@@ -18,8 +18,9 @@ const VALUE_FLAGS = new Set([
   "--coverage-dir",
 ]);
 const UNIT_SCRIPTS = new Set(["test", "test:unit", "test:watch", "coverage"]);
-// From the CLI package (`bun test ./e2e`) or from the repo root (`bun test ./packages/cli/e2e`).
-const testRoots = ["e2e", "packages/cli/e2e"];
+// A package's e2e/ from inside it (`bun test ./e2e`) or from the repo root
+// (`bun test ./packages/<name>/e2e`).
+const E2E_ROOT = /^\.\/(?:packages\/[\w.-]+\/)?e2e(?:\/|$)/;
 
 const command = text(readPayload()?.tool_input?.command);
 for (const { argv } of commands(command ?? "")) {
@@ -39,11 +40,7 @@ for (const { argv } of commands(command ?? "")) {
     const paths = positional.filter((arg) => arg.includes("/") || /\.[cm]?[jt]sx?$/.test(arg));
     const scoped =
       paths.length > 0 &&
-      paths.every(
-        (path) =>
-          !path.split("/").includes("..") &&
-          testRoots.some((root) => path === `./${root}` || path.startsWith(`./${root}/`)),
-      );
+      paths.every((path) => !path.split("/").includes("..") && E2E_ROOT.test(path));
     if (!scoped) {
       deny(
         "BLOCKED: Scope Bun's runner to its declared binary/native tests; use bun run test for the Node unit suite.",

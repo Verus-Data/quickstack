@@ -9,6 +9,8 @@ describe("base CLI runner guard", () => {
     "bun test ./tests/config.test.ts",
     "bun test -t ./e2e",
     "bun test ./packages/cli/tests",
+    "bun test ./packages/api/src",
+    "bun test ./packages/../e2e",
     "bun --bun run test:unit",
     "bun --bun node_modules/.bin/vitest run",
     "bun add @effect/schema",
@@ -21,6 +23,7 @@ describe("base CLI runner guard", () => {
     "bun test ./e2e -t 'unit tests'",
     "bun test ./packages/cli/e2e",
     "bun test ./packages/cli/e2e/binary.test.ts",
+    "bun test ./packages/api/e2e",
     "git commit -m 'bun test'",
     "bun add effect",
   ])("allows %s", async (command) => expect(denyReason(await check(command))).toBeUndefined());

@@ -109,7 +109,7 @@ Application features, install/update distribution and release workflow (decision
 
 ## Pending user actions
 
-Maintainers: add `Bash(./packages/cli/dist/*)`, `Bash(bun run test:hooks)` and `Bash(bun run test:hooks *)` to `.claude/settings.json` permissions. The existing `bun run test:unit` entries only apply when run inside `packages/cli`.
+None.
 
 ## Deeper context
 
