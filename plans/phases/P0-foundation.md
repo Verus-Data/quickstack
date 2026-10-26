@@ -14,13 +14,13 @@ fixed target.
 
 ### Name
 
-- [ ] Reserve `quickstacks` on npm with a placeholder package (Riley). Decide on
+- [ ] Reserve `quickstacks` on npm with a placeholder package (maintainers). Decide on
       `quickstack` too (open question 6).
 - [ ] Check the name on GitHub and as a domain, and record what's taken.
 
 ### Product decisions
 
-- [ ] Review [00-requirements.md](../00-requirements.md) with Riley; mark it AGREED.
+- [ ] Review [00-requirements.md](../00-requirements.md) with the maintainers; mark it AGREED.
 - [ ] Decide D5 (brief budget), D6 (registry audience), D7 (verify layers), D8 (canary
       timing) and D9 (entry point). Move each agreed one to the
       [decisions log](../README.md#decisions-log).
@@ -34,7 +34,7 @@ fixed target.
 - [x] (2026-10-26, D10) Language and runtime: TypeScript CLI on the `typescript-cli`
       base stack, no product features ([01, Stack](../01-architecture.md#stack)).
 - [ ] Decide distribution, A1 in [01](../01-architecture.md#a1-distribution-open)
-      (Riley). The recommendation is a Node ESM bundle on npm.
+      (maintainers). The recommendation is a Node ESM bundle on npm.
 - [x] (2026-10-26) Port the `typescript-cli` base boilerplate (required and default
       fragments only) and rename it to quickstacks, with no product code. `bun run check`
       green locally: lint, typecheck, 112 unit tests, 8 binary tests. Details in

@@ -1,7 +1,7 @@
 # Product requirements: quickstacks
 
 Status: DRAFT 2026-10-26, derived from [PROBLEM_STATEMENT.md](../product/PROBLEM_STATEMENT.md)
-and not yet reviewed with Riley. Settled decisions are in the
+and not yet reviewed by the maintainers. Settled decisions are in the
 [README decisions log](README.md#decisions-log); everything under
 [Proposed decisions](#proposed-decisions) below is open until agreed. Risks and open
 questions are in [10-risks-and-open-questions.md](10-risks-and-open-questions.md).
@@ -97,7 +97,7 @@ as D1-D4:
 
 ## Proposed decisions
 
-Each needs Riley's call. When agreed, move it to the README decisions log with the same
+Each needs the maintainers' call. When agreed, move it to the README decisions log with the same
 ID and the date.
 
 | ID | Proposal | Why | Traces to |
@@ -120,7 +120,7 @@ collected today; P2 exists to collect the first two.
 | It's faster than by hand | Median time from `new` to green `verify` | Under 20 minutes (sandbox) | P2 run records |
 | The result is complete | Shipped stacks whose verify covers all D7 layers | Every shipped stack | `validate` (if D7 is agreed) |
 | Stacks don't rot | A stack that passed last month passes this month with no prose change | To set | P4 canary |
-| People write their own | Stacks and fragments in user directories and third-party sources | Any user besides Riley | Usage telemetry, if adopted (not yet decided) |
+| People write their own | Stacks and fragments in user directories and third-party sources | Anyone outside the maintainers | Usage telemetry, if adopted (not yet decided) |
 
 Telemetry isn't decided. If it's adopted, the privacy model and opt-in or opt-out choice
 need their own RFC before any collection ships.

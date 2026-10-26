@@ -38,12 +38,12 @@ edited; the plan reads it as quickstacks.
 
 | Step | Owner | Notes |
 |---|---|---|
-| Reserve `quickstacks` on npm | Riley | Free on 2026-10-26; not reserved |
-| Review 00-requirements.md and decide D5-D9 | Riley | Each is one table row with its reason and source |
-| Answer the open questions in 10 | Riley | Question 1 (registry audience) decides which stacks ship bundled |
+| Reserve `quickstacks` on npm | Maintainers | Free on 2026-10-26; not reserved |
+| Review 00-requirements.md and decide D5-D9 | Maintainers | Each is one table row with its reason and source |
+| Answer the open questions in 10 | Maintainers | Question 1 (registry audience) decides which stacks ship bundled |
 | Competitive research | Agent, after the review | Fill the gap noted in 00-requirements |
-| Decide distribution (A1) | Riley | Recommendation in 01: Node ESM bundle on npm |
-| Commit the review fixes and push; confirm CI `ci-ok` on `main` | Riley (commit on request) | Boilerplate committed; review fixes not yet |
-| Add the hook permissions listed in `AGENTS.md` under "Pending user actions" | Riley | The agent can't edit `.claude/settings.json` |
+| Decide distribution (A1) | Maintainers | Recommendation in 01: Node ESM bundle on npm |
+| Commit the review fixes and push; confirm CI `ci-ok` on `main` | Maintainers (agents commit on request) | Boilerplate committed; review fixes not yet |
+| Add the hook permissions listed in `AGENTS.md` under "Pending user actions" | Maintainers | The agent can't edit `.claude/settings.json` |
 | Design A2-A4 before writing `verify` and `new` | Agent, in P1 | Streaming output, signals during handoff, structured errors |
 | If A1 picks the npm bundle, add the Node build and point e2e at it | Agent, after A1 | P0 task |

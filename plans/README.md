@@ -34,7 +34,7 @@ statement needs a change first.
 | [../product/PROBLEM_STATEMENT.md](../product/PROBLEM_STATEMENT.md) | Who has the problem, what's broken today, evidence, jobs, success measures, assumptions |
 | [00-requirements.md](00-requirements.md) | What release 1 builds, for whom, in and out of scope, proposed decisions, how success is measured |
 | [01-architecture.md](01-architecture.md) | Not started: the design questions the build has to settle, and what each one traces to |
-| [10-risks-and-open-questions.md](10-risks-and-open-questions.md) | Risks with mitigations; open questions for Riley |
+| [10-risks-and-open-questions.md](10-risks-and-open-questions.md) | Risks with mitigations; open questions for the maintainers |
 | [phases/](phases/) | The execution plan, one file per phase, each with tasks and exit criteria |
 
 ## Phases
@@ -56,7 +56,7 @@ D8 below.
 ## Decisions log
 
 Settled decisions only, each with its date and reason. A proposal belongs in
-[00-requirements.md](00-requirements.md#proposed-decisions) until Riley agrees to it;
+[00-requirements.md](00-requirements.md#proposed-decisions) until the maintainers agree to it;
 then it moves here with an ID that never changes.
 
 | ID | Date | Decision and why | Governing detail |
@@ -66,8 +66,8 @@ then it moves here with an ID that never changes.
 | D2 | 2026-10-26 | Not an agent: the CLI never calls an LLM and never runs a command from an entry. The user's own agent does the work, and the trust story depends on the CLI executing nothing it reads. | [PROBLEM_STATEMENT](../product/PROBLEM_STATEMENT.md#what-this-is-not), [01](01-architecture.md#security-boundaries) |
 | D3 | 2026-10-26 | Not a package manager or version resolver: versions are the agent's job on purpose. | [PROBLEM_STATEMENT](../product/PROBLEM_STATEMENT.md#what-this-is-not) |
 | D4 | 2026-10-26 | No retrofitting: `add` applies fragments to an existing project and never restructures what's there. | [PROBLEM_STATEMENT](../product/PROBLEM_STATEMENT.md#what-this-is-not) |
-| D10 | 2026-10-26 | The repo is a TypeScript CLI built on the `typescript-cli` base stack with no product features (Riley). Ported as boilerplate the same day from the stacks registry's verified base run (`typescript-cli-base.bundle`, commit `809025a`), renamed to quickstacks. How the package is distributed is still open (A1). | [01, Stack](01-architecture.md#stack) |
-| D11 | 2026-10-26 | The repo is a bun-workspace monorepo (Riley): `apps/cli` is the `quickstacks` package; an API and an MCP server will each be their own package under `apps/`; shared code goes in `packages/`. The harness (`.claude/`, lefthook, CI, root Biome and tsconfig base, hook tests) belongs to the root. Follows the layout in `~/Projects/poker`. | [01, Repository layout](01-architecture.md#repository-layout) |
+| D10 | 2026-10-26 | The repo is a TypeScript CLI built on the `typescript-cli` base stack with no product features. Ported as boilerplate the same day from the stacks registry's verified base run (`typescript-cli-base.bundle`, commit `809025a`), renamed to quickstacks. How the package is distributed is still open (A1). | [01, Stack](01-architecture.md#stack) |
+| D11 | 2026-10-26 | The repo is a bun-workspace monorepo: `apps/cli` is the `quickstacks` package; an API and an MCP server will each be their own package under `apps/`; shared code goes in `packages/`. The harness (`.claude/`, lefthook, CI, root Biome and tsconfig base, hook tests) belongs to the root. Follows the layout in `~/Projects/poker`. | [01, Repository layout](01-architecture.md#repository-layout) |
 
 ## Plan conventions
 

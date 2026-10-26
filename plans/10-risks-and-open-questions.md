@@ -19,7 +19,7 @@ Status: DRAFT 2026-10-26, from the assumptions and open questions in
 | The base stack ships a Bun binary, but users arrive through `npx` | Without a Node-runnable package, the problem statement's first command fails | Decide A1 in P0 ([01](01-architecture.md#a1-distribution-open)); e2e tests the artifact that's actually published |
 | The name is taken before it's published | `stacks` was lost this way | Reserve `quickstacks` on npm in P0 |
 
-## Open questions for Riley
+## Open questions for the maintainers
 
 1. Who is the bundled registry for: a community catalog, or the author's own stack
    written down once? Proposal D6 picks the catalog. The answer decides which entries
