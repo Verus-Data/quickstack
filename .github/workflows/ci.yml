@@ -34,8 +34,6 @@ jobs:
         with:
           name: diagnostics-${{ matrix.os }}
           path: |
-            apps/*/coverage/
-            apps/*/logs/
             packages/*/coverage/
             packages/*/logs/
   # The one required check: green only when every matrix job passed.

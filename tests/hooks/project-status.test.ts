@@ -114,18 +114,18 @@ describe("project-status", { timeout: 30_000 }, () => {
     }
   });
 
-  it("reads each workspace app's log", async () => {
-    put("apps/cli/logs/cli.jsonl", '{"time":"t","level":"error","msg":"x"}\n');
-    put("apps/api/src/index.ts");
-    expect(await status()).toContain("apps/cli/logs/cli.jsonl has 1 warn/error line(s): jq -c");
+  it("reads each workspace package's log", async () => {
+    put("packages/cli/logs/cli.jsonl", '{"time":"t","level":"error","msg":"x"}\n');
+    put("packages/api/src/index.ts");
+    expect(await status()).toContain("packages/cli/logs/cli.jsonl has 1 warn/error line(s): jq -c");
     expect(await status()).not.toContain("cli.jsonl");
   });
 
   it("reads every JSON log an app writes, skipping rotated ones", async () => {
-    put("apps/api/logs/api.jsonl", '{"time":"t","level":"warn","msg":"x"}\n');
-    put("apps/api/logs/api.prev.jsonl", '{"time":"t","level":"error","msg":"x"}\n');
+    put("packages/api/logs/api.jsonl", '{"time":"t","level":"warn","msg":"x"}\n');
+    put("packages/api/logs/api.prev.jsonl", '{"time":"t","level":"error","msg":"x"}\n');
     const out = await status();
-    expect(out).toContain("apps/api/logs/api.jsonl has 1 warn/error line(s)");
+    expect(out).toContain("packages/api/logs/api.jsonl has 1 warn/error line(s)");
     expect(out).not.toContain(".prev");
   });
 

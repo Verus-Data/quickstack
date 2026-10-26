@@ -45,9 +45,37 @@ every command an agent calls.
 | Templates and generators (Yeoman, cookiecutter, the `create-*` family) | Durable choices: layout, tooling, conventions | Versions are committed, so the template ages from the day it ships; it can't express intent ("mypy strict with the pydantic plugin") without a config file that will be wrong for the next release |
 | A bare agent prompt | The perishable part: current docs, running generators, fixing what breaks | No definition of done, a different layout every run, skips tests, lint, CI and agent config unless told in a level of detail that costs the afternoon |
 
-The landscape beyond these two hasn't been researched. Before release 1 is agreed,
-check spec-driven agent workflows and any agent-native scaffolders that have appeared,
-and add rows here with sources. Kelvo's README competitor table is the format to follow.
+Wider landscape, researched 2026-10-26. Where a claim came from a third-party review
+rather than vendor docs, the row says so. Nothing found combines a version-less
+project description, the user's own agent, an executable definition of done, and
+detection of a weakened gate.
+
+| Product | Kind | Versions | Definition of done | Uses the user's agent | Where it leaves the gap | Source |
+|---|---|---|---|---|---|---|
+| Copier | Template engine with updates | Template versions from git tags; dependency versions frozen in the template | None; `copier update` leaves conflicts as markers or `.rej` files | No | The best update story of the template tools, still with no gate that says the result works | [docs](https://copier.readthedocs.io/en/stable/updating/) |
+| create-t3-app and the `create-*` family | Official generator | Pinned by the CLI release | Builds | No | One opinionated stack each. quickstacks calls generators like these as a step rather than competing with them | [docs](https://create.t3.gg/en/installation) |
+| degit | Repo snapshot copy | Whatever the repo had at that commit | None | No | A plain copy with no parameters | [repo](https://github.com/Rich-Harris/degit) |
+| Projen | Config synthesized from code | Manages upgrades itself | Its own build and test tasks | No | Owns the generated files for the life of the project; a manager, not a one-shot handoff | [site](https://projen.io/) |
+| Nx generators and Nx MCP | Monorepo generators exposed to agents | Tied to the Nx release | Nx tasks, no done gate | Partly, through MCP | Closest to "the agent runs official generators", but only inside Nx | [docs](https://nx.dev/docs/reference/nx-mcp) |
+| GitHub Spec Kit | Spec-driven workflow | Chosen during planning | Implement and converge commands repeat until the model reports converged | Yes, many agents | Works per feature, not per project bootstrap; the model decides it is done | [repo](https://github.com/github/spec-kit) |
+| Kiro | Agentic IDE with specs | Not addressed | EARS-style acceptance criteria and a task checklist | No, its own agent | A checklist, not an executable check; tied to the IDE | [docs](https://kiro.dev/docs/specs/feature-specs/requirements-first/) |
+| Tessl | Spec-as-source and a skills registry | Versioned registry items | A verification phase in its spec workflow (third-party review) | Registry works with any agent | Ongoing regeneration from specs rather than a bootstrap; not generally available | [review](https://codemyspec.com/blog/tessl-review) |
+| BMAD Method | Agent persona and workflow kit | Not addressed for project dependencies | Workflow steps only | Yes | Heavy process, no executable gate | [docs](https://docs.bmad-method.org/start/install-bmad/) |
+| Agent OS | Standards injected into projects | Stack-neutral | None (third-party review) | Yes | Standards without bootstrap or verification | [review](https://codemyspec.com/blog/agent-os-review) |
+| AGENTS.md | Open instruction-file convention | n/a | An optional build-and-test section agents "will try to run" | Yes, most agents | A convention with no runner. quickstacks writes one rather than competing | [site](https://agents.md/) |
+| A Stop-hook loop plugin for Claude Code ("Ralph Wiggum") | Agent loop pattern | n/a | Re-prompts until the model emits a completion promise or hits an iteration cap | Claude Code only | Shows people want "loop until checks pass"; completion is still self-reported (third-party write-up) | [write-up](https://www.dreamhost.com/blog/ralph-wiggum/) |
+| Lovable, bolt.new, v0 | Hosted app builders | The platform picks the stack | A running preview | No, their own agent | Hosted, fixed stacks, backend lock-in (third-party comparison) | [comparison](https://resources.rework.com/tools/ai-coding/lovable-vs-bolt-new-vs-v0) |
+| shadcn registry | Distribution model for copied components | npm dependencies resolved at install | None | Not by design | Copies files rather than describing intent, but its static, URL-addressable registry JSON is a model for a registry index | [docs](https://ui.shadcn.com/docs/registry/getting-started) |
+
+Patterns users will expect, and what the plan does with each:
+
+| Pattern | Seen in | In this plan |
+|---|---|---|
+| An `--agent <name>` flag and a non-interactive `-y` | Spec Kit `init --integration`, BMAD `--tools ... --yes` | `new --agent`, `--yes` and `--sandbox` (1.2, 1.4) |
+| A stored record of the inputs that machines can check | Copier's answers file and `check-update` | `.quickstacks/manifest.json` (1.2) |
+| AGENTS.md as where agents look for build and test commands | AGENTS.md, Nx's agent setup | Every stack writes one; the brief requires it to be accurate (1.1) |
+| A static registry addressable by URL | shadcn | The registry index (4.0) |
+| Trust tiers for third-party content | Claude Code plugin marketplaces, Tessl's security scores | Origins with `trusted` marks (1.0), git sources pinned and confirmed (3.2) |
 
 ## What we're building
 
@@ -84,8 +112,10 @@ and the bundled set. Who the bundled set is for is open (D6).
 
 In scope for release 1 (proposed): the entry format, `list`, `new` with `--sandbox`,
 `verify`, the brief, handoff to the agent on PATH, `validate` with a brief budget, and
-enough stacks to test the core assumption at both small and large brief sizes. `add` and
-user-authored stacks are wanted (jobs 3 and 4) but can follow in P3.
+enough stacks to test the core assumption at both small and large brief sizes. That is
+phases 0 and 1 in [02-roadmap.md](02-roadmap.md#mvp-cutline). User-directory stacks load
+in the MVP because the origin is cheap; `add`, authoring tools and git sources (jobs 3
+and 4) follow in phase 3.
 
 Out of scope, from [What this is not](../product/PROBLEM_STATEMENT.md#what-this-is-not), settled
 as D1-D4:
@@ -102,25 +132,32 @@ ID and the date.
 
 | ID | Proposal | Why | Traces to |
 |---|---|---|---|
-| D5 | Set a per-stack brief budget, enforced by `validate`, before writing the second stack. Starting point: a cap near the 3,200-3,900 words the first stacks needed, with a separate cap for stack plus optional fragments | Once stacks are 10,000 words nobody will cut them; the problem statement calls this a one-way door | Assumptions row 1; open question "What is the brief budget?" |
+| D5 | Set a per-stack brief budget, enforced by `validate` ([1.5](phases/phase-1.5.md)), before the MVP stacks are written ([1.6](phases/phase-1.6.md)). Starting numbers, revised 2026-10-26: stack body 2,000 words, fragment body 1,000, composed brief (stack with its required and default fragments, either preset) 5,000, and 6,500 with any one optional fragment. Composed briefs around 4,500 words have reached green in 10 to 15 minutes; briefs near 7,000 reached green more slowly and once with deliverables missing | Once stacks are 10,000 words nobody will cut them; the problem statement calls this a one-way door | Assumptions row 1; open question "What is the brief budget?" |
 | D6 | The bundled registry is a curated catalog of stacks a stranger would want. Personal tooling lives in the user directory or a personal source | Mixed content makes the product unclear either way; origin layering already supports the split | Open question "Who is the bundled registry for?" |
 | D7 | Every shipped stack's `verify` covers install, lint, typecheck, test, and a dev-server probe when there is a server. A stack can't ship without it | This is the "result is complete" success measure; making it a format rule turns it into something `validate` can check | Success table row 3 |
-| D8 | Bring the canary forward to straight after P2, ahead of add and authoring | Manual end-to-end runs are the only quality signal and nobody has time to run them | Open question "How does a stack prove it still works?" |
+| D8 | Run the canary in phase 2, straight after the MVP and ahead of `add` and authoring (phase 3), but not inside the MVP. Reasons in [02-roadmap.md](02-roadmap.md#measurement-and-the-canary) | Manual end-to-end runs are the only quality signal and nobody has time to run them | Open question "How does a stack prove it still works?" |
 | D9 | Hand off to whatever agent is on PATH, and treat "ask your agent to run quickstacks" as an equal entry point. Instrument which one people use | Low-confidence assumption; cheap to support both and measure | Assumptions row 5 |
+| D12 | Publish the package with `engines.node` `>=22` and test the packed artifact on Node 22 and the `.node-version` Node in CI ([0.2](phases/phase-0.2.md)) | The base's `>=24 <25` would refuse many `npx` users; 22 is the oldest Node line still in maintenance | Entry point `npx quickstacks`; A1 |
+| D13 | The MVP bundles three stacks: `astro-blog` first (small brief, dev server), `go-cli` (small, no server) and `python-react` (large brief, two servers), with the fragments their defaults need (AGENTS.md and agent config, git hooks, GitHub CI). `typescript-cli`, `react-router` and personal-tooling fragments stay out of the bundled set ([1.6](phases/phase-1.6.md)) | One small and one near-budget brief tests assumption 1; all three are stacks a stranger would want (D6) | Assumption 1; open questions on registry audience and the first stack |
+| D14 | Changed verify steps fail `verify` (exit 5, `VerifyChanged`) instead of warning. The step digest is kept in the manifest and in the user's state directory; `verify --accept-changes` re-records it only from a terminal and never when an agent is detected ([1.3](phases/phase-1.3.md)) | A warning lets an agent finish by weakening the definition of done, which is the failure the trust story exists to prevent | Jobs ("why the brief refuses to let the agent weaken a step"); assumption 3 |
+| D15 | The canary runs on a machine the maintainers control (scheduled locally or on a self-hosted runner) under a maintainer's own agent subscription, never with model API keys stored in GitHub-hosted CI; its GitHub token is limited to opening issues and pull requests on this repo ([2.1](phases/phase-2.1.md)) | Keeps inference out of hosted CI and its secrets, at the cost of depending on one machine being on | Open question "How does a stack prove it still works?" |
+| D16 | Host the API on Cloudflare Workers with D1, or on a Node server with Postgres; [4.0a](phases/phase-4.0a.md) compares them and recommends Workers with D1, since domain code depends only on Effect services and a later move is a new platform layer | Cost, operations and how well Effect's HTTP modules run on each | Success rows 4 and 5 across users |
+| D17 | Telemetry consent model (opt-in or opt-out), with a first run that sends nothing, standard off switches, and a published schema ([4.1a and 4.1b](phases/phase-4.1a.md)). 4.1a recommends opt-out with those protections; if the answer is opt-in or no collection, 4.2 shrinks to publishing canary results. Same question as open question 5 in 10 | Two success measures can't be collected across users without it; the trust story makes the default matter | Success table; "None of these are collected today" |
 
 ## How success is measured
 
 Measured per stack, not per release. These come from
 [What success looks like](../product/PROBLEM_STATEMENT.md#what-success-looks-like). None are
-collected today; P2 exists to collect the first two.
+collected today. The roadmap's [measurement section](02-roadmap.md#measurement-and-the-canary)
+says where each first gets a number.
 
 | Outcome | Measure | Target | Collected by |
 |---|---|---|---|
-| The agent finishes without help | Fraction of `new --sandbox` runs reaching green `verify` with no user intervention | To set in P0 | P2 run records |
-| It's faster than by hand | Median time from `new` to green `verify` | Under 20 minutes (sandbox) | P2 run records |
-| The result is complete | Shipped stacks whose verify covers all D7 layers | Every shipped stack | `validate` (if D7 is agreed) |
-| Stacks don't rot | A stack that passed last month passes this month with no prose change | To set | P4 canary |
-| People write their own | Stacks and fragments in user directories and third-party sources | Anyone outside the maintainers | Usage telemetry, if adopted (not yet decided) |
+| The agent finishes without help | Fraction of `new --sandbox` runs reaching green `verify` with no user intervention | Proposed in [0.0](phases/phase-0.0.md): 2 of 3 stacks at the MVP gate, then 80% of bench runs per stack per month | MVP gate runs (1.6), bench runs (2.0) |
+| It's faster than by hand | Median time from `new` to green `verify` | Under 20 minutes (sandbox) | Run records (1.3, 2.0) |
+| The result is complete | Shipped stacks whose verify covers all D7 layers | Every shipped stack | `validate` (1.5, if D7 is agreed) |
+| Stacks don't rot | A stack that passed last month passes this month with no prose change | Every bundled stack | The canary (2.1) |
+| People write their own | Stacks and fragments in user directories and third-party sources | Anyone outside the maintainers | Git sources make it countable (3.2); usage telemetry across users (4.1), if D17 is agreed |
 
-Telemetry isn't decided. If it's adopted, the privacy model and opt-in or opt-out choice
-need their own RFC before any collection ships.
+Telemetry isn't decided (D17). If it's adopted, [4.1a and 4.1b](phases/phase-4.1a.md) carries the
+privacy model and no collection ships before it.

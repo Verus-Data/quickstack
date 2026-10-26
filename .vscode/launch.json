@@ -7,14 +7,14 @@
       "request": "launch",
       "program": "src/bin.ts",
       "args": ["doctor"],
-      "cwd": "${workspaceFolder}/apps/cli"
+      "cwd": "${workspaceFolder}/packages/cli"
     },
     {
       "name": "Debug current vitest file",
       "type": "node-terminal",
       "request": "launch",
       "command": "bun run test:unit ${file}",
-      "cwd": "${workspaceFolder}/apps/cli"
+      "cwd": "${workspaceFolder}/packages/cli"
     },
     {
       "name": "Debug current bun test file",
@@ -22,7 +22,7 @@
       "request": "launch",
       "program": "${file}",
       "runtimeArgs": ["test"],
-      "cwd": "${workspaceFolder}/apps/cli"
+      "cwd": "${workspaceFolder}/packages/cli"
     }
   ]
 }

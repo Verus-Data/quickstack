@@ -1,8 +1,8 @@
 ---
 paths:
-  - "apps/cli/src/**/*.ts"
-  - "apps/cli/tests/**/*.ts"
-  - "apps/cli/scripts/**/*.ts"
+  - "packages/cli/src/**/*.ts"
+  - "packages/cli/tests/**/*.ts"
+  - "packages/cli/scripts/**/*.ts"
   - "tests/**/*.ts"
   - "scripts/**/*.ts"
   - ".claude/hooks/**/*.ts"

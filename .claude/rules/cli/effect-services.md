@@ -1,6 +1,6 @@
 ---
 paths:
-  - "apps/cli/src/**"
+  - "packages/cli/src/**"
 ---
 
 # Services, configuration, and logging

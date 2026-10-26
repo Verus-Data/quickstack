@@ -18,8 +18,8 @@ const VALUE_FLAGS = new Set([
   "--coverage-dir",
 ]);
 const UNIT_SCRIPTS = new Set(["test", "test:unit", "test:watch", "coverage"]);
-// From the CLI package (`bun test ./e2e`) or from the repo root (`bun test ./apps/cli/e2e`).
-const testRoots = ["e2e", "apps/cli/e2e"];
+// From the CLI package (`bun test ./e2e`) or from the repo root (`bun test ./packages/cli/e2e`).
+const testRoots = ["e2e", "packages/cli/e2e"];
 
 const command = text(readPayload()?.tool_input?.command);
 for (const { argv } of commands(command ?? "")) {

@@ -2,7 +2,7 @@
 // lost on the next run and hides the real fix.
 //
 //   dist/                        build output (the project build command), at the root or in a
-//                                workspace package (apps/<name>/, packages/<name>/)
+//                                workspace package (packages/<name>/)
 //   coverage/                    coverage reports (bun run coverage), likewise
 //   bun.lock                     bun's lockfile (bun add / bun remove / bun install)
 import { spawnSync } from "node:child_process";
@@ -35,8 +35,8 @@ function reasonFor(filePath: string): string | undefined {
   if (rel === "bun.lock") {
     return "bun.lock is written by bun. Change package.json with bun add / bun remove, or run bun install.";
   }
-  // Workspace packages own their generated output: apps/cli/dist/ is the same as dist/.
-  rel = rel.replace(/^(?:apps|packages)\/[^/]+\//, "");
+  // Workspace packages own their generated output: packages/cli/dist/ is the same as dist/.
+  rel = rel.replace(/^packages\/[^/]+\//, "");
 
   if (rel.startsWith("dist/") || rel.startsWith("build/")) {
     return `${rel} is build output. Change the source and run the project build command.`;

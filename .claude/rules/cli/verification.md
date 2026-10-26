@@ -1,8 +1,8 @@
 ---
 paths:
-  - "apps/cli/src/**"
-  - "apps/cli/tests/**"
-  - "apps/cli/scripts/**"
+  - "packages/cli/src/**"
+  - "packages/cli/tests/**"
+  - "packages/cli/scripts/**"
 ---
 
 # Verification

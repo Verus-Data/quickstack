@@ -46,7 +46,7 @@ async function main(): Promise<void> {
   }
   if (!`${fileDir}/`.startsWith(`${root}/`)) return;
   // In a workspace the file belongs to the nearest tsconfig.json at or under the root
-  // (apps/cli/tsconfig.json for apps/cli/src/main.ts); that project is the one checked.
+  // (packages/cli/tsconfig.json for packages/cli/src/main.ts); that project is the one checked.
   let project = fileDir;
   while (project !== root && !isFile(join(project, "tsconfig.json"))) project = dirname(project);
   // tsc prints paths relative to the project; match that.

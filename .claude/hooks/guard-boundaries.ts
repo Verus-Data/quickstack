@@ -1,4 +1,4 @@
-// Enforce the CLI's platform and output boundaries before writing TypeScript under apps/cli/src/.
+// Enforce the CLI's platform and output boundaries before writing TypeScript under packages/cli/src/.
 // Other workspace packages (the API, the MCP server) get their own rules, not these.
 import { dirname, isAbsolute, resolve } from "node:path";
 import { deny, findUp, projectRoot, readPayload, text, writtenText } from "./_lib";
@@ -11,18 +11,18 @@ function codeLines(written: string): string[] {
     .map((line) => line.replace(/(^|[ \t])\/\/.*$/, ""));
 }
 
-/** The path under apps/cli/src/ ("core/health.ts"); else undefined. */
+/** The path under packages/cli/src/ ("core/health.ts"); else undefined. */
 function srcPath(filePath: string): string | undefined {
   if (!/\.tsx?$/.test(filePath)) return undefined;
   const abs = isAbsolute(filePath) ? filePath : resolve(projectRoot(), filePath);
-  // The nearest package root above the file: apps/cli in the repo or in a worktree under
+  // The nearest package root above the file: packages/cli in the repo or in a worktree under
   // .claude/worktrees/. .claude/ counts too, so the guard holds in a fresh checkout before
-  // apps/cli/package.json exists.
+  // packages/cli/package.json exists.
   const pkg = findUp(dirname(abs), "package.json", ".claude");
   if (!pkg) return undefined;
   const rel = abs.slice(pkg.length + 1);
-  if (pkg.endsWith("/apps/cli")) return rel.startsWith("src/") ? rel.slice(4) : undefined;
-  return rel.startsWith("apps/cli/src/") ? rel.slice("apps/cli/src/".length) : undefined;
+  if (pkg.endsWith("/packages/cli")) return rel.startsWith("src/") ? rel.slice(4) : undefined;
+  return rel.startsWith("packages/cli/src/") ? rel.slice("packages/cli/src/".length) : undefined;
 }
 
 function reasonsFor(file: string, lines: string[]): string[] {
@@ -55,5 +55,5 @@ if (file !== undefined) {
   const written = writtenText(payload?.tool_input);
   const reasons = written ? reasonsFor(file, codeLines(written)) : [];
   if (reasons.length)
-    deny(`BLOCKED: apps/cli/src/${file} ${reasons.join("; ")}. See .claude/rules/cli/cli.md.`);
+    deny(`BLOCKED: packages/cli/src/${file} ${reasons.join("; ")}. See .claude/rules/cli/cli.md.`);
 }

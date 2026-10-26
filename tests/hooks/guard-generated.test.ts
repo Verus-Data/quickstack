@@ -7,7 +7,7 @@ describe("shared generated-output guard", () => {
     "build/index.js",
     "coverage/index.html",
     "bun.lock",
-    "apps/cli/dist/quickstacks",
+    "packages/cli/dist/quickstacks",
     "packages/shared/coverage/index.html",
   ])("denies %s", async (path) => {
     expect(
@@ -18,8 +18,8 @@ describe("shared generated-output guard", () => {
     "src/build/helper.ts",
     "src/index.ts",
     "/outside/dist/program",
-    "apps/cli/src/build/helper.ts",
-    "apps/cli/bun.lock",
+    "packages/cli/src/build/helper.ts",
+    "packages/cli/bun.lock",
   ])("allows %s", async (path) => {
     expect(
       denyReason(await runHook("PreToolUse", "guard-generated", write(path, "x"))),

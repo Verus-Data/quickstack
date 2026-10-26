@@ -8,24 +8,23 @@
   },
   "workspaces": {
     "packages": [
-      "apps/*",
       "packages/*"
     ],
     "catalog": {
-      "@biomejs/biome": "^2.5.15",
-      "@effect/platform-bun": "^4.0.5",
-      "@effect/platform-node": "^4.0.5",
-      "@effect/vitest": "^4.0.5",
+      "@biomejs/biome": "^2.6.3",
+      "@effect/platform-bun": "^4.0.6",
+      "@effect/platform-node": "^4.0.6",
+      "@effect/vitest": "^4.0.6",
       "@types/bun": "^1.4.3",
       "@types/node": "24",
       "@vitest/coverage-v8": "^5.0.5",
-      "effect": "^4.0.5",
+      "effect": "^4.0.6",
       "typescript": "^7.0.2",
       "vitest": "^5.0.5"
     }
   },
   "scripts": {
-    "dev": "bun run --cwd apps/cli dev",
+    "dev": "bun run --cwd packages/cli dev",
     "build": "bun run --filter '*' build",
     "typecheck": "tsc --noEmit && bun run --filter '*' typecheck",
     "lint": "biome check .",

@@ -1,7 +1,8 @@
 # quickstacks plan
 
-Status: planning only, started 2026-10-26. No code exists yet. **Start with
-[HANDOFF.md](HANDOFF.md)**, then [00-requirements.md](00-requirements.md).
+Status: planning, started 2026-10-26. The CLI base is in place with no product code.
+**Start with [HANDOFF.md](HANDOFF.md)**, then [00-requirements.md](00-requirements.md) and
+[02-roadmap.md](02-roadmap.md).
 
 ## Product to preserve
 
@@ -33,25 +34,25 @@ statement needs a change first.
 | [HANDOFF.md](HANDOFF.md) | Current state, next steps and who owns each |
 | [../product/PROBLEM_STATEMENT.md](../product/PROBLEM_STATEMENT.md) | Who has the problem, what's broken today, evidence, jobs, success measures, assumptions |
 | [00-requirements.md](00-requirements.md) | What release 1 builds, for whom, in and out of scope, proposed decisions, how success is measured |
-| [01-architecture.md](01-architecture.md) | Not started: the design questions the build has to settle, and what each one traces to |
+| [02-roadmap.md](02-roadmap.md) | Every phase and sub-phase with its goal, trace and dependencies; the MVP cutline; the repo and stack facts the plan relies on; open architecture questions A1-A4; the trust boundary |
 | [10-risks-and-open-questions.md](10-risks-and-open-questions.md) | Risks with mitigations; open questions for the maintainers |
-| [phases/](phases/) | The execution plan, one file per phase, each with tasks and exit criteria |
+| [phases/](phases/) | One file per sub-phase (`phase-<phase>.<sub>.md`), each with scope, design, files touched, acceptance tests and exit criteria |
 
 ## Phases
 
-Proposed 2026-10-26, not agreed. Only P0 has a phase file so far; write the next one
-when its predecessor is close to exiting, not before.
+Proposed 2026-10-26, not agreed. The full outline, with sub-phases, dependencies and
+what can run in parallel, is [02-roadmap.md](02-roadmap.md). Phases 0 and 1 are the MVP.
 
-| Phase | Goal | Traces to | Status |
-|---|---|---|---|
-| [P0 foundation](phases/P0-foundation.md) | Name secured, requirements agreed, brief budget and registry audience decided, repo and gates in place | Open questions: npm name, brief budget, registry audience | Not started |
-| P1 core loop | `list --json`, `new`, the brief, `verify`, handoff, and one stack an agent takes to a green `verify --sandbox` with no help | Jobs 1, 2 and 5; success rows 1-3 | Not planned |
-| P2 measured runs | Every sandbox run recorded (time to green, interventions, brief size), so the success table has numbers | "None of these are collected today" | Not planned |
-| P3 add and authoring | `add` applies a fragment to an existing repo without overwriting; authors can write and validate their own stacks in a user directory | Jobs 3 and 4; stack author user | Not planned |
-| P4 stacks that prove themselves | A scheduled canary that scaffolds each stack headlessly and reports when one stops passing | "How does a stack prove it still works?"; success row 4 | Not planned |
+| Phase | Goal | Sub-phases | Traces to | Status |
+|---|---|---|---|---|
+| 0 Foundation | Name held, hard-to-reverse decisions made, `npx quickstacks` installs the real CLI, and the base can run long and interactive commands | [0.0](phases/phase-0.0.md) decisions and name, [0.1](phases/phase-0.1.md) repo baseline, [0.2](phases/phase-0.2.md) distribution, [0.3](phases/phase-0.3.md) command runtime | Open questions: npm name, brief budget, registry audience | In progress (0.1 mostly executed) |
+| 1 Core loop (MVP) | `list --json`, `new --sandbox`, the brief, `verify` with tamper detection, handoff, `validate` with the brief budget, three bundled stacks each taken to green by an agent | [1.0](phases/phase-1.0.md) to [1.6](phases/phase-1.6.md) | Jobs 1, 2 and 5; success rows 1-3; assumption 1 | Not started |
+| 2 Stacks that prove themselves | Run records, a fingerprint and bench, a scheduled canary, deterministic rot checks | [2.0](phases/phase-2.0.md) to [2.2](phases/phase-2.2.md) | "How does a stack prove it still works?"; success rows 1, 2 and 4 | Not started |
+| 3 Existing repos and authors | `add`, authoring tools, git sources with trust | [3.0](phases/phase-3.0.md) to [3.2](phases/phase-3.2.md) | Jobs 3 and 4; the stack author; success row 5 | Not started |
+| 4 The hosted side | The API and registry index, usage telemetry, stats and a directory, an MCP server | [4.0a](phases/phase-4.0a.md) to [4.3](phases/phase-4.3.md) | Success rows 4 and 5 across users; assumptions 5 and 6 | Not started |
 
-The problem statement argues P4 "probably belongs earlier". Where it lands is decision
-D8 below.
+The problem statement argues the canary "probably belongs earlier". The roadmap puts it
+first after the MVP (D8) and explains why not inside it.
 
 ## Decisions log
 
@@ -61,13 +62,13 @@ then it moves here with an ID that never changes.
 
 | ID | Date | Decision and why | Governing detail |
 |---|---|---|---|
-| D0 | 2026-10-26 | The product is named quickstacks. `stacks` on npm is an unrelated package; `quickstack` and `quickstacks` both returned 404 on `npm view` on 2026-10-26 (free, not yet reserved). | [P0](phases/P0-foundation.md) |
+| D0 | 2026-10-26 | The product is named quickstacks. `stacks` on npm is an unrelated package; `quickstack` and `quickstacks` both returned 404 on `npm view` on 2026-10-26 (free, not yet reserved). | [0.0](phases/phase-0.0.md) |
 | D1 | 2026-10-26 | Not a template engine: `files/` holds only what is the same across versions; everything else is prose. Committed versions are what make templates age. | [PROBLEM_STATEMENT](../product/PROBLEM_STATEMENT.md#what-this-is-not) |
-| D2 | 2026-10-26 | Not an agent: the CLI never calls an LLM and never runs a command from an entry. The user's own agent does the work, and the trust story depends on the CLI executing nothing it reads. | [PROBLEM_STATEMENT](../product/PROBLEM_STATEMENT.md#what-this-is-not), [01](01-architecture.md#security-boundaries) |
+| D2 | 2026-10-26 | Not an agent: the CLI never calls an LLM and never runs a command from an entry. The user's own agent does the work, and the trust story depends on the CLI executing nothing it reads. | [PROBLEM_STATEMENT](../product/PROBLEM_STATEMENT.md#what-this-is-not), [roadmap, Trust boundary](02-roadmap.md#trust-boundary) |
 | D3 | 2026-10-26 | Not a package manager or version resolver: versions are the agent's job on purpose. | [PROBLEM_STATEMENT](../product/PROBLEM_STATEMENT.md#what-this-is-not) |
 | D4 | 2026-10-26 | No retrofitting: `add` applies fragments to an existing project and never restructures what's there. | [PROBLEM_STATEMENT](../product/PROBLEM_STATEMENT.md#what-this-is-not) |
-| D10 | 2026-10-26 | The repo is a TypeScript CLI built on the `typescript-cli` base stack with no product features. Ported as boilerplate the same day from the stacks registry's verified base run (`typescript-cli-base.bundle`, commit `809025a`), renamed to quickstacks. How the package is distributed is still open (A1). | [01, Stack](01-architecture.md#stack) |
-| D11 | 2026-10-26 | The repo is a bun-workspace monorepo: `apps/cli` is the `quickstacks` package; an API and an MCP server will each be their own package under `apps/`; shared code goes in `packages/`. The harness (`.claude/`, lefthook, CI, root Biome and tsconfig base, hook tests) belongs to the root. Follows the layout in `~/Projects/poker`. | [01, Repository layout](01-architecture.md#repository-layout) |
+| D10 | 2026-10-26 | The repo is a TypeScript CLI built on the `typescript-cli` base stack with no product features. Ported as boilerplate the same day from the stacks registry's verified base run (`typescript-cli-base.bundle`, commit `809025a`), renamed to quickstacks. How the package is distributed is still open (A1). | [roadmap, Repository and stack](02-roadmap.md#repository-and-stack) |
+| D11 | 2026-10-26 | The repo is a bun-workspace monorepo: `packages/cli` is the `quickstacks` package; `packages/api` and `packages/mcp` hold the API and MCP server; shared code gets its own package. Every package is under `packages/` (2026-10-26: the CLI moved there from `apps/cli` and `apps/` was dropped, so there is one place packages live). The harness (`.claude/`, lefthook, CI, root Biome and tsconfig base, hook tests) belongs to the root. Follows the layout in `~/Projects/poker`. | [roadmap, Repository and stack](02-roadmap.md#repository-and-stack) |
 
 ## Plan conventions
 

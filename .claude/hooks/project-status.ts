@@ -1,6 +1,6 @@
 // SessionStart: live state for this stack that AGENTS.md can't carry because it is static:
 // the installed Bun version and how many
-// warn/error lines the JSON logs (logs/cli.jsonl at the root, and every apps/<name>/logs/*.jsonl)
+// warn/error lines the JSON logs (logs/cli.jsonl at the root, and every packages/<name>/logs/*.jsonl)
 // gained since the previous session started.
 //
 // Plain-text stdout from a SessionStart hook is added to the agent's context. Separate from the
@@ -64,22 +64,22 @@ function readBytes(file: string, start: number, length: number): Buffer {
   }
 }
 
-/** logs/cli.jsonl at the root, and each workspace app's logs/*.jsonl (rotated *.prev.jsonl skipped). */
+/** logs/cli.jsonl at the root, and each workspace package's logs/*.jsonl (rotated *.prev.jsonl skipped). */
 function cliLogFiles(): string[] {
   const files = ["logs/cli.jsonl"];
-  let apps: string[] = [];
+  let packages: string[] = [];
   try {
-    apps = readdirSync("apps");
+    packages = readdirSync("packages");
   } catch {
-    // Not a workspace: only the root log.
+    // No packages/: only the root log.
   }
-  for (const app of apps) {
+  for (const pkg of packages) {
     try {
-      for (const name of readdirSync(`apps/${app}/logs`).sort())
+      for (const name of readdirSync(`packages/${pkg}/logs`).sort())
         if (name.endsWith(".jsonl") && !name.endsWith(".prev.jsonl"))
-          files.push(`apps/${app}/logs/${name}`);
+          files.push(`packages/${pkg}/logs/${name}`);
     } catch {
-      // No logs yet for this app.
+      // No logs yet for this package.
     }
   }
   return files;

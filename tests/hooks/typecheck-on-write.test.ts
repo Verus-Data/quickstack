@@ -54,21 +54,21 @@ describe("typecheck-on-write", { timeout: 60_000 }, () => {
   });
 
   it("checks the workspace package that owns the file", async () => {
-    // The root project excludes apps/, as the repo's does; the package has its own tsconfig.
+    // The root project excludes packages/, as the repo's does; the package has its own tsconfig.
     put(
       "tsconfig.json",
       JSON.stringify({ include: ["root.ts"], compilerOptions: { noEmit: true, types: [] } }),
     );
     put("root.ts", "export const r = 1;\n");
     put(
-      "apps/cli/tsconfig.json",
+      "packages/cli/tsconfig.json",
       JSON.stringify({
         include: ["src/**/*.ts"],
         compilerOptions: { strict: true, noEmit: true, types: [], skipLibCheck: true },
       }),
     );
     const { context } = await typecheck(
-      put("apps/cli/src/a.ts", "export const n: number = 'x';\n"),
+      put("packages/cli/src/a.ts", "export const n: number = 'x';\n"),
     );
     expect(context).toMatch(/^tsc found 1 type error\(s\), 1 in src\/a\.ts\./);
     expect(context).toContain("src/a.ts(1,14): error TS2322");

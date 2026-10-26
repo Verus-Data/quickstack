@@ -2,7 +2,7 @@
 
 ## Overview
 
-A bun workspace (`apps/*`, `packages/*`). `apps/cli` is the `quickstacks` package: the bare `typescript-cli` base stack, with Effect 4 commands/services, doctor/version, lazy configuration, safe output and logs. Bun compiles the executable; Node 24 runs Vitest. There is no product code, vendor, release tooling or network requirement. An API and an MCP server will be their own packages under `apps/`; code two apps share goes in `packages/`.
+A bun workspace; every package is in `packages/<name>/`. `packages/cli` is `quickstacks`, the CLI: Effect 4 commands/services, doctor/version, lazy configuration, safe output and logs. Bun compiles the executable; Node 24 runs Vitest. There is no product code, vendor, release tooling or network requirement. `packages/api` (`@quickstacks/api`) and `packages/mcp` (`@quickstacks/mcp`) are placeholders with no code or scripts. Code two packages share goes in its own package, never imported across another package's `src/`. How the monorepo works and how to add a package: README.md, "Monorepo".
 
 The root owns the harness: `.claude/`, lefthook, CI, the root `biome.json`, `tsconfig.base.json`, and the hook tests in `tests/hooks/`. Each package owns its source, tests, `tsconfig.json` (extending `../../tsconfig.base.json`) and any Biome plugins in a nested `biome.json` (`"root": false, "extends": "//"`). See docs/harness.md.
 
@@ -20,7 +20,7 @@ Root commands run from the repo root and fan out to every workspace package (`bu
 | `bun run install:ci` | Frozen dependency install |
 | `bun run dev doctor` | The CLI's source doctor with local logs/data (unprefixed output, so `--json` stays parseable) |
 | `bun run dev doctor --json` | Machine-readable source doctor |
-| `bun run build` | Build every package (the CLI compiles `apps/cli/dist/quickstacks`) |
+| `bun run build` | Build every package (the CLI compiles `packages/cli/dist/quickstacks`) |
 | `bun run typecheck` | Root harness tsc, then each package's |
 | `bun run lint` | Biome over the whole repo, with each package's nested plugins |
 | `bun run format` | Safe fixes and formatting |
@@ -32,7 +32,7 @@ Root commands run from the repo root and fan out to every workspace package (`bu
 | `bun run clean` | Each package's generated output |
 | `bun run prepare` | Install hooks outside CI |
 
-In `apps/cli/` (run there):
+In `packages/cli/` (run there):
 
 | Command | Purpose |
 | --- | --- |
@@ -43,9 +43,9 @@ In `apps/cli/` (run there):
 | `./dist/quickstacks doctor --json` | Compiled local diagnostics |
 | `bun run check` | This package's gate only |
 
-## Architecture map (apps/cli)
+## Architecture map (packages/cli)
 
-Paths below are relative to `apps/cli/`.
+Paths below are relative to `packages/cli/`.
 
 - `src/bin.ts`: Bun/platform/Host/writer boundary, process signals and exit status.
 - `src/main.ts`: one invocation, framework Console capture, safe outcome and logging.
@@ -85,7 +85,7 @@ JSON commands produce one result; JSON failures produce one stderr error envelop
 
 ## Debugging
 
-Read apps/cli/logs/cli.log and apps/cli/logs/cli.jsonl. Development data stays under apps/cli/.dev/data. Use LOG_LEVEL=debug for detail. The session hook reports Bun mismatch and only newly added warning/error lines. Shared session-start can advise about absent .env; this base intentionally works without it.
+Read packages/cli/logs/cli.log and packages/cli/logs/cli.jsonl. Development data stays under packages/cli/.dev/data. Use LOG_LEVEL=debug for detail. The session hook reports Bun mismatch and only newly added warning/error lines. Shared session-start can advise about absent .env; this base intentionally works without it.
 
 After two unsuccessful fixes with no new diagnostic, stop and investigate other hypotheses. Read errors before guessing; do not swallow defects or report success after failure.
 
@@ -99,7 +99,7 @@ Install lefthook on PATH (e.g. brew install lefthook), then bun install. Pre-com
 
 ## Build workarounds
 
-No patches, pinned prereleases or disabled rules. Every shared dependency version lives once, in the root `workspaces.catalog`; packages depend on `catalog:`. Effect packages resolve together at stable 4.0.5 with compatible 4.x ranges, Vitest/coverage 5.x. The generated type config targets current TypeScript 7. Bun compile disables all runtime config autoload and removes its linked sourcemap output intentionally.
+No patches, pinned prereleases or disabled rules. Every shared dependency version lives once, in the root `workspaces.catalog`; packages depend on `catalog:`. Effect packages resolve together at stable 4.0.6 with compatible 4.x ranges, Vitest/coverage 5.x. The generated type config targets current TypeScript 7. Bun compile disables all runtime config autoload and removes its linked sourcemap output intentionally.
 
 The shipped dev wrapper was adapted to forward directly delivered SIGINT/SIGTERM/SIGHUP, with a reproducing subprocess test. Reassess/remove local adaptation when upstream provides equivalent signal forwarding. Biome stdin suppresses useful plugin diagnostics, so boundary tests use actual temporary files; no Grit rule was removed.
 
@@ -109,7 +109,7 @@ Application features, install/update distribution and release workflow (decision
 
 ## Pending user actions
 
-Maintainers: add `Bash(./apps/cli/dist/*)`, `Bash(bun run test:hooks)` and `Bash(bun run test:hooks *)` to `.claude/settings.json` permissions. The existing `bun run test:unit` entries only apply when run inside `apps/cli`.
+Maintainers: add `Bash(./packages/cli/dist/*)`, `Bash(bun run test:hooks)` and `Bash(bun run test:hooks *)` to `.claude/settings.json` permissions. The existing `bun run test:unit` entries only apply when run inside `packages/cli`.
 
 ## Deeper context
 
