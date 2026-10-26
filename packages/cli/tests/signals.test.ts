@@ -72,9 +72,13 @@ describe("the signal policy (A3)", () => {
 });
 
 const groupAlive = (pid: number) => alive(-pid);
-/** Starts `bun <args>` as the leader of its own process group, as a shell would start a job. */
+/**
+ * Starts `bun <args>` as the leader of its own process group, as a shell would start a job.
+ * `ulimit -c 0` stops a SIGQUIT death writing a core dump: on CI runners a crash handler
+ * collects it before the process exits, which outlasts the test timeout.
+ */
 function launch(args: string[], cwd: string, home: string) {
-  const child = spawn("bun", args, {
+  const child = spawn("/bin/sh", ["-c", 'ulimit -c 0; exec bun "$@"', "sh", ...args], {
     cwd,
     detached: true,
     stdio: "ignore",
