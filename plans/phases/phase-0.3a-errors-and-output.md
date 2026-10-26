@@ -1,7 +1,7 @@
 # Phase 0.3a: Errors and output
 
-Status: DRAFT 2026-10-26 (not agreed). Answers A2 and A4 as recommendations; the
-maintainers review them, and both must be in the decisions log before
+Status: EXECUTED 2026-10-26 on branch `feat/phase-0`. Answers A2 and A4 as
+recommendations; the maintainers review them, and both must be in the decisions log before
 [1.6c](phase-1.6c-first-release.md) publishes.
 
 | Field | Value |
@@ -116,7 +116,8 @@ report is what an agent most needs when verify fails, and the envelope still say
 command failed:
 
 - stdout carries one result whether the command passed or failed.
-- On any failure, the last stderr line is the envelope.
+- On any failure in `--json` mode, the last stderr line is the envelope. In human mode the
+  base's `command failure` log line still follows it on stderr, as the base did.
 - For every other tag, stdout stays empty on failure, as today.
 
 `main` does not invent a result. A keeps-result command that fails before writing one
@@ -202,6 +203,21 @@ gives:
 The same nearest-name helper, `src/core/suggest.ts::closest(name, known)`, is what 1.1
 uses for mistyped stack and fragment ids, so the two never disagree on what "close" means.
 
+What shipped: effect/cli 4.0.6 does compute suggestions. The parser fails with
+`CliError.ShowHelp` carrying `UnknownSubcommand { subcommand, parent, suggestions }`, where
+`suggestions` is plain Levenshtein within 2, only the names at the minimum distance, and
+case-sensitive. With `renderErrors: false` and `main` discarding captured framework output on
+failure, none of it reached the user. `main` discards the framework's list and builds
+`Usage.details` from `closest` over the real tree's listed subcommands, for consistency with
+1.1. Because the base has no `list` command yet, the acceptance tests pin `doctr` → `doctor`
+(human and `--json`) and `zzzz` → no suggestion on the real tree; the `lsit` → `list` test
+moves to [1.0](phase-1.0-entry-format-and-registry.md) when `list` exists, and
+`tests/suggest.test.ts` already covers the ranking.
+
+Suggestions for unknown flags (`--jsno`) are deferred: such a failure is a bare `Usage` with no
+details. effect/cli's `UnrecognizedOption.suggestions` is where that data is when someone picks
+it up.
+
 ### Failure modes
 
 | Situation | Tag | Exit | What the caller sees |
@@ -252,6 +268,8 @@ the style of `tests/errors.test.ts`:
   with `--json` the last stderr line is one envelope (with `details.suggestions:
   ["list"]` if 0.3a does the mapping itself) and stdout is empty; `quickstacks zzzz` exits
   2 with no suggestion. `closest` unit tests cover ties, case and a distance of 3.
+  (Shipped as `doctr` → `doctor` on the real tree; the `lsit` → `list` case moves to 1.0,
+  see "Unknown commands and did-you-mean".)
 - Host: `Host.memory()` reports both TTY flags `false`; with overrides, a test command
   reading `Host` sees the values the helper passed.
 - PermissionDenied: a write that fails with EACCES gives `details.reason: "write"` in the

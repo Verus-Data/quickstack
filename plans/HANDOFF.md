@@ -55,7 +55,7 @@ which sub-phase each one blocks. D5 (the brief budget) is a hypothesis whose evi
 | Review requirements.md and roadmap.md; decide A1, D12, D22 and D23 first, then D5-D7, D9, D13, D14, D18-D20 | Maintainers | The gating table in [0.0](phases/phase-0.0-decisions-and-npm-name.md) says which can wait |
 | Review A2-A4 as answered in 0.3a and 0.3b | Maintainers | Must be in the decisions log before [1.6c](phases/phase-1.6c-first-release.md) publishes |
 | Answer the open questions in [risks-and-open-questions.md](risks-and-open-questions.md) | Maintainers | Question 1 (registry audience) decides which stacks ship bundled |
-| Execute 0.3a (errors and output) | Agent | Needs only 0.1. Its answers to A2 and A4 are recommendations until the maintainers agree them; build them so the review can still change the details |
+| Execute 0.3a (errors and output) | Agent | Done 2026-10-26 on `feat/phase-0`. Effect/cli's own unknown-subcommand suggestions are discarded for `closest` (recorded in the 0.3a plan); unknown-flag suggestions are deferred |
 | Execute 0.3b (processes and signals) | Agent, after 0.3a | Same rule for A3 |
 | Execute 0.2 (distribution) | Agent, after A1, D12 and D22 | Deferred 2026-10-26 to late phase 1, before 1.6b. Changes `bin.ts` |
 | Decide open questions 24-28 (behavior kept on purpose in phases 0-1) | Maintainers | Before 1.0, 1.1, 1.3b and 1.6c, as each question says; the rest (D25-D28, questions 29-31) can wait for phases 3-4 |

@@ -1,44 +1,62 @@
-import { Effect } from "effect";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { Effect, Schema } from "effect";
 import { expect, test } from "vitest";
 import {
   BadInput,
-  Defect,
+  BrokenPipe,
+  errorClasses,
+  errorTable,
   exitCode,
-  Interrupted,
-  InvalidConfig,
-  NotConfigured,
-  NotFound,
   PermissionDenied,
+  PermissionDeniedDetails,
   retryable,
-  UpstreamUnavailable,
-  Usage,
+  VerifyChanged,
+  VerifyFailed,
 } from "../src/errors";
-import { runCli } from "./helpers/cli";
+import { Output } from "../src/services/output";
+import { ndjson, quiet, runCli, tempDir, writeError } from "./helpers/cli";
 
-const cases = [
-  [new Usage(), 2, false],
-  [new BadInput(), 2, false],
-  [new NotFound(), 2, false],
-  [new NotConfigured(), 3, false],
-  [new InvalidConfig(), 3, false],
-  [new UpstreamUnavailable(), 4, true],
-  [new PermissionDenied(), 6, false],
-  [new Interrupted(), 130, false],
-  [new Defect(), 1, false],
-] as const;
-test.each(cases)(
-  "maps %s exhaustively and main preserves failure output",
-  async (error, status, retry) => {
-    expect(exitCode(error)).toBe(status);
-    expect(retryable(error)).toBe(retry);
+const reported = errorClasses.map((Class) => new Class()).filter((e) => !(e instanceof BrokenPipe));
+test("the published error table, written out row by row", () => {
+  expect(errorTable).toEqual({
+    Usage: { exit: 2, retryable: false, keepsResult: false },
+    BadInput: { exit: 2, retryable: false, keepsResult: false },
+    NotFound: { exit: 2, retryable: false, keepsResult: false },
+    NotConfigured: { exit: 3, retryable: false, keepsResult: false },
+    InvalidConfig: { exit: 3, retryable: false, keepsResult: false },
+    UpstreamUnavailable: { exit: 4, retryable: true, keepsResult: false },
+    VerifyFailed: { exit: 5, retryable: false, keepsResult: true },
+    VerifyChanged: { exit: 5, retryable: false, keepsResult: true },
+    PermissionDenied: { exit: 6, retryable: false, keepsResult: false },
+    Interrupted: { exit: 130, retryable: false, keepsResult: false },
+    Defect: { exit: 1, retryable: false, keepsResult: false },
+    BrokenPipe: { exit: 0, retryable: false, keepsResult: false },
+  });
+});
+test("the class list and the table's keys are the same set", () => {
+  expect(new Set(errorClasses.map((Class) => new Class()._tag))).toEqual(
+    new Set(Object.keys(errorTable)),
+  );
+});
+test.each(reported.map((error) => [error._tag, error] as const))(
+  "a program failing %s exits with its row's code, retryable from its row, and no result",
+  async (_tag, error) => {
+    const row = errorTable[error._tag];
+    expect(exitCode(error)).toBe(row.exit);
+    expect(retryable(error)).toBe(row.retryable);
     const result = await runCli(["--json"], { program: Effect.fail(error) });
-    expect(result.status).toBe(status);
+    expect(result.status).toBe(row.exit);
     expect(result.stdout).toBe("");
     expect(JSON.parse(result.stderr)).toEqual({
-      error: { tag: error._tag, message: error.message, retryable: retry },
+      error: { tag: error._tag, message: error.message, retryable: row.retryable },
     });
   },
 );
+test("VerifyFailed and VerifyChanged exit 5 and keep their result", () => {
+  for (const error of [new VerifyFailed(), new VerifyChanged()])
+    expect(errorTable[error._tag]).toEqual({ exit: 5, retryable: false, keepsResult: true });
+});
 test("an observed cancellation returns 130 and disposes its scope", async () => {
   let released = false;
   const controller = new AbortController();
@@ -55,4 +73,194 @@ test("an observed cancellation returns 130 and disposes its scope", async () => 
   expect(result.status).toBe(130);
   expect(released).toBe(true);
   expect(result.stdout).toBe("");
+});
+
+const denied = () =>
+  new PermissionDenied({ details: { reason: "write", path: "/private/target" } });
+test("details go into the JSON envelope and as indented lines in human mode", async () => {
+  const json = await runCli(["--json"], { program: Effect.fail(denied()) });
+  expect(json.status).toBe(6);
+  expect(JSON.parse(json.stderr)).toEqual({
+    error: {
+      tag: "PermissionDenied",
+      message: "Permission denied.",
+      retryable: false,
+      details: { reason: "write", path: "/private/target" },
+    },
+  });
+  const human = await runCli([], { program: Effect.fail(denied()), env: quiet });
+  expect(human.status).toBe(6);
+  expect(human.stderr).toBe("Permission denied.\n  Path: /private/target\n");
+});
+test("a details object mutated to carry an extra property is a defect, not a leak", async () => {
+  const dir = tempDir();
+  try {
+    const file = join(dir.path, "cli.jsonl");
+    const error = denied();
+    Object.assign(error.details ?? {}, { extra: "leaked" });
+    const result = await runCli(["--json"], {
+      program: Effect.fail(error),
+      env: { LOG_LEVEL: "info", QUICKSTACKS_LOG_FILE: file },
+    });
+    expect(result.status).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(JSON.parse(result.stderr).error.tag).toBe("Defect");
+    expect(result.stderr).not.toContain("leaked");
+    const log = readFileSync(file, "utf8");
+    expect(ndjson(log)).toHaveLength(1);
+    expect(log).not.toContain("leaked");
+  } finally {
+    dir.cleanup();
+  }
+});
+test("construction drops keys the details schema doesn't name", () => {
+  const error = new PermissionDenied({ details: { reason: "write", extra: 1 } as never });
+  expect(error.details).toEqual({ reason: "write" });
+});
+test("encoding PermissionDenied details with an extra property fails", () => {
+  const encode = Schema.encodeUnknownSync(PermissionDeniedDetails);
+  expect(encode({ reason: "write" }, { onExcessProperty: "error" })).toEqual({ reason: "write" });
+  expect(() => encode({ reason: "write", extra: 1 }, { onExcessProperty: "error" })).toThrow();
+});
+test("the JSONL log record of a failure contains no detail value", async () => {
+  const dir = tempDir();
+  try {
+    const file = join(dir.path, "cli.jsonl");
+    const result = await runCli(["--json"], {
+      program: Effect.fail(denied()),
+      env: { LOG_LEVEL: "info", QUICKSTACKS_LOG_FILE: file },
+    });
+    expect(result.stderr).toContain("/private/target");
+    const records = ndjson(readFileSync(file, "utf8"));
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({ msg: "command", status: 6 });
+    expect(JSON.stringify(records)).not.toContain("/private/target");
+  } finally {
+    dir.cleanup();
+  }
+});
+
+const report = (error: VerifyFailed | BadInput) =>
+  Effect.gen(function* () {
+    const output = yield* Output;
+    yield* output.result({ passed: false }, "Verify: 1 step failed");
+    return yield* Effect.fail(error);
+  });
+test.each([
+  [["--json"], '{"passed":false}\n'],
+  [[], "Verify: 1 step failed\n"],
+])("VerifyFailed keeps its result on stdout with %j", async (args, stdout) => {
+  const result = await runCli(args, { program: report(new VerifyFailed()), env: quiet });
+  expect(result.status).toBe(5);
+  expect(result.stdout).toBe(stdout);
+  const last = result.stderr.trimEnd().split("\n").at(-1);
+  if (args.length)
+    expect(JSON.parse(last ?? "")).toEqual({
+      error: { tag: "VerifyFailed", message: "Verify failed.", retryable: false },
+    });
+  else expect(last).toBe("Verify failed.");
+});
+test.each([[["--json"]], [[]]])(
+  "BadInput (no kept result) leaves stdout empty after a result was written, with %j",
+  async (args) => {
+    const result = await runCli(args, { program: report(new BadInput()) });
+    expect(result.status).toBe(2);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("Invalid input.");
+  },
+);
+test("VerifyFailed keeps exit 5 when stdout is closed, and still writes the envelope", async () => {
+  const result = await runCli(["--json"], {
+    program: report(new VerifyFailed()),
+    stdout: async () => {
+      throw writeError("EPIPE");
+    },
+  });
+  expect(result.status).toBe(5);
+  expect(result.stdout).toBe("");
+  expect(JSON.parse(result.stderr).error.tag).toBe("VerifyFailed");
+});
+test("VerifyFailed keeps exit 5 when both streams are closed", async () => {
+  const closed = async () => {
+    throw writeError("EPIPE");
+  };
+  const result = await runCli(["--json"], {
+    program: report(new VerifyFailed()),
+    stdout: closed,
+    stderr: closed,
+  });
+  expect(result).toEqual({ status: 5, stdout: "", stderr: "" });
+});
+test("a successful command whose stdout is closed exits 0", async () => {
+  const result = await runCli(["doctor", "--json"], {
+    stdout: async () => {
+      throw writeError("EPIPE");
+    },
+  });
+  expect(result).toEqual({ status: 0, stdout: "", stderr: "" });
+});
+test("BadInput with a closed stderr is quiet and exits 0, as before", async () => {
+  const result = await runCli(["--json"], {
+    program: Effect.fail(new BadInput()),
+    stderr: async () => {
+      throw writeError("EPIPE");
+    },
+  });
+  expect(result).toEqual({ status: 0, stdout: "", stderr: "" });
+});
+test("a non-EPIPE write error is PermissionDenied with reason write", async () => {
+  const result = await runCli(["doctor", "--json"], {
+    stdout: async () => {
+      throw writeError("EACCES");
+    },
+  });
+  expect(result.status).toBe(6);
+  expect(JSON.parse(result.stderr)).toEqual({
+    error: {
+      tag: "PermissionDenied",
+      message: "Permission denied.",
+      retryable: false,
+      details: { reason: "write" },
+    },
+  });
+});
+test("a kept result that can't be written still exits 5 and is noted in the log", async () => {
+  const dir = tempDir();
+  try {
+    const file = join(dir.path, "cli.jsonl");
+    const result = await runCli(["--json"], {
+      program: report(new VerifyFailed()),
+      env: { LOG_LEVEL: "info", QUICKSTACKS_LOG_FILE: file },
+      stdout: async () => {
+        throw writeError("EACCES");
+      },
+    });
+    expect(result.status).toBe(5);
+    expect(result.stdout).toBe("");
+    expect(JSON.parse(result.stderr).error.tag).toBe("VerifyFailed");
+    const records = ndjson(readFileSync(file, "utf8"));
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({
+      msg: "command",
+      status: 5,
+      result: "unwritten",
+      resultError: "PermissionDenied",
+    });
+  } finally {
+    dir.cleanup();
+  }
+});
+test("a kept result that was written carries no unwritten note", async () => {
+  const dir = tempDir();
+  try {
+    const file = join(dir.path, "cli.jsonl");
+    await runCli(["--json"], {
+      program: report(new VerifyFailed()),
+      env: { LOG_LEVEL: "info", QUICKSTACKS_LOG_FILE: file },
+    });
+    const [record] = ndjson(readFileSync(file, "utf8"));
+    expect(record).not.toHaveProperty("result");
+  } finally {
+    dir.cleanup();
+  }
 });

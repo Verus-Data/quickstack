@@ -96,7 +96,7 @@ product behavior yet.
 | [0.0 Decisions and name](phases/phase-0.0-decisions-and-npm-name.md) | `quickstacks` reserved on npm; the MVP-gating proposals decided or deferred with a reason; A2-A4 reviewed; first stack named | Open question "Is the npm name available?"; open questions on brief budget and registry audience | nothing | In progress (owner: maintainers). Name check done; npm reservation and non-blocking decisions deferred 2026-10-26 |
 | [0.1 Repo baseline](phases/phase-0.1-repo-baseline.md) | The ported base, workspace move and review fixes committed, CI `ci-ok` green on `main` | "What has to be true for it to be worth building": a trustworthy base (D10, D11) | nothing | Executed 2026-10-26 |
 | [0.2 Distribution](phases/phase-0.2-npm-distribution-artifact.md) | A1 answered: a Node ESM bundle packed with `bun pm pack`, a Node floor check before Effect loads, bundled assets found at runtime, local e2e against the packed tarball | Open question on the npm name; the README's first command `npx quickstacks new` | 0.0 (A1, D12, D22), 0.1 | Deferred 2026-10-26 to late phase 1, before 1.6b (see below) |
-| [0.3a Errors and output](phases/phase-0.3a-errors-and-output.md) | A2 and A4: one error table, closed `details`, exit 5, results kept on report-carrying failures, live progress on stderr | Agent as the main reader ("a verify command that doesn't exist", "ambiguity") | 0.1 | Not started |
+| [0.3a Errors and output](phases/phase-0.3a-errors-and-output.md) | A2 and A4: one error table, closed `details`, exit 5, results kept on report-carrying failures, live progress on stderr | Agent as the main reader ("a verify command that doesn't exist", "ambiguity") | 0.1 | Executed 2026-10-26 |
 | [0.3b Processes and signals](phases/phase-0.3b-processes-and-signals.md) | The `Processes` service (process groups, bounded tails, drain, `which`) and A3, the signal policy for interactive children | The CLI hands off "to the agent the user already has"; verify runs long commands | 0.3a | Not started |
 
 0.2 keeps its number but runs late in phase 1: on 2026-10-26 the maintainers deferred
@@ -525,7 +525,7 @@ names.
 
 | Tag | Exit | Retryable | Keeps result | Added in |
 |---|---|---|---|---|
-| `Usage`, `BadInput`, `NotFound` | 2 | no | no | base; `Usage.details` `{ command, suggestions }` for an unknown command if the framework doesn't suggest (0.3a); `NotFound.details.suggestions` for stack and fragment ids (1.1) |
+| `Usage`, `BadInput`, `NotFound` | 2 | no | no | base; `Usage.details` `{ command, suggestions }` for an unknown subcommand, from `closest`; effect/cli's own suggestions are discarded (0.3a); `NotFound.details.suggestions` for stack and fragment ids (1.1) |
 | `NotConfigured`, `InvalidConfig` | 3 | no | no | base |
 | `UpstreamUnavailable` | 4 | yes | no | base |
 | `PermissionDenied` | 6 | no | no | base; `details` is `{ reason, path? }`: `reason` is a closed set: `write` (0.3a), `read` (1.0), `escape` and `unwritable` (1.2a), and `agent`, `no-tty` and `state-unwritable` for confirmations and the state record (1.3b, 3.2a); `path` names the file or directory that couldn't be read or written (1.0, 1.2a, 1.2b, 3.4c) |

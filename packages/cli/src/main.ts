@@ -2,12 +2,14 @@ import { Cause, Clock, Console, Effect, Exit, Logger, References } from "effect"
 import { CliError, Command } from "effect/cli";
 import { cli } from "./cli";
 import { AppConfig } from "./config";
+import { closest } from "./core/suggest";
 import {
   type AppError,
   BrokenPipe,
   Defect,
   exitCode,
   Interrupted,
+  keepsResult,
   knownError,
   Usage,
 } from "./errors";
@@ -18,6 +20,36 @@ import { VERSION } from "./version";
 export function hasFlag(args: readonly string[], ...flags: readonly string[]): boolean {
   const end = args.indexOf("--");
   return (end === -1 ? args : args.slice(0, end)).some((arg) => flags.includes(arg));
+}
+/** The listed subcommand names (and aliases) under `path`, which starts with the root's name. */
+function subcommandNames(root: Command.Command.Any, path: readonly string[]): string[] {
+  let node: Command.Command.Any | undefined = root;
+  for (const name of path.slice(1))
+    node = node?.subcommands.flatMap((group) => group.commands).find((c) => c.name === name);
+  return (node?.subcommands ?? [])
+    .flatMap((group) => group.commands)
+    .filter((command) => !command.unlisted)
+    .flatMap((command) => (command.alias ? [command.name, command.alias] : [command.name]));
+}
+/**
+ * A parser failure is Usage; an unknown subcommand also names close known subcommands. The
+ * framework's own `UnknownSubcommand.suggestions` is discarded in favor of `closest`.
+ */
+function usage(error: CliError.CliError): Usage {
+  const unknown =
+    error._tag === "ShowHelp"
+      ? error.errors.find((e) => e._tag === "UnknownSubcommand")
+      : error._tag === "UnknownSubcommand"
+        ? error
+        : undefined;
+  return unknown?._tag === "UnknownSubcommand"
+    ? new Usage({
+        details: {
+          command: unknown.subcommand,
+          suggestions: closest(unknown.subcommand, subcommandNames(cli, unknown.parent ?? [])),
+        },
+      })
+    : new Usage();
 }
 export function main(
   args: readonly string[],
@@ -87,7 +119,7 @@ export function main(
             ? new Interrupted()
             : failure
               ? (knownError(failure.error) ??
-                (CliError.isCliError(failure.error) ? new Usage() : new Defect()))
+                (CliError.isCliError(failure.error) ? usage(failure.error) : new Defect()))
               : new Defect();
         if (error instanceof Defect && !knownError(failure?.error))
           defect = defectTrace(Cause.squash(exit.cause));
@@ -103,16 +135,36 @@ export function main(
         );
       }
       let status = error ? exitCode(error) : 0;
+      // The tag of a write error that lost a kept result; the exit stays the failure's own.
+      let unwritten: string | undefined;
       if (error) {
-        yield* output.clear;
+        // A keeps-result failure (a failing verify) writes its report first; the envelope still
+        // comes last on stderr. A closed stdout or stderr can't turn it into a pass.
+        const keep = keepsResult(error);
+        if (keep) {
+          const flushed = yield* Effect.exit(output.flush);
+          const failure = Exit.isFailure(flushed)
+            ? flushed.cause.reasons.find(Cause.isFailReason)
+            : undefined;
+          if (failure && !(failure.error instanceof BrokenPipe))
+            unwritten = knownError(failure.error)?._tag ?? "Defect";
+        } else yield* output.clear;
         const written = yield* Effect.exit(output.error(error));
         if (
+          !keep &&
           Exit.isFailure(written) &&
           written.cause.reasons.some(
             (reason) => Cause.isFailReason(reason) && reason.error instanceof BrokenPipe,
           )
         )
           return 0;
+        if (Exit.isFailure(written) && written.cause.reasons.some(Cause.isDieReason)) {
+          // The details didn't encode against their closed schema: report a defect instead.
+          error = new Defect();
+          defect = defectTrace(Cause.squash(written.cause));
+          status = exitCode(error);
+          yield* output.error(error).pipe(Effect.catchCause(() => Effect.void));
+        }
       } else {
         const flushed = yield* Effect.exit(output.flush);
         if (Exit.isFailure(flushed)) {
@@ -138,6 +190,7 @@ export function main(
               outcome: status === 0 ? "success" : "failure",
               status,
               ...(defect ? { defect } : {}),
+              ...(unwritten ? { result: "unwritten", resultError: unwritten } : {}),
             },
             error,
           }),

@@ -29,6 +29,8 @@ const platform = Layer.mergeAll(
     executable: process.execPath,
     compiled: Bun.isStandaloneExecutable,
     cwd: process.cwd(),
+    stdinIsTTY: process.stdin.isTTY === true,
+    stdoutIsTTY: process.stdout.isTTY === true,
   }),
 );
 const layer = Layer.provideMerge(AppLayer(), platform);

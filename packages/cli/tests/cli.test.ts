@@ -5,7 +5,7 @@ import { Effect } from "effect";
 import { afterEach, expect, test } from "vitest";
 import { hasFlag } from "../src/main";
 import { VERSION } from "../src/version";
-import { runCli, tempDir } from "./helpers/cli";
+import { quiet, runCli, tempDir } from "./helpers/cli";
 
 const dirs: ReturnType<typeof tempDir>[] = [];
 afterEach(() => {
@@ -49,18 +49,46 @@ test.each([
   if (args.includes("--json")) expect(() => JSON.parse(result.stdout)).not.toThrow();
 });
 test.each([
-  ["unknown", "--json"],
   ["--unexpected", "--json"],
   ["doctor", "extra", "--json"],
   ["--log-level", "--json"],
   ["--completions", "--json"],
-])("usage failure has empty stdout and exactly one JSON error for %j", async (...args) => {
+])("Usage (no kept result) has empty stdout and exactly one JSON error for %j", async (...args) => {
   const result = await runCli(args);
   expect(result.status).toBe(2);
   expect(result.stdout).toBe("");
   expect(JSON.parse(result.stderr)).toEqual({
     error: { tag: "Usage", message: "Invalid command. Run --help for usage.", retryable: false },
   });
+});
+test("a mistyped subcommand is Usage with the close match under the message", async () => {
+  const result = await runCli(["doctr"], { env: quiet });
+  expect(result.status).toBe(2);
+  expect(result.stdout).toBe("");
+  expect(result.stderr).toBe("Invalid command. Run --help for usage.\n  Did you mean: doctor?\n");
+});
+test("a mistyped subcommand with --json is one envelope naming the suggestions", async () => {
+  const result = await runCli(["doctr", "--json"]);
+  expect(result.status).toBe(2);
+  expect(result.stdout).toBe("");
+  expect(JSON.parse(result.stderr.trimEnd().split("\n").at(-1) ?? "")).toEqual({
+    error: {
+      tag: "Usage",
+      message: "Invalid command. Run --help for usage.",
+      retryable: false,
+      details: { command: "doctr", suggestions: ["doctor"] },
+    },
+  });
+});
+test("an unknown subcommand with no close match gets no suggestion", async () => {
+  const human = await runCli(["zzzz"], { env: quiet });
+  expect(human.status).toBe(2);
+  expect(human.stdout).toBe("");
+  expect(human.stderr).toBe("Invalid command. Run --help for usage.\n");
+  const json = await runCli(["zzzz", "--json"]);
+  expect(json.status).toBe(2);
+  expect(json.stdout).toBe("");
+  expect(JSON.parse(json.stderr).error.details).toEqual({ command: "zzzz", suggestions: [] });
 });
 test("broken optional config does not break doctor, help or version", async () => {
   const home = configFile("{broken");
