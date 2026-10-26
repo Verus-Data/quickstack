@@ -47,9 +47,6 @@ D0-D4, D10 and D11 are settled. D5-D9 and D12-D28 are proposals in
 which sub-phase each one blocks. D5 (the brief budget) is a hypothesis whose evidence is
 [1.6b](phases/phase-1.6b-mvp-gate-runs.md)'s gate runs. A1-A4 are open.
 
-The problem statement calls the product "stacks"; it hasn't been edited, and the plan
-reads it as quickstacks.
-
 ## Next steps
 
 | Step | Owner | Notes |

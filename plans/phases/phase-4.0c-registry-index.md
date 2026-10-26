@@ -5,7 +5,7 @@ Status: DRAFT 2026-10-26 (not agreed)
 | Field | Value |
 |---|---|
 | Goal | A maintainer can build, sign and deploy by hand a static, content-addressed registry index of official stacks whose compositions passed a ledger run, each stack carrying its last ledger run and the fragment digests that passed, served as static assets with cache headers from host config |
-| Traces to | "Stacks don't rot: A stack that passed last month still passes this month without a prose change." Assumption 6: "the remote registry 404s today". The agent's frustration with "ambiguity", which a visible last run reduces when two stacks fit |
+| Traces to | "Stacks don't rot: A stack that passed last month still passes this month without a prose change." Assumption 6: "no public registry exists yet". The agent's frustration with "ambiguity", which a visible last run reduces when two stacks fit |
 | Depends on | 4.0b (the host and its static assets directory), 4.0a (`canonicalBundle`, `bundleDigest`, `EntryBundle`), 2.0a (`composeFiles`, `fingerprint`), 2.0c (`LedgerRecord` and the ledger reader), 2.2 ("changed since last green" uses the same fingerprint match), D21 (signed index, proposed), open question 14 (proven-only serving) |
 | Blocks | 4.0d, 4.0e (the official-names file and directory pages extend this build), 5.2 |
 | Decisions needed | D21. If declined, the index ships unsigned and 4.0d must treat every index entry as untrusted (trust model point 7 falls away and point 2 covers it). Open question 14: if the maintainers want every validated revision served, drop the proof rule and carry-forward; entries then carry `lastRun: null` when unproven, and the `composition` map is still required |

@@ -1,6 +1,6 @@
 # Problem statement
 
-What stacks is for, who it is for, and what has to be true for it to be worth building. Written from the product side so that technical decisions (the format, the CLI, the registry) can be checked against it. The roadmap and plans in this directory should trace back to a line here.
+What quickstacks is for, who it is for, and what has to be true for it to be worth building. Written from the product side so that technical decisions (the format, the CLI, the registry) can be checked against it. The roadmap and plans in `plans/` should trace back to a line here.
 
 ## The problem in one sentence
 
@@ -26,16 +26,16 @@ Two existing approaches, each with a failure mode the other doesn't have.
 
 **A bare agent prompt** ("set up a FastAPI and React project with tests") has the opposite problem. The agent is good at the perishable part: it can read current docs, run the generators, and fix what breaks. It's bad at the durable part. It has no definition of done, so it stops when the dev server starts. It makes a fresh set of layout and tooling choices every run. It skips test setup, lint config, CI, and agent config unless asked, and asking in enough detail is the afternoon the user was trying to save.
 
-The split stacks makes is that humans own what lasts (what the project is made of, how it's laid out, what the tools must enforce, what "working" means) and agents own what ages (versions, generator flags, config formats). Neither existing approach draws that line.
+The split quickstacks makes is that humans own what lasts (what the project is made of, how it's laid out, what the tools must enforce, what "working" means) and agents own what ages (versions, generator flags, config formats). Neither existing approach draws that line.
 
 ## Evidence
 
-Most of this is first-hand from building the five stacks, not from users. The assumptions log below says what's still unproven.
+Most of this is the maintainers' own experience, not data from users. The assumptions log below says what's still unproven.
 
-- Every shipped stack was distilled from a production project that had been set up by hand more than once (`docs/roadmap.md` lists the source project for each). The repetition is real for at least one user.  
-- End-to-end runs changed stack prose every time. The astro-blog run hit an agent-specific dev-server behavior that failed `verify` until the stack said what to do; the react-router-ai run produced a project whose improvements were ported back into the stack twice. A bare prompt would have produced those projects without the lessons, and a template could not have carried them forward.  
-- Brief size is already spreading. With default fragments, the brief an agent gets is roughly 3,200 words for astro-blog, 3,900 for python-react, 9,300 for typescript-cli, and 10,300 for react-router-ai. The two newest stacks are three times the size of the first ones, which is the first sign that stack prose grows without a budget.  
-- Two of the five stacks have not been taken to a green `verify` by an agent since their last change (typescript-cli has never been run; react-router-ai needs a rerun after its second port). The only quality signal the product has is manual and nobody has time to run it.
+- The repetition is real for at least the maintainers: each stack worth bundling comes from a production project that has been set up by hand more than once.
+- End-to-end agent runs are where stack prose gets corrected. A run surfaces agent-specific behavior (a dev server that never exits, a step the agent misreads) that fails `verify` until the stack says what to do, and the fix goes back into the stack so the next project starts with it. A bare prompt would hit the same problems with nothing carried forward, and a template could not carry the lesson at all.
+- Stack prose grows without a budget. Runs add guidance and nothing removes it, so a stack drifts toward describing a whole project. The brief is what the agent actually reads, which makes its size a risk from the first stack.
+- Until there is a canary, the only quality signal the product has is manual and nobody has time to run it. A stack can go months without an agent taking it to a green `verify` after a change.
 
 ## Jobs to be done
 
@@ -63,18 +63,18 @@ Measured per stack, not per release.
 | Stacks don't rot | A stack that passed last month still passes this month without a prose change |
 | People write their own | Stacks and fragments in `~/.stacks` and third-party sources, not only the bundled registry |
 
-None of these are collected today. The stack directory plan proposes telemetry for the first two; the canary in the roadmap's "Later" section is the only way to get the fourth.
+None of these are collected today. Opt-in telemetry would cover the first two; a scheduled canary is the only way to get the fourth.
 
 ## Assumptions
 
 | Assumption | Evidence | Confidence | How to validate |
 | :---- | :---- | :---- | :---- |
-| Agents can follow a 3,000 to 10,000 word brief faithfully | Four sandbox runs to green, all with prose fixes along the way | Medium for 3,000, low for 10,000 | Rerun the two large stacks and count hesitations and skipped instructions; set a brief budget |
-| Version-less prose rots much more slowly than templates | Reasoning, plus one stack (astro-blog) that has survived its runs | Medium | The scheduled canary; count prose edits per stack per quarter |
-| `verify` is enough of a definition of done to keep an agent honest | The hash check and the brief's rules; no observed cheating in runs so far | Medium | Inspect projects from runs for no-op targets and weakened tests |
-| Users want to bring their own stacks (not only consume a registry) | One user, who built the tool for that | Low | Watch whether anyone besides the author writes a STACK.md |
-| Handoff to whatever agent is on PATH is the right entry point | Matches how the author works | Low | Watch whether people use `new` from a terminal or ask their agent to run it |
-| A community registry will form | None; the remote registry 404s today | Low | Publish, then count PRs to `registry/` from outside |
+| Agents can follow a 3,000 to 10,000 word brief faithfully | None measured yet; hand-run sessions reached green only with prose fixes along the way | Medium for 3,000, low for 10,000 | Run each bundled stack to green and count hesitations and skipped instructions; set a brief budget |
+| Version-less prose rots much more slowly than templates | Reasoning only | Medium | The scheduled canary; count prose edits per stack per quarter |
+| `verify` is enough of a definition of done to keep an agent honest | The hash check and the brief's rules; not yet tested against an agent trying to get to green | Medium | Inspect projects from runs for no-op targets and weakened tests |
+| Users want to bring their own stacks (not only consume a registry) | The maintainers' own need | Low | Watch whether anyone besides the maintainers writes a STACK.md |
+| Handoff to whatever agent is on PATH is the right entry point | Matches how the maintainers work | Low | Watch whether people use `new` from a terminal or ask their agent to run it |
+| A community registry will form | None; no public registry exists yet | Low | Publish, then count PRs to `registry/` from outside |
 
 The first assumption is the one to test next. It's a one-way door in practice: once stacks are 10,000 words, nobody will cut them.
 
@@ -87,7 +87,7 @@ The first assumption is the one to test next. It's a one-way door in practice: o
 
 ## Open questions
 
-- **Who is the bundled registry for?** Today it mixes stacks and fragments a stranger would want (python-react, go-cli, ci-github, postgres) with ones that encode one person's tooling (rr, ce-plugin, the Effect and OpenRouter choices in the two newest stacks). If the product is "write your stack down once", those belong in `~/.stacks` or a personal source. If it's a community catalog, they need to earn their place. The registry's origin layering supports either; the bundled content should pick one.  
-- **What is the brief budget?** The two newest stacks suggest that without a limit, stacks absorb entire projects. A per-stack cap on brief size, enforced by `validate`, would force the fragment split the roadmap already anticipates.  
-- **How does a stack prove it still works?** Manual end-to-end runs don't scale past a handful of stacks. The canary is listed as "Later"; it is the product's CI and probably belongs earlier.  
-- **Is the npm name available?** `npm view stacks` resolves to an unrelated package at version 0.75. `npx stacks new ...`, the README's first line, will install that package. The name needs resolving before anything else in the roadmap matters.
+- **Who is the bundled registry for?** Some candidate entries are ones a stranger would want (a Python and React app, a Go CLI, GitHub CI, Postgres); others encode one team's personal tooling. If the product is "write your stack down once", the personal ones belong in `~/.stacks` or a personal source. If it's a community catalog, every bundled entry needs to earn its place. The registry's origin layering supports either; the bundled content should pick one.  
+- **What is the brief budget?** Without a limit, stacks absorb entire projects. A per-stack cap on brief size, enforced by `validate`, would force the fragment split the roadmap already anticipates.  
+- **How does a stack prove it still works?** Manual end-to-end runs don't scale past a handful of stacks. A scheduled canary is the product's CI; until one exists, someone has to run the bench by hand.  
+- **Is the npm name available?** `npx quickstacks new ...`, the README's first line, only works if `quickstacks` is free on npm or is published by the maintainers before anyone else takes it. The name needs resolving before anything else in the roadmap matters.

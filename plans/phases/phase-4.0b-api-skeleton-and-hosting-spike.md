@@ -5,7 +5,7 @@ Status: DRAFT 2026-10-26 (not agreed)
 | Field | Value |
 |---|---|
 | Goal | `packages/api` is a working Effect HTTP program that serves only `GET /healthz`, with its own gate run by the root fan-out, and a time-boxed Cloudflare Workers spike answers open questions 16 and 17 and writes a D16 recommendation |
-| Traces to | "the remote registry 404s today" (assumption 6, which phase 4 replaces with a real host). D11: "an API and an MCP server will each be their own package". D16 |
+| Traces to | "no public registry exists yet" (assumption 6, which phase 4 replaces with a real host). D11: "an API and an MCP server will each be their own package". D16 |
 | Depends on | 4.0a (the spike proves `@quickstacks/format` runs inside the Workers runtime), D16 (proposed; this sub-phase produces the evidence for it) |
 | Blocks | 4.0c (static hosting config), 4.1b (the platform layer and test harness) |
 | Decisions needed | D16. The spike runs first; the maintainers decide D16 from its findings before the skeleton's platform layer is written. If they pick a Node server, `src/platform/node.ts` replaces `src/platform/worker.ts` and the tests run only against the Node adapter |

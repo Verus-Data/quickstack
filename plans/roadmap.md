@@ -169,7 +169,7 @@ a maintainer by hand; CI builds and deploys are 5.2.
 | Sub-phase | Goal | Traces to | Depends on | Status |
 |---|---|---|---|---|
 | [4.0a The format package](phases/phase-4.0a-format-package.md) | Extract the entry, manifest and run-record schemas to a private `packages/format` and add `canonicalBundle`/`bundleDigest`, bundled into the CLI, with the CLI suite unchanged | D11 ("shared code gets its own package") | 1.3b, 1.6c; 3.5a soft | Not started |
-| [4.0b API skeleton and hosting spike](phases/phase-4.0b-api-skeleton-and-hosting-spike.md) | `packages/api` on Effect's HTTP modules serving `/healthz`, its own gate, a Workers spike that answers open questions 16 and 17 | "the remote registry 404s today"; D16 | 4.0a, D16 | Not started |
+| [4.0b API skeleton and hosting spike](phases/phase-4.0b-api-skeleton-and-hosting-spike.md) | `packages/api` on Effect's HTTP modules serving `/healthz`, its own gate, a Workers spike that answers open questions 16 and 17 | "no public registry exists yet"; D16 | 4.0a, D16 | Not started |
 | [4.0c Registry index](phases/phase-4.0c-registry-index.md) | A static, content-addressed, signed index (D21) of proven compositions with each stack's last ledger run, built, signed inline and deployed by a maintainer, with `build:index --check` against the live host | "Stacks don't rot" made visible | 4.0b, 4.0a, 2.0a, 2.0c, 2.2 | Not started |
 | [4.0e Official names and directory](phases/phase-4.0e-official-names-and-directory.md) | The same build writes the signed `v1/names.json` (every official id and step name from every `v*` tag and index entry) and a static directory page per indexed stack, deployed by hand with the index | "Stacks don't rot" made visible; "None of these are collected today" (4.1c's official names) | 4.0c, 1.6c | Not started |
 | [4.0d The CLI's remote origin](phases/phase-4.0d-cli-remote-origin.md) | The CLI reads the index with a cache, signature check, bounded refresh, backoff and `--offline`, so official stacks update without a CLI release | "Stacks don't rot"; the agent's frustration with ambiguity | 4.0c, 0.3b, 1.3a | Not started |
@@ -419,8 +419,8 @@ problem statement rates "users want to bring their own stacks" low confidence wi
 known user. This is D8 as revised.
 
 Phase 4 comes after because its value depends on assumptions the problem statement rates
-lowest: that a community registry forms ("None; the remote registry 404s today") and that
-people other than the author will use it. It is also the only phase that adds a service to
+lowest: that a community registry forms ("None; no public registry exists yet") and that
+people other than the maintainers will write their own stacks. It is also the only phase that adds a service to
 run and pay for, and a privacy promise to keep. The ledger from phase 2 gives it something
 real to serve when it starts.
 
@@ -430,8 +430,8 @@ CI", is the main loss: until 5.1 runs, rot is found by maintainers rerunning the
 
 ## Measurement and the canary
 
-The problem statement says the canary "is the product's CI and probably belongs earlier".
-This plan agrees it matters and still puts it in phase 5 (D8, revised under D23):
+The problem statement calls a scheduled canary "the product's CI".
+This plan agrees it matters and puts it in phase 5 (D8, revised under D23):
 
 1. The MVP gate already requires a recorded green run per bundled stack (D20), so the
    demo ships with the same signal a first canary run would give.

@@ -5,7 +5,7 @@ Status: DRAFT 2026-10-26 (not agreed)
 | Field | Value |
 |---|---|
 | Goal | The CLI reads the signed registry index so new and updated official stacks reach users without a CLI release, shows each stack's last ledger run in `list --json`, and never lets the network slow, fail or change a command's output beyond adding fresher proven entries |
-| Traces to | "Stacks don't rot" and assumption 6, "the remote registry 404s today". The agent's frustration: "ambiguity", which a visible last run reduces when two stacks fit. The bundled set keeps the CLI usable offline |
+| Traces to | "Stacks don't rot" and assumption 6, "no public registry exists yet". The agent's frustration: "ambiguity", which a visible last run reduces when two stacks fit. The bundled set keeps the CLI usable offline |
 | Depends on | 4.0c (a signed index and bundles at a URL), 0.3b (`src/platform/`, where platform adapters live), 1.3a (the `HttpClient` layer its probes use), D21 (proposed) |
 | Blocks | 4.2b (stats use the same cached-fetch pattern), 5.2 |
 | Decisions needed | D21. If declined, the default index is treated like a non-default one: every entry `trusted: false` |

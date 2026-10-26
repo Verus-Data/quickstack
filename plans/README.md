@@ -22,9 +22,7 @@ the second half and has no first.
 
 The CLI never calls an LLM and never runs a command from a stack entry.
 
-[PROBLEM_STATEMENT.md](../product/PROBLEM_STATEMENT.md) is the source for everything here. It
-calls the product "stacks" (`npx stacks`, `~/.stacks`, `docs/roadmap.md`); read those
-as quickstacks. Every requirement, phase and decision in this folder should
+[PROBLEM_STATEMENT.md](../product/PROBLEM_STATEMENT.md) is the source for everything here. Every requirement, phase and decision in this folder should
 trace back to a line in it. If one can't, either the plan is wrong or the problem
 statement needs a change first.
 
@@ -55,7 +53,7 @@ demo.
 | 4 The hosted side | The format package, the API and signed registry index, usage telemetry with integrity checks and a launch runbook, stats, a browsable directory, dependency trends, an MCP server | [4.0a](phases/phase-4.0a-format-package.md) to [4.3](phases/phase-4.3-mcp-server.md) | Success rows 4 and 5 across users; assumptions 5 and 6 | Not started |
 | 5 CI and scheduled inference | The release workflow with provenance, extra CI jobs, the scheduled canary, CI-built index deploys | [5.0](phases/phase-5.0-ci-release-and-checks.md) to [5.2](phases/phase-5.2-ci-index-build-and-deploy.md) | "The canary is the product's CI"; success row 4 | Not started |
 
-The problem statement argues the canary "probably belongs earlier". The roadmap puts it
+The problem statement calls a scheduled canary "the product's CI". The roadmap puts it
 in phase 5 (D8, revised under D23) and explains why.
 
 ## Decisions log
