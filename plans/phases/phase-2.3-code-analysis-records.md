@@ -5,10 +5,10 @@ Status: DRAFT 2026-10-26 (not agreed)
 | Field | Value |
 |---|---|
 | Goal | Run static analysis over any directory — a project `new` built, a repo `add` touched, or this repo itself — using the open-source analyzers already on the machine, and write one SARIF 2.1.0 log per run that carries the measured facts and the quickstacks attribution a later backend, MCP server and search/score layer can read without inventing a data model |
-| Traces to | The trust job ("the user wants to start work in a project they don't have to audit first") and the existing gap in [What success looks like](../product/PROBLEM_STATEMENT.md#what-success-looks-like): every row measures the recipe or the run, none measures the artifact. See [Open question 1](#open-questions-for-the-maintainers) — this plan proposes a sixth row rather than claiming an existing one |
-| Depends on | Nothing in the repo. It is its own package with its own gate entry. Soft, optional coupling: reads `.quickstacks/manifest.json` when [1.2](phase-1.2-new-scaffold-and-manifest.md) writes it, and only to attribute a record |
-| Blocks | Nothing. Feeds 4.1b (ingest), 4.2 (stats), 4.3 (MCP) and any scoring layer built on top of them |
-| Decisions needed | Which analyzers ship in the first cut (question 2); whether tools are assumed present or provisioned (question 3) |
+| Traces to | The trust job ("the user wants to start work in a project they don't have to audit first") and the gap in [What success looks like](../product/PROBLEM_STATEMENT.md#what-success-looks-like): every row measures the recipe or the run, none measures the artifact. The record is the artifact's metadata rather than a new success row — settled by the maintainer, 2026-10-26: a success row states a claim the product makes, while this is data attached to a stack, and any statistic is derived later from records already stored |
+| Depends on | Nothing in the repo. It is its own package with its own gate entry. Soft, optional coupling: reads `.quickstacks/manifest.json` when [1.2b](phase-1.2b-manifest-state-and-detection.md) writes it, and only to attribute a record |
+| Blocks | Nothing. Feeds 4.1b (ingest), 4.2a (stats), 4.3 (MCP) and any scoring layer built on top of them |
+| Decisions needed | Which analyzers ship in the first cut (question 1); whether tools are assumed present or provisioned (question 2) |
 | Decisions or questions this settles | The record format and its extension block; the analyzer adapter contract; the attribution key; the exit contract; the tiering; what a partial record means |
 
 ## Why this exists, and why it is not already in the plan
@@ -18,10 +18,10 @@ record whether commands passed:
 
 | Sub-phase | What it does | Why this is different |
 |---|---|---|
-| [1.3](phase-1.3-verify-and-tamper-detection.md) `verify` | Runs the manifest's lint, typecheck, test and build steps | Answers pass or fail on the project's own commands. No measurement, no cross-language tooling, nothing kept |
-| [2.0](phase-2.0-run-records-and-bench.md) run records | One record per verify run: outcome, timing, step status | Describes the run, not the code |
+| [1.3a](phase-1.3a-verify-runner-and-probes.md) `verify` | Runs the manifest's lint, typecheck, test and build steps | Answers pass or fail on the project's own commands. No measurement, no cross-language tooling, nothing kept |
+| [2.0c](phase-2.0c-run-ledger.md) run records | One record per verify run: outcome, timing, step status | Describes the run, not the code |
 | [2.2](phase-2.2-deterministic-rot-checks.md) rot checks | Shipped files against the composition: commands, hook wiring, ports, import closure | Author-time checks of registry content, inside `validate`. Never sees a built project |
-| [4.2](phase-4.2-stats-and-directory.md) stats | Green rate, time to green, entry points | Aggregates usage events, not code properties |
+| [4.2a](phase-4.2a-stats-rollup-and-routes.md) stats | Green rate, time to green, entry points | Aggregates usage events, not code properties |
 
 The plan measures the recipe (budget, layers, composition) and the run (verify, ledger,
 canary). Nobody measures the artifact. That is the gap this sub-phase fills, and it is
@@ -51,7 +51,7 @@ In:
 Out:
 
 - A database, an ORM, migrations, a server, an ingest endpoint. JSON files only.
-- The MCP server (4.3), stats rollups (4.2) and any scoring weights. Those read this
+- The MCP server (4.3), stats rollups (4.2a) and any scoring weights. Those read this
   format; they do not live here.
 - A `quickstacks analyze` subcommand in `packages/cli`. Wiring it into the CLI is a
   later, separate change, and phase 1 owns `src/cli.ts` right now.
@@ -119,13 +119,13 @@ rewritten to be relative to the target root.
 }
 ```
 
-`attribution` uses 2.0's ledger key exactly — stack, `with`, preset, agent, fingerprint —
+`attribution` uses 2.0c's ledger key exactly — stack, `with`, preset, agent, fingerprint —
 so a later ingest can join an analysis to a run record without a mapping table. Two
 identities, and the difference is the point:
 
 | Field | Identifies | Computed from |
 |---|---|---|
-| `fingerprint` | What we asked for: the composition | 2.0's composition hash; absent until 1.2 writes a manifest |
+| `fingerprint` | What we asked for: the composition | 2.0a's composition hash; absent until 1.2b writes a manifest |
 | `target.digest` | What we got: the artifact | sha256 over the sorted (relative path, content) list, excluding ignored roots |
 
 A stack's history is `fingerprint → digest → analysis`. A digest that has no fingerprint
@@ -135,8 +135,8 @@ is still a valid record: analysis of a repo `add` touched, or of this repo itsel
 
 Read `.quickstacks/manifest.json` when it exists. Every field is optional and unknown
 fields are ignored; a manifest that does not parse is a warning, not a failure, and the
-record still lands with `kind: "label"` or `kind: "none"`. 1.2 owns that file's schema,
-so this reader decodes the three fields it needs and nothing else. When 1.2 lands, the
+record still lands with `kind: "label"` or `kind: "none"`. 1.2b owns that file's schema,
+so this reader decodes the three fields it needs and nothing else. When 1.2b lands, the
 tests gain a fixture built by the real `new` instead of a hand-written manifest.
 
 ### Tiers and the adapter contract
@@ -243,6 +243,7 @@ build.
 | No runtime dependencies | Keeps the package out of the root catalog, which is the one file the parallel phase-1 work also edits |
 | Absolute base in `originalUriBaseIds`, relative artifact URIs | Records from different machines and OSes must aggregate in one database |
 | Package home is `packages/tools/analyze` | Tools live under a `tools` namespace with one directory per tool; `analyze` is the first, so it nests under it. Settled by the maintainer: a flat `packages/<name>/` works for shipped packages, but tool packages are a distinct kind and get their own namespace so `packages/` does not become a grab bag |
+| The record is stack metadata, not a success row | A success row states a claim the product makes; this is data attached to a stack. Settled by the maintainer: ship the metadata now and derive statistics from stored records later, so no weighting has to be frozen into the record |
 
 ## Files and areas touched
 
@@ -278,7 +279,7 @@ touches. If they conflict at merge time, the resolution is to keep both sides.
   a fake that prints valid SARIF and exits 1 records `ran` with `exitCode: 1` and findings
   kept; a fake that exits 2 with no stdout records `failed`; a fake that exits 0 with invalid
   JSON records `failed`; a missing binary records `absent`; a fake that sleeps past the
-  timeout records `timeout` and the run still exits 0. Same fake-binary technique as 2.0's
+  timeout records `timeout` and the run still exits 0. Same fake-binary technique as 2.0c's
   bench tests. A tool the user excluded with `--tool` is recorded `skipped` with reason
   `not-selected`, so a record distinguishes a deliberate omission from a missing binary.
 - A malformed SARIF payload is rejected with `invalid-sarif`, naming the offending
@@ -326,18 +327,13 @@ touches. If they conflict at merge time, the resolution is to keep both sides.
 
 ## Open questions for the maintainers
 
-1. **Is "the artifact is sound, not just green" a success row?** Every existing row
-   measures the recipe or the run. This sub-phase produces a measure the problem statement
-   does not list. Proposal: add it as a sixth row, "analysis is collected and joined to
-   stack content", and let 4.2 define the number. Until then this plan traces to the trust
-   job only.
-2. **Which analyzers ship in the first cut.** Proposed: the six in the adapter table,
+1. **Which analyzers ship in the first cut.** Proposed: the six in the adapter table,
    every one optional at runtime. The alternative is tier 0 plus `--sarif` only, which is
    smaller and defers every flag to the first user who needs one.
-3. **Are tools assumed present, or provisioned?** Proposed: assumed present, never
+2. **Are tools assumed present, or provisioned?** Proposed: assumed present, never
    installed by the analyzer — it reports `absent` and moves on. Provisioning (a
    container image, a `tool:install` script) is a separate decision with a supply-chain
    cost, and D2's spirit argues against a tool that downloads binaries.
-4. **Does the record belong in the analysed project?** Proposed: no — stdout by default,
-   `--out` when a caller wants a file. Writing into the target means touching 1.2's
+3. **Does the record belong in the analysed project?** Proposed: no — stdout by default,
+   `--out` when a caller wants a file. Writing into the target means touching 1.2b's
    `.quickstacks/` contract, which this sub-phase should not do.
