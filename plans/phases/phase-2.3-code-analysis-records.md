@@ -43,8 +43,10 @@ In:
   `runs[0].properties`.
 - Attribution from `.quickstacks/manifest.json` when present, an explicit `--label`
   otherwise.
-- Deterministic output: the same tree twice produces byte-identical results except for
-  timestamps and durations.
+- Deterministic output: the same tree twice produces identical results except for
+  `runId`, `createdAt` and durations. `runId` is deliberately unique per run — a backend
+  storing records needs one id per invocation, so it is excluded from the determinism
+  comparison rather than derived from content.
 
 Out:
 
@@ -71,7 +73,7 @@ this plan relies on, and nothing more:
 | `run.tool.driver` | Which tool, which version, its rule metadata |
 | `run.results[]` | The findings: `ruleId`, `level`, `message.text`, `locations`, `partialFingerprints` |
 | `run.invocations[]` | Whether the tool ran, its exit code and duration |
-| `run.artifacts[]` | The file inventory, with `originalUriBaseIds` fixing portability |
+| `run.artifacts[]` | Left empty in v1. The per-file inventory lives in `properties.quickstacks.metrics` instead, so a record over a large tree does not carry every path twice. An ingest that wants per-file rows asks for `--artifacts` later |
 | `run.properties` | The `quickstacks` extension block (SARIF allows an arbitrary property bag here) |
 | `partialFingerprints` | A stable id per finding, so a scoring layer can track one finding across runs |
 
@@ -162,6 +164,14 @@ An adapter is data plus two argv builders. Adding an analyzer is one table entry
 fake-binary test. No adapter ever builds a shell string: arguments are arrays, the
 binary is resolved on `PATH`, and the process is spawned without a shell.
 
+An adapter must be read-only with respect to the target. A tool that writes a cache or
+log directory inside the target is not acceptable: it corrupts subsequent measurements
+and makes the digest depend on what previously ran in the directory. A tool needing a
+cache gets a disabling flag (e.g. ruff `--no-cache`) or a cache path outside the target
+(a path under the temp dir or `HOME` — `HOME` is already set by the spawn). A tool that
+cannot be tamed that way is not shipped as an adapter. Each entry's `note` records the
+read-only conclusion and `verified` is set honestly.
+
 The shipped table in the first cut is proposed as semgrep (multi-language), ruff
 (Python), ESLint with its SARIF formatter (JS/TS), golangci-lint (Go), trivy
 (dependencies and images) and gitleaks (secrets). Each entry's exact invocation is
@@ -210,7 +220,9 @@ build.
 | Case | Handling |
 |---|---|
 | No analyzer installed | `tools[].status: "absent"`; tier 0 record still lands; exit 0 |
-| A tool crashes | `status: "failed"` with its exit code; its results are dropped, not half-parsed |
+| A tool excluded with `--tool` | `tools[].status: "skipped"`, reason `not-selected`; the record shows the omission |
+| A tool exits non-zero with valid SARIF 2.1.0 | `status: "ran"`, findings kept, `exitCode` recorded — a non-zero exit is how linters signal "something was found", not a failure |
+| A tool exits non-zero with no stdout | `status: "failed"`, reason `exit-code:N`; no results |
 | A tool emits invalid SARIF | `status: "failed"`, reason `invalid-sarif`; other runs kept |
 | A tool emits SARIF 2.0.0 or another version | Rejected with `invalid-sarif` naming the version; never silently upgraded |
 | Binary present but not executable | `status: "failed"`, reason `not-executable` |
@@ -254,15 +266,20 @@ touches. If they conflict at merge time, the resolution is to keep both sides.
 
 - Tier 0 over a polyglot fixture: file count, language mix, line counts and marker counts
   match hand-computed values.
-- Determinism: the same tree twice produces identical output once `createdAt`, durations
-  and invocation timestamps are removed.
+- Determinism: the same tree twice produces identical output once `runId`, `createdAt`,
+  durations and invocation timestamps are removed.
 - Digest: changes when a file byte changes, when a file is added, when a file is renamed;
   unchanged by touching mtime, by reordering directory entries, and by the presence of an
-  ignored root (`node_modules/`, `dist/`, `.git/`).
+  ignored root (`node_modules/`, `dist/`, `.git/`). A symlink is skipped, never followed —
+  content outside the target tree must not enter the record — and the count is reported as
+  `skippedSymlinks`, the same hazard 1.0 avoids by rejecting symlinks in an entry.
 - Tool ledger: a fake binary that emits fixture SARIF records `ran` with its result count;
-  a fake that exits non-zero records `failed` and contributes no results; a missing binary
-  records `absent`; a fake that sleeps past the timeout records `timeout` and the run
-  still exits 0. Same fake-binary technique as 2.0's bench tests.
+  a fake that prints valid SARIF and exits 1 records `ran` with `exitCode: 1` and findings
+  kept; a fake that exits 2 with no stdout records `failed`; a fake that exits 0 with invalid
+  JSON records `failed`; a missing binary records `absent`; a fake that sleeps past the
+  timeout records `timeout` and the run still exits 0. Same fake-binary technique as 2.0's
+  bench tests. A tool the user excluded with `--tool` is recorded `skipped` with reason
+  `not-selected`, so a record distinguishes a deliberate omission from a missing binary.
 - A malformed SARIF payload is rejected with `invalid-sarif`, naming the offending
   version, while other runs survive.
 - `--sarif <file>` adopts an external log and attributes it to the same envelope.
