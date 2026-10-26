@@ -6,8 +6,8 @@ Status: DRAFT 2026-10-26 (not agreed)
 |---|---|
 | Goal | Define what a stack and a fragment are on disk, load them from the project, user and bundled origins with trust marks, and ship `list` and `list --json` so an agent can pick a stack |
 | Traces to | "It runs `list --json`, picks a stack, runs `new`" (Who has it, the coding agent); job 5, "I want a target I can verify against"; What this is not, "`files/` holds only what is the same across versions; everything else is prose" |
-| Depends on | [0.3](phase-0.3.md) (structured error details), [0.2](phase-0.2.md) for the bundled registry path at runtime (1.0 can start with a stub path and a test override) |
-| Blocks | [1.1](phase-1.1.md), and through it everything else in phase 1. Stack prose for [1.6](phase-1.6.md) can be drafted once this file's format is agreed |
+| Depends on | [0.3](phase-0.3-command-runtime.md) (structured error details), [0.2](phase-0.2-npm-distribution-artifact.md) for the bundled registry path at runtime (1.0 can start with a stub path and a test override) |
+| Blocks | [1.1](phase-1.1-composition-and-brief.md), and through it everything else in phase 1. Stack prose for [1.6](phase-1.6-bundled-stacks-and-mvp-gate.md) can be drafted once this file's format is agreed |
 | Decisions needed | None to start. D6 (bundled audience) only changes which entries ship, which is 1.6's concern |
 | Decisions or questions this settles | Entry frontmatter schema v1; origin order and the trust rule; where the user directory lives; the `yaml` dependency; the `list --json` shape |
 

@@ -1,6 +1,6 @@
 # Phase 4.0b: The CLI's remote origin
 
-Status: DRAFT 2026-10-26 (not agreed). Second half of phase 4.0; [4.0a](phase-4.0a.md)
+Status: DRAFT 2026-10-26 (not agreed). Second half of phase 4.0; [4.0a](phase-4.0a-api-foundation-and-registry-index.md)
 builds the index this reads.
 
 | Field | Value |

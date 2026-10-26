@@ -77,7 +77,7 @@ Human mode prints the message, then one indented line per detail field that the 
 renderer chooses to show (for `VerifyFailed`, the failed step names).
 
 `VerifyFailed` and `VerifyChanged` are added to the table now so exit 5 is reserved and
-tested here; their detail schemas are defined in [1.3](phase-1.3.md). Until then they
+tested here; their detail schemas are defined in [1.3](phase-1.3-verify-and-tamper-detection.md). Until then they
 exist with empty details, used only in tests.
 
 ### Failures that keep their result

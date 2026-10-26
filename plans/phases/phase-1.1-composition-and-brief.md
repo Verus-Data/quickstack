@@ -6,8 +6,8 @@ Status: DRAFT 2026-10-26 (not agreed)
 |---|---|
 | Goal | Turn a stack id plus `--with`/`--without` and a preset into a composition (entries, files, verify steps, commands, decisions, env), and render the brief an agent can follow to a green `verify` without asking anything the brief could have answered |
 | Traces to | "a brief that says 'set up testing' without saying which layers, a verify command that doesn't exist, a decision with no default" (the coding agent's frustration); "Success is reaching a green `verify` without asking the user anything the brief could have answered"; Evidence, "stack prose grows without a budget" |
-| Depends on | [1.0](phase-1.0.md) |
-| Blocks | [1.2](phase-1.2.md), [1.5](phase-1.5.md) |
+| Depends on | [1.0](phase-1.0-entry-format-and-registry.md) |
+| Blocks | [1.2](phase-1.2-new-scaffold-and-manifest.md), [1.5](phase-1.5-validate-and-brief-budget.md) |
 | Decisions needed | D5 only for the numbers 1.5 enforces; 1.1 just counts words. D7 is not needed here |
 | Decisions or questions this settles | Composition order and conflict rules; conditional prose syntax; how words are counted; the brief's section order and its fixed rules, including the `Asked` log used to count interventions |
 

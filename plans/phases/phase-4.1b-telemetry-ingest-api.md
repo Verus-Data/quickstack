@@ -1,6 +1,6 @@
 # Phase 4.1b: Usage telemetry, ingest
 
-Status: DRAFT 2026-10-26 (not agreed). Second half of phase 4.1; [4.1a](phase-4.1a.md)
+Status: DRAFT 2026-10-26 (not agreed). Second half of phase 4.1; [4.1a](phase-4.1a-telemetry-cli-client.md)
 is the client.
 
 | Field | Value |

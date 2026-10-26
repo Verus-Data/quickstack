@@ -19,7 +19,7 @@ In: reserving the name, reviewing the requirements, deciding or deferring each p
 setting the one success target that has no number yet, and naming the first stack.
 
 Out: any code. The repo work that was in the old foundation phase is in
-[0.1](phase-0.1.md) (baseline) and [0.2](phase-0.2.md) (distribution).
+[0.1](phase-0.1-repo-baseline.md) (baseline) and [0.2](phase-0.2-npm-distribution-artifact.md) (distribution).
 
 ## Tasks
 
@@ -53,7 +53,7 @@ roadmap is written so that a "not yet" on them doesn't block phase 1.
 | D16 | API hosting | 4.0 | Before phase 4 |
 | D17 | Telemetry consent | 4.1 | Before 4.1 |
 
-A2-A4 are architecture questions the Agent answers in [0.3](phase-0.3.md) and the
+A2-A4 are architecture questions the Agent answers in [0.3](phase-0.3-command-runtime.md) and the
 maintainers review there; they don't need a decision here.
 
 ## Name check
@@ -88,7 +88,7 @@ sub-phase that will ask again. Empty until the review.
   one.
 - The first stack is named.
 - `bun run check` is still green from the repo root (no code changes are expected; this
-  is the same check [0.1](phase-0.1.md) ends with).
+  is the same check [0.1](phase-0.1-repo-baseline.md) ends with).
 
 ## What this plan may get wrong
 

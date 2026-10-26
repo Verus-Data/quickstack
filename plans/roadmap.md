@@ -70,10 +70,10 @@ No product behavior yet.
 
 | Sub-phase | Goal | Traces to | Depends on | Status |
 |---|---|---|---|---|
-| [0.0 Decisions and name](phases/phase-0.0.md) | `quickstacks` reserved on npm; D5-D9 and D12-D17 decided or deferred with a reason; first stack named | Open question "Is the npm name available?"; open questions on brief budget and registry audience | nothing | Not started (owner: maintainers) |
-| [0.1 Repo baseline](phases/phase-0.1.md) | The ported base, workspace move and review fixes committed, CI `ci-ok` green on `main` | "What has to be true for it to be worth building": a trustworthy base (D10, D11) | nothing | Mostly executed |
-| [0.2 Distribution](phases/phase-0.2.md) | A1 answered: a Node ESM bundle published to npm, a wider Node range, bundled assets found at runtime, e2e against the packed tarball | Open question on the npm name; the README's first command `npx quickstacks new` | 0.0 (A1, D12), 0.1 | Not started |
-| [0.3 Command runtime](phases/phase-0.3.md) | A2-A4 answered: live progress on stderr, results that survive an expected failure, structured error details and exit 5, a process service with process groups, and a signal policy for interactive children | Agent as the main reader ("a verify command that doesn't exist", "ambiguity"); A2-A4 in [Open architecture questions](#open-architecture-questions) | 0.1 | Not started |
+| [0.0 Decisions and name](phases/phase-0.0-decisions-and-npm-name.md) | `quickstacks` reserved on npm; D5-D9 and D12-D17 decided or deferred with a reason; first stack named | Open question "Is the npm name available?"; open questions on brief budget and registry audience | nothing | Not started (owner: maintainers) |
+| [0.1 Repo baseline](phases/phase-0.1-repo-baseline.md) | The ported base, workspace move and review fixes committed, CI `ci-ok` green on `main` | "What has to be true for it to be worth building": a trustworthy base (D10, D11) | nothing | Mostly executed |
+| [0.2 Distribution](phases/phase-0.2-npm-distribution-artifact.md) | A1 answered: a Node ESM bundle published to npm, a wider Node range, bundled assets found at runtime, e2e against the packed tarball | Open question on the npm name; the README's first command `npx quickstacks new` | 0.0 (A1, D12), 0.1 | Not started |
+| [0.3 Command runtime](phases/phase-0.3-command-runtime.md) | A2-A4 answered: live progress on stderr, results that survive an expected failure, structured error details and exit 5, a process service with process groups, and a signal policy for interactive children | Agent as the main reader ("a verify command that doesn't exist", "ambiguity"); A2-A4 in [Open architecture questions](#open-architecture-questions) | 0.1 | Not started |
 
 ### Phase 1: the core loop (MVP)
 
@@ -82,13 +82,13 @@ Goal: an agent can run `list --json`, `new --sandbox`, read the brief and loop o
 
 | Sub-phase | Goal | Traces to | Depends on | Status |
 |---|---|---|---|---|
-| [1.0 Entry format and registry](phases/phase-1.0.md) | `STACK.md`/`FRAGMENT.md` schema, origins (project, user, bundled) with trust marks, `list` and `list --json` | Job 5 ("a target I can verify against"); the agent "runs `list --json`, picks a stack" | 0.3 | Not started |
-| [1.1 Composition and the brief](phases/phase-1.1.md) | Fragment composition, conditional prose, decisions, the commands map, and the brief with its word count | The brief "must say which layers of testing", "a default for every decision" | 1.0 | Not started |
-| [1.2 `new`: scaffold and manifest](phases/phase-1.2.md) | Files written with single ownership and JSON merge, templates with a fixed variable set, git init, the manifest with its step digest, `--sandbox`, `--with`, `--without`, `--yes`, `--no-launch` | Job 1, job 2; "writes a few files and a brief" | 1.1 | Not started |
-| [1.3 `verify`](phases/phase-1.3.md) | Phased step runner, HTTP probes, teardown, built-in checks, tamper detection, local run records | "verify as the definition of done"; success rows 1-3 | 1.2 (manifest), 0.3 | Not started |
-| [1.4 Handoff and entry points](phases/phase-1.4.md) | Detect the calling agent, launch the agent on PATH with the signal policy, or print the prompt; the no-argument agent guide | Assumption "Handoff to whatever agent is on PATH" (D9) | 1.2, 0.3 | Not started |
-| [1.5 `validate` and the brief budget](phases/phase-1.5.md) | Format, composition and conditional checks; D5 budget; D7 verify layers; version-sensitive files and pinned versions in prose | Open question "What is the brief budget?"; success row 3 | 1.1 | Not started |
-| [1.6 Bundled stacks and the MVP gate](phases/phase-1.6.md) | Three stacks and their default fragments written to budget; one recorded green sandbox run each; first public release | Assumption 1 (brief size); success rows 1-3; D6 | 1.3, 1.4, 1.5, 0.2 | Not started |
+| [1.0 Entry format and registry](phases/phase-1.0-entry-format-and-registry.md) | `STACK.md`/`FRAGMENT.md` schema, origins (project, user, bundled) with trust marks, `list` and `list --json` | Job 5 ("a target I can verify against"); the agent "runs `list --json`, picks a stack" | 0.3 | Not started |
+| [1.1 Composition and the brief](phases/phase-1.1-composition-and-brief.md) | Fragment composition, conditional prose, decisions, the commands map, and the brief with its word count | The brief "must say which layers of testing", "a default for every decision" | 1.0 | Not started |
+| [1.2 `new`: scaffold and manifest](phases/phase-1.2-new-scaffold-and-manifest.md) | Files written with single ownership and JSON merge, templates with a fixed variable set, git init, the manifest with its step digest, `--sandbox`, `--with`, `--without`, `--yes`, `--no-launch` | Job 1, job 2; "writes a few files and a brief" | 1.1 | Not started |
+| [1.3 `verify`](phases/phase-1.3-verify-and-tamper-detection.md) | Phased step runner, HTTP probes, teardown, built-in checks, tamper detection, local run records | "verify as the definition of done"; success rows 1-3 | 1.2 (manifest), 0.3 | Not started |
+| [1.4 Handoff and entry points](phases/phase-1.4-handoff-and-entry-points.md) | Detect the calling agent, launch the agent on PATH with the signal policy, or print the prompt; the no-argument agent guide | Assumption "Handoff to whatever agent is on PATH" (D9) | 1.2, 0.3 | Not started |
+| [1.5 `validate` and the brief budget](phases/phase-1.5-validate-and-brief-budget.md) | Format, composition and conditional checks; D5 budget; D7 verify layers; version-sensitive files and pinned versions in prose | Open question "What is the brief budget?"; success row 3 | 1.1 | Not started |
+| [1.6 Bundled stacks and the MVP gate](phases/phase-1.6-bundled-stacks-and-mvp-gate.md) | Three stacks and their default fragments written to budget; one recorded green sandbox run each; first public release | Assumption 1 (brief size); success rows 1-3; D6 | 1.3, 1.4, 1.5, 0.2 | Not started |
 
 ### Phase 2: stacks that prove themselves
 
@@ -98,9 +98,9 @@ finding, all without an LLM in CI.
 
 | Sub-phase | Goal | Traces to | Depends on | Status |
 |---|---|---|---|---|
-| [2.0 Run records, fingerprint and bench](phases/phase-2.0.md) | A run record schema, a content fingerprint per composition, a ledger, `quickstacks runs`, and a bench script that drives the user's own agent headlessly | "None of these are collected today"; success rows 1 and 2; assumption 1 | 1.6 | Not started |
-| [2.1 The canary](phases/phase-2.1.md) | Scheduled bench runs of every bundled stack on a machine the maintainers control, with a report when a stack that passed stops passing | "How does a stack prove it still works?"; success row 4; assumption 2 | 2.0, D15 | Not started |
-| [2.2 Deterministic rot checks](phases/phase-2.2.md) | `validate` checks shipped files against the composition (commands, hook wiring, ports, import closure), flags dated prose, and reports "changed since last green" | Assumption 2 ("version-less prose rots much more slowly"); assumption 3 (verify keeps the agent honest) | 2.0 (fingerprint), 1.5 | Not started |
+| [2.0 Run records, fingerprint and bench](phases/phase-2.0-run-records-and-bench.md) | A run record schema, a content fingerprint per composition, a ledger, `quickstacks runs`, and a bench script that drives the user's own agent headlessly | "None of these are collected today"; success rows 1 and 2; assumption 1 | 1.6 | Not started |
+| [2.1 The canary](phases/phase-2.1-scheduled-canary.md) | Scheduled bench runs of every bundled stack on a machine the maintainers control, with a report when a stack that passed stops passing | "How does a stack prove it still works?"; success row 4; assumption 2 | 2.0, D15 | Not started |
+| [2.2 Deterministic rot checks](phases/phase-2.2-deterministic-rot-checks.md) | `validate` checks shipped files against the composition (commands, hook wiring, ports, import closure), flags dated prose, and reports "changed since last green" | Assumption 2 ("version-less prose rots much more slowly"); assumption 3 (verify keeps the agent honest) | 2.0 (fingerprint), 1.5 | Not started |
 
 ### Phase 3: existing repos and authors
 
@@ -109,9 +109,9 @@ and write their own stacks once, for themselves or their team.
 
 | Sub-phase | Goal | Traces to | Depends on | Status |
 |---|---|---|---|---|
-| [3.0 `add`](phases/phase-3.0.md) | Apply fragments to an existing repo without overwriting anything; parked copies in `incoming/` and a merge brief | Job 4; D4 | 1.6 | Not started |
-| [3.1 Authoring](phases/phase-3.1.md) | `show`, `create stack|fragment`, `validate --brief` preview, personal defaults (`always`), the authoring guide | Job 3; the stack author user; success row 5 | 1.5, 2.2 | Not started |
-| [3.2 Git sources and trust](phases/phase-3.2.md) | `source add <git-url>` pinned to a commit, first-use listing of executables, update diffs, untrusted-until-confirmed | Success row 5 ("third-party sources"); the [Trust boundary](#trust-boundary) | 3.1 | Not started |
+| [3.0 `add`](phases/phase-3.0-add-fragments-to-repo.md) | Apply fragments to an existing repo without overwriting anything; parked copies in `incoming/` and a merge brief | Job 4; D4 | 1.6 | Not started |
+| [3.1 Authoring](phases/phase-3.1-authoring-and-preview.md) | `show`, `create stack|fragment`, `validate --brief` preview, personal defaults (`always`), the authoring guide | Job 3; the stack author user; success row 5 | 1.5, 2.2 | Not started |
+| [3.2 Git sources and trust](phases/phase-3.2-git-sources-and-trust.md) | `source add <git-url>` pinned to a commit, first-use listing of executables, update diffs, untrusted-until-confirmed | Success row 5 ("third-party sources"); the [Trust boundary](#trust-boundary) | 3.1 | Not started |
 
 ### Phase 4: the hosted side
 
@@ -121,12 +121,12 @@ across users rather than one machine, and agents can see which stacks work.
 
 | Sub-phase | Goal | Traces to | Depends on | Status |
 |---|---|---|---|---|
-| [4.0a API foundation and registry index](phases/phase-4.0a.md) | `packages/api` on Effect's HTTP modules with its own gate; shared schemas extracted to `packages/format`; a static, content-addressed registry index with each stack's last canary result | "Stacks don't rot" made visible; "the remote registry 404s today"; D11 | 2.1, 3.2, D16 | Not started |
-| [4.0b The CLI's remote origin](phases/phase-4.0b.md) | The CLI reads the index with a cache, bounded refresh, backoff and `--offline`, so official stacks update without a CLI release and `list --json` shows `lastRun` | "Stacks don't rot"; the agent's frustration with ambiguity | 4.0a | Not started |
-| [4.1a Telemetry client](phases/phase-4.1a.md) | Consent, first-run notice, random ids outside the project, events, a spool, and failures that never touch command output | "None of these are collected today"; success rows 1, 2 and 5; D9 instrumentation | 4.0a, D17 | Not started |
-| [4.1b Telemetry ingest](phases/phase-4.1b.md) | Per-event validation, idempotency, normalizing unknown names to `custom`, recomputed verify outcomes, rate limits and caps, hashed networks, retention | Same as 4.1a | 4.0a, 4.1a's event schema, D17 | Not started |
-| [4.2 Stats and directory](phases/phase-4.2.md) | Aggregates with small-cell suppression, a stats endpoint, `stats` in `list --json`, a static directory page | The agent picking a stack; success row 5 | 4.1b, 4.0b | Not started |
-| [4.3 MCP server](phases/phase-4.3.md) | `packages/mcp` exposing list, show, new (no launch) and verify as tools over stdio, built on the CLI's `--json` contract | Assumption 5 (entry point); D11 | 4.0a, evidence from D9 | Not started, gated |
+| [4.0a API foundation and registry index](phases/phase-4.0a-api-foundation-and-registry-index.md) | `packages/api` on Effect's HTTP modules with its own gate; shared schemas extracted to `packages/format`; a static, content-addressed registry index with each stack's last canary result | "Stacks don't rot" made visible; "the remote registry 404s today"; D11 | 2.1, 3.2, D16 | Not started |
+| [4.0b The CLI's remote origin](phases/phase-4.0b-cli-remote-origin.md) | The CLI reads the index with a cache, bounded refresh, backoff and `--offline`, so official stacks update without a CLI release and `list --json` shows `lastRun` | "Stacks don't rot"; the agent's frustration with ambiguity | 4.0a | Not started |
+| [4.1a Telemetry client](phases/phase-4.1a-telemetry-cli-client.md) | Consent, first-run notice, random ids outside the project, events, a spool, and failures that never touch command output | "None of these are collected today"; success rows 1, 2 and 5; D9 instrumentation | 4.0a, D17 | Not started |
+| [4.1b Telemetry ingest](phases/phase-4.1b-telemetry-ingest-api.md) | Per-event validation, idempotency, normalizing unknown names to `custom`, recomputed verify outcomes, rate limits and caps, hashed networks, retention | Same as 4.1a | 4.0a, 4.1a's event schema, D17 | Not started |
+| [4.2 Stats and directory](phases/phase-4.2-stats-and-directory.md) | Aggregates with small-cell suppression, a stats endpoint, `stats` in `list --json`, a static directory page | The agent picking a stack; success row 5 | 4.1b, 4.0b | Not started |
+| [4.3 MCP server](phases/phase-4.3-mcp-server.md) | `packages/mcp` exposing list, show, new (no launch) and verify as tools over stdio, built on the CLI's `--json` contract | Assumption 5 (entry point); D11 | 4.0a, evidence from D9 | Not started, gated |
 
 ## Dependency graph
 
@@ -310,10 +310,10 @@ answer is agreed it becomes a decision in the README log and the sub-phase recor
 
 | ID | Question | Options | Recommendation | Answered in |
 |---|---|---|---|---|
-| A1 | Distribution. The base compiles one Bun binary, but the problem statement's entry point is `npx quickstacks new`, which runs an npm package under Node | (a) Publish a Node ESM bundle to npm; keep the compiled binary as a test artifact or drop it. (b) Per-platform compiled binaries behind an npm wrapper, which brings signing and notarization. (c) Binary only via curl or Homebrew, which breaks `npx` and the "ask your agent" entry point | (a): one artifact that works wherever Node does, and core code already must run unchanged under Node | [0.2](phases/phase-0.2.md) |
-| A2 | Streaming output. Output and the logger buffer everything until the command ends | (a) NDJSON events on stdout in `--json` mode. (b) One result at the end, live progress on stderr in human mode only | (b): keeps "JSON commands produce one result", and agents' shell tools capture whole output anyway | [0.3](phases/phase-0.3.md) |
-| A3 | Signals during handoff. `bin.ts` turns SIGINT and SIGTERM into an interrupt of the whole program, but Ctrl+C during handoff belongs to the agent | (a) `exec` into the agent (Node can't). (b) Spawn the agent with inherited stdio, ignore SIGINT and SIGQUIT while it runs, forward SIGTERM and SIGHUP, exit with its status | (b), with output flushed before the spawn | [0.3](phases/phase-0.3.md), used by [1.4](phases/phase-1.4.md) |
-| A4 | Structured errors. Errors are fixed messages with no fields; a failing verify needs the step, its command and exit code | (a) Schema fields on tagged errors and a closed `details` object in the envelope, with `VerifyFailed` on exit 5. (b) Put failure data only in the result | (a) plus keeping verify's report on stdout; exit and retryable tables become one table | [0.3](phases/phase-0.3.md) |
+| A1 | Distribution. The base compiles one Bun binary, but the problem statement's entry point is `npx quickstacks new`, which runs an npm package under Node | (a) Publish a Node ESM bundle to npm; keep the compiled binary as a test artifact or drop it. (b) Per-platform compiled binaries behind an npm wrapper, which brings signing and notarization. (c) Binary only via curl or Homebrew, which breaks `npx` and the "ask your agent" entry point | (a): one artifact that works wherever Node does, and core code already must run unchanged under Node | [0.2](phases/phase-0.2-npm-distribution-artifact.md) |
+| A2 | Streaming output. Output and the logger buffer everything until the command ends | (a) NDJSON events on stdout in `--json` mode. (b) One result at the end, live progress on stderr in human mode only | (b): keeps "JSON commands produce one result", and agents' shell tools capture whole output anyway | [0.3](phases/phase-0.3-command-runtime.md) |
+| A3 | Signals during handoff. `bin.ts` turns SIGINT and SIGTERM into an interrupt of the whole program, but Ctrl+C during handoff belongs to the agent | (a) `exec` into the agent (Node can't). (b) Spawn the agent with inherited stdio, ignore SIGINT and SIGQUIT while it runs, forward SIGTERM and SIGHUP, exit with its status | (b), with output flushed before the spawn | [0.3](phases/phase-0.3-command-runtime.md), used by [1.4](phases/phase-1.4-handoff-and-entry-points.md) |
+| A4 | Structured errors. Errors are fixed messages with no fields; a failing verify needs the step, its command and exit code | (a) Schema fields on tagged errors and a closed `details` object in the envelope, with `VerifyFailed` on exit 5. (b) Put failure data only in the result | (a) plus keeping verify's report on stdout; exit and retryable tables become one table | [0.3](phases/phase-0.3-command-runtime.md) |
 
 ## Trust boundary
 

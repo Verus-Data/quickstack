@@ -18,10 +18,10 @@ committed (`d36b795`); CI hasn't run.
 
 A code review of the foundation on 2026-10-26 found bugs from the workspace move and gaps
 in the base. The fixes are applied and uncommitted; what changed is in
-[phase 0.1](phases/phase-0.1.md). `bun run check` passes from the root (77 hook tests, 51
+[phase 0.1](phases/phase-0.1-repo-baseline.md). `bun run check` passes from the root (77 hook tests, 51
 CLI tests, 8 binary tests). Three findings are product design and are open architecture
 questions A2-A4 in [the roadmap](02-roadmap.md#open-architecture-questions), answered by
-[phase 0.3](phases/phase-0.3.md).
+[phase 0.3](phases/phase-0.3-command-runtime.md).
 
 The full plan was written on 2026-10-26: [02-roadmap.md](02-roadmap.md) outlines five
 phases and their sub-phases, with the MVP cutline after phase 1, and each sub-phase has
@@ -43,10 +43,10 @@ edited; the plan reads it as quickstacks.
 
 | Step | Owner | Notes |
 |---|---|---|
-| Reserve `quickstacks` on npm | Maintainers | Free on 2026-10-26; not reserved ([0.0](phases/phase-0.0.md)) |
-| Review 00-requirements.md and 02-roadmap.md; decide A1 and D12 first, then D5-D7, D9, D13, D14 | Maintainers | The gating table in [0.0](phases/phase-0.0.md) says which can wait |
+| Reserve `quickstacks` on npm | Maintainers | Free on 2026-10-26; not reserved ([0.0](phases/phase-0.0-decisions-and-npm-name.md)) |
+| Review 00-requirements.md and 02-roadmap.md; decide A1 and D12 first, then D5-D7, D9, D13, D14 | Maintainers | The gating table in [0.0](phases/phase-0.0-decisions-and-npm-name.md) says which can wait |
 | Answer the open questions in 10 | Maintainers | Question 1 (registry audience) decides which stacks ship bundled |
-| Commit the review fixes and push; confirm CI `ci-ok` on `main` | Maintainers (agents commit on request), then Agent | [0.1](phases/phase-0.1.md) |
+| Commit the review fixes and push; confirm CI `ci-ok` on `main` | Maintainers (agents commit on request), then Agent | [0.1](phases/phase-0.1-repo-baseline.md) |
 | Add the hook permissions listed in `AGENTS.md` under "Pending user actions", if any | Maintainers | The agent can't edit `.claude/settings.json` |
 | Execute 0.3 (command runtime) | Agent | Needs only 0.1; can start before the decisions land |
 | Execute 0.2 (distribution) | Agent, after A1 and D12 | Changes `bin.ts`; land after 0.3 or agree the split first |

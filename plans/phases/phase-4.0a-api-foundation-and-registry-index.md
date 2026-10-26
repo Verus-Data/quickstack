@@ -1,7 +1,7 @@
 # Phase 4.0a: API foundation and the registry index
 
 Status: DRAFT 2026-10-26 (not agreed). Phase 4.0 is split in two: this file builds the
-API package and publishes the index; [4.0b](phase-4.0b.md) teaches the CLI to read it.
+API package and publishes the index; [4.0b](phase-4.0b-cli-remote-origin.md) teaches the CLI to read it.
 
 | Field | Value |
 |---|---|

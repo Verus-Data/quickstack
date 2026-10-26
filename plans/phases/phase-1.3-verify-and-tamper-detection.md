@@ -6,8 +6,8 @@ Status: DRAFT 2026-10-26 (not agreed)
 |---|---|
 | Goal | `quickstacks verify` runs the project's manifest steps in phases, probes dev servers, always tears down, fails when the steps were changed since `new` wrote them, and records each run locally, so an agent has an unambiguous definition of done |
 | Traces to | "When I'm an agent asked to set up a project, I want a target I can verify against, so I know when I'm done" (job 5); "That is why `verify` exists, why the brief refuses to let the agent weaken a step" (Jobs, the trust paragraph); success rows "The agent finishes without help", "It's faster than by hand", "The result is complete"; assumption "`verify` is enough of a definition of done to keep an agent honest" |
-| Depends on | [1.2](phase-1.2.md) (manifest, digest, state record), [0.3](phase-0.3.md) (process service, progress output, report-carrying failures, exit 5) |
-| Blocks | [1.6](phase-1.6.md), [2.0](phase-2.0.md) |
+| Depends on | [1.2](phase-1.2-new-scaffold-and-manifest.md) (manifest, digest, state record), [0.3](phase-0.3-command-runtime.md) (process service, progress output, report-carrying failures, exit 5) |
+| Blocks | [1.6](phase-1.6-bundled-stacks-and-mvp-gate.md), [2.0](phase-2.0-run-records-and-bench.md) |
 | Decisions needed | D14 (changed steps fail rather than warn). If the maintainers choose "warn", the `VerifyChanged` path becomes a warning in the result and outcome `changed` still never counts as green |
 | Decisions or questions this settles | Phase semantics; probe behavior; process-group cleanup; the result and run-record shapes; what counts as green; how failures are classified |
 

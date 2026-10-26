@@ -1,7 +1,7 @@
 # Phase 4.1a: Usage telemetry, CLI side
 
 Status: DRAFT 2026-10-26 (not agreed). Phase 4.1 is split in two: this file is the
-client in the CLI; [4.1b](phase-4.1b.md) is ingest in the API. They share the event
+client in the CLI; [4.1b](phase-4.1b-telemetry-ingest-api.md) is ingest in the API. They share the event
 schema in `packages/format` and ship in the same CLI release.
 
 | Field | Value |

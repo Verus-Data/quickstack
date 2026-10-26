@@ -6,8 +6,8 @@ Status: DRAFT 2026-10-26 (not agreed)
 |---|---|
 | Goal | `quickstacks new <stack> [dir]` writes the composed files, the brief and the manifest into a new project, initializes git, and returns a result an agent can act on, without running any command from any entry |
 | Traces to | "The CLI writes a few files and a brief, then hands off" (README product summary); job 1, "the same well-tested setup I'd build by hand, without spending the afternoon"; job 2, "a running dev environment with tests in a few minutes"; What this is not, "never runs a command from a stack" |
-| Depends on | [1.1](phase-1.1.md) |
-| Blocks | [1.3](phase-1.3.md) (reads the manifest), [1.4](phase-1.4.md) (hands off after `new`), [3.0](phase-3.0.md) (reuses the writer) |
+| Depends on | [1.1](phase-1.1-composition-and-brief.md) |
+| Blocks | [1.3](phase-1.3-verify-and-tamper-detection.md) (reads the manifest), [1.4](phase-1.4-handoff-and-entry-points.md) (hands off after `new`), [3.0](phase-3.0-add-fragments-to-repo.md) (reuses the writer) |
 | Decisions needed | D14 shapes the manifest's digest fields; the fields are written here whichever way D14 goes, so 1.2 does not block on it |
 | Decisions or questions this settles | Manifest format and location; the template variable set; target-directory rules; git behavior; `new --json` shape |
 

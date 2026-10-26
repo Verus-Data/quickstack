@@ -45,11 +45,11 @@ what can run in parallel, is [02-roadmap.md](02-roadmap.md). Phases 0 and 1 are 
 
 | Phase | Goal | Sub-phases | Traces to | Status |
 |---|---|---|---|---|
-| 0 Foundation | Name held, hard-to-reverse decisions made, `npx quickstacks` installs the real CLI, and the base can run long and interactive commands | [0.0](phases/phase-0.0.md) decisions and name, [0.1](phases/phase-0.1.md) repo baseline, [0.2](phases/phase-0.2.md) distribution, [0.3](phases/phase-0.3.md) command runtime | Open questions: npm name, brief budget, registry audience | In progress (0.1 mostly executed) |
-| 1 Core loop (MVP) | `list --json`, `new --sandbox`, the brief, `verify` with tamper detection, handoff, `validate` with the brief budget, three bundled stacks each taken to green by an agent | [1.0](phases/phase-1.0.md) to [1.6](phases/phase-1.6.md) | Jobs 1, 2 and 5; success rows 1-3; assumption 1 | Not started |
-| 2 Stacks that prove themselves | Run records, a fingerprint and bench, a scheduled canary, deterministic rot checks | [2.0](phases/phase-2.0.md) to [2.2](phases/phase-2.2.md) | "How does a stack prove it still works?"; success rows 1, 2 and 4 | Not started |
-| 3 Existing repos and authors | `add`, authoring tools, git sources with trust | [3.0](phases/phase-3.0.md) to [3.2](phases/phase-3.2.md) | Jobs 3 and 4; the stack author; success row 5 | Not started |
-| 4 The hosted side | The API and registry index, usage telemetry, stats and a directory, an MCP server | [4.0a](phases/phase-4.0a.md) to [4.3](phases/phase-4.3.md) | Success rows 4 and 5 across users; assumptions 5 and 6 | Not started |
+| 0 Foundation | Name held, hard-to-reverse decisions made, `npx quickstacks` installs the real CLI, and the base can run long and interactive commands | [0.0](phases/phase-0.0-decisions-and-npm-name.md) decisions and name, [0.1](phases/phase-0.1-repo-baseline.md) repo baseline, [0.2](phases/phase-0.2-npm-distribution-artifact.md) distribution, [0.3](phases/phase-0.3-command-runtime.md) command runtime | Open questions: npm name, brief budget, registry audience | In progress (0.1 mostly executed) |
+| 1 Core loop (MVP) | `list --json`, `new --sandbox`, the brief, `verify` with tamper detection, handoff, `validate` with the brief budget, three bundled stacks each taken to green by an agent | [1.0](phases/phase-1.0-entry-format-and-registry.md) to [1.6](phases/phase-1.6-bundled-stacks-and-mvp-gate.md) | Jobs 1, 2 and 5; success rows 1-3; assumption 1 | Not started |
+| 2 Stacks that prove themselves | Run records, a fingerprint and bench, a scheduled canary, deterministic rot checks | [2.0](phases/phase-2.0-run-records-and-bench.md) to [2.2](phases/phase-2.2-deterministic-rot-checks.md) | "How does a stack prove it still works?"; success rows 1, 2 and 4 | Not started |
+| 3 Existing repos and authors | `add`, authoring tools, git sources with trust | [3.0](phases/phase-3.0-add-fragments-to-repo.md) to [3.2](phases/phase-3.2-git-sources-and-trust.md) | Jobs 3 and 4; the stack author; success row 5 | Not started |
+| 4 The hosted side | The API and registry index, usage telemetry, stats and a directory, an MCP server | [4.0a](phases/phase-4.0a-api-foundation-and-registry-index.md) to [4.3](phases/phase-4.3-mcp-server.md) | Success rows 4 and 5 across users; assumptions 5 and 6 | Not started |
 
 The problem statement argues the canary "probably belongs earlier". The roadmap puts it
 first after the MVP (D8) and explains why not inside it.
@@ -62,7 +62,7 @@ then it moves here with an ID that never changes.
 
 | ID | Date | Decision and why | Governing detail |
 |---|---|---|---|
-| D0 | 2026-10-26 | The product is named quickstacks. `stacks` on npm is an unrelated package; `quickstack` and `quickstacks` both returned 404 on `npm view` on 2026-10-26 (free, not yet reserved). | [0.0](phases/phase-0.0.md) |
+| D0 | 2026-10-26 | The product is named quickstacks. `stacks` on npm is an unrelated package; `quickstack` and `quickstacks` both returned 404 on `npm view` on 2026-10-26 (free, not yet reserved). | [0.0](phases/phase-0.0-decisions-and-npm-name.md) |
 | D1 | 2026-10-26 | Not a template engine: `files/` holds only what is the same across versions; everything else is prose. Committed versions are what make templates age. | [PROBLEM_STATEMENT](../product/PROBLEM_STATEMENT.md#what-this-is-not) |
 | D2 | 2026-10-26 | Not an agent: the CLI never calls an LLM and never runs a command from an entry. The user's own agent does the work, and the trust story depends on the CLI executing nothing it reads. | [PROBLEM_STATEMENT](../product/PROBLEM_STATEMENT.md#what-this-is-not), [roadmap, Trust boundary](02-roadmap.md#trust-boundary) |
 | D3 | 2026-10-26 | Not a package manager or version resolver: versions are the agent's job on purpose. | [PROBLEM_STATEMENT](../product/PROBLEM_STATEMENT.md#what-this-is-not) |
