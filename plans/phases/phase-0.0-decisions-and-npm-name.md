@@ -1,64 +1,83 @@
 # Phase 0.0: Decisions and name
 
 Status: IN PROGRESS 2026-10-26. Competitive research done (see
-[00-requirements.md](../00-requirements.md#what-were-replacing)); everything else waits on
-the maintainers.
+[requirements.md](../requirements.md#what-were-replacing)); everything else waits on the
+maintainers.
 
 | Field | Value |
 |---|---|
-| Goal | The npm name is held, the requirements are agreed, and every decision that later sub-phases block on is either made or explicitly deferred with a reason |
+| Goal | The npm name is held, the requirements are agreed, every decision an MVP sub-phase blocks on is made or explicitly deferred with a reason, A2-A4 are reviewed, and the first stack is named |
 | Traces to | Open question "Is the npm name available? ... The name needs resolving before anything else in the roadmap matters"; open questions "Who is the bundled registry for?" and "What is the brief budget?" |
-| Depends on | nothing |
-| Blocks | 0.2 (A1, D12), 1.4 (D9), 1.5 (D5, D7), 1.6 (D5, D6, D13), phase 2 ordering (D8), 2.1 (D15), 4.0 (D16), 4.1 (D17) |
-| Decisions needed | All of D5-D9 and D12-D17, and A1. Not all at once: the table below says which ones gate the MVP |
-| Settles | Nothing by itself. Each agreed proposal moves to the README decisions log with its ID unchanged |
+| Depends on | nothing. The A2-A4 review needs [0.3a](phase-0.3a-errors-and-output.md) and [0.3b](phase-0.3b-processes-and-signals.md) to have landed their answers |
+| Blocks | [0.2](phase-0.2-npm-distribution-artifact.md) (A1, D12, D22, D23), [1.0](phase-1.0-entry-format-and-registry.md) (D19), [1.1](phase-1.1-composition-and-brief.md) and [1.6a](phase-1.6a-bundled-stack-content.md) drafting (D18), [1.3b](phase-1.3b-tamper-detection-and-run-records.md) (D14), [1.4](phase-1.4-handoff-and-entry-points.md) (D9), [1.5](phase-1.5-validate-and-brief-budget.md) (D5, D7), [1.6a](phase-1.6a-bundled-stack-content.md) (D5, D6, D13), [1.6b](phase-1.6b-mvp-gate-runs.md) (D20), [1.6c](phase-1.6c-first-release.md) (A2-A4 in the log, D20), phase 2 start (D8), [2.0b](phase-2.0b-bench.md) (D24), [4.0b](phase-4.0b-api-skeleton-and-hosting-spike.md) (D16), [4.0c](phase-4.0c-registry-index.md) and [4.0d](phase-4.0d-cli-remote-origin.md) (D21), [4.1a](phase-4.1a-telemetry-cli-client.md) (D17), [4.2d](phase-4.2d-dependency-telemetry-client-and-ingest.md) (D25), [3.5a](phase-3.5a-app-entry-kind.md) (D26), [3.4b](phase-3.4b-native-agent-adapters.md) (D27), [3.3a](phase-3.3a-release-and-deploy-fragments.md) (D28), [5.1](phase-5.1-scheduled-canary.md) (D15, D24) |
+| Decisions needed | A1 and D5-D9, D12-D28 from [requirements.md](../requirements.md#proposed-decisions), plus the maintainers' review of A2-A4. Not all at once: the gating table below says which ones the MVP needs. A "no" on any of them sends the blocked sub-phase back to its plan before work starts; it does not block this file |
+| Settles | Nothing by itself. Each agreed proposal moves to the [README decisions log](../README.md#decisions-log) with its ID unchanged |
 
 ## Scope
 
 In: reserving the name, reviewing the requirements, deciding or deferring each proposal,
-setting the one success target that has no number yet, and naming the first stack.
+reviewing A2-A4 once 0.3a and 0.3b have answered them, confirming the success-rate target,
+and naming the first stack.
 
-Out: any code. The repo work that was in the old foundation phase is in
-[0.1](phase-0.1-repo-baseline.md) (baseline) and [0.2](phase-0.2-npm-distribution-artifact.md) (distribution).
+Out: any code. The repo baseline is [0.1](phase-0.1-repo-baseline.md); distribution is
+[0.2](phase-0.2-npm-distribution-artifact.md).
 
-## Tasks
+## Design
+
+### Tasks
 
 | Task | Owner | Done when |
 |---|---|---|
 | Reserve `quickstacks` on npm with a placeholder package. Decide whether to hold `quickstack` too (open question 6) | maintainers | `npm view quickstacks` shows the placeholder |
-| Check `quickstacks` on GitHub and as a domain; record what's taken in this file | Agent | A short table below, with the date checked |
-| Review [00-requirements.md](../00-requirements.md) and mark it AGREED or list the changes | maintainers | Its `Status:` line says AGREED with a date |
-| Decide the MVP-gating proposals (table below) | maintainers | Each is in the decisions log or deferred here with a reason |
-| Set the target for "the agent finishes without help" | maintainers | A number in 00's success table. Proposal: 2 of 3 bundled stacks green with zero interventions at the MVP gate, then 80% of bench runs per stack per month in phase 2 |
-| Name the first stack (open question 4) | maintainers | Proposal in D13: `astro-blog`, the smallest brief with a dev server, so 1.3 exercises every D7 layer without also testing the long-brief assumption |
-| Competitive research | Agent | Done 2026-10-26 |
+| Check `quickstacks` on GitHub and as a domain; record what's taken in the name check below | an agent | The table below filled in, with the date checked |
+| Review [requirements.md](../requirements.md) and mark it AGREED or list the changes | maintainers | Its `Status:` line says AGREED with a date |
+| Decide the MVP-gating proposals (table below) | maintainers | Each is in the decisions log or under Deferred below with a reason |
+| Review A2-A4 as answered in [0.3a](phase-0.3a-errors-and-output.md) (A2, A4) and [0.3b](phase-0.3b-processes-and-signals.md) (A3) | maintainers | A2-A4 are in the decisions log before [1.6c](phase-1.6c-first-release.md) publishes. Exit 5, the `details` envelope and the signal policy are permanent once agents depend on them ([roadmap, MVP cutline](../roadmap.md#mvp-cutline)) |
+| Confirm the success-rate target for "the agent finishes without help" | maintainers | D20 agreed or changed: the gate is every bundled stack with one recorded green zero-intervention run with `tamperCheck: "full"`; two of three green on the first attempt is the success-rate target, not the gate; then 80% of bench and canary runs per stack per month (open question 21 asks whether the monthly window is too small) |
+| Name the first stack (open question 4) | maintainers | D13 agreed or changed. Proposal: `astro-blog`, the smallest brief with a dev server, so [1.3a](phase-1.3a-verify-runner-and-probes.md) exercises every D7 layer without also testing the long-brief assumption |
+| Answer the open questions that block MVP sub-phases: 7 ([1.5](phase-1.5-validate-and-brief-budget.md)), 8 and 22 ([1.6b](phase-1.6b-mvp-gate-runs.md)), 9 ([1.3b](phase-1.3b-tamper-detection-and-run-records.md)), 10 ([1.6a](phase-1.6a-bundled-stack-content.md)), 19 ([0.2](phase-0.2-npm-distribution-artifact.md)), 20 ([1.6c](phase-1.6c-first-release.md)) | maintainers | Each answered in [risks-and-open-questions.md](../risks-and-open-questions.md#open-questions-for-the-maintainers) or deferred below |
+| Competitive research | an agent | Done 2026-10-26 |
 
-## Which decisions gate what
+### Which decisions gate what
 
-The MVP needs seven answers. The rest can wait until their phase starts, and the
-roadmap is written so that a "not yet" on them doesn't block phase 1.
+The MVP needs thirteen answers (A1 and twelve proposals), plus the A2-A4 review. The
+other ten proposals can wait until their phase starts; the roadmap is written so a "not yet" on
+them doesn't block phase 1. The sub-phase each one blocks matches the
+[roadmap's decision table](../roadmap.md#decisions-and-open-architecture-questions-by-sub-phase).
 
-| ID | Proposal, short form | Gates | Needed by |
+| ID | Proposal, short form | Blocks | Needed by |
 |---|---|---|---|
 | A1 | Ship a Node ESM bundle on npm | 0.2 | Before 0.2 starts |
 | D12 | Node range `>=22` for the published package | 0.2 | Before 0.2 starts |
-| D5 | Brief budget numbers | 1.5 enforcement, and 1.6's stack prose | Before 1.5 |
+| D22 | macOS and Linux on the Node runtime only; Bun runtime refused | 0.2 | Before 0.2 starts |
+| D23 | Demo first: CI and scheduled inference move to phase 5 | The roadmap order; 0.2 and 1.6c scope | Before 0.2 starts |
+| D19 | Project-origin entries untrusted by default | 1.0 | Before 1.0 |
+| D18 | Entry format v1 | 1.1 start; 1.6a drafting | Before 1.1 |
+| D5 | Brief budget numbers | 1.5 enforcement, and 1.6a's stack prose | Before 1.5 |
 | D7 | Verify layers every stack must cover | 1.5 | Before 1.5 |
 | D9 | Both entry points, handoff kind recorded | 1.4 | Before 1.4 |
-| D6 | Bundled registry is a curated catalog | 1.6 | Before 1.6 |
-| D13 | The three MVP stacks | 1.6 | Before 1.6 (drafting can start earlier) |
-| D14 | Changed verify steps fail verify | 1.3 | Before 1.3 |
-| D8 | Canary right after the MVP | Phase 2 start | After the MVP gate |
-| D15 | Where the canary runs, on whose agent account | 2.1 | Before 2.1 |
-| D16 | API hosting | 4.0 | Before phase 4 |
-| D17 | Telemetry consent | 4.1 | Before 4.1 |
+| D14 | Changed verify steps fail verify | 1.3b | Before 1.3b |
+| D6 | Bundled registry is a curated catalog | 1.6a | Before 1.6a |
+| D13 | The three MVP stacks and their word targets | 1.6a | Before 1.6a (drafting can start after 1.0) |
+| D20 | The MVP gate rule | 1.6b, 1.6c | Before 1.6b |
+| A2, A4 | Live progress on stderr only; closed `details` and exit 5 | 1.6c publishes | Reviewed after 0.3a; in the log before 1.6c |
+| A3 | Signal policy for interactive children | 1.6c publishes | Reviewed after 0.3b; in the log before 1.6c |
+| D8 | Canary in phase 5; local proof before authoring and sources | Phase 2 start | After the MVP gate |
+| D24 | Headless agent auth by long-lived token | 2.0b, 5.1 | Before 2.0b |
+| D16 | API hosting | 4.0b | Before 4.0b |
+| D21 | Signed default index | 4.0c, 4.0d | Before 4.0c |
+| D17 | Telemetry consent | 4.1a | Before 4.1a |
+| D15 | Where the canary runs, on whose agent account, with what isolation and token | 5.1 | Before 5.1 |
+| D28 | The `package_scope` template variable (entry `schemaVersion: 2`) | 3.3a | Before 3.3a |
+| D27 | Native adapters for Codex, OpenCode and Cursor | 3.4b | Before 3.4b |
+| D26 | The `app` kind and its two-phase brief (entry `schemaVersion: 3`) | 3.5a, 3.5b | Before 3.5a |
+| D25 | Dependency-version telemetry, allowlisted names only (needs D17) | 4.2d | Before 4.2d |
 
-A2-A4 are architecture questions the Agent answers in [0.3](phase-0.3-command-runtime.md) and the
-maintainers review there; they don't need a decision here.
+A2-A4 are architecture questions an agent answers in 0.3a and 0.3b, building to the
+roadmap's recommendation. Building first is deliberate: the review is of working code and
+tests, and the review can still change details because nothing is published until 1.6c.
 
-## Name check
-
-To be filled in by the Agent.
+### Name check
 
 | Where | `quickstacks` | `quickstack` | Checked |
 |---|---|---|---|
@@ -66,26 +85,34 @@ To be filled in by the Agent.
 | GitHub org or repo | | | |
 | Domain | | | |
 
+### Deferred
+
+Decisions the maintainers chose not to make yet, each with its reason and the sub-phase
+that will ask again. Empty until the review.
+
+## Files and areas touched
+
+`plans/README.md` (decisions log), `plans/requirements.md` (status line, proposals that
+move out), `plans/risks-and-open-questions.md` (answered questions), and this file. No
+code.
+
 ## Acceptance tests
 
 None in code. The checks are on the documents:
 
-- Every ID in the gating table has a row in either the README decisions log or the
-  "Deferred" list below, with a date.
+- Every MVP row in the gating table (A1 through D20, and A2-A4) has a row in either the
+  README decisions log or the Deferred list above, with a date.
 - `grep -n "Status:" plans/*.md plans/phases/*.md` shows no file without a status line.
-
-## Deferred
-
-Decisions the maintainers chose not to make yet, each with its reason and the
-sub-phase that will ask again. Empty until the review.
 
 ## Exit criteria
 
-- `npm view quickstacks` shows our package.
-- 00-requirements.md is AGREED.
-- A1, D5, D6, D7, D9, D12, D13 and D14 are each in the decisions log or deferred with a
-  reason. Anything deferred that gates an MVP sub-phase blocks that sub-phase, not this
-  one.
+- `npm view quickstacks` shows the maintainers' package.
+- requirements.md is AGREED.
+- A1, D5, D6, D7, D9, D12, D13, D14 and D18-D20, D22 and D23 are each in the decisions
+  log or deferred with a reason. Anything deferred that gates an MVP sub-phase blocks
+  that sub-phase, not this one.
+- A2-A4 are in the decisions log, or this file stays IN PROGRESS for that row alone
+  until they are; 1.6c checks it before publishing.
 - The first stack is named.
 - `bun run check` is still green from the repo root (no code changes are expected; this
   is the same check [0.1](phase-0.1-repo-baseline.md) ends with).
@@ -95,5 +122,8 @@ sub-phase that will ask again. Empty until the review.
 - Reserving a name with a placeholder package can trip npm's policy on squatting if
   nothing is published for a long time. If phase 1 slips, publish a real 0.0.x with
   `doctor` and `--version` rather than leave the placeholder.
-- Eight decisions in one review is a lot. If the review stalls, take A1 and D12 first:
-  they unblock 0.2, and nothing in 0.3 or 1.0-1.2 waits on the rest.
+- Thirteen decisions in one review is a lot. If the review stalls, take A1, D12, D22 and
+  D23 first: they unblock 0.2. 0.3a and 0.3b need no decision, and 1.0 needs only D19.
+- Reviewing A2-A4 after the code exists risks the review rubber-stamping what was built.
+  0.3a and 0.3b each state the options they rejected, so the maintainers review a choice,
+  not only a diff.

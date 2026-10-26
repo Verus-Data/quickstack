@@ -1,6 +1,6 @@
 # Handoff for the next quickstacks session
 
-Status: CURRENT 2026-10-26 (full plan written; awaiting the maintainers' review)
+Status: DRAFT 2026-10-26 (full plan written; awaiting the maintainers' review)
 
 Start here, then read repo `AGENTS.md`, the README's
 [product summary](README.md#product-to-preserve), and
@@ -10,43 +10,55 @@ to `archive/` and leave a link.
 
 ## Current state (2026-10-26)
 
-Planning, with boilerplate in place. The repo holds the problem statement, this plan
-folder, and the `typescript-cli` base ported and renamed to quickstacks: `doctor` and
-`--version` only, no product features. The repo is a bun-workspace monorepo (D11): the CLI
-is `packages/cli`, with `packages/api` and `packages/mcp` as placeholders for the API and MCP server. The boilerplate is
-committed (`d36b795`); CI hasn't run.
+Planning, with the CLI base in place. The repo holds the problem statement, this plan
+folder, and the `typescript-cli` base as quickstacks: `doctor` and `--version` only, no
+product features. The repo is a bun-workspace monorepo (D11): the CLI is `packages/cli`,
+with `packages/api` and `packages/mcp` as placeholders for the API and MCP server. The
+base and the foundation review's fixes are committed (check `git log` for what landed;
+this file doesn't cite hashes), so [0.1](phases/phase-0.1-repo-baseline.md) is executed.
+Whether `ci-ok` passed on `main` for the latest pushed commit: unknown; check with
+`gh run list` before building on it.
 
-A code review of the foundation on 2026-10-26 found bugs from the workspace move and gaps
-in the base. The fixes are applied and uncommitted; what changed is in
-[phase 0.1](phases/phase-0.1-repo-baseline.md). `bun run check` passes from the root (77 hook tests, 51
-CLI tests, 8 binary tests). Three findings are product design and are open architecture
-questions A2-A4 in [the roadmap](02-roadmap.md#open-architecture-questions), answered by
-[phase 0.3](phases/phase-0.3-command-runtime.md).
+Three foundation questions are product design and are open architecture questions A2-A4
+in [the roadmap](roadmap.md#open-architecture-questions), answered by
+[0.3a](phases/phase-0.3a-errors-and-output.md) and
+[0.3b](phases/phase-0.3b-processes-and-signals.md).
 
-The full plan was written on 2026-10-26: [02-roadmap.md](02-roadmap.md) outlines five
-phases and their sub-phases, with the MVP cutline after phase 1, and each sub-phase has
-its own file in [phases/](phases/). Competitive research is done and recorded in
-[00-requirements.md](00-requirements.md#what-were-replacing). The old single
-foundation phase file was folded into phases 0.0-0.2 and deleted.
+The plan, in brief:
 
-D0-D4, D10 and D11 are settled. D5-D9 and D12-D17 are proposals in
-[00-requirements.md](00-requirements.md#proposed-decisions); the roadmap's decision table
-says which sub-phase each one blocks. A1-A4 are open, each assigned to a phase 0
-sub-phase. The repo and stack facts the plan relies on are in
-[the roadmap](02-roadmap.md#repository-and-stack); `AGENTS.md` is the code-level
-reference.
+- [roadmap.md](roadmap.md) has six phases. Phases 0 and 1 are the MVP and the
+  `npx quickstacks` demo, published to npm by hand. Phase 5 holds every CI change and
+  everything that runs an agent on a schedule (D23, proposed).
+- The roadmap's shared-contracts table is the single owner of every cross-phase type,
+  symbol, error tag and schema version, and its [trust model](roadmap.md#trust-model)
+  is the one place trust rules live. Phase files cite both.
+- Each sub-phase is sized for one agent; large ones are split with letter suffixes
+  (for example [1.2a](phases/phase-1.2a-new-scaffold-and-templates.md) and
+  [1.2b](phases/phase-1.2b-manifest-state-and-detection.md)). The roadmap's phase tables
+  and dependency graph list every file.
+- Below the MVP cutline on purpose: `new --dry-run` and naming options
+  ([3.1c](phases/phase-3.1c-new-dry-run-and-naming.md)), the agent skill
+  ([3.4c](phases/phase-3.4c-agent-skill.md)), the rot checks that only matter once
+  stacks age ([2.2](phases/phase-2.2-deterministic-rot-checks.md)), and everything in
+  phases 2-5.
 
-The problem statement still uses the earlier working name "stacks". It hasn't been
-edited; the plan reads it as quickstacks.
+D0-D4, D10 and D11 are settled. D5-D9 and D12-D28 are proposals in
+[requirements.md](requirements.md#proposed-decisions); the roadmap's decision table says
+which sub-phase each one blocks. D5 (the brief budget) is a hypothesis whose evidence is
+[1.6b](phases/phase-1.6b-mvp-gate-runs.md)'s gate runs. A1-A4 are open.
+
+The problem statement calls the product "stacks"; it hasn't been edited, and the plan
+reads it as quickstacks.
 
 ## Next steps
 
 | Step | Owner | Notes |
 |---|---|---|
 | Reserve `quickstacks` on npm | Maintainers | Free on 2026-10-26; not reserved ([0.0](phases/phase-0.0-decisions-and-npm-name.md)) |
-| Review 00-requirements.md and 02-roadmap.md; decide A1 and D12 first, then D5-D7, D9, D13, D14 | Maintainers | The gating table in [0.0](phases/phase-0.0-decisions-and-npm-name.md) says which can wait |
-| Answer the open questions in 10 | Maintainers | Question 1 (registry audience) decides which stacks ship bundled |
-| Commit the review fixes and push; confirm CI `ci-ok` on `main` | Maintainers (agents commit on request), then Agent | [0.1](phases/phase-0.1-repo-baseline.md) |
-| Add the hook permissions listed in `AGENTS.md` under "Pending user actions", if any | Maintainers | The agent can't edit `.claude/settings.json` |
-| Execute 0.3 (command runtime) | Agent | Needs only 0.1; can start before the decisions land |
-| Execute 0.2 (distribution) | Agent, after A1 and D12 | Changes `bin.ts`; land after 0.3 or agree the split first |
+| Review requirements.md and roadmap.md; decide A1, D12, D22 and D23 first, then D5-D7, D9, D13, D14, D18-D20 | Maintainers | The gating table in [0.0](phases/phase-0.0-decisions-and-npm-name.md) says which can wait |
+| Review A2-A4 as answered in 0.3a and 0.3b | Maintainers | Must be in the decisions log before [1.6c](phases/phase-1.6c-first-release.md) publishes |
+| Answer the open questions in [risks-and-open-questions.md](risks-and-open-questions.md) | Maintainers | Question 1 (registry audience) decides which stacks ship bundled |
+| Execute 0.3a (errors and output) | Agent | Needs only 0.1. Its answers to A2 and A4 are recommendations until the maintainers agree them; build them so the review can still change the details |
+| Execute 0.3b (processes and signals) | Agent, after 0.3a | Same rule for A3 |
+| Execute 0.2 (distribution) | Agent, after A1, D12 and D22 | Changes `bin.ts`; land after 0.3b, or rebase on it |
+| Decide open questions 24-28 (behavior kept on purpose in phases 0-1) | Maintainers | Before 1.0, 1.1, 1.3b and 1.6c, as each question says; the rest (D25-D28, questions 29-31) can wait for phases 3-4 |

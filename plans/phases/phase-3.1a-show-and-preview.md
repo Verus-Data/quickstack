@@ -1,0 +1,166 @@
+# Phase 3.1a: `show` and the brief preview
+
+Status: DRAFT 2026-10-26 (not agreed)
+
+| Field | Value |
+|---|---|
+| Goal | `quickstacks show <id>` prints one stack or fragment's metadata, origin, trust, full guidance, shipped files and last recorded run; `quickstacks validate --brief <stack>` prints the exact brief an agent would get, with word counts against the D5 caps and the composition's fingerprint, without scaffolding anything |
+| Traces to | Job 3: "When I've settled on a stack I rebuild often, I want to write it down once, including the agent tooling, so every new project starts where the last one ended." The stack author: "the only proof a stack works is an end-to-end agent run, and nothing tells them when their prose has gone stale." |
+| Depends on | 1.5 (`validate`, its canonical render and the D5 checks), 2.0a (`fingerprint`, `composeFiles`), 2.0c (the ledger and its service layer) |
+| Blocks | 3.1b (`create --from` shows `show`'s report before copying an untrusted entry), 3.1c (`new --dry-run` reuses the in-memory composition path). 3.2a uses `show`'s report as its interim trust report (soft) |
+| Decisions needed | D5 (proposed): the caps the preview prints against; a different budget changes only the numbers. D19 (proposed): `show` reports `trusted` as 1.0 computes it |
+| Settles | What `show` prints and which entries get a last run; how the preview picks its agent and personal defaults |
+
+## Scope
+
+In:
+
+- `quickstacks show <id> [--kind stack|fragment] [--json]`.
+- `quickstacks validate [path] --brief <stack> [--with a,b] [--without c] [--sandbox] [--json]`.
+- `ShowReport` and `PreviewResult` schemas.
+
+Out:
+
+- `create`, the `preset` setting and the authoring guide (3.1b).
+- A "fragments this project could still add" hint in `show`. 3.0's `missingRequired` covers the required case; the optional case can follow if authors ask.
+- Any change to shadowing. The user and project origins and their `shadows` marks are 1.0's; `show` only reports them.
+- Any CI wiring. The existing `ci.yml` runs these tests unchanged (D23).
+
+## Design
+
+### Where this fits
+
+This sub-phase gives authors and reviewers a way to read an entry and its composed brief without running `new`. 3.1b then adds the commands that write entries (`create`) and the guide that tells authors how; it uses `show`'s report when copying an untrusted entry. 3.2a reuses the same report for `quickstacks trust` until 3.2b's allowlist report replaces it. Both commands here are read-only: they compose in memory and start no process ([Trust model](../roadmap.md#trust-model) point 1).
+
+### `show`
+
+Looks the id up with 1.0's `Registry.get`, in origin precedence order. Ids are unique within a kind; a fragment may share an id with a stack or an app, but a stack and an app may not share one ([roadmap, Contracts: Entry and its listing](../roadmap.md#types-and-schemas)). When two kinds share the id, `--kind` picks one; without it, that is `BadInput` naming both. 3.5a adds `app` to `--kind` under the same rule.
+
+Human output:
+
+```
+Go CLI (go-cli), stack, origin bundled, trusted
+A Go command-line tool with ...
+Fragments: required none; default agent-ops, git-hooks, ci-github; optional goreleaser
+Verify: install, build, lint, test, smoke, readme-filled
+Brief: 2,980 words with defaults (cap 5,000)
+Last run: green 2026-11-02, same content
+--- guidance ---
+<body, every conditional branch>
+```
+
+`show --json` decodes against `ShowReport` (`src/schemas/show.ts`):
+
+| Field | Value |
+|---|---|
+| `id`, `kind`, `name`, `description`, `tags`, `deps`, `tools`, `decisions`, `env`, `commands` | From the entry's meta |
+| `origin`, `trusted`, `shadows`, `path` | From `Entry` ([roadmap, Contracts: Entry and its listing](../roadmap.md#types-and-schemas)) |
+| `fragments` | Stack only: `{ required, default, optional }` |
+| `appliesTo`, `requires`, `conflicts`, `needsOwnRepo`, `fits` | Fragment only. `fits` lists stack ids whose id or tags match `appliesTo` |
+| `verify` | Every step as written, every field |
+| `files` | Every shipped file with its source path and its output path (dotfile names unescaped, `.tmpl` stripped, adapters labeled by agent) |
+| `body` | Unfiltered: every conditional branch, markers kept, so an author or reviewer sees all of it |
+| `bodyWords`, `bodyCap` | Numbers: `countWords` of the entry's body, and its per-entry cap from D5 |
+| `briefWords`, `briefCap` | `briefWords` is a number, the same quantity it is everywhere ([roadmap, Contracts: Word count](../roadmap.md#types-and-schemas)): `countWords` of the composed brief on 1.5's canonical render (stack with required and default fragments). `null` for a fragment. `briefCap` is the composed cap |
+| `lastRun` | See below |
+
+`show` is the human-readable review of an entry: it prints everything an agent would follow (body, `commands`, verify `run`s) and every file the entry would write. That is why 3.1b and 3.2a use it as a review before trust is granted.
+
+### `lastRun`
+
+The ledger ([Contracts: Ledger](../roadmap.md#types-and-schemas)) records runs of bundled content only, so `lastRun` comes from it only for `origin: "bundled"` entries. Every other origin gets `lastRun: null`, including a user copy that shadows a bundled id: its content is not what the ledger ran.
+
+For a bundled stack, `lastRun` is the newest `LedgerRecord` for that stack: `{ date, result, fingerprint, sameContent }`. `sameContent` is whether that record's fingerprint equals the fingerprint of the stack's default composition rendered now, through `composeFiles` and `fingerprint` with the record's agent and preset. For a bundled fragment, it is the newest record whose fragments include it, with that record's stack named, and `sameContent` compares against the same composition rendered now. A ledger with no matching record gives `null`.
+
+`sameContent: false` means the CLI's bundled content changed since the recorded run, typically in a development checkout. 2.2's "changed since last green" note is the `validate` view of the same comparison; `show` does not duplicate its rules.
+
+### The brief preview
+
+`validate --brief <stack>` composes through 1.1's `compose` and renders through the same brief renderer `new` uses, on 1.5's canonical render context (project name, year and environment facts fixed), so output is reproducible and its word count matches what `validate` budgets.
+
+It deliberately renders the stack, not the author's personal setup:
+
+- Adapters target one agent: `Settings.agents[0]`, or `claude` when `agents` is unset. A brief with several adapter targets differs only in its adapter list, and an author reads one brief.
+- `Settings.always` is ignored. The preview shows what anyone else running the stack gets; `--with` adds fragments explicitly.
+- The preset comes from `--sandbox` only.
+
+Human output prints the brief to stdout and the size report to stderr. `--json` returns `PreviewResult`:
+
+```json
+{
+  "stack": "go-cli",
+  "fragments": ["agent-ops", "git-hooks", "ci-github"],
+  "preset": "sandbox",
+  "agent": "claude",
+  "brief": "# Build example: Go CLI\n...",
+  "words": {
+    "brief": 2980,
+    "cap": 5000,
+    "entries": [{ "id": "go-cli", "body": 1266, "cap": 2000 }]
+  },
+  "fingerprint": "sha256:...",
+  "findings": []
+}
+```
+
+`findings` are 1.5's findings for the composed entries, with 1.5's severities ([Other shared facts: validate severities](../roadmap.md#other-shared-facts)). Any `error` (a composed brief over the cap among them) exits 2 with `ValidationFailed`, which keeps its result, so stdout still holds the brief and the author can read what to cut.
+
+### Failure modes
+
+| Case | Result | Exit |
+|---|---|---|
+| `show` or `--brief` unknown id | `NotFound` with the nearest ids | 2 |
+| Id is both a stack and a fragment, no `--kind` | `BadInput` | 2 |
+| `--brief` names a fragment | `BadInput`; preview takes a stack | 2 |
+| Entry fails to decode | `EntryInvalid` with the file and first schema issue | 2 |
+| Composition conflict (`--with`) | `ComposeConflict` | 2 |
+| Preview has an error finding | `ValidationFailed`, result kept | 2 |
+| Ledger unreadable | `lastRun: null` and one warning on stderr; `show` still succeeds | 0 |
+
+No new error tags.
+
+### Decided here
+
+| Question | Decision | Why |
+|---|---|---|
+| Which entries get `lastRun` | Bundled only | The ledger only records bundled content; any other match would be a false claim |
+| Preview agent | `Settings.agents[0]` | One readable brief; the agent list only changes adapters |
+| Preview and `always` | Ignored | An author previews the stack as others get it |
+| `show` body | Unfiltered | The filtered view is the preview |
+
+## Files and areas touched
+
+| Path | Change |
+|---|---|
+| `packages/cli/src/commands/show.ts` | New thin handler |
+| `packages/cli/src/core/show.ts` | Builds `ShowReport` from registry, composition and ledger |
+| `packages/cli/src/schemas/show.ts` | `ShowReport`, `PreviewResult` |
+| `packages/cli/src/commands/validate.ts` | `--brief`, `--with`, `--without`, `--sandbox` |
+| `packages/cli/src/cli.ts` | Register `show` |
+| `packages/cli/tests/show.test.ts`, `preview.test.ts` | New |
+| `packages/cli/README.md`, `AGENTS.md` | Document both commands |
+
+## Acceptance tests
+
+Through `tests/helpers/cli.ts` with the fixture registry. The test helper provides a fixture ledger by supplying 2.0c's ledger service layer over a fixture `runs.json`; `Host` carries no ledger.
+
+1. `show <bundled-stack> --json` decodes against `ShowReport`, with `lastRun` from the fixture ledger and `sameContent: true`.
+2. Editing the fixture bundled stack's body between two `show` runs flips `sameContent` to false.
+3. A user-directory copy of the same id shows `origin: "user"`, `shadows: ["bundled"]` and `lastRun: null`; a project-origin entry shows `trusted: false` and `lastRun: null`.
+4. A bundled fragment's `lastRun` names the stack of the newest record that included it.
+5. `show` lists every shipped file with its output path, including an escaped dotfile shown unescaped and a `.tmpl` shown without the suffix.
+6. `validate --brief <stack> --sandbox --json` returns the same brief text `new <stack> --sandbox --no-launch` writes to `BRIEF.md` when run under 1.5's canonical context (directory named as that context's project, TestClock at its year, `agents` unset), and the same `fingerprint` `new --json` records.
+7. With `Settings.always: ["ci-github"]` and `agents: ["codex", "claude"]`, the preview contains no `ci-github` body and renders `codex` adapters only.
+8. A fixture stack over the composed cap: exit 2, stdout holds the brief, the last stderr line is the `ValidationFailed` envelope.
+9. Neither command starts a process (the `Processes` test layer records none).
+
+## Exit criteria
+
+- Acceptance tests pass; `bun run check` is green from the repo root.
+- `AGENTS.md` and the CLI README document `show` and `validate --brief`.
+
+## What this plan may get wrong
+
+- `show` composes to count words and compare fingerprints, so it is slower than `list`. If it is slow on large stacks, `briefWords` and `sameContent` can move behind a flag.
+- The preview's equivalence with `new` depends on 1.5's canonical context fixing every environment fact the brief mentions (missing tools, git state). If it misses one, test 6 will show it and the context, not the preview, should be fixed.
+- Authors with several agents may want to preview each. An override flag for the preview's adapter agent is a small addition if asked.

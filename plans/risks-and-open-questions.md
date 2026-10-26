@@ -1,71 +1,162 @@
 # Risks and open questions
 
 Status: DRAFT 2026-10-26, from the assumptions and open questions in
-[PROBLEM_STATEMENT.md](../product/PROBLEM_STATEMENT.md#assumptions).
+[PROBLEM_STATEMENT.md](../product/PROBLEM_STATEMENT.md#assumptions) and the demo-first
+proposal (D23).
 
 ## Risks
 
 | Risk | Why it matters | Mitigation |
 |---|---|---|
-| Agents don't follow a long brief faithfully (confidence medium at 3,000 words, low at 10,000) | Skipped instructions show up as incomplete projects that still look finished; this is the assumption the problem statement says to test next | Set the brief budget (D5) before the second stack; run a large and a small brief and count hesitations and skipped instructions |
-| Stack prose grows without a budget | Briefs tripled in size across the first five stacks; past a point nobody cuts them | `validate` enforces the budget (D5); detail that only one project needs goes into a fragment |
-| Version-less prose rots anyway (confidence medium) | The product's main advantage over templates is unproven past one stack | Record prose edits per stack per quarter; the canary ([2.1](phases/phase-2.1-scheduled-canary.md), straight after the MVP under D8) |
-| `verify` isn't enough to keep an agent honest (confidence medium) | An agent can reach green with no-op targets or weakened tests, and the user trusts a project they shouldn't | Tamper detection on verify steps; the brief forbids weakening a step; changed steps fail verify (D14, [1.3](phases/phase-1.3-verify-and-tamper-detection.md)); inspect projects from bench runs ([2.0](phases/phase-2.0-run-records-and-bench.md)) for no-op targets and weakened tests |
-| Stacks are only tested by hand | The only quality signal is a manual end-to-end run nobody has time for; stacks silently break | Run records from the MVP on ([1.3](phases/phase-1.3-verify-and-tamper-detection.md)); bench and ledger ([2.0](phases/phase-2.0-run-records-and-bench.md)); the canary (D8) |
-| Nobody besides the author writes a stack (confidence low) | Jobs 3 and 4 and the registry plans assume they will | Make release 1 worth using with bundled stacks alone; watch for any outside stack before investing in third-party sources |
-| A community registry never forms (confidence low) | Work on third-party sources and a directory would be wasted | Third-party sources wait until someone outside asks for them |
-| The entry point is wrong (confidence low) | Handoff to the agent on PATH matches how the author works, not necessarily anyone else | Support both entry points and measure which is used (D9) |
-| Third-party stacks ship hooks or scripts the user's agent will run | A source is a supply-chain path into the user's machine | The CLI never runs entry commands (D2); untrusted origins are marked in `list --json`; git sources ship with pinning, a first-use listing of executables and confirmation ([3.2](phases/phase-3.2-git-sources-and-trust.md)) |
-| The base stack ships a Bun binary, but users arrive through `npx` | Without a Node-runnable package, the problem statement's first command fails | Decide A1 in [0.2](phases/phase-0.2-npm-distribution-artifact.md) ([roadmap](02-roadmap.md#open-architecture-questions)); e2e tests the packed tarball that's actually published |
-| The name is taken before it's published | `stacks` was lost this way | Reserve `quickstacks` on npm in [0.0](phases/phase-0.0-decisions-and-npm-name.md) |
-| Agents running inside sandboxes can't write the user's state directory | The second copy of the step digest and first-green times go missing, so tamper detection falls back to the manifest's own copy | Commands still work and report `stateRecord: false`; bench runs use a writable throwaway HOME ([1.2](phases/phase-1.2-new-scaffold-and-manifest.md), [2.0](phases/phase-2.0-run-records-and-bench.md)) |
-| The canary depends on one maintainer machine and one agent subscription (D15) | A machine that's off or a lapsed subscription looks like stacks passing silently | The canary reports its own last successful run; a missed schedule is itself an alert ([2.1](phases/phase-2.1-scheduled-canary.md)) |
-| Telemetry, once added, costs trust in a tool that already hands a repo to an agent | The emotional job is trust | No collection before D17 and a published schema; the first enabled run sends nothing ([4.1a and 4.1b](phases/phase-4.1a-telemetry-cli-client.md)) |
+| Agents don't follow a long brief faithfully (confidence medium at 3,000 words, low at 10,000) | Skipped instructions show up as incomplete projects that still look finished; this is the assumption the problem statement says to test next | Set the brief budget (D5) before the second stack; run a brief near 3,000 words and one near 5,000 (D13) and count hesitations and skipped instructions. The budget keeps stacks away from 10,000 words; it sidesteps the 10,000-word question rather than answering it, and the plan has no run that tests it |
+| Stack prose grows without a budget | Each stack and fragment adds a little prose for one more case, so briefs can grow several times over across a handful of stacks; past a point nobody cuts them | `validate` enforces the budget (D5); detail that only one project needs goes into a fragment |
+| Version-less prose rots anyway (confidence medium) | The product's main advantage over templates is unproven past one stack | Record prose edits per stack per quarter; bench reruns by hand ([2.0b](phases/phase-2.0b-bench.md)); the canary ([5.1](phases/phase-5.1-scheduled-canary.md), phase 5 under D8 and D23) |
+| Until phase 5, nothing reruns stacks on a schedule (D23) | Rot shows up only when a maintainer reruns the bench or a user reports it | The bench makes a rerun one command per stack; `validate`'s rot checks ([2.2](phases/phase-2.2-deterministic-rot-checks.md)) run without an agent; the ledger shows each stack's last green date |
+| `verify` isn't enough to keep an agent honest (confidence medium) | An agent can reach green with no-op targets or weakened tests, and the user trusts a project they shouldn't | Tamper detection on verify steps with the coverage in the [trust model](roadmap.md#trust-model) point 5; the brief forbids weakening a step and says what counts as weakening; changed steps fail verify (D14, [1.3b](phases/phase-1.3b-tamper-detection-and-run-records.md)); inspect projects from bench runs ([2.0b](phases/phase-2.0b-bench.md)) for no-op targets and weakened tests |
+| Stacks are only tested by hand | The only quality signal is a manual end-to-end run nobody has time for; stacks silently break | Run records from the MVP on ([1.3b](phases/phase-1.3b-tamper-detection-and-run-records.md)); ledger and bench ([2.0c](phases/phase-2.0c-run-ledger.md), [2.0b](phases/phase-2.0b-bench.md)); the canary (D8, [5.1](phases/phase-5.1-scheduled-canary.md)) |
+| Nobody besides the maintainers writes a stack (confidence low) | Jobs 3 and 4 and the registry plans assume they will | Make release 1 worth using with bundled stacks alone; watch for any outside stack before investing in third-party sources |
+| A community registry never forms (confidence low) | Work on third-party sources and a directory would be wasted | Third-party sources ([3.2a](phases/phase-3.2a-git-sources-and-untrusted-origin.md)) start only when someone outside the maintainers asks for them; nothing in phase 4 depends on them |
+| The entry point is wrong (confidence low) | Handoff to the agent on PATH matches how the maintainers work, not necessarily anyone else | Support both entry points and measure which is used (D9) |
+| A cloned repo ships project-local entries | An agent that picks a stack the repo shipped follows prose nobody reviewed | Every project-origin entry is untrusted until allowlisted (D19, [trust model](roadmap.md#trust-model) point 2); the agent never picks one unless the user names it |
+| Third-party stacks ship hooks or scripts the user's agent will run | A source is a supply-chain path into the user's machine | The CLI never runs entry commands (D2); untrusted origins are marked in `list --json`; git sources are pinned, fetched with hardened git calls, and confirmed after an allowlist trust report ([3.2a](phases/phase-3.2a-git-sources-and-untrusted-origin.md), [3.2b](phases/phase-3.2b-source-updates-and-trust-report.md), trust model point 6) |
+| The base stack ships a Bun binary, but users arrive through `npx` | Without a Node-runnable package, the problem statement's first command fails | Decide A1 in [0.2](phases/phase-0.2-npm-distribution-artifact.md) ([roadmap](roadmap.md#open-architecture-questions)); local e2e tests the packed tarball that's actually published |
+| The name is taken before it's published | An unreserved name can be taken by an unrelated package at any time, and a lookalike can follow | Reserve `quickstacks` on npm in [0.0](phases/phase-0.0-decisions-and-npm-name.md) |
+| A manual publish ships something the gate didn't test (D23) | No release workflow checks the tarball before it reaches npm | [1.6c](phases/phase-1.6c-first-release.md) publishes the exact tarball 1.6b's gate ran, by file digest; [5.0](phases/phase-5.0-ci-release-and-checks.md) automates it |
+| Agents running inside sandboxes can't write the user's state directory | The second copy of the step digest and first-green times go missing, so tamper detection falls back to the manifest's own copy | Commands still work and report `stateRecord: false`; `manifest-only` never passes the gate (D20) ([1.2b](phases/phase-1.2b-manifest-state-and-detection.md), [1.3b](phases/phase-1.3b-tamper-detection-and-run-records.md)) |
+| Headless agent logins don't survive a throwaway HOME | Copied OAuth credentials rotate and invalidate the original; keychain logins can't be copied | Long-lived tokens passed by env (D24) |
+| The canary depends on one maintainer machine and one agent subscription (D15) | A machine that's off or a lapsed subscription looks like stacks passing silently | The canary reports its own last successful run; a missed schedule is itself an alert; infra failures are a separate class from rot ([5.1](phases/phase-5.1-scheduled-canary.md)) |
+| Telemetry, once added, costs trust in a tool that already hands a repo to an agent | The emotional job is trust | No collection before D17 and a published schema; the first enabled run sends nothing; consent is checked again at send time ([4.1a](phases/phase-4.1a-telemetry-cli-client.md) to [4.1c](phases/phase-4.1c-telemetry-maintenance-and-retention.md)) |
 
 ## Open questions for the maintainers
 
-1. Who is the bundled registry for: a community catalog, or the author's own stack
+1. Who is the bundled registry for: a community catalog, or the maintainers' own stack
    written down once? Proposal D6 picks the catalog. The answer decides which entries
    ship bundled.
 2. What is the brief budget, per stack and for stack plus fragments? Proposal D5.
-3. Does the canary belong before `add` and authoring? Proposal D8.
-4. Which stack goes first in phase 1? Proposal D13 says `astro-blog`. Ideally one with a small brief and a dev server, so phase 1
-   exercises every verify layer in D7 without testing the long-brief assumption at the
-   same time.
+3. Does the canary belong before `add` and authoring? Proposal D8, revised under D23:
+   no, it moves to phase 5; local bench reruns come before authoring and sources.
+4. Which stack goes first in phase 1? Proposal D13 says `astro-blog`. Ideally one with a
+   small brief and a dev server, so phase 1 exercises every verify layer in D7 without
+   testing the long-brief assumption at the same time.
 5. Should there be usage telemetry, and if so opt-in or opt-out? Two success measures
    ("finishes without help" across real users, "people write their own") can't be
-   collected without it. Proposal D17; blocks [4.1a and 4.1b](phases/phase-4.1a-telemetry-cli-client.md).
+   collected without it. Proposal D17; blocks
+   [4.1a](phases/phase-4.1a-telemetry-cli-client.md).
 6. Does `quickstack` (the repo name) need reserving on npm as well as `quickstacks`, to
    stop a lookalike?
 7. Does D5's budget count the brief's fixed text (about 700 words of ground rules,
-   versions and definition of done), or only what authors write? Counting it keeps the
-   number honest about what the agent reads; excluding it means a CLI wording change
-   can't push a stack over. Blocks [1.5](phases/phase-1.5-validate-and-brief-budget.md), and should be settled
-   before [1.6](phases/phase-1.6-bundled-stacks-and-mvp-gate.md) measures anything.
+   versions and definition of done), or only what authors write? The plan's default is to
+   count it, because that is what the agent reads, and 1.5 reports `fixedWords` beside
+   `briefWords` so a CLI wording change that pushes a stack over is visible. Blocks
+   [1.5](phases/phase-1.5-validate-and-brief-budget.md), and should be settled before
+   [1.6a](phases/phase-1.6a-bundled-stack-content.md) measures anything.
 8. Is the agent's own log of the questions it asked the user (`## Asked` in
-   `.quickstacks/NOTES.md`) good enough to count interventions in interactive runs, or
-   do interactive runs only count as anecdotes and headless bench runs carry the
-   measure? Needed before the [1.6](phases/phase-1.6-bundled-stacks-and-mvp-gate.md) gate.
-9. `verify --accept-changes` is refused when an agent is detected or there is no TTY.
-   Some agents' shell tools may allocate a TTY and not set a marker. Is "a determined
-   agent can still accept changes" acceptable, given D14 guards against accidental
-   weakening and not an adversary? Blocks [1.3](phases/phase-1.3-verify-and-tamper-detection.md).
+   `.quickstacks/NOTES.md`) good enough to count interventions in interactive runs, or do
+   interactive runs only count as anecdotes and headless bench runs carry the measure?
+   Needed before the [1.6b](phases/phase-1.6b-mvp-gate-runs.md) gate.
+9. `verify --accept-changes`, `quickstacks trust` and confirming a source are refused
+   when an agent is detected or stdin is not a TTY. Some agents' shell tools may allocate
+   a TTY and not set a marker, and the state directory and trust store are files the
+   user's account (and so the agent) can edit. Is "a determined agent can still accept
+   changes" acceptable, given D14 guards against accidental weakening and not an
+   adversary? Blocks [1.3b](phases/phase-1.3b-tamper-detection-and-run-records.md).
 10. Should dev-server probes be limited to local hosts as a format rule (so a verify step
-   can't be pointed at an external URL)? Proposed in [1.3](phases/phase-1.3-verify-and-tamper-detection.md); needed
-   before [1.6](phases/phase-1.6-bundled-stacks-and-mvp-gate.md) writes stack verify steps.
-11. The bench ([2.0](phases/phase-2.0-run-records-and-bench.md)) runs the agent with full permissions inside a
-   throwaway directory and a throwaway HOME, because allowlisted headless runs can't
-   write agent config or git hook files that every stack ships. Is that posture
-   acceptable on a maintainer's machine? Blocks 2.0.
+    can't be pointed at an external URL)? Proposed in
+    [1.3a](phases/phase-1.3a-verify-runner-and-probes.md); needed before
+    [1.6a](phases/phase-1.6a-bundled-stack-content.md) writes stack verify steps.
+11. The bench ([2.0b](phases/phase-2.0b-bench.md)) runs the agent with full permissions in
+    a throwaway directory on a maintainer's own machine, because allowlisted headless runs
+    can't write the agent config or git hook files every stack ships. A throwaway HOME
+    doesn't stop that agent reading the real home by absolute path. The alternative is an
+    allowlist of tools for the agent plus an explicit opt-in flag for full permissions; the
+    plan keeps full permissions because the allowlisted run can't finish any stack. Is that
+    acceptable for local runs by a maintainer? Unattended runs are isolated per D15. Blocks
+    2.0b and [5.1](phases/phase-5.1-scheduled-canary.md).
 12. A green bench run whose notes show a deliverable was never built is relabeled
-   `partial` by hand, which means a maintainer reads every bench run. Is that a
-   commitment the maintainers want, or should only failing and canary-regression runs
-   get a human read? Blocks 2.0's exit.
-13. The canary posts pull requests and issues with a token kept on the canary machine.
-   Which scopes is it allowed (part of D15)? Blocks [2.1](phases/phase-2.1-scheduled-canary.md).
+    `partial` by hand, which means a maintainer reads every bench run. Is that a
+    commitment the maintainers want, or should only failing and regression runs get a
+    human read? Blocks 2.0b's exit.
+13. Which GitHub token scopes does the canary get? Proposed answer, now part of D15: a
+    fine-grained token on this repo only with contents, pull-request and issues write, with
+    `main` protected so the token can't push to it. Blocks
+    [5.1](phases/phase-5.1-scheduled-canary.md).
 14. Should the registry index serve only stack content whose fingerprint has a passing
-   canary run? Recommended in [4.0a](phases/phase-4.0a-api-foundation-and-registry-index.md): it makes the canary a release
-   gate for stack prose, which means 2.1 has to be reliable first. Blocks 4.0a and 4.0b.
-15. What evidence starts the MCP server ([4.3](phases/phase-4.3-mcp-server.md))? Proposed: more than
-   half of `new` runs hand off inside an agent for two 28-day windows, plus evidence that
-   agents struggle with the shell path. Blocks 4.3.
+    ledger run (bench now, canary from phase 5)? Recommended in
+    [4.0c](phases/phase-4.0c-registry-index.md): an index entry carries the
+    digests of the composition that passed, and the last proven entry is carried forward
+    when the current content isn't proven. Blocks 4.0c and
+    [4.0d](phases/phase-4.0d-cli-remote-origin.md).
+15. What starts the MCP server ([4.3](phases/phase-4.3-mcp-server.md))? Revised proposal:
+    documented agent struggles with the shell path (2.0b bench notes, issues), or a user
+    asking for a client that has no shell tool. A majority of handoffs from inside an agent
+    (4.2a, if D17 is agreed) shows the shell path works, so it is supporting context, not
+    the trigger. Without telemetry, the two evidence sources above are enough. Blocks 4.3.
+16. If D17 is declined, does the API still need a Worker at all, or does static hosting of
+    the index and directory cover phase 4? Blocks
+    [4.0b](phases/phase-4.0b-api-skeleton-and-hosting-spike.md); the spike answers it.
+17. Does the Cloudflare Workers Vitest pool run with the repo's Vitest 5 on Node? If not,
+    API tests need another harness or D16 changes. Blocks 4.0b; the spike answers it
+    first.
+18. Should git sources keep the user's global git credential helper (so private repos
+    work) or run with it disabled? Blocks
+    [3.2a](phases/phase-3.2a-git-sources-and-untrusted-origin.md).
+19. Is running the published package under Bun unsupported acceptable for release 1
+    (D22)? Some users run `bunx` by habit. Blocks
+    [0.2](phases/phase-0.2-npm-distribution-artifact.md).
+20. Is a manual `npm publish` without provenance acceptable for the first releases (D23),
+    with provenance arriving in [5.0](phases/phase-5.0-ci-release-and-checks.md)? Blocks
+    [1.6c](phases/phase-1.6c-first-release.md).
+21. The 80%-per-month target means about four bench or canary samples per stack per month,
+    so one failure misses it. Keep the number, widen the window to a quarter, or set a
+    minimum sample count? Blocks [5.1](phases/phase-5.1-scheduled-canary.md)'s report.
+22. Is "under 20 minutes from `new` to green" an acceptable stand-in for the problem
+    statement's "time to first passing test" for the time-pressure user? The plan records
+    both (`firstTestPassAt`) and targets the stricter one. Needed before
+    [1.6b](phases/phase-1.6b-mvp-gate-runs.md) reports.
+23. Do the maintainers own, or want to reserve, the `@quickstacks` npm scope? The MCP
+    server ([4.3](phases/phase-4.3-mcp-server.md)) publishes as `@quickstacks/mcp`, with
+    `quickstacks-mcp` as the fallback name. Blocks 4.3's release.
+
+Questions 24-31 are behavior the plan chose on purpose where a gentler option exists. The
+plan keeps its choice in each case; the maintainers confirm or change it.
+
+24. Edited verify steps fail `verify` (exit 5, `VerifyChanged`) instead of warning (D14).
+    The risk is an agent that "fixes" a step, hits the failure, and keeps editing. The
+    brief ([1.1](phases/phase-1.1-composition-and-brief.md)) and the agent skill
+    ([3.4c](phases/phase-3.4c-agent-skill.md), once it ships) tell the agent to stop, report what changed,
+    and leave `verify --accept-changes` to the user. Is a hard stop with that instruction
+    acceptable, or should the first changed run warn? Blocks 1.3b.
+25. Exit codes are specific (2, 3, 4, 5, 6, 130, and 128+N when passing through the
+    agent's signal) rather than a generic 1 for every failure
+    ([0.3a](phases/phase-0.3a-errors-and-output.md),
+    [1.4](phases/phase-1.4-handoff-and-entry-points.md)). They are permanent once
+    published. Keep the table as is? Blocks 1.6c.
+26. `--with` naming a fragment that doesn't apply to the chosen stack fails
+    `ComposeConflict` rather than being dropped with a warning
+    ([1.1](phases/phase-1.1-composition-and-brief.md)). An agent learns of its mistake
+    immediately, at the cost of one more call. Keep the error? Blocks 1.1.
+27. An entry in a higher origin that fails to decode is listed as rejected and hides a
+    working copy with the same id in a lower origin, rather than falling back to it
+    ([1.0](phases/phase-1.0-entry-format-and-registry.md)). Safer, but a broken user
+    override hides a good bundled stack until it's fixed. Keep it? Blocks 1.0.
+28. Default target agents are `--agents`, else `Settings.agents`, else Claude Code only; a
+    detected non-Claude agent doesn't change the set
+    ([1.1](phases/phase-1.1-composition-and-brief.md)). Until native adapters land (D27),
+    adding the detected agent would only add AGENTS.md, which every stack writes anyway.
+    Revisit when 3.4b ships: should the detected agent then join the default set? Blocks
+    3.4b.
+29. Network hashes use one secret key and expire after 30 days, rather than a key that
+    rotates weekly ([4.1b](phases/phase-4.1b-telemetry-ingest-and-storage.md)). One key
+    keeps 28-day concentration and capping counts exact; the cost is that a network can be
+    linked across events for up to 30 days, which the `/telemetry` page says. Acceptable?
+    Blocks 4.1b.
+30. Concentration is handled by capping each contributor's share of a stats cell (each
+    install counts at most 3 projects, and the effective sample is at most three times the
+    distinct networks) rather than suppressing any cell where one contributor is over 20%
+    ([4.2a](phases/phase-4.2a-stats-rollup-and-routes.md)). Capping keeps a stack's stats
+    visible when one heavy user or a maintainer's own runs dominate it; minimum-sample
+    suppression still applies. Confirm the cap values. Blocks 4.2a.
+31. Green rates are broken down by the agent that ran the project, shown inside a stack's
+    page and detail route and never as a ranking of agents across stacks
+    ([4.2a](phases/phase-4.2a-stats-rollup-and-routes.md)). Is a per-stack breakdown
+    acceptable to publish, given it lets readers compare agents on one stack? Blocks 4.2a.
