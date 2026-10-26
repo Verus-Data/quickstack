@@ -1,8 +1,8 @@
 ---
 paths:
-  - "packages/analyze/src/**"
-  - "packages/analyze/tests/**"
-  - "packages/analyze/e2e/**"
+  - "packages/tools/analyze/src/**"
+  - "packages/tools/analyze/tests/**"
+  - "packages/tools/analyze/e2e/**"
 ---
 
 # analyze
