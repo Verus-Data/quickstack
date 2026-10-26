@@ -12,6 +12,17 @@
         "vitest": "catalog:",
       },
     },
+    "packages/analyze": {
+      "name": "@quickstacks/analyze",
+      "version": "0.1.0",
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@types/node": "catalog:",
+        "@vitest/coverage-v8": "catalog:",
+        "typescript": "catalog:",
+        "vitest": "catalog:",
+      },
+    },
     "packages/api": {
       "name": "@quickstacks/api",
       "version": "0.0.0",
@@ -101,6 +112,8 @@
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
 
     "@oxc-project/types": ["@oxc-project/types@0.154.0", "", {}, "sha512-KYOUGQFlLWR+s4QMV2Q9ko38TZm7EdO87Qm7rvZLqk/webse/cDjtyxKhg/47l0byCbs/k46LT8qc4PKjAikzA=="],
+
+    "@quickstacks/analyze": ["@quickstacks/analyze@workspace:packages/analyze"],
 
     "@quickstacks/api": ["@quickstacks/api@workspace:packages/api"],
 
