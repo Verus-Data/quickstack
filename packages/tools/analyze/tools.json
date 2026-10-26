@@ -4,10 +4,10 @@
     "languages": [],
     "binary": "semgrep",
     "versionArgv": ["--version"],
-    "sarifArgv": ["scan", "--sarif", "--config", "auto", "{target}"],
+    "sarifArgv": ["scan", "--sarif", "--config", "auto", "--metrics", "off", "{target}"],
     "timeoutMs": 120000,
     "verified": false,
-    "note": "Confirm --sarif writes SARIF 2.1.0 to stdout against the installed semgrep binary; the {target} placeholder is substituted with the absolute target path. Read-only: semgrep writes its SARIF to stdout and does not create a cache or log directory inside the target."
+    "note": "Confirm --sarif writes SARIF 2.1.0 to stdout against the installed semgrep binary; the {target} placeholder is substituted with the absolute target path. The first run needs network to fetch the auto ruleset; results are cached afterwards, so subsequent runs are offline. Telemetry is disabled with --metrics off. The digest and metrics are unaffected either way: semgrep writes its SARIF to stdout and does not create a cache or log directory inside the target."
   },
   {
     "id": "ruff",

@@ -8,7 +8,7 @@ Status: DRAFT 2026-10-26 (not agreed)
 | Traces to | The trust job ("the user wants to start work in a project they don't have to audit first") and the existing gap in [What success looks like](../product/PROBLEM_STATEMENT.md#what-success-looks-like): every row measures the recipe or the run, none measures the artifact. See [Open question 1](#open-questions-for-the-maintainers) — this plan proposes a sixth row rather than claiming an existing one |
 | Depends on | Nothing in the repo. It is its own package with its own gate entry. Soft, optional coupling: reads `.quickstacks/manifest.json` when [1.2](phase-1.2-new-scaffold-and-manifest.md) writes it, and only to attribute a record |
 | Blocks | Nothing. Feeds 4.1b (ingest), 4.2 (stats), 4.3 (MCP) and any scoring layer built on top of them |
-| Decisions needed | The package name (question 2); which analyzers ship in the first cut (question 3); whether tools are assumed present or provisioned (question 4) |
+| Decisions needed | Which analyzers ship in the first cut (question 2); whether tools are assumed present or provisioned (question 3) |
 | Decisions or questions this settles | The record format and its extension block; the analyzer adapter contract; the attribution key; the exit contract; the tiering; what a partial record means |
 
 ## Why this exists, and why it is not already in the plan
@@ -32,7 +32,7 @@ telemetry model.
 
 In:
 
-- `packages/analyze`, a standalone package with its own scripts and gate entry.
+- `packages/tools/analyze`, a standalone package with its own scripts and gate entry.
 - Tier 0 measurements computed with no external tool: file inventory, language mix, line
   counts, test-file ratio, marker density, largest files, manifest and ecosystem
   detection.
@@ -242,18 +242,19 @@ build.
 | No build artifact in v1 | It runs from source under Bun. Packaging is 0.2's problem (A1) and is not re-decided here |
 | No runtime dependencies | Keeps the package out of the root catalog, which is the one file the parallel phase-1 work also edits |
 | Absolute base in `originalUriBaseIds`, relative artifact URIs | Records from different machines and OSes must aggregate in one database |
+| Package home is `packages/tools/analyze` | Tools live under a `tools` namespace with one directory per tool; `analyze` is the first, so it nests under it. Settled by the maintainer: a flat `packages/<name>/` works for shipped packages, but tool packages are a distinct kind and get their own namespace so `packages/` does not become a grab bag |
 
 ## Files and areas touched
 
 | Path | Change |
 |---|---|
-| `packages/analyze/package.json` | New package, `@quickstacks/analyze`, private, standard scripts |
-| `packages/analyze/tsconfig.json` | Extends the base; no Bun types |
-| `packages/analyze/src/` | `bin.ts`, `main.ts`, `cli.ts`, `schemas/`, `core/` (inventory, digest, sarif, run, tools), `output.ts` |
-| `packages/analyze/tools.json` | The adapter table (data, so an entry is reviewable on its own) |
-| `packages/analyze/tests/` | Unit tests, fake tool binaries, a polyglot fixture tree |
-| `packages/analyze/e2e/` | Run the real entry point against the fixture, decode the log |
-| `packages/analyze/README.md` | Usage, the record shape, the tier table |
+| `packages/tools/analyze/package.json` | New package, `@quickstacks/analyze`, private, standard scripts |
+| `packages/tools/analyze/tsconfig.json` | Extends the base; no Bun types |
+| `packages/tools/analyze/src/` | `bin.ts`, `main.ts`, `cli.ts`, `schemas/`, `core/` (inventory, digest, sarif, run, tools), `output.ts` |
+| `packages/tools/analyze/tools.json` | The adapter table (data, so an entry is reviewable on its own) |
+| `packages/tools/analyze/tests/` | Unit tests, fake tool binaries, a polyglot fixture tree |
+| `packages/tools/analyze/e2e/` | Run the real entry point against the fixture, decode the log |
+| `packages/tools/analyze/README.md` | Usage, the record shape, the tier table |
 | `.claude/rules/analyze/analyze.md` | Path-scoped rules, per `docs/harness.md` |
 | `plans/phases/phase-2.3-code-analysis-records.md` | This file |
 | `plans/roadmap.md`, `AGENTS.md` | Phase 2 row, dependency-graph line, architecture map and commands — additive hunks only |
@@ -295,7 +296,7 @@ touches. If they conflict at merge time, the resolution is to keep both sides.
 ## Exit criteria
 
 - `bun run check` green from the repo root, with the new package in the fan-out.
-- `bun run --cwd packages/analyze analyze .` produces a valid record for this repo.
+- `bun run --cwd packages/tools/analyze analyze .` produces a valid record for this repo.
 - One record each for a TypeScript, a Python and a Go fixture tree, all three from the
   same command with no flags.
 - `AGENTS.md` has the architecture-map and commands entries; the package README defines
@@ -330,17 +331,13 @@ touches. If they conflict at merge time, the resolution is to keep both sides.
    does not list. Proposal: add it as a sixth row, "analysis is collected and joined to
    stack content", and let 4.2 define the number. Until then this plan traces to the trust
    job only.
-2. **Package name and home.** Proposed `packages/analyze` (`@quickstacks/analyze`), which
-   matches `cli`, `api`, `mcp` and D11's "shared code gets its own package, never a grab
-   bag". A `utilities/` or `tools/` bucket is the alternative; the risk is that it becomes
-   the place everything goes.
-3. **Which analyzers ship in the first cut.** Proposed: the six in the adapter table,
+2. **Which analyzers ship in the first cut.** Proposed: the six in the adapter table,
    every one optional at runtime. The alternative is tier 0 plus `--sarif` only, which is
    smaller and defers every flag to the first user who needs one.
-4. **Are tools assumed present, or provisioned?** Proposed: assumed present, never
+3. **Are tools assumed present, or provisioned?** Proposed: assumed present, never
    installed by the analyzer — it reports `absent` and moves on. Provisioning (a
    container image, a `tool:install` script) is a separate decision with a supply-chain
    cost, and D2's spirit argues against a tool that downloads binaries.
-5. **Does the record belong in the analysed project?** Proposed: no — stdout by default,
+4. **Does the record belong in the analysed project?** Proposed: no — stdout by default,
    `--out` when a caller wants a file. Writing into the target means touching 1.2's
    `.quickstacks/` contract, which this sub-phase should not do.

@@ -36,6 +36,8 @@ jobs:
           path: |
             packages/*/coverage/
             packages/*/logs/
+            packages/tools/*/coverage/
+            packages/tools/*/logs/
   # The one required check: green only when every matrix job passed.
   ci-ok:
     needs: check

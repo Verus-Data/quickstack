@@ -2,7 +2,7 @@
 
 ## Overview
 
-A bun workspace; every package is in `packages/<name>/`. `packages/cli` is `quickstacks`, the CLI: Effect 4 commands/services, doctor/version, lazy configuration, safe output and logs. Bun compiles the executable; Node 24 runs Vitest. There is no product code, vendor, release tooling or network requirement. `packages/api` (`@quickstacks/api`) and `packages/mcp` (`@quickstacks/mcp`) are placeholders with no code or scripts. `packages/analyze` (`@quickstacks/analyze`) is a standalone static-analysis record producer: open-source analyzers over any directory, one SARIF 2.1.0 log per run, no runtime dependencies, no CLI wiring (phase 2.3 in `plans/`). Code two packages share goes in its own package, never imported across another package's `src/`. How the monorepo works and how to add a package: README.md, "Monorepo".
+A bun workspace; every package is in `packages/<name>/` or `packages/tools/<name>/`. `packages/cli` is `quickstacks`, the CLI: Effect 4 commands/services, doctor/version, lazy configuration, safe output and logs. Bun compiles the executable; Node 24 runs Vitest. There is no product code, vendor, release tooling or network requirement. `packages/api` (`@quickstacks/api`) and `packages/mcp` (`@quickstacks/mcp`) are placeholders with no code or scripts. `packages/tools/analyze` (`@quickstacks/analyze`) is a standalone static-analysis record producer: open-source analyzers over any directory, one SARIF 2.1.0 log per run, no runtime dependencies, no CLI wiring (phase 2.3 in `plans/`). Code two packages share goes in its own package, never imported across another package's `src/`. How the monorepo works and how to add a package: README.md, "Monorepo".
 
 The root owns the harness: `.claude/`, lefthook, CI, the root `biome.json`, `tsconfig.base.json`, and the root test suite in `tests/`: the hook tests in `tests/hooks/`, the delegate runner's in `tests/scripts/` and the check in `tests/acceptance/` that traces each plan's acceptance tests to tagged CLI tests. Each package owns its source, tests, `tsconfig.json` (extending `../../tsconfig.base.json`) and any Biome plugins in a nested `biome.json` (`"root": false, "extends": "//"`). See docs/harness.md.
 
@@ -45,7 +45,7 @@ In `packages/cli/` (run there):
 | `./dist/quickstacks doctor --json` | Compiled local diagnostics |
 | `bun run check` | This package's gate only |
 
-In `packages/analyze/` (run there):
+In `packages/tools/analyze/` (run there):
 
 | Command | Purpose |
 |---|---|
@@ -56,7 +56,7 @@ In `packages/analyze/` (run there):
 | `bun run test:unit tests/tools.test.ts` | Single test file |
 | `bun run check` | This package's gate only |
 
-The adapter table is `packages/analyze/tools.json`. An entry with `"verified": false` has not had its flags confirmed against an installed binary; confirm, then flip it.
+The adapter table is `packages/tools/analyze/tools.json`. An entry with `"verified": false` has not had its flags confirmed against an installed binary; confirm, then flip it.
 
 ## Architecture map (packages/cli)
 
@@ -89,9 +89,9 @@ Paths below are relative to `packages/cli/`.
 
 bin supplies platform, Host, Foreground and the stdout/stderr writers; AppLayer builds config, then Output over config and Host (its audience needs both), then logging and Processes, without opening config. main runs one scoped command. Doctor reads cached config and reports optional-file errors. Framework help is captured and flushed only on success; failures clear the output buffer.
 
-## Architecture map (packages/analyze)
+## Architecture map (packages/tools/analyze)
 
-Paths below are relative to `packages/analyze/`. No Effect, no dependencies, runs under Node.
+Paths below are relative to `packages/tools/analyze/`. No Effect, no dependencies, runs under Node.
 
 - `src/bin.ts`: the only module touching argv, `process.exitCode` and signals.
 - `src/cli.ts`: hand-rolled argument parsing; unknown flag is a usage error.
