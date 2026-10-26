@@ -1,0 +1,3 @@
+# Feature
+
+Read AGENTS.md and relevant rules. Clarify the feature and write a focused RFC in docs/rfcs/ explaining behavior, boundaries, failure modes, and acceptance tests. Obtain an adversarial design review from the architect agent (or the installed ce plugin). Implement in an isolated worktree with independent subtasks delegated only when useful. Run the project check command and exercise the feature through the actual interface. Use project-documented development servers and test harnesses; stop only processes you started. Request two code reviews, address findings, and create a PR using the repository template. Merge only when authorized and checks pass. Preserve deliverables and clean up the task worktree after handoff.

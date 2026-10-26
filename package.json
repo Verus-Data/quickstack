@@ -1,0 +1,35 @@
+{
+  "name": "@quickstacks/monorepo",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.4.2",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run --cwd apps/cli dev",
+    "build": "bun run --filter '*' build",
+    "typecheck": "tsc --noEmit && bun run --filter '*' typecheck",
+    "lint": "biome check .",
+    "format": "biome check --write .",
+    "test": "bun run test:hooks && bun run --filter '*' test",
+    "test:hooks": "vitest run",
+    "coverage": "bun run --filter '*' coverage",
+    "e2e": "bun run --filter '*' e2e",
+    "check": "bun run lint && bun run typecheck && bun run test && bun run e2e",
+    "clean": "bun run --filter '*' clean",
+    "prepare": "bun scripts/prepare.ts",
+    "install:ci": "bun install --frozen-lockfile"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
+    "@types/bun": "^1.4.3",
+    "@types/node": "24",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  }
+}

@@ -1,0 +1,44 @@
+import { spawn } from "node:child_process";
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { expect, test, vi } from "vitest";
+import { tempDir } from "./helpers/cli";
+
+test("dev wrapper forwards a directly delivered termination signal to its child", async () => {
+  const dir = tempDir();
+  mkdirSync(join(dir.path, "scripts"));
+  mkdirSync(join(dir.path, "src"));
+  copyFileSync("scripts/dev.ts", join(dir.path, "scripts/dev.ts"));
+  writeFileSync(
+    join(dir.path, "src/bin.ts"),
+    `import { writeFileSync } from "node:fs"; writeFileSync("ready",String(process.pid)); process.on("SIGTERM",()=>{writeFileSync("terminated","yes");process.exit(143);});setInterval(()=>{},1000);`,
+  );
+  const child = spawn("bun", ["scripts/dev.ts"], {
+    cwd: dir.path,
+    detached: true,
+    stdio: "ignore",
+    env: { PATH: process.env.PATH, HOME: dir.path },
+  });
+  const closed = new Promise<number | null>((resolve, reject) => {
+    child.on("error", reject);
+    child.on("close", resolve);
+  });
+  try {
+    await vi.waitFor(() => expect(existsSync(join(dir.path, "ready"))).toBe(true));
+    child.kill("SIGTERM");
+    await closed;
+    await vi.waitFor(() => expect(existsSync(join(dir.path, "terminated"))).toBe(true), {
+      timeout: 1000,
+    });
+    expect(readFileSync(join(dir.path, "terminated"), "utf8")).toBe("yes");
+  } finally {
+    if (child.pid) {
+      try {
+        process.kill(-child.pid, "SIGKILL");
+      } catch (error) {
+        expect((error as NodeJS.ErrnoException).code).toBe("ESRCH");
+      }
+    }
+    dir.cleanup();
+  }
+}, 10000);

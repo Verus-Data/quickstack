@@ -1,0 +1,33 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ci-ok:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: package.json
+      - run: bun run install:ci
+      - run: bun run lint
+      - run: bun run typecheck
+      - run: bun run test:hooks
+      - run: bun run coverage
+      - run: bun run e2e
+      - uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: diagnostics
+          path: |
+            apps/*/coverage/
+            apps/*/logs/
