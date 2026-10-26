@@ -54,20 +54,10 @@ async function main(): Promise<void> {
     fileDir === project
       ? basename(given)
       : `${fileDir.slice(project.length + 1)}/${basename(given)}`;
-  if (
-    ["node_modules/", "dist/", "coverage/", "build/", ".react-router/"].some((dir) =>
-      rel.startsWith(dir),
-    )
-  )
-    return;
+  if (["node_modules/", "dist/", "coverage/", "build/"].some((dir) => rel.startsWith(dir))) return;
 
   const tsc = join(root, "node_modules/.bin/tsc");
   if (!isExecutable(tsc)) return;
-
-  const prepare = join(root, ".claude/hooks/before-typecheck.ts");
-  if (isFile(prepare)) {
-    await run("bun", [prepare, rel], { cwd: project, timeoutSec: 15 });
-  }
 
   const cacheName = project === root ? "hook" : project.slice(root.length + 1).replace(/\//g, "-");
   const { code, output } = await run(

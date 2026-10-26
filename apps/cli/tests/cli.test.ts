@@ -1,7 +1,9 @@
 import { mkdirSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { join } from "node:path";
 import { Effect } from "effect";
 import { afterEach, expect, test } from "vitest";
+import { hasFlag } from "../src/main";
 import { VERSION } from "../src/version";
 import { runCli, tempDir } from "./helpers/cli";
 
@@ -93,6 +95,35 @@ test("empty env values mean absent and invalid log level falls back safely", asy
   expect(result.status).toBe(0);
   expect(JSON.parse(result.stdout).paths.data).toContain(".local/share/quickstacks");
   expect(result.stderr).toBe("");
+});
+test("paths follow the XDG base directories, and an unset HOME means the user's home", async () => {
+  const paths = async (env: Record<string, string>) =>
+    JSON.parse((await runCli(["doctor", "--json"], { env })).stdout).paths;
+  expect(await paths({ XDG_DATA_HOME: "/xdg/data", XDG_CACHE_HOME: "/xdg/cache" })).toMatchObject({
+    data: "/xdg/data/quickstacks",
+    cache: "/xdg/cache/quickstacks",
+  });
+  expect(await paths({ HOME: "", XDG_CONFIG_HOME: "" })).toMatchObject({
+    config: join(homedir(), ".config", "quickstacks", "config.json"),
+    cache: join(homedir(), ".cache", "quickstacks"),
+  });
+});
+test("--json after -- belongs to the command, not quickstacks", async () => {
+  expect(hasFlag(["doctor", "--json"], "--json")).toBe(true);
+  expect(hasFlag(["doctor", "--", "--json"], "--json")).toBe(false);
+  const result = await runCli(["doctor", "--", "--json"]);
+  expect(result.status).toBe(2);
+  expect(result.stderr).toMatch(/^Invalid command\. Run --help for usage\.\n/);
+});
+test("a defect's class and stack frames are logged, but not its message", async () => {
+  const result = await runCli([], {
+    program: Effect.die(new TypeError("private detail")),
+    env: { LOG_LEVEL: "error", QUICKSTACKS_LOG_FORMAT: "json" },
+  });
+  const line = result.stderr.split("\n").find((l) => l.includes('"msg":"command"'));
+  const record = JSON.parse(line ?? "") as { defect: string };
+  expect(record.defect).toMatch(/^TypeError\nat /);
+  expect(result.stderr).not.toContain("private detail");
 });
 test("main maps a defect once and never leaks its object", async () => {
   const result = await runCli([], {

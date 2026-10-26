@@ -70,8 +70,8 @@ export function exitCode(error: AppError): number {
 export function retryable(error: AppError): boolean {
   switch (error._tag) {
     case "UpstreamUnavailable":
-    case "Defect":
       return true;
+    case "Defect":
     case "Usage":
     case "BadInput":
     case "NotFound":

@@ -1,7 +1,7 @@
 // SessionStart: live state for this stack that AGENTS.md can't carry because it is static:
 // the installed Bun version and how many
-// warn/error lines logs/cli.jsonl (at the root and in each apps/<name>/) gained since the previous
-// session started.
+// warn/error lines the JSON logs (logs/cli.jsonl at the root, and every apps/<name>/logs/*.jsonl)
+// gained since the previous session started.
 //
 // Plain-text stdout from a SessionStart hook is added to the agent's context. Separate from the
 // agent-ops session-start hook (branch, dirty files, .env, dependencies), which stays
@@ -64,15 +64,25 @@ function readBytes(file: string, start: number, length: number): Buffer {
   }
 }
 
-/** logs/cli.jsonl at the root and in each workspace app (apps/cli/logs/cli.jsonl). */
+/** logs/cli.jsonl at the root, and each workspace app's logs/*.jsonl (rotated *.prev.jsonl skipped). */
 function cliLogFiles(): string[] {
+  const files = ["logs/cli.jsonl"];
   let apps: string[] = [];
   try {
-    apps = readdirSync("apps").map((app) => `apps/${app}/logs/cli.jsonl`);
+    apps = readdirSync("apps");
   } catch {
     // Not a workspace: only the root log.
   }
-  return ["logs/cli.jsonl", ...apps];
+  for (const app of apps) {
+    try {
+      for (const name of readdirSync(`apps/${app}/logs`).sort())
+        if (name.endsWith(".jsonl") && !name.endsWith(".prev.jsonl"))
+          files.push(`apps/${app}/logs/${name}`);
+    } catch {
+      // No logs yet for this app.
+    }
+  }
+  return files;
 }
 
 function cliLog(root: string, file: string): void {

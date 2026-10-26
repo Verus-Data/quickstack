@@ -18,6 +18,6 @@ CLAUDE.md imports canonical AGENTS.md. docs/harness.md describes ownership. The 
 | _lib.ts, _shell.ts | Protocol/process and shell parsing helpers |
 | _lib.sh, _destructive-patterns.sh | Bash 3.2 helpers and deny patterns |
 
-rules/cli holds the apps/cli contract, service/config/logging, tests, TypeScript and verification rules. rules/effect.md links skills/effect/SKILL.md, checked against the installed packages. Commands /check, /test and /feature orchestrate work; agents/architect.md and reviewer.md are read-only.
+rules/typescript.md applies to every TypeScript file in the repo. rules/cli holds the apps/cli contract, service/config/logging, tests and verification rules, and rules/cli/effect.md, which links skills/effect/SKILL.md, checked against the installed packages. Commands /check, /test and /feature orchestrate work; agents/architect.md and reviewer.md are read-only.
 
 jq powers Bash payload parsing. Hooks never download tools. Missing optional tools cause quiet/advisory behavior; guards explain denies. Tests execute helpers and exercise actual boundary rules. Personal settings.local.json is ignored. `.env` is optional here even when the generic session-start advisory mentions it.

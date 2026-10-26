@@ -1,10 +1,10 @@
 {
   "compilerOptions": {
     "target": "ES2023",
-    "lib": ["ES2023", "DOM"],
+    "lib": ["ES2023"],
     "module": "ESNext",
     "moduleResolution": "bundler",
-    "types": ["bun", "node"],
+    "types": ["node"],
     "strict": true,
     "noUncheckedIndexedAccess": true,
     "verbatimModuleSyntax": true,

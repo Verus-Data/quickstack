@@ -7,8 +7,13 @@ on:
 permissions:
   contents: read
 jobs:
-  ci-ok:
-    runs-on: ubuntu-latest
+  check:
+    strategy:
+      fail-fast: false
+      matrix:
+        # Process spawning, signals and the compiled binary differ between Linux and macOS.
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
@@ -27,7 +32,16 @@ jobs:
       - uses: actions/upload-artifact@v6
         if: failure()
         with:
-          name: diagnostics
+          name: diagnostics-${{ matrix.os }}
           path: |
             apps/*/coverage/
             apps/*/logs/
+            packages/*/coverage/
+            packages/*/logs/
+  # The one required check: green only when every matrix job passed.
+  ci-ok:
+    needs: check
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - run: test "${{ needs.check.result }}" = success

@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 import { BunServices } from "@effect/platform-bun";
 import { Effect, Layer } from "effect";
-import { main } from "./main";
+import { hasFlag, main } from "./main";
 import { AppLayer, runInvocation } from "./runtime";
 import { Host } from "./services/host";
 import { Output, type Writer } from "./services/output";
@@ -17,7 +17,7 @@ process.stdout.on("error", () => {});
 process.stderr.on("error", () => {});
 const args = process.argv.slice(2);
 const output = Output.layer(
-  args.includes("--json"),
+  hasFlag(args, "--json"),
   writer(process.stdout),
   writer(process.stderr),
 );

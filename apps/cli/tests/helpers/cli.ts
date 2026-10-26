@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { NodeServices } from "@effect/platform-node";
 import { Effect, Layer } from "effect";
 import type { Environment } from "../../src/config";
-import { main } from "../../src/main";
+import { hasFlag, main } from "../../src/main";
 import { AppLayer, runInvocation } from "../../src/runtime";
 import { Host } from "../../src/services/host";
 import { Output } from "../../src/services/output";
@@ -32,7 +32,7 @@ export async function runCli(
   const temp = options.home ? undefined : tempDir();
   const home = options.home ?? temp?.path ?? "/invalid";
   const env = { HOME: home, XDG_CONFIG_HOME: join(home, "config"), NO_COLOR: "1", ...options.env };
-  const captured = Output.memory(args.includes("--json"));
+  const captured = Output.memory(hasFlag(args, "--json"));
   const platform = Layer.mergeAll(
     NodeServices.layer,
     captured.layer,

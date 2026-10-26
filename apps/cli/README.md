@@ -23,18 +23,18 @@ Optional configuration is `$XDG_CONFIG_HOME/quickstacks/config.json`, defaulting
 
 | Setting | Meaning |
 | --- | --- |
-| `QUICKSTACKS_DATA_DIR` | Data path; defaults to `$HOME/.local/share/quickstacks` |
+| `QUICKSTACKS_DATA_DIR` | Data path; defaults to `$XDG_DATA_HOME/quickstacks` (`$HOME/.local/share/quickstacks`) |
 | `QUICKSTACKS_LOG_FORMAT` | `json` for JSON diagnostics, otherwise plain readable logs |
 | `QUICKSTACKS_LOG_FILE` | Optional JSONL file; directory recreated when needed |
 | `LOG_LEVEL` | trace/debug/info/warn/error/fatal/none; default and invalid-value fallback warn |
 | `NO_COLOR` | Keep output free of ANSI (current formatter always uses plain text) |
-| `HOME`, `XDG_CONFIG_HOME` | User/config path roots |
+| `HOME`, `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_CACHE_HOME` | Path roots; an unset `HOME` means the user's home directory. The cache is `$XDG_CACHE_HOME/quickstacks` (`$HOME/.cache/quickstacks`) |
 
 The development wrapper sets info logging, appends `logs/cli.jsonl`, copies noninteractive stderr to `logs/cli.log`, and uses `.dev/data`. Logs rotate above 5 MiB. It forwards arguments, terminal behavior, signals and the child's exit status. `.env` is optional for source development. The standalone build disables dotenv, bunfig, tsconfig and package autoload, following the [Bun compile API](https://bun.sh/docs/bundler/executables).
 
 ## Output contract
 
-Stdout contains results only. `--json` emits one result object; JSON version is `{ "version": "0.1.0" }` and JSON help is `{ "help": "..." }`. Failures leave stdout empty and stderr contains a safe diagnostic, or exactly one JSON `{ "error": { "tag", "message", "retryable" } }` object. In JSON mode ancillary logs go only to the optional log file so stderr remains parseable. Human mode emits logs to stderr and optionally to the same JSONL file. No streaming command exists in this base.
+Stdout contains results only. `--json` emits one result object; JSON version is `{ "version": "0.1.0" }` and JSON help is `{ "help": "..." }`. Failures leave stdout empty and stderr contains a safe diagnostic, or exactly one JSON `{ "error": { "tag", "message", "retryable" } }` object. In JSON mode ancillary logs go only to the optional log file so stderr remains parseable; set `QUICKSTACKS_LOG_FILE`, or rerun without `--json`, to see why a `Defect` happened. A `--json` after `--` belongs to the command, not to quickstacks. Human mode emits logs to stderr and optionally to the same JSONL file. No streaming command exists in this base.
 
 Exit codes: usage/bad-input/not-found 2; config 3; upstream 4; permission 6; interruption 130; defect 1. A closed stdout pipe exits quietly with 0. Defects never become success.
 

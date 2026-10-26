@@ -4,7 +4,12 @@ export const DoctorReport = Schema.Struct({
   platform: Schema.String,
   executable: Schema.String,
   compiled: Schema.Boolean,
-  paths: Schema.Struct({ config: Schema.String, data: Schema.String, cwd: Schema.String }),
+  paths: Schema.Struct({
+    config: Schema.String,
+    data: Schema.String,
+    cache: Schema.String,
+    cwd: Schema.String,
+  }),
   configErrors: Schema.Array(Schema.String),
 }).annotate({
   title: "Doctor report",

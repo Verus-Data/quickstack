@@ -9,7 +9,7 @@ Delete any section that has nothing in it rather than writing "N/A".
 
 ## Why
 
-<!-- The problem this solves, and for whom. Link the RFC in docs/rfcs/ if there is one. -->
+<!-- The problem this solves, and for whom. Link the RFC in plans/ if there is one. -->
 
 ## What changed
 

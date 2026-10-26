@@ -21,17 +21,17 @@
     "clean": "bun scripts/clean.ts"
   },
   "dependencies": {
-    "@effect/platform-bun": "^4.0.5",
-    "effect": "^4.0.5"
+    "@effect/platform-bun": "catalog:",
+    "effect": "catalog:"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.15",
-    "@effect/platform-node": "^4.0.5",
-    "@effect/vitest": "^4.0.5",
-    "@types/bun": "^1.4.3",
-    "@types/node": "24",
-    "@vitest/coverage-v8": "^5.0.5",
-    "typescript": "^7.0.2",
-    "vitest": "^5.0.5"
+    "@biomejs/biome": "catalog:",
+    "@effect/platform-node": "catalog:",
+    "@effect/vitest": "catalog:",
+    "@types/bun": "catalog:",
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
   }
 }

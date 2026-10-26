@@ -15,7 +15,7 @@ export const doctor = Effect.gen(function* () {
     platform: host.platform,
     executable: host.executable,
     compiled: host.compiled,
-    paths: { config: paths.config, data, cwd: host.cwd },
+    paths: { config: paths.config, data, cache: paths.cache, cwd: host.cwd },
     configErrors,
   });
 });

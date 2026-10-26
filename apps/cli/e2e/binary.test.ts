@@ -1,10 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import { version } from "../package.json";
 
-const binary = resolve("dist/quickstacks");
+const binary = join(import.meta.dir, "../dist/quickstacks");
 async function invoke(args: readonly string[], prepare?: (dir: string) => void) {
   const dir = mkdtempSync(join(tmpdir(), "cli-binary-"));
   try {

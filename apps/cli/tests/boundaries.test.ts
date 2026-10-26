@@ -4,6 +4,8 @@ import { join } from "node:path";
 import { expect, test } from "vitest";
 import { tempDir } from "./helpers/cli";
 
+const pkg = join(import.meta.dirname, "..");
+
 const probes = [
   ['import { x } from "bun"; export { x };', "Platform code belongs"],
   ['import { x } from "zod"; export { x };', "Use Schema from effect"],
@@ -19,11 +21,11 @@ test.each(probes)("Grit enforces %s", (source, message) => {
     mkdirSync(join(dir.path, "src/core"), { recursive: true });
     writeFileSync(
       join(dir.path, "biome.json"),
-      JSON.stringify({ plugins: [join(process.cwd(), "biome-plugins/boundaries.grit")] }),
+      JSON.stringify({ plugins: [join(pkg, "biome-plugins/boundaries.grit")] }),
     );
     const file = join(dir.path, "src/core/probe.ts");
     writeFileSync(file, `${source}\n`);
-    const result = spawnSync(join(process.cwd(), "node_modules/.bin/biome"), ["lint", file], {
+    const result = spawnSync(join(pkg, "node_modules/.bin/biome"), ["lint", file], {
       cwd: dir.path,
       encoding: "utf8",
     });

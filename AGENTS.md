@@ -79,7 +79,7 @@ Bun tests only `./e2e` after compiling. Binary tests spawn the artifact with an 
 
 ## Error handling
 
-Fixed safe tagged messages; exhaustive exit/retryability tables in errors.ts. Expected usage/input/not-found exit 2, config 3, upstream 4, permissions 6, interruption 130, defects 1; BrokenPipe is quiet 0. main observes failures/defects once and clears stdout on error. The outer runtime maps a pending interrupt after cleanup to 130. Logs never serialize arbitrary cause objects or secrets.
+Fixed safe tagged messages; exhaustive exit/retryability tables in errors.ts. Expected usage/input/not-found exit 2, config 3, upstream 4, permissions 6, interruption 130, defects 1; BrokenPipe is quiet 0. main observes failures/defects once and clears stdout on error. The outer runtime maps a pending interrupt after cleanup to 130. Logs never serialize arbitrary cause objects or secrets; a defect is logged as its class and stack frames, without its message. Defects are not retryable.
 
 JSON commands produce one result; JSON failures produce one stderr error envelope. To preserve that contract, JSON-mode ancillary logs use only the configured JSONL file. Human diagnostics/logs use stderr. No colors are currently emitted, respecting NO_COLOR and pipes.
 
@@ -95,13 +95,13 @@ Install lefthook on PATH (e.g. brew install lefthook), then bun install. Pre-com
 
 ## CI
 
-.github/workflows/ci.yml runs one sequential ci-ok on ubuntu-latest, main pushes, PRs and manual runs; contents:read only. Bun comes from packageManager, Node from .node-version. Frozen install, lint, typecheck, coverage, binary e2e; upload logs/coverage on failure. Required check: ci-ok. Upgrade official action tags after checking upstream; SHA pins are deferred for the sandbox.
+.github/workflows/ci.yml runs a sequential `check` job on ubuntu-latest and macos-latest for main pushes, PRs and manual runs, then `ci-ok`, which passes only when both did; contents:read only. Bun comes from packageManager, Node from .node-version. Frozen install, lint, typecheck, coverage, binary e2e; upload each package's logs/coverage on failure. Required check: ci-ok. Upgrade official action tags after checking upstream; SHA pins are deferred.
 
 ## Build workarounds
 
-No patches, pinned prereleases or disabled rules. Effect packages resolve together at stable 4.0.5 with compatible 4.x ranges, Vitest/coverage 5.x. The generated type config targets current TypeScript 7. Bun compile disables all runtime config autoload and removes its linked sourcemap output intentionally.
+No patches, pinned prereleases or disabled rules. Every shared dependency version lives once, in the root `workspaces.catalog`; packages depend on `catalog:`. Effect packages resolve together at stable 4.0.5 with compatible 4.x ranges, Vitest/coverage 5.x. The generated type config targets current TypeScript 7. Bun compile disables all runtime config autoload and removes its linked sourcemap output intentionally.
 
-The shipped dev wrapper was adapted to forward directly delivered SIGINT/SIGTERM/SIGHUP, with a reproducing subprocess test. Parent confirmed this was a preexisting advisory, not an extraction regression. Reassess/remove local adaptation when upstream provides equivalent signal forwarding. Biome stdin suppresses useful plugin diagnostics, so boundary tests use actual temporary files; no Grit rule was removed.
+The shipped dev wrapper was adapted to forward directly delivered SIGINT/SIGTERM/SIGHUP, with a reproducing subprocess test. Reassess/remove local adaptation when upstream provides equivalent signal forwarding. Biome stdin suppresses useful plugin diagnostics, so boundary tests use actual temporary files; no Grit rule was removed.
 
 ## Deferred
 
@@ -109,7 +109,7 @@ Application features, install/update distribution and release workflow (decision
 
 ## Pending user actions
 
-None.
+Riley: add `Bash(./apps/cli/dist/*)`, `Bash(bun run test:hooks)` and `Bash(bun run test:hooks *)` to `.claude/settings.json` permissions. The existing `bun run test:unit` entries only apply when run inside `apps/cli`.
 
 ## Deeper context
 

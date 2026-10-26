@@ -1,7 +1,6 @@
 // Protect the Node unit runner and explicitly scoped Bun binary/native tests.
-import { existsSync, readFileSync } from "node:fs";
-import { basename, join } from "node:path";
-import { deny, projectRoot, readPayload, text } from "./_lib";
+import { basename } from "node:path";
+import { deny, readPayload, text } from "./_lib";
 import { commands } from "./_shell";
 
 const VALUE_FLAGS = new Set([
@@ -21,21 +20,6 @@ const VALUE_FLAGS = new Set([
 const UNIT_SCRIPTS = new Set(["test", "test:unit", "test:watch", "coverage"]);
 // From the CLI package (`bun test ./e2e`) or from the repo root (`bun test ./apps/cli/e2e`).
 const testRoots = ["e2e", "apps/cli/e2e"];
-// Optional native capabilities declare their own roots; the base names no app paths.
-const configPath = join(projectRoot(), ".claude/platform-paths.json");
-if (existsSync(configPath)) {
-  const config = JSON.parse(readFileSync(configPath, "utf8"));
-  if (Array.isArray(config.bunTestPaths)) {
-    testRoots.push(
-      ...config.bunTestPaths.filter(
-        (path: unknown): path is string =>
-          typeof path === "string" &&
-          /^[\w.-]+(?:\/[\w.-]+)*$/.test(path) &&
-          !path.split("/").some((part) => part === "." || part === ".."),
-      ),
-    );
-  }
-}
 
 const command = text(readPayload()?.tool_input?.command);
 for (const { argv } of commands(command ?? "")) {

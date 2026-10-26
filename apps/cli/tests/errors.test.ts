@@ -24,7 +24,7 @@ const cases = [
   [new UpstreamUnavailable(), 4, true],
   [new PermissionDenied(), 6, false],
   [new Interrupted(), 130, false],
-  [new Defect(), 1, true],
+  [new Defect(), 1, false],
 ] as const;
 test.each(cases)(
   "maps %s exhaustively and main preserves failure output",

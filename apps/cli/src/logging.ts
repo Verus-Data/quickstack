@@ -15,6 +15,12 @@ const scalar = (v: unknown): string | number | boolean | null =>
   v === null || typeof v === "string" || typeof v === "number" || typeof v === "boolean"
     ? v
     : "[redacted]";
+/** A defect's class and stack frames, without its message (which may carry data). */
+export function defectTrace(defect: unknown): string {
+  if (!(defect instanceof Error)) return typeof defect;
+  const frames = (defect.stack ?? "").split("\n").filter((line) => /^\s+at /.test(line));
+  return [defect.name, ...frames.map((line) => line.trim())].join("\n");
+}
 export function entry(input: {
   date: Date;
   level: string;

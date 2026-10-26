@@ -8,7 +8,7 @@ test("dev wrapper forwards a directly delivered termination signal to its child"
   const dir = tempDir();
   mkdirSync(join(dir.path, "scripts"));
   mkdirSync(join(dir.path, "src"));
-  copyFileSync("scripts/dev.ts", join(dir.path, "scripts/dev.ts"));
+  copyFileSync(join(import.meta.dirname, "../scripts/dev.ts"), join(dir.path, "scripts/dev.ts"));
   writeFileSync(
     join(dir.path, "src/bin.ts"),
     `import { writeFileSync } from "node:fs"; writeFileSync("ready",String(process.pid)); process.on("SIGTERM",()=>{writeFileSync("terminated","yes");process.exit(143);});setInterval(()=>{},1000);`,

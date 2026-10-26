@@ -11,9 +11,14 @@ import {
   knownError,
   Usage,
 } from "./errors";
-import { entry, Logging } from "./logging";
+import { defectTrace, entry, Logging } from "./logging";
 import { Output } from "./services/output";
 import { VERSION } from "./version";
+/** Whether one of `flags` comes before any `--`; what follows `--` belongs to the command. */
+export function hasFlag(args: readonly string[], ...flags: readonly string[]): boolean {
+  const end = args.indexOf("--");
+  return (end === -1 ? args : args.slice(0, end)).some((arg) => flags.includes(arg));
+}
 export function main(
   args: readonly string[],
   program: Effect.Effect<
@@ -66,6 +71,7 @@ export function main(
         ),
       );
       let error: AppError | undefined;
+      let defect: string | undefined;
       let help = false;
       if (Exit.isFailure(exit)) {
         const failure = exit.cause.reasons.find(Cause.isFailReason);
@@ -83,6 +89,8 @@ export function main(
               ? (knownError(failure.error) ??
                 (CliError.isCliError(failure.error) ? new Usage() : new Defect()))
               : new Defect();
+        if (error instanceof Defect && !knownError(failure?.error))
+          defect = defectTrace(Cause.squash(exit.cause));
       }
       if (error instanceof BrokenPipe) return 0;
       if (!error && (help || framework.length)) {
@@ -90,8 +98,8 @@ export function main(
           .join("\n")
           .replace(new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g"), "");
         yield* output.result(
-          args.includes("--version") || args.includes("-v") ? { version: VERSION } : { help: text },
-          args.includes("--version") || args.includes("-v") ? VERSION : text,
+          hasFlag(args, "--version", "-v") ? { version: VERSION } : { help: text },
+          hasFlag(args, "--version", "-v") ? VERSION : text,
         );
       }
       let status = error ? exitCode(error) : 0;
@@ -111,6 +119,7 @@ export function main(
           const failure = flushed.cause.reasons.find(Cause.isFailReason);
           if (failure?.error instanceof BrokenPipe) return 0;
           error = failure ? (knownError(failure.error) ?? new Defect()) : new Defect();
+          if (error instanceof Defect) defect = defectTrace(Cause.squash(flushed.cause));
           status = exitCode(error);
           yield* output.error(error).pipe(Effect.catchCause(() => Effect.void));
         }
@@ -128,11 +137,12 @@ export function main(
               duration: finished - started,
               outcome: status === 0 ? "success" : "failure",
               status,
+              ...(defect ? { defect } : {}),
             },
             error,
           }),
         );
-      yield* logging.flush(settings, args.includes("--json"));
+      yield* logging.flush(settings, hasFlag(args, "--json"));
       return status;
     }),
   );

@@ -121,6 +121,14 @@ describe("project-status", { timeout: 30_000 }, () => {
     expect(await status()).not.toContain("cli.jsonl");
   });
 
+  it("reads every JSON log an app writes, skipping rotated ones", async () => {
+    put("apps/api/logs/api.jsonl", '{"time":"t","level":"warn","msg":"x"}\n');
+    put("apps/api/logs/api.prev.jsonl", '{"time":"t","level":"error","msg":"x"}\n');
+    const out = await status();
+    expect(out).toContain("apps/api/logs/api.jsonl has 1 warn/error line(s)");
+    expect(out).not.toContain(".prev");
+  });
+
   it("says nothing about a clean log", async () => {
     put("logs/cli.jsonl", '{"time":"t","level":"info","msg":"command"}\n');
     expect(await status()).not.toContain("cli.jsonl");

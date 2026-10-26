@@ -39,7 +39,9 @@ fixed target.
       fragments only) and rename it to quickstacks, with no product code. `bun run check`
       green locally: lint, typecheck, 112 unit tests, 8 binary tests. Details in
       [01, Stack](../01-architecture.md#stack).
-- [ ] Push to GitHub and confirm CI's `ci-ok` passes on `main`.
+- [x] (2026-10-26) Foundation code review; fixes applied, product-design findings recorded
+      as A2-A4 in [01](../01-architecture.md#a2-a4-output-signals-and-errors-for-p1-commands-open).
+- [ ] Push to GitHub and confirm CI's `ci-ok` passes on `main` (Linux and macOS).
 - [ ] If A1 picks the npm bundle, add the Node build and point e2e at the shipped
       artifact.
 - [x] (2026-10-26) Commands are in `AGENTS.md`, from the ported base.
