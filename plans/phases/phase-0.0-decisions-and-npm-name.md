@@ -1,8 +1,9 @@
 # Phase 0.0: Decisions and name
 
-Status: IN PROGRESS 2026-10-26. Competitive research done (see
-[requirements.md](../requirements.md#what-were-replacing)); everything else waits on the
-maintainers.
+Status: IN PROGRESS 2026-10-26. Competitive research and the name check are done (see
+[requirements.md](../requirements.md#what-were-replacing) and the name check below). On
+2026-10-26 the maintainers deferred the npm reservation and every decision that does not
+block the prototype (see Deferred); the rest waits on them.
 
 | Field | Value |
 |---|---|
@@ -82,13 +83,36 @@ tests, and the review can still change details because nothing is published unti
 | Where | `quickstacks` | `quickstack` | Checked |
 |---|---|---|---|
 | npm | Free (404) | Free (404) | 2026-10-26 |
-| GitHub org or repo | | | |
-| Domain | | | |
+| GitHub user or org | Free (404) | Taken: user `QuickStack`, created 2013 | 2026-10-26 |
+| GitHub repos with the name | 2 unrelated, 0 stars (`QuickStacks-Software-Developpment/MainSite`, an org with that name, and `QuickStackSort`) | About 100, including `yoshinorim/quickstack` (336 stars, a MySQL stack-trace tool) and `biersoeckli/QuickStack` (363 stars, a self-hosted PaaS) | 2026-10-26 |
+| Domain `.com` | Registered 2005 (Tucows) | Registered 2000 (GoDaddy) | 2026-10-26 |
+| Domain `.dev` | Free (RDAP 404) | Registered (Infomaniak name servers) | 2026-10-26 |
+| Domain `.io` | Free | Registered 2025-11-29 (Porkbun) | 2026-10-26 |
+| Domain `.sh` | Free | Free | 2026-10-26 |
+
+`quickstacks` is the clearer name: free on npm, as a GitHub account, and on `.dev`, `.io`
+and `.sh`. `quickstack` collides with two established GitHub projects and has its `.com`,
+`.dev` and `.io` taken, so holding it on npm (open question 6) would only guard against
+typo-squatting.
 
 ### Deferred
 
 Decisions the maintainers chose not to make yet, each with its reason and the sub-phase
-that will ask again. Empty until the review.
+that will ask again.
+
+On 2026-10-26 the maintainers deferred everything here that does not block the prototype:
+the first goal is a working core loop run from the repo (`bun run dev`, or the compiled
+binary), and packaging for npm is a distribution task that can come later. Each deferred
+item is asked again by the sub-phase it blocks, and none of them blocks
+[0.3a](phase-0.3a-errors-and-output.md) or [0.3b](phase-0.3b-processes-and-signals.md).
+
+| Item | Deferred to | Reason |
+|---|---|---|
+| Reserving `quickstacks` on npm (and `quickstack`, open question 6) | Before [1.6c](phase-1.6c-first-release.md) publishes; sooner if someone else takes the name | Distribution is not needed for the prototype. The name was free on 2026-10-26; the risk of waiting is that someone registers it |
+| A1, D12, D22 and open question 19 | Before [0.2](phase-0.2-npm-distribution-artifact.md), which now runs late in phase 1, before [1.6b](phase-1.6b-mvp-gate-runs.md) | They only shape the npm package. Until 0.2 lands, phase 1 uses the stubs its files already describe (a stub registry path, `Host.invocation` fixed to `quickstacks`) |
+| D23 | Before [1.6c](phase-1.6c-first-release.md) | The roadmap is already written to it; nothing before 1.6c changes if it is agreed later |
+| requirements.md review and the remaining MVP-gating proposals (D5-D7, D9, D13, D14, D18-D20) | Each before the sub-phase the gating table names | None of them blocks phase 0's code; each phase-1 sub-phase asks for its own decision before work starts |
+| Review of A2-A4 | After 0.3a and 0.3b land, before 1.6c | The review is of the built code, as planned |
 
 ## Files and areas touched
 

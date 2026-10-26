@@ -1,6 +1,9 @@
 # Phase 0.2: Distribution
 
-Status: DRAFT 2026-10-26 (not agreed). Needs A1, D12, D22 and D23 decided first.
+Status: DEFERRED 2026-10-26 by the maintainers to late phase 1, before
+[1.6b](phase-1.6b-mvp-gate-runs.md): distribution is not needed for the prototype. Still a
+DRAFT (not agreed); needs A1, D12, D22 and D23 decided first. The file keeps its number
+because many phase files cite "0.2".
 
 | Field | Value |
 |---|---|
