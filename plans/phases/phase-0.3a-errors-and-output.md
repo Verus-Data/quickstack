@@ -220,8 +220,8 @@ uses for mistyped stack and fragment ids, so the two never disagree on what "clo
 fixture), new
 `src/core/suggest.ts`, `tests/errors.test.ts`, `tests/cli.test.ts` (every "stdout empty on failure" assertion
 names the tags it covers), new `tests/output.test.ts`, `.claude/rules/cli/cli.md` (the
-output contract, `progress`, `flushNow`, and its exit-mapping sentence, which gains
-"verify failed or changed 5"), `AGENTS.md` (Error handling: the exit list gains
+UX contract, whose exit-code branches gain 5 as "read the verify report", plus `progress`,
+`flushNow` and the `errorTable` pointer), `AGENTS.md` (Error handling: the exit list gains
 `VerifyFailed`/`VerifyChanged` 5, plus `details`, kept results and the `BrokenPipe`
 rule). Both files describe the shipped code, so they change in the same commit as
 `errors.ts`, not before.
@@ -264,7 +264,7 @@ the style of `tests/errors.test.ts`:
 
 - `bun run check` green from the repo root.
 - `AGENTS.md` Error handling lists exit 5 and describes `details`, kept results and the
-  `BrokenPipe` rule; `.claude/rules/cli/cli.md` lists exit 5 in its exit mappings and
+  `BrokenPipe` rule; `.claude/rules/cli/cli.md` (the UX contract) gives exit 5 its branch meaning and
   describes `progress`, `flushNow` and the `flushNow` exception.
 - A2 and A4 handed to the maintainers' review in [0.0](phase-0.0-decisions-and-npm-name.md);
   1.6c checks they are in the decisions log before publishing.

@@ -113,4 +113,4 @@ None.
 
 ## Deeper context
 
-README.md for usage/configuration; docs/harness.md for adapter ownership; .claude/README.md for installed hooks/commands; .claude/skills/effect/SKILL.md for current APIs.
+README.md for usage/configuration; docs/harness.md for adapter ownership; .claude/README.md for installed hooks/commands; .claude/rules/architecture.md for product and contract constraints on any design; .claude/skills/effect/SKILL.md for current APIs.

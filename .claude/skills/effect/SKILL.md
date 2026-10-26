@@ -5,7 +5,7 @@ description: Load before changing CLI programs, services, configuration, schemas
 
 # Effect 4 in this CLI
 
-Checked against effect, @effect/platform-bun, @effect/platform-node and @effect/vitest 4.0.5. Package exports and installed matching declarations are authoritative. Resolve an import with import.meta.resolve before searching its `.d.ts`; do not infer paths from an older prerelease. Consult installed effect/ai-docs/src and https://effect.website for current-major context. Recheck these notes with each dependency bump.
+Checked against effect, @effect/platform-bun, @effect/platform-node and @effect/vitest 4.0.6. Package exports and installed matching declarations are authoritative. Resolve an import with import.meta.resolve before searching its `.d.ts`; do not infer paths from an older prerelease. Consult installed effect/ai-docs/src and https://effect.website for current-major context. Recheck these notes with each dependency bump.
 
 ## Verified entry points
 
