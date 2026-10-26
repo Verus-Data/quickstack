@@ -54,6 +54,19 @@ export class Defect extends Schema.TaggedError<Defect>()("Defect", {}) {
 export class BrokenPipe extends Schema.TaggedError<BrokenPipe>()("BrokenPipe", {}) {
   override readonly message = "Output pipe closed.";
 }
+/**
+ * No process could start: the cwd is missing or not a directory (`cwd`), `/bin/sh` is missing
+ * (`shell`), a binary run without a shell is missing or not executable (`command`), or the system
+ * refused a new process (`resources`). `errno` is the system's code, such as `ENOENT`. A command
+ * that isn't installed under `/bin/sh -c` is not this: the shell runs and exits 127. Internal and
+ * outside `AppError`, so it reaches `main` as a `Defect` unless the caller handles it.
+ */
+export class SpawnFailed extends Schema.TaggedError<SpawnFailed>()("SpawnFailed", {
+  kind: Schema.Literals(["cwd", "shell", "command", "resources"]),
+  errno: Schema.String,
+}) {
+  override readonly message = "A process could not be started.";
+}
 /** Every error class main reports; a unit test keeps it equal to `errorTable`'s keys. */
 export const errorClasses = [
   Usage,

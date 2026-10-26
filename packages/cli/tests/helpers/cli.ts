@@ -2,12 +2,13 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { NodeServices } from "@effect/platform-node";
-import { Effect, Layer } from "effect";
-import type { Environment } from "../../src/config";
+import { Effect, type Exit, Layer, type Scope } from "effect";
+import { AppConfig, type Environment } from "../../src/config";
 import { hasFlag, main } from "../../src/main";
 import { AppLayer, runInvocation } from "../../src/runtime";
 import { Host, type HostInfo } from "../../src/services/host";
 import { Output, type Writer } from "../../src/services/output";
+import { Foreground, Processes } from "../../src/services/processes";
 export function tempDir() {
   const path = mkdtempSync(join(tmpdir(), "cli-base-"));
   return { path, cleanup: () => rmSync(path, { recursive: true, force: true }) };
@@ -55,6 +56,7 @@ export async function runCli(
       capture(stderr, options.stderr),
     ),
     Host.memory({ platform: "test-node", cwd: home, ...options.host }),
+    Foreground.layer(Foreground.make()),
   );
   try {
     const status = await runInvocation(
@@ -72,4 +74,31 @@ export async function runCli(
 /** A write error as Node reports it, with its errno code. */
 export function writeError(code: "EPIPE" | "EACCES") {
   return Object.assign(new Error(code), { code });
+}
+/**
+ * Runs `program` against the live Processes layer: real child processes, the real filesystem, and
+ * an AppConfig that captured only `env` (by default just this machine's PATH).
+ */
+export function runProcesses<A, E>(
+  program: Effect.Effect<A, E, Processes | AppConfig | Foreground | Scope.Scope>,
+  env: Environment = { PATH: process.env.PATH },
+): Promise<Exit.Exit<A, E>> {
+  const deps = Layer.mergeAll(AppConfig.memory(env), Foreground.layer(Foreground.make()));
+  const layer = Processes.layer.pipe(
+    Layer.provideMerge(deps),
+    Layer.provideMerge(NodeServices.layer),
+  );
+  return Effect.runPromiseExit(program.pipe(Effect.scoped, Effect.provide(layer)));
+}
+/**
+ * `kill(pid, 0)` liveness, for a process or (with a negative pid) a process group: success or
+ * EPERM is alive (a macOS zombie member answers EPERM), ESRCH is gone.
+ */
+export function alive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return (error as NodeJS.ErrnoException).code === "EPERM";
+  }
 }

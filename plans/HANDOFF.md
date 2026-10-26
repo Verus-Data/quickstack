@@ -10,9 +10,14 @@ to `archive/` and leave a link.
 
 ## Current state (2026-10-26)
 
-Planning, with the CLI base in place. The repo holds the problem statement, this plan
-folder, and the `typescript-cli` base as quickstacks: `doctor` and `--version` only, no
-product features. The repo is a bun-workspace monorepo (D11): the CLI is `packages/cli`,
+Phase 0's agent work is done on branch `feat/phase-0` (not yet merged to `main`):
+[0.3a](phases/phase-0.3a-errors-and-output.md) (error table, exit 5, kept results,
+progress, did-you-mean) and [0.3b](phases/phase-0.3b-processes-and-signals.md) (the
+`Processes` service and the signal policy) are executed. The maintainers deferred
+[0.2](phases/phase-0.2-npm-distribution-artifact.md) (npm distribution) to late phase 1
+and the npm reservation to before 1.6c; [0.0](phases/phase-0.0-decisions-and-npm-name.md)
+stays in progress for the decisions. The CLI still has only `doctor` and `--version`, run
+from the repo (`bun run dev`) or the compiled binary; no product features yet. The repo is a bun-workspace monorepo (D11): the CLI is `packages/cli`,
 with `packages/api` and `packages/mcp` as placeholders for the API and MCP server. The
 base and the foundation review's fixes are committed (check `git log` for what landed;
 this file doesn't cite hashes), so [0.1](phases/phase-0.1-repo-baseline.md) is executed.
@@ -56,6 +61,8 @@ which sub-phase each one blocks. D5 (the brief budget) is a hypothesis whose evi
 | Review A2-A4 as answered in 0.3a and 0.3b | Maintainers | Must be in the decisions log before [1.6c](phases/phase-1.6c-first-release.md) publishes |
 | Answer the open questions in [risks-and-open-questions.md](risks-and-open-questions.md) | Maintainers | Question 1 (registry audience) decides which stacks ship bundled |
 | Execute 0.3a (errors and output) | Agent | Done 2026-10-26 on `feat/phase-0`. Effect/cli's own unknown-subcommand suggestions are discarded for `closest` (recorded in the 0.3a plan); unknown-flag suggestions are deferred |
-| Execute 0.3b (processes and signals) | Agent, after 0.3a | Same rule for A3 |
+| Execute 0.3b (processes and signals) | Agent | Done 2026-10-26 on `feat/phase-0`. Its signal and process tests use real subprocesses and `ps -o pgid=`; they have only run on macOS so far |
+| Merge `feat/phase-0` to `main` | Maintainers | Check `ci-ok` on the branch's PR first (the Linux job is the first run of the process tests on Linux) |
+| Decide D19 (project-origin entries untrusted by default) | Maintainers | The only decision [1.0](phases/phase-1.0-entry-format-and-registry.md), the next sub-phase, blocks on |
 | Execute 0.2 (distribution) | Agent, after A1, D12 and D22 | Deferred 2026-10-26 to late phase 1, before 1.6b. Changes `bin.ts` |
 | Decide open questions 24-28 (behavior kept on purpose in phases 0-1) | Maintainers | Before 1.0, 1.1, 1.3b and 1.6c, as each question says; the rest (D25-D28, questions 29-31) can wait for phases 3-4 |

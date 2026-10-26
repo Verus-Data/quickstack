@@ -1,7 +1,8 @@
 # Phase 0.3b: Processes and signals
 
-Status: DRAFT 2026-10-26 (not agreed). Answers A3 as a recommendation; the maintainers
-review it, and it must be in the decisions log before [1.6c](phase-1.6c-first-release.md)
+Status: EXECUTED 2026-10-26 on branch `feat/phase-0` (deviations under "Found while
+executing"; the `npm exec` wrapper case waits for 0.2). Answers A3 as a recommendation;
+the maintainers review it, and it must be in the decisions log before [1.6c](phase-1.6c-first-release.md)
 publishes.
 
 | Field | Value |
@@ -328,3 +329,75 @@ program under the real platform layer:
 - A setuid or differently owned group member answers EPERM forever, so the registry would
   never drop it. SIGKILL to it fails the same way; the exit-time kill ignores the error,
   and nothing waits on it.
+
+### Found while executing (2026-10-26)
+
+- `effect/process` was not used; the spawn lives in `src/platform/process.ts` on
+  `node:child_process` (the fallback above). Checked in the installed 4.0.6
+  `@effect/platform-node-shared/NodeChildProcessSpawner` (which `BunServices` re-exports):
+  a process killed by a signal makes `handle.exitCode` fail with the signal name only in
+  the error message, so there is no `(code, signal)` pair for `Finished.signal` and
+  `128 + n`; its liveness check treats every `kill(-pid, 0)` error as gone, EPERM included;
+  its `exit` listener SIGTERMs the whole group as soon as the leader exits non-zero, which
+  would kill a backgrounded child before the 2 s drain; and its finalizer sends SIGKILL
+  only when `forceKillAfter` is set. Its argv form passes `shell` through unchanged, so it
+  would not have gone through a shell, and `detached` does default to `true` on Unix.
+- Node reports a missing `cwd` as `ENOENT` on `spawn /bin/sh`, the same as a missing shell,
+  so the service checks the cwd with `FileSystem.stat` first (`kind: "cwd"`, `ENOENT` or
+  `ENOTDIR`). A cwd that exists but can't be entered fails at spawn with `EACCES` and is
+  reported as `shell` (or `command` for `exec` and `interactive`).
+- The holder is `services/processes.ts::Foreground` (`quickstacks/Foreground`), one
+  per-invocation object with the registered groups and the interactive child's pid. bin
+  provides it in its platform layer next to `Host`; the test helpers provide a fresh one.
+- `childEnv` is a method on `AppConfig`, because the captured environment lives inside the
+  config layer. `Processes.which` reads the captured `PATH` through `childEnv([])`.
+- SIGQUIT's "Default" is done by removing the policy's listeners and re-raising the signal.
+  A signal death skips `exit` handlers, so the registered groups are SIGKILLed first (an
+  addition to the table, with a test).
+- The 1 s rule applies to SIGTERM and SIGHUP as well as SIGINT: all three share the "first
+  interrupt" time, so a SIGTERM right after a Ctrl+C is ignored and one later forces the exit.
+- `start` has no drain: `Running.exited` resolves once the leader has exited and its output
+  has closed, so a grandchild still holding the pipes keeps it pending (read as still
+  running). `ShellSpec.timeout` on `start` kills the group from a fiber owned by the scope.
+- After `run` or `exec` returns, a group member that outlived the shell with its output
+  redirected gets the scope-close sequence (SIGTERM, 5 s, SIGKILL), so such a step can take
+  up to 5 s longer. `exec` adds no note on a held pipe; `truncated` says so.
+- The agent-launched case is tested: SIGINT to quickstacks's pid alone while an interactive
+  child runs is ignored by quickstacks and never reaches the child. SIGTERM to the pid is
+  still forwarded, so that is how a script stops a handoff.
+- The signal tests run in Vitest and spawn a fixture (`tests/fixtures/signals.ts`, using
+  `installSignalPolicy`, `BunServices` and the live `Processes`) under Bun, since `bin.ts`
+  runs on Bun until 0.2. The dev-wrapper case copies `scripts/dev.ts` and runs
+  `bun scripts/dev.ts` with the fixture as its `src/bin.ts`, as `tests/dev-script.test.ts`
+  does, rather than `bun run dev`. The `npm exec` case is left to 0.2, which lands second.
+- On macOS the forwarded and terminal-delivered copies of one Ctrl+C land well inside 1 s;
+  CI has not run the tests yet.
+- The boundary covers more than the three calls named above: the Grit rule and
+  `.claude/hooks/guard-boundaries.ts` both match `process.kill`, `on`, `once`, `off`,
+  `addListener`, `removeListener`, `prependListener`, `prependOnceListener` and `exit`, and
+  imports of `node:child_process`, `child_process`, `node:process` and
+  `@effect/platform-node`, outside `bin.ts` and `src/platform/`.
+- A3 additions after review. A SIGINT left to the interactive child is remembered: if a
+  wrapper's copy of it arrives after the child has exited, within 1 s, it is ignored rather
+  than read as a first Ctrl+C. Only SIGINT gets this rule, because a SIGTERM shortly after
+  should still stop the CLI. A SIGTERM or SIGHUP forwarded to the child is remembered too:
+  when the child exits, the CLI is interrupted and exits 130, instead of carrying on with the
+  command (`foregroundCleared`, called through the holder's `onForegroundCleared`). The table
+  row "quickstacks waits for it to exit" now ends in 130.
+- Teardown: a closing scope sends SIGTERM to every group it launched at once, and each
+  group's SIGKILL is due 5 s after its own SIGTERM, so N groups that ignore SIGTERM take
+  about 5 s, not N times that. Groups in different scopes are still stopped one scope at a
+  time.
+- A scoped watcher drops a group from the registry once its output has closed and the group
+  is seen empty, and only registered groups are ever signaled, so a reused pid isn't hit.
+  `start`'s timeout checks the whole group, not just the shell.
+- `onOutput` is fed from a sliding queue of 1024 chunks: under a reader slower than the
+  command, the oldest undelivered chunks are dropped (progress is best-effort; the tail is
+  unaffected). The per-stream decoders are flushed at the end, so a trailing partial
+  character arrives as U+FFFD.
+- The kept tail starts at the next whole UTF-8 character when truncation cuts one, so it can
+  be up to 3 bytes shorter than `TAIL_BYTES`.
+- Node rejects some arguments synchronously (a NUL byte in argv or env). The adapter turns
+  that into `SpawnFailed` with Node's code as `errno` (`ERR_INVALID_ARG_VALUE`) and the
+  method's usual kind (`shell` for `run` and `start`, `command` for `exec` and
+  `interactive`), rather than a thrown defect.

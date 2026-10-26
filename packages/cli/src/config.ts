@@ -79,7 +79,15 @@ export function configLayer(env: Environment = process.env) {
           noColor: Boolean(yield* read(text("NO_COLOR"))),
         };
       });
-      return { get, paths, logging };
+      // A child's whole environment: what was captured, minus `remove`, plus `set`. Nothing is
+      // inherited from the live process environment.
+      const childEnv = (remove: readonly string[], set: Record<string, string> = {}) => {
+        const env: Record<string, string> = {};
+        for (const [key, value] of Object.entries(captured))
+          if (value !== undefined && !remove.includes(key)) env[key] = value;
+        return { ...env, ...set };
+      };
+      return { get, paths, logging, childEnv };
     }),
   );
 }
@@ -89,6 +97,11 @@ export class AppConfig extends Context.Service<
     get: Effect.Effect<Settings, InvalidConfig>;
     paths: Effect.Effect<Paths>;
     logging: Effect.Effect<LogSettings>;
+    /**
+     * The whole environment for a child process, built from the environment this layer captured
+     * (including its `PATH`): every captured name except `remove`, then `set` on top.
+     */
+    childEnv: (remove: readonly string[], set?: Record<string, string>) => Record<string, string>;
   }
 >()("quickstacks/AppConfig") {
   static layer = () => configLayer();

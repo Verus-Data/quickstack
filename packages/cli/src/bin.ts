@@ -2,9 +2,11 @@
 import { BunServices } from "@effect/platform-bun";
 import { Effect, Layer } from "effect";
 import { hasFlag, main } from "./main";
+import { installSignalPolicy } from "./platform/signals";
 import { AppLayer, runInvocation } from "./runtime";
 import { Host } from "./services/host";
 import { Output, type Writer } from "./services/output";
+import { Foreground } from "./services/processes";
 
 const writer =
   (stream: NodeJS.WriteStream): Writer =>
@@ -21,8 +23,11 @@ const output = Output.layer(
   writer(process.stdout),
   writer(process.stderr),
 );
+// This invocation's process groups and interactive child, shared with the signal policy.
+const holder = Foreground.make();
 const platform = Layer.mergeAll(
   BunServices.layer,
+  Foreground.layer(holder),
   output,
   Host.layer({
     platform: process.platform,
@@ -35,15 +40,12 @@ const platform = Layer.mergeAll(
 );
 const layer = Layer.provideMerge(AppLayer(), platform);
 const controller = new AbortController();
-const abort = () => controller.abort();
-process.on("SIGINT", abort);
-process.on("SIGTERM", abort);
+const removeSignalPolicy = installSignalPolicy(holder, () => controller.abort());
 try {
   process.exitCode = await runInvocation(
     main(args).pipe(Effect.provide(layer), Effect.scoped),
     controller.signal,
   );
 } finally {
-  process.off("SIGINT", abort);
-  process.off("SIGTERM", abort);
+  removeSignalPolicy();
 }

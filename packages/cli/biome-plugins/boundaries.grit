@@ -14,10 +14,21 @@ or {
         register_diagnostic(span=$src, message="Platform code belongs in bin.ts or an explicit platform adapter; use Effect services elsewhere.")
       },
       and {
+        $src <: r"[\"'](?:node:child_process|child_process|node:process|@effect/platform-node[^\"']*)[\"']",
+        $filename <: not r".*/src/(?:bin\.ts|platform/.*)",
+        register_diagnostic(span=$src, message="Node process APIs belong in bin.ts or src/platform/; use the Processes service elsewhere.")
+      },
+      and {
         $src <: r"[\"'](?:zod|zod/[^\"']*|@effect/schema[^\"']*)[\"']",
         register_diagnostic(span=$src, message="Use Schema from effect at project-owned boundaries.")
       }
     }
+  },
+  `process.$m($args)` as $p where {
+    $m <: r"^(?:kill|on|once|off|addListener|removeListener|prependListener|prependOnceListener|exit)$",
+    $filename <: r".*/src/.*",
+    $filename <: not r".*/src/(?:bin\.ts|platform/.*)",
+    register_diagnostic(span=$p, message="Node process APIs belong in bin.ts or src/platform/; use the Processes service elsewhere.")
   },
   `console.$m($args)` as $c where {
     $filename <: r".*/src/.*",

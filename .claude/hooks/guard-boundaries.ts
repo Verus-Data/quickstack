@@ -36,6 +36,20 @@ function reasonsFor(file: string, lines: string[]): string[] {
     reasons.push("imports Bun outside an explicit platform boundary; use Effect platform services");
   if (!platformSide && has(/(^|[^\w$.])Bun\.\w/))
     reasons.push("uses the Bun global outside an explicit platform boundary");
+  if (
+    !platformSide &&
+    has(
+      /(?:from|import)\s*\(?\s*["'](?:node:child_process|child_process|node:process|@effect\/platform-node[^"']*)["']/,
+    )
+  )
+    reasons.push("imports Node process APIs outside bin.ts and src/platform/; use Processes");
+  if (
+    !platformSide &&
+    has(
+      /(^|[^\w$.])process\.(?:kill|on|once|off|addListener|removeListener|prependListener|prependOnceListener|exit)\s*\(/,
+    )
+  )
+    reasons.push("calls a Node process API outside bin.ts and src/platform/; use Processes");
   if (!["config.ts", "bin.ts"].includes(file) && has(/(^|[^\w$.])process\.env\b/))
     reasons.push("reads process.env outside config.ts");
   if (has(/(^|[^\w$.])console\.\w+\s*\(/))
