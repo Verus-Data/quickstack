@@ -47,13 +47,13 @@ export const projectFlags = (command: "new" | "add") => ({
   ),
   yes: Flag.Boolean("yes").pipe(
     Flag.withDescription(
-      "The brief tells the agent to take every decision's default instead of asking you.",
+      "Take every decision's default: the brief tells the agent not to ask you.",
     ),
     Flag.withDefault(false),
   ),
   agents: Flag.String("agents").pipe(
     Flag.withDescription(
-      "Agents to write adapter files for: claude, codex, opencode, cursor (comma-separated). Default: the agents setting, else claude.",
+      "Agents to write adapter files for: claude, codex, opencode, cursor. Repeatable or comma-separated. Default: the agents setting, else claude.",
     ),
     Flag.atLeast(0),
     Flag.mapEffect((values) =>

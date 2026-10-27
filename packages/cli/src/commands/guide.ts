@@ -21,6 +21,14 @@ export const printGuide = Effect.gen(function* () {
 
 export const guideCommand = Command.make("guide", {}, () => printGuide).pipe(
   Command.withDescription(
-    "Print the guide for coding agents: the list, new, verify loop and the rules. Same as running quickstacks with no arguments.",
+    "Print the guide for coding agents: the list, new, verify loop and the rules. Same as running quickstacks with no arguments. Exits 0.",
   ),
+  Command.withShortDescription("Print the guide for coding agents."),
+  Command.withExamples(({ commandPath }) => [
+    { command: commandPath.join(" "), description: "Print the guide" },
+    {
+      command: `${commandPath.join(" ")} --json`,
+      description: "Get the guide and its commands as one object",
+    },
+  ]),
 );

@@ -11,4 +11,13 @@ export const doctorCommand = Command.make("doctor", {}, () =>
       `quickstacks ${report.version}\nPlatform: ${report.platform}\nCompiled: ${report.compiled}\nConfig: ${report.paths.config}\nData: ${report.paths.data}\nUser entries: ${report.paths.user}\nRegistry: ${report.registry.path}${report.registry.found ? "" : " (not found)"}\nSkill: ${report.skill.path}${report.skill.found ? "" : " (not found)"}\n${report.configErrors.length ? report.configErrors.join("\n") : "Configuration: ok"}`,
     );
   }),
-).pipe(Command.withDescription("Inspect local runtime, paths and optional configuration."));
+).pipe(
+  Command.withDescription(
+    "Inspect local runtime, paths and optional configuration: version, platform, config and data paths, the bundled registry and skill. A broken config file is reported, not fatal. Exits 0.",
+  ),
+  Command.withShortDescription("Inspect the local runtime, paths and configuration."),
+  Command.withExamples(({ commandPath }) => [
+    { command: commandPath.join(" "), description: "Print the diagnostics" },
+    { command: `${commandPath.join(" ")} --json`, description: "Get one DoctorReport object" },
+  ]),
+);

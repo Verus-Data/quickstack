@@ -14,7 +14,7 @@ export const addCommand = Command.make(
   "add",
   {
     fragments: Argument.String("fragment").pipe(
-      Argument.withDescription("One or more fragments to apply (see list fragments)."),
+      Argument.withDescription("One or more fragments to apply (see `list fragments`)."),
       Argument.atLeast(1),
     ),
     dir: Flag.String("dir").pipe(
@@ -60,6 +60,17 @@ export const addCommand = Command.make(
     }),
 ).pipe(
   Command.withDescription(
-    `Apply fragments to an existing repository without overwriting live files. Conflicts are parked under ${INCOMING}/ for your agent to merge; verify checks the whole project.`,
+    `Apply fragments to an existing repository without overwriting live files. Conflicts are parked under ${INCOMING}/ for your agent to merge; verify checks the whole project. Exits 0 on success, 2 on bad input or an unknown fragment, 3 on a bad manifest, 5 when the project's verify steps changed (VerifyChanged), 6 on permissions, 130 when interrupted; after launching an agent, the agent's own status.`,
   ),
+  Command.withShortDescription("Apply fragments to an existing repository."),
+  Command.withExamples(({ commandPath }) => [
+    {
+      command: `${commandPath.join(" ")} ci-github`,
+      description: "Add CI to the current repository",
+    },
+    {
+      command: `${commandPath.join(" ")} ci-github git-hooks --dir ../my-project --json`,
+      description: "Add two fragments to another directory, as an agent would",
+    },
+  ]),
 );

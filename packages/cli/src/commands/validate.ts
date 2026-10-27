@@ -64,11 +64,15 @@ export const validateCommand = Command.make(
       Flag.optional,
     ),
     with: Flag.String("with").pipe(
-      Flag.withDescription("With --brief: add an optional fragment or app (repeatable)."),
+      Flag.withDescription(
+        "With --brief: add an optional fragment or app. Repeatable or comma-separated.",
+      ),
       Flag.atLeast(0),
     ),
     without: Flag.String("without").pipe(
-      Flag.withDescription("With --brief: leave out a default fragment (repeatable)."),
+      Flag.withDescription(
+        "With --brief: leave out a default fragment. Repeatable or comma-separated.",
+      ),
       Flag.atLeast(0),
     ),
     sandbox: Flag.Boolean("sandbox").pipe(
@@ -119,6 +123,18 @@ export const validateCommand = Command.make(
     }),
 ).pipe(
   Command.withDescription(
-    "Check stacks and fragments before an agent builds from them: frontmatter, references, conditional prose, compositions, verify layers (install, lint, typecheck, test) and word budgets. Reads files only; exits 2 with the report on stdout when there are errors.",
+    "Check stacks and fragments before an agent builds from them: frontmatter, references, conditional prose, compositions, verify layers (install, lint, typecheck, test) and word budgets. Reads files only. Exits 0 when there are no errors (warnings and notes don't fail), 2 on errors (ValidationFailed, with the report still on stdout) or a path that is neither a registry nor an entry, 6 when the root can't be read.",
   ),
+  Command.withShortDescription("Check stacks and fragments, or preview a composed brief."),
+  Command.withExamples(({ commandPath }) => [
+    { command: commandPath.join(" "), description: "Check the bundled registry" },
+    {
+      command: `${commandPath.join(" ")} ~/.config/quickstacks/stacks/my-api --json`,
+      description: "Check one entry and get the ValidateReport",
+    },
+    {
+      command: `${commandPath.join(" ")} --brief typescript-cli --sandbox`,
+      description: "Print the brief a composition renders to, with its word count",
+    },
+  ]),
 );

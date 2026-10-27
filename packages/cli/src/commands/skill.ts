@@ -42,11 +42,24 @@ const install = Command.make(
     }),
 ).pipe(
   Command.withDescription(
-    "Install the bundled Claude Code skill (default: $HOME/.claude/skills/quickstacks/SKILL.md).",
+    "Install the bundled Claude Code skill (default: $HOME/.claude/skills/quickstacks/SKILL.md). Other agents can take the text from --print. Exits 0 when written or unchanged, 2 when a different SKILL.md is already there (TargetNotEmpty; --force replaces it) or the bundled skill is missing, 6 when HOME is unset or the target can't be written.",
   ),
+  Command.withShortDescription("Install the agent skill for Claude Code."),
+  Command.withExamples(({ commandPath }) => [
+    { command: commandPath.join(" "), description: "Install for your user" },
+    {
+      command: `${commandPath.join(" ")} --project`,
+      description: "Install into the current repository's .claude/skills/",
+    },
+    {
+      command: `${commandPath.join(" ")} --print`,
+      description: "Print the skill to copy somewhere else",
+    },
+  ]),
 );
 
 export const skillCommand = Command.make("skill").pipe(
   Command.withDescription("Manage the bundled quickstacks agent skill."),
+  Command.withShortDescription("Manage the bundled agent skill."),
   Command.withSubcommands([install]),
 );

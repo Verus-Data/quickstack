@@ -102,8 +102,20 @@ export const listCommand = Command.make(
     }),
 ).pipe(
   Command.withDescription(
-    "List the stacks, fragments and apps you can build from, with where each comes from and whether it is trusted.",
+    "List the stacks, fragments and apps you can build from, with where each comes from and whether it is trusted. Inside a project, the default view shows the fragments you can still add. Exits 0, or 2 on an unknown group.",
   ),
+  Command.withShortDescription("List the stacks, fragments and apps you can build from."),
+  Command.withExamples(({ commandPath }) => [
+    {
+      command: commandPath.join(" "),
+      description: "Show every group, or addable fragments in a project",
+    },
+    { command: `${commandPath.join(" ")} stacks`, description: "Show only the stacks" },
+    {
+      command: `${commandPath.join(" ")} --json`,
+      description: "Get the full registry as one ListResult object",
+    },
+  ]),
 );
 
 function descriptionWidth(

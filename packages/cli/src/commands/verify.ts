@@ -121,8 +121,20 @@ export const verifyCommand = Command.make(
     }),
 ).pipe(
   Command.withDescription(
-    `Run this project's verify steps from ${MANIFEST_PATH} (found from here or any directory above): setup, check, serve (each server probed, then stopped), then teardown, which always runs. Prints each command before running it. First checks the steps against the copy recorded when the project was made; changed steps run nothing and exit 5 (VerifyChanged) until a person runs --accept-changes. Every run appends a record to ${RUNS_PATH}. Exits 0 when green or partial, 5 with the report on stdout when a step fails or the steps changed.`,
+    `Run this project's verify steps from ${MANIFEST_PATH} (found from here or any directory above): setup, check, serve (each server probed, then stopped), then teardown, which always runs. Prints each command before running it. First checks the steps against the copy recorded when the project was made; changed steps run nothing until a person runs --accept-changes. Every run appends a record to ${RUNS_PATH}. Exits 0 when green or partial, 2 outside a project, 3 on a bad manifest or a state record from a newer quickstacks, 5 when a step fails (VerifyFailed) or the steps changed (VerifyChanged), with the report still on stdout, 6 when --accept-changes is refused, 130 when interrupted (teardown still runs).`,
   ),
+  Command.withShortDescription("Run the project's verify steps: the definition of done."),
+  Command.withExamples(({ commandPath }) => [
+    { command: commandPath.join(" "), description: "Run every step from the project root" },
+    {
+      command: `${commandPath.join(" ")} --only lint,test`,
+      description: "Rerun two checks while fixing them (outcome partial)",
+    },
+    {
+      command: `${commandPath.join(" ")} --json`,
+      description: "Get one VerifyResult object, as an agent would",
+    },
+  ]),
 );
 
 const requireConfirmation = Effect.gen(function* () {
