@@ -8,12 +8,12 @@ Acceptance tests: traced
 
 | Field | Value |
 |---|---|
-| Goal | After `new` writes the project, the brief reaches an agent without the user copying anything: the agent that called quickstack is told what to do next, or the first agent CLI on PATH is launched with the brief as its first prompt, or the prompt is printed. No agent is ever launched for a project with an untrusted entry. Running `quickstack` with no arguments prints a guide written for agents; a `guide` subcommand printing the same guide is proposed, not agreed |
+| Goal | After `new` writes the project, the brief reaches an agent without the user copying anything: the agent that called stacks is told what to do next, or the first agent CLI on PATH is launched with the brief as its first prompt, or the prompt is printed. No agent is ever launched for a project with an untrusted entry. Running `stacks` with no arguments prints a guide written for agents; a `guide` subcommand printing the same guide is proposed, not agreed |
 | Traces to | "The CLI writes a few files and a brief, then hands off to the agent the user already has"; assumption "Handoff to whatever agent is on PATH is the right entry point" (confidence low, "Watch whether people use `new` from a terminal or ask their agent to run it"); the agent user: "It runs `list --json`, picks a stack, runs `new`, reads the brief, builds, and loops on `verify`" |
 | Depends on | [1.2a](phase-1.2a-new-scaffold-and-templates.md) (`new` and its result), [1.2b](phase-1.2b-manifest-state-and-detection.md) (the manifest with its optional `handoff` field, `AppConfig.agent`, `DetectedAgent`, `AgentMarkers`), [0.3b](phase-0.3b-processes-and-signals.md) (`Processes.interactive`, `Processes.which`, the A3 signal policy), [0.3a](phase-0.3a-errors-and-output.md) (`Output.flushNow`, `Host.stdinIsTTY`, `Host.stdoutIsTTY`) |
 | Blocks | [1.6b](phase-1.6b-mvp-gate-runs.md) (the gate runs use the real handoff), [2.0b](phase-2.0b-bench.md) (the bench reuses the launch-args table and prompt text), [3.0](phase-3.0-add-fragments-to-repo.md) (`add` reuses the handoff module and flags), [3.4c](phase-3.4c-agent-skill.md) (the agent skill reuses the guide's loop and rules) |
 | Decisions needed | D9 (both entry points, instrumented). If deferred, build both anyway and record the handoff kind, since recording costs nothing. If the maintainers drop the PATH launch, the `launch` outcome and its tests go and `print` takes its place; the rest stands. A3 (signal policy, 0.3b) as recommended; if A3 changes, only the launch step changes |
-| Settles | Launch order; when the CLI refuses to launch; the exact prompt text; how `new` exits after launching an agent; the manifest's `handoff` record; what `quickstack` with no arguments prints; whether a `guide` subcommand prints it too (proposed) |
+| Settles | Launch order; when the CLI refuses to launch; the exact prompt text; how `new` exits after launching an agent; the manifest's `handoff` record; what `stacks` with no arguments prints; whether a `guide` subcommand prints it too (proposed) |
 
 ## Scope
 
@@ -40,7 +40,7 @@ Out:
 - The `agents` setting (added by 1.1; read here for launch order).
 - Native per-agent config under `adapters/<agent>/` for anything but Claude Code
   ([3.4b](phase-3.4b-native-agent-adapters.md)).
-- An agent skill that teaches agents about quickstack ([3.4c](phase-3.4c-agent-skill.md)
+- An agent skill that teaches agents about stacks ([3.4c](phase-3.4c-agent-skill.md)
   ships one, reusing this guide's loop and rules).
 - Sending the handoff kind anywhere (4.1a, if D17 is agreed).
 - `add` handoff (3.0 reuses this module).
@@ -60,7 +60,7 @@ Everything the decision reads is already defined elsewhere; this sub-phase cites
 | Agent ids | `AgentId` from 1.0 |
 | Configured order | `Settings.agents` (1.1) |
 | Trust | `trusted` on each composed `Entry` (1.0) |
-| How this CLI was invoked | `Host.invocation` (`quickstack`, or `npx -y quickstack@<version>`) |
+| How this CLI was invoked | `Host.invocation` (`stacks`, or `npx -y stacks@<version>`) |
 
 ### The decision
 
@@ -91,7 +91,7 @@ The handler looks up each candidate binary with `Processes.which` first, so the 
 stays pure. Rules, first match wins:
 
 1. An agent is detected (`detected` is not `"none"`, so `"other"` counts): `inside-agent`.
-   quickstack is already a tool call inside an agent session; launching a second agent
+   stacks is already a tool call inside an agent session; launching a second agent
    there would nest sessions.
 2. `--json`: `print` with reason `json`. A machine caller wants a result, not a terminal
    takeover.
@@ -117,7 +117,7 @@ Rule 5 sits below 1-4 only because those already never launch; any reordering mu
 
 One sentence, the same in every outcome, built by `agentPrompt(invocation)`:
 
-> Read .quickstack/BRIEF.md and carry it out. It's your full task for this project; you're done when `<invocation> verify` passes.
+> Read .stacks/BRIEF.md and carry it out. It's your full task for this project; you're done when `<invocation> verify` passes.
 
 `<invocation>` is `Host.invocation`, the same string the brief uses (1.1), so a project
 created through `npx` names the pinned version. Launch arguments per agent:
@@ -136,7 +136,7 @@ docs; a test asserts every `AgentId` has a row.
 
 | Kind | Stdout (human) | `--json` result `handoff` field | Exit |
 |---|---|---|---|
-| `inside-agent` | `NEXT STEP FOR THE AGENT: read .quickstack/BRIEF.md now and carry it out, working in <dir>. Loop on <invocation> verify until it passes. Don't stop here to report back; the brief says when to ask the user.` With untrusted entries, instead: `STOP: this project uses entries this machine hasn't trusted: <ids>. Don't start. Show the user the list and .quickstack/BRIEF.md's first section, and continue only if they confirm.` | `{ kind, agent, untrusted }` | 0 |
+| `inside-agent` | `NEXT STEP FOR THE AGENT: read .stacks/BRIEF.md now and carry it out, working in <dir>. Loop on <invocation> verify until it passes. Don't stop here to report back; the brief says when to ask the user.` With untrusted entries, instead: `STOP: this project uses entries this machine hasn't trusted: <ids>. Don't start. Show the user the list and .stacks/BRIEF.md's first section, and continue only if they confirm.` | `{ kind, agent, untrusted }` | 0 |
 | `launch` | `Launching <bin> in <dir>...`, flushed, then the agent owns the terminal | not reachable (`--json` never launches) | the agent's status |
 | `print` | `Next: open <dir> in your coding agent and give it this prompt:`, the prompt, an example (`cd <dir> && claude "<prompt>"`) and the brief path; with untrusted entries, a warning naming each entry and its path first | `{ kind, reason, agent?, untrusted, prompt }` | 0 |
 
@@ -158,7 +158,7 @@ drop stderr.
    Ctrl+C reaches it ([roadmap, Contracts: Process service](../roadmap.md#types-and-schemas)).
    Its environment is the captured environment unchanged (the user is starting their own
    agent; nothing is stripped). While it runs, the A3 policy (0.3b) ignores SIGINT and
-   SIGQUIT in quickstack and forwards SIGTERM and SIGHUP.
+   SIGQUIT in stacks and forwards SIGTERM and SIGHUP.
 4. The child's status becomes the invocation's exit: its code, or 128 plus the signal
    number. `new` returns it through a per-invocation exit-status override that `main`
    applies only when the command succeeded, so a non-zero agent exit writes no error
@@ -183,29 +183,29 @@ Manifest](../roadmap.md#types-and-schemas)); this sub-phase fills it:
 and `launch`, and is `"other"` when an unrecognized agent was detected. Filling a declared optional field needs no `schemaVersion` bump
 ([roadmap, Schema versions](../roadmap.md#schema-versions)), and `handoff` is outside the
 step digest (Trust model point 5). This is the local half of D9's instrumentation: 2.0c's
-`quickstack runs` reports it; 4.1a can send it if telemetry is agreed.
+`stacks runs` reports it; 4.1a can send it if telemetry is agreed.
 
 ### The no-argument guide
 
-`quickstack` with no subcommand prints a short guide written for agents (and readable by
+`stacks` with no subcommand prints a short guide written for agents (and readable by
 people) instead of the framework's help. Today a bare invocation ends in the framework's
 `ShowHelp`, which `main` turns into help text and exit 0; the guide replaces that text
 only for the bare root, and `--help` keeps the framework help. Content, under 250 words,
 in `src/core/guide.ts` with a test asserting the cap with `countWords`:
 
-1. What quickstack does, in two sentences.
-2. The loop: `quickstack list --json`, pick a stack and tell the user why,
-   `quickstack new <stack> <dir> [--sandbox]`, read the brief, loop on
-   `quickstack verify`.
+1. What stacks does, in two sentences.
+2. The loop: `stacks list --json`, pick a stack and tell the user why,
+   `stacks new <stack> <dir> [--sandbox]`, read the brief, loop on
+   `stacks verify`.
 3. Rules: never pick an entry `list --json` marks untrusted unless the user named it
-   (Trust model point 3); never edit `.quickstack/manifest.json`; weakening a step counts
+   (Trust model point 3); never edit `.stacks/manifest.json`; weakening a step counts
    as failure; if `verify` reports `VerifyChanged`, stop and ask the user (only they can
    accept the change); ask the user only what the brief says to ask.
 4. Where the user's own stacks go (the user directory from 1.0).
 
 `--json` on the bare root returns `{ guide: "<text>", commands: [...] }`.
 
-`quickstack guide` (proposed) is a subcommand with no arguments that prints the same
+`stacks guide` (proposed) is a subcommand with no arguments that prints the same
 text from the same `src/core/guide.ts`, with the same `--json` result, so there is one
 guide and two ways to reach it. It exists because the bare root is easy to miss: a
 subcommand shows up in `--help`'s command list, and an agent told "run the guide" has a
@@ -213,13 +213,13 @@ name to run. It reads neither the project nor the registry, so it works anywhere
 
 ### The help footer
 
-`quickstack --help` keeps the framework's help, and ends with a fixed footer from the
+`stacks --help` keeps the framework's help, and ends with a fixed footer from the
 same `src/core/guide.ts`, so an agent that reaches for `--help` first still finds the
 loop:
 
 ```
 Start here (agents): <cli> list --json, pick a stack and tell the user why,
-then <cli> new <stack> <dir> --json, then follow .quickstack/BRIEF.md
+then <cli> new <stack> <dir> --json, then follow .stacks/BRIEF.md
 until <cli> verify is green. Run <cli> with no arguments for the full guide.
 ```
 
@@ -241,7 +241,7 @@ toward nothing (it isn't the guide's 250 words).
 | `--launch` binary not on PATH | none; `print` with `agent-not-found` | 0 | The printed prompt plus "claude isn't on PATH" |
 | Spawn fails after the binary was found | `SpawnFailed` handled here: `PermissionDenied` for `EACCES`, `Defect` otherwise | 6 or 1 | The project is written; stdout already has the summary (step 2 flushed it); stderr has the envelope |
 | Agent exits non-zero or by signal | none | the agent's status | Whatever the agent printed |
-| SIGTERM or SIGHUP to quickstack during the session | none | forwarded; then the agent's status | The agent shuts down; no orphan is left on the terminal |
+| SIGTERM or SIGHUP to stacks during the session | none | forwarded; then the agent's status | The agent shuts down; no orphan is left on the terminal |
 | Untrusted entries composed | none; `print` with `untrusted`, or the `STOP` text inside an agent | 0 | A warning naming each entry and its path |
 
 ### Decisions settled here
@@ -299,22 +299,22 @@ toward nothing (it isn't the guide's 250 words).
    before the child ran. The agent's environment is the captured one unchanged, and the
    `command` log record names the handoff kind and agent only.
 8. Signal policy (subprocess form, as the dev-script test does): the fake agent sleeps; the
-   test sends SIGTERM to quickstack and asserts the child received SIGTERM and quickstack
+   test sends SIGTERM to stacks and asserts the child received SIGTERM and stacks
    exited 130 (the A3 policy: a forwarded SIGTERM stops the CLI with 130 once the child
    exits).
 9. `--no-launch`, either TTY flag false, an untrusted fixture entry with a fake `claude` on
    `PATH`, and an empty `PATH`: each prints the prompt, exit 0, and the fake `claude` never
    ran.
 10. The prompt uses `Host.invocation`: with an npx-style invocation it reads
-    `npx -y quickstack@<version> verify`.
-11. `quickstack` with no args: the guide, exit 0, under 250 words by `countWords`, and it
+    `npx -y stacks@<version> verify`.
+11. `stacks` with no args: the guide, exit 0, under 250 words by `countWords`, and it
     contains the untrusted-entry rule and the `VerifyChanged` rule; `--help` still shows the
     framework help; `--json` returns `GuideResult`.
-12. `quickstack guide` (proposed) prints exactly the bare root's text, exit 0, and
+12. `stacks guide` (proposed) prints exactly the bare root's text, exit 0, and
     `guide --json` returns the same result as the bare root's `--json`; `guide` appears in
     the root `--help` command list.
-13. `quickstack --help` ends with the "Start here (agents)" footer using
-    `Host.invocation`; `quickstack new --help` does not contain it; exit 0 for both.
+13. `stacks --help` ends with the "Start here (agents)" footer using
+    `Host.invocation`; `stacks new --help` does not contain it; exit 0 for both.
 14. e2e: the built artifact run with `CLAUDECODE=1` on a fixture registry prints the
     next-step text and writes the manifest record.
 
@@ -365,11 +365,11 @@ What execution found, 2026-10-26:
 - The `guide` subcommand is built (`commands/guide.ts`) though the maintainers haven't
   formally agreed it. Dropping it is deleting that file and its line in `cli.ts`; the bare
   root keeps the same handler. The footer still says "Run <cli> with no arguments".
-- Signal test: the plan expected quickstack to exit 143 after a forwarded SIGTERM. The A3
+- Signal test: the plan expected stacks to exit 143 after a forwarded SIGTERM. The A3
   policy as built in 0.3b (`platform/signals.ts::foregroundCleared`, AGENTS.md "Error
   handling") stops the CLI with 130 once the child exits, the same as every other signal
   stop, so acceptance test 8 asserts 130. The agent's own status still reaches the caller
-  when nothing signaled quickstack.
+  when nothing signaled stacks.
 - The prompt text changed from the 1.2a placeholder: no backticks around the verify command
   ("It's your full task ...; you're done when <invocation> verify passes."), because the
   printed example puts the prompt in double quotes and backticks would run as a command
@@ -398,7 +398,7 @@ What execution found, 2026-10-26:
   commands. They name `verify`, which lands with 1.3a; the test that every listed command
   is a subcommand skips `verify` until then.
 - The e2e test puts the fixture stack in the user directory, because entries under
-  `QUICKSTACK_REGISTRY_DIR` are untrusted and would give the `STOP` text.
+  `STACKS_REGISTRY_DIR` are untrusted and would give the `STOP` text.
 
 Review, 2026-10-26:
 

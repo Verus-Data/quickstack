@@ -73,8 +73,8 @@ it.effect.prop(
         year: String(new Date().getUTCFullYear()),
       };
       const xdg = join(home, "config");
-      mkdirSync(join(xdg, "quickstack"), { recursive: true });
-      writeFileSync(join(xdg, "quickstack/config.json"), JSON.stringify({ author: vars.author }));
+      mkdirSync(join(xdg, "stacks"), { recursive: true });
+      writeFileSync(join(xdg, "stacks/config.json"), JSON.stringify({ author: vars.author }));
       const files = await render(c, vars);
       const result = newResult(
         await scaffoldCli(fixture, home, name, { agents: agent, sandbox, scope }),

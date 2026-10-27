@@ -407,9 +407,9 @@ describe("new refuses before writing", () => {
 
   test("an invalid package_scope setting is InvalidConfig, nothing written", async () => {
     const home = setup();
-    mkdirSync(join(home, "config", "quickstack"), { recursive: true });
+    mkdirSync(join(home, "config", "stacks"), { recursive: true });
     writeFileSync(
-      join(home, "config", "quickstack", "config.json"),
+      join(home, "config", "stacks", "config.json"),
       JSON.stringify({ package_scope: "Acme" }),
     );
     const { status, stderr } = await newCli(["fixture-stack", "app", "--json"], { home });
@@ -743,8 +743,8 @@ describe("template variables", () => {
   };
   const configured = (settings: object) => {
     const home = setup();
-    mkdirSync(join(home, "config", "quickstack"), { recursive: true });
-    writeFileSync(join(home, "config", "quickstack", "config.json"), JSON.stringify(settings));
+    mkdirSync(join(home, "config", "stacks"), { recursive: true });
+    writeFileSync(join(home, "config", "stacks", "config.json"), JSON.stringify(settings));
     return home;
   };
 
@@ -770,9 +770,9 @@ describe("template variables", () => {
       };
       expect(await readme([], { home: gitHome(), env: withGit })).toContain("- author: Git Name\n");
       const both = gitHome();
-      mkdirSync(join(both, "config", "quickstack"), { recursive: true });
+      mkdirSync(join(both, "config", "stacks"), { recursive: true });
       writeFileSync(
-        join(both, "config", "quickstack", "config.json"),
+        join(both, "config", "stacks", "config.json"),
         JSON.stringify({ author: "Set Author" }),
       );
       expect(await readme([], { home: both, env: withGit })).toContain("- author: Set Author\n");
@@ -1121,7 +1121,7 @@ describe("a real CLI process", () => {
         PATH: `${shim}:${process.env.PATH ?? ""}`,
         HOME: home,
         LOG_LEVEL: "none",
-        QUICKSTACK_REGISTRY_DIR: newRegistry,
+        STACKS_REGISTRY_DIR: newRegistry,
       },
     });
     const closed = new Promise<number | null>((resolve, reject) => {
@@ -1131,7 +1131,7 @@ describe("a real CLI process", () => {
     await vi.waitFor(() => expect(existsSync(marker)).toBe(true), { timeout: 10000 });
     expect(existsSync(join(home, "app", ".stacks", "BRIEF.md"))).toBe(true);
     expect(statSync(join(home, "app", ".git")).isDirectory()).toBe(true);
-    const records = join(home, ".local", "state", "quickstack", "projects");
+    const records = join(home, ".local", "state", "stacks", "projects");
     expect(readdirSync(records)).toHaveLength(1);
     process.kill(-(child.pid as number), "SIGINT");
     expect(await closed).toBe(130);

@@ -25,7 +25,7 @@ flowchart TB
 
 The two text renderings carry the same result with the same exit code and files; agent output leaves out what an agent doesn't need:
 
-- No log lines on stderr (they go only to `QUICKSTACK_LOG_FILE` when it is set), so stderr is the failure message, its detail lines and `Next:`, plus `verify`'s `> <step>` line as each step starts.
+- No log lines on stderr (they go only to `STACKS_LOG_FILE` when it is set), so stderr is the failure message, its detail lines and `Next:`, plus `verify`'s `> <step>` line as each step starts.
 - Paths in a command's result text print relative to the working directory when inside it, absolute otherwise. Paths in error details (`Path:`, `Looked for:`) stay absolute for now, and `--json` keeps every path absolute.
 - `new`: no written-file listing (the brief lists the files), no absolute `Project:` line, and no `For example:` command after a printed prompt (it repeats the prompt).
 - `verify`: no rows for passed steps (the summary counts them) and none on a `changed` run, where every step is skipped for the same reason and the error lists the change. Failed and skipped rows, output tails and the `Next:` line stay, and the per-command progress lines are human-only.
@@ -47,7 +47,7 @@ Stdout contains results only. `--json` emits one result object; JSON version is 
 
 Two exceptions keep stdout. A failure that carries a report (`VerifyFailed`, `VerifyChanged`, `ValidationFailed`) writes that report to stdout before the error. A command that hands the terminal to another program writes its output so far before doing so, which stays on stdout if it later fails.
 
-In JSON and agent output, ancillary logs go only to the optional log file, so stderr stays parseable and short; set `QUICKSTACK_LOG_FILE`, or rerun at a terminal, to see why a `Defect` happened. A `--json` after `--` belongs to the command, not to quickstack. Human output emits logs to stderr, before any error, and optionally to the same JSONL file; the summary record of an expected failure goes to the file only, so `Next:` ends stderr (a `Defect`'s stays, with its stack frames).
+In JSON and agent output, ancillary logs go only to the optional log file, so stderr stays parseable and short; set `STACKS_LOG_FILE`, or rerun at a terminal, to see why a `Defect` happened. A `--json` after `--` belongs to the command, not to stacks. Human output emits logs to stderr, before any error, and optionally to the same JSONL file; the summary record of an expected failure goes to the file only, so `Next:` ends stderr (a `Defect`'s stays, with its stack frames).
 
 ## JSON Schemas
 
@@ -60,7 +60,7 @@ Each exit code means one next action, and a published code never changes meaning
 | Exit | Tags | Next action |
 | --- | --- | --- |
 | 0 | | Success. For `verify`, check the outcome: `partial` is exit 0 but not done |
-| 1 | `Defect` | A bug in quickstack; not retryable |
+| 1 | `Defect` | A bug in stacks; not retryable |
 | 2 | `Usage`, `BadInput`, `NotFound`, `EntryInvalid`, `ComposeConflict`, `TargetNotEmpty`, `ValidationFailed` | Fix the input. `ValidationFailed` keeps its report on stdout |
 | 3 | `NotConfigured`, `InvalidConfig` | Fix the configuration or manifest, or upgrade @steamfield/stacks for a newer schema |
 | 4 | `UpstreamUnavailable` | Retry later |
@@ -74,6 +74,6 @@ After `new` launches an agent, the exit is that agent's own status (128 plus the
 
 Ctrl+C (SIGINT), SIGTERM or SIGHUP stops the command after its cleanup, with exit 130, and the processes it started are killed. A second Ctrl+C within a second of the first is treated as the same keypress (a wrapper such as `bun run dev` or `npx` forwards a copy); one a second or more later exits at once, killing those processes without further cleanup.
 
-While quickstack has handed the terminal to another program (an agent launched by `new`), Ctrl+C and SIGQUIT belong to that program, and SIGTERM and SIGHUP are passed on to it; once that program exits, quickstack stops too, with exit 130.
+While stacks has handed the terminal to another program (an agent launched by `new`), Ctrl+C and SIGQUIT belong to that program, and SIGTERM and SIGHUP are passed on to it; once that program exits, stacks stops too, with exit 130.
 
 Processes started by `verify` run in their own process group. On interruption, timeout or the end of a step, the group gets SIGTERM, then SIGKILL after 5 seconds.

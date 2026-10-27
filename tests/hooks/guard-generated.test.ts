@@ -7,7 +7,7 @@ describe("shared generated-output guard", () => {
     "build/index.js",
     "coverage/index.html",
     "bun.lock",
-    "packages/cli/dist/quickstack",
+    "packages/cli/dist/stacks",
     "packages/shared/coverage/index.html",
   ])("denies %s", async (path) => {
     expect(

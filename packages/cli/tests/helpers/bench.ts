@@ -117,7 +117,7 @@ export function benchFixture(space: ReturnType<typeof workspace>, compiled?: () 
     LANG: "C.UTF-8",
     NO_COLOR: "1",
     LOG_LEVEL: "none",
-    QUICKSTACK_BENCH_OBSERVE: cliLog,
+    STACKS_BENCH_OBSERVE: cliLog,
     CLAUDE_CODE_OAUTH_TOKEN: "fake-claude-token-for-tests",
     CODEX_ACCESS_TOKEN: "fake-codex-token-for-tests",
     GIT_CONFIG_NOSYSTEM: "1",
@@ -157,7 +157,7 @@ export function benchFixture(space: ReturnType<typeof workspace>, compiled?: () 
     writeFileSync(
       sourceBin,
       `${shebang}import { appendFileSync as observeBenchChild } from "node:fs";\n` +
-        `if (process.env.QUICKSTACK_BENCH_OBSERVE) observeBenchChild(process.env.QUICKSTACK_BENCH_OBSERVE, JSON.stringify({ args: process.argv.slice(2), cwd: process.cwd(), executable: process.argv[1], env: process.env }) + "\\n");\n${body}`,
+        `if (process.env.STACKS_BENCH_OBSERVE) observeBenchChild(process.env.STACKS_BENCH_OBSERVE, JSON.stringify({ args: process.argv.slice(2), cwd: process.cwd(), executable: process.argv[1], env: process.env }) + "\\n");\n${body}`,
     );
   }
   const registry = join(packageRoot, "registry");
@@ -283,7 +283,7 @@ export function benchFixture(space: ReturnType<typeof workspace>, compiled?: () 
           childEnv: (remove, set) =>
             config.childEnv(remove, {
               ...set,
-              QUICKSTACK_BENCH_OBSERVE: cliLog,
+              STACKS_BENCH_OBSERVE: cliLog,
             }),
         })),
       ),

@@ -1,6 +1,6 @@
-# quickstack
+# stacks
 
-quickstack starts projects for coding agents. You pick a stack, it writes a few starter files and a brief, your coding agent builds the project from the brief, and `stacks verify` says when it's done. To try it, follow the [quick start](docs/quickstart.md).
+stacks starts projects for coding agents. You pick a stack, it writes a few starter files and a brief, your coding agent builds the project from the brief, and `stacks verify` says when it's done. To try it, follow the [quick start](docs/quickstart.md).
 
 The npm package is `@steamfield/stacks`; the command it installs is `stacks`. It needs Node 22 or newer, on macOS or Linux.
 
@@ -10,7 +10,7 @@ npm install -g @steamfield/stacks   # or install it, then run it as `stacks`
 stacks new typescript-cli my-cli
 ```
 
-The CLI is TypeScript on Effect, bundled for Node. It executes nothing it reads: only `verify` runs commands, and only the steps in a project's own manifest. [How quickstack works](docs/architecture.md) explains the design, and the [docs index](docs/README.md) lists everything else: concepts, agents, authoring, and the command, output, configuration and validation references.
+The CLI is TypeScript on Effect, bundled for Node. It executes nothing it reads: only `verify` runs commands, and only the steps in a project's own manifest. [How stacks works](docs/architecture.md) explains the design, and the [docs index](docs/README.md) lists everything else: concepts, agents, authoring, and the command, output, configuration and validation references.
 
 ## Bundled stacks
 

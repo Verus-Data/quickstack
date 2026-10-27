@@ -139,7 +139,7 @@ export const RunRecord = Schema.Struct({
   schemaVersion: Schema.Literal(1),
   /** ISO start time, from Clock. */
   at: Schema.String,
-  /** The quickstack version that ran. */
+  /** The stacks version that ran. */
   cli: Schema.String,
   agent: DetectedAgent,
   outcome,

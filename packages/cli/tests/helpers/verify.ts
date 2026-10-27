@@ -50,7 +50,7 @@ export function manifest(steps: StepInput[], overrides: Partial<Manifest> = {}):
 export const stateEnv = (home: string) => ({ XDG_STATE_HOME: join(home, "state") });
 /** Where the state record for `projectId` lives under `stateEnv(home)`. */
 export const recordPath = (home: string, projectId: string) =>
-  join(home, "state", "quickstack", "projects", `${projectId}.json`);
+  join(home, "state", "stacks", "projects", `${projectId}.json`);
 
 /**
  * Writes a project as `new` leaves it: the manifest under `root` and its state record under

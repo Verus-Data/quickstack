@@ -1,12 +1,12 @@
 #!/usr/bin/env bun
-// `bun run dev -- <args>`: quickstack from source, the way a person or agent runs it while working
+// `bun run dev -- <args>`: stacks from source, the way a person or agent runs it while working
 // here. Adds what the installed binary doesn't do:
 //   - LOG_LEVEL defaults to info (the binary's default is warn), so each run logs its
 //     command records.
-//   - JSON log lines go to logs/cli.jsonl (QUICKSTACK_LOG_FILE), appended across runs.
+//   - JSON log lines go to logs/cli.jsonl (STACKS_LOG_FILE), appended across runs.
 //   - stderr is copied to logs/cli.log. Both files move to *.prev.* past 5 MB.
-//   - Development data is saved in .dev/data (QUICKSTACK_DATA_DIR), not your real ~/.local/share/quickstack.
-//   - Project state records go to .dev/state (QUICKSTACK_STATE_DIR), not ~/.local/state/quickstack.
+//   - Development data is saved in .dev/data (STACKS_DATA_DIR), not your real ~/.local/share/stacks.
+//   - Project state records go to .dev/state (STACKS_STATE_DIR), not ~/.local/state/stacks.
 // Everything else (stdin, stdout, the exit code, Ctrl+C) passes straight through.
 import { appendFileSync, existsSync, mkdirSync, renameSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -18,7 +18,7 @@ const root = join(import.meta.dirname, "..");
 // directory, so a caller outside the repository sets INIT_CWD="$PWD".
 const caller =
   process.env.INIT_CWD || process.env.npm_config_local_prefix || process.env.PWD || process.cwd();
-const registry = process.env.QUICKSTACK_REGISTRY_DIR;
+const registry = process.env.STACKS_REGISTRY_DIR;
 const logs = join(root, "logs");
 mkdirSync(logs, { recursive: true });
 
@@ -43,10 +43,10 @@ const child = Bun.spawn(
     env: {
       ...process.env,
       LOG_LEVEL: process.env.LOG_LEVEL || "info",
-      QUICKSTACK_LOG_FILE: process.env.QUICKSTACK_LOG_FILE ?? join(logs, "cli.jsonl"),
-      QUICKSTACK_DATA_DIR: process.env.QUICKSTACK_DATA_DIR || join(root, ".dev", "data"),
-      QUICKSTACK_STATE_DIR: process.env.QUICKSTACK_STATE_DIR || join(root, ".dev", "state"),
-      ...(registry ? { QUICKSTACK_REGISTRY_DIR: resolve(caller, registry) } : {}),
+      STACKS_LOG_FILE: process.env.STACKS_LOG_FILE ?? join(logs, "cli.jsonl"),
+      STACKS_DATA_DIR: process.env.STACKS_DATA_DIR || join(root, ".dev", "data"),
+      STACKS_STATE_DIR: process.env.STACKS_STATE_DIR || join(root, ".dev", "state"),
+      ...(registry ? { STACKS_REGISTRY_DIR: resolve(caller, registry) } : {}),
       // Colors survive the pipe when the real stderr is a terminal.
       ...(process.stderr.isTTY && !process.env.NO_COLOR ? { FORCE_COLOR: "1" } : {}),
     },

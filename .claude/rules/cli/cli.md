@@ -19,7 +19,7 @@ The CLI's first-class user is a coding agent (PROBLEM_STATEMENT, "Who has it": t
 
 Agent output is the human rendering with the noise cut, never a different result. It omits:
 
-- Log lines on stderr. Logs go to the configured file only (`QUICKSTACK_LOG_FILE`), as in JSON mode; stderr holds the failure message, its detail lines and `Next:`, plus the short live lines `Output.event` writes (verify's `> <step>` as each step starts), and nothing else. Human mode still prints log lines at the configured level.
+- Log lines on stderr. Logs go to the configured file only (`STACKS_LOG_FILE`), as in JSON mode; stderr holds the failure message, its detail lines and `Next:`, plus the short live lines `Output.event` writes (verify's `> <step>` as each step starts), and nothing else. Human mode still prints log lines at the configured level.
 - `Output.progress` lines (human mode only).
 - Anything another line or file already says: `new`'s written-file listing (the brief lists it), the `Project:` absolute path and the `For example:` command after a printed prompt; `verify`'s passed rows (the summary counts them) and every row of a `changed` run; `validate`'s size rows that are within budget (rows over their limit stay; `--json` keeps every size). No mode repeats `validate`'s counts under `Validation failed.`: the report ends with them and the envelope's `details` carries them.
 - Layout for a terminal: `list` keeps each description on one line instead of wrapping it.

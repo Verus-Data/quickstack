@@ -5,8 +5,8 @@ import { dirname, join } from "node:path";
 import { version } from "../package.json";
 
 function findNode(): string {
-  const candidate = process.env.QUICKSTACK_E2E_NODE || Bun.which("node");
-  const failure = "Set QUICKSTACK_E2E_NODE to a Node 22 or newer binary.";
+  const candidate = process.env.STACKS_E2E_NODE || Bun.which("node");
+  const failure = "Set STACKS_E2E_NODE to a Node 22 or newer binary.";
   if (!candidate || !Bun.which(candidate)) throw new Error(failure);
   const result = Bun.spawnSync([candidate, "--version"]);
   const major = Number(result.stdout.toString().match(/^v(\d+)\./)?.[1]);
@@ -16,7 +16,7 @@ function findNode(): string {
 
 export const node = findNode();
 export const tarball = join(import.meta.dirname, `../dist/pack/steamfield-stacks-${version}.tgz`);
-const root = realpathSync(mkdtempSync(join(tmpdir(), "quickstack-package-")));
+const root = realpathSync(mkdtempSync(join(tmpdir(), "stacks-package-")));
 process.once("exit", () => rmSync(root, { recursive: true, force: true }));
 export const prefix = join(root, "prefix");
 export const packageRoot = join(prefix, "lib/node_modules/@steamfield/stacks");

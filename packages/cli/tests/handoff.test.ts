@@ -10,7 +10,7 @@ import {
 } from "../src/core/handoff";
 import { AgentId, DetectedAgent } from "../src/schemas/entry";
 
-const prompt = agentPrompt("quickstack");
+const prompt = agentPrompt("stacks");
 const base: HandoffInput = {
   detected: "none",
   json: false,
@@ -156,32 +156,32 @@ test("every agent id has a launch row [1.4#1]", () => {
 });
 
 test("the prompt names the invocation, so an npx project names the pinned version [1.4#10]", () => {
-  expect(agentPrompt("npx -y quickstack@1.2.3")).toBe(
-    "Read .stacks/BRIEF.md and carry it out. It's your full task for this project; you're done when npx -y quickstack@1.2.3 verify passes.",
+  expect(agentPrompt("npx -y stacks@1.2.3")).toBe(
+    "Read .stacks/BRIEF.md and carry it out. It's your full task for this project; you're done when npx -y stacks@1.2.3 verify passes.",
   );
   const text = renderHandoff(
     { kind: "print", reason: "no-launch", untrusted: [] },
-    { shown: "app", invocation: "npx -y quickstack@1.2.3", audience: "human", agent: "claude" },
+    { shown: "app", invocation: "npx -y stacks@1.2.3", audience: "human", agent: "claude" },
   );
-  expect(text).toContain("npx -y quickstack@1.2.3 verify passes.");
+  expect(text).toContain("npx -y stacks@1.2.3 verify passes.");
   const inside = renderHandoff(
     { kind: "inside-agent", agent: "claude", untrusted: [] },
-    { shown: "app", invocation: "npx -y quickstack@1.2.3", audience: "agent", agent: "claude" },
+    { shown: "app", invocation: "npx -y stacks@1.2.3", audience: "agent", agent: "claude" },
   );
-  expect(inside).toContain("Loop on npx -y quickstack@1.2.3 verify until it passes.");
+  expect(inside).toContain("Loop on npx -y stacks@1.2.3 verify until it passes.");
 });
 
 test("the printed example quotes a directory with spaces and quotes so it pastes into a shell [1.4#19]", () => {
   const text = renderHandoff(
     { kind: "print", reason: "no-launch", agent: "opencode", untrusted: [] },
-    { shown: "my 'app'", invocation: "quickstack", audience: "human", agent: "claude" },
+    { shown: "my 'app'", invocation: "stacks", audience: "human", agent: "claude" },
   );
   expect(text.split("\n").at(-1)).toBe(
     `For example: cd 'my '\\''app'\\''' && opencode --prompt "${prompt}"`,
   );
   const here = renderHandoff(
     { kind: "print", reason: "no-launch", untrusted: [] },
-    { shown: ".", invocation: "quickstack", audience: "human", agent: "claude" },
+    { shown: ".", invocation: "stacks", audience: "human", agent: "claude" },
   );
   expect(here.split("\n").at(-1)).toBe(`For example: claude "${prompt}"`);
 });

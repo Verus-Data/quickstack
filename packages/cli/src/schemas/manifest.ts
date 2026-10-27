@@ -49,7 +49,7 @@ export const Manifest = Schema.Struct({
   projectId: ProjectId,
   /** ISO time, from Clock. */
   createdAt: Schema.String,
-  /** The quickstack version that wrote it. */
+  /** The stacks version that wrote it. */
   cli: Schema.String,
   mode: Schema.Literals(["new", "add"]),
   /** Project template name; older manifests fall back to inference. */

@@ -8,7 +8,7 @@ schema_version: 1
 id: ${JSON.stringify(id)}
 kind: stack
 name: ${JSON.stringify(id)}
-description: "quickstack:fill: describe the stack"
+description: "stacks:fill: describe the stack"
 tags: [make]
 deps: {}
 commands:
@@ -27,7 +27,7 @@ verify:
   - name: readme
     phase: check
     layer: docs
-    run: "test -s README.md && ! grep -n 'quickstack:fill' README.md"
+    run: "test -s README.md && ! grep -n 'stacks:fill' README.md"
 merge: []
 fragments: { required: [], default: [], optional: [] }
 ---
@@ -64,7 +64,7 @@ schema_version: 1
 id: ${JSON.stringify(id)}
 kind: fragment
 name: ${JSON.stringify(id)}
-description: "quickstack:fill: describe the fragment"
+description: "stacks:fill: describe the fragment"
 tags: []
 deps: {}
 commands: {}
@@ -117,7 +117,7 @@ export const starterFiles = [
   { source: "files/.gitignore", text: ".stacks/state/\n" },
   {
     source: "files/README.md",
-    text: "<!-- quickstack:fill: describe the project and its commands -->\n",
+    text: "<!-- stacks:fill: describe the project and its commands -->\n",
   },
 ];
 export const trustQuestion = "Copy this entry into your trusted user registry? [y/N]";

@@ -68,9 +68,9 @@ Each stack lists the composition of its default set and one composition per opti
 Static HTML, no client-side JavaScript, generated from the index entries and their bundles. It ships whether or not D17 is agreed.
 
 - `/`: each stack's name, description, tags, last ledger run (`passed <date> with <agent>` or `carried forward from <date>`), and the copy command.
-- `/stacks/<id>/`: deps by role and default and optional fragments from the stack's frontmatter, the verify steps (name, phase, layer, command), the last ledger run, a link to the entry's source in the repo, and the exact command `npx quickstack new <id>`.
+- `/stacks/<id>/`: deps by role and default and optional fragments from the stack's frontmatter, the verify steps (name, phase, layer, command), the last ledger run, a link to the entry's source in the repo, and the exact command `npx stacks new <id>`.
 
-The stack's prose body is not rendered: rendering Markdown needs a new dependency, and the source link covers it. Each stack page holds one `<!-- quickstack:stats -->` comment where 4.2b inserts stats; until then it renders as nothing.
+The stack's prose body is not rendered: rendering Markdown needs a new dependency, and the source link covers it. Each stack page holds one `<!-- stacks:stats -->` comment where 4.2b inserts stats; until then it renders as nothing.
 
 ### Output added to 4.0c's tree
 
@@ -110,7 +110,7 @@ Over 4.0c's fixtures plus a fixture git repo with tags:
 - A tag whose registry fails today's decode still contributes its ids, and the build prints a warning naming the tag.
 - `--check` against the local server fails, naming `v1/names.json`, when one byte of its payload changes, and passes on a good build.
 - `--unsigned`: `v1/names.json` has `signature: ""`.
-- One directory page per indexed stack, containing the exact string `npx quickstack new <id>`, the stats marker, and no `<script>`.
+- One directory page per indexed stack, containing the exact string `npx stacks new <id>`, the stats marker, and no `<script>`.
 - `_headers` has the rules above; under the local Workers runtime from 4.0b, `GET /v1/names.json` and a stack page carry them.
 
 ## Exit criteria

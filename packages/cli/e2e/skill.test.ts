@@ -38,7 +38,7 @@ async function print(executable: string, home: string) {
 }
 
 test("the installed package finds skill/ beside dist/, including after relocation [3.4c#10]", async () => {
-  const root = mkdtempSync(join(tmpdir(), "quickstack-skill-binary-"));
+  const root = mkdtempSync(join(tmpdir(), "stacks-skill-binary-"));
   try {
     const home = join(root, "unrelated cwd");
     mkdirSync(home);

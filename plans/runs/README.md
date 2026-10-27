@@ -14,16 +14,16 @@ Every note records the fields below; 2.0c's ledger import skips a note that lack
 | Field | What |
 |---|---|
 | Stack and fragments | The composition, with preset |
-| Repo commit | The quickstacks commit the CLI and registry were built from, so 2.0c can recompute the fingerprint |
-| CLI | How it was run: the compiled dev binary and working registry (until 0.2), the packed tarball's file digest, or `npx quickstacks@<version>` |
+| Repo commit | The stacks commit the CLI and registry were built from, so 2.0c can recompute the fingerprint |
+| CLI | How it was run: the compiled dev binary and working registry (until 0.2), the packed tarball's file digest, or `npx stacks@<version>` |
 | Agent | Agent and version, interactive or headless |
 | Brief size | `briefWords` and `fixedWords` from `new --json` |
 | Times | `new` to first passing `test`-layer step, `new` to first green `verify` (from the state record) |
 | Verify count | Number of `verify` runs in `runs.jsonl` |
-| Interventions | Lines under `## Asked` in `.quickstacks/NOTES.md`, and anything the maintainer typed |
+| Interventions | Lines under `## Asked` in `.stacks/NOTES.md`, and anything the maintainer typed |
 | Outcome | `green`, `partial`, `failed`, `infra`, with `tamperCheck` |
 | Findings | The `## Findings` lines worth acting on, each with the fix it led to |
-| Final verify record (optional) | The last line of `.quickstacks/state/runs.jsonl`, pasted as JSON; 2.0c's import fills `run` from it |
+| Final verify record (optional) | The last line of `.stacks/state/runs.jsonl`, pasted as JSON; 2.0c's import fills `run` from it |
 | Agent minutes (optional) | Wall-clock minutes the agent ran; 2.0c's import fills `agentMinutes` from it |
 
 Bench notes also record the agent selection rule, how it ended, turns, hook names

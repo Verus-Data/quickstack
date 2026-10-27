@@ -1,1 +1,1 @@
-<!-- quickstack:fill: describe the project -->
+<!-- stacks:fill: describe the project -->

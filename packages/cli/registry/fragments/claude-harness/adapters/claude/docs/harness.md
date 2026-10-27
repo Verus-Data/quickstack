@@ -8,12 +8,12 @@ What's in the tree:
 | --- | --- | --- |
 | Hooks | Guards that deny (destructive commands, secrets, generated files, the project's boundary violations, wrong commands); lint and type feedback after each edit; formatting at the end of a turn; repo state at session start | `.claude/hooks/`, wired in `.claude/settings.json`; per-hook detail in [`.claude/README.md`](../.claude/README.md) |
 | Path-scoped rules | Guidance that loads only when the agent touches matching files | `.claude/rules/` |
-| Slash commands | `/check`, `/test`, `/feature`<!-- quickstack:fill Append every other command in .claude/commands/ by name. --> | `.claude/commands/` |
+| Slash commands | `/check`, `/test`, `/feature`<!-- stacks:fill Append every other command in .claude/commands/ by name. --> | `.claude/commands/` |
 | Agents | `architect` and `reviewer`, both read-only | `.claude/agents/` |
-| Skills | <!-- quickstack:fill Name each skill in .claude/skills/ and what it covers, or write "None yet." --> | `.claude/skills/` |
+| Skills | <!-- stacks:fill Name each skill in .claude/skills/ and what it covers, or write "None yet." --> | `.claude/skills/` |
 | Hook tests | A deny and a near miss for every guard, every advisory hook end to end, and the wiring in `settings.json` | `tests/hooks/` |
 
-<!-- quickstack:fill If the project ships lint plugins (Biome GritQL rules for conventions the type checker can't see), add a "Lint plugins" row to the table above naming their directory; otherwise delete this comment. -->
+<!-- stacks:fill If the project ships lint plugins (Biome GritQL rules for conventions the type checker can't see), add a "Lint plugins" row to the table above naming their directory; otherwise delete this comment. -->
 
 `AGENTS.md` is the agent's map of the code. This page is for a person who wants to know why the harness looks the way it does.
 

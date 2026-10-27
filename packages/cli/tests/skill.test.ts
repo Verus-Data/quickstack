@@ -34,7 +34,7 @@ function workspace() {
   dirs.push(dir);
   return realpathSync(dir.path);
 }
-const target = (root: string) => join(root, ".claude", "skills", "quickstack", "SKILL.md");
+const target = (root: string) => join(root, ".claude", "skills", "stacks", "SKILL.md");
 const withGit = { PATH: process.env.PATH ?? "", GIT_CONFIG_NOSYSTEM: "1" };
 function init(root: string) {
   const git = spawnGit(["init", "--quiet", root]);
@@ -114,12 +114,12 @@ function commands(body: string) {
 }
 
 describe("shipped agent skill", () => {
-  test("frontmatter is closed and describes when to use quickstack [3.4c#1]", () => {
+  test("frontmatter is closed and describes when to use stacks [3.4c#1]", () => {
     const doc = parseDocument(skill().frontmatter, { logLevel: "silent" });
     expect(doc.errors).toEqual([]);
     expect(doc.warnings).toEqual([]);
     const meta = Schema.decodeUnknownSync(
-      Schema.Struct({ name: Schema.Literal("quickstack"), description: Schema.String }),
+      Schema.Struct({ name: Schema.Literal("stacks"), description: Schema.String }),
       { onExcessProperty: "error" },
     )(doc.toJS());
     expect(meta.description.trim().length).toBeGreaterThan(0);
@@ -247,7 +247,7 @@ describe("skill install", () => {
   });
 
   test.each([false, true])(
-    "an escaping quickstack symlink is refused (force=%s) [3.4c#8]",
+    "an escaping stacks symlink is refused (force=%s) [3.4c#8]",
     async (force) => {
       const home = workspace();
       const outside = workspace();
@@ -356,9 +356,7 @@ describe("skill install", () => {
     symlinkSync(dotfiles, join(home, ".claude"));
     const installed = result(await install(home, ["--json"]));
     expect(installed.action).toBe("written");
-    expect(realpathSync(installed.path ?? "")).toBe(
-      join(dotfiles, "skills", "quickstack", "SKILL.md"),
-    );
+    expect(realpathSync(installed.path ?? "")).toBe(join(dotfiles, "skills", "stacks", "SKILL.md"));
     expect(readFileSync(target(home), "utf8")).toBe(fixtureText);
   });
 

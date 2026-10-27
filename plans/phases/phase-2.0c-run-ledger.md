@@ -7,12 +7,12 @@ Acceptance tests: traced
 
 | Field | Value |
 |---|---|
-| Goal | Every recorded build of a bundled stack is kept with the content it ran: the ledger `packages/cli/registry/runs.json` holds `LedgerRecord`s that wrap 1.3b's `RunRecord` and carry 2.0a's fingerprint, the 1.6b gate runs are imported with fingerprints computed at their repo commits, `quickstack runs` reports a project's own numbers, and `list` shows each stack's last run |
+| Goal | Every recorded build of a bundled stack is kept with the content it ran: the ledger `packages/cli/registry/runs.json` holds `LedgerRecord`s that wrap 1.3b's `RunRecord` and carry 2.0a's fingerprint, the 1.6b gate runs are imported with fingerprints computed at their repo commits, `stacks runs` reports a project's own numbers, and `list` shows each stack's last run |
 | Traces to | "None of these are collected today"; success rows "The agent finishes without help" and "It's faster than by hand"; the stack author: "the only proof a stack works is an end-to-end agent run" |
 | Depends on | [2.0a](phase-2.0a-composed-files-and-fingerprint.md) (`fingerprint`, `composeFiles`), [1.6b](phase-1.6b-mvp-gate-runs.md) (the gate run notes to import), [1.3b](phase-1.3b-tamper-detection-and-run-records.md) (`RunRecord`, `runs.jsonl`, `firstGreenAt`, `firstTestPassAt`), [0.3b](phase-0.3b-processes-and-signals.md) (`Processes` for the import script's `git`) |
 | Blocks | [2.0b](phase-2.0b-bench.md) (appends `LedgerRecord`s, reads `runs --json`), [2.2](phase-2.2-deterministic-rot-checks.md) (ledger notes), [3.1a](phase-3.1a-show-and-preview.md) (`show` prints the last run), [4.0c](phase-4.0c-registry-index.md) (publishes ledger results) |
 | Decisions needed | D8 (local proof in phase 2) assumed. D20 (the gate rule) defines what an imported gate run claims. Nothing here needs open question 11 or 12; those block 2.0b |
-| Settles | The `LedgerRecord` fields and `result` values; how a gate run note becomes a ledger record; what `quickstack runs` reports; the `lastRun` field in `list --json` |
+| Settles | The `LedgerRecord` fields and `result` values; how a gate run note becomes a ledger record; what `stacks runs` reports; the `lastRun` field in `list --json` |
 
 ## Scope
 
@@ -23,7 +23,7 @@ In:
   `src/core/ledger.ts`.
 - `scripts/ledger-import.ts`: turns gate run notes from `plans/runs/` into ledger records,
   computing each fingerprint from the registry at the note's repo commit.
-- `quickstack runs [--json]` in a project.
+- `stacks runs [--json]` in a project.
 - `lastRun` per stack in `list` and `list --json`.
 
 Out:
@@ -67,7 +67,7 @@ export const LedgerRecord = Schema.Struct({
   agent: AgentId,                             // the agent the run drove; always a known one
   agentVersion: Schema.String,                // as the agent reports it, e.g. "1.0.33"
   mode: Schema.Literals(["interactive", "headless"]),
-  repoCommit: Schema.String,                  // 40-hex quickstack commit the CLI and registry came from
+  repoCommit: Schema.String,                  // 40-hex stacks commit the CLI and registry came from
   cli: Schema.String,                         // CLI version of the artifact that ran
   fingerprint: Schema.String,
   briefWords: Schema.Number,                  // countWords of the rendered brief (roadmap, Contracts: Word count)
@@ -183,11 +183,11 @@ When the prose changed after a gate run, the imported record's fingerprint diffe
 the current content's. That is the honest answer, and 2.2 reports it as "changed since
 last green".
 
-### `quickstack runs`
+### `stacks runs`
 
-Run inside a project. It reads `.quickstack/manifest.json`, the project state record
-(roadmap, Contracts: Project state record), `.quickstack/state/runs.jsonl` decoded line by
-line with `RunRecord`, and `.quickstack/NOTES.md`:
+Run inside a project. It reads `.stacks/manifest.json`, the project state record
+(roadmap, Contracts: Project state record), `.stacks/state/runs.jsonl` decoded line by
+line with `RunRecord`, and `.stacks/NOTES.md`:
 
 ```ts
 // src/schemas/runs.ts
@@ -286,8 +286,8 @@ Human `list` shows `proven <date>` for `pass`, `<result> <date>` otherwise, or `
    `fingerprint` computed at the first commit and differs from the current one; a note
    missing the repo commit is skipped with exit 1; importing the same note twice adds one
    record.
-6. The compiled binary (`bun run build` makes `packages/cli/dist/quickstack`) reads
-   the `registry/runs.json` it ships with, so `./dist/quickstack list --json` shows a
+6. The compiled binary (`bun run build` makes `packages/cli/dist/stacks`) reads
+   the `registry/runs.json` it ships with, so `./dist/stacks list --json` shows a
    bundled stack's `lastRun`.
 
 ### Realistic edge cases
@@ -328,7 +328,7 @@ Human `list` shows `proven <date>` for `pass`, `<result> <date>` otherwise, or `
   recorded commit. The three gate notes therefore have `with: []`.
 - 2026-10-27 implementation: a compiled-binary note may identify its CLI version only in the
   optional final `RunRecord`; the importer uses that recorded version when the CLI row has no
-  `quickstack@<version>`. Abbreviated repo commits are resolved by git to full commit ids.
+  `stacks@<version>`. Abbreviated repo commits are resolved by git to full commit ids.
 - 2026-10-27 implementation: `Manifest.stack` already permits null for the future `add`
   command, while `ProjectRuns.stack` is a string. A stackless manifest reports `"none"`.
 - 2026-10-27 implementation: Bun consumes an initial option terminator before the script sees

@@ -6,7 +6,7 @@ import { BRIEF_PATH, MANIFEST_PATH } from "../project-layout";
  */
 export const guideText = (cli: string) =>
   [
-    `quickstack starts projects for coding agents. It writes a stack's starter files and a brief, ${BRIEF_PATH}, and verify is the definition of done: the project's own checks, run from its manifest.`,
+    `stacks starts projects for coding agents. It writes a stack's starter files and a brief, ${BRIEF_PATH}, and verify is the definition of done: the project's own checks, run from its manifest.`,
     "",
     "The loop:",
     `1. ${cli} list --json: pick a stack (${cli} show <id> --json reviews one) and tell the user why.`,
@@ -26,7 +26,7 @@ export const guideText = (cli: string) =>
     `${cli} <command> --help shows each command's flags, exit codes and examples.`,
     `On failure, do what the error's Next line (the envelope's next field with --json) says. ${cli} schema <name> prints the JSON Schema of any --json result.`,
     "",
-    "The user's own stacks and fragments go in $XDG_CONFIG_HOME/quickstack/stacks/<id>/ and fragments/<id>/ (default ~/.config/quickstack/).",
+    "The user's own stacks and fragments go in $XDG_CONFIG_HOME/stacks/stacks/<id>/ and fragments/<id>/ (default ~/.config/stacks/).",
   ].join("\n");
 
 /** Before the guide for a person at a terminal (the human audience), who isn't its reader. */

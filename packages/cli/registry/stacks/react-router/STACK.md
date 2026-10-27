@@ -31,7 +31,7 @@ verify:
     expect: { http: "http://localhost:${PORT_WEB}/healthz", within: 90s }
   - name: readme-filled
     layer: check
-    run: "test -s README.md && ! grep -n 'quickstack:fill' README.md"
+    run: "test -s README.md && ! grep -n 'stacks:fill' README.md"
 commands:
   install: Install dependencies with bun
   dev: Run the foreground server and preserve logs
@@ -88,16 +88,16 @@ Use Biome's current generated config, recommended rules plus import/export types
 
 Vitest uses its own React plugin configuration, Node by default, happy-dom for components, Testing Library cleanup and jest-dom. Cover `app/` except generated UI primitives; exclude e2e. Test each runtime layer with real local dependencies: health response and config failure, decoding/error statuses and retryability, runtime isolation/disposal, request ids, defect logging once, and the resilient file sink. Hook tests run with the Claude adapter. Playwright uses Chromium, one worker, CI forbidOnly, and retained failure traces; serve the production build on a separate test port. Tests need no `.env` or credentials.
 
-<!-- quickstack:when with=ci-github -->
+<!-- stacks:when with=ci-github -->
 CI sets up Bun from packageManager and Node from .node-version, installs frozen dependencies, runs lint/typecheck/coverage, installs Chromium with system dependencies, then runs e2e. Upload Playwright reports and test results on failure. No external credentials are needed.
-<!-- quickstack:end -->
+<!-- stacks:end -->
 
 ## Commands and gotchas
 
 Wire the declared scripts to framework, Biome, Vitest, Playwright, and shipped helpers. `prepare` invokes `scripts/prepare.ts`, which outside CI also runs `playwright install chromium` on every install (slow the first time, not hung); `dev:bg`/`dev:stop` invoke `scripts/dev-bg.ts start`/`stop`. `start` serves the build with Node's optional env-file support and sets the framework's `PORT` from PORT_WEB, else an existing `PORT`, else 3000. `clean` removes only generated project outputs. Document command names, logs, and hook ownership in AGENTS.
 
-<!-- quickstack:when with=git-hooks -->
+<!-- stacks:when with=git-hooks -->
 The shipped `scripts/prepare.ts`, run by the `prepare` script after every `bun install`, already runs `lefthook install` (skipped when `CI` is set, lefthook is missing, or `lefthook.yml` doesn't exist yet, and non-fatal when it fails, for example outside a git checkout), so don't add another install step. pre-push runs `bun run typecheck` alongside `bun run test`, in parallel.
-<!-- quickstack:end -->
+<!-- stacks:end -->
 
 Vitest/Vite/React Router run on Node: never force `--bun`, and never substitute `bun test` for Vitest. Route types must exist before tsc. Bun does not automatically pass its loaded `.env` into a child Node process. Check current TypeScript/compiler and Biome configuration requirements; adapt generated config and record necessary workarounds. The architecture remains Effect-based even when the optional Effect testing fragment is excluded; use the installed Effect service/runtime APIs.

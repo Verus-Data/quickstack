@@ -4,8 +4,8 @@ Status: DRAFT 2026-10-26 (not agreed)
 
 | Field | Value |
 |---|---|
-| Goal | A `v*` tag on `main` publishes the `quickstack` package to npm with provenance and no long-lived token; CI tests the packed artifact on Node 22 as well as the `.node-version` Node; the bundled registry's `validate` and rot checks fail CI when they fail locally |
-| Traces to | "Is the npm name available? ... `npx quickstack new ...`, the README's first line, only works if `quickstack` is free on npm." Entry point `npx quickstack` (D9) and the Node range (D12): every user's first contact is a package someone downloaded from npm, so what ships must be the artifact the gate tested |
+| Goal | A `v*` tag on `main` publishes the `stacks` package to npm with provenance and no long-lived token; CI tests the packed artifact on Node 22 as well as the `.node-version` Node; the bundled registry's `validate` and rot checks fail CI when they fail locally |
+| Traces to | "Is the npm name available? ... `npx stacks new ...`, the README's first line, only works if `stacks` is free on npm." Entry point `npx stacks` (D9) and the Node range (D12): every user's first contact is a package someone downloaded from npm, so what ships must be the artifact the gate tested |
 | Depends on | [1.6c](phase-1.6c-first-release.md) (the package exists on npm, published by hand; the packed-tarball e2e and the Node 22 e2e switch from [0.2](phase-0.2-npm-distribution-artifact.md) exist and pass locally) |
 | Blocks | [5.1](phase-5.1-scheduled-canary.md) (ledger PRs need CI that validates the ledger), [5.2](phase-5.2-ci-index-build-and-deploy.md) (reuses this file's workflow conventions) |
 | Decisions needed | D12 (Node range; if the floor changes, the `e2e-node22` job's Node version changes with it). D23 (this sub-phase exists because of it). [Open question 20](../risks-and-open-questions.md#open-questions-for-the-maintainers): is a manual `npm publish` without provenance acceptable for the first releases? If the maintainers say no, this sub-phase moves ahead of 1.6c and 1.6c publishes through the workflow instead of by hand; nothing in the design changes |
@@ -15,7 +15,7 @@ Status: DRAFT 2026-10-26 (not agreed)
 
 Where this fits: everything here wraps behavior that already exists and is tested
 locally. 0.2 built the Node ESM bundle, the `bun pm pack` tarball, the tarball e2e and
-the `QUICKSTACK_E2E_NODE` switch that makes the e2e spawn a chosen Node. 1.5 and 2.2
+the `STACKS_E2E_NODE` switch that makes the e2e spawn a chosen Node. 1.5 and 2.2
 built `validate` and its rot checks, with a test asserting the bundled registry is clean.
 1.6c published the first version by hand with `npm publish <tgz>`. This sub-phase only
 adds `.github/workflows/` wiring and the docs that describe it. Its siblings: 5.1
@@ -38,7 +38,7 @@ Out:
 - Changelog or version-bump tooling. A maintainer bumps `version` in
   `packages/cli/package.json` in a PR, merges, then tags.
 - SHA-pinned actions (deferred in `AGENTS.md`); action tags match `ci.yml`.
-- Publishing `@quickstack/mcp`. 4.3 publishes it by hand; a CI release for it is out of
+- Publishing `@stacks/mcp`. 4.3 publishes it by hand; a CI release for it is out of
   scope here and owned by no sub-phase.
 - Updating the released-versions list 4.1b's ingest checks: 4.1c reads released versions
   from npm daily; a publish-time push is an optional later speed-up.
@@ -76,7 +76,7 @@ e2e-node22:
       with:
         bun-version-file: package.json
     - run: bun run install:ci
-    - run: echo "QUICKSTACK_E2E_NODE=$(command -v node)" >> "$GITHUB_ENV"
+    - run: echo "STACKS_E2E_NODE=$(command -v node)" >> "$GITHUB_ENV"
     - run: bun run e2e
     - uses: actions/upload-artifact@v6
       if: failure()
@@ -86,7 +86,7 @@ e2e-node22:
 ```
 
 Build and e2e only: lint, typecheck and unit tests don't depend on the Node that runs the
-packed CLI, and `bun run e2e` builds first. `QUICKSTACK_E2E_NODE` is 0.2's switch (an
+packed CLI, and `bun run e2e` builds first. `STACKS_E2E_NODE` is 0.2's switch (an
 absolute Node path whose directory the e2e puts first in the scratch `PATH`); it is set
 explicitly because the e2e builds its child environment from scratch and setup-node's
 toolcache isn't in `/usr/bin:/bin`. Both OSes, because process groups and signals differ
@@ -156,7 +156,7 @@ id-token: write }`, `environment: npm`):
 2. Download the tarball artifact.
 3. `npm publish <tgz> --provenance --access public`, adding `--tag next` when the version
    has a prerelease part, so a prerelease never becomes `latest`.
-4. Smoke check: in an empty temp directory, `npx -y quickstack@<version> --version`
+4. Smoke check: in an empty temp directory, `npx -y stacks@<version> --version`
    prints the version, retried a few times over about two minutes for registry
    propagation.
 
@@ -172,7 +172,7 @@ publisher.
 
 These go in `AGENTS.md` under "Pending user actions" until done:
 
-- On npmjs.com, add a trusted publisher for `quickstack`: this repository, workflow
+- On npmjs.com, add a trusted publisher for `stacks`: this repository, workflow
   `release.yml`, environment `npm`. The package must already exist, which 1.6c ensures.
 - In the repository settings, create the `npm` environment.
 - After the first release through the workflow, set the package's publishing access on

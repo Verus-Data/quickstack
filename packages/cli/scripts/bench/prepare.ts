@@ -157,7 +157,7 @@ export const prepare = (options: Options, adapters: readonly AgentAdapter[]) =>
         const created = yield* Effect.acquireRelease(
           fs.makeTempDirectory({
             ...(captured.TMPDIR ? { directory: captured.TMPDIR } : {}),
-            prefix: "quickstack-bench-",
+            prefix: "stacks-bench-",
           }),
           (directory) =>
             options.keep

@@ -219,7 +219,7 @@ test("an unknown top-level key, bad JSON or a bad project id is InvalidConfig wi
   expect(exit).toEqual(Exit.fail(new InvalidConfig({ details: { path } })));
 });
 
-test("a manifest from a newer quickstack is InvalidConfig with its schemaVersion, even with new keys [1.2b#4]", async () => {
+test("a manifest from a newer stacks is InvalidConfig with its schemaVersion, even with new keys [1.2b#4]", async () => {
   const manifest = await encoded();
   const { path, exit } = await written({ ...manifest, schemaVersion: 2, newField: 1 });
   expect(exit).toEqual(Exit.fail(new InvalidConfig({ details: { path, schemaVersion: 2 } })));
@@ -267,6 +267,6 @@ test("InvalidConfig details reach the envelope, and human mode escapes the path 
   });
   const human = await runCli([], { program: Effect.fail(error), env: quiet, host: terminal });
   expect(human.stderr).toBe(
-    "Configuration is invalid.\n  Path: /p/\\u001b[31m/manifest.json\n  Schema version: 2, from a newer quickstack.\n  Next: upgrade @steamfield/stacks, then run this command again.\n",
+    "Configuration is invalid.\n  Path: /p/\\u001b[31m/manifest.json\n  Schema version: 2, from a newer stacks.\n  Next: upgrade @steamfield/stacks, then run this command again.\n",
   );
 });

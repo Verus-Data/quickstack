@@ -28,8 +28,8 @@ Implement an `update` command with `--check`. Read release settings independentl
 Write `.github/workflows/release.yml` using current workflow conventions: on version tags, verify the tag matches package version, run the project check command, build all targets, upload binaries/checksums/installer, and run each artifact on its matching OS and CPU. Smoke-test checksum, `--version`, and `doctor --json`. Only the publish job receives contents-write permission and creates the GitHub release with generated notes. Use the CI fragment's action-pinning and timeout conventions when selected.
 
 When native packages are present, install optional packages for all release targets and make the bundler include only the target's native library, failing clearly if it is absent. Otherwise no native-package plugin is needed.
-<!-- quickstack:when with=openrouter-chat-cli -->
+<!-- stacks:when with=openrouter-chat-cli -->
 Apply this to the OpenTUI packages and extend the smoke matrix with `doctor --tui --json`.
-<!-- quickstack:end -->
+<!-- stacks:end -->
 
 Test installation paths with spaces and shell metacharacters, missing binary/checksum assets, checksum mismatch, unsupported platforms, permissions, source-mode update refusal, atomic replacement, and version comparison against a local release server. Keep network access outside automated verification. Document distribution commands and recovery in AGENTS.md.

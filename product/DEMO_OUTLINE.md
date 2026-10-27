@@ -4,7 +4,7 @@ Status: DRAFT 2026-10-26 — proposed three-minute Loom; record only after the d
 
 ## Story
 
-**quickstack is the product. A Rho transaction-monitoring agent makes its value visible.**
+**stacks is the product. A Rho transaction-monitoring agent makes its value visible.**
 
 Show the cost of repeated setup, the reusable build context, verification, and a useful application result. Keep the terminal readable and the application simple enough to understand immediately.
 
@@ -28,7 +28,7 @@ The $500 threshold is a review rule, not a finding of fraud. Read-only means the
 | --- | --- | --- |
 | 0:00–0:15 | Empty project next to a short setup checklist | “Every new agent idea starts with the same setup work: dependencies, tests, lint, and explaining your standards again.” |
 | 0:15–0:30 | Rho example request | “Let's build a transaction-review agent. The useful part is spotting charges worth reviewing. First, it needs a reliable foundation.” |
-| 0:30–0:55 | Actual quickstack invocation, selected stack, generated brief | “quickstack turns a reusable stack into instructions and acceptance checks for the coding agent I already use.” |
+| 0:30–0:55 | Actual stacks invocation, selected stack, generated brief | “stacks turns a reusable stack into instructions and acceptance checks for the coding agent I already use.” |
 | 0:55–1:20 | Coding agent reads brief; show concrete setup decisions and resulting files | “The stack preserves the decisions I want repeated. The agent handles current dependencies and configuration.” |
 | 1:20–1:40 | Real verification output and a representative test | “Starting the server isn't enough. Here are the checks that define working, and the result of running them.” |
 | 1:40–2:05 | Application displays sandbox transactions and a flagged charge | “This charge exceeds our review threshold. The agent explains the flag using the transaction's actual fields.” |
@@ -50,7 +50,7 @@ If recording uses real sandbox responses, choose the visible examples from the a
 
 | Component | Role |
 | --- | --- |
-| quickstack | Prepare reusable stack context, the brief, and verification requirements as implemented |
+| stacks | Prepare reusable stack context, the brief, and verification requirements as implemented |
 | User's coding agent | Build the project, run tools and checks, diagnose failures |
 | Rho sandbox | Supply read-only transaction data through a verified available endpoint |
 | Application | Evaluate review rules and present explanations |
@@ -73,4 +73,4 @@ Confirm current track rules and dual-entry eligibility from the organizer before
 
 ## If the full workflow is unfinished
 
-Show the working portion and name the remaining steps accurately. A fixture-backed local prototype can illustrate the workflow, but must be labeled as such and does not demonstrate a live Rho integration, deployment, or completed quickstack product loop.
+Show the working portion and name the remaining steps accurately. A fixture-backed local prototype can illustrate the workflow, but must be labeled as such and does not demonstrate a live Rho integration, deployment, or completed stacks product loop.

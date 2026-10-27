@@ -62,7 +62,7 @@ const readManifestFile = (project: string) =>
       onExcessProperty: "error",
     },
   );
-const recordsDir = (home: string) => join(home, "state", "quickstack", "projects");
+const recordsDir = (home: string) => join(home, "state", "stacks", "projects");
 const recordFile = (home: string, projectId: string) => join(recordsDir(home), `${projectId}.json`);
 const readRecord = (file: string) =>
   Schema.decodeUnknownSync(ProjectState)(JSON.parse(readFileSync(file, "utf8")), {

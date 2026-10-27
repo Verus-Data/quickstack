@@ -239,8 +239,8 @@ describe("launching an agent", () => {
     const home = temp();
     const claude = fakeAgent(join(home, "bin"), "claude");
     const codex = fakeAgent(join(home, "bin"), "codex");
-    mkdirSync(join(home, "config", "quickstack"), { recursive: true });
-    writeFileSync(join(home, "config", "quickstack", "config.json"), '{"agents":["codex"]}');
+    mkdirSync(join(home, "config", "stacks"), { recursive: true });
+    writeFileSync(join(home, "config", "stacks", "config.json"), '{"agents":["codex"]}');
     expect((await newCli([], { home, host: terminal })).status).toBe(0);
     expect(codex.run().argv).toEqual([PROMPT]);
     expect(claude.ran()).toBe(false);
@@ -299,7 +299,7 @@ describe("launching an agent", () => {
       expect(status).toBe(1);
       expect(stdout).toContain(`Launching ${bin} in app...`);
       expect(stderr).toBe(
-        "An unexpected error occurred.\n  Next: set QUICKSTACK_LOG_FILE to a file path and run the command again; the file records where it failed. Report it if it repeats.\n",
+        "An unexpected error occurred.\n  Next: set STACKS_LOG_FILE to a file path and run the command again; the file records where it failed. Report it if it repeats.\n",
       );
       expect(manifestOf(app).handoff).toEqual({ kind: "print", at: manifestOf(app).createdAt });
     },
@@ -397,10 +397,10 @@ describe("printing the prompt", () => {
 
 test("an npx invocation is the one the prompt names [1.4#10]", async () => {
   const { status, stdout } = await newCli(["--json"], {
-    host: { invocation: "npx -y quickstack@1.2.3" },
+    host: { invocation: "npx -y stacks@1.2.3" },
   });
   expect(status).toBe(0);
-  expect(decode(stdout).handoff.prompt).toContain("npx -y quickstack@1.2.3 verify passes.");
+  expect(decode(stdout).handoff.prompt).toContain("npx -y stacks@1.2.3 verify passes.");
 });
 
 test("the command log record names the handoff and the agent, nothing else of it [1.4#7]", async () => {
@@ -409,7 +409,7 @@ test("the command log record names the handoff and the agent, nothing else of it
   const file = join(home, "cli.jsonl");
   const { stderr } = await newCli([], {
     home,
-    env: { CLAUDECODE: "1", LOG_LEVEL: "info", QUICKSTACK_LOG_FILE: file },
+    env: { CLAUDECODE: "1", LOG_LEVEL: "info", STACKS_LOG_FILE: file },
   });
   expect(stderr).toBe("");
   const record = JSON.parse(

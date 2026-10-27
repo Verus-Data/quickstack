@@ -14,7 +14,7 @@ afterEach(() => {
 function configFile(content: string) {
   const dir = tempDir();
   dirs.push(dir);
-  const parent = join(dir.path, "config", "quickstack");
+  const parent = join(dir.path, "config", "stacks");
   mkdirSync(parent, { recursive: true });
   writeFileSync(join(parent, "config.json"), content);
   return dir.path;
@@ -22,7 +22,7 @@ function configFile(content: string) {
 test("doctor runs under Node and respects human/JSON result contracts", async () => {
   const human = await runCli(["doctor"], { host: terminal });
   expect(human.status).toBe(0);
-  expect(human.stdout).toContain(`quickstack ${VERSION}`);
+  expect(human.stdout).toContain(`stacks ${VERSION}`);
   expect(human.stderr).toBe("");
   const json = await runCli(["doctor", "--json"]);
   expect(json.status).toBe(0);
@@ -44,10 +44,10 @@ test("the scoped npm package keeps the stacks command and config paths", async (
   expect(doctor.status).toBe(0);
   expect(doctor.stderr).toBe("");
   expect(JSON.parse(doctor.stdout).paths).toMatchObject({
-    config: join(dir.path, "config/quickstack/config.json"),
-    data: join(dir.path, ".local/share/quickstack"),
-    cache: join(dir.path, ".cache/quickstack"),
-    user: join(dir.path, "config/quickstack"),
+    config: join(dir.path, "config/stacks/config.json"),
+    data: join(dir.path, ".local/share/stacks"),
+    cache: join(dir.path, ".cache/stacks"),
+    user: join(dir.path, "config/stacks"),
   });
 });
 test.each([
@@ -152,7 +152,7 @@ test("closed config rejects unknown fields and env overrides valid file values",
       (
         await runCli(["doctor", "--json"], {
           home,
-          env: { QUICKSTACK_DATA_DIR: "/env-data" },
+          env: { STACKS_DATA_DIR: "/env-data" },
         })
       ).stdout,
     ).paths.data,
@@ -160,25 +160,25 @@ test("closed config rejects unknown fields and env overrides valid file values",
 });
 test("empty env values mean absent and invalid log level falls back safely", async () => {
   const result = await runCli(["doctor", "--json"], {
-    env: { LOG_LEVEL: "bogus", QUICKSTACK_DATA_DIR: "" },
+    env: { LOG_LEVEL: "bogus", STACKS_DATA_DIR: "" },
   });
   expect(result.status).toBe(0);
-  expect(JSON.parse(result.stdout).paths.data).toContain(".local/share/quickstack");
+  expect(JSON.parse(result.stdout).paths.data).toContain(".local/share/stacks");
   expect(result.stderr).toBe("");
 });
 test("paths follow the XDG base directories, and an unset HOME means the user's home", async () => {
   const paths = async (env: Record<string, string>) =>
     JSON.parse((await runCli(["doctor", "--json"], { env })).stdout).paths;
   expect(await paths({ XDG_DATA_HOME: "/xdg/data", XDG_CACHE_HOME: "/xdg/cache" })).toMatchObject({
-    data: "/xdg/data/quickstack",
-    cache: "/xdg/cache/quickstack",
+    data: "/xdg/data/stacks",
+    cache: "/xdg/cache/stacks",
   });
   expect(await paths({ HOME: "", XDG_CONFIG_HOME: "" })).toMatchObject({
-    config: join(homedir(), ".config", "quickstack", "config.json"),
-    cache: join(homedir(), ".cache", "quickstack"),
+    config: join(homedir(), ".config", "stacks", "config.json"),
+    cache: join(homedir(), ".cache", "stacks"),
   });
 });
-test("--json after -- belongs to the command, not quickstack", async () => {
+test("--json after -- belongs to the command, not stacks", async () => {
   expect(hasFlag(["doctor", "--json"], "--json")).toBe(true);
   expect(hasFlag(["doctor", "--", "--json"], "--json")).toBe(false);
   const result = await runCli(["doctor", "--", "--json"]);
@@ -188,7 +188,7 @@ test("--json after -- belongs to the command, not quickstack", async () => {
 test("a defect's class and stack frames are logged, but not its message", async () => {
   const result = await runCli([], {
     program: Effect.die(new TypeError("private detail")),
-    env: { LOG_LEVEL: "error", QUICKSTACK_LOG_FORMAT: "json" },
+    env: { LOG_LEVEL: "error", STACKS_LOG_FORMAT: "json" },
     host: terminal,
   });
   const line = result.stderr.split("\n").find((l) => l.includes('"msg":"command"'));
@@ -199,7 +199,7 @@ test("a defect's class and stack frames are logged, but not its message", async 
 test("main maps a defect once and never leaks its object", async () => {
   const result = await runCli([], {
     program: Effect.die({ token: "secret-value", message: "private" }),
-    env: { LOG_LEVEL: "info", QUICKSTACK_LOG_FORMAT: "json" },
+    env: { LOG_LEVEL: "info", STACKS_LOG_FORMAT: "json" },
     host: terminal,
   });
   expect(result.status).toBe(1);

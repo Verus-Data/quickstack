@@ -42,7 +42,7 @@ verify:
   - { name: db-down, phase: teardown, layer: install, run: bun run db:down }
   - name: readme-filled
     layer: check
-    run: "test -s README.md && ! grep -n 'quickstack:fill' README.md"
+    run: "test -s README.md && ! grep -n 'stacks:fill' README.md"
 commands:
   setup: Install dependencies, create .env from .env.example, link apps/mobile/.env (idempotent)
   prepare: Install git hooks outside CI (runs after every bun install)
@@ -138,14 +138,14 @@ Read `docs/testing.md` before writing a test. Testing Trophy: mostly integration
 ## Commands
 
 Root scripts call workspace scripts with `bun run --filter`. `setup` is idempotent: install, copy `.env.example` to `.env` if missing, symlink `apps/mobile/.env` to the root one (Expo only reads env from its project directory; skip the link while `apps/mobile` doesn't exist yet). `dev`, `dev:logs`, `sim:shot` run the shipped `scripts/*.sh`; `dev.sh` calls the API workspace's `dev` script and the mobile workspace's `dev` (`expo start`) or `ios` (`expo run:ios`) scripts by package name, so keep those names. `prepare` runs `scripts/prepare.ts`; `bundle` writes `dist/`. `typecheck` in mobile generates Expo's route types first, with the headless command from the installed Expo CLI's help (it must not start Metro). Mirror the table in AGENTS.md with single-file test commands for both runners (`cd apps/api && bun run test test/health.test.ts`, `cd apps/mobile && bunx jest test/home-screen.test.tsx`). Note there that `PORT_DB` and `DATABASE_URL`'s port move together, and that `verify`'s teardown stops the dev Postgres.
-<!-- quickstack:when with=git-hooks -->
+<!-- stacks:when with=git-hooks -->
 
 pre-push runs `bun run db:up` before the tests, since the API suite needs Postgres; say so in the Git hooks section.
-<!-- quickstack:end -->
+<!-- stacks:end -->
 
-<!-- quickstack:when with=ci-github -->
+<!-- stacks:when with=ci-github -->
 **CI.** Jobs for lint, typecheck, mobile tests, API tests, and the bundle. The stack declares no coverage command, so CI runs `test:api` and `test:mobile`; take the coverage decision as no. Mobile tests and the bundle also set up Node from `.node-version`. API tests run against a Postgres service container with `DATABASE_URL` set, and run `db:check` first. The bundle job runs `bundle` and Expo's doctor in `apps/mobile`.
-<!-- quickstack:end -->
+<!-- stacks:end -->
 
 ## Gotchas
 

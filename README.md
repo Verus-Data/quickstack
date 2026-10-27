@@ -1,10 +1,10 @@
-# quickstack
+# stacks
 
-quickstack starts projects for coding agents. To use it, follow the [quick start](packages/cli/docs/quickstart.md); the [docs index](packages/cli/docs/README.md) has everything else.
+stacks starts projects for coding agents. To use it, follow the [quick start](packages/cli/docs/quickstart.md); the [docs index](packages/cli/docs/README.md) has everything else.
 
 ## Install
 
-quickstack needs Node 22 or newer, on macOS or Linux. The npm package is `@steamfield/stacks`; run it with `npx`, no install step:
+stacks needs Node 22 or newer, on macOS or Linux. The npm package is `@steamfield/stacks`; run it with `npx`, no install step:
 
 ```sh
 npx @steamfield/stacks list stacks                # see what you can build
@@ -26,8 +26,8 @@ This repository is a bun workspace. Product planning is in [plans/](plans/README
 | Path | What it is |
 | --- | --- |
 | [packages/cli](packages/cli/README.md) | `@steamfield/stacks`, the CLI (installed as `stacks`): Effect 4, a Node 22+ bundle. `new <stack>` writes a project and the brief your coding agent builds it from; the bundled stacks are listed in its README |
-| [packages/api](packages/api/README.md) | `@quickstack/api`, the HTTP API (placeholder, no code yet) |
-| [packages/mcp](packages/mcp/README.md) | `@quickstack/mcp`, the MCP server (placeholder, no code yet) |
+| [packages/api](packages/api/README.md) | `@stacks/api`, the HTTP API (placeholder, no code yet) |
+| [packages/mcp](packages/mcp/README.md) | `@stacks/mcp`, the MCP server (placeholder, no code yet) |
 | `.claude/`, `docs/harness.md` | The agent harness: hooks, rules, skills and their tests in `tests/hooks/`, and the acceptance trace in `tests/acceptance/` |
 
 ## Development quick start
@@ -40,7 +40,7 @@ bun run dev doctor --json   # the CLI from source
 bun run check               # lint, typecheck, root tests, every package's tests and e2e
 ```
 
-Choose a destination outside this checkout. Start a project yourself with `bun run dev new astro-blog "$HOME/quickstack-projects/my-blog"`, or run `bun run dev skill install` once and ask your coding agent to start one. The skill guides it through choosing a stack, reading the brief and building until verify passes. Use `--project` to install it only for the current repo, or `--print` to copy it elsewhere.
+Choose a destination outside this checkout. Start a project yourself with `bun run dev new astro-blog "$HOME/stacks-projects/my-blog"`, or run `bun run dev skill install` once and ask your coding agent to start one. The skill guides it through choosing a stack, reading the brief and building until verify passes. Use `--project` to install it only for the current repo, or `--print` to copy it elsewhere.
 See [AGENTS.md](AGENTS.md) for the full command list.
 
 ## Monorepo
@@ -55,7 +55,7 @@ Dependency versions live once, in `workspaces.catalog` in the root `package.json
 
 To add a package:
 
-1. Create `packages/<name>/package.json` with a scoped name (`@quickstack/<name>`), `"private": true` and `"type": "module"`, then run `bun install`.
+1. Create `packages/<name>/package.json` with a scoped name (`@stacks/<name>`), `"private": true` and `"type": "module"`, then run `bun install`.
 2. Add `tsconfig.json` extending `../../tsconfig.base.json`, which has Node types only; add `"types": ["bun", "node"]` only if the package uses Bun APIs.
 3. Define the standard scripts the package supports so the root gate runs them.
 4. If it needs lint rules of its own, add a nested `biome.json` with `"root": false, "extends": "//"`.

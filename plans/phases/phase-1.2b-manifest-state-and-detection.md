@@ -6,7 +6,7 @@ Acceptance tests: traced
 
 | Field | Value |
 |---|---|
-| Goal | `new` writes `.quickstack/manifest.json` with its step digest and the out-of-project state record that holds the second digest copy, and the CLI detects the agent that called it, so verify, tamper detection and handoff have what they read |
+| Goal | `new` writes `.stacks/manifest.json` with its step digest and the out-of-project state record that holds the second digest copy, and the CLI detects the agent that called it, so verify, tamper detection and handoff have what they read |
 | Traces to | "That is why `verify` exists, why the brief refuses to let the agent weaken a step" (Jobs, the trust paragraph); job 5, "a target I can verify against"; the agent user, who "runs `new`, reads the brief, builds, and loops on `verify`" |
 | Depends on | [1.2a](phase-1.2a-new-scaffold-and-templates.md) (the `new` command, the safe writer and its write order and rollback, `NewResult`), [1.1](phase-1.1-composition-and-brief.md) (`Composition`, the commands map, `targetAgents`), [0.3b](phase-0.3b-processes-and-signals.md) (`config.ts::childEnv`, which strips the markers this file defines) |
 | Blocks | [1.3a](phase-1.3a-verify-runner-and-probes.md) (reads the manifest and the marker list), [1.3b](phase-1.3b-tamper-detection-and-run-records.md) (digest and state record), [1.4](phase-1.4-handoff-and-entry-points.md) (detection, the manifest's `handoff` field), [3.0](phase-3.0-add-fragments-to-repo.md) (reuses the manifest and digest) |
@@ -63,7 +63,7 @@ const Manifest = Schema.Struct({
   schemaVersion: Schema.Literal(1),
   projectId: Schema.String,            // random UUID from Effect's Random
   createdAt: Schema.String,            // ISO, from Clock
-  cli: Schema.String,                  // quickstack version that wrote it
+  cli: Schema.String,                  // stacks version that wrote it
   mode: Schema.Literals(["new", "add"]), // 1.2b writes "new"; 3.0 writes "add"
   preset: Schema.Literals(["default", "sandbox"]),
   agents: Schema.Array(AgentId),
@@ -102,7 +102,7 @@ dependency beyond the `yaml` reader 1.0 adds for frontmatter.
 - Any other new field is excess and fails decode; the Schema versions rule says such a
   field bumps `schemaVersion`. A manifest with `schemaVersion` above 1 fails
   `InvalidConfig` with `details: { path, schemaVersion }` and the fixed "upgrade
-  quickstack" message, from one function, `core/manifest.ts::readManifest`, which 1.3a,
+  stacks" message, from one function, `core/manifest.ts::readManifest`, which 1.3a,
   1.3b, 1.4 and 3.0 call.
 
 ### Step digest
@@ -127,13 +127,13 @@ stage of a step is its `app` tag (3.5b).
 
 `src/core/project-state.ts::ProjectState` is the roadmap contract (Types and schemas:
 Project state record), with `schemaVersion: 1` per the Schema versions table. 1.2b writes
-it at `$XDG_STATE_HOME/quickstack/projects/<projectId>.json`:
+it at `$XDG_STATE_HOME/stacks/projects/<projectId>.json`:
 
 ```ts
 const ProjectState = Schema.Struct({
   schemaVersion: Schema.Literal(1),
   projectId: Schema.String,
-  manifestPath: Schema.String,         // real path of .quickstack/manifest.json
+  manifestPath: Schema.String,         // real path of .stacks/manifest.json
   verifyDigest: Schema.String,        // whole set, same value as the manifest's
   stepDigests: Schema.Record(Schema.String, Schema.String), // step name -> digest of that step
   settingsDigest: Schema.String,      // env + preset
@@ -154,21 +154,21 @@ stays the pass/fail test; the per-part digests only explain a failure.
 matches however the project was reached. This is the second copy D14 compares against; an
 agent that edits both the manifest steps and `verifyDigest` leaves this one unchanged.
 
-`config.ts::Paths` gains `state` (`QUICKSTACK_STATE_DIR` when set, else
+`config.ts::Paths` gains `state` (`STACKS_STATE_DIR` when set, else
 `XDG_STATE_HOME`, default `~/.local/state`, plus `SLUG`); `bun run dev` points it at
 `packages/cli/.dev/state`, as it does data at `.dev/data`. If the state directory isn't writable (some agent sandboxes allow writes only in
 the project), `new` still succeeds and reports `stateRecord: false`; 1.3b then reports
 the tamper check as manifest-only, which never passes the gate (D20). The state record is
-written after `.quickstack/` and before `git init` (1.2a's write order), and 1.2a's
+written after `.stacks/` and before `git init` (1.2a's write order), and 1.2a's
 rollback removes it when a later step fails.
 
 ### An existing scaffold
 
-A target that already holds `.quickstack/manifest.json` fails `TargetNotEmpty` (1.2a)
+A target that already holds `.stacks/manifest.json` fails `TargetNotEmpty` (1.2a)
 with `details.scaffold`: `"unfinished"` when the state record for that manifest's
 `projectId` has no `firstGreenAt` (or there is no record), `"green"` otherwise. Human mode
 adds a hint: for `unfinished`, "an earlier `new` wrote this; continue with
-`.quickstack/BRIEF.md`, or remove the directory to start again"; for `green`, "this is a
+`.stacks/BRIEF.md`, or remove the directory to start again"; for `green`, "this is a
 finished project; use `add` (3.0) to extend it". The roadmap's Error tags row for
 `TargetNotEmpty` names this detail.
 
@@ -214,7 +214,7 @@ verify steps' environment, including `AI_AGENT`.
 
 | Question | Answer | Why |
 |---|---|---|
-| Manifest format | JSON at `.quickstack/manifest.json` | Canonical hashing, direct Schema decode, one fewer dependency |
+| Manifest format | JSON at `.stacks/manifest.json` | Canonical hashing, direct Schema decode, one fewer dependency |
 | Later manifest fields | `handoff`, `fingerprint`, `mode: "add"`, `stack: null` declared now | Filling them later needs no version bump |
 | `EntryRef.origin` in the manifest | Non-empty string | Older readers survive new origins |
 | Second digest copy | Under `XDG_STATE_HOME`, keyed by project id, with the manifest's real path | Outside the project, so editing project files can't hide a changed step |
@@ -238,7 +238,7 @@ verify steps' environment, including `AI_AGENT`.
 
 Through `runCli` with temp HOME, XDG dirs and a temp `cwd`.
 
-1. `new fixture-stack app --sandbox --json` writes `.quickstack/manifest.json` that
+1. `new fixture-stack app --sandbox --json` writes `.stacks/manifest.json` that
    decodes, with `briefWords` equal to the result's, and `stateRecord: true`.
 2. The manifest's `verifyDigest` equals `digestSteps(manifest)`, and the state record
    holds the same digest, the project id, `schemaVersion: 1` and `manifestPath` equal to
@@ -268,7 +268,7 @@ Through `runCli` with temp HOME, XDG dirs and a temp `cwd`.
 10. The state record's `stepDigests` has one entry per step name; editing one step changes
     only that entry (and `verifyDigest`); changing an `env` value changes only
     `settingsDigest` (and `verifyDigest`).
-11. A target with `.quickstack/manifest.json` and no green state record fails
+11. A target with `.stacks/manifest.json` and no green state record fails
     `TargetNotEmpty` with `details.scaffold: "unfinished"`; after a state record with
     `firstGreenAt` set, `"green"`.
 
@@ -320,7 +320,7 @@ Through `runCli` with temp HOME, XDG dirs and a temp `cwd`.
     `{ path, schemaVersion? }`; a manifest that isn't JSON or doesn't decode carries the
     path, and one with `schemaVersion` above 1 carries the version too, checked before the
     decode so a newer manifest with new keys still reports its version. The fixed "upgrade
-    quickstack" text is a human detail line, since a tag's message is fixed. A missing
+    stacks" text is a human detail line, since a tag's message is fixed. A missing
     manifest is `NotFound` with no details (1.3a sets `looked`, the string 1.5 added, to the
     directory its walk started from) and an unreadable one is
     `PermissionDenied` `read`.
@@ -363,7 +363,7 @@ Through `runCli` with temp HOME, XDG dirs and a temp `cwd`.
     writer: the record is outside the project, so the writer doesn't track it. Acquiring
     is uninterruptible, so a record that was written always has its release.
   - **`details.scaffold` is computed only when the target's entries include
-    `.quickstack`.** A missing manifest (including a `.quickstack/` without one) gives
+    `.stacks`.** A missing manifest (including a `.stacks/` without one) gives
     no `scaffold` key; one that can't be read or decoded, or a newer `schemaVersion`, is
     `unfinished`. The record is looked up by project id only, not by `manifestPath`.
   - **The `green` hint doesn't tell the user to run `add`**, which doesn't exist until
@@ -378,7 +378,7 @@ Through `runCli` with temp HOME, XDG dirs and a temp `cwd`.
     unwritable.
   - **Manual run** with the realistic fixture registry in sandbox mode: ten files
     written (the manifest included), a fresh repository, `stateRecord: true`, the record
-    under `$XDG_STATE_HOME/quickstack/projects/` with the manifest's real path, and a
+    under `$XDG_STATE_HOME/stacks/projects/` with the manifest's real path, and a
     rerun into the same directory gave `TargetNotEmpty` with `scaffold: "unfinished"`
     and the hint.
 - 2026-10-26, from the code review of `new` on feat/phase-1:
@@ -389,8 +389,8 @@ Through `runCli` with temp HOME, XDG dirs and a temp `cwd`.
     `CURSOR_EXTENSION_HOST_ROLE=agent-exec` and `AI_AGENT` need checking too. Before
     1.3b makes `--accept-changes` depend on detection, check each one, drop those that
     don't exist and set `confirmed` on the rest.
-  - **`QUICKSTACK_STATE_DIR`** replaces the whole state directory (no `quickstack/`
-    appended), matching `QUICKSTACK_DATA_DIR`. `bun run dev new` used to write its
+  - **`STACKS_STATE_DIR`** replaces the whole state directory (no `stacks/`
+    appended), matching `STACKS_DATA_DIR`. `bun run dev new` used to write its
     records into the developer's real `~/.local/state`.
   - **`projectStatePath` checks the id itself.** `ProjectId` is exported from
     `schemas/manifest.ts` and `projectStatePath` returns no path for an id it refuses, so

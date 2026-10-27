@@ -4,11 +4,11 @@ Status: DRAFT 2026-10-26 (not agreed). Gated: start only when the evidence below
 
 | Field | Value |
 |---|---|
-| Goal | `@quickstack/mcp` is a published stdio MCP server that exposes `list`, `show`, `new` (never launching an agent) and `verify` as tools by running the published CLI's `--json` contract, so an agent whose client prefers MCP tools, or has no shell, gets the same results and the same trust boundary as the CLI |
+| Goal | `@stacks/mcp` is a published stdio MCP server that exposes `list`, `show`, `new` (never launching an agent) and `verify` as tools by running the published CLI's `--json` contract, so an agent whose client prefers MCP tools, or has no shell, gets the same results and the same trust boundary as the CLI |
 | Traces to | Assumption 5: "Handoff to whatever agent is on PATH is the right entry point. Confidence: Low. Validate: Watch whether people use `new` from a terminal or ask their agent to run it." The coding agent as "the CLI's main reader". D11: "an MCP server will be its own package" |
-| Depends on | 1.6c (a published `quickstack` with a stable `--json` contract), 3.1a (`show --json`, which `quickstack_show` wraps). Evidence: open question 15 |
+| Depends on | 1.6c (a published `stacks` with a stable `--json` contract), 3.1a (`show --json`, which `stacks_show` wraps). Evidence: open question 15 |
 | Blocks | Nothing |
-| Decisions needed | Open question 15 (the start condition below). D9 (proposed) supplies context. The `@quickstack` npm scope must be owned by the maintainers before publishing ([open question 23](../risks-and-open-questions.md#open-questions-for-the-maintainers)); if it isn't, publish as `quickstack-mcp` and change nothing else |
+| Decisions needed | Open question 15 (the start condition below). D9 (proposed) supplies context. The `@stacks` npm scope must be owned by the maintainers before publishing ([open question 23](../risks-and-open-questions.md#open-questions-for-the-maintainers)); if it isn't, publish as `stacks-mcp` and change nothing else |
 | Settles | How the server shares code with the CLI; packaging; tool contracts; that MCP changes nothing about what runs |
 
 ## The gate (open question 15)
@@ -16,9 +16,9 @@ Status: DRAFT 2026-10-26 (not agreed). Gated: start only when the evidence below
 The CLI's `--json` contract already serves every agent that can run shell commands. An MCP server earns its place only when that path is shown to fail someone. Start this sub-phase when either holds:
 
 - Documented agent struggles with the shell path: 2.0b bench run notes in `plans/runs/` or GitHub issues showing an agent mis-parsing `--json` output, failing to find or invoke the CLI, or losing the brief, in a way a tool interface would fix; or
-- A user asks for quickstack in a client that has MCP tools but no shell tool.
+- A user asks for stacks in a client that has MCP tools but no shell tool.
 
-A majority of `new` events with handoff kind `inside-agent` (4.2a's entry-point share, if D17 is agreed) is supporting context only: it shows agents are running quickstack through the shell successfully, which argues against the server, not for it. Without telemetry, the two evidence sources above are enough. The exit criteria require recording which evidence started the work.
+A majority of `new` events with handoff kind `inside-agent` (4.2a's entry-point share, if D17 is agreed) is supporting context only: it shows agents are running stacks through the shell successfully, which argues against the server, not for it. Without telemetry, the two evidence sources above are enough. The exit criteria require recording which evidence started the work.
 
 ## Scope
 
@@ -26,7 +26,7 @@ In:
 
 - Filling in the `packages/mcp` placeholder: a stdio MCP server, tests, scripts the root fan-out runs, `.claude/rules/mcp/`.
 - Four tools and one resource.
-- A manual `npm publish` of `@quickstack/mcp` by a maintainer, the same way 1.6c publishes the CLI. A CI release of this package is out of scope here and owned by no sub-phase: 5.0's workflow releases only `quickstack`.
+- A manual `npm publish` of `@stacks/mcp` by a maintainer, the same way 1.6c publishes the CLI. A CI release of this package is out of scope here and owned by no sub-phase: 5.0's workflow releases only `stacks`.
 
 Out:
 
@@ -46,9 +46,9 @@ The server runs the CLI with `--json` for each tool call. The JSON contract is s
 
 ### Packaging
 
-- `@quickstack/mcp` depends on `quickstack` with `"quickstack": "workspace:^"`, which `bun pm pack` rewrites to the released range. Its own code and `effect` are bundled the way 0.2 bundles the CLI, so `quickstack` is its only runtime dependency.
-- The server finds the CLI from the dependency, never from PATH: `createRequire(import.meta.url).resolve("quickstack/package.json")`, then the `bin.quickstack` path from that file, run as `process.execPath <bin> ... --json`. That pins the CLI version the server was released with. If 0.2 gives `quickstack` an `exports` map, it must include `"./package.json"`; the startup test catches it if not.
-- `bin`: `quickstack-mcp`. A client registers it as `npx -y @quickstack/mcp`.
+- `@stacks/mcp` depends on `stacks` with `"stacks": "workspace:^"`, which `bun pm pack` rewrites to the released range. Its own code and `effect` are bundled the way 0.2 bundles the CLI, so `stacks` is its only runtime dependency.
+- The server finds the CLI from the dependency, never from PATH: `createRequire(import.meta.url).resolve("stacks/package.json")`, then the `bin.stacks` path from that file, run as `process.execPath <bin> ... --json`. That pins the CLI version the server was released with. If 0.2 gives `stacks` an `exports` map, it must include `"./package.json"`; the startup test catches it if not.
+- `bin`: `stacks-mcp`. A client registers it as `npx -y @stacks/mcp`.
 
 ### Protocol
 
@@ -58,26 +58,26 @@ The server runs the CLI with `--json` for each tool call. The JSON contract is s
 
 | Tool | Input | Runs | Returns |
 |---|---|---|---|
-| `quickstack_list` | `{ kind?: "stacks" \| "fragments" }` | `quickstack list --json` | The `list --json` result |
-| `quickstack_show` | `{ id: string }` | `quickstack show <id> --json` | The `show --json` result |
-| `quickstack_new` | `{ stack, dir, with?, without?, sandbox?, yes? }` | `quickstack new <stack> <dir> --no-launch --json ...` | The `new --json` result, including `next` and the brief path |
-| `quickstack_verify` | `{ dir, only? }` | `quickstack verify --json` with `cwd: dir` | The verify result; `isError: true` when the CLI exits non-zero, with the result still attached |
+| `stacks_list` | `{ kind?: "stacks" \| "fragments" }` | `stacks list --json` | The `list --json` result |
+| `stacks_show` | `{ id: string }` | `stacks show <id> --json` | The `show --json` result |
+| `stacks_new` | `{ stack, dir, with?, without?, sandbox?, yes? }` | `stacks new <stack> <dir> --no-launch --json ...` | The `new --json` result, including `next` and the brief path |
+| `stacks_verify` | `{ dir, only? }` | `stacks verify --json` with `cwd: dir` | The verify result; `isError: true` when the CLI exits non-zero, with the result still attached |
 
-Plus a resource `quickstack://brief/<dir>` returning `.quickstack/BRIEF.md`.
+Plus a resource `stacks://brief/<dir>` returning `.stacks/BRIEF.md`.
 
-Arguments are passed as an argv array, never through a shell. Tool descriptions are written for the agent: `quickstack_new` never launches an agent and its `next` text is the caller's task; `quickstack_verify` runs the project's own steps and weakening a step counts as failure; any non-empty untrusted list in a result means stop and ask the user.
+Arguments are passed as an argv array, never through a shell. Tool descriptions are written for the agent: `stacks_new` never launches an agent and its `next` text is the caller's task; `stacks_verify` runs the project's own steps and weakening a step counts as failure; any non-empty untrusted list in a result means stop and ask the user.
 
 A non-zero exit becomes a tool result with `isError: true` and structured content `{ exit, error }`, where `error` is the CLI's envelope from the last stderr line and, for keeps-result failures (exit 5), `result` is the stdout result.
 
 ### Trust
 
-Trust model ([roadmap, Trust model](../roadmap.md#trust-model)) points 1 to 4 apply unchanged. `quickstack_new` always passes `--no-launch`. `quickstack_verify` runs the manifest's steps, the same decision as running verify from a shell; the client's tool approval is an extra check, not a replacement. Untrusted entries surface through the same result fields. The server runs under the client's environment, so `AppConfig.agent` detection and point 4's refusals still apply to anything the CLI does.
+Trust model ([roadmap, Trust model](../roadmap.md#trust-model)) points 1 to 4 apply unchanged. `stacks_new` always passes `--no-launch`. `stacks_verify` runs the manifest's steps, the same decision as running verify from a shell; the client's tool approval is an extra check, not a replacement. Untrusted entries surface through the same result fields. The server runs under the client's environment, so `AppConfig.agent` detection and point 4's refusals still apply to anything the CLI does.
 
 ### Failure modes
 
 | Case | Result |
 |---|---|
-| `quickstack` not resolvable | Server exits at startup with a message naming the package; no tools registered |
+| `stacks` not resolvable | Server exits at startup with a message naming the package; no tools registered |
 | CLI exits non-zero | `isError: true` with `{ exit, error, result? }` |
 | CLI output isn't valid JSON | `isError: true`, tag `Defect`; logged to the server's stderr |
 | `dir` outside the client's workspace roots | Rejected before running, when the client provides roots |
@@ -87,7 +87,7 @@ Trust model ([roadmap, Trust model](../roadmap.md#trust-model)) points 1 to 4 ap
 
 | Path | Change |
 |---|---|
-| `packages/mcp/package.json`, `tsconfig.json`, `biome.json` | Fill in the placeholder; drop `private`; `bin`; depend on `quickstack`; scripts `build`, `typecheck`, `test`, `coverage`, `check`, `clean` |
+| `packages/mcp/package.json`, `tsconfig.json`, `biome.json` | Fill in the placeholder; drop `private`; `bin`; depend on `stacks`; scripts `build`, `typecheck`, `test`, `coverage`, `check`, `clean` |
 | `packages/mcp/src/server.ts`, `src/tools/*.ts`, `src/run-cli.ts` | New |
 | `packages/mcp/scripts/build.ts` | Bundle, as 0.2's build does |
 | `packages/mcp/tests/` | New |
@@ -99,23 +99,23 @@ Trust model ([roadmap, Trust model](../roadmap.md#trust-model)) points 1 to 4 ap
 All against the built bundles: the package's `test` script builds the CLI (`bun run --cwd ../cli build`) and the server, then runs Vitest on Node, so tests exercise the files that get published.
 
 - An `McpClient` from `effect/ai` connects over stdio to the built server, lists four tools and one resource.
-- `quickstack_list` returns the same JSON as running the resolved CLI with `list --json` directly, byte for byte.
-- The server resolves the CLI through `quickstack/package.json`'s `bin` field: with a fake `quickstack` earlier on PATH that would fail, tools still work.
-- `quickstack_new` into a temp dir writes the brief and manifest, the result's `handoff.kind` is `print`, and no agent process starts with a fake agent on PATH.
-- `quickstack_verify` on a fixture with one failing step returns `isError: true`, `exit: 5`, the envelope and the result with the failing step.
+- `stacks_list` returns the same JSON as running the resolved CLI with `list --json` directly, byte for byte.
+- The server resolves the CLI through `stacks/package.json`'s `bin` field: with a fake `stacks` earlier on PATH that would fail, tools still work.
+- `stacks_new` into a temp dir writes the brief and manifest, the result's `handoff.kind` is `print`, and no agent process starts with a fake agent on PATH.
+- `stacks_verify` on a fixture with one failing step returns `isError: true`, `exit: 5`, the envelope and the result with the failing step.
 - An untrusted fixture composition returns a non-empty untrusted list.
 - The brief resource returns the file's exact contents.
-- `bun pm pack` of the package: its `package.json` lists only `quickstack` as a dependency.
+- `bun pm pack` of the package: its `package.json` lists only `stacks` as a dependency.
 
 ## Exit criteria
 
 - The gate is met and the evidence that met it is recorded in this file.
 - Acceptance tests pass; `bun run check` green from the repo root, including `packages/mcp`.
-- A maintainer publishes `@quickstack/mcp` by hand; `npx -y @quickstack/mcp` starts from a clean directory.
+- A maintainer publishes `@stacks/mcp` by hand; `npx -y @stacks/mcp` starts from a clean directory.
 - One real agent client registers the server and builds a sandbox project to a green `verify` through the tools alone; run note in `plans/runs/`.
 
 ## What this plan may get wrong
 
-- Long verify runs may exceed client tool timeouts. Then `quickstack_verify` needs `only` in a loop, or progress notifications, which is the streaming question (A2) again.
+- Long verify runs may exceed client tool timeouts. Then `stacks_verify` needs `only` in a loop, or progress notifications, which is the streaming question (A2) again.
 - `effect/ai`'s MCP modules are marked unstable and may change in a 4.x minor. Pin the catalog range if they do, and record why under Build workarounds.
 - The gate may never be met because shell access is universal. That means the CLI was the right interface and this plan stays unexecuted.

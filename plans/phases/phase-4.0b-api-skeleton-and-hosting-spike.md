@@ -6,7 +6,7 @@ Status: DRAFT 2026-10-26 (not agreed)
 |---|---|
 | Goal | `packages/api` is a working Effect HTTP program that serves only `GET /healthz`, with its own gate run by the root fan-out, and a time-boxed Cloudflare Workers spike answers open questions 16 and 17 and writes a D16 recommendation |
 | Traces to | "no public registry exists yet" (assumption 6, which phase 4 replaces with a real host). D11: "an API and an MCP server will each be their own package". D16 |
-| Depends on | 4.0a (the spike proves `@quickstack/format` runs inside the Workers runtime), D16 (proposed; this sub-phase produces the evidence for it) |
+| Depends on | 4.0a (the spike proves `@stacks/format` runs inside the Workers runtime), D16 (proposed; this sub-phase produces the evidence for it) |
 | Blocks | 4.0c (static hosting config), 4.1b (the platform layer and test harness) |
 | Decisions needed | D16. The spike runs first; the maintainers decide D16 from its findings before the skeleton's platform layer is written. If they pick a Node server, `src/platform/node.ts` replaces `src/platform/worker.ts` and the tests run only against the Node adapter |
 | Settles | Open questions 16 and 17 (answers recorded here for the maintainers); the API's program structure; how the API is tested; which Effect HTTP exports it uses |
@@ -41,7 +41,7 @@ Run before any skeleton code. Each question gets a short answer and the evidence
 | Open question 17: does the Workers Vitest pool run with the repo's Vitest 5 on Node? | Add `@cloudflare/vitest-pool-workers` and `wrangler` as dev dependencies in a scratch branch; run one test that calls the Worker's fetch handler in workerd. Record the pool version and whether it accepts Vitest 5 |
 | If not, what harness? | Fall back to Node tests that start the Worker with Wrangler's local runtime (`wrangler dev`, or its programmatic API) and call it with `fetch`. Record start-up time per test file |
 | Does Effect's HTTP stack run in workerd? | Build `/healthz` with `HttpApi`, `HttpApiGroup`, `HttpApiEndpoint` from `effect/http-api` and `HttpApiBuilder`, and turn it into a fetch handler with `HttpRouter.toWebHandler` from `effect/http` (both exports confirmed in the installed `effect` 4.0.6). Record bundle size against the Workers script limit |
-| Does `@quickstack/format` run there? | Decode a fixture entry and compute a `bundleDigest` inside the Worker |
+| Does `@stacks/format` run there? | Decode a fixture entry and compute a `bundleDigest` inside the Worker |
 | Do static assets get cache headers from host config? | Put a `_headers` file in the assets directory; check `Cache-Control` on a fixture `v1/index.json` and `v1/entries/...` file under `wrangler dev`. Confirm assets are served before the Worker runs, so the index never touches Effect code |
 | Can a scheduled handler call an Effect program? | A no-op `scheduled` export run with Wrangler's scheduled-test mode |
 | Is there an `effect/sql` D1 driver at a version compatible with `effect` 4.0.6? | Check npm. If not, 4.1b writes a small `SqlClient` adapter over the D1 binding, or D16 changes; record which |
@@ -84,7 +84,7 @@ Error responses use the CLI's envelope (see roadmap, Contracts: Error envelope) 
 
 `/healthz` returns a static `ok` here. Once 4.1b gives the API a store, it checks the store and returns 503 when the store is down.
 
-The API's service keys use the `quickstack/api/<Name>` namespace (for example `quickstack/api/Config`), so they never collide with the CLI's `quickstack/<Name>` keys.
+The API's service keys use the `stacks/api/<Name>` namespace (for example `stacks/api/Config`), so they never collide with the CLI's `stacks/<Name>` keys.
 
 ### Package scripts
 

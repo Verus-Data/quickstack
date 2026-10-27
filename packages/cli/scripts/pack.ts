@@ -45,15 +45,15 @@ function restoreGitignores(archive: string) {
     .filter((file) => file.split(/[\\/]/).at(-1) === ".gitignore")
     .sort();
   if (!files.length) return;
-  const staging = mkdtempSync(join(tmpdir(), "quickstack-pack-"));
+  const staging = mkdtempSync(join(tmpdir(), "stacks-pack-"));
   try {
     const tar = join(staging, "package.tar");
     writeFileSync(tar, gunzipSync(readFileSync(archive)));
-    const additions = files.map((file) => `package/registry/${file}.quickstack`);
+    const additions = files.map((file) => `package/registry/${file}.stacks`);
     for (const [index, file] of files.entries()) {
       const target = additions[index];
       if (target === undefined) throw new Error("Missing registry archive path");
-      if (existsSync(join("registry", `${file}.quickstack`)))
+      if (existsSync(join("registry", `${file}.stacks`)))
         throw new Error("Registry packaging escape collides");
       mkdirSync(dirname(join(staging, target)), { recursive: true });
       copyFileSync(join("registry", file), join(staging, target));

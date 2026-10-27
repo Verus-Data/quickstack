@@ -33,7 +33,7 @@ A pure `core/prompting.ts::canPrompt({ audience, stdinIsTTY, stdoutIsTTY })` is 
 
 ### How
 
-Pickers are built with effect/cli's `Prompt` (`Select`, `MultiSelect`, `AutoComplete` for long lists, `Text` for ids), run through Effect's `Terminal` service, which `core/create.ts` already uses for its confirmation. The choices come from the same data the command already reads (`core/list.ts` for stacks and addable fragments), so there's no second catalog. A finished prompt yields the same parsed flag values the parser would; the command then prints one line, `Running: quickstack new <stack> <dir> --with a,b --sandbox`, rendered with `core/shell.ts::shellArg`, and continues exactly as the flagged command would. Ctrl+C during a prompt is `Terminal.QuitError`, mapped to the existing interruption path (exit 130, nothing written).
+Pickers are built with effect/cli's `Prompt` (`Select`, `MultiSelect`, `AutoComplete` for long lists, `Text` for ids), run through Effect's `Terminal` service, which `core/create.ts` already uses for its confirmation. The choices come from the same data the command already reads (`core/list.ts` for stacks and addable fragments), so there's no second catalog. A finished prompt yields the same parsed flag values the parser would; the command then prints one line, `Running: stacks new <stack> <dir> --with a,b --sandbox`, rendered with `core/shell.ts::shellArg`, and continues exactly as the flagged command would. Ctrl+C during a prompt is `Terminal.QuitError`, mapped to the existing interruption path (exit 130, nothing written).
 
 ## Files and areas touched
 

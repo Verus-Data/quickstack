@@ -565,7 +565,7 @@ describe("finding the project", () => {
     expect(human.stderr).toContain("Not found.");
   });
 
-  test("a manifest a newer quickstack wrote exits 3 InvalidConfig with its schema version [1.3a#17]", async () => {
+  test("a manifest a newer stacks wrote exits 3 InvalidConfig with its schema version [1.3a#17]", async () => {
     const root = space.dir();
     mkdirSync(join(root, ".stacks"));
     const v1 = JSON.parse(encodeManifest(manifest([{ name: "lint", run: "touch ran" }])));

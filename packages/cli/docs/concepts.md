@@ -1,10 +1,10 @@
 # Concepts
 
-quickstack has a small vocabulary: stacks, fragments, the brief and verify. Once those four click, every command makes sense. This page explains each one with a real example from the bundled registry, then covers how they combine and what ends up in your project.
+stacks has a small vocabulary: stacks, fragments, the brief and verify. Once those four click, every command makes sense. This page explains each one with a real example from the bundled registry, then covers how they combine and what ends up in your project.
 
 ## The idea in one paragraph
 
-Starting a project well takes judgment that doesn't change much from year to year (how to lay it out, what to test, what "done" means) and details that change constantly (package versions, generator flags, config file formats). quickstack splits the two. A person writes down the lasting part once, as a stack. A coding agent supplies the current details every time it builds one, by reading today's docs. The CLI's job is to hand the agent the lasting part as a brief, and then hold it to a definition of done it can't quietly lower.
+Starting a project well takes judgment that doesn't change much from year to year (how to lay it out, what to test, what "done" means) and details that change constantly (package versions, generator flags, config file formats). stacks splits the two. A person writes down the lasting part once, as a stack. A coding agent supplies the current details every time it builds one, by reading today's docs. The CLI's job is to hand the agent the lasting part as a brief, and then hold it to a definition of done it can't quietly lower.
 
 ```mermaid
 flowchart LR
@@ -172,9 +172,9 @@ Everything after the frontmatter is Markdown prose for the agent: how to lay the
 Prose can vary by composition. A block between two markers is included only when its condition holds:
 
 ```md
-<!-- quickstack:when with=ci-github -->
+<!-- stacks:when with=ci-github -->
 CI uses Bun's packageManager and Node's .node-version ...
-<!-- quickstack:end -->
+<!-- stacks:end -->
 ```
 
 That paragraph appears in the brief only when `ci-github` is part of the project. The conditions are `with=<fragment>`, `preset=<preset>`, `stack=<id>`, `tag=<tag>`, `tag!=<tag>` and `mode=<new|add>`.
@@ -187,12 +187,12 @@ That paragraph appears in the brief only when `ci-github` is part of the project
 
 ## Where entries come from
 
-quickstack reads entries from three places, called roots, and the first one that has an id wins:
+stacks reads entries from three places, called roots, and the first one that has an id wins:
 
 | Origin | Where | Trusted |
 | --- | --- | --- |
 | `project` | `.stacks/stacks/` and `.stacks/fragments/` in the current directory | No |
-| `user` | `~/.config/quickstack/` (or `$XDG_CONFIG_HOME/quickstack/`) | Yes |
+| `user` | `~/.config/stacks/` (or `$XDG_CONFIG_HOME/stacks/`) | Yes |
 | `bundled` | The registry shipped with the CLI | Yes |
 
 ```mermaid
@@ -215,7 +215,7 @@ flowchart LR
 
 A higher root's copy hides the lower ones; `list --json` marks it with the origins it `shadows`. An entry that fails to load is listed as rejected and never silently replaced by a lower copy.
 
-Project entries are untrusted because a repository you just cloned can contain them, and you didn't write them. An untrusted entry still works, but quickstack never launches an agent on one automatically, an agent is told to stop and ask you first, and copying one into your user registry needs you at a terminal to read the full report.
+Project entries are untrusted because a repository you just cloned can contain them, and you didn't write them. An untrusted entry still works, but stacks never launches an agent on one automatically, an agent is told to stop and ask you first, and copying one into your user registry needs you at a terminal to read the full report.
 
 Your own stacks and fragments go in the user root. `stacks create stack my-api` starts one there; [the authoring guide](authoring.md) walks through writing it.
 
@@ -223,7 +223,7 @@ Your own stacks and fragments go in the user root. `stacks create stack my-api` 
 
 `new` and `add` write `.stacks/BRIEF.md`, the agent's entire task. It's assembled from fixed CLI text and the composed entries:
 
-1. A header: stack, fragments, preset, target agents, and the files quickstack wrote.
+1. A header: stack, fragments, preset, target agents, and the files stacks wrote.
 2. "Your job", "Versions" and "Ground rules": the same for every project. Use current versions, prefer official generators, never weaken verify.
 3. "Decisions": every entry's decisions, each with its default. With `--yes` or `--sandbox`, the agent takes the defaults without asking.
 4. "Dependencies and tools": packages by role, and any tools missing from PATH.
@@ -246,7 +246,7 @@ Briefs are long, often 4,000 words or more, and that's deliberate. The agent rea
 
 The manifest is the part that lasts. It's committed with the project, so anyone who clones it can run `stacks verify` and get the same checks.
 
-There is one more record, outside the project: a state record under `~/.local/state/quickstack/projects/`. It holds a second copy of the steps' digest and the project's timings (when it first went green). The next section explains why it exists.
+There is one more record, outside the project: a state record under `~/.local/state/stacks/projects/`. It holds a second copy of the steps' digest and the project's timings (when it first went green). The next section explains why it exists.
 
 ## Verify
 

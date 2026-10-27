@@ -2,7 +2,7 @@
 
 This guide takes you from nothing to a project your coding agent is building, in about five minutes. You'll install the CLI, pick a stack, preview it, write the project, and run the check that says when it's done.
 
-quickstack does the setup work that's easy to get subtly wrong: picking the pieces, laying out the project, and writing down what "working" means. Your coding agent (Claude Code, Codex, OpenCode or Cursor) does the building. The CLI never writes application code and never runs an install script; it writes a few starter files and a brief, and the agent takes it from there.
+stacks does the setup work that's easy to get subtly wrong: picking the pieces, laying out the project, and writing down what "working" means. Your coding agent (Claude Code, Codex, OpenCode or Cursor) does the building. The CLI never writes application code and never runs an install script; it writes a few starter files and a brief, and the agent takes it from there.
 
 ```mermaid
 flowchart LR
@@ -27,12 +27,12 @@ The blue steps are yours, and this guide walks through each one. The purple loop
 
 - [Node](https://nodejs.org) 22 or newer, on macOS or Linux. `npx` comes with it.
 - git.
-- A coding agent CLI on your PATH, if you want quickstack to hand the project over for you. `claude`, `codex`, `opencode` and `cursor-agent` are recognized.
-- Whatever the stack builds with. A Go stack needs Go, a Python stack needs uv, and so on. quickstack tells you if something is missing; it never fails because of it.
+- A coding agent CLI on your PATH, if you want stacks to hand the project over for you. `claude`, `codex`, `opencode` and `cursor-agent` are recognized.
+- Whatever the stack builds with. A Go stack needs Go, a Python stack needs uv, and so on. stacks tells you if something is missing; it never fails because of it.
 
 ## Get the CLI
 
-quickstack is on npm as `@steamfield/stacks`, so there's nothing to clone or build. The quickest way in is `npx`, which downloads the package on first use and runs it:
+stacks is on npm as `@steamfield/stacks`, so there's nothing to clone or build. The quickest way in is `npx`, which downloads the package on first use and runs it:
 
 ```sh
 npx @steamfield/stacks --version
@@ -115,9 +115,9 @@ Run the same command without `--dry-run`:
 stacks new typescript-cli my-cli --sandbox
 ```
 
-quickstack writes the starter files, creates a git repository, and then starts your coding agent in `my-cli/` with one instruction: read the brief and carry it out. You'll be talking to the agent from here on.
+stacks writes the starter files, creates a git repository, and then starts your coding agent in `my-cli/` with one instruction: read the brief and carry it out. You'll be talking to the agent from here on.
 
-If you'd rather start the agent yourself, add `--no-launch`. quickstack then prints the prompt to give it:
+If you'd rather start the agent yourself, add `--no-launch`. stacks then prints the prompt to give it:
 
 ```text
 Next: open /path/to/my-cli in your coding agent and give it this prompt:
@@ -179,7 +179,7 @@ stacks runs
 
 ## Add fragments to a project you already have
 
-quickstack works on existing repositories too. `add` applies fragments without overwriting anything:
+stacks works on existing repositories too. `add` applies fragments without overwriting anything:
 
 ```sh
 cd my-existing-repo
@@ -204,19 +204,19 @@ flowchart LR
   class M agent
 ```
 
-New files are written. When a file already exists, quickstack leaves it alone and parks its own version under `.stacks/incoming/`, and the brief asks your agent to merge the two. Then `verify` checks the whole project, the same as for a new one.
+New files are written. When a file already exists, stacks leaves it alone and parks its own version under `.stacks/incoming/`, and the brief asks your agent to merge the two. Then `verify` checks the whole project, the same as for a new one.
 
-`stacks list fragments` shows what you can add. Inside a project quickstack made, plain `stacks list` shows only the fragments that fit it.
+`stacks list fragments` shows what you can add. Inside a project stacks made, plain `stacks list` shows only the fragments that fit it.
 
 ## Let your agent drive instead
 
-Everything above also works the other way round: you ask your agent for a project and it runs quickstack. Install the skill once:
+Everything above also works the other way round: you ask your agent for a project and it runs stacks. Install the skill once:
 
 ```sh
 stacks skill install        # or: npx @steamfield/stacks skill install
 ```
 
-That puts a short skill file where Claude Code finds it (`~/.claude/skills/quickstack/SKILL.md`). Then, in any Claude Code session, ask for something like "start me a Go CLI with tests and CI". The agent picks a stack, tells you which and why, writes the project and builds it until verify passes. [Using quickstack with an agent](agents.md) covers other agents and what the agent sees.
+That puts a short skill file where Claude Code finds it (`~/.claude/skills/stacks/SKILL.md`). Then, in any Claude Code session, ask for something like "start me a Go CLI with tests and CI". The agent picks a stack, tells you which and why, writes the project and builds it until verify passes. [Using stacks with an agent](agents.md) covers other agents and what the agent sees.
 
 ## Where to go next
 

@@ -25,7 +25,7 @@ export function createWorkspace() {
 export function releaseCreate() {
   for (const dir of dirs.splice(0)) dir.cleanup();
 }
-export const userRoot = (home: string) => join(home, "config", "quickstack");
+export const userRoot = (home: string) => join(home, "config", "stacks");
 export const entryPath = (home: string, kind: "stack" | "fragment", id: string) =>
   join(userRoot(home), kind === "stack" ? "stacks" : "fragments", id);
 export function putCreate(root: string, path: string, text: string | Uint8Array) {

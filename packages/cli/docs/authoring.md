@@ -13,7 +13,7 @@ stacks create stack team-api --from project --yes
 ```
 
 The result names the entry directory and this guide. Entries go under
-`$XDG_CONFIG_HOME/quickstack/` (default `~/.config/quickstack/`). Existing targets are
+`$XDG_CONFIG_HOME/stacks/` (default `~/.config/stacks/`). Existing targets are
 preserved. Copies keep the same id and every byte, including `files/` and `adapters/`.
 The user copy shadows the bundled entry. Project entries and overridden bundled roots
 are untrusted: a person must review the full stderr report at a terminal. The yes flag
@@ -54,7 +54,7 @@ verify:
 ```
 
 File checks are short shell commands in v1: the skeleton's README check requires a
-nonempty file without `quickstack:fill`. Replace every fill marker yourself; validation
+nonempty file without `stacks:fill`. Replace every fill marker yourself; validation
 currently does not flag them.
 
 A `.tmpl` file can use only `{{project_name}}`, `{{project_slug}}`, `{{env_prefix}}`,
@@ -62,9 +62,9 @@ A `.tmpl` file can use only `{{project_name}}`, `{{project_slug}}`, `{{env_prefi
 package names. Conditional prose uses standalone markers, without nesting:
 
 ```md
-<!-- quickstack:when preset=sandbox -->
+<!-- stacks:when preset=sandbox -->
 Describe the local-only setup.
-<!-- quickstack:end -->
+<!-- stacks:end -->
 ```
 
 Other condition keys are `stack`, `tag`, `tag!=`, `mode` and `with`.
@@ -72,10 +72,10 @@ Other condition keys are `stack`, `tag`, `tag!=`, `mode` and `with`.
 ## Preview and remove rot
 
 ```sh
-stacks validate ~/.config/quickstack/stacks/my-api --json
+stacks validate ~/.config/stacks/stacks/my-api --json
 stacks show my-api --kind stack
-stacks validate ~/.config/quickstack --brief my-api --sandbox
-stacks validate ~/.config/quickstack --brief my-api --with my-ci
+stacks validate ~/.config/stacks --brief my-api --sandbox
+stacks validate ~/.config/stacks --brief my-api --with my-ci
 ```
 
 Use your XDG path when customized. Show includes every guidance branch and shipped

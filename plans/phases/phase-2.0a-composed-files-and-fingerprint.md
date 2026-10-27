@@ -25,7 +25,7 @@ In:
 
 Out:
 
-- The ledger, the gate-run import, `quickstack runs` and `lastRun` in `list` (2.0c).
+- The ledger, the gate-run import, `stacks runs` and `lastRun` in `list` (2.0c).
 - The bench (2.0b). Rot checks (2.2). Publishing results (4.0c).
 - Any CI step. The existing `check` job runs this sub-phase's tests through the root
   `bun run --filter '*'` scripts with no workflow change.
@@ -69,8 +69,8 @@ because a stack and a fragment may share an id; `RenderedFile.owner` spells it
 are included for the agents in the composition's options, so a composition is already
 agent-specific. The output is sorted by `path`.
 
-It does not include what the CLI itself writes: `.quickstack/BRIEF.md`,
-`.quickstack/manifest.json`, `.quickstack/.gitignore`, `NOTES.md` or the state record.
+It does not include what the CLI itself writes: `.stacks/BRIEF.md`,
+`.stacks/manifest.json`, `.stacks/.gitignore`, `NOTES.md` or the state record.
 
 `new` is refactored so its writer takes `composeFiles`' output and only writes: resolve
 the real parent path, refuse an escape, write bytes, set the executable bit (1.2a's safe
@@ -164,7 +164,7 @@ code moved.
    a `.tmpl` file, a merged JSON file, an escaped dotfile, an executable hook and an
    adapter file): `new` into a temporary directory, then read every file back; the set of
    paths, bytes and executable bits equals `composeFiles` with the same variables, minus
-   nothing and plus only the CLI's own `.quickstack/` files listed above.
+   nothing and plus only the CLI's own `.stacks/` files listed above.
 2. Fingerprint: stable across two runs and across `TZ` and `HOME` values for the same
    inputs; changes when any body, frontmatter value, preset or shipped file byte changes;
    unchanged by YAML reformatting, by a change to the brief's fixed text and by the

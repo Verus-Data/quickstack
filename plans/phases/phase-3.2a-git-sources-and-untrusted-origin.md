@@ -4,21 +4,21 @@ Status: DEFERRED 2026-10-27 to phase 4 or later. Gated: starts only when someone
 
 | Field | Value |
 |---|---|
-| Goal | A user can add a git repository of stacks as a source pinned to one commit, fetched with hardened `git` calls that run nothing from the repository or the user's git setup; its entries appear as `origin: "source"` and untrusted; and a person (never an agent) can allowlist a project entry or confirm a source commit with `quickstack trust`, recorded in the trust store |
+| Goal | A user can add a git repository of stacks as a source pinned to one commit, fetched with hardened `git` calls that run nothing from the repository or the user's git setup; its entries appear as `origin: "source"` and untrusted; and a person (never an agent) can allowlist a project entry or confirm a source commit with `stacks trust`, recorded in the trust store |
 | Traces to | Success row 5: "Stacks and fragments in `~/.stacks` and third-party sources, not only the bundled registry." The stack author: "for themselves, their team, or strangers." Jobs: "the emotional job underneath all of these is trust ... why the CLI never runs commands from an entry." Risk: "Third-party stacks ship hooks or scripts the user's agent will run" |
 | Depends on | 3.1a (soft: `show`'s report is the interim review). 0.3b's `Processes.exec` (argv spawn with no shell, captured output and a timeout) for every `git` call, and `Processes.which`. 1.0's registry. Demand gate: the roadmap's dashed edge; see [risks](../risks-and-open-questions.md#risks), "A community registry never forms" |
 | Blocks | 3.2b. Nothing in phase 4 depends on it |
-| Decisions needed | Open question 18 (blocks this sub-phase): keep or disable the user's global git config, credential helper included. The design below assumes "disable" and says what changes otherwise. D19 (proposed): if project entries were trusted by default, `quickstack trust stack|fragment` would only matter for shadowing entries. Open question 9: the limits of "a person confirmed" apply unchanged |
-| Settles | How a source is identified, pinned, fetched, stored and removed; where sources rank; the trust store's shape; the `quickstack trust` command |
+| Decisions needed | Open question 18 (blocks this sub-phase): keep or disable the user's global git config, credential helper included. The design below assumes "disable" and says what changes otherwise. D19 (proposed): if project entries were trusted by default, `stacks trust stack|fragment` would only matter for shadowing entries. Open question 9: the limits of "a person confirmed" apply unchanged |
+| Settles | How a source is identified, pinned, fetched, stored and removed; where sources rank; the trust store's shape; the `stacks trust` command |
 
 ## Scope
 
 In:
 
-- `quickstack source add <git-url> [--ref <branch|tag|sha>] [--name <name>] [--json]`, `source list [--json]`, `source remove <name> [--json]`.
+- `stacks source add <git-url> [--ref <branch|tag|sha>] [--name <name>] [--json]`, `source list [--json]`, `source remove <name> [--json]`.
 - The source origin in the registry loader, ranked last.
-- The trust store at `$XDG_STATE_HOME/quickstack/trust.json` ([roadmap, Other shared facts: Trust store](../roadmap.md#other-shared-facts)), read by the registry loader for project and source entries.
-- `quickstack trust stack <id>`, `trust fragment <id>`, `trust source <name>`, each with `--dry-run`; `trust list [--json]`; `trust revoke <digest>` and `trust revoke source <name>`.
+- The trust store at `$XDG_STATE_HOME/stacks/trust.json` ([roadmap, Other shared facts: Trust store](../roadmap.md#other-shared-facts)), read by the registry loader for project and source entries.
+- `stacks trust stack <id>`, `trust fragment <id>`, `trust source <name>`, each with `--dry-run`; `trust list [--json]`; `trust revoke <digest>` and `trust revoke source <name>`.
 - `Settings.sources`.
 
 Out:
@@ -33,7 +33,7 @@ Out:
 
 ### Where this fits
 
-3.2a makes sources exist and makes trust grantable; 3.2b makes source changes reviewable. Until 3.2b lands, `quickstack trust` shows `show`'s full output (3.1a) for each entry, which lists every file, body, command and verify step but marks nothing. 3.2b swaps in the allowlist trust report ([Trust model](../roadmap.md#trust-model) point 6) at the same call site and adds `source update`. Don't publish a release that has 3.2a without 3.2b.
+3.2a makes sources exist and makes trust grantable; 3.2b makes source changes reviewable. Until 3.2b lands, `stacks trust` shows `show`'s full output (3.1a) for each entry, which lists every file, body, command and verify step but marks nothing. 3.2b swaps in the allowlist trust report ([Trust model](../roadmap.md#trust-model) point 6) at the same call site and adds `source update`. Don't publish a release that has 3.2a without 3.2b.
 
 ### Untrusted behavior is already built
 
@@ -59,7 +59,7 @@ No trust lives here: `config.json` is agent-editable, and confirmations go to th
 
 The name defaults to the URL's last path segment without `.git`; a collision or a non-kebab result is `BadInput` asking for `--name`.
 
-Checkouts live at `$XDG_DATA_HOME/quickstack/sources/<name>/<commit>/`, written once and never rewritten, with `.git` removed. Inside a checkout the layout is 1.0's registry layout, at the repository root or under `registry/` if that directory exists.
+Checkouts live at `$XDG_DATA_HOME/stacks/sources/<name>/<commit>/`, written once and never rewritten, with `.git` removed. Inside a checkout the layout is 1.0's registry layout, at the repository root or under `registry/` if that directory exists.
 
 `source remove <name>` deletes the config entry, every checkout under `sources/<name>/`, and the trust store's confirmations for that name. A checkout no config entry names is never read, and leaving a confirmation behind would silently re-trust a later source added under the same name and URL. Projects already built from the source keep working: their manifest holds the steps.
 
@@ -96,7 +96,7 @@ git -C <tmp> <hardening> -c core.symlinks=false checkout --quiet --detach FETCH_
 - The commit is whatever `rev-parse FETCH_HEAD` resolves, never the ref text.
 - `ls-tree` rejects the source when the tree holds a symlink (mode `120000`) or a submodule (`160000`), before checkout, because `core.symlinks=false` would otherwise turn a symlink into a plain file that 1.0's symlink check can't see.
 - Each call runs with `Processes.exec`'s timeout set to `GIT_TIMEOUT` (2 minutes, one constant in `src/core/sources/git.ts`, injectable for tests); interruption kills the process group (0.3b).
-- The checkout goes to a temporary directory under `$XDG_DATA_HOME/quickstack/sources/` and is renamed into place only after every entry decodes, so a half-fetched source never appears and nothing is written to `config.json`.
+- The checkout goes to a temporary directory under `$XDG_DATA_HOME/stacks/sources/` and is renamed into place only after every entry decodes, so a half-fetched source never appears and nothing is written to `config.json`.
 
 Open question 18. Disabling the global config (`GIT_CONFIG_GLOBAL=/dev/null`) means no program from the user's git setup runs and behavior is the same on every machine; private repos work over SSH through the user's SSH agent, not over HTTPS through a stored credential. If the maintainers answer "keep it", drop that one variable: the `-c` flags above still override the user's hooks and fsmonitor, the hostile-config test below must still pass, and the user's credential helper, `url.*.insteadOf` and filter drivers apply as they would for their own `git fetch`.
 
@@ -120,7 +120,7 @@ export const TrustStore = Schema.Struct({
 - A source entry is trusted when `sources` holds the config's `name`, `url` and `commit` and the checkout's current digest. Editing the checkout or the pin makes every entry in it untrusted.
 - Written by temp file and rename. An unreadable or higher-version store is treated as empty with one warning, so a broken store can only remove trust. When the state directory isn't writable, confirming fails `PermissionDenied` with `details.reason: "state-unwritable"`.
 
-### `quickstack trust`
+### `stacks trust`
 
 | Command | Does |
 |---|---|
@@ -130,7 +130,7 @@ export const TrustStore = Schema.Struct({
 | `trust list [--json]` | Every confirmation, with whether it still matches |
 | `trust revoke <digest>`, `trust revoke source <name>` | Remove confirmations; allowed under an agent, since it only removes trust |
 
-A confirmation follows point 4: `PermissionDenied` (`details.reason` `agent` or `no-tty`) unless `AppConfig.agent` is `"none"` and `Host.stdinIsTTY` is true, with or without `--yes`. Otherwise it prints the trust report on stderr, asks y/N, and records on yes; `--yes` skips the question, never the trust report. `source add` never confirms: it records the pin untrusted and prints `quickstack trust source <name>` as the next step.
+A confirmation follows point 4: `PermissionDenied` (`details.reason` `agent` or `no-tty`) unless `AppConfig.agent` is `"none"` and `Host.stdinIsTTY` is true, with or without `--yes`. Otherwise it prints the trust report on stderr, asks y/N, and records on yes; `--yes` skips the question, never the trust report. `source add` never confirms: it records the pin untrusted and prints `stacks trust source <name>` as the next step.
 
 ### Interfaces
 
@@ -143,7 +143,7 @@ export class Sources extends Context.Service<Sources, {
   readonly remove: (name: string) => Effect.Effect<void, NotFound | PermissionDenied>;
   readonly fetch: (url: string, ref: string) =>
     Effect.Effect<{ commit: CommitSha; dir: string }, SourceFetchFailed | EntryInvalid>; // 3.2b reuses
-}>()("quickstack/Sources") {}
+}>()("stacks/Sources") {}
 
 // src/core/trust/store.ts
 export class Trust extends Context.Service<Trust, {
@@ -152,7 +152,7 @@ export class Trust extends Context.Service<Trust, {
   readonly isTrustedSource: (s: SourceConfig, digest: string) => Effect.Effect<boolean>;
   readonly confirm: (c: Confirmation) => Effect.Effect<void, PermissionDenied>;
   readonly revoke: (r: Revocation) => Effect.Effect<void, NotFound | PermissionDenied>;
-}>()("quickstack/Trust") {}
+}>()("stacks/Trust") {}
 ```
 
 Core stays platform-free: git through `Processes.exec`, files through Effect `FileSystem` and `Path`.
@@ -224,7 +224,7 @@ Sources are real repositories made with `git init` and commits in a temporary di
 - Acceptance tests pass; `bun run check` is green from the repo root.
 - Open question 18 is answered and the design matches the answer.
 - A maintainer adds a real team repository as a source, reviews it with `trust source --dry-run`, confirms it, and builds one project from it to a green `verify`, recorded in a run note in [plans/runs/](../runs/README.md).
-- `AGENTS.md`, the CLI README and the authoring guide describe sources, `quickstack trust` and what untrusted changes.
+- `AGENTS.md`, the CLI README and the authoring guide describe sources, `stacks trust` and what untrusted changes.
 
 ## What this plan may get wrong
 

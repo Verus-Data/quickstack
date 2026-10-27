@@ -114,7 +114,7 @@ function git(home: string, cwd: string, args: string[]) {
   return result.stdout.toString().trim();
 }
 function settings(home: string, author: string) {
-  const dir = join(home, "config", "quickstack");
+  const dir = join(home, "config", "stacks");
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, "config.json"), JSON.stringify({ author }));
 }
@@ -542,7 +542,7 @@ describe("dry-run with existing files and environment", () => {
     const home = temp();
     const earlier = success(await invoke(home, ["earlier", "--json"]));
     expect(earlier.stateRecord).toBe(true);
-    expect(readdirSync(join(home, "state/quickstack/projects"))).toHaveLength(1);
+    expect(readdirSync(join(home, "state/stacks/projects"))).toHaveLength(1);
     const before = snapshot(home);
     const result = success(await invoke(home, ["later", "--dry-run", "--json"]));
     expect(result).toMatchObject({ dryRun: true, stateRecord: false });

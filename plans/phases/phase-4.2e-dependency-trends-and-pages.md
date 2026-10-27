@@ -54,7 +54,7 @@ Only 28-day windows over finalized days, as in 4.2a. Adoption, drop and transiti
 | Does it work | Green rate of the stack's projects using X against those not using X, per stack, only when both cells pass 4.2a's rate thresholds | Stack page section |
 | Ecosystem | Reporting projects per ecosystem; top dependencies by projects; recent major transitions | `/deps/<ecosystem>/` |
 
-Every count and rate uses 4.2a's install cap and effective sample, its suppression rules and its publishing gate; which pages answer is set out under Pages below. Every page says the numbers describe "quickstack projects", not the ecosystem.
+Every count and rate uses 4.2a's install cap and effective sample, its suppression rules and its publishing gate; which pages answer is set out under Pages below. Every page says the numbers describe "stacks projects", not the ecosystem.
 
 The stack page section is the reason this exists: it tells a stack author, for example, that most of their stack's projects now land on a new major of the framework the prose describes, and whether those projects go green as often. 2.2's rot checks look at the entry; this looks at what agents actually built from it.
 
@@ -63,7 +63,7 @@ The stack page section is the reason this exists: it tells a stack author, for e
 - `/deps/`: one link per ecosystem with its project count.
 - `/deps/<ecosystem>/`: top 50 dependencies by reporting projects, recent major transitions, links to each dependency page.
 - `/deps/<ecosystem>/<name>/`: the metrics above, the stacks whose projects use it most, and the computed and through dates.
-- `/stacks/<id>/`: a `<!-- quickstack:deps -->` marker added to 4.0e's template, filled with the stack's top dependencies, their major shares and the with-and-without green rates.
+- `/stacks/<id>/`: a `<!-- stacks:deps -->` marker added to 4.0e's template, filled with the stack's top dependencies, their major shares and the with-and-without green rates.
 
 All are rendered by the Worker with the same plain marker replacement as 4.2b, every value escaped (package names come from the allowlist, but are escaped anyway), `Cache-Control: public, max-age=3600`, no client-side JavaScript. Which dependency pages answer, decided here:
 
@@ -82,7 +82,7 @@ The pages are switched by the `DEPS_ENABLED` Worker config var in `packages/api/
 |---|---|
 | `packages/api/src/stats/deps.ts`, `src/stats/rollup.ts` | Dependency dimensions in the daily step |
 | `packages/api/src/handlers/deps.ts`, `src/stats/render.ts` | Pages and the stack page section |
-| `packages/cli/scripts/site/` | The `quickstack:deps` marker in the stack page template |
+| `packages/cli/scripts/site/` | The `stacks:deps` marker in the stack page template |
 | `packages/api/wrangler.jsonc` | `/deps/*` routes before assets; the `DEPS_ENABLED` var |
 | `packages/api/tests/deps-stats.test.ts` | New |
 | `AGENTS.md`, the directory's about text | Definitions in the words above |

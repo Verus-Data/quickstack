@@ -6,7 +6,7 @@ Acceptance tests: traced
 
 | Field | Value |
 |---|---|
-| Goal | `quickstack validate [path]` checks a stack, a fragment, or a whole registry directory before anyone spends an agent run on it: schema, composition, conditional prose, the brief budget (D5) measured on a canonical render, and the verify layers (D7). `validate --brief <stack>` prints the brief a composition renders to, with its word counts. The bundled registry passes with zero errors and zero warnings, including while it is still empty |
+| Goal | `stacks validate [path]` checks a stack, a fragment, or a whole registry directory before anyone spends an agent run on it: schema, composition, conditional prose, the brief budget (D5) measured on a canonical render, and the verify layers (D7). `validate --brief <stack>` prints the brief a composition renders to, with its word counts. The bundled registry passes with zero errors and zero warnings, including while it is still empty |
 | Traces to | Open question "What is the brief budget? ... A per-stack cap on brief size, enforced by `validate`, would force the fragment split"; success row "The result is complete"; assumption 1 (agents follow a long brief), tested here only as a hypothesis: a cap keeps every bundled brief inside the size the gate runs (1.6b) are meant to prove |
 | Depends on | 1.1 (composition, the brief renderer and `countWords`; `validate` composes and renders, it doesn't reimplement either), and through it 1.0 (entry schema, origins, the registry loader) |
 | Blocks | [1.6a](phase-1.6a-bundled-stack-content.md) and [1.6d](phase-1.6d-guardrail-hook-fragments.md) (entries are written against it), [2.2](phase-2.2-deterministic-rot-checks.md) (adds the content and staleness checks to the same pipeline), [3.1a](phase-3.1a-show-and-preview.md) (`show`, and the preview's fingerprint and findings on top of 1.5's `validate --brief`) |
@@ -50,8 +50,8 @@ Out:
 ### CLI surface
 
 ```
-quickstack validate [path] [--json]
-quickstack validate [path] --brief <stack> [--with <id>].. [--without <id>].. [--sandbox] [--json]
+stacks validate [path] [--json]
+stacks validate [path] --brief <stack> [--with <id>].. [--without <id>].. [--sandbox] [--json]
 ```
 
 Exit 0 when there are no error findings (warnings and notes allowed). Exit 2 with
@@ -71,7 +71,7 @@ ignored. Their values may repeat and may be comma-separated. An unknown `--brief
 1.1's `NotFound` with suggestions.
 
 The bundled registry (the path from roadmap, Other shared facts: Bundled registry in the
-repo, or `QUICKSTACK_REGISTRY_DIR` when set) is always a registry root, even when it
+repo, or `STACKS_REGISTRY_DIR` when set) is always a registry root, even when it
 holds only its `README.md`. It ships empty until 1.6a, and an empty registry validates
 clean: zero entries, zero findings, no size rows, exit 0. An explicit path to some other
 directory with neither `stacks/` nor `fragments/` is `NotFound`.
@@ -183,7 +183,7 @@ one fixed context:
 | Written paths | The composition's planned paths, from `compose` | Deterministic from the entries |
 | Missing tools | none | Depends on the machine |
 | `yes` | `false` for `default`, `true` for `sandbox` | What `--sandbox` implies |
-| CLI invocation (`Host.invocation`) | `npx -y quickstack@<this CLI's version>` | The longest form an agent sees |
+| CLI invocation (`Host.invocation`) | `npx -y stacks@<this CLI's version>` | The longest form an agent sees |
 | Target agents | 1.1's default (`targetAgents` with no `Settings.agents` and no agent marker) | No user config |
 | `Settings.always` | none | User config |
 | Untrusted entries | none | The stop-and-confirm section is fixed text that only project-origin briefs get; it isn't the author's to cut |
@@ -285,7 +285,7 @@ Sizes (words)
   example-cli (sandbox)            6,212 / 6,000   fixed 793   over
 ...
 1 stack, 3 fragments: 1 error, 0 warnings, 0 notes
-Next: fix the errors above, then run quickstack validate /path/to/registry
+Next: fix the errors above, then run stacks validate /path/to/registry
 ```
 
 With no errors, the `Next:` line suggests `validate --brief <first stack> --sandbox`. Every
@@ -442,7 +442,7 @@ Found executing, 2026-10-26:
   `entry` is optional rather than `"<registry>"`. `ValidateReport` gained `bundled`.
   `validate` takes a resolved `Target`, not a path.
 - **Paths.** An entry directory must sit directly under `stacks/` or `fragments/`; its root is
-  the grandparent. `QUICKSTACK_REGISTRY_DIR` replaces the bundled registry for this
+  the grandparent. `STACKS_REGISTRY_DIR` replaces the bundled registry for this
   invocation, so it is validated as bundled (self-contained, zero-warning). An unreadable
   root is `PermissionDenied` (exit 6) while an unreadable entry file is a `schema` finding.
 - **`schema` findings carry 1.0's rejection text** and no parser line: 1.0's loader reports

@@ -30,7 +30,7 @@ verify:
     expect: { http: "http://localhost:${PORT_WEB}/healthz", within: 90s }
   - name: readme-filled
     layer: check
-    run: "test -s README.md && ! grep -n 'quickstack:fill' README.md"
+    run: "test -s README.md && ! grep -n 'stacks:fill' README.md"
 commands:
   install: Install dependencies with bun
   dev: Run React Router in the local Workers runtime

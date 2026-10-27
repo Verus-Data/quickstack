@@ -170,7 +170,7 @@ test("a details object mutated to carry an extra property is a defect, not a lea
     Object.assign(error.details ?? {}, { extra: "leaked" });
     const result = await runCli(["--json"], {
       program: Effect.fail(error),
-      env: { LOG_LEVEL: "info", QUICKSTACK_LOG_FILE: file },
+      env: { LOG_LEVEL: "info", STACKS_LOG_FILE: file },
     });
     expect(result.status).toBe(1);
     expect(result.stdout).toBe("");
@@ -342,7 +342,7 @@ test("the JSONL log record of a failure contains no detail value", async () => {
     const file = join(dir.path, "cli.jsonl");
     const result = await runCli(["--json"], {
       program: Effect.fail(denied()),
-      env: { LOG_LEVEL: "info", QUICKSTACK_LOG_FILE: file },
+      env: { LOG_LEVEL: "info", STACKS_LOG_FILE: file },
     });
     expect(result.stderr).toContain("/private/target");
     const records = ndjson(readFileSync(file, "utf8"));
@@ -449,7 +449,7 @@ test("a kept result that can't be written still exits 5 and is noted in the log"
     const file = join(dir.path, "cli.jsonl");
     const result = await runCli(["--json"], {
       program: report(new VerifyFailed()),
-      env: { LOG_LEVEL: "info", QUICKSTACK_LOG_FILE: file },
+      env: { LOG_LEVEL: "info", STACKS_LOG_FILE: file },
       stdout: async () => {
         throw writeError("EACCES");
       },
@@ -475,7 +475,7 @@ test("a kept result that was written carries no unwritten note", async () => {
     const file = join(dir.path, "cli.jsonl");
     await runCli(["--json"], {
       program: report(new VerifyFailed()),
-      env: { LOG_LEVEL: "info", QUICKSTACK_LOG_FILE: file },
+      env: { LOG_LEVEL: "info", STACKS_LOG_FILE: file },
     });
     const [record] = ndjson(readFileSync(file, "utf8"));
     expect(record).not.toHaveProperty("result");

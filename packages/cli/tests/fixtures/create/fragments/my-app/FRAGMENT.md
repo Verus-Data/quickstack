@@ -3,7 +3,7 @@ schema_version: 1
 id: my-app
 kind: fragment
 name: My app
-description: "quickstack:fill: describe the app"
+description: "stacks:fill: describe the app"
 tags: []
 deps: {}
 commands: {}

@@ -38,7 +38,7 @@ verify:
     expect: { http: "http://localhost:${PORT_WEB}/", within: 90s }
   - name: readme-filled
     layer: check
-    run: "test -s README.md && ! grep -n 'quickstack:fill' README.md"
+    run: "test -s README.md && ! grep -n 'stacks:fill' README.md"
 commands:
   install: Install JS dependencies, the pinned Rust toolchain and crates, and Playwright's Chromium
   dev: Run the full app (tauri dev; Vite on PORT_WEB plus the Rust shell)
@@ -132,13 +132,13 @@ Logic that isn't Tauri-specific lives in a crate, testable without a webview. Th
 
 Mock at the transport seam on the frontend and at traits on the Rust side; never mock internal modules or `vi.mock` Tauri packages. Cover the slice at every layer: core unit tests; a shell test driving the tick loop with paused tokio time (including a skipped tick) through a sink trait or Tauri's test runtime; a Vitest test that renders the window through `renderWithProviders`, pushes two frames into the mock, and asserts what renders, plus the command error path and the ended-channel state; a render-count test proving a frame that changes one slice doesn't re-render a sibling; and a Playwright test that loads the window on the mock and sees the app info and a changing tick. Playwright can't drive the packaged webview (WebDriver doesn't support WKWebView on macOS), so the real webview is covered by Rust tests and a manual `make dev` check; list that under Pending user actions when you can't open a window.
 
-<!-- quickstack:when with=ci-github -->
+<!-- stacks:when with=ci-github -->
 CI has two jobs plus the aggregate `ci-ok`. The frontend job on Ubuntu runs `make install` (CI set: frozen lockfile, browser system deps), `lint-web`, `typecheck-web`, `coverage`, and `e2e`. The Rust job on the bundle platform (macOS by default) caches cargo and runs `lint-rust`, `test-rust`, `bindings-check`, and `architecture-check`; the toolchain comes from `rust-toolchain.toml`. A Linux Rust job needs Tauri's WebKitGTK packages. Upload Playwright reports on failure.
-<!-- quickstack:end -->
+<!-- stacks:end -->
 
-<!-- quickstack:when with=git-hooks -->
+<!-- stacks:when with=git-hooks -->
 pre-commit runs Biome on staged frontend files and `cargo fmt` when Rust is staged, re-staging fixes; pre-push runs `make lint` and `make test`. Leave `make check` (bindings export and Playwright) to CI and to the end of a task.
-<!-- quickstack:end -->
+<!-- stacks:end -->
 
 ## Commands
 

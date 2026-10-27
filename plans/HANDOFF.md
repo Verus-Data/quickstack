@@ -1,4 +1,4 @@
-# Handoff for the next quickstack session
+# Handoff for the next stacks session
 
 Status: DRAFT 2026-10-27 (phases 0 and 1 merged; the doable plans of phases 2 and 3 executed
 and production-reviewed, 3.2a/3.2b deferred; plan awaiting the maintainers' review)
@@ -12,9 +12,9 @@ to `archive/` and leave a link.
 ## 0.1.0 released (2026-10-27)
 
 The CLI is on npm as `@steamfield/stacks` 0.1.0 and installs the `stacks` command (D34:
-npm refused the unscoped `quickstack`). It is a Node 22+ ESM bundle (`dist/cli.mjs` behind
+npm refused the unscoped `stacks`). It is a Node 22+ ESM bundle (`dist/cli.mjs` behind
 the `dist/stacks` entry), packed reproducibly by `bun run pack`; tag `v0.1.0`. The product,
-`.quickstack/`, `QUICKSTACK_*` and the skill name keep quickstack. A manual QA pass over the
+`.stacks/`, `STACKS_*` and the skill name keep stacks. A manual QA pass over the
 installed package found one blocker (`validate` with no path checked nothing), fixed before
 publishing. Open from that pass, next release:
 
@@ -56,7 +56,7 @@ A maintainer still has to confirm each run, and the other four bundled stacks ha
 Phases 2 and 3 are being executed through Codex delegates (`/execute:codex`), one test-author
 then one implementer per sub-phase, merged to `main` as each lands. Work runs off the dev build
 and the compiled binary: there is no packed tarball until 0.2, so every tarball check is
-reworded for `dist/quickstack` or deferred in its plan.
+reworded for `dist/stacks` or deferred in its plan.
 
 - Executed: [2.0a](phases/phase-2.0a-composed-files-and-fingerprint.md) (composed files and
   the fingerprint), [3.5b](phases/phase-3.5b-two-phase-brief.md) (base then app stages in
@@ -91,11 +91,11 @@ reworded for `dist/quickstack` or deferred in its plan.
   Codex adapter's hooks refuse when their guard is missing. The repo's own Codex delegates now
   run the destructive guard too.
 - Open from the reviews, for maintainers:
-  - The agent skill (and its plugin copy) falls back to `npx -y quickstack@latest`, and the
+  - The agent skill (and its plugin copy) falls back to `npx -y stacks@latest`, and the
     npm name is unreserved, so anyone could publish under it. Reserve the name or drop the
     fallback before the plugin is published.
   - `.rr.yaml` names one maintainer's hosts (rr is opt-in per clone, `git config
-    quickstack.rr true`); another maintainer who opts in needs hosts with the same names.
+    stacks.rr true`); another maintainer who opts in needs hosts with the same names.
   - Decided 2026-10-27: the repo's hooks stay separate from the shipped ones and its destructive
     guard stays looser (docs/harness.md, "Repo hooks and shipped hooks").
   - Cursor's `Write` payload for an edit to an existing file isn't recorded; the fixture
@@ -145,7 +145,7 @@ amended D18); the roadmap's decision table says which sub-phase each one blocks.
 | Step | Owner | Notes |
 |---|---|---|
 | Agree or change the amended D18 (entry format v1) | Maintainers | Phases 1-3 are built to it; see [requirements.md](requirements.md#proposed-decisions) and the dated entries in each phase file's "What this plan may get wrong" |
-| Reserve `quickstack` on npm | Maintainers | Part of the final step before public release, with 0.2 and 1.6c; sooner only if someone else takes the name. The name was free on 2026-10-26, see the name check in [0.0](phases/phase-0.0-decisions-and-npm-name.md) |
+| Reserve `stacks` on npm | Maintainers | Part of the final step before public release, with 0.2 and 1.6c; sooner only if someone else takes the name. The name was free on 2026-10-26, see the name check in [0.0](phases/phase-0.0-decisions-and-npm-name.md) |
 | Review requirements.md and roadmap.md; decide A1, D12, D22 and D23 first, then D5-D7, D9, D13, D14, D18-D20 | Maintainers | The gating table in [0.0](phases/phase-0.0-decisions-and-npm-name.md) says which can wait |
 | Review A2-A4 as answered in 0.3a and 0.3b | Maintainers | Must be in the decisions log before [1.6c](phases/phase-1.6c-first-release.md) publishes |
 | Answer the open questions in [risks-and-open-questions.md](risks-and-open-questions.md) | Maintainers | Question 1 (registry audience) decides which stacks ship bundled |

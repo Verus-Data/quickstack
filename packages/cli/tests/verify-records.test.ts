@@ -167,7 +167,7 @@ describe("run records", () => {
       try {
         const run = await verify(["--json"], {
           cwd: root,
-          env: { ...env, LOG_LEVEL: "warn", QUICKSTACK_LOG_FILE: log },
+          env: { ...env, LOG_LEVEL: "warn", STACKS_LOG_FILE: log },
         });
         expect(splitEvents(run.stderr).rest).toBe("");
         expect(startedSteps(run.stderr)).toEqual(["lint"]);
@@ -322,7 +322,7 @@ describe("timing fields", () => {
     "an unwritable state record leaves the outcome alone and reports stateRecord false",
     async () => {
       const { root, env, home } = recorded([{ name: "lint", run: "true" }]);
-      const projects = join(home, "state", "quickstack", "projects");
+      const projects = join(home, "state", "stacks", "projects");
       chmodSync(projects, 0o500);
       try {
         const run = await verify(["--json"], { cwd: root, env });

@@ -145,7 +145,7 @@ test("relative XDG configuration returns an absolute path rooted at the invocati
     }),
     CreateResult,
   );
-  expect(result.path).toBe(join(config, "quickstack/fragments/x"));
+  expect(result.path).toBe(join(config, "stacks/fragments/x"));
   expect(existsSync(join(result.path, "FRAGMENT.md"))).toBe(true);
 });
 
@@ -200,5 +200,5 @@ test("the printed validate command preserves shell characters in the registry pa
   });
   expect(parsed.status).toBe(0);
   expect(parsed.stderr).toBe("");
-  expect(parsed.stdout).toBe(relative(home, join(config, "quickstack/fragments/x")));
+  expect(parsed.stdout).toBe(relative(home, join(config, "stacks/fragments/x")));
 });

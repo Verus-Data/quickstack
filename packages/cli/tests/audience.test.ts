@@ -38,7 +38,7 @@ describe("the audience is picked once per invocation from the terminal and agent
     const result = await runCli(["doctor"], {
       home,
       host,
-      env: { LOG_LEVEL: "info", QUICKSTACK_LOG_FILE: file, ...env },
+      env: { LOG_LEVEL: "info", STACKS_LOG_FILE: file, ...env },
     });
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("Configuration: ok\n");
@@ -55,7 +55,7 @@ describe("the audience is picked once per invocation from the terminal and agent
     const result = await runCli(["doctor", "--json"], {
       home,
       host,
-      env: { LOG_LEVEL: "info", QUICKSTACK_LOG_FILE: file, ...env },
+      env: { LOG_LEVEL: "info", STACKS_LOG_FILE: file, ...env },
     });
     expect(result.status).toBe(0);
     expect(JSON.parse(result.stdout)).toMatchObject({ configErrors: [] });
@@ -82,14 +82,14 @@ describe("agent output carries no log lines", () => {
     const missing = join(home, "nope");
     const result = await runCli(["list"], {
       home,
-      env: { QUICKSTACK_REGISTRY_DIR: missing, LOG_LEVEL: "warn", QUICKSTACK_LOG_FILE: file },
+      env: { STACKS_REGISTRY_DIR: missing, LOG_LEVEL: "warn", STACKS_LOG_FILE: file },
     });
     expect(result.status).toBe(0);
     expect(result.stderr).toBe("");
     expect(ndjson(readFileSync(file, "utf8"))).toEqual([
       expect.objectContaining({
         level: "warn",
-        msg: `QUICKSTACK_REGISTRY_DIR is not a directory: ${missing}`,
+        msg: `STACKS_REGISTRY_DIR is not a directory: ${missing}`,
       }),
     ]);
   });
@@ -141,7 +141,7 @@ describe("new for an agent", () => {
     const run = (args: string[], host = {}) =>
       runCli(["new", "fixture-stack", ...args], {
         home,
-        env: { ...quiet, QUICKSTACK_REGISTRY_DIR: join(home, "registry") },
+        env: { ...quiet, STACKS_REGISTRY_DIR: join(home, "registry") },
         host: { cwd: home, ...host },
       });
     const agent = await run(["app"]);
@@ -293,7 +293,7 @@ describe("the guide by audience", () => {
     for (const args of [[], ["guide"]]) {
       const agent = await runCli(args);
       expect(agent.status).toBe(0);
-      expect(agent.stdout).toMatch(/^quickstack starts projects for coding agents\./);
+      expect(agent.stdout).toMatch(/^stacks starts projects for coding agents\./);
       const human = await runCli(args, { host: terminal });
       expect(human.stdout).toBe(
         `This guide is written for coding agents. To start a project yourself, run stacks list, then stacks new <stack> <dir>; stacks --help lists every command.\n\n${agent.stdout}`,
@@ -307,7 +307,7 @@ describe("the guide by audience", () => {
 describe("list for an agent", () => {
   test("keeps each description whole on one line", async () => {
     const home = temp();
-    const user = join(home, "config", "quickstack");
+    const user = join(home, "config", "stacks");
     const description = Array.from({ length: 40 }, (_, i) => `word${i}`).join(" ");
     writeEntry({
       root: user,
@@ -328,7 +328,7 @@ describe("list for an agent", () => {
 
   test("names a rejected entry's directory relative to the working directory", async () => {
     const home = temp();
-    const user = join(home, "config", "quickstack");
+    const user = join(home, "config", "stacks");
     writeEntry({
       root: user,
       kind: "stack",
@@ -341,7 +341,7 @@ describe("list for an agent", () => {
       host: { registry: smallRegistry },
     });
     expect(agent.status).toBe(0);
-    expect(agent.stdout).toContain("\n    config/quickstack/stacks/broken\n");
+    expect(agent.stdout).toContain("\n    config/stacks/stacks/broken\n");
   });
 });
 

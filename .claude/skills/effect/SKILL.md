@@ -13,7 +13,7 @@ The authoritative sources are the installed package, in this order: its declarat
 
 | Don't write (Effect 3 or a 4.0 prerelease) | Write |
 | --- | --- |
-| `Context.Tag`, `Context.GenericTag`, `Effect.Service`, `Effect.Tag`, `ServiceMap` | `class X extends Context.Service<X, Shape>()("quickstack/X")` |
+| `Context.Tag`, `Context.GenericTag`, `Effect.Service`, `Effect.Tag`, `ServiceMap` | `class X extends Context.Service<X, Shape>()("stacks/X")` |
 | `Layer.scoped` | `Layer.effect` (it removes `Scope` from the layer's requirements itself) |
 | `Effect.catchAll`, `catchAllCause`, `catchAllDefect` | `Effect.catch`, `catchCause`, `catchDefect` |
 | `Effect.either`, `Either` | `Effect.result`, `Result` (`.success` / `.failure`, `Result.isFailure`) |
@@ -33,7 +33,7 @@ The authoritative sources are the installed package, in this order: its declarat
 
 ## Services and layers
 
-A service is `Context.Service<Self, Shape>()("quickstack/Name")` with static layer factories (`layer`, `memory`, `fixed`). The layer's `Effect.gen` yields every dependency once and returns the shape; methods close over those values, so a method's requirements are `never` (or `Scope` when it hands back a scoped resource, like `Processes.start`). Don't `yield*` a service inside a method, a loop or a pure helper: pure code (rendering, composition text, decisions) takes values.
+A service is `Context.Service<Self, Shape>()("stacks/Name")` with static layer factories (`layer`, `memory`, `fixed`). The layer's `Effect.gen` yields every dependency once and returns the shape; methods close over those values, so a method's requirements are `never` (or `Scope` when it hands back a scoped resource, like `Processes.start`). Don't `yield*` a service inside a method, a loop or a pure helper: pure code (rendering, composition text, decisions) takes values.
 
 State is per invocation. `bin.ts` builds the layers once per process and `tests/helpers/cli.ts` builds them once per `runCli`, so any state belongs inside the layer's constructor: a closure variable, a `Ref`, or `Effect.cached` for lazy work done once (`AppConfig.get`, `Registry`'s `load`). Never a module-level `let`, `Map` or array, and never a cache added to a service object to skip work its layer already caches. A `Registry.get` that kept a mutable snapshot on the instance was reverted for this: `load` is already cached per build, and a second cache only adds staleness and ordering bugs. If repeated work is the problem, put `Effect.cached` in the layer.
 

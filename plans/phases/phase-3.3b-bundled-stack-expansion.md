@@ -57,7 +57,7 @@ checks by hand that:
 
 - The proving slice named in the stack's Setup was built, and covers every D7 layer.
 - A stack with two toolchains (a native shell and a web UI, say) gets hooks and CI that
-  cover both, through `quickstack:when tag=...` blocks in the default fragments.
+  cover both, through `stacks:when tag=...` blocks in the default fragments.
 - `tools` lists every CLI the agent needed on `PATH`, so 1.2a's missing-tools list and
   the `--without` hint were accurate.
 - Every step that needs a production account (edge hosting, app stores) carries `prod`,
@@ -106,7 +106,7 @@ they are listed so no one rediscovers them.
 2. `validate` over the bundled registry reports zero errors and zero warnings.
 3. Each gate stack's canonical brief in both presets is byte-identical to a committed
    digest list generated through `validate --brief <stack> [--sandbox] --json`.
-4. Adding a shared fragment's `quickstack:when` branch for another stack leaves an
+4. Adding a shared fragment's `stacks:when` branch for another stack leaves an
    unaffected gate stack's canonical brief bytes and its composition fingerprint
    unchanged in both presets, so its ledger proof still holds.
 

@@ -7,7 +7,7 @@ Acceptance tests: traced
 
 | Field | Value |
 |---|---|
-| Goal | The npm package ships one agent skill, `skill/SKILL.md`, that tells a coding agent when to reach for quickstack and how to run the loop without help, and `quickstack skill install` puts it where Claude Code finds it, so "ask your agent to start a project" works in a session that has never seen quickstack |
+| Goal | The npm package ships one agent skill, `skill/SKILL.md`, that tells a coding agent when to reach for stacks and how to run the loop without help, and `stacks skill install` puts it where Claude Code finds it, so "ask your agent to start a project" works in a session that has never seen stacks |
 | Traces to | Assumption "Handoff to whatever agent is on PATH is the right entry point ... Watch whether people use `new` from a terminal or ask their agent to run it" (D9 makes asking the agent an equal entry point); the coding agent's frustration with "ambiguity"; "Success is reaching a green `verify` without asking the user anything the brief could have answered" |
 | Depends on | [1.1](phase-1.1-composition-and-brief.md) (the brief's rules the skill repeats, `countWords`), [1.4](phase-1.4-handoff-and-entry-points.md) (the no-argument guide's loop and rules, `Host.invocation`), [1.6c](phase-1.6c-first-release.md) (the published package the skill ships in; it reaches users in the next release) |
 | Blocks | [3.4b](phase-3.4b-native-agent-adapters.md)'s plugin marketplace listing, which lists this skill |
@@ -16,9 +16,9 @@ Acceptance tests: traced
 
 ## Where this fits
 
-1.4's no-argument guide reaches an agent that already decided to run `quickstack`. The
+1.4's no-argument guide reaches an agent that already decided to run `stacks`. The
 skill reaches one earlier: a user says "start me a blog with tests" and the agent, which
-has never heard of quickstack, needs to know the CLI exists, when it fits, and that the
+has never heard of stacks, needs to know the CLI exists, when it fits, and that the
 brief is the task. Claude Code loads skills from `.claude/skills/<name>/SKILL.md` in a
 project and `~/.claude/skills/<name>/SKILL.md` for a user, choosing one by its
 `description`. The skill text is fixed CLI text, like the brief's `text.ts` and the
@@ -29,7 +29,7 @@ guide's `guide.ts`; it reads no entry and runs nothing (Trust model point 1).
 In:
 
 - `packages/cli/skill/SKILL.md`, shipped in the package next to `registry/`.
-- `quickstack skill install [--project] [--force] [--print] [--json]`.
+- `stacks skill install [--project] [--force] [--print] [--json]`.
 - Tests that render the skill, budget it, and check every command it names against the
   real command tree.
 - Packing: `skill/` added to the package `files` list and to 0.2's tarball file-list
@@ -56,17 +56,17 @@ to a second asset directory). Core code never computes the path. `doctor` report
 
 ### Content
 
-YAML frontmatter with `name: quickstack` and a `description` under 1,024 characters that
+YAML frontmatter with `name: stacks` and a `description` under 1,024 characters that
 says when to use it: starting a new project, setting up tests, lint, CI and agent config
-in a new repo, or when the user mentions quickstack or a stack. Then the body, in this
+in a new repo, or when the user mentions stacks or a stack. Then the body, in this
 order:
 
 1. **When to use it.** A new project from nothing, or a user asking for "a project set
    up properly". For an existing repo, `<cli> add <fragment>` when the installed CLI has
-   `add` (3.0); if this lands before 3.0, the skill says quickstack doesn't handle
+   `add` (3.0); if this lands before 3.0, the skill says stacks doesn't handle
    existing repos yet, and 3.0 updates that line.
-2. **How to run it.** `quickstack` if it is on PATH, otherwise
-   `npx -y quickstack@latest`. After `new`, use exactly the command the brief uses for
+2. **How to run it.** `stacks` if it is on PATH, otherwise
+   `npx -y stacks@latest`. After `new`, use exactly the command the brief uses for
    `verify`, which is the same version that wrote the project.
 3. **Pick a stack.** Run `<cli> list --json`. Pick the stack whose `description` and
    `tags` match the request; tell the user which one and why in one sentence, and name a
@@ -74,19 +74,19 @@ order:
    user named it, and if they did, confirm with them before going on (Trust model
    point 3). If nothing fits, say so instead of forcing one.
 4. **Start it.** `<cli> new <stack> <dir> --json` (add `--sandbox` when the user wants
-   the fastest path to something running). Read `.quickstack/BRIEF.md`. It is the whole
+   the fastest path to something running). Read `.stacks/BRIEF.md`. It is the whole
    task; follow it in order, and ask the user only what it tells you to ask.
 5. **Loop to green.** Run `<cli> verify` from the project root with your longest shell
    timeout. On failure, fix the code or config the failing step exercises, never the
    step. Done is exit 0 with outcome `green`.
-6. **Never weaken verify.** Don't edit `.quickstack/manifest.json`; don't make commands
+6. **Never weaken verify.** Don't edit `.stacks/manifest.json`; don't make commands
    pass without doing their job. If verify fails with `VerifyChanged`, stop: don't edit
    the steps back and forth, and don't run `verify --accept-changes` (it refuses agents).
    Tell the user what changed and that only they can accept it, from their own terminal,
    or undo it. This is the same rule as the brief's (1.1).
 7. **Finish.** Follow the brief's after-green list, then summarize for the user: the
    stack and why, the decisions taken with their defaults, anything left undone, and
-   where the brief's problems were noted (`.quickstack/NOTES.md`).
+   where the brief's problems were noted (`.stacks/NOTES.md`).
 
 The command forms are the same as the guide's (1.4) and the brief's (1.1). One unit test
 checks the skill names the same subcommands and flags as the guide, so the three can't
@@ -101,8 +101,8 @@ it; it isn't an entry. The skill's own test does.
 
 | Flag | Effect |
 |---|---|
-| none | Write to `$HOME/.claude/skills/quickstack/SKILL.md` (Claude Code's user skills directory) |
-| `--project` | Write to `.claude/skills/quickstack/SKILL.md` under the git toplevel of `Host.cwd`, or `Host.cwd` when it isn't in a repo |
+| none | Write to `$HOME/.claude/skills/stacks/SKILL.md` (Claude Code's user skills directory) |
+| `--project` | Write to `.claude/skills/stacks/SKILL.md` under the git toplevel of `Host.cwd`, or `Host.cwd` when it isn't in a repo |
 | `--force` | Overwrite a target whose content differs |
 | `--print` | Write the skill to stdout and touch nothing (the documented copy path for any other location) |
 | `--json` | `{ path, action: "written" \| "unchanged" \| "printed", text? }`; `text` holds the skill only for `--print`, and `path` is then `null`, so stdout stays one result |
@@ -111,13 +111,13 @@ The target directory is created when missing. A target with identical bytes is
 `unchanged`, exit 0. A target with different bytes and no `--force` fails `TargetNotEmpty`
 (1.2a's tag, `details: { path, entries: ["SKILL.md"] }`) with a human hint to rerun with
 `--force` or `--print`, so a user's edited copy is never replaced silently. Writes use
-1.2a's safe writer rooted at the skills directory, so a symlinked `quickstack/` can't
+1.2a's safe writer rooted at the skills directory, so a symlinked `stacks/` can't
 redirect the write. An unwritable target is `PermissionDenied`, exit 6.
 
 Installing is allowed under a detected agent: the content is the CLI's own fixed text,
 not an entry, so it carries no trust decision (Trust model points 1 and 4 are about entry
 content and confirmations). The README's quick start shows both ways in: run
-`npx quickstack new` yourself, or run `npx quickstack skill install` once and ask your
+`npx stacks new` yourself, or run `npx stacks skill install` once and ask your
 agent.
 
 ### Failure modes
@@ -150,9 +150,9 @@ No new error tag.
 Through `tests/helpers/cli.ts::runCli` with temporary HOME and XDG directories.
 
 1. The skill's frontmatter decodes with exactly `name` and `description`, `name` is
-   `quickstack`, and `description` is under 1,024 characters.
+   `stacks`, and `description` is under 1,024 characters.
 2. `countWords` of the body is at most `SKILL_WORDS`.
-3. Every `quickstack <subcommand>` and `<cli> <subcommand> [--flag]` named in the body
+3. Every `stacks <subcommand>` and `<cli> <subcommand> [--flag]` named in the body
    parses against the real command tree (each is run with `--help` through `runCli` and
    exits 0), and every flag it names is a flag of that subcommand. Renaming a flag in
    a later sub-phase without updating the skill fails this test.
@@ -168,14 +168,14 @@ Through `tests/helpers/cli.ts::runCli` with temporary HOME and XDG directories.
    outside a repo, under `Host.cwd`.
 7. `--print` writes the skill to stdout and creates nothing; with `--json`, stdout is one
    result with `action: "printed"`, `path: null` and the skill in `text`.
-8. A symlinked `~/.claude/skills/quickstack` pointing outside the skills root fails
+8. A symlinked `~/.claude/skills/stacks` pointing outside the skills root fails
    `PermissionDenied` and writes nothing outside it; an unwritable target (mode 000,
    skipped as root) exits 6.
 9. With `Host.skill` pointing at a missing directory, `skill install` fails `NotFound` and
    `doctor --json` reports `skill.found: false`.
-10. Bun e2e: `bun run build` produces `packages/cli/dist/quickstack`; the compiled
+10. Bun e2e: `bun run build` produces `packages/cli/dist/stacks`; the compiled
     binary finds `skill/` beside `dist/`, as it finds the bundled registry, and
-    `./dist/quickstack skill install --print` prints it, including after relocation.
+    `./dist/stacks skill install --print` prints it, including after relocation.
 
 ### Realistic edge cases
 
@@ -224,6 +224,6 @@ Through `tests/helpers/cli.ts::runCli` with temporary HOME and XDG directories.
 - Repeating the brief's rules in the skill risks two wordings drifting. Acceptance test 4
   checks the rules are present, not that they read the same; if they drift, generate the
   skill's rule lines from `text.ts`.
-- `npx -y quickstack@latest` in the skill means an agent may run a newer CLI than the
+- `npx -y stacks@latest` in the skill means an agent may run a newer CLI than the
   user installed. That is the point for a first run; after `new`, the brief's exact
   command takes over.

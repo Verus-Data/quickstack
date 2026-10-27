@@ -240,7 +240,7 @@ test("preview is canonical under agent markers, git variables, a parent repo and
         GIT_WORK_TREE: parent,
         XDG_STATE_HOME: "relative-state",
       },
-      host: { registry, cwd, invocation: "quickstack-custom" },
+      host: { registry, cwd, invocation: "stacks-custom" },
     }),
   );
   expect(changed).toEqual(baseline);

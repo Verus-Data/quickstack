@@ -1,34 +1,34 @@
 # Phase 3.0: `add`
 
-Status: EXECUTED 2026-10-27 (`add`, parked conflicts under `.quickstack/incoming/`, the add
+Status: EXECUTED 2026-10-27 (`add`, parked conflicts under `.stacks/incoming/`, the add
 brief, `list` in a project; reviewed once and fixed, then refactored into named stages sharing
 `new`'s handoff flow). Test 7 is the deterministic writer-level interrupt test
 Acceptance tests: traced
 
 | Field | Value |
 |---|---|
-| Goal | `quickstack add <fragment...>` applies known-good fragments to a repo that already exists, after the same tamper check `verify` runs. It never overwrites a file, parks every conflicting file under `.quickstack/incoming/` for the agent to merge, and writes an add-mode brief whose definition of done is `quickstack verify` |
+| Goal | `stacks add <fragment...>` applies known-good fragments to a repo that already exists, after the same tamper check `verify` runs. It never overwrites a file, parks every conflicting file under `.stacks/incoming/` for the agent to merge, and writes an add-mode brief whose definition of done is `stacks verify` |
 | Traces to | Job 4: "When I have an existing repo, I want to add a known-good piece (CI, agent hooks, Postgres) without it overwriting what's there, so the repo gets better instead of different." What this is not: "`add` applies fragments; it does not restructure what's there." |
 | Depends on | 1.6c (composition, the 1.2a scaffold writer, the 1.2b manifest, brief, handoff and `verify` have shipped once), 1.3b (the tamper check and `--accept-changes`). May run alongside phase 2 (D8 as revised): it reuses bundled fragments the gate already proved |
 | Blocks | Nothing. Nothing in 3.1a, 3.1b, 3.2a or 3.2b needs `add` |
 | Decisions needed | D4 (settled): never restructure. D14 (proposed): if changed steps only warned, the tamper check here would still run but a mismatch would warn and stop `add` from recording a digest, instead of failing. D19 (proposed): if project entries were trusted by default, the untrusted-under-agent rule below would apply only to shadowing project entries. Open question 9 (who can confirm) applies to the digest rule below unchanged |
-| Settles | How a fragment lands in a repo without overwriting; how `add` keeps the step digest honest; what `add` does in a repo quickstack didn't scaffold; how repeat runs treat unmerged parked files |
+| Settles | How a fragment lands in a repo without overwriting; how `add` keeps the step digest honest; what `add` does in a repo stacks didn't scaffold; how repeat runs treat unmerged parked files |
 
 ## Scope
 
 In:
 
-- `quickstack add <fragment...> [--dir <path>] [--agents <list>] [--launch <agent>] [--sandbox] [--yes] [--no-launch] [--json]`, run from the project root or with `--dir`. `--launch` is 1.4's handoff preference, `--no-launch` is 1.4's flag, and `--yes` is 1.2a's "take every decision's default" (implied by `--sandbox`), all with the meaning they have on `new`. A flag contradiction (`--launch` with `--no-launch`, `--json` with `--launch`) fails `Usage`, exit 2, the same rule as `new`.
+- `stacks add <fragment...> [--dir <path>] [--agents <list>] [--launch <agent>] [--sandbox] [--yes] [--no-launch] [--json]`, run from the project root or with `--dir`. `--launch` is 1.4's handoff preference, `--no-launch` is 1.4's flag, and `--yes` is 1.2a's "take every decision's default" (implied by `--sandbox`), all with the meaning they have on `new`. A flag contradiction (`--launch` with `--no-launch`, `--json` with `--launch`) fails `Usage`, exit 2, the same rule as `new`.
 - The project name for templates in a repo with no manifest, inferred from the repo's own files (below).
 - A recorded stack id that no longer resolves: a warning, and fragments applied without stack matching.
 - Missing tools reported before anything is written, the same lookup as 1.2a's.
 - A context-aware default view for `list` inside a project (below).
 - The 1.3b tamper check on an existing manifest before anything is planned.
-- Parking conflicting files under `.quickstack/incoming/<path>`, with the classification order below.
-- Creating `.quickstack/manifest.json` when the repo has none ("existing repo" mode, `stack: null`).
+- Parking conflicting files under `.stacks/incoming/<path>`, with the classification order below.
+- Creating `.stacks/manifest.json` when the repo has none ("existing repo" mode, `stack: null`).
 - Appending the new fragments' steps, `env` and `commands` to the manifest and recording the new step digest, except under the untrusted-under-agent rule.
 - An add-mode brief with a "Merge needed" section, then handoff through 1.4.
-- Refusals: symlinked `.quickstack/` or `incoming/`, `needsOwnRepo` fragments inside an enclosing repository, unknown ids, stack ids, conflicts, a fragment already applied, step name collisions.
+- Refusals: symlinked `.stacks/` or `incoming/`, `needsOwnRepo` fragments inside an enclosing repository, unknown ids, stack ids, conflicts, a fragment already applied, step name collisions.
 - A line in the result and brief, with the exact command, when the project's stack requires a fragment the project doesn't have.
 
 Out:
@@ -49,8 +49,8 @@ Out:
 ### Behavior, in order
 
 1. Resolve the project root: `--dir`, or the current directory.
-2. Refuse before reading further when `.quickstack/` or `.quickstack/incoming/` is a symlink: `PermissionDenied` with `details.path`, the same failure 1.2a's write guard gives for a destination outside the project.
-3. Read `.quickstack/manifest.json` if it exists. A manifest that fails to decode, or has a higher `schemaVersion`, fails the way 1.3a's manifest reader does (`InvalidConfig`, per [roadmap, Schema versions](../roadmap.md#schema-versions)). No manifest means an existing repo: `add` will create one with `stack: null`.
+2. Refuse before reading further when `.stacks/` or `.stacks/incoming/` is a symlink: `PermissionDenied` with `details.path`, the same failure 1.2a's write guard gives for a destination outside the project.
+3. Read `.stacks/manifest.json` if it exists. A manifest that fails to decode, or has a higher `schemaVersion`, fails the way 1.3a's manifest reader does (`InvalidConfig`, per [roadmap, Schema versions](../roadmap.md#schema-versions)). No manifest means an existing repo: `add` will create one with `stack: null`.
 4. **Tamper check.** With a manifest, run 1.3b's tamper check, the same exported function in `src/core/verify/tamper.ts` that `verify` calls, not a copy, with the lookup rules in [roadmap, Trust model](../roadmap.md#trust-model) point 5. Three outcomes:
 
 | Tamper check | `add` does |
@@ -66,8 +66,8 @@ Out:
 6a. **Missing tools.** Look up the composition's `requiresTools` with `Processes.which`, as 1.2a does. Missing ones go into `missingTools` (1.2a's shape, with the owning fragment ids) and a `warnings` line naming each tool and the fragment that needs it, before any file is written, so a human run shows them before the merge list. They don't stop `add`: the agent may install the tool, and the brief's ground rules say so.
 7. Check `needsOwnRepo`: if any composed fragment has it and `git rev-parse --show-toplevel` (through `Processes`) names a parent directory, refuse with `ComposeConflict` (reason `needs_own_repo`) before writing, as 1.2a does. A nested directory with its own `git init` is fine.
 8. Plan files with `planAdd` (classification below).
-9. Write the planned files and parked copies through 1.2a's safe writer, then the state record (when one is kept), then the manifest last. Ensure `.quickstack/.gitignore` exists with the entries in [roadmap, Other shared facts: Project metadata](../roadmap.md#other-shared-facts); never rewrite one the user edited.
-10. Write `.quickstack/BRIEF.md` in add mode and hand off through 1.4's decision. Any untrusted composed entry gives `print` with reason `untrusted`, the 1.4 rule (point 3).
+9. Write the planned files and parked copies through 1.2a's safe writer, then the state record (when one is kept), then the manifest last. Ensure `.stacks/.gitignore` exists with the entries in [roadmap, Other shared facts: Project metadata](../roadmap.md#other-shared-facts); never rewrite one the user edited.
+10. Write `.stacks/BRIEF.md` in add mode and hand off through 1.4's decision. Any untrusted composed entry gives `print` with reason `untrusted`, the 1.4 rule (point 3).
 
 ### Project name without a manifest
 
@@ -89,7 +89,7 @@ Once `add` exists, `list` with no kind argument chooses its view from where it r
 
 | Context | Default view |
 |---|---|
-| No `.quickstack/manifest.json` in the current directory or `--dir` | Stacks, then fragments (1.0's view, unchanged) |
+| No `.stacks/manifest.json` in the current directory or `--dir` | Stacks, then fragments (1.0's view, unchanged) |
 | A manifest that decodes | "Fragments you can add": fragments whose `appliesTo` fits the recorded stack and its tags (all fragments when `stack` is `null` or unknown), minus those already applied, each with its `Next: <invocation> add <id>` line; then one line pointing at `list stacks` |
 | A manifest that fails to decode or is newer | 1.0's view, plus a warning line naming the path and the decode error |
 
@@ -148,7 +148,7 @@ For each planned file, the first row that matches decides:
 |---|---|---|
 | 1 | Live destination absent | Write it |
 | 2 | Live file present with identical bytes | Skip; nothing to merge |
-| 3 | Live file present, no parked copy at `incoming/<path>` | Park the new content at `.quickstack/incoming/<path>` |
+| 3 | Live file present, no parked copy at `incoming/<path>` | Park the new content at `.stacks/incoming/<path>` |
 | 4 | Parked copy present with identical bytes | Skip the write; the copy stays listed |
 | 5 | Parked copy present, and it and the new content both parse as JSON | Deep-merge the new content into the parked copy |
 | 6 | Otherwise | Write the next free `<path>.2`, `<path>.3`, ... under `incoming/` |
@@ -170,10 +170,10 @@ Built by 1.1's renderer with `mode: "add"`. Fixed wording lives in `src/core/bri
 - Title "Add <fragments> to <project>" and facts naming the stack (or "none recorded, existing repo") and the fragments already applied.
 - "Your job" says to apply the fragments without breaking what's there.
 - Conditional blocks evaluate `mode=add`; `with=` sees existing and new fragments.
-- "Merge needed": every file under `incoming/`, with the instruction to bring in what the incoming copy adds, keep the project's choices where they conflict, and delete `.quickstack/incoming/` when done.
-- "Missing required fragments", when the stack requires fragments the project lacks, with `quickstack add <ids>`.
+- "Merge needed": every file under `incoming/`, with the instruction to bring in what the incoming copy adds, keep the project's choices where they conflict, and delete `.stacks/incoming/` when done.
+- "Missing required fragments", when the stack requires fragments the project lacks, with `stacks add <ids>`.
 - The stop-and-confirm section when any entry is untrusted (point 3), naming `verify --accept-changes` when `digestRecorded` is false.
-- The definition of done is `quickstack verify` over the whole manifest.
+- The definition of done is `stacks verify` over the whole manifest.
 
 ### Result
 
@@ -187,7 +187,7 @@ Built by 1.1's renderer with `mode: "add"`. Fixed wording lives in `src/core/bri
   "alreadyApplied": ["agent-ops"],
   "written": [".github/pull_request_template.md"],
   "skipped": [],
-  "mergeNeeded": [{ "path": "AGENTS.md", "incoming": [".quickstack/incoming/AGENTS.md"] }],
+  "mergeNeeded": [{ "path": "AGENTS.md", "incoming": [".stacks/incoming/AGENTS.md"] }],
   "missingRequired": [],
   "commandsKept": [],
   "warnings": [],
@@ -197,7 +197,7 @@ Built by 1.1's renderer with `mode: "add"`. Fixed wording lives in `src/core/bri
   "tamperCheck": "full",
   "stateRecord": true,
   "digestRecorded": true,
-  "brief": ".quickstack/BRIEF.md",
+  "brief": ".stacks/BRIEF.md",
   "briefWords": 1840,
   "untrusted": [],
   "handoff": { "kind": "print", "reason": "json" }
@@ -220,7 +220,7 @@ Built by 1.1's renderer with `mode: "add"`. Fixed wording lives in `src/core/bri
 | `--sandbox` or `--agents` disagree with the manifest | `BadInput` | 2 |
 | Manifest corrupt or newer | `InvalidConfig` | 3 |
 | Manifest unreadable (I/O failure, a directory) | `PermissionDenied`, as `readManifest` fails | 6 |
-| `.quickstack/` or `incoming/` is a symlink, a write escapes the project, a write fails, or the state record can't be rewritten | `PermissionDenied` with `details.path`; rollback as above | 6 |
+| `.stacks/` or `incoming/` is a symlink, a write escapes the project, a write fails, or the state record can't be rewritten | `PermissionDenied` with `details.path`; rollback as above | 6 |
 
 No new error tags.
 
@@ -255,16 +255,16 @@ No new error tags.
 All through `tests/helpers/cli.ts` with the fixture registry and temporary projects created with real `git init`.
 
 1. `add ci-github` in a scaffolded project writes only absent files, appends the fragment's steps, and `verify --json` afterwards lists old and new steps with `tamperCheck: "full"`.
-2. A pre-existing `AGENTS.md` is byte-identical after `add`; the fragment's version is at `.quickstack/incoming/AGENTS.md` and "Merge needed" lists it.
+2. A pre-existing `AGENTS.md` is byte-identical after `add`; the fragment's version is at `.stacks/incoming/AGENTS.md` and "Merge needed" lists it.
 3. Classification: two runs that both park `.claude/settings.json` give one deep-merged parked copy; two that park `README.md` give `README.md` and `README.md.2`; a parked copy identical to the new content is not rewritten; a parked file from an earlier run that this run doesn't touch is still listed.
 4. Tamper: edit a step and `verifyDigest` in the manifest with the state record present; `add` exits 5 and the tree hash is unchanged.
 5. Manifest-only: delete the state record; `add` succeeds with `tamperCheck: "manifest-only"`, `stateRecord: false`, and no state record exists afterwards.
 6. Untrusted under an agent: a project-origin fragment with `CLAUDECODE=1` writes files and steps, `digestRecorded: false`, and the next `verify` exits 5 listing the new steps as added; `verify --accept-changes` with a TTY and no marker then lets it run. The same `add` with a TTY and no marker gives `digestRecorded: true` and still no launch.
 7. Rollback: a write that fails partway (a read-only directory at a later destination) leaves no created file, restores a pre-existing parked JSON copy byte for byte, and leaves the manifest and state record unchanged; the same holds under interrupt.
-8. A plain git repo with no `.quickstack/` gets a manifest with `stack: null`, `mode: "add"`, and `createdManifest: true`.
-9. A symlinked `.quickstack` pointing outside the project exits 6 and writes nothing anywhere.
+8. A plain git repo with no `.stacks/` gets a manifest with `stack: null`, `mode: "add"`, and `createdManifest: true`.
+9. A symlinked `.stacks` pointing outside the project exits 6 and writes nothing anywhere.
 10. `needsOwnRepo` inside another repo exits 2 before writing; with its own `git init` it succeeds.
-11. A fixture stack requiring the fixture-only fragment `fixture-required` and a project without it: `missingRequired` and the brief both contain `quickstack add fixture-required`.
+11. A fixture stack requiring the fixture-only fragment `fixture-required` and a project without it: `missingRequired` and the brief both contain `stacks add fixture-required`.
 12. Adding a fragment already applied exits 2 with the tree unchanged.
 13. `add` starts no process other than `git` (the `Processes` test layer records spawns).
 14. Property test: for any set of pre-existing paths, every pre-existing live file's bytes are unchanged after `add`.

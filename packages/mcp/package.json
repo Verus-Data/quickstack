@@ -1,5 +1,5 @@
 {
-  "name": "@quickstack/mcp",
+  "name": "@stacks/mcp",
   "version": "0.0.0",
   "private": true,
   "type": "module"

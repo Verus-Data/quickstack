@@ -1,4 +1,4 @@
-# quickstack documentation
+# stacks documentation
 
 New here? Start with the [quick start](quickstart.md). It gets a project running in about five minutes.
 
@@ -6,8 +6,8 @@ New here? Start with the [quick start](quickstart.md). It gets a project running
 | --- | --- |
 | [Quick start](quickstart.md) | Install the CLI and start your first project |
 | [Concepts](concepts.md) | Understand stacks, fragments, the brief and verify |
-| [Using quickstack with an agent](agents.md) | Let Claude Code, Codex, OpenCode or Cursor drive |
-| [How quickstack works](architecture.md) | See the pipeline, the design rules and the source layout |
+| [Using stacks with an agent](agents.md) | Let Claude Code, Codex, OpenCode or Cursor drive |
+| [How stacks works](architecture.md) | See the pipeline, the design rules and the source layout |
 | [Authoring a stack or fragment](authoring.md) | Write your own entry and prove it |
 | [Command reference](reference/commands.md) | Look up every command and flag |
 | [Output and errors](reference/output.md) | Script against `--json`, exit codes and the error envelope |

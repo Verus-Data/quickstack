@@ -120,13 +120,13 @@ export class EventStore extends Context.Service<EventStore, {
   readonly officialNames: Effect.Effect<OfficialNames, StoreUnavailable>;
   readonly releasedVersions: Effect.Effect<ReadonlySet<string>, StoreUnavailable>;
   readonly rebuildProject: (key: ProjectKey) => Effect.Effect<void, StoreUnavailable>; // store/projects.ts::rebuildProject
-}>()("quickstack/api/EventStore") {
+}>()("stacks/api/EventStore") {
   static memory: () => Layer.Layer<EventStore>;
   static d1: Layer.Layer<EventStore, never, SqlClient.SqlClient>;
 }
 ```
 
-`RateLimiter` (`quickstack/api/RateLimiter`) and `NetworkHasher` (`quickstack/api/NetworkHasher`) follow the same pattern. `EventStore` covers the write path and the lookups ingest needs; the lease, `maintenance_state`, per-day counts and pruning belong to 4.1c's `MaintenanceStore` (`quickstack/api/MaintenanceStore`), and the internal integrity tables to 4.1d's `IntegrityStore`. `src/platform/worker.ts` provides the D1 implementations and the `SqlClient` layer from the binding; nothing else touches bindings. `NETWORK_HASH_KEY` is read only in the API's `config.ts` and never logged. The privacy page and schema route are static text and `TelemetryEvent`'s JSON Schema export.
+`RateLimiter` (`stacks/api/RateLimiter`) and `NetworkHasher` (`stacks/api/NetworkHasher`) follow the same pattern. `EventStore` covers the write path and the lookups ingest needs; the lease, `maintenance_state`, per-day counts and pruning belong to 4.1c's `MaintenanceStore` (`stacks/api/MaintenanceStore`), and the internal integrity tables to 4.1d's `IntegrityStore`. `src/platform/worker.ts` provides the D1 implementations and the `SqlClient` layer from the binding; nothing else touches bindings. `NETWORK_HASH_KEY` is read only in the API's `config.ts` and never logged. The privacy page and schema route are static text and `TelemetryEvent`'s JSON Schema export.
 
 ### Failure modes
 

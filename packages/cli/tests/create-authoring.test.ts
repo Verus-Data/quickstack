@@ -79,6 +79,6 @@ test.each([
   expect(run.status).toBe(0);
   expect(run.stderr).toBe("");
   // Agent rendering may use a cwd-relative path.
-  expect(run.stdout).toContain("config/quickstack/fragments/my-ci");
+  expect(run.stdout).toContain("config/stacks/fragments/my-ci");
   expect(run.stdout).toContain(authoringGuide);
 });

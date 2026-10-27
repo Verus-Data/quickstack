@@ -1,6 +1,6 @@
 ---
-name: quickstack
-description: Start a new project with quickstack.
+name: stacks
+description: Start a new project with stacks.
 ---
 
 Fixture skill: preserve these bytes, including café and `quotes`.

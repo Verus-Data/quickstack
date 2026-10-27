@@ -19,7 +19,7 @@ export type HostInfo = {
   /** How a person runs this CLI, for copy-paste `Next:` lines. */
   invocation: string;
 };
-export class Host extends Context.Service<Host, HostInfo>()("quickstack/Host") {
+export class Host extends Context.Service<Host, HostInfo>()("stacks/Host") {
   static layer = (value: HostInfo) => Layer.succeed(Host, value);
   static memory = (overrides: Partial<HostInfo> = {}) =>
     Host.layer({

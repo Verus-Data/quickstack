@@ -13,12 +13,12 @@
       },
     },
     "packages/api": {
-      "name": "@quickstack/api",
+      "name": "@stacks/api",
       "version": "0.0.0",
     },
     "packages/cli": {
       "name": "@steamfield/stacks",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "bin": {
         "stacks": "dist/stacks.mjs",
       },
@@ -38,7 +38,7 @@
       },
     },
     "packages/mcp": {
-      "name": "@quickstack/mcp",
+      "name": "@stacks/mcp",
       "version": "0.0.0",
     },
   },
@@ -105,10 +105,6 @@
 
     "@oxc-project/types": ["@oxc-project/types@0.154.0", "", {}, "sha512-KYOUGQFlLWR+s4QMV2Q9ko38TZm7EdO87Qm7rvZLqk/webse/cDjtyxKhg/47l0byCbs/k46LT8qc4PKjAikzA=="],
 
-    "@quickstack/api": ["@quickstack/api@workspace:packages/api"],
-
-    "@quickstack/mcp": ["@quickstack/mcp@workspace:packages/mcp"],
-
     "@redis/bloom": ["@redis/bloom@6.3.0", "", { "peerDependencies": { "@redis/client": "^6.3.0" } }, "sha512-NQ5poYpZr0jv6zazN1cy6JY5kIipKFZ3R9GTL4kOUTX3a9YAfY29U8bsE4lWhVQEM+G4V0BXVC57mubIdDijeA=="],
 
     "@redis/client": ["@redis/client@6.3.0", "", { "peerDependencies": { "@node-rs/xxhash": "^1.1.0", "@opentelemetry/api": ">=1 <2" }, "optionalPeers": ["@node-rs/xxhash", "@opentelemetry/api"] }, "sha512-fHrjwGCBvAANGi+TuRuwKi83sIOzgHr8eh+Uf48w3fSX7Hhrz174NrWqfJhAC2vnN0d/tfaZpdr6+o6JC3QHwg=="],
@@ -150,6 +146,10 @@
     "@rolldown/binding-win32-x64-msvc": ["@rolldown/binding-win32-x64-msvc@1.2.14", "", { "os": "win32", "cpu": "x64" }, "sha512-9mE94bf2GZUaR/fUSXCMpBoWkctu421Mi0ORpm4zqfbkjKep7RxzPFa5etcGs5h+2KApoWBOA/hAJa/7saGgEQ=="],
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.1", "", {}, "sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw=="],
+
+    "@stacks/api": ["@stacks/api@workspace:packages/api"],
+
+    "@stacks/mcp": ["@stacks/mcp@workspace:packages/mcp"],
 
     "@steamfield/stacks": ["@steamfield/stacks@workspace:packages/cli"],
 

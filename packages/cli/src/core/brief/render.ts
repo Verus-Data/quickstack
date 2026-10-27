@@ -24,7 +24,7 @@ export type BriefContext = {
   };
   project: string;
   git: GitState;
-  /** Paths quickstack wrote, relative to the project root. */
+  /** Paths stacks wrote, relative to the project root. */
   written: ReadonlyArray<string>;
   missing: ReadonlyArray<MissingTool>;
   /** `--yes` or `--sandbox`: take every decision's default. */

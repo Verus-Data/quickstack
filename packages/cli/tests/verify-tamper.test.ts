@@ -462,7 +462,7 @@ describe("--accept-changes", () => {
         tag: "PermissionDenied",
         details: {
           reason: "state-unwritable",
-          path: join(notDir, "quickstack", "projects", `${project.manifest.projectId}.json`),
+          path: join(notDir, "stacks", "projects", `${project.manifest.projectId}.json`),
         },
       },
     });

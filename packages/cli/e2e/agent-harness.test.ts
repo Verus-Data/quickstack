@@ -30,7 +30,7 @@ const SuiteReport = Schema.Struct({
 });
 
 test("the compiled binary ships a runnable hook suite and a harness-owned test step [3.4a#2]", async () => {
-  const root = mkdtempSync(join(tmpdir(), "quickstack-harness-"));
+  const root = mkdtempSync(join(tmpdir(), "stacks-harness-"));
   try {
     const home = join(root, "home");
     mkdirSync(home);

@@ -35,8 +35,8 @@ Entries come from three roots, highest precedence first:
 | Origin | Root | Trusted |
 | --- | --- | --- |
 | `project` | `./.stacks/` in the working directory | No: a cloned repository can ship these |
-| `user` | `$XDG_CONFIG_HOME/quickstack/` (`~/.config/quickstack/`), beside `config.json` | Yes |
-| `bundled` | The registry shipped with the CLI (`packages/cli/registry/` in this repo; `QUICKSTACK_REGISTRY_DIR` replaces it) | Yes, unless `QUICKSTACK_REGISTRY_DIR` set it |
+| `user` | `$XDG_CONFIG_HOME/stacks/` (`~/.config/stacks/`), beside `config.json` | Yes |
+| `bundled` | The registry shipped with the CLI (`packages/cli/registry/` in this repo; `STACKS_REGISTRY_DIR` replaces it) | Yes, unless `STACKS_REGISTRY_DIR` set it |
 
 Each root holds `stacks/<id>/STACK.md` and `fragments/<id>/FRAGMENT.md`, each with optional `files/` (copied into every project) and `adapters/<agent>/` (copied when that agent is a target; agents are `claude`, `codex`, `opencode`, `cursor`). An app is a fragment with `category: app`. Files are stored under their real names, dotfiles included: `files/.gitignore` is written as `.gitignore`. An entry directory may not be or contain a symlink, and nothing past one is read. The project root and its `stacks/` and `fragments/` must be real directories (a symlinked one is skipped with a warning); the user and bundled roots may be symlinks.
 
@@ -95,12 +95,12 @@ The handoff for a real run, first match wins (the manifest's `handoff` records w
 
 1. Run from inside an agent session (an agent marker such as `CLAUDECODE` or `AI_AGENT` is set): stdout ends with `NEXT STEP FOR THE AGENT: ...`, telling that agent to read the brief and loop on `verify`. With an untrusted entry it says `STOP` instead: show the user the entries and the brief's first section, and continue only if they confirm.
 2. `--json`, `--no-launch`, stdin or stdout not a terminal, or any untrusted entry: the prompt is printed (with an example command, for a human) and nothing is launched. An untrusted entry never launches an agent.
-3. Otherwise the first agent CLI on PATH (`--launch` alone, else the `agents` setting, then `claude`, `codex`, `opencode`, `cursor-agent`) starts in the project with the prompt as its first message, with your environment and the terminal. If it can't be started, the manifest's `handoff` is rewritten to `print`. quickstack exits with that agent's status, with no error envelope: the project was written either way. None on PATH: the prompt is printed. `--launch` with `--no-launch` or `--json` is `Usage` (exit 2).
+3. Otherwise the first agent CLI on PATH (`--launch` alone, else the `agents` setting, then `claude`, `codex`, `opencode`, `cursor-agent`) starts in the project with the prompt as its first message, with your environment and the terminal. If it can't be started, the manifest's `handoff` is rewritten to `print`. stacks exits with that agent's status, with no error envelope: the project was written either way. None on PATH: the prompt is printed. `--launch` with `--no-launch` or `--json` is `Usage` (exit 2).
 
 ### What `new` checks and writes
 
-- `.stacks/manifest.json` records the stack, fragments, preset, agents and the verify steps with their digest; it is committed with the project. A manifest whose `schemaVersion` is newer than this CLI reads fails `InvalidConfig` (exit 3): upgrade quickstack.
-- The state record is a second copy of the verify digest at `$XDG_STATE_HOME/quickstack/projects/<projectId>.json` (`QUICKSTACK_STATE_DIR` replaces `$XDG_STATE_HOME/quickstack`), so editing the project's files can't hide a changed verify step. When that directory isn't writable, `new` still succeeds with `stateRecord: false`, and verify's tamper check uses the manifest only.
+- `.stacks/manifest.json` records the stack, fragments, preset, agents and the verify steps with their digest; it is committed with the project. A manifest whose `schemaVersion` is newer than this CLI reads fails `InvalidConfig` (exit 3): upgrade stacks.
+- The state record is a second copy of the verify digest at `$XDG_STATE_HOME/stacks/projects/<projectId>.json` (`STACKS_STATE_DIR` replaces `$XDG_STATE_HOME/stacks`), so editing the project's files can't hide a changed verify step. When that directory isn't writable, `new` still succeeds with `stateRecord: false`, and verify's tamper check uses the manifest only.
 - The target must not exist, or be empty. A directory holding only `.git` or OS litter (`.DS_Store`, `Thumbs.db`, `desktop.ini`, `._*`) counts as empty; anything else fails `TargetNotEmpty` (exit 2).
 - Inside another repository nothing is initialized, and a fragment with `needs_own_repo` is refused (`ComposeConflict`, with the `--without` flags that would avoid it). A target that is itself a repository's root is that project's own repository, so those fragments are allowed. When git fails for any reason other than "not a git repository" (a broken `.git`, unsafe ownership), nothing is initialized and the result carries a `git_unusable` warning.
 - No entry may write under `.git/` or `.stacks/`, in any letter case (`ComposeConflict`, reason `reserved_path`), and two entry files whose paths differ only in case collide (`file_owner`).
@@ -146,10 +146,10 @@ stacks verify                 # every step, from the project root or any directo
 
 ### Changed steps and run records
 
-Before running anything, `verify` checks the steps against the copies recorded by `new`: the manifest's own `verifyDigest`, and the project state record outside the project (`$XDG_STATE_HOME/quickstack/projects/<projectId>.json`, or under `QUICKSTACK_STATE_DIR`). The digest covers every field verify reads from each step, plus the manifest's `env` and `preset`; a step's `owner` is left out.
+Before running anything, `verify` checks the steps against the copies recorded by `new`: the manifest's own `verifyDigest`, and the project state record outside the project (`$XDG_STATE_HOME/stacks/projects/<projectId>.json`, or under `STACKS_STATE_DIR`). The digest covers every field verify reads from each step, plus the manifest's `env` and `preset`; a step's `owner` is left out.
 
 - Any difference is outcome `changed`: no step runs, not even teardown, and the exit is 5 (`VerifyChanged`) with the result on stdout. Its `changed` field (and the envelope's `details`) says which copy disagreed (`against`: `manifest` or `state-record`) and, from the state record's per-step digests, which steps were `edited`, `added` or `removed`, and whether `env` or `preset` changed (`settings`). A state record found only by the manifest's path, under a different `projectId`, is a change with `reason: "project-id"`.
-- With no state record on this machine (a fresh clone, or a state directory `new` couldn't write), only the manifest's copy is checked and the result says `tamperCheck: "manifest-only"`, which never counts for the MVP gate. An unreadable record counts as missing; one a newer quickstack wrote fails `InvalidConfig` (3).
+- With no state record on this machine (a fresh clone, or a state directory `new` couldn't write), only the manifest's copy is checked and the result says `tamperCheck: "manifest-only"`, which never counts for the MVP gate. An unreadable record counts as missing; one a newer stacks wrote fails `InvalidConfig` (3).
 - `verify --accept-changes` is for a person who changed the steps on purpose. It is refused with `PermissionDenied` (6) when an agent is detected (`reason: "agent"`) or stdin isn't a terminal (`no-tty`), and then changes nothing. Otherwise its report names what changed, it writes the new digest to the state record (creating it on a fresh clone) and then to the manifest, keeps the project's timing fields, and runs the steps. A state record it can't write fails `PermissionDenied` (`state-unwritable`) with the manifest untouched.
 - Every run that gets past the manifest (`changed`, `failed` and interrupted ones included) appends one `RunRecord` line to `.stacks/state/runs.jsonl`, which the project's `.gitignore` ignores: `schemaVersion`, start time, CLI version, detected agent, outcome, scope, `tamperCheck`, `acceptedChanges`, durations and each step's name, phase, layer, status, failure kind and exit code. No commands, output, paths or environment values, so it is safe to attach to a bug report.
 - The state record's `firstGreenAt` is set by the first green run and `firstTestPassAt` by the first run, of any scope, in which a `test`-layer step passed; neither is overwritten. The result's `firstGreen` is true on the run that set it, and `stateRecord` is false when there was no record to update or it couldn't be written. A run record or state record that can't be written is one logged warning; the outcome and exit don't change.
@@ -161,7 +161,7 @@ stacks runs          # summary for the nearest project
 stacks runs --json   # ProjectRuns
 ```
 
-`runs` finds the nearest project and reports its stack, fingerprint, creation time, handoff kind, brief words, verify count, last outcome, timings, interventions (the nonempty items under `## Asked` in `NOTES.md`), state-record availability and skipped history lines. It reads the project's `.stacks/state/runs.jsonl` and `NOTES.md`. Timings come only from the out-of-project state record; unavailable timings or notes stay unknown. Invalid or newer history lines are counted and skipped. Outside a project it exits 2 with `NotFound`. A manifest that doesn't decode, or a manifest or state record from a newer quickstack, exits 3 with `InvalidConfig`; an unreadable manifest exits 6. Moving a project keeps its timings through its project id.
+`runs` finds the nearest project and reports its stack, fingerprint, creation time, handoff kind, brief words, verify count, last outcome, timings, interventions (the nonempty items under `## Asked` in `NOTES.md`), state-record availability and skipped history lines. It reads the project's `.stacks/state/runs.jsonl` and `NOTES.md`. Timings come only from the out-of-project state record; unavailable timings or notes stay unknown. Invalid or newer history lines are counted and skipped. Outside a project it exits 2 with `NotFound`. A manifest that doesn't decode, or a manifest or state record from a newer stacks, exits 3 with `InvalidConfig`; an unreadable manifest exits 6. Moving a project keeps its timings through its project id.
 
 ## validate
 
@@ -190,7 +190,7 @@ stacks create stack team-api --from project --yes
 ## skill install
 
 ```sh
-stacks skill install                   # $HOME/.claude/skills/quickstack/SKILL.md
+stacks skill install                   # $HOME/.claude/skills/stacks/SKILL.md
 stacks skill install --project         # git toplevel, or cwd outside a repo
 stacks skill install --force           # replace an edited copy
 stacks skill install --print           # copy the skill to another location yourself
@@ -224,7 +224,7 @@ Prints the JSON Schema (draft 2020-12, objects closed) of a command's `--json` r
 
 ## Shell completions
 
-`--completions <shell>` prints a static completion script for `bash`, `zsh`, `fish` or `powershell`, covering every command and flag. Regenerate it after upgrading quickstack.
+`--completions <shell>` prints a static completion script for `bash`, `zsh`, `fish` or `powershell`, covering every command and flag. Regenerate it after upgrading stacks.
 
 ```sh
 stacks --completions bash >> ~/.bashrc

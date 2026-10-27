@@ -15,9 +15,9 @@ verify:
 
 # CI guidance
 
-<!-- quickstack:when mode=add with=fixture-required -->
+<!-- stacks:when mode=add with=fixture-required -->
 ADD WITH EXISTING REQUIREMENT
-<!-- quickstack:end -->
-<!-- quickstack:when mode=new -->
+<!-- stacks:end -->
+<!-- stacks:when mode=new -->
 NEW ONLY BODY
-<!-- quickstack:end -->
+<!-- stacks:end -->

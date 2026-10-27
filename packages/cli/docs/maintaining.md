@@ -4,7 +4,7 @@ This page is for maintainers: proving bundled stacks with the bench, recording r
 
 ## The bench
 
-The bench is how a bundled stack earns its "proven" label: a real coding agent builds the stack headlessly from an empty directory, and quickstack verifies the result independently.
+The bench is how a bundled stack earns its "proven" label: a real coding agent builds the stack headlessly from an empty directory, and stacks verifies the result independently.
 
 ```sh
 bun run bench <stack> --agent claude --keep
@@ -31,27 +31,27 @@ It records only added fragments in `with`, removing fragments already selected b
 
 ## Publishing the Claude Code plugin
 
-`plugin/` is a Claude Code plugin carrying the agent skill, published by hand after a CLI release to a marketplace repository the maintainers own (not created yet; see [marketplaces](https://code.claude.com/docs/en/plugin-marketplaces) and the [manifest reference](https://code.claude.com/docs/en/plugins-reference)). `skill/SKILL.md` is the source; `plugin/skills/quickstack/SKILL.md` is a committed copy, because a plugin's paths can't leave its directory. `tests/native-agent-plugin.test.ts` fails when the copy or the manifest's `version` drifts from the skill and `package.json`.
+`plugin/` is a Claude Code plugin carrying the agent skill, published by hand after a CLI release to a marketplace repository the maintainers own (not created yet; see [marketplaces](https://code.claude.com/docs/en/plugin-marketplaces) and the [manifest reference](https://code.claude.com/docs/en/plugins-reference)). `skill/SKILL.md` is the source; `plugin/skills/stacks/SKILL.md` is a committed copy, because a plugin's paths can't leave its directory. `tests/native-agent-plugin.test.ts` fails when the copy or the manifest's `version` drifts from the skill and `package.json`.
 
-1. On the release revision, from `packages/cli/`, refresh the copy and check the plugin loads (`/quickstack:quickstack` should appear in the session):
+1. On the release revision, from `packages/cli/`, refresh the copy and check the plugin loads (`/stacks:stacks` should appear in the session):
 
    ```sh
-   cp skill/SKILL.md plugin/skills/quickstack/SKILL.md
+   cp skill/SKILL.md plugin/skills/stacks/SKILL.md
    bun run test:unit tests/native-agent-plugin.test.ts
    claude plugin validate ./plugin
    claude --plugin-dir ./plugin
    ```
 
-2. In the marketplace checkout, replace `plugins/quickstack/` with `plugin/` (including `.claude-plugin/`). On first publication, create `.claude-plugin/marketplace.json` with the marketplace `name`, an `owner` and a `plugins` array holding:
+2. In the marketplace checkout, replace `plugins/stacks/` with `plugin/` (including `.claude-plugin/`). On first publication, create `.claude-plugin/marketplace.json` with the marketplace `name`, an `owner` and a `plugins` array holding:
 
    ```json
    {
-     "name": "quickstack",
-     "source": "./plugins/quickstack",
-     "description": "Choose a quickstack stack and follow its brief until verify is green."
+     "name": "stacks",
+     "source": "./plugins/stacks",
+     "description": "Choose a stack with the stacks CLI and follow its brief until verify is green."
    }
    ```
 
    The version stays in the plugin manifest only.
-3. Run `claude plugin validate <marketplace-checkout>`, `claude plugin marketplace add <marketplace-checkout>` and `claude plugin install quickstack@<marketplace-name>`, and confirm the skill appears in a new session.
+3. Run `claude plugin validate <marketplace-checkout>`, `claude plugin marketplace add <marketplace-checkout>` and `claude plugin install stacks@<marketplace-name>`, and confirm the skill appears in a new session.
 4. Push the marketplace, and record the CLI version, marketplace revision and date in `plans/HANDOFF.md`.

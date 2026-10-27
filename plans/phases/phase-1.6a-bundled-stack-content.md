@@ -103,8 +103,8 @@ and passes 1.5. The rules an entry author most often gets wrong:
   `project_slug`, `env_prefix`, `package_scope`, `author` and `year`. A fragment that
   publishes a package names it with `{{package_scope}}` rather than asking the agent to
   guess a scope. A rendered file never contains `{{`.
-- **Conditional prose** uses `<!-- quickstack:when tag=... -->` and
-  `<!-- quickstack:end -->` lines; `quickstack:fill` markers pass through to the
+- **Conditional prose** uses `<!-- stacks:when tag=... -->` and
+  `<!-- stacks:end -->` lines; `stacks:fill` markers pass through to the
   project. Markers are processed inside code fences too (1.1), so a fenced example of one
   is indented.
 - **`merge`** lists each JSON output this entry shares with other writers (hook lists in
@@ -126,7 +126,7 @@ Beyond what `validate` checks:
 - Tool configuration is intent ("strict mode, no implicit any, unchecked index access"),
   never a pasted config file.
 - `files/` holds only what is the same across versions: `.gitignore`, `.editorconfig`, an
-  AGENTS.md skeleton with `quickstack:fill` markers, a Makefile or scripts skeleton that
+  AGENTS.md skeleton with `stacks:fill` markers, a Makefile or scripts skeleton that
   calls tools by name, agent hooks. Every shipped source file passes the stack's own lint
   and format rules as shipped; a run that fails `lint` on files the agent didn't write is
   a stack bug.
@@ -136,15 +136,15 @@ Beyond what `validate` checks:
 ### The `agent-ops` fragment
 
 This sub-phase writes `agent-ops`'s `FRAGMENT.md`, its `AGENTS.md` skeleton in `files/`
-(with `quickstack:fill` markers for overview, commands, layout, conventions, testing and
+(with `stacks:fill` markers for overview, commands, layout, conventions, testing and
 Build workarounds), and its verify steps. The Claude Code guardrails it ships under
 `adapters/claude/` (hooks, `.claude/settings.json`, `.claude/README.md`) are
 [1.6d](phase-1.6d-guardrail-hook-fragments.md)'s, which also owns the body paragraph
 about them.
 
 Verify steps the fragment adds, both `phase: check`, `layer: docs`: `agents-md`, whose
-`run` fails while `AGENTS.md` is missing, empty or still holds a `quickstack:fill`
-marker (`test -s AGENTS.md && ! grep -q 'quickstack:fill' AGENTS.md`), and `readme`, the
+`run` fails while `AGENTS.md` is missing, empty or still holds a `stacks:fill`
+marker (`test -s AGENTS.md && ! grep -q 'stacks:fill' AGENTS.md`), and `readme`, the
 same over `README.md` (each stack ships the README skeleton). They make "AGENTS.md and
 the README describe the real project" part of done rather than a request in the brief.
 If 1.3a later adds a built-in `filled` check, these two steps can move to it.

@@ -43,9 +43,7 @@ const packagedFiles = Layer.effect(
     );
     const resolve = (file: string) =>
       escapedPaths.has(file)
-        ? Effect.map(fs.exists(`${file}.quickstack`), (exists) =>
-            exists ? `${file}.quickstack` : file,
-          )
+        ? Effect.map(fs.exists(`${file}.stacks`), (exists) => (exists ? `${file}.stacks` : file))
         : Effect.succeed(file);
     return {
       ...fs,
@@ -62,7 +60,7 @@ const packagedFiles = Layer.effect(
           .pipe(
             Effect.map((names) =>
               escapedPaths.has(`${file}/.gitignore`)
-                ? names.map((name) => (name === ".gitignore.quickstack" ? ".gitignore" : name))
+                ? names.map((name) => (name === ".gitignore.stacks" ? ".gitignore" : name))
                 : names,
             ),
           ),

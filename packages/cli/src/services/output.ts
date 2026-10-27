@@ -66,7 +66,7 @@ export class Output extends Context.Service<
     flushNow: Effect.Effect<void, BrokenPipe | PermissionDenied>;
     clear: Effect.Effect<void>;
   }
->()("quickstack/Output") {
+>()("stacks/Output") {
   /**
    * This invocation's Output: the audience comes from `--json` (`json`), `Host.stdoutIsTTY` and
    * `AppConfig.agent`, resolved once here.

@@ -97,7 +97,7 @@ export class NotConfigured extends Schema.TaggedError<NotConfigured>()("NotConfi
 }
 /**
  * `path`: the file that didn't decode, such as `.stacks/manifest.json` (1.2b).
- * `schemaVersion`: the version a newer quickstack wrote, when that is why it didn't decode.
+ * `schemaVersion`: the version a newer stacks wrote, when that is why it didn't decode.
  */
 export const InvalidConfigDetails = Schema.Struct({
   path: Schema.String,
@@ -421,7 +421,7 @@ export function failureGuide(error: AppError, invocation: string): FailureGuide 
     case "Defect":
       return guide(
         [],
-        "set QUICKSTACK_LOG_FILE to a file path and run the command again; the file records where it failed. Report it if it repeats.",
+        "set STACKS_LOG_FILE to a file path and run the command again; the file records where it failed. Report it if it repeats.",
       );
     case "BrokenPipe":
       return guide([]);
@@ -564,7 +564,7 @@ function configGuide(error: InvalidConfig, invocation: string): FailureGuide {
     return guide(
       [
         `Path: ${printable(details.path)}`,
-        `Schema version: ${details.schemaVersion}, from a newer quickstack.`,
+        `Schema version: ${details.schemaVersion}, from a newer stacks.`,
       ],
       "upgrade @steamfield/stacks, then run this command again.",
     );
@@ -811,7 +811,7 @@ function permissionReason(reason: (typeof PermissionDeniedDetails.Type)["reason"
         [
           "The state record outside the project can't be written, so nothing was confirmed or changed.",
         ],
-        "make that directory writable (or set QUICKSTACK_STATE_DIR to one that is), then run this command again.",
+        "make that directory writable (or set STACKS_STATE_DIR to one that is), then run this command again.",
       );
     case "launch":
       return guide(
@@ -834,7 +834,7 @@ function targetNext(details: typeof TargetNotEmptyDetails.Type, invocation: stri
   if (
     details.entries.length === 1 &&
     details.entries[0] === "SKILL.md" &&
-    /[/\\]\.claude[/\\]skills[/\\]quickstack$/.test(details.path)
+    /[/\\]\.claude[/\\]skills[/\\]stacks$/.test(details.path)
   )
     return guide(
       [],

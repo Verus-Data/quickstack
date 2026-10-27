@@ -295,7 +295,7 @@ test("budget-body: limits are inclusive, per kind: stack 2,000, fragment 1,000, 
 
 test("budget-body counts every conditional branch, but no marker line", async () => {
   const root = temp();
-  const body = `${SETUP}<!-- quickstack:when preset=sandbox -->\none two\n<!-- quickstack:end -->\n<!-- quickstack:when preset=default -->\nthree\n<!-- quickstack:end -->\n`;
+  const body = `${SETUP}<!-- stacks:when preset=sandbox -->\none two\n<!-- stacks:end -->\n<!-- stacks:when preset=default -->\nthree\n<!-- stacks:end -->\n`;
   stack(root, "branches", "", { body });
   const { report: got } = await report([root]);
   expect(got.sizes.find((row) => row.kind === "body")?.words).toBe(countWords(SETUP) + 3);
@@ -308,7 +308,7 @@ test("budget-body counts every conditional branch, but no marker line", async ()
 async function composedSizes(root: string, pad: number, sandboxOnly = 0) {
   for (const id of ["f1", "f2", "f3", "f4"]) fragment(root, id, "", words(990, id));
   const sandboxBlock = sandboxOnly
-    ? `<!-- quickstack:when preset=sandbox -->\n${words(sandboxOnly, "s")}\n<!-- quickstack:end -->\n`
+    ? `<!-- stacks:when preset=sandbox -->\n${words(sandboxOnly, "s")}\n<!-- stacks:end -->\n`
     : "";
   stack(root, "big", "fragments:\n  default: [f1, f2, f3, f4]", {
     body: `${SETUP}\n${words(pad, "b")}\n${sandboxBlock}`,
@@ -367,9 +367,9 @@ test("sizes are rendered with the canonical context: tools, git, invocation and 
   fragment(root, "always-on", "", words(30));
   const baseline = (await report([root])).report.sizes;
   const home = temp();
-  mkdirSync(join(home, "config", "quickstack"), { recursive: true });
+  mkdirSync(join(home, "config", "stacks"), { recursive: true });
   writeFileSync(
-    join(home, "config", "quickstack", "config.json"),
+    join(home, "config", "stacks", "config.json"),
     JSON.stringify({ always: ["always-on"], agents: ["codex", "claude"] }),
   );
   const parent = temp();
@@ -380,7 +380,7 @@ test("sizes are rendered with the canonical context: tools, git, invocation and 
   fragment(nested, "always-on", "", words(30));
   const variants = [
     await report([root], { home, env: { PATH: process.env.PATH ?? "" } }),
-    await report([root], { host: { invocation: "npx -y quickstack@9.9.9" } }),
+    await report([root], { host: { invocation: "npx -y stacks@9.9.9" } }),
     await report([nested], { env: { PATH: process.env.PATH ?? "" } }),
   ];
   for (const variant of variants) expect(variant.report.sizes).toEqual(baseline);
@@ -421,9 +421,9 @@ it.prop(
     const body = lines.join("\n");
     const marked = [
       ...lines.slice(0, at),
-      "<!-- quickstack:when preset=sandbox -->",
+      "<!-- stacks:when preset=sandbox -->",
       ...lines.slice(at),
-      "<!-- quickstack:end -->",
+      "<!-- stacks:end -->",
     ].join("\n");
     expect(countWords(marked)).toBe(countWords(body));
     expect(countWords(`${body}\nextra`)).toBe(countWords(body) + 1);
@@ -744,20 +744,15 @@ test("merge-path-missing and merge-json, checked per entry even when no composit
 test("conditional prose: syntax with its file line and 1.1's problem code, unknown ids, unknown tags [1.5#1]", async () => {
   const root = temp();
   stack(root, "prose", "", {
-    body: `${SETUP}<!-- quickstack:when tag=web -->\nweb\n<!-- quickstack:end -->\n`,
+    body: `${SETUP}<!-- stacks:when tag=web -->\nweb\n<!-- stacks:end -->\n`,
   });
   fragment(
     root,
     "ids",
     "",
-    "# G\n<!-- quickstack:when stack=nope with=missing -->\nx\n<!-- quickstack:end -->\n",
+    "# G\n<!-- stacks:when stack=nope with=missing -->\nx\n<!-- stacks:end -->\n",
   );
-  fragment(
-    root,
-    "broken",
-    "",
-    "# G\n\n<!-- quickstack:when preset=prod -->\nx\n<!-- quickstack:end -->\n",
-  );
+  fragment(root, "broken", "", "# G\n\n<!-- stacks:when preset=prod -->\nx\n<!-- stacks:end -->\n");
   const { report: got } = await report([root]);
   const conditional = got.findings.filter((finding) => finding.check.startsWith("conditional"));
   // minimal() frontmatter is 6 lines for a stack (7 for a fragment), plus the two --- lines.
@@ -799,7 +794,7 @@ test("a with= or stack= id that resolves only in another origin is a resolved-ou
   stack(bundled, "far-stack");
   const user = join(home, "authoring");
   stack(user, "mine", "", {
-    body: `${SETUP}<!-- quickstack:when with=shared stack=far-stack -->\nx\n<!-- quickstack:end -->\n`,
+    body: `${SETUP}<!-- stacks:when with=shared stack=far-stack -->\nx\n<!-- stacks:end -->\n`,
   });
   const { status, report: got } = await report([user], { home, registry: bundled });
   expect(status).toBe(0);
@@ -875,18 +870,18 @@ test("the Next line uses the invocation and escapes control characters in the ec
   const home = temp();
   const root = join(home, "odd\u001bname");
   stack(root, "clean");
-  const clean = await run([root], { home, host: { invocation: "npx -y quickstack@9.9.9" } });
+  const clean = await run([root], { home, host: { invocation: "npx -y stacks@9.9.9" } });
   expect(clean.status).toBe(0);
   expect(clean.stdout).not.toContain("\u001b");
   expect(clean.stdout).toContain(
-    `Next: npx -y quickstack@9.9.9 validate '${home}/odd\\u001bname' --brief clean --sandbox`,
+    `Next: npx -y stacks@9.9.9 validate '${home}/odd\\u001bname' --brief clean --sandbox`,
   );
   stack(root, "broken", "decisions: [Pick a database]");
-  const failed = await run([root], { home, host: { invocation: "npx -y quickstack@9.9.9" } });
+  const failed = await run([root], { home, host: { invocation: "npx -y stacks@9.9.9" } });
   expect(failed.status).toBe(2);
   expect(failed.stdout).not.toContain("\u001b");
   expect(failed.stdout).toContain(
-    `Next: fix the errors above, then run npx -y quickstack@9.9.9 validate '${home}/odd\\u001bname'`,
+    `Next: fix the errors above, then run npx -y stacks@9.9.9 validate '${home}/odd\\u001bname'`,
   );
 });
 
@@ -940,7 +935,7 @@ test("--brief takes --with as a comma list and --without, like new", async () =>
 test("control characters from an entry are escaped in human output [1.5#10]", async () => {
   const root = temp();
   stack(root, "sneaky", "", {
-    body: `${SETUP}<!-- quickstack:when tag=\u001b[31m -->\nx\n<!-- quickstack:end -->\n`,
+    body: `${SETUP}<!-- stacks:when tag=\u001b[31m -->\nx\n<!-- stacks:end -->\n`,
   });
   const result = await run([root], { host: terminal });
   expect(result.stdout).toContain("tag=\\u001b[31m is a tag no stack declares");

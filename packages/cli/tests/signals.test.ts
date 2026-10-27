@@ -149,7 +149,7 @@ describe("signals reaching a real CLI process", () => {
     const cli = launch([fixture, "interactive", dir.path], pkg, dir.path);
     try {
       await waitFor(dir.path, "child-ready");
-      // An agent or script signaling quickstack's pid only: ignored, and the child never sees it.
+      // An agent or script signaling stacks's pid only: ignored, and the child never sees it.
       process.kill(cli.pid, "SIGINT");
       await delay(300);
       expect(cli.child.exitCode).toBeNull();

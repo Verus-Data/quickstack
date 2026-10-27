@@ -48,7 +48,7 @@ row in 0.3a's table: it reaches `main` only as a `Defect` when a caller doesn't 
 
 ### The service
 
-A `Context.Service` named `quickstack/Processes` (see roadmap, Contracts: Process
+A `Context.Service` named `stacks/Processes` (see roadmap, Contracts: Process
 service, Output tail size, PATH lookup). This sub-phase owns it:
 
 ```ts
@@ -120,7 +120,7 @@ HTTP client and sockets of 1.3a and 4.0d) go in `src/platform/` under the same r
 |---|---|---|---|---|
 | `run`, `start` | `true`: the child leads a new process group | `ignore` | piped into the bounded tail |
 | `exec` | `true`, as `run` | `ignore` | piped, kept separately (`Captured.stdout`, `Captured.stderr`), each capped at `TAIL_BYTES` | Group kill reaches every descendant; a step that reads stdin gets EOF instead of hanging verify |
-| `interactive` | `false`: the child stays in quickstack's process group, which is the terminal's foreground group | inherit | inherit | The terminal's Ctrl+C reaches the agent, and the agent can read the TTY |
+| `interactive` | `false`: the child stays in stacks's process group, which is the terminal's foreground group | inherit | inherit | The terminal's Ctrl+C reaches the agent, and the agent can read the TTY |
 
 `effect/process`'s `CommandOptions.detached` defaults to `true` on Unix, so
 `interactive` must pass `false` explicitly. Left at the default, the agent would run in
@@ -149,7 +149,7 @@ with SIGTTIN.
 (`sh -c 'npm run dev &'`) leaves a grandchild holding the pipes open, which would hang
 verify. When the pipes are still open after the drain, the service SIGKILLs the group,
 sets `pipesHeld: true`, and appends one fixed line to the tail:
-`quickstack: output was still open 2s after the command exited; its process group was killed.`
+`stacks: output was still open 2s after the command exited; its process group was killed.`
 The exit code stays the shell's. 1.3a turns `pipesHeld` into its self-backgrounding
 finding.
 
@@ -219,7 +219,7 @@ register its child for as long as it runs. The decision is a pure function in
 | SIGINT within 1 s of the first | Ignored as the same Ctrl+C | Ignored |
 | SIGINT 1 s or more after the first, while cleanup runs | SIGKILL every registered group, then `process.exit(130)` | Ignored |
 | SIGQUIT | Default | Ignored |
-| SIGTERM | Interrupt, as SIGINT | Forwarded to the child; quickstack waits for it to exit |
+| SIGTERM | Interrupt, as SIGINT | Forwarded to the child; stacks waits for it to exit |
 | SIGHUP | Interrupt, as SIGINT | Forwarded to the child |
 
 The 1 s rule exists because one Ctrl+C can arrive twice. `scripts/dev.ts` forwards SIGINT
@@ -319,8 +319,8 @@ program under the real platform layer:
   above. Check too that its argv form never goes through a shell; if any option does,
   `exec` spawns through the adapter.
 - Ignoring SIGINT while an interactive child runs assumes the terminal sends it to the
-  whole foreground group, which is true when quickstack was started from a shell. When
-  an agent or a script sends SIGINT to quickstack's pid only, the child never sees it.
+  whole foreground group, which is true when stacks was started from a shell. When
+  an agent or a script sends SIGINT to stacks's pid only, the child never sees it.
   Forwarding it would make a terminal Ctrl+C arrive twice at the agent, which some agents
   read as "exit". Test the agent-launched case explicitly and record what happens.
 - The 1 s window is a guess at how far apart a terminal's delivery and a wrapper's
@@ -346,7 +346,7 @@ program under the real platform layer:
   so the service checks the cwd with `FileSystem.stat` first (`kind: "cwd"`, `ENOENT` or
   `ENOTDIR`). A cwd that exists but can't be entered fails at spawn with `EACCES` and is
   reported as `shell` (or `command` for `exec` and `interactive`).
-- The holder is `services/processes.ts::Foreground` (`quickstack/Foreground`), one
+- The holder is `services/processes.ts::Foreground` (`stacks/Foreground`), one
   per-invocation object with the registered groups and the interactive child's pid. bin
   provides it in its platform layer next to `Host`; the test helpers provide a fresh one.
 - `childEnv` is a method on `AppConfig`, because the captured environment lives inside the
@@ -362,8 +362,8 @@ program under the real platform layer:
 - After `run` or `exec` returns, a group member that outlived the shell with its output
   redirected gets the scope-close sequence (SIGTERM, 5 s, SIGKILL), so such a step can take
   up to 5 s longer. `exec` adds no note on a held pipe; `truncated` says so.
-- The agent-launched case is tested: SIGINT to quickstack's pid alone while an interactive
-  child runs is ignored by quickstack and never reaches the child. SIGTERM to the pid is
+- The agent-launched case is tested: SIGINT to stacks's pid alone while an interactive
+  child runs is ignored by stacks and never reaches the child. SIGTERM to the pid is
   still forwarded, so that is how a script stops a handoff.
 - The signal tests run in Vitest and spawn a fixture (`tests/fixtures/signals.ts`, using
   `installSignalPolicy`, `BunServices` and the live `Processes`) under Bun, since `bin.ts`
@@ -383,7 +383,7 @@ program under the real platform layer:
   should still stop the CLI. A SIGTERM or SIGHUP forwarded to the child is remembered too:
   when the child exits, the CLI is interrupted and exits 130, instead of carrying on with the
   command (`foregroundCleared`, called through the holder's `onForegroundCleared`). The table
-  row "quickstack waits for it to exit" now ends in 130.
+  row "stacks waits for it to exit" now ends in 130.
 - Teardown: a closing scope sends SIGTERM to every group it launched at once, and each
   group's SIGKILL is due 5 s after its own SIGTERM, so N groups that ignore SIGTERM take
   about 5 s, not N times that. Groups in different scopes are still stopped one scope at a

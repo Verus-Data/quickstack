@@ -11,7 +11,7 @@ test("inside an agent session, the binary prints the next step and records it in
   const home = mkdtempSync(join(tmpdir(), "cli-binary-handoff-"));
   try {
     // The fixture stack as the user's own entries, which are trusted, so the handoff isn't STOP.
-    const user = join(home, "config", "quickstack");
+    const user = join(home, "config", "stacks");
     mkdirSync(user, { recursive: true });
     cpSync(join(import.meta.dir, "../tests/fixtures/registry-new/stacks"), join(user, "stacks"), {
       recursive: true,
@@ -28,7 +28,7 @@ test("inside an agent session, the binary prints the next step and records it in
         XDG_CONFIG_HOME: join(home, "config"),
         XDG_STATE_HOME: join(home, "state"),
         // An empty registry root, so only the user's entries are found.
-        QUICKSTACK_REGISTRY_DIR: join(home, "empty"),
+        STACKS_REGISTRY_DIR: join(home, "empty"),
         LOG_LEVEL: "none",
         NO_COLOR: "1",
         PATH: scratchPath,

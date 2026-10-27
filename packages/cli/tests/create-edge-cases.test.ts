@@ -55,7 +55,7 @@ test.each(["json", "human", "agent"])(
 test("a file blocking the personal registry is a permission failure without partial parents", async () => {
   const home = createWorkspace();
   const registry = createWorkspace();
-  putCreate(home, "config/quickstack", "my configuration file\n");
+  putCreate(home, "config/stacks", "my configuration file\n");
   const before = entrySnapshot(home);
   createFailure(
     await createCli(home, ["create", "stack", "team-api", "--json"], { host: { registry } }),
@@ -63,12 +63,12 @@ test("a file blocking the personal registry is a permission failure without part
     "PermissionDenied",
   );
   expect(entrySnapshot(home)).toEqual(before);
-  expect(readFileSync(join(home, "config/quickstack"), "utf8")).toBe("my configuration file\n");
+  expect(readFileSync(join(home, "config/stacks"), "utf8")).toBe("my configuration file\n");
 });
 
 test("--from user is refused before replacing an existing source", async () => {
   const home = createWorkspace();
-  putCreate(home, "config/quickstack/fragments/keep/FRAGMENT.md", "unfinished personal entry\n");
+  putCreate(home, "config/stacks/fragments/keep/FRAGMENT.md", "unfinished personal entry\n");
   const before = entrySnapshot(home);
   const error = createFailure(
     await createCli(home, ["create", "fragment", "copy", "--from", "user", "--json"]),

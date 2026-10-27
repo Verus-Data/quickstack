@@ -35,7 +35,7 @@ Out:
 ### Flags
 
 ```
-quickstack new <stack> [dir]
+stacks new <stack> [dir]
   --name "My App"     project name for templates (default: the directory's base name)
   --author "A. Name"  author for templates (default: Settings.author, then git user.name)
   --dry-run           compose and report what would be written; write nothing
@@ -58,7 +58,7 @@ The rest of 1.2a's table is unchanged.
 ### Dry-run result
 
 `NewResult` gains `dryRun: Schema.Boolean`. A dry run returns the same shape with
-`written` as the planned list (output paths, including the `.quickstack/`
+`written` as the planned list (output paths, including the `.stacks/`
 files and the manifest), `stateRecord: false`, `git` as it would be, and nothing on disk.
 Target-directory refusals (`TargetNotEmpty`, `needs_own_repo`) and template errors fail
 the dry run exactly as they would fail `new`, because the point is to find them first.
@@ -104,7 +104,7 @@ with scopes, accents or camelCase change.
 ## Acceptance tests
 
 1. `new fixture-stack app --dry-run --json` returns the planned file list including
-   `.quickstack/manifest.json`, `dryRun: true`, `stateRecord: false`; the target does not
+   `.stacks/manifest.json`, `dryRun: true`, `stateRecord: false`; the target does not
    exist afterwards and no state record was written.
 2. A dry run into a non-empty target fails `TargetNotEmpty`; a dry run with an unknown
    `{{name}}` fails `EntryInvalid` reason `template`; neither writes anything.

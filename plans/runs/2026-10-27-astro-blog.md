@@ -31,7 +31,7 @@ command naming another checkout.
 - The draft sample post is in no output: not built, not in RSS, not in the sitemap.
 - Canonical URLs come from the route (`https://example.com/hello-world`, no `.html`).
 - The independent verify served the site (`web` serve step) green.
-- No `quickstacks:fill` is left in `AGENTS.md`, `README.md` or `.claude/README.md`.
+- No `stacks:fill` is left in `AGENTS.md`, `README.md` or `.claude/README.md`.
 - CI triggers on `master`, the branch the repository is on.
 
 Nothing is missing.
@@ -59,7 +59,7 @@ Final verify record (the independent run):
 {"schemaVersion":1,"at":"2026-10-27T06:06:42.502Z","cli":"0.1.0","agent":"none","outcome":"green","scope":"full","tamperCheck":"full","acceptedChanges":false,"durationMs":7709,"secondsSinceCreated":179,"steps":[{"name":"install","phase":"setup","layer":"install","status":"passed","exitCode":0,"durationMs":101},{"name":"git-hooks-install","phase":"setup","layer":"install","status":"passed","exitCode":0,"durationMs":62},{"name":"lint","phase":"check","layer":"lint","status":"passed","exitCode":0,"durationMs":479},{"name":"check","phase":"check","layer":"typecheck","status":"passed","exitCode":0,"durationMs":4881},{"name":"test","phase":"check","layer":"test","status":"passed","exitCode":0,"durationMs":842},{"name":"build","phase":"check","layer":"build","status":"skipped","durationMs":0},{"name":"readme-filled","phase":"check","layer":"check","status":"passed","exitCode":0,"durationMs":6},{"name":"agents-md-filled","phase":"check","layer":"check","status":"passed","exitCode":0,"durationMs":6},{"name":"claude-readme-filled","phase":"check","layer":"check","status":"passed","exitCode":0,"durationMs":6},{"name":"git-hooks-validate","phase":"check","layer":"check","status":"passed","exitCode":0,"durationMs":26},{"name":"git-hooks-configured","phase":"check","layer":"check","status":"passed","exitCode":0,"durationMs":6},{"name":"web","phase":"serve","layer":"serve","status":"passed","durationMs":1291}]}
 ```
 
-`.quickstacks/NOTES.md` as the agent left it:
+`.stacks/NOTES.md` as the agent left it:
 
 ```markdown
 # Notes

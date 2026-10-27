@@ -126,7 +126,7 @@ report first.
 
 ### The BrokenPipe rule
 
-Today `main` returns 0 when flushing hits `BrokenPipe`, so `quickstack verify --json |
+Today `main` returns 0 when flushing hits `BrokenPipe`, so `stacks verify --json |
 head -c 100` would exit 0 on a failed verify. The new rule (see roadmap, Error tags:
 `BrokenPipe`):
 
@@ -173,7 +173,7 @@ An agent that wants progress can run without `--json`; the brief (1.1) tells it 
   This exception goes in `.claude/rules/cli/cli.md` and `AGENTS.md`.
 
 The only planned caller is 1.4, right before `Processes.interactive`, so the user sees
-quickstack's last lines before the agent takes the screen.
+stacks's last lines before the agent takes the screen.
 
 ### Host: terminal flags
 
@@ -187,7 +187,7 @@ trust rules (roadmap, Trust model, point 4) do.
 
 ### Unknown commands and did-you-mean
 
-A mistyped subcommand (`quickstack lsit`) is a `Usage` failure, exit 2, like any other
+A mistyped subcommand (`stacks lsit`) is a `Usage` failure, exit 2, like any other
 parser failure. Before writing the mapping, check what `effect/cli` in the installed
 version does with an unknown subcommand: whether it suggests a close match, what text it
 prints and to which stream. Then pin one behavior with a test, whichever the framework
@@ -264,9 +264,9 @@ the style of `tests/errors.test.ts`:
   stderr); in `--json` mode stderr holds only the envelope; with a stderr writer that
   rejects first with EPIPE and then with EACCES, `progress` never fails and the exit code
   is unchanged.
-- Did-you-mean: `quickstack lsit` exits 2 with `Usage`; in human mode stderr names `list`;
+- Did-you-mean: `stacks lsit` exits 2 with `Usage`; in human mode stderr names `list`;
   with `--json` the last stderr line is one envelope (with `details.suggestions:
-  ["list"]` if 0.3a does the mapping itself) and stdout is empty; `quickstack zzzz` exits
+  ["list"]` if 0.3a does the mapping itself) and stdout is empty; `stacks zzzz` exits
   2 with no suggestion. `closest` unit tests cover ties, case and a distance of 3.
   (Shipped as `doctr` → `doctor` on the real tree; the `lsit` → `list` case moves to 1.0,
   see "Unknown commands and did-you-mean".)

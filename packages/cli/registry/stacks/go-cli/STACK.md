@@ -29,7 +29,7 @@ verify:
   - { name: smoke, layer: test, run: make smoke }
   - name: readme-filled
     layer: check
-    run: "test -s README.md && ! grep -n 'quickstack:fill' README.md"
+    run: "test -s README.md && ! grep -n 'stacks:fill' README.md"
 commands:
   install: Download modules and install dev tools that are missing
   build: Build the binary into bin/ with version info
@@ -72,7 +72,7 @@ No generator; write the code by hand at the root.
 2. Write errors, output, config, `cli/root.go` + `version.go`, then `main.go`. `BIN` in the Makefile must match the `cmd/` directory.
 3. Add one real command (for example `config show`) that exercises config, output modes, and errors end to end.
 4. Write `.golangci.yml` for the installed golangci-lint and its version to `.golangci-lint-version`.
-5. Tests per Testing; short docs skeletons; fill the README's `quickstack:fill` markers (`readme-filled` checks).
+5. Tests per Testing; short docs skeletons; fill the README's `stacks:fill` markers (`readme-filled` checks).
 6. Run `stacks verify` until it passes.
 
 ## Conventions
@@ -108,10 +108,10 @@ No generator; write the code by hand at the root.
 ## Commands
 
 The shipped Makefile (`make help`) has install, build, vet, lint, lint-fix, fmt, fmt-check (gofmt and goimports), test, test-integration, coverage, vuln (govulncheck), smoke, ci, clean. Adapt recipes, keep the names, mirror them in AGENTS.md.
-<!-- quickstack:when with=ci-github -->
+<!-- stacks:when with=ci-github -->
 
 **CI.** Go's setup action with the version read from `go.mod`. Steps: `make fmt-check`, lint, `make coverage` (`make test` if the coverage decision is no), `make vuln`, `make build`. Lint is the one sanctioned exception to calling make targets: use golangci-lint's official action with its `version-file` input pointed at `.golangci-lint-version` (the file `make lint` checks against; the action accepts only that name or `.tool-versions`), because the action installs and caches that exact binary.
-<!-- quickstack:end -->
+<!-- stacks:end -->
 
 ## Gotchas
 

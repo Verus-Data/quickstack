@@ -52,7 +52,7 @@ const unsigned: Manifest = {
 const project: Manifest = { ...unsigned, verifyDigest: digestSteps(unsigned) };
 
 test("one SIGINT through npm exec records interruption and runs teardown", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "quickstack-npm-signal-"));
+  const dir = mkdtempSync(join(tmpdir(), "stacks-npm-signal-"));
   const manifest = {
     ...unsigned,
     verify: [

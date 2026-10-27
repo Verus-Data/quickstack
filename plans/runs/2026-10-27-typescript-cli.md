@@ -4,7 +4,7 @@
 |---|---|
 | Stack and fragments | `typescript-cli`, no added fragments, preset `sandbox` |
 | Repo commit | `d47b1045a3a5dc5260717cbd1795323a59c390ba` |
-| CLI | Compiled dev binary quickstacks@0.1.0, installed with the working registry |
+| CLI | Compiled dev binary stacks@0.1.0, installed with the working registry |
 | Agent | Claude Code 2.1.311, headless; explicit --agent |
 | Target agents | `claude` |
 | Brief size | `briefWords` 4595, `fixedWords` 797 |
@@ -33,7 +33,7 @@ of the 2.0b bench. Brief findings to fold into the registry: the Effect CLI impo
 - `bun add -d @types/node` picks the newest major (26); pinned to `^24.19.2` to match `.node-version` (24), as the brief warned.
 - The `Runtime.Teardown` cast the brief mentions is not needed: `bin.ts` uses `Effect.runPromiseExit` with an `AbortSignal` instead of `runMain`, so nothing goes under Build workarounds.
 - The brief's "Biome starts from current generated config" would reformat every markdown table in the repo (Biome 2.6 formats markdown); `biome.json` `files.includes` is limited to code and JSON (src, tests, e2e, scripts, hooks, root configs).
-- `.env.example` shipped by quickstacks uses unprefixed `LOG_LEVEL` and prefixed `RUN_*` others; kept that split (LOG_LEVEL is a conventional name, and `scripts/dev.ts` sets it).
+- `.env.example` shipped by stacks uses unprefixed `LOG_LEVEL` and prefixed `RUN_*` others; kept that split (LOG_LEVEL is a conventional name, and `scripts/dev.ts` sets it).
 - CI trigger branch: `git branch --show-current` is `master` while the gitStatus context calls `main` the main branch; the workflow triggers on `master` per the brief's rule.
 - `gh` is not authenticated here, so action majors were read with `git ls-remote --tags` (checkout v7, setup-node v7, upload-artifact v7, setup-bun v2). `actionlint` is not installed, so the workflow was not linted.
 - `oven-sh/setup-bun` is given `bun-version-file: package.json` to use the `packageManager` version; not exercised locally.

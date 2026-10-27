@@ -796,7 +796,7 @@ describe("add realistic existing-project cases", () => {
 
   test("existing fragments satisfy requires and conflicts while personal always defaults stay out [3.0#27]", async () => {
     const project = await scaffolded();
-    put(project.home, "config/quickstack/config.json", '{"always":["other-only"]}');
+    put(project.home, "config/stacks/config.json", '{"always":["other-only"]}');
     const result = await added(await addCli(project, ["add", "ci-github", "--json"]));
     expect(result.added).toEqual(["ci-github"]);
     expect(result.warnings).toEqual([]);
@@ -823,7 +823,7 @@ describe("add realistic existing-project cases", () => {
       kind: "fragment",
       dir: "bad-conditional",
       frontmatter: minimal("fragment", "bad-conditional"),
-      body: "<!-- quickstack:when mode=add -->\nunclosed\n",
+      body: "<!-- stacks:when mode=add -->\nunclosed\n",
     });
     put(dir, "files/should-not-exist.txt", "must not land\n");
     const before = snapshot(project.root);

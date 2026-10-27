@@ -225,7 +225,7 @@ test("project names, scope, author and the brief's fixed wording are outside the
   const c = await composition(fixture);
   const expected = await hash(c);
   const first = newResult(await scaffoldCli(fixture, home, "first", { scope: "one" }));
-  const config = join(home, "config/quickstack");
+  const config = join(home, "config/stacks");
   mkdirSync(config, { recursive: true });
   writeFileSync(join(config, "config.json"), JSON.stringify({ author: "Another Author" }));
   const second = newResult(await scaffoldCli(fixture, home, "second", { scope: "two" }));
@@ -240,7 +240,7 @@ test("project names, scope, author and the brief's fixed wording are outside the
     written: first.written,
     missing: missingTools(c, () => true),
     yes: true,
-    invocation: "quickstack",
+    invocation: "stacks",
   };
   const before = renderBrief(c, context).text;
   // Simulate a CLI prose-only release using the real fixed text, restoring it for other tests.

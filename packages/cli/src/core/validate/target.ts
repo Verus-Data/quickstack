@@ -6,7 +6,7 @@ import { bundledRoot } from "../registry/registry";
 
 /**
  * What `validate` checks: a registry root, and with `only` one entry under it. `bundled` is true
- * for the bundled registry (the shipped one, or QUICKSTACK_REGISTRY_DIR), which must be
+ * for the bundled registry (the shipped one, or STACKS_REGISTRY_DIR), which must be
  * self-contained.
  */
 export type Target = {

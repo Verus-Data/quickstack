@@ -275,7 +275,7 @@ assumption 2.
   only the fixed list (including `DO_NOT_TRACK=1`) plus the agent token variable. This
   runs `agent-entry.sh` directly as the current user.
 - Telemetry: a fake agent that runs the packed CLI's `new` and `verify` with
-  `QUICKSTACK_TELEMETRY_URL` pointed at a recording server (and the release-build seam on,
+  `STACKS_TELEMETRY_URL` pointed at a recording server (and the release-build seam on,
   as in the packed tarball) leaves the server with no request and the telemetry spool
   empty.
 - Ordering: a fake agent that starts a `setsid` sleeper and exits; the fake `gh` on

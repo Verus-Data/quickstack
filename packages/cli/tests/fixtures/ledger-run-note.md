@@ -6,7 +6,7 @@ Synthetic gate run for the ledger import tests.
 |---|---|
 | Stack and fragments | `sample`, no added fragments, preset `sandbox` |
 | Repo commit | `{{COMMIT}}` |
-| CLI | `quickstack@0.1.0`, compiled dev binary from `bun run build` at that commit |
+| CLI | `stacks@0.1.0`, compiled dev binary from `bun run build` at that commit |
 | Agent | Claude Code 2.1.311, headless (`claude -p`) |
 | Brief size | `briefWords` 123, `fixedWords` 45 |
 | Times | first passing `test`-layer step 1.5 min, first green `verify` 2.5 min |

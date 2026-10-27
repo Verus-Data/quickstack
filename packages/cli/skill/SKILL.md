@@ -1,13 +1,13 @@
 ---
-name: quickstack
-description: Start a new project from a stack or add fragments to an existing repo, then drive it to a verified working state. Use for project setup, tests, lint, CI and agent configuration, or when the user mentions quickstack.
+name: stacks
+description: Start a new project from a stack or add fragments to an existing repo, then drive it to a verified working state. Use for project setup, tests, lint, CI and agent configuration, or when the user mentions stacks.
 ---
 
-# quickstack
+# stacks
 
 ## When to use it
 
-Use quickstack for a new project from nothing, or when the user asks for a project set up properly. For an existing repo, use `<cli> add <fragment...> --json` to apply fragments without restructuring it. Use `list --json` to choose fragments; inside a quickstack project, `project.addable` lists those that fit.
+Use stacks for a new project from nothing, or when the user asks for a project set up properly. For an existing repo, use `<cli> add <fragment...> --json` to apply fragments without restructuring it. Use `list --json` to choose fragments; inside a stacks project, `project.addable` lists those that fit.
 
 A stack is a recipe: dependencies by role, starter files, agent guidance and a definition of done. A fragment is one capability a stack can include, such as CI or a database. The CLI writes the brief; you build the project with current versions.
 

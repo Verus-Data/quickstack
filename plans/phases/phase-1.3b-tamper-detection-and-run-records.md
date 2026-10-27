@@ -5,7 +5,7 @@ Acceptance tests: traced
 
 | Field | Value |
 |---|---|
-| Goal | `verify` fails with `VerifyChanged` (exit 5) when the verify steps were changed since `new` recorded them, a person (never an agent) can re-record them with `--accept-changes`, and every verify run appends a `RunRecord` to `.quickstack/state/runs.jsonl` and sets `firstGreenAt` and `firstTestPassAt` in the project state record |
+| Goal | `verify` fails with `VerifyChanged` (exit 5) when the verify steps were changed since `new` recorded them, a person (never an agent) can re-record them with `--accept-changes`, and every verify run appends a `RunRecord` to `.stacks/state/runs.jsonl` and sets `firstGreenAt` and `firstTestPassAt` in the project state record |
 | Traces to | "That is why `verify` exists, why the brief refuses to let the agent weaken a step" (Jobs, the trust paragraph); assumption 3, "`verify` is enough of a definition of done to keep an agent honest"; the time-pressure user's measure, "time to first passing test"; success row "It's faster than by hand" |
 | Depends on | [1.3a](phase-1.3a-verify-runner-and-probes.md) (`runVerify`, `VerifyResult`, the `onFinished` seam); through 1.3a, [1.2b](phase-1.2b-manifest-state-and-detection.md) (`Manifest`, `digestSteps`, `ProjectState`, `AppConfig.agent`, `DetectedAgent`); [0.3a](phase-0.3a-errors-and-output.md) (`Host.stdinIsTTY`) |
 | Blocks | [1.6b](phase-1.6b-mvp-gate-runs.md) (the gate needs `tamperCheck: "full"` and the timing fields), [2.0c](phase-2.0c-run-ledger.md) (the ledger imports `RunRecord` unchanged), [3.0](phase-3.0-add-fragments-to-repo.md) (runs the same tamper check first), [4.1a](phase-4.1a-telemetry-cli-client.md) (event shapes build on `RunRecord`) |
@@ -38,7 +38,7 @@ Out:
 
 - Defining `digestSteps` or `ProjectState` (1.2b owns both; this sub-phase only reads,
   compares and updates fields that 1.2b declared).
-- Reading or aggregating `runs.jsonl` (`quickstack runs`, 2.0c). The ledger (2.0c).
+- Reading or aggregating `runs.jsonl` (`stacks runs`, 2.0c). The ledger (2.0c).
 - `add`'s use of the same check (3.0). Any CI change.
 
 ## Design
@@ -115,8 +115,8 @@ copies never disagree because of a half-done accept.
 ### Run records
 
 Every run that reaches the runner or the tamper check, including `changed`, `failed` and
-`interrupted` ones, appends one line to `.quickstack/state/runs.jsonl` (ignored by the
-project's `.quickstack/.gitignore`; [roadmap, Other shared facts: Project
+`interrupted` ones, appends one line to `.stacks/state/runs.jsonl` (ignored by the
+project's `.stacks/.gitignore`; [roadmap, Other shared facts: Project
 metadata](../roadmap.md#other-shared-facts)). `NotFound` and `InvalidConfig` runs have no
 project to record into and append nothing.
 
@@ -232,14 +232,14 @@ the same failure rule as the run record.
     green leaves it unchanged.
 12. A failing full run in which the `test`-layer step passed writes `firstTestPassAt`;
     `--only unit` passing does too on a fresh project; a `changed` run never does.
-13. With `.quickstack/state/` unwritable, verify's outcome and exit are unchanged and one
+13. With `.stacks/state/` unwritable, verify's outcome and exit are unchanged and one
     warning is logged.
 14. e2e: the built artifact fails `VerifyChanged` on a fixture manifest with an edited step.
 
 ## Exit criteria
 
 - All tests above pass; `bun run check` green from the repo root.
-- `AGENTS.md` documents `VerifyChanged`, `--accept-changes` and `.quickstack/state/`;
+- `AGENTS.md` documents `VerifyChanged`, `--accept-changes` and `.stacks/state/`;
   `packages/cli/README.md` documents the flag and the run record file.
 - `RunRecord` matches the roadmap's Run record row and Schema versions row, and
   `RunRecord.agent` is the shared `DetectedAgent`.
@@ -281,14 +281,14 @@ Found while executing it (2026-10-26):
   run record, like `NotFound` and `InvalidConfig`.
 - **The run record writer** appends with plain `FileSystem` rather than `scaffold/write.ts`
   (which creates files exclusively and has no append). It refuses to write when
-  `.quickstack/state/` resolves outside the project (a link), with one warning.
+  `.stacks/state/` resolves outside the project (a link), with one warning.
 - **`runVerify`'s seam** now hands `onFinished` a `RunResult` (the result without the four
   tamper fields, never outcome `changed`); the command adds `tamperCheck`, `changed`,
   `firstGreen` and `stateRecord`. A `changed` result is built by `tamper.ts::changedResult`
   with every step skipped, its scope from the selection flags.
 - **`RunStep.exitCode`** is present on passed steps too (exit 0), as in `StepResult`.
 - **PermissionDenied wording** for `agent` and `no-tty` is generic ("This needs a person's
-  confirmation"), since `quickstack trust` and source confirmation (3.2a) share the reasons.
+  confirmation"), since `stacks trust` and source confirmation (3.2a) share the reasons.
 
 Found in review (2026-10-26):
 
@@ -299,10 +299,10 @@ Found in review (2026-10-26):
   differs from the one this run was checked against (or that is gone) is left alone, with
   `firstGreen` and `stateRecord` false, and each timing field is set only if still null in the
   fresh copy. A small window between that read and the rename remains; it would need a lock.
-- **Run records through a link.** The writer checked only `.quickstack/state/`'s real path, so
+- **Run records through a link.** The writer checked only `.stacks/state/`'s real path, so
   a `runs.jsonl` that was itself a symlink (or a hard link) got the line appended to its
-  target, and `state/` was created before the check, so a `.quickstack/` linked out of the
-  project got a `state/` directory outside it. `.quickstack/` is now checked before anything
+  target, and `state/` was created before the check, so a `.stacks/` linked out of the
+  project got a `state/` directory outside it. `.stacks/` is now checked before anything
   is created, and an existing `runs.jsonl` must be a regular file with one link; either
   refusal is the same one warning. lstat-then-append is not atomic; this covers links left
   in place, not one swapped in during the run.

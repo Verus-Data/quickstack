@@ -25,7 +25,7 @@ verify:
   - { name: binary, layer: build, run: bun run e2e, timeout: 15m }
   - name: readme-filled
     layer: docs
-    run: "test -s README.md && ! grep -n 'quickstack:fill' README.md"
+    run: "test -s README.md && ! grep -n 'stacks:fill' README.md"
 commands:
   install: Install dependencies with bun
   dev: Run the CLI from source with checkout-local logs and data
@@ -87,9 +87,9 @@ Vitest runs on Node and excludes e2e. Its setup clears credentials and uses temp
 
 Build with Bun compile, minification, linked sourcemap removed from final output, and dotenv/bunfig autoload disabled; write dist/<slug>. Version comes from package metadata bundled into the artifact. `prepare` runs the shipped helper; `check` runs lint, typecheck, test, and e2e. Clean only generated project output.
 
-<!-- quickstack:when with=git-hooks -->
+<!-- stacks:when with=git-hooks -->
 The shipped `scripts/prepare.ts`, run by the `prepare` script after every `bun install`, already runs `lefthook install` (skipped when `CI` is set, lefthook is missing, or `lefthook.yml` doesn't exist yet, and non-fatal when it fails, for example outside a git checkout), so don't add another install step. pre-push runs `bun run typecheck` alongside `bun run test`, in parallel.
-<!-- quickstack:end -->
+<!-- stacks:end -->
 
 ## Gotchas
 

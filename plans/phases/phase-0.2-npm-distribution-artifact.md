@@ -6,7 +6,7 @@ as the `stacks` command (D34). A1 (a), D12, D22 and D23 are approved. Publishing
 | Field | Value |
 |---|---|
 | Goal | `npx @steamfield/stacks <command>` runs the real CLI under Node on macOS or Linux, from one tarball packed with `bun pm pack` that the local e2e suite installs and tests byte for byte |
-| Traces to | Open question "Is the npm name available? ... `npx @steamfield/stacks new ...`, the README's first line, only works if `stacks` is free on npm"; D9's entry point "ask your agent to run quickstack", which only works if the agent can `npx` it |
+| Traces to | Open question "Is the npm name available? ... `npx @steamfield/stacks new ...`, the README's first line, only works if `stacks` is free on npm"; D9's entry point "ask your agent to run stacks", which only works if the agent can `npx` it |
 | Depends on | [0.0](phase-0.0-decisions-and-npm-name.md) (A1, D12, D22, D23, the name reserved), [0.1](phase-0.1-repo-baseline.md) |
 | Blocks | [1.0](phase-1.0-entry-format-and-registry.md) soft (the registry path; a stub path works until then), [1.1](phase-1.1-composition-and-brief.md) soft (the `_npx` rule for `Host.invocation`; 1.1 stubs the constant `stacks` until then), [1.6b](phase-1.6b-mvp-gate-runs.md) soft (gate runs use the packed tarball if this has landed, else the compiled binary), [1.6c](phase-1.6c-first-release.md) (publishes the tarball this file's pack script makes), [5.0](phase-5.0-ci-release-and-checks.md) (its release workflow and `e2e-node22` job reuse the pack script and e2e) |
 | Decisions needed | A1 (recommendation (a), a Node ESM bundle on npm; if (b) or (c), this file is rewritten before work starts). D12 (Node `>=22`; a different floor changes the floor constant, `engines` and the `@types/node` pin, nothing else). D22 (macOS and Linux on Node only; if Bun must be supported, the refusal goes and this file needs a way to stop Bun loading `.env` before `config.ts` captures the environment, which Bun doesn't offer for a script run by `bun`). D23 (if CI stays in scope, the release workflow and the Node 22 job come back here from 5.0). Open question 19 (is refusing Bun acceptable). The maintainers record A1, D12 and D22 in the README decisions log before this file's work starts; that is their step, not part of this file's exit criteria |
@@ -51,9 +51,9 @@ any code in `bin.ts` runs, so a floor check inside `bin.ts` can be pre-empted by
 or API error on an old Node. The entry imports nothing at the top level and does three
 things in order:
 
-1. If `process.versions.bun` is set, write `quickstack runs on Node. Bun is not
+1. If `process.versions.bun` is set, write `stacks runs on Node. Bun is not
    supported; run it with npx or node.` to stderr and exit 1 (D22).
-2. If the major of `process.versions.node` is below 22 (D12), write `quickstack needs
+2. If the major of `process.versions.node` is below 22 (D12), write `stacks needs
    Node 22 or newer.` to stderr and exit 1.
 3. `import("./cli.mjs")`.
 
@@ -74,7 +74,7 @@ The package:
 
 ```json
 {
-  "name": "quickstack",
+  "name": "stacks",
   "type": "module",
   "bin": { "stacks": "dist/stacks" },
   "files": ["dist/stacks", "dist/cli.mjs", "registry"],
@@ -135,7 +135,7 @@ Supported: macOS and Linux, on Node 22 or newer (D12, D22). Process groups, `kil
 and `/bin/sh` are POSIX, and 0.3b relies on them; `"os"` makes npm refuse to install on
 Windows rather than fail later.
 
-`bunx quickstack` is supported only in the sense that `bunx` honors the shebang when
+`bunx stacks` is supported only in the sense that `bunx` honors the shebang when
 `node` is on PATH, so the CLI runs under Node; an e2e case proves it. Running under the
 Bun runtime (`bunx --bun`, or Bun with no Node installed) hits the entry's refusal. The
 reason is D22's: under Bun, `.env` files load into the environment before `config.ts`
@@ -154,11 +154,11 @@ with its own tests.
 
 `bun run pack` in `packages/cli`: `bun run build`, then
 `bun pm pack --destination dist/pack --quiet`, then write
-`dist/pack/quickstack-<version>.tgz.sha256`. It uses `bun pm pack`, never `npm pack`,
+`dist/pack/stacks-<version>.tgz.sha256`. It uses `bun pm pack`, never `npm pack`,
 because `package.json` uses `catalog:` specs and `npm pack` would ship them unresolved.
 `scripts/clean.ts` already removes `dist/`.
 
-What [1.6c](phase-1.6c-first-release.md) publishes: the `dist/pack/quickstack-<version>.tgz`
+What [1.6c](phase-1.6c-first-release.md) publishes: the `dist/pack/stacks-<version>.tgz`
 that 1.6b's gate runs installed, identified by that sha256, with
 `npm publish <tgz> --access public` run by a maintainer. Never `npm publish` from the
 package directory, which would repack. Provenance needs the 5.0 workflow (open question
@@ -169,7 +169,7 @@ package directory, which would repack. Provenance needs the 5.0 workflow (open q
 `bun run e2e` in `packages/cli` becomes `bun run pack && bun test ./e2e`. The suite's
 setup (one helper in `e2e/`, run once before the tests):
 
-1. Find Node. Read `QUICKSTACK_E2E_NODE` (an absolute path to a `node` binary). When it
+1. Find Node. Read `STACKS_E2E_NODE` (an absolute path to a `node` binary). When it
    is unset, resolve `node` from the e2e process's own `PATH` (`Bun.which`) before
    building any scrubbed environment. If neither gives a Node of the floor or newer, fail
    with a line naming the variable; never skip.
@@ -190,7 +190,7 @@ assertion in the same change.
 On CI this runs inside the existing `check` job with no workflow change: setup-node puts
 the `.node-version` Node on `PATH`, and step 1 finds it. Testing on Node 22 is a
 documented manual step until 5.0 adds the `e2e-node22` job:
-`QUICKSTACK_E2E_NODE=/path/to/node22/bin/node bun run e2e`, written in
+`STACKS_E2E_NODE=/path/to/node22/bin/node bun run e2e`, written in
 `packages/cli/README.md` and run before 1.6b.
 
 ### Failure modes
@@ -200,9 +200,9 @@ documented manual step until 5.0 adds the `e2e-node22` job:
 | Node below the floor | One fixed stderr line from the entry; Effect never loads | 1 |
 | Run under the Bun runtime | One fixed stderr line from the entry | 1 |
 | Registry directory missing from the package | `doctor` reports `found: false`; commands that need it fail `NotFound` (1.0) | 2 |
-| `bunx quickstack` with Node on PATH | Runs under Node, same output as `node` | as usual |
+| `bunx stacks` with Node on PATH | Runs under Node, same output as `node` | as usual |
 | Installed on Windows | npm refuses the install (`os`) | n/a |
-| e2e can't find Node | Setup fails naming `QUICKSTACK_E2E_NODE` | test failure |
+| e2e can't find Node | Setup fails naming `STACKS_E2E_NODE` | test failure |
 
 ## Files and areas touched
 
@@ -222,11 +222,11 @@ Not `.github/workflows/`.
 
 - e2e: the installed `stacks --version` prints the package version; `doctor --json`
   reports a `registry.path` inside the install prefix with `found: true`.
-- e2e: with a hostile `.env` (`QUICKSTACK_DATA_DIR=/should-not-load`, `LOG_LEVEL=trace`)
+- e2e: with a hostile `.env` (`STACKS_DATA_DIR=/should-not-load`, `LOG_LEVEL=trace`)
   and `bunfig.toml` with a throwing preload in the cwd, output equals a clean cwd's, under
-  the installed bin and under `bunx quickstack` run from a scratch project that has the
+  the installed bin and under `bunx stacks` run from a scratch project that has the
   tarball installed, with Node on the scratch PATH.
-- e2e: `bun <prefix>/lib/node_modules/quickstack/dist/stacks --version` exits 1
+- e2e: `bun <prefix>/lib/node_modules/stacks/dist/stacks --version` exits 1
   with the Bun line and empty stdout.
 - e2e: the floor check, by running the installed entry under the found Node with a
   `--import` preload that redefines `process.versions` with `node: "20.0.0"`: exit 1, the
@@ -247,7 +247,7 @@ Not `.github/workflows/`.
 
 - `bun run check` green from the repo root, with e2e running against the installed
   tarball, locally and in the existing CI `check` job on Linux and macOS.
-- The e2e suite passed once with `QUICKSTACK_E2E_NODE` pointing at a Node 22 binary,
+- The e2e suite passed once with `STACKS_E2E_NODE` pointing at a Node 22 binary,
   recorded in this file with the date and Node version.
 - `bun pm pack --dry-run` in `packages/cli` lists only the expected files.
 - `AGENTS.md` updated as listed above.
@@ -265,7 +265,7 @@ Not `.github/workflows/`.
   changed only by the package spelling, verified by reversing that substitution.
 
 - Verified 2026-10-27: the installed-package suite passed on Node 22.23.3 with
-  `QUICKSTACK_E2E_NODE` set explicitly (33 tests). The root gate passed
+  `STACKS_E2E_NODE` set explicitly (33 tests). The root gate passed
   all five rr partitions on macOS and Linux. First-user QA installed the tarball with
   npm and ran root/help, list, show, preview, new, verify and usage failures in all
   three audiences. Verify correctly failed the unimplemented project's install step
@@ -284,7 +284,7 @@ Not `.github/workflows/`.
   complete license/notice files as a comment in cli.mjs; the exact shipped file list
   stays unchanged. All three findings have reproducing, revert-verified tests.
   A final regression also pins the escaped paths into the bundle at build time, so
-  an author's literal `.gitignore.quickstack` filename stays literal; source development
+  an author's literal `.gitignore.stacks` filename stays literal; source development
   has no escaped paths. The Homebrew Node override fixture retains its sibling library
   directory, which that interpreter needs when copied under a different filename.
 
@@ -301,7 +301,7 @@ Not `.github/workflows/`.
   launcher; independent verify still uses that installed copy. `human` also finds Node.
 - Recorded 2026-10-27: Bun 1.4.2 omits literal `.gitignore` files, and npm drops them
   even if appended to the archive. The pack script appends their unchanged bytes under
-  `.gitignore.quickstack` before hashing; bin's filesystem adapter decodes those names
+  `.gitignore.stacks` before hashing; bin's filesystem adapter decodes those names
   only inside its bundled registry. `show`, composition and `create --from bundled`
   therefore expose the original names. No entry format or author files change. A raw
   `bun pm pack --dry-run` lists the unaugmented allowlist; the final tarball test checks
@@ -345,6 +345,6 @@ Not `.github/workflows/`.
 - 2026-10-26: the registry stub in `bin.ts` used `import.meta.dirname`, which inside a Bun
   standalone binary is the virtual `/$bunfs`, so the compiled binary found no bundled
   registry at all. Ahead of 0.2, a compiled binary now looks for `registry/` beside its own
-  `bin/` directory (`dist/quickstack` finds the package's, `<prefix>/bin/stacks` finds
+  `bin/` directory (`dist/stacks` finds the package's, `<prefix>/bin/stacks` finds
   `<prefix>/registry`), so 1.6b's gate runs can use an installed copy of the binary. 0.2
   still decides where the npm package's registry lives and replaces the stub.

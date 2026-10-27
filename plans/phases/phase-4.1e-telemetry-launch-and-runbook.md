@@ -53,13 +53,13 @@ Each step has a check; a failed check stops the procedure.
 | 8 | Ingest smoke on the domain: `bun run --cwd packages/api smoke -- --host https://<host>` | 202 with `rejected: []`; both events stored with `excluded = 'excluded_install'`; no `projects` row for the smoke id |
 | 9 | Production acceptance (below) | All of its checks pass; a run note is written |
 | 10 | Route alerts (below) | A `test` flag raised with `scripts/queries/test-flag.sql` reaches the destination within an hour |
-| 11 | Publish the CLI release that enables collection, by the current release procedure ([1.6c](phase-1.6c-first-release.md), or [5.0](phase-5.0-ci-release-and-checks.md)'s workflow once it exists) | `npx quickstack@<version> telemetry status --json` on a clean machine reports `not_notified`, then `enabled` after one run |
+| 11 | Publish the CLI release that enables collection, by the current release procedure ([1.6c](phase-1.6c-first-release.md), or [5.0](phase-5.0-ci-release-and-checks.md)'s workflow once it exists) | `npx stacks@<version> telemetry status --json` on a clean machine reports `not_notified`, then `enabled` after one run |
 
 The secret is set after the first deploy on purpose: the 503 before it and the 202 after it prove that ingest refuses to store unhashed networks and that the secret is the one the Worker reads. The domain and its security settings come last, once the Worker itself is known to work.
 
 ### Reserved smoke install id
 
-`00000000-0000-4000-8000-000000000001`. A migration inserts it into `exclusions` as kind `install` with reason `smoke`, so 4.1b stores every event from it excluded and it never builds a project or reaches a metric. `smoke.ts` posts one fixed `new` event and one fixed `verify` event from it with fresh event ids and a `cliVersion` that is a published version of `quickstack` (the latest, read from the npm registry), so it is in `released_versions` once 4.1c has run and the stored reason is `excluded_install` by the exclusions rule alone; 4.1b's precedence puts `excluded_install` first in any case, then reads them back through `scripts/queries/smoke.sql` (run with `wrangler d1 execute --remote`, not through any route) and checks they were stored excluded. 5.2 runs the same script after every CI deploy. A real client can't produce this id: 4.1a generates random v4 UUIDs, and the id's random bits are all zero.
+`00000000-0000-4000-8000-000000000001`. A migration inserts it into `exclusions` as kind `install` with reason `smoke`, so 4.1b stores every event from it excluded and it never builds a project or reaches a metric. `smoke.ts` posts one fixed `new` event and one fixed `verify` event from it with fresh event ids and a `cliVersion` that is a published version of `stacks` (the latest, read from the npm registry), so it is in `released_versions` once 4.1c has run and the stored reason is `excluded_install` by the exclusions rule alone; 4.1b's precedence puts `excluded_install` first in any case, then reads them back through `scripts/queries/smoke.sql` (run with `wrangler d1 execute --remote`, not through any route) and checks they were stored excluded. 5.2 runs the same script after every CI deploy. A real client can't produce this id: 4.1a generates random v4 UUIDs, and the id's random bits are all zero.
 
 ### Production acceptance
 
@@ -68,7 +68,7 @@ Run once by a maintainer with the release build that will enable collection, bef
 1. `telemetry status --json` reports `not_notified`.
 2. `new go-cli <dir> --sandbox --no-launch --json`: the notice appears in the result; `telemetry status --json` reports no `installId` and `spooled: 0`, so nothing was queued and nothing can have been sent.
 3. `verify --json` in that directory. Its own flush sends the verify event, so nothing is left to flush by hand: `telemetry status --json` reports an `installId` and `spooled: 0`, and `scripts/queries/recent.sql` filtered to that install id and the last 5 minutes shows exactly one `verify` event and no `new` event.
-4. With `QUICKSTACK_TELEMETRY_DEBUG=1`, one more `verify`: the printed event equals the row step 3's query shows, field for field, apart from the server-side columns and the event id.
+4. With `STACKS_TELEMETRY_DEBUG=1`, one more `verify`: the printed event equals the row step 3's query shows, field for field, apart from the server-side columns and the event id.
 5. The next scheduled run's archive object for that day (once it is older than 7 days, or with the archive step run by hand against a test day) contains no `network_hash` key.
 6. `telemetry disable`: the local spool and ids are gone; one more `verify` sends nothing.
 7. The acceptance install id is added to `exclusions` with reason `acceptance`, so the run never counts.

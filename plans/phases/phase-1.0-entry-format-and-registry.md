@@ -26,7 +26,7 @@ In:
 - Splitting a markdown file into frontmatter and body. No markdown parsing beyond that.
 - Loading entries from three origins: project, user, bundled, with `origin`, `trusted`
   and `shadows` on every `Entry`, and `RejectedEntry` for one that failed to decode.
-- `quickstack list [stacks|fragments|apps] [--json]`.
+- `stacks list [stacks|fragments|apps] [--json]`.
 - Two fixture registries used by this and later sub-phases:
   `packages/cli/tests/fixtures/registry/` (small, one case per rule) and
   `packages/cli/tests/fixtures/registry-real/` (five realistic entries, below).
@@ -34,7 +34,7 @@ In:
 Out:
 
 - Composition, conditional prose and the brief (1.1). Running verify steps (1.3a).
-- The trust store and `quickstack trust`, which make a project entry trusted (3.2a).
+- The trust store and `stacks trust`, which make a project entry trusted (3.2a).
   1.0 marks every project entry untrusted; see "Trust marks" below.
 - `show` (3.1a). Git sources (3.2a). The remote index (4.0d).
 - `lastRun` data in `list` beyond a `null` placeholder; the run ledger
@@ -221,8 +221,8 @@ authors; 1.0 does not enforce headings.
 
 | Origin | Root | Default trust | Notes |
 |---|---|---|---|
-| `project` | `./.quickstack/` in `Host.cwd` | Untrusted ([Trust model](../roadmap.md#trust-model), point 2; D19) | A cloned repo can ship these |
-| `user` | `$XDG_CONFIG_HOME/quickstack/` (default `~/.config/quickstack/`) | Trusted | The directory that holds `config.json`. The problem statement's `~/.stacks` |
+| `project` | `./.stacks/` in `Host.cwd` | Untrusted ([Trust model](../roadmap.md#trust-model), point 2; D19) | A cloned repo can ship these |
+| `user` | `$XDG_CONFIG_HOME/stacks/` (default `~/.config/stacks/`) | Trusted | The directory that holds `config.json`. The problem statement's `~/.stacks` |
 | `bundled` | `packages/cli/registry/` in the repo, inside the npm package at runtime | Trusted | `Host.registry`, a stub repo path from `bin.ts` until 0.2 resolves it from `import.meta.url`; never computed by core code |
 
 Lookup by id walks project, user, bundled and returns the first hit. `list` shows each id
@@ -275,7 +275,7 @@ export class Registry extends Context.Service<Registry, {
     Effect.Effect<Entry, NotFound | EntryInvalid>
   readonly files: (entry: Entry) =>
     Effect.Effect<ReadonlyArray<EntryFile>, EntryInvalid> // files/ and adapters/, relative
-}>()("quickstack/Registry") {
+}>()("stacks/Registry") {
   static layer: (roots: RegistryRoots) => Layer.Layer<Registry, never, FileSystem | Path>
 }
 // ordered, highest precedence first; see roadmap, Contracts: Registry view
@@ -309,9 +309,9 @@ says to avoid. It goes in the root workspace catalog and `packages/cli/package.j
 ### `list`
 
 ```
-quickstack list                 # stacks, fragments, apps
-quickstack list stacks          # one group: stacks, fragments (apps excluded) or apps
-quickstack list --json          # everything
+stacks list                 # stacks, fragments, apps
+stacks list stacks          # one group: stacks, fragments (apps excluded) or apps
+stacks list --json          # everything
 ```
 
 ```ts
@@ -361,7 +361,7 @@ The human view is grouped and ends with what to run next:
   `Host.stdoutIsTTY` is true and it is narrower. Words are never split; a single word
   longer than the width gets its own line.
 - A final `Rejected` block with one line per rejected entry (id, origin, error).
-- Then `Next:` lines with the exact commands to run, using `Host.invocation` (0.2; a fixed `quickstack` until 0.2 lands) so a
+- Then `Next:` lines with the exact commands to run, using `Host.invocation` (0.2; a fixed `stacks` until 0.2 lands) so a
   copy and paste works: `Next: <invocation> new <first-stack-id> <dir> --sandbox` and
   `Next: <invocation> list --json` (for an agent choosing). When there are no stacks, the
   only line is `Next: <invocation> doctor` (the registry path is wrong). `--json` has no
@@ -396,8 +396,8 @@ two entries of one kind with the same id.
 | Built-in file checks | Not in v1; a file check is a short `run` command | Keeps the step to one shape; 1.3a records built-in kinds as an open additive item |
 | Default step timeout | 10 minutes | Covers a cold install; a hung step can't hold verify forever |
 | Apps | A fragment with `category: app`, not a kind | One entry kind and one composition algorithm |
-| User directory | `$XDG_CONFIG_HOME/quickstack/{stacks,fragments}/` | User-authored entries are configuration; they sit beside `config.json`, which the base already resolves |
-| Project-local entries | `./.quickstack/{stacks,fragments}/`, all untrusted (D19) | Same directory as project metadata; a clone can ship any id |
+| User directory | `$XDG_CONFIG_HOME/stacks/{stacks,fragments}/` | User-authored entries are configuration; they sit beside `config.json`, which the base already resolves |
+| Project-local entries | `./.stacks/{stacks,fragments}/`, all untrusted (D19) | Same directory as project metadata; a clone can ship any id |
 | Invalid higher-origin entry | Shown as rejected, not replaced, so a broken user or project copy hides a working bundled one until it is fixed or removed. The rejected row's `error` names the origin it hid (`hides bundled copy`) so the fix is obvious. [Open question 27](../risks-and-open-questions.md#open-questions-for-the-maintainers) asks the maintainers to confirm this over falling back | Silent fallback hides an author's mistake behind a bundled copy |
 | Dotfiles | Stored literally in every origin | It is what authors expect in a `files/` tree; npm's packing gap is 0.2's to solve at pack time |
 
@@ -504,15 +504,15 @@ option is needed).
   used here. It belongs to 3.2a, which inspects a git tree; the roadmap now says so.
 - 2026-10-26, from executing it:
   - **Pointing the CLI at a registry.** Nothing in the plan let the dev CLI or the binary
-    read a registry other than the stub path, so 1.0 adds `QUICKSTACK_REGISTRY_DIR`,
+    read a registry other than the stub path, so 1.0 adds `STACKS_REGISTRY_DIR`,
     read by `config.ts` as `Paths.registry`; when set it replaces `Host.registry` as the
     bundled root (`registry.ts::defaultRoots`). `Host.registry` is still never computed
     by core code. 1.5 and 1.6b can use the same variable to validate or gate a catalog
     outside the package.
   - **Doctor.** `doctor` now reports `paths.user` and `registry: { path, found }` (the
-    roadmap's Bundled registry row), so the `Next: quickstack doctor` line leads
+    roadmap's Bundled registry row), so the `Next: stacks doctor` line leads
     somewhere useful.
-  - **`Host` fields.** 1.0 declares `Host.invocation` (the constant `quickstack` from
+  - **`Host` fields.** 1.0 declares `Host.invocation` (the constant `stacks` from
     `bin.ts`), because its `Next:` lines use it; the roadmap's Invocation string row now
     says so. It also adds `Host.stdoutColumns` (the terminal width when stdout is a TTY),
     which the 80-column wrap needs and `Host.stdoutIsTTY` alone can't give.
@@ -552,7 +552,7 @@ option is needed).
   - **`EntryInvalid.details`** is `{ id, origin, reason, path? }` in 1.0; `line` is left
     for 1.1, which first has a line to report.
 - 2026-10-26, from code review:
-  - **`QUICKSTACK_REGISTRY_DIR` is untrusted.** A bundled root other than the shipped one
+  - **`STACKS_REGISTRY_DIR` is untrusted.** A bundled root other than the shipped one
     gives `trusted: false`. Roots carry `overridden`, and `registry.ts::trustOf` takes the
     entry (without `trusted`) and its root, so 3.2a adds the digest lookup without a
     signature change. Config returns the variable as given; `registry.ts::bundledRoot`
@@ -584,7 +584,7 @@ option is needed).
   - **`Next:` lines suggest only trusted entries.** The plan said the first stack; `list`
     names the first trusted stack, and in the apps group `--with <app>` names the first
     trusted app that applies to a trusted stack. When stacks exist but none is trusted,
-    the only line is `Next: quickstack list --json`.
+    the only line is `Next: stacks list --json`.
   - **Non-blank strings.** `name`, `description` and a step's `run` must hold a
     non-whitespace character (`id` and a step's `name` are kebab-case already).
   - **A rejected entry's directory** is printed whole on its own line, never wrapped.

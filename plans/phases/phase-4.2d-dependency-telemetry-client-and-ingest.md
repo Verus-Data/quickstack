@@ -32,7 +32,7 @@ Out:
 
 ### Where this fits
 
-4.1a sends what a project was built from (stack and fragments) and how verify went. This adds what the agent installed, which is the half of a project quickstack deliberately doesn't write. 4.2e turns it into per-stack and per-dependency numbers. Nothing in this sub-phase publishes anything.
+4.1a sends what a project was built from (stack and fragments) and how verify went. This adds what the agent installed, which is the half of a project stacks deliberately doesn't write. 4.2e turns it into per-stack and per-dependency numbers. Nothing in this sub-phase publishes anything.
 
 ### The allowlist
 
@@ -51,7 +51,7 @@ The signature matters: the allowlist decides which names the CLI is willing to r
 
 ### When the CLI reads and sends
 
-The allowlist is fetched by `src/core/allowlist.ts` with 4.0d's cached-fetch rules (24-hour TTL, deadline, backoff, nothing under `--offline`), cached as `$XDG_CACHE_HOME/quickstack/allowlist.json` with `allowlist.state.json` beside it, and refreshed only where 4.0d refreshes the index, never during `verify`. Only the allowlist from `AppConfig.apiUrl` (4.2b's seam; tests point it at a local server) is used.
+The allowlist is fetched by `src/core/allowlist.ts` with 4.0d's cached-fetch rules (24-hour TTL, deadline, backoff, nothing under `--offline`), cached as `$XDG_CACHE_HOME/stacks/allowlist.json` with `allowlist.state.json` beside it, and refreshed only where 4.0d refreshes the index, never during `verify`. Only the allowlist from `AppConfig.apiUrl` (4.2b's seam; tests point it at a local server) is used.
 
 `deps` is added to a `verify` event when all of these hold: consent is `enabled` (4.1a's table), the second notice has been shown (below), the run's outcome is `green`, a cached allowlist verifies, the project has a telemetry project file, and either the project has never sent `deps` or its last `deps` was sent at least 7 days ago (`depsSentAt` in 4.1a's `projects/<projectKey>.json`). The repeat lets 4.2e see a project change its dependencies over time; the 7-day spacing keeps the volume to a few reports per project.
 

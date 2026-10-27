@@ -53,7 +53,7 @@ test("the tarball contains exactly the allowlisted files, preserving every asset
   const assets = ["registry", "skill"].flatMap((dir) =>
     files(join(source, dir)).map((file) => `${dir}/${file}`),
   );
-  const packedPath = (file: string) => (file.endsWith("/.gitignore") ? `${file}.quickstack` : file);
+  const packedPath = (file: string) => (file.endsWith("/.gitignore") ? `${file}.stacks` : file);
   const expected = [
     "package.json",
     "README.md",
@@ -77,7 +77,7 @@ test("the tarball contains exactly the allowlisted files, preserving every asset
   expect(packed).not.toMatch(/(?:catalog|workspace):/);
   expect(JSON.parse(packed)).toMatchObject({
     name: "@steamfield/stacks",
-    version: "0.1.0",
+    version: "0.2.0",
     bin: metadata.bin,
     files: metadata.files,
     engines: { node: ">=22" },
@@ -111,7 +111,7 @@ test("the installed bundle retains the complete dependency license notices", () 
 });
 
 test("runtime guards refuse Bun and old Node before loading the bundle", () => {
-  const root = mkdtempSync(join(tmpdir(), "quickstack-runtime-"));
+  const root = mkdtempSync(join(tmpdir(), "stacks-runtime-"));
   try {
     expect(run([process.execPath, binary, "--version"], root)).toEqual({
       status: 1,
@@ -134,19 +134,19 @@ test("runtime guards refuse Bun and old Node before loading the bundle", () => {
   }
 });
 
-test("an unusable e2e Node override fails naming QUICKSTACK_E2E_NODE", () => {
+test("an unusable e2e Node override fails naming STACKS_E2E_NODE", () => {
   const result = Bun.spawnSync([process.execPath, join(import.meta.dirname, "package.ts")], {
-    env: { PATH: scratchPath, QUICKSTACK_E2E_NODE: "/missing-quickstack-e2e-node" },
+    env: { PATH: scratchPath, STACKS_E2E_NODE: "/missing-stacks-e2e-node" },
   });
   expect(result.exitCode).not.toBe(0);
   expect(result.stdout.toString()).toBe("");
   expect(result.stderr.toString()).toContain(
-    "\nerror: Set QUICKSTACK_E2E_NODE to a Node 22 or newer binary.\n",
+    "\nerror: Set STACKS_E2E_NODE to a Node 22 or newer binary.\n",
   );
 });
 
 test("the e2e Node override also controls shebangs when its filename is node22", () => {
-  const root = realpathSync(mkdtempSync(join(tmpdir(), "quickstack-node-override-")));
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "stacks-node-override-")));
   try {
     const bin = join(root, "bin");
     mkdirSync(bin);
@@ -164,7 +164,7 @@ test("the e2e Node override also controls shebangs when its filename is node22",
     const result = Bun.spawnSync(
       [process.execPath, "-e", script, join(import.meta.dirname, "package.ts"), root],
       {
-        env: { PATH: `${bin}:/usr/bin:/bin`, QUICKSTACK_E2E_NODE: selected },
+        env: { PATH: `${bin}:/usr/bin:/bin`, STACKS_E2E_NODE: selected },
       },
     );
     expect(result.exitCode, result.stderr.toString()).toBe(0);
@@ -176,7 +176,7 @@ test("the e2e Node override also controls shebangs when its filename is node22",
 }, 30_000);
 
 test("the installed catalog scaffolds a project and create finds the shipped authoring guide", () => {
-  const root = mkdtempSync(join(tmpdir(), "quickstack-installed-"));
+  const root = mkdtempSync(join(tmpdir(), "stacks-installed-"));
   try {
     const project = join(root, "demo");
     const created = run(
@@ -221,7 +221,7 @@ test("the installed catalog scaffolds a project and create finds the shipped aut
 });
 
 test("hostile cwd files change nothing for the installed bin or bunx with Node on PATH", () => {
-  const root = mkdtempSync(join(tmpdir(), "quickstack-bunx-"));
+  const root = mkdtempSync(join(tmpdir(), "stacks-bunx-"));
   try {
     const install = run(
       [
@@ -243,7 +243,7 @@ test("hostile cwd files change nothing for the installed bin or bunx with Node o
       const clean = run([...argv, "doctor", "--json"], root);
       expect(clean.status).toBe(0);
       expect(clean.stderr).toBe("");
-      writeFileSync(join(root, ".env"), "QUICKSTACK_DATA_DIR=/should-not-load\nLOG_LEVEL=trace\n");
+      writeFileSync(join(root, ".env"), "STACKS_DATA_DIR=/should-not-load\nLOG_LEVEL=trace\n");
       writeFileSync(join(root, "bunfig.toml"), 'preload = ["./poison.ts"]\n');
       writeFileSync(join(root, "poison.ts"), 'throw new Error("unexpected preload")');
       expect(run([...argv, "doctor", "--json"], root)).toEqual(clean);

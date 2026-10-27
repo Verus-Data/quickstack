@@ -56,7 +56,7 @@ export class Logging extends Context.Service<
     records: LogEntry[];
     flush: (settings: LogSettings, quiet?: boolean) => Effect.Effect<void>;
   }
->()("quickstack/Logging") {
+>()("stacks/Logging") {
   static layer = Layer.effect(
     Logging,
     Effect.gen(function* () {

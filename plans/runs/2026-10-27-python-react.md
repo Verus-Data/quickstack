@@ -29,7 +29,7 @@ command naming another checkout.
 
 - `make e2e` runs the Playwright smoke "home page shows the API health" against both dev servers and passes.
 - The independent verify ran both serve steps (`api`, `web`) and the `api-contract` check green.
-- No `quickstacks:fill` is left in `AGENTS.md`, `README.md` or `.claude/README.md`.
+- No `stacks:fill` is left in `AGENTS.md`, `README.md` or `.claude/README.md`.
 - CI triggers on `master`, the branch the repository is on, and `make typecheck` covers `backend/scripts/`.
 
 Nothing is missing.
@@ -59,7 +59,7 @@ Final verify record (the independent run):
 {"schemaVersion":1,"at":"2026-10-27T06:11:09.368Z","cli":"0.1.0","agent":"none","outcome":"green","scope":"full","tamperCheck":"full","acceptedChanges":false,"durationMs":6095,"secondsSinceCreated":321,"steps":[{"name":"install","phase":"setup","layer":"install","status":"passed","exitCode":0,"durationMs":95},{"name":"git-hooks-install","phase":"setup","layer":"install","status":"passed","exitCode":0,"durationMs":35},{"name":"lint","phase":"check","layer":"lint","status":"passed","exitCode":0,"durationMs":838},{"name":"typecheck","phase":"check","layer":"typecheck","status":"passed","exitCode":0,"durationMs":1407},{"name":"test","phase":"check","layer":"test","status":"passed","exitCode":0,"durationMs":2039},{"name":"api-contract","phase":"check","layer":"check","status":"passed","exitCode":0,"durationMs":260},{"name":"build","phase":"check","layer":"build","status":"skipped","durationMs":0},{"name":"readme-filled","phase":"check","layer":"check","status":"passed","exitCode":0,"durationMs":5},{"name":"agents-md-filled","phase":"check","layer":"check","status":"passed","exitCode":0,"durationMs":5},{"name":"claude-readme-filled","phase":"check","layer":"check","status":"passed","exitCode":0,"durationMs":5},{"name":"git-hooks-validate","phase":"check","layer":"check","status":"passed","exitCode":0,"durationMs":21},{"name":"git-hooks-configured","phase":"check","layer":"check","status":"passed","exitCode":0,"durationMs":4},{"name":"api","phase":"serve","layer":"serve","status":"passed","durationMs":749},{"name":"web","phase":"serve","layer":"serve","status":"passed","durationMs":631}]}
 ```
 
-`.quickstacks/NOTES.md` as the agent left it:
+`.stacks/NOTES.md` as the agent left it:
 
 ```markdown
 # Notes

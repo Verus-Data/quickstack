@@ -115,17 +115,17 @@ describe("installed Node package", () => {
   });
   test("invalid optional file is reported by doctor without failing", async () => {
     const result = await invoke(["doctor", "--json"], (dir) => {
-      const config = join(dir, "config", "quickstack");
+      const config = join(dir, "config", "stacks");
       mkdirSync(config, { recursive: true });
       writeFileSync(join(config, "config.json"), "{invalid");
     });
     expect(result.status).toBe(0);
     expect(JSON.parse(result.stdout).configErrors).toEqual(["Configuration is invalid."]);
   });
-  test("list --json reads the registry QUICKSTACK_REGISTRY_DIR names", async () => {
+  test("list --json reads the registry STACKS_REGISTRY_DIR names", async () => {
     const registry = join(import.meta.dir, "../tests/fixtures/registry-real");
     const result = await invoke(["list", "--json"], undefined, {
-      QUICKSTACK_REGISTRY_DIR: registry,
+      STACKS_REGISTRY_DIR: registry,
     });
     expect(result.status).toBe(0);
     expect(result.stderr).toBe("");
@@ -139,9 +139,9 @@ describe("installed Node package", () => {
       "openrouter-chat-cli",
     ]);
   });
-  test("validate and validate --brief run from the binary over QUICKSTACK_REGISTRY_DIR", async () => {
+  test("validate and validate --brief run from the binary over STACKS_REGISTRY_DIR", async () => {
     const registry = join(import.meta.dir, "../tests/fixtures/registry-real");
-    const env = { QUICKSTACK_REGISTRY_DIR: registry };
+    const env = { STACKS_REGISTRY_DIR: registry };
     const result = await invoke(["validate", "--json"], undefined, env);
     expect(result.status).toBe(0);
     expect(result.stderr).toBe("");
@@ -196,7 +196,7 @@ describe("installed Node package", () => {
     const { bin, prefix } = install(join(import.meta.dir, "../tests/fixtures/registry-new"));
     try {
       writeFileSync(
-        join(prefix, "registry/stacks/fixture-stack/files/.gitignore.quickstack"),
+        join(prefix, "registry/stacks/fixture-stack/files/.gitignore.stacks"),
         "literal file\n",
       );
       const project = join(prefix, "project");
@@ -208,7 +208,7 @@ describe("installed Node package", () => {
       );
       expect(result.status).toBe(0);
       expect(result.stderr).toBe("");
-      expect(readFileSync(join(project, ".gitignore.quickstack"), "utf8")).toBe("literal file\n");
+      expect(readFileSync(join(project, ".gitignore.stacks"), "utf8")).toBe("literal file\n");
     } finally {
       rmSync(prefix, { recursive: true, force: true });
     }
@@ -224,7 +224,7 @@ describe("installed Node package", () => {
     try {
       const app = join(out, "app");
       const result = await invoke(["new", "fixture-stack", app, "--sandbox", "--json"], undefined, {
-        QUICKSTACK_REGISTRY_DIR: join(import.meta.dir, "../tests/fixtures/registry-new"),
+        STACKS_REGISTRY_DIR: join(import.meta.dir, "../tests/fixtures/registry-new"),
       });
       expect(result.stderr).toBe("");
       expect(result.status).toBe(0);
@@ -263,7 +263,7 @@ describe("installed Node package", () => {
   });
   test("does not autoload dotenv or bunfig from working directory", async () => {
     const result = await invoke(["doctor", "--json"], (dir) => {
-      writeFileSync(join(dir, ".env"), "QUICKSTACK_DATA_DIR=/should-not-load\n");
+      writeFileSync(join(dir, ".env"), "STACKS_DATA_DIR=/should-not-load\n");
       writeFileSync(join(dir, "bunfig.toml"), 'preload = ["./poison.ts"]\n');
       writeFileSync(join(dir, "poison.ts"), 'throw new Error("unexpected preload")');
     });

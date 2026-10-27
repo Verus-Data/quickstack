@@ -8,7 +8,7 @@ import { tempDir } from "./helpers/cli";
 
 test("configuration is lazy and caches within each layer, but not across invocations", async () => {
   const dir = tempDir();
-  const configDir = join(dir.path, "quickstack");
+  const configDir = join(dir.path, "stacks");
   mkdirSync(configDir, { recursive: true });
   const file = join(configDir, "config.json");
   writeFileSync(file, '{"dataDir":"/first"}');
@@ -36,7 +36,7 @@ test("configuration is lazy and caches within each layer, but not across invocat
 });
 test("building a config layer never opens a broken config file", async () => {
   const dir = tempDir();
-  const path = join(dir.path, "quickstack");
+  const path = join(dir.path, "stacks");
   mkdirSync(path, { recursive: true });
   writeFileSync(join(path, "config.json"), "not json");
   try {

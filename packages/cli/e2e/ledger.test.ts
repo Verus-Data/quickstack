@@ -20,7 +20,7 @@ import { binary, packageRoot, scratchPath } from "./package";
 const registry = join(import.meta.dir, "../registry");
 
 test("the installed package reads its shipped ledger, including after relocation [2.0c#6]", async () => {
-  const root = mkdtempSync(join(tmpdir(), "quickstack-ledger-binary-"));
+  const root = mkdtempSync(join(tmpdir(), "stacks-ledger-binary-"));
   try {
     const home = join(root, "unrelated cwd");
     mkdirSync(home);

@@ -6,7 +6,7 @@ Status: DEFERRED 2026-10-27 to phase 4 or later, with 3.2a. Gated: starts only a
 |---|---|
 | Goal | Before a person trusts anything they didn't write, they see an allowlist report of every file it would write, with everything not plainly inert marked, plus every body, command, verify step and hook command; and a user can move a source's pin with `source update` after reading a diff of what changed |
 | Traces to | Jobs: "the emotional job underneath all of these is trust: the user wants to start work in a project they don't have to audit first." Success row 5: "Stacks and fragments in `~/.stacks` and third-party sources." Risk: "Third-party stacks ship hooks or scripts the user's agent will run" |
-| Depends on | 3.2a (sources, `Sources.fetch`, the trust store, `quickstack trust`) |
+| Depends on | 3.2a (sources, `Sources.fetch`, the trust store, `stacks trust`) |
 | Blocks | Nothing. Nothing in phase 4 depends on it |
 | Decisions needed | None new. Implements [roadmap, Trust model](../roadmap.md#trust-model) point 6 as written; if the maintainers wanted a blocklist instead, the classification table below would invert and the fixtures would stay |
 | Settles | The inert list; how hook commands are found in shipped JSON; what `source update` shows and when the pin moves; which checkouts are kept |
@@ -15,8 +15,8 @@ Status: DEFERRED 2026-10-27 to phase 4 or later, with 3.2a. Gated: starts only a
 
 In:
 
-- `trustReport`: the allowlist report, used by `quickstack trust` for every kind (3.2a) and by `create --from` (3.1b), replacing `show`'s interim report at those call sites.
-- `quickstack source update <name> [--ref <ref>] [--json]` with a diff against the pinned commit.
+- `trustReport`: the allowlist report, used by `stacks trust` for every kind (3.2a) and by `create --from` (3.1b), replacing `show`'s interim report at those call sites.
+- `stacks source update <name> [--ref <ref>] [--json]` with a diff against the pinned commit.
 - On `trust source <name>`, a diff since the last confirmed commit ahead of the full report.
 - One fixture per vector in the acceptance tests.
 
@@ -58,7 +58,7 @@ Hook commands in JSON: every shipped file whose output path ends in `.json` is p
 1. Fetch the stored `ref` (or `--ref`, which replaces it) with 3.2a's `Sources.fetch`, so every hardening rule applies.
 2. If the resolved commit is the pin and its checkout exists, return `unchanged: true`. If the checkout was deleted by hand, store it again; its digest decides trust as usual.
 3. Compute `SourceDiff` against the pinned checkout: entries added, removed and changed; per changed entry, frontmatter fields before and after, body `countWords` before and after, and files added, removed and changed, each with its output path and report class. Bodies and every changed `executable-or-config` file get a unified diff. Inert files are listed without one.
-4. Print the diff (human) or return it (`--json`), then move the pin in `config.json`. The new commit is untrusted until a person runs `quickstack trust source <name>` (point 2), so every point-3 rule applies to its entries meanwhile.
+4. Print the diff (human) or return it (`--json`), then move the pin in `config.json`. The new commit is untrusted until a person runs `stacks trust source <name>` (point 2), so every point-3 rule applies to its entries meanwhile.
 5. Keep the checkouts of the new pin and of the most recently confirmed commit; delete the rest.
 
 Unified diffs come from `git diff --no-index --no-color --no-ext-diff --no-textconv -- <old> <new>` with 3.2a's environment and `-c` flags, so no diff or textconv program from the user's setup runs and no new dependency is needed.

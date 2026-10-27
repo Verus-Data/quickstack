@@ -21,13 +21,13 @@ test.each([
   put(entry, "files/author.txt.tmpl", "{{author}}\n");
   expect(spawnGit(["-C", project.root, "config", "user.name", git]).status).toBe(0);
   if (configured !== undefined)
-    put(project.home, "config/quickstack/config.json", JSON.stringify({ author: configured }));
+    put(project.home, "config/stacks/config.json", JSON.stringify({ author: configured }));
   await added(await addCli(project, ["add", "author", "--json"]));
   expect(read(project.root, "author.txt")).toBe(`${expected}\n`);
 });
 
 test("a configured author with remaining control characters is InvalidConfig for add", async () => {
   const project = addProject();
-  put(project.home, "config/quickstack/config.json", JSON.stringify({ author: "Bad\tAuthor" }));
+  put(project.home, "config/stacks/config.json", JSON.stringify({ author: "Bad\tAuthor" }));
   refused(await addCli(project, ["add", "named", "--json"]), 3, "InvalidConfig");
 });

@@ -33,7 +33,7 @@ E2E is `bun test ./e2e` against the installed Node package. It covers startup, s
 Replace a service with a test layer only at a real boundary: the process and terminal (`Output.memory`, `Host.memory`), the clock, randomness, and anything off the machine (network, registries, a spawned agent). Pass the fake as a layer, the same way production code gets the real one. Never use `vi.mock` or module mocks, and never stub your own services to make a test pass.
 
 - Time: use `TestClock` from Effect, never `sleep` or real timers. For real child processes, poll for the condition with `vi.waitFor`.
-- Files and config: use a real temporary directory (`tempDir()`) and pass `HOME`, `XDG_*` and `QUICKSTACK_*` through the `env` option. Config only reads env given to its layer, so a test never touches the developer's real home.
+- Files and config: use a real temporary directory (`tempDir()`) and pass `HOME`, `XDG_*` and `STACKS_*` through the `env` option. Config only reads env given to its layer, so a test never touches the developer's real home.
 - Commands that run steps or spawn processes: run real, tiny, deterministic programs (a script in the temp dir that writes a file or exits with a code) rather than faking the process service, unless the test is about a failure the OS won't produce on demand.
 - A fake must behave like the real thing on the paths the test uses, including its failures (EPIPE, permission denied, missing file).
 

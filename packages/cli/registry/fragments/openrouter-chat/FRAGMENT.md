@@ -70,9 +70,9 @@ Scripts share `chatModelOptions` and a fresh script layer with terminal-only log
 
 Evals call real chat/extract programs one case/model at a time with deadlines. Include currentTime and concise-answer/extract cases; report pass/fail/error/truncated, finish reason, latency, tokens, cost, provider, served model, and per-model totals/median. Write timestamped JSON, fail on any failed/errored case or no passing cases, and unit-test pure scoring plus recording validation. Add `eval` and `record:openrouter` scripts for these. They need a key and spend money, so they are deliberately absent from the commands table and never run in check, verify, or CI; both refuse to start without a key.
 
-<!-- quickstack:when with=ci-github -->
+<!-- stacks:when with=ci-github -->
 CI runs the app browser flow against stubs, installs Chromium system dependencies, and uploads failure artifacts. Keep real provider credentials absent. Include scripts and eval source in typechecking without executing paid commands.
-<!-- quickstack:end -->
+<!-- stacks:end -->
 
 ## Design and adapter
 

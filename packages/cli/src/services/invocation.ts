@@ -20,7 +20,7 @@ export class Invocation extends Context.Service<
     /** Adds fields to the `command` log record. Never argument values, paths or prompt text. */
     annotate: (fields: Record<string, string>) => Effect.Effect<void>;
   }
->()("quickstack/Invocation") {
+>()("stacks/Invocation") {
   static make = () => {
     const state: InvocationState = { status: undefined, fields: {} };
     return {

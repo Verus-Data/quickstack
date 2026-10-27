@@ -29,9 +29,8 @@ function dependencyNotices(metafile: Bun.BuildMetafile): string {
 
 const startedAt = performance.now();
 mkdirSync("dist", { recursive: true });
-// Remove the retired quickstack artifacts when rebuilding an existing checkout.
-for (const artifact of ["dist/quickstack", "dist/quickstack.mjs"])
-  rmSync(artifact, { force: true });
+// Remove the retired stacks artifacts when rebuilding an existing checkout.
+for (const artifact of ["dist/stacks", "dist/stacks.mjs"]) rmSync(artifact, { force: true });
 const result = await Bun.build({
   entrypoints: ["src/bin.ts"],
   outdir: "dist",

@@ -1,9 +1,9 @@
 /**
  * Conditional prose in entry bodies (roadmap, Other shared facts: Prose markers):
  *
- *   <!-- quickstack:when stack=go-cli,python-react preset=default -->
+ *   <!-- stacks:when stack=go-cli,python-react preset=default -->
  *   ...
- *   <!-- quickstack:end -->
+ *   <!-- stacks:end -->
  *
  * Commas are OR within a key, several keys are AND, blocks don't nest and each marker is alone on
  * its line. A matching block loses its marker lines; a non-matching block is removed whole.
@@ -27,9 +27,9 @@ export type Condition = Partial<Record<Key, ReadonlyArray<string>>>;
 /** A malformed marker: its 1-based line in the body and what is wrong with it. */
 export type ConditionalError = { line: number; problem: ConditionalProblem };
 
-const MARKER = /^\s*<!--\s*quickstack:(\S+)(.*?)-->\s*$/;
+const MARKER = /^\s*<!--\s*stacks:(\S+)(.*?)-->\s*$/;
 /**
- * `quickstack:fill`, `quickstack:fill: text` and `quickstack:fill:text` mark text the agent
+ * `stacks:fill`, `stacks:fill: text` and `stacks:fill:text` mark text the agent
  * replaces; they are not conditionals and stay as written.
  */
 const isFill = (directive: string) => directive === "fill" || directive.startsWith("fill:");
@@ -120,7 +120,7 @@ export function scanConditionals(
     const line = i + 1;
     const match = MARKER.exec(text);
     if (!match) {
-      if (/<!--\s*quickstack:(?:when|end)\b/.test(text)) return { line, problem: "not_alone" };
+      if (/<!--\s*stacks:(?:when|end)\b/.test(text)) return { line, problem: "not_alone" };
       continue;
     }
     const problem = scanMarker(match, line, state);

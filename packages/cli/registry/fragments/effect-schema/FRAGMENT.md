@@ -22,12 +22,12 @@ One schema owns each boundary shape and its TypeScript type. Decode incoming dat
 
 Install `effect`; Schema belongs to it, never the standalone `@effect/schema` package from older examples. Follow the schema-location decision: one dependency-free file per domain, importing only `effect`, re-exported from `index.ts` for client/server reuse.
 
-<!-- quickstack:when tag=web -->
+<!-- stacks:when tag=web -->
 Shared request/response schemas must be platform-free. Loaders/actions decode params and input at their boundaries.
-<!-- quickstack:end -->
-<!-- quickstack:when tag=cli -->
+<!-- stacks:end -->
+<!-- stacks:when tag=cli -->
 Use src/schemas for arguments, flags, stdin, config, storage, and machine output as added. Optional config uses a closed schema.
-<!-- quickstack:end -->
+<!-- stacks:end -->
 
 **Conventions.**
 - Share the schema/type name: `export const User = Schema.Struct({...})`, `export type User = typeof User.Type`. Wire types use `typeof User.Encoded`.
@@ -38,9 +38,9 @@ Use src/schemas for arguments, flags, stdin, config, storage, and machine output
 - For validation-only libraries accepting Standard Schema, use Effect's adapter. Domain errors are typed, serializable `Schema.TaggedError` classes.
 - Keep framework/codegen validators (Astro's `astro/zod`, orval-generated zod). Effect Schema covers owned boundaries; use zod otherwise only at a library edge requiring it. Transitive peer dependencies are fine.
 
-<!-- quickstack:when mode=add -->
+<!-- stacks:when mode=add -->
 **Existing projects.** Keep validators. Use Effect Schema at new boundaries; migrate touched ones with tests passing before and after.
-<!-- quickstack:end -->
+<!-- stacks:end -->
 
 ## Testing
 

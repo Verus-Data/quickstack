@@ -80,7 +80,7 @@ const program = Effect.scoped(
               )
             )
               return null;
-            const temporary = yield* fs.makeTempDirectoryScoped({ prefix: "quickstack-ledger-" });
+            const temporary = yield* fs.makeTempDirectoryScoped({ prefix: "stacks-ledger-" });
             const archive = path.join(temporary, "registry.tar");
             yield* exec(
               [

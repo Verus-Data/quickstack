@@ -39,7 +39,7 @@ function setup(settings?: unknown) {
     frontmatter: minimal("fragment", "shipping").replace("category: tooling", "category: deploy"),
   });
   if (settings !== undefined)
-    putCreate(home, "config/quickstack/config.json", JSON.stringify(settings));
+    putCreate(home, "config/stacks/config.json", JSON.stringify(settings));
   return { home, registry };
 }
 async function newProject(home: string, registry: string, dir: string, flags: string[] = []) {
@@ -89,7 +89,7 @@ test("new uses the setting and records an explicit default override in its resul
   presetBehavior(configured, "sandbox");
   const overridden = await newProject(home, registry, "overridden", ["--preset", "default"]);
   presetBehavior(overridden, "default");
-  expect(JSON.parse(readFileSync(join(home, "config/quickstack/config.json"), "utf8"))).toEqual({
+  expect(JSON.parse(readFileSync(join(home, "config/stacks/config.json"), "utf8"))).toEqual({
     preset: "sandbox",
   });
 });

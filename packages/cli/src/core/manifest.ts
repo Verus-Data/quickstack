@@ -129,7 +129,7 @@ const versionOf = (value: unknown) =>
 /**
  * Reads and decodes a manifest. A missing file is `NotFound`; one that can't be read is
  * `PermissionDenied` (`read`); one that isn't JSON or doesn't decode, excess keys included, is
- * `InvalidConfig` with its path; one a newer quickstack wrote (`schemaVersion` above 1) is
+ * `InvalidConfig` with its path; one a newer stacks wrote (`schemaVersion` above 1) is
  * `InvalidConfig` with that version too.
  */
 export const readManifest = (

@@ -39,7 +39,7 @@ const DRAIN = Duration.seconds(2);
 const SETTLE = Duration.seconds(1);
 const POLL = Duration.millis(20);
 const PIPES_HELD =
-  "quickstack: output was still open 2s after the command exited; its process group was killed.";
+  "stacks: output was still open 2s after the command exited; its process group was killed.";
 const RESOURCE_ERRNOS = new Set(["EAGAIN", "EMFILE", "ENFILE", "ENOMEM"]);
 
 export type ShellSpec = {
@@ -93,9 +93,7 @@ export interface Running {
 }
 
 /** The per-invocation `ProcessHolder` (see platform/process.ts), provided by bin.ts. */
-export class Foreground extends Context.Service<Foreground, ProcessHolder>()(
-  "quickstack/Foreground",
-) {
+export class Foreground extends Context.Service<Foreground, ProcessHolder>()("stacks/Foreground") {
   static make = (): ProcessHolder => ({
     groups: new Set(),
     foreground: undefined,
@@ -182,7 +180,7 @@ export class Processes extends Context.Service<
     /** The first executable regular file named `name` on the captured PATH. */
     which(name: string): Effect.Effect<Option.Option<string>>;
   }
->()("quickstack/Processes") {
+>()("stacks/Processes") {
   static layer = Layer.effect(
     Processes,
     Effect.gen(function* () {

@@ -175,7 +175,7 @@ the workflow.
 - The `build` job's artifact has `signature: ""` in every envelope, and step 4 checks
   every signed file the deploy job built.
 - With deploys enabled, a merge that changes one fragment's body: the live index's commit
-  matches, the changed bundle's digest is new, and `npx quickstack@latest list --json`
+  matches, the changed bundle's digest is new, and `npx stacks@latest list --json`
   on a clean machine shows the change after the index cache expires.
 
 ## Exit criteria

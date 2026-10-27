@@ -54,7 +54,7 @@ faster than you could write the contract, or when you can't yet say what done lo
    Read-only is the default; `--write` lets Codex edit the worktree. Read-only suits review and
    investigation only: Vitest writes `node_modules/.vite-temp`, so no test runs without `--write`. Independent units run as
    2-4 delegates at once, one worktree each. The digest (result, commands run, files written,
-   last message) is the command's output; full logs stay under `$TMPDIR/quickstack-delegate/`.
+   last message) is the command's output; full logs stay under `$TMPDIR/stacks-delegate/`.
 
 4. Review. `success` only means the turn finished. Codex has already run one
    `code-reviewer` pass (`.claude/agents/code-reviewer.md`) on its own diff in a fresh Codex process and resolved the findings
@@ -93,6 +93,6 @@ faster than you could write the contract, or when you can't yet say what done lo
    current HEAD, which from the main checkout is `main`. A unit you abandon gets
    `git worktree remove --force` and `git branch -D` once you've confirmed nothing in it is
    worth keeping. Remove only worktrees you created; other sessions keep theirs under the same
-   directory. The run logs under `$TMPDIR/quickstack-delegate/` can stay.
+   directory. The run logs under `$TMPDIR/stacks-delegate/` can stay.
 
 `/execute:codex <plan>` runs this loop over a whole plan.

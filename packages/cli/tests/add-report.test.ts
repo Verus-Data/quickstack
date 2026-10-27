@@ -37,7 +37,7 @@ test("the add summary keeps the shown path, merge task and actionable confirmati
   const context: Parameters<typeof renderAdd>[1] = {
     shown: "app",
     audience: "agent",
-    invocation: "npx -y quickstack@0.1.0",
+    invocation: "npx -y stacks@0.1.0",
   };
   const text = renderAdd(result, context);
   expect(text).toBe(
@@ -52,7 +52,7 @@ test("the add summary keeps the shown path, merge task and actionable confirmati
       "  README.md: .stacks/incoming/README.md",
       "Missing required: required. Next: stacks add required",
       "Untrusted: ci (project): local/ci",
-      "Stop: ask the user to review the new steps and run npx -y quickstack@0.1.0 verify --accept-changes in their terminal.",
+      "Stop: ask the user to review the new steps and run npx -y stacks@0.1.0 verify --accept-changes in their terminal.",
       "Brief: .stacks/BRIEF.md",
     ].join("\n"),
   );
@@ -60,7 +60,7 @@ test("the add summary keeps the shown path, merge task and actionable confirmati
 });
 
 test("adding to the current directory doesn't name it as a dot", () => {
-  const text = renderAdd(result, { shown: ".", audience: "agent", invocation: "quickstack" });
+  const text = renderAdd(result, { shown: ".", audience: "agent", invocation: "stacks" });
   expect(text.split("\n")[0]).toBe("Added ci");
 });
 
@@ -74,7 +74,7 @@ test("entry and filesystem values cannot inject control characters into the add 
         { ...result.untrusted[0], id: "ci", kind: "fragment", origin: "project", dir: "bad\tpath" },
       ],
     },
-    { shown: "app\rpath", audience: "agent", invocation: "quickstack" },
+    { shown: "app\rpath", audience: "agent", invocation: "stacks" },
   );
   expect(text).toContain("Added ci\\u000aspoof to app\\u000dpath");
   expect(text).toContain("Written: bad\\u001b.txt");
