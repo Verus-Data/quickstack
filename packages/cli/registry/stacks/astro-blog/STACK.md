@@ -67,7 +67,8 @@ src/config.ts                site title, description, author, nav
 src/layouts/BaseLayout.astro HTML shell: meta, OG tags, theme script
 src/pages/                   index.astro, [slug].astro, 404.astro, rss.xml.ts, og/[slug].png.ts (if OG on)
 src/components/              React .tsx only, each with a colocated .test.tsx
-src/lib/posts.ts             getPublishedPosts(), getRoutablePosts(), slugFor(), reading time
+src/lib/posts.ts             pure over given entries: published, routable, slugFor(), reading time
+src/lib/collection.ts        the only `astro:content` import; feeds posts.ts
 src/styles/global.css        Tailwind entry, typography plugin, theme tokens
 ```
 
@@ -84,8 +85,9 @@ src/styles/global.css        Tailwind entry, typography plugin, theme tokens
 
 - **Minimal Astro.** The only `.astro` files are `BaseLayout.astro` and page routes, which load content and render React components. Every reusable component is `.tsx`. Add `client:*` only where interactivity is needed.
 - **Schema.** `schema.ts` exports the zod object (import `z` from `astro/zod`); `content.config.ts` wraps it with the `glob` loader over `src/content/blog/**/*.{md,mdx}`. Fields: `title`, `description`, `date` (coerced), `updated?`, `author`, `tags` (default `[]`), `status` (`draft` | `published` | `unlisted`, default `published`), `cover?`, `ogImage?`. `unlisted` renders at its URL but stays out of the index, sitemap, and RSS.
-- **One place decides visibility.** `lib/posts.ts`: `getPublishedPosts()` (published, newest first), `getRoutablePosts()` (published + unlisted, plus drafts when `import.meta.env.DEV`), `slugFor(entry)` (filename minus extension; strip it defensively, since the loader's id may keep it). Pages, RSS, OG, and sitemap all use these.
+- **One place decides visibility.** `lib/posts.ts` (pure, so unit tests need no content layer; `lib/collection.ts` wraps it): `getPublishedPosts()` (published, newest first), `getRoutablePosts()` (published + unlisted, plus drafts when `import.meta.env.DEV`), `slugFor(entry)` (filename minus extension; strip it defensively, since the loader's id may keep it). Pages, RSS, OG, and sitemap all use these.
 - **Sitemap** filters drafts, unlisted, and `og/` routes. The config can't import `astro:content`, so read status from the MDX frontmatter directly.
+- **Canonical and OG URLs** come from the route (`/`, `/<slug>`), never `Astro.url.pathname`, which ends in `.html` under file-style output.
 - **RSS** lists published posts newest first. With `trailingSlash: "never"`, pass `trailingSlash: false` to `@astrojs/rss` so item links match.
 - **OG images (if on)**: 1200x630 card via satori + resvg, fonts loaded from `src/assets/fonts/` (never fetched at build), published and unlisted posts only.
 - **Styling.** Tailwind; post bodies use `prose` with dark variants; an inline head script prevents a theme flash.
@@ -95,7 +97,7 @@ src/styles/global.css        Tailwind entry, typography plugin, theme tokens
 
 - **astro.config.mjs**: `output: "static"`, `site`, `trailingSlash` and `build.format` per the decision, integrations mdx, react, sitemap (filtered), Tailwind in `vite.plugins`, Shiki with light and dark themes.
 - **tsconfig.json**: Astro's strict preset, `jsx: "react-jsx"`, `jsxImportSource: "react"`, `@/*` -> `src/*`, and `types` with `vitest/globals` and `@testing-library/jest-dom` so `astro check` accepts the tests.
-- **vitest.config.ts**: built with Astro's `getViteConfig()`; `happy-dom`, `globals: true`, a setup file importing jest-dom's vitest matchers, include `src/**/*.test.{ts,tsx}`, v8 coverage, and every vendor key (`PUBLIC_POSTHOG_KEY`) set to `""` in `test.env`.
+- **vitest.config.ts**: built with Astro's `getViteConfig()` (with `/// <reference types="vitest/config" />`); `happy-dom`, `globals: true`, a setup file importing jest-dom's vitest matchers, include `src/**/*.test.{ts,tsx}`, v8 coverage, and every vendor key (`PUBLIC_POSTHOG_KEY`) set to `""` in `test.env`.
 - **Prettier** with the Astro plugin: `make format` writes, `make lint` checks. `.prettierignore` covers build output, `.quickstacks/` and `.claude/`.
 
 ## Testing

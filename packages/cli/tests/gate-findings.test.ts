@@ -147,3 +147,25 @@ test.each(["astro-blog", "go-cli", "python-react"])(
     );
   },
 );
+
+test("python-react's Makefile runs dump_openapi as the module the brief names", async () => {
+  const makefile = readFileSync(join(await scaffold("python-react"), "Makefile"), "utf8");
+  expect(makefile).not.toContain("python scripts/dump_openapi.py");
+  expect(makefile).toContain("uv run python -m scripts.dump_openapi");
+});
+
+test("astro-blog keeps astro:content out of the post logic the unit tests cover", async () => {
+  expect(await brief("astro-blog")).toMatch(
+    /src\/lib\/collection\.ts +the only `astro:content` import/,
+  );
+});
+
+test("astro-blog builds canonical URLs without file-style output's .html", async () => {
+  expect(await brief("astro-blog")).toContain(
+    "never `Astro.url.pathname`, which ends in `.html` under file-style output",
+  );
+});
+
+test("astro-blog's vitest.config.ts references vitest's config types", async () => {
+  expect(await brief("astro-blog")).toContain('`/// <reference types="vitest/config" />`');
+});
