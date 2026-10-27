@@ -115,10 +115,12 @@ test("one SIGINT through npm exec records interruption and runs teardown", async
   child.stderr.on("data", (chunk) => {
     stderr += chunk;
   });
-  const exited = new Promise<number | null>((resolve, reject) => {
-    child.once("error", reject);
-    child.once("close", resolve);
-  });
+  const exited = new Promise<{ code: number | null; signal: NodeJS.Signals | null }>(
+    (resolve, reject) => {
+      child.once("error", reject);
+      child.once("close", (code, signal) => resolve({ code, signal }));
+    },
+  );
   try {
     const deadline = Date.now() + 15_000;
     while (!existsSync(join(dir, "ready"))) {
@@ -128,7 +130,14 @@ test("one SIGINT through npm exec records interruption and runs teardown", async
     }
     if (child.pid === undefined) throw new Error("npm exec has no pid");
     process.kill(-child.pid, "SIGINT");
-    expect(await exited).toBe(130);
+    // npm runs the bin under `sh -c`. macOS's sh execs it, so npm passes on the CLI's 130; dash
+    // (Linux) stays the parent, dies from the group's SIGINT, and npm re-raises SIGINT on itself.
+    const status = await exited;
+    const interrupted: (typeof status)[] = [
+      { code: 130, signal: null },
+      { code: null, signal: "SIGINT" },
+    ];
+    expect(interrupted).toContainEqual(status);
     expect(stdout).toBe("");
     expect(stderr.trim().split("\n").at(-1)).toContain('"tag":"Interrupted"');
     expect(existsSync(join(dir, "torn"))).toBe(true);
@@ -137,7 +146,9 @@ test("one SIGINT through npm exec records interruption and runs teardown", async
     );
     expect(record.outcome).toBe("interrupted");
   } finally {
-    if (child.exitCode === null && child.pid !== undefined) process.kill(-child.pid, "SIGKILL");
+    // A process killed by a signal also has a null exitCode, so its group may already be gone.
+    if (child.exitCode === null && child.signalCode === null && child.pid !== undefined)
+      process.kill(-child.pid, "SIGKILL");
     await exited;
     rmSync(dir, { recursive: true, force: true });
   }
