@@ -926,7 +926,7 @@ describe("git init failing or interrupted", () => {
     const human = await newCli(["fixture-stack", "app2"], { home, env: { PATH: bin } });
     expect(human.status).toBe(0);
     expect(human.stdout).toContain(
-      "Git: git couldn't tell whether this is inside a repository (exit 128); none used\n",
+      "Git: git couldn't tell whether this is inside a repository (exit 128); none used. Run git status in the project to see git's error\n",
     );
     expect(human.stdout).not.toContain("Warnings:");
   });

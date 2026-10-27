@@ -10,7 +10,7 @@ const gitLine = (result: NewResult) => {
   if (failed) return `git init failed (exit ${failed.exitCode ?? "unknown"}); no repository`;
   const unusable = result.warnings.find((warning) => warning.code === "git_unusable");
   if (unusable)
-    return `git couldn't tell whether this is inside a repository${unusable.exitCode === undefined ? "" : ` (exit ${unusable.exitCode})`}; none used`;
+    return `git couldn't tell whether this is inside a repository${unusable.exitCode === undefined ? "" : ` (exit ${unusable.exitCode})`}; none used. Run git status in the project to see git's error`;
   return result.git === "fresh"
     ? "new repository, nothing committed"
     : result.git === "parent"
