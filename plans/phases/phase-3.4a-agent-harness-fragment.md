@@ -129,3 +129,20 @@ Two bench runs of the same stack (`astro-blog` is the TypeScript-capable small s
   test script aliases and an offline Makefile install target, because `verify --only` also runs setup
   and the bare scaffold has no agent-generated Makefile. Real bench proof belongs to the maintainers and is outside the traced
   numbers.
+
+- 2026-10-27 implementation: the existing standalone hooks and Node/Vitest suite are retained.
+  `block-destructive.sh` delegates from its own directory and remains the sole settings entry;
+  removing the TypeScript guard or Bun restores the pattern list. `harness-hooks` skips only when
+  the Claude guard is absent (no Claude adapter), otherwise runs the shipped Vitest suite on Node.
+  Recursive deletion checks resolve existing symlink ancestors in filesystem order before `..`,
+  and deny unresolved expansions and xargs operands; hard resets probe the selected
+  repository, denying when dirty or unreadable. History rewriting is guarded conservatively:
+  force pushes on any branch, including leases, rebase, filter-branch/filter-repo and reflog
+  expiry/deletion require confirmation rather than discovering a remote's default branch.
+  The delegated guard covers the plan's classes; the shell fallback's broader pattern list
+  (SQL, releases, containers and similar operations) is not carried into the TypeScript guard.
+
+- Independent review found raw macOS `rdisk` targets, operand-free xargs deletes, shell
+  brace/glob expansion and symlink-parent traversal gaps. Shipped regressions reproduce all
+  four through the wired shell entry and fail again with the fixes reverted. `_shell.ts` now
+  carries per-word expansion metadata so quoted/escaped literal filenames remain allowed.

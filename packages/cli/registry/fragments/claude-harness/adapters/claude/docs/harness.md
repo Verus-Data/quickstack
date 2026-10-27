@@ -21,7 +21,9 @@ What's in the tree:
 
 The hooks are TypeScript run by Bun, written against `node:` APIs only. `_lib.ts` reads the hook payload, runs child processes with timeouts, resolves project paths, and writes the hook protocol's output (`deny`, additional context). `_shell.ts` parses a shell command into the commands it actually runs, so a quoted example, a heredoc body, or a comment isn't mistaken for execution. Stack and app guards import both; that's why the stack requires this harness.
 
-`typecheck-on-write.ts` runs `tsc` after each `.ts`/`.tsx` write and hands back errors in the edited file and its callers. When the project ships `.claude/hooks/before-typecheck.ts` (for generated types), the hook awaits it first. `guard-generated.ts` denies hand edits to tool-owned output and names the command that regenerates it. `guard-commands.ts` denies commands that would fight the project's tooling (another package manager touching bun's lockfile). Missing tools and advisory timeouts stay quiet: an advisory hook never blocks work because something it wanted isn't installed.
+`typecheck-on-write.ts` runs `tsc` after each `.ts`/`.tsx` write and hands back errors in the edited file and its callers. When the project ships `.claude/hooks/before-typecheck.ts` (for generated types), the hook awaits it first. `guard-generated.ts` denies hand edits to tool-owned output and names the command that regenerates it. `block-destructive.sh` delegates to `guard-commands.ts` when that file and Bun are present; otherwise it keeps its shell pattern guard. The shell entry is the only command guard wired by these fragments. The TypeScript guard denies recursive deletions outside the project (including symlink targets), unresolved deletion targets from shell expansions or xargs, hard resets on dirty or unreadable repositories, history rewrites (including force pushes with a lease), and raw disk writes. Guard inspection failures deny the call. These are accident guards, not a security boundary against an agent with full permissions.
+
+`guard-commands.ts` also denies commands that would fight the project's tooling (another package manager touching bun's lockfile). Missing tools and advisory timeouts stay quiet: an advisory hook never blocks work because something it wanted isn't installed.
 
 ## Which layer catches what
 
@@ -30,7 +32,7 @@ Layers are listed earliest first. "Rule" means a path-scoped file in `.claude/ru
 | Mistake | Prevention | Blocked or flagged | Backstop |
 | --- | --- | --- | --- |
 | Running the wrong test runner or package manager | `AGENTS.md`, the testing rule | `guard-commands.ts` (and the stack's command guard) denies it with the right command | none needed: the command never runs |
-| Destroying work (a hard reset, a force push, deleting the filesystem root) | none | `block-destructive.sh` denies it; `permissions.deny` repeats the worst shapes in case the hook can't run | `tests/hooks/` |
+| Destroying work (a hard reset, a force push, deleting the filesystem root) | none | `block-destructive.sh` delegates to the lexer guard, or uses its shell patterns; `permissions.deny` repeats the worst shapes in case the hook can't run | `tests/hooks/` |
 | Crossing a boundary the stack defines (server-only code imported by the client, platform APIs outside their entry files) | the stack's rules | the stack's guard denies the write; a lint plugin, if the project has one, flags it | the production build or the Node test runner fails, then CI |
 | Hand-editing generated files (build output, coverage, lockfiles, recorded fixtures) | `AGENTS.md` conventions | `guard-generated.ts` denies it and names the command that regenerates the file | regenerating overwrites a hand edit anyway |
 | Writing a secret into a file | `.env` is gitignored, and `Read(./.env)` is denied | `detect-secrets.sh` denies credential-shaped writes | none: the pre-commit hook runs only the formatter and linter |
@@ -38,6 +40,8 @@ Layers are listed earliest first. "Rule" means a path-scoped file in `.claude/ru
 | A type error, including one in a caller of the edited file | none | `typecheck-on-write.ts` hands back `tsc` errors after each `.ts`/`.tsx` write | pre-push typecheck, CI |
 | A guard change that turns a hook into a no-op | `.claude/README.md` | `tests/hooks/`: a deny and a near miss for every guard | pre-push tests, CI |
 | A convention no tool checks (thin entry points, error mapping, log once, decode at the boundary) | rules, `AGENTS.md` | the `reviewer` agent before a commit | `/feature` runs two code reviews before the PR |
+
+To disable a hook, remove its entry from `.claude/settings.json`. Removing `guard-commands.ts` restores the shell destructive guard and disables the package-manager guard. Run `node node_modules/vitest/vitest.mjs run tests/hooks` to check the shipped harness, also run by the `harness-hooks` verify step.
 
 Guards deny; everything else advises. Lint and type errors arrive as context and never block a write, so the agent keeps moving and fixes them on its next edit.
 
