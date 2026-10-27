@@ -40,10 +40,10 @@
   },
   "description": "Compose project guidance and verify agent-built projects.",
   "bin": {
-    "stacks": "dist/stacks.mjs"
+    "stacks": "dist/stacks"
   },
   "files": [
-    "dist/stacks.mjs",
+    "dist/stacks",
     "dist/cli.mjs",
     "registry",
     "skill",

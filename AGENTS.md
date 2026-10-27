@@ -44,7 +44,7 @@ Root commands run from the repo root and fan out to every workspace package (`bu
 | `bun run dev validate [path]` | Check a registry or one entry (no path: the bundled one). Exit 0 clean, 2 on any error finding (`ValidationFailed`, report kept on stdout) or a bad path, 6 unreadable root. `--brief <stack> [--with ..] [--without ..] [--sandbox]` prints the canonical composed brief; JSON includes findings and fingerprint. Errors retain the brief on stdout; agent mode prints only the brief, without word counts; size counts go to human stderr only. A relative path resolves against the directory you ran it from |
 | `bun run dev runs [--json]` | Summarize the nearest project’s own verify history, trusted state timings and NOTES Asked count; exit 2 outside a project |
 | `bun run dev verify [--only ..] [--skip-tag ..] [--all] [--accept-changes]` | Run the nearest project's manifest steps from the directory you ran it in. Exit 0 green or partial, 5 on a failed step (`VerifyFailed`) or changed steps (`VerifyChanged`, nothing run), both with the result kept on stdout, 2 outside a project, 3 bad manifest or a newer state record, 6 `--accept-changes` under an agent or without a TTY on stdin, 130 interrupted (teardown still ran) |
-| `bun run build` | Build every package (the CLI bundles `packages/cli/dist/cli.mjs` with the `dist/stacks.mjs` Node entry) |
+| `bun run build` | Build every package (the CLI bundles `packages/cli/dist/cli.mjs` with the `dist/stacks` Node entry) |
 | `bun run typecheck` | Root harness tsc, then each package's |
 | `bun run lint` | Biome over the whole repo, with each package's nested plugins |
 | `bun run format` | Safe fixes and formatting |
@@ -65,8 +65,8 @@ In `packages/cli/` (run there):
 | `bun run pack` | Build, pack with Bun, preserve registry dotfiles, and write the tarball's sha256 under `dist/pack/` |
 | `bun run e2e` | Pack, install offline, then bun test ./e2e against the installed Node package |
 | `bun run human -- <args>` | The Node bundle in human mode (pseudo-terminal, agent markers removed); `new` and `add` need `--no-launch` |
-| `node dist/stacks.mjs --version` | Bundled version |
-| `node dist/stacks.mjs doctor --json` | Packaged local diagnostics |
+| `node dist/stacks --version` | Bundled version |
+| `node dist/stacks doctor --json` | Packaged local diagnostics |
 | `bun run check` | This package's gate only |
 
 ## Test runs

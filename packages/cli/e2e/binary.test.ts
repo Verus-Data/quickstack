@@ -26,7 +26,7 @@ import { binary, packageRoot, scratchPath } from "./package";
 function install(registry?: string): { bin: string; prefix: string } {
   const prefix = mkdtempSync(join(tmpdir(), "cli-binary-prefix-"));
   mkdirSync(join(prefix, "dist"));
-  const bin = join(prefix, "dist", "stacks.mjs");
+  const bin = join(prefix, "dist", "stacks");
   copyFileSync(binary, bin);
   copyFileSync(join(packageRoot, "dist/cli.mjs"), join(prefix, "dist/cli.mjs"));
   chmodSync(bin, 0o755);

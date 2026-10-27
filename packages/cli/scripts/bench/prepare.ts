@@ -215,8 +215,8 @@ export const prepare = (options: Options, adapters: readonly AgentAdapter[]) =>
       if (!options.cli) yield* exec(["bun", "run", "build"], repo);
       const entry = options.cli
         ? path.resolve(host.cwd, options.cli)
-        : path.join(packageRoot, "dist/stacks.mjs");
-      const installed = path.join(prefix, "dist/stacks.mjs");
+        : path.join(packageRoot, "dist/stacks");
+      const installed = path.join(prefix, "dist/stacks");
       yield* fs.makeDirectory(path.dirname(installed), { recursive: true });
       yield* fs.copyFile(entry, installed);
       yield* fs.copyFile(

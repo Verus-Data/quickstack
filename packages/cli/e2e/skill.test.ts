@@ -52,7 +52,7 @@ test("the installed package finds skill/ beside dist/, including after relocatio
     const prefix = join(root, "relocated package");
     mkdirSync(join(prefix, "dist"), { recursive: true });
     mkdirSync(join(prefix, "skill"));
-    const relocated = join(prefix, "dist", "stacks.mjs");
+    const relocated = join(prefix, "dist", "stacks");
     copyFileSync(binary, relocated);
     copyFileSync(join(packageRoot, "dist/cli.mjs"), join(prefix, "dist/cli.mjs"));
     chmodSync(relocated, 0o755);

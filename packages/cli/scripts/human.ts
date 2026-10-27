@@ -44,9 +44,9 @@ export function humanPlan(options: {
 }
 
 if (import.meta.main) {
-  const binary = join(import.meta.dirname, "..", "dist", "stacks.mjs");
+  const binary = join(import.meta.dirname, "..", "dist", "stacks");
   if (!existsSync(binary)) {
-    console.error("human: dist/stacks.mjs is missing; run bun run build first.");
+    console.error("human: dist/stacks is missing; run bun run build first.");
     process.exit(2);
   }
   const node = Bun.which("node");

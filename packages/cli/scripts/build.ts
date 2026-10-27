@@ -56,8 +56,8 @@ appendFileSync(
   "dist/cli.mjs",
   `\n/*\nThird-party notices\n\n${dependencyNotices(result.metafile).replaceAll("*/", "* /")}\n*/\n`,
 );
-copyFileSync("scripts/node-entry.mjs", "dist/stacks.mjs");
-chmodSync("dist/stacks.mjs", 0o755);
-console.log(`Built dist/stacks.mjs in ${((performance.now() - startedAt) / 1_000).toFixed(2)}s.`);
-console.log("Run `./dist/stacks.mjs` from packages/cli to demo the build.");
-console.log("From the repo root, run `./packages/cli/dist/stacks.mjs`.");
+copyFileSync("scripts/node-entry.mjs", "dist/stacks");
+chmodSync("dist/stacks", 0o755);
+console.log(`Built dist/stacks in ${((performance.now() - startedAt) / 1_000).toFixed(2)}s.`);
+console.log("Run `./dist/stacks` from packages/cli to demo the build.");
+console.log("From the repo root, run `./packages/cli/dist/stacks`.");

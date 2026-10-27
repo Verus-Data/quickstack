@@ -32,8 +32,8 @@ Use Bun 1.4.2 and Node 24 LTS. Install lefthook (`brew install lefthook` on macO
 ```sh
 bun install
 bun run dev doctor            # the CLI from source
-bun run build                 # compile dist/stacks.mjs
-node dist/stacks.mjs --version
+bun run build                 # compile dist/stacks
+node dist/stacks --version
 bun run check                 # this package's gate
 ```
 

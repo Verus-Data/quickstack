@@ -58,7 +58,7 @@ test("the tarball contains exactly the allowlisted files, preserving every asset
     "package.json",
     "README.md",
     "LICENSE",
-    "dist/stacks.mjs",
+    "dist/stacks",
     "dist/cli.mjs",
     "docs/authoring.md",
     ...assets,
@@ -70,7 +70,7 @@ test("the tarball contains exactly the allowlisted files, preserving every asset
     .map((file) => file.replace(/^package\//, ""))
     .sort();
   expect(actual).toEqual(expected.map(packedPath).sort());
-  for (const file of [...assets, "LICENSE", "docs/authoring.md", "dist/stacks.mjs", "dist/cli.mjs"])
+  for (const file of [...assets, "LICENSE", "docs/authoring.md", "dist/stacks", "dist/cli.mjs"])
     expect(digest(join(packageRoot, packedPath(file)))).toBe(digest(join(source, file)));
   expect(digest(join(source, "LICENSE"))).toBe(digest(join(source, "../../LICENSE")));
   const packed = readFileSync(join(packageRoot, "package.json"), "utf8");

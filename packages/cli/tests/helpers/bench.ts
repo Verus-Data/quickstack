@@ -91,7 +91,7 @@ export function benchCli(space: ReturnType<typeof workspace>) {
       env: fixture.env,
       timeout: 60_000,
     });
-    binary = join(fixture.packageRoot, "dist/stacks.mjs");
+    binary = join(fixture.packageRoot, "dist/stacks");
     return binary;
   };
 }

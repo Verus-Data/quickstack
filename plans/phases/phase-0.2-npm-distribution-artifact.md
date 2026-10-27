@@ -46,7 +46,7 @@ Two files in `packages/cli/dist/`:
 | File | What it is |
 |---|---|
 | `cli.mjs` | `bun build src/bin.ts` with `target: "node"`, `format: "esm"`, minified, every dependency bundled, no sourcemap. Bundling Effect means `npx` downloads one small tarball and resolves no dependency tree, which matters most on a first run inside an agent's sandbox |
-| `stacks.mjs` | The package's `bin`. A few lines copied verbatim by the build from `scripts/node-entry.mjs`, with a `#!/usr/bin/env node` first line |
+| `stacks` | The package's `bin`. A few lines copied verbatim by the build from `scripts/node-entry.mjs`, with a `#!/usr/bin/env node` first line |
 
 The entry exists because in a single ESM bundle, Effect's module bodies evaluate before
 any code in `bin.ts` runs, so a floor check inside `bin.ts` can be pre-empted by a syntax
@@ -78,8 +78,8 @@ The package:
 {
   "name": "quickstack",
   "type": "module",
-  "bin": { "stacks": "dist/stacks.mjs" },
-  "files": ["dist/stacks.mjs", "dist/cli.mjs", "registry"],
+  "bin": { "stacks": "dist/stacks" },
+  "files": ["dist/stacks", "dist/cli.mjs", "registry"],
   "engines": { "node": ">=22" },
   "os": ["darwin", "linux"]
 }
@@ -228,12 +228,12 @@ Not `.github/workflows/`.
   and `bunfig.toml` with a throwing preload in the cwd, output equals a clean cwd's, under
   the installed bin and under `bunx quickstack` run from a scratch project that has the
   tarball installed, with Node on the scratch PATH.
-- e2e: `bun <prefix>/lib/node_modules/quickstack/dist/stacks.mjs --version` exits 1
+- e2e: `bun <prefix>/lib/node_modules/quickstack/dist/stacks --version` exits 1
   with the Bun line and empty stdout.
 - e2e: the floor check, by running the installed entry under the found Node with a
   `--import` preload that redefines `process.versions` with `node: "20.0.0"`: exit 1, the
   fixed line, empty stdout.
-- e2e: the tarball contains exactly `package.json`, `README.md`, `dist/stacks.mjs`,
+- e2e: the tarball contains exactly `package.json`, `README.md`, `dist/stacks`,
   `dist/cli.mjs` and `registry/**`, and its `package.json` has no `catalog:` or
   `workspace:` spec.
 - e2e: the `.sha256` file matches the tarball.
