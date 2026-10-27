@@ -85,7 +85,9 @@ review="$(mktemp -d)"
   awk 'NR==1&&/^---$/{f=1;next} f&&/^---$/{f=0;next} !f' "${ce}agents/code-reviewer.md"
   echo
   echo "Load these skills first: <paths from its skills: line>."
-  echo "Review the uncommitted work in $PWD against {BASE BRANCH}: git diff {BASE BRANCH}, plus"
+  # The merge base, not the branch tip: work merged into the base since this branch started
+  # would otherwise read as reverted by this diff.
+  echo "Review the uncommitted work in $PWD: git diff $(git merge-base HEAD {BASE BRANCH}), plus"
   echo "every untracked file. Repo standards: AGENTS.md and .claude/rules/. Your sandbox is"
   echo "read-only, so don't run Vitest; the author already ran the checks. The task's contract:"
   cat "{THIS CONTRACT'S PATH}"
