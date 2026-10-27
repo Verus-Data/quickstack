@@ -95,7 +95,10 @@ codex exec --ephemeral --sandbox read-only -m gpt-6.1-sol -c 'model_reasoning_ef
 ```
 
 Fix every finding in `review.md` (its list has no optional tier), or say in the hand-off why a
-finding is wrong. A finding about a locked file is a note for the orchestrator, not an edit. Then rerun the acceptance checks. One review pass only: don't review again
+finding is wrong. A finding about a locked file is a note for the orchestrator, not an edit. A
+finding that is a bug gets a regression test in the repo before its fix (a new test file when the
+natural one is locked), revert-verified; a probe in a temp script doesn't count. Then rerun the
+acceptance checks. One review pass only: don't review again
 after the fixes.
 
 ## Hand-off
