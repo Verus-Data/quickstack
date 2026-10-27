@@ -18,11 +18,18 @@ implements, if any.}
 
 ## Skills to apply
 
-Read each and apply it to this task; your hand-off says where it changed what you did.
+The `ce` skills and agents come from the Claude Code `claude-essentials` marketplace. Find the
+newest installed copy with:
 
-- `{absolute path to ce:writing-tests SKILL.md}`: for every test you write. Where it and
+```bash
+ce=$(ls -d "$HOME"/.claude/plugins/cache/*/ce/*/ | sort -V | tail -1)
+```
+
+Read each skill and apply it to this task; your hand-off says where it changed what you did.
+
+- `${ce}skills/writing-tests/SKILL.md`: for every test you write. Where it and
   `.claude/rules/cli/testing.md` differ, the rule wins.
-- `{absolute path to ce:architecting-systems SKILL.md}`, with its `references/structure.md`,
+- `${ce}skills/architecting-systems/SKILL.md`, with its `references/structure.md`,
   `coupling.md` and `boundaries.md`: before adding or changing a module, service, schema or
   contract. `.claude/rules/architecture.md` adds this repo's constraints on top.
 
@@ -57,18 +64,50 @@ bun run check   # the full gate, before finishing a feature
 - disable a lint rule, weaken a test or add a cast to get green
 - add features, options or abstractions the goal doesn't need
 
+## Review before hand-off
+
+Once the acceptance checks pass, get one independent code review and fix what it finds, so the
+work comes back clean. The reviewer is the `ce:code-reviewer` agent,
+`${ce}agents/code-reviewer.md`: its body is the reviewer's instructions and its `skills:`
+frontmatter names the skills it loads (`${ce}skills/<name>/SKILL.md`).
+
+Run it as a fresh Codex process, so it doesn't share your context, read-only, with its report
+going to a file outside the worktree:
+
+```bash
+review="$(mktemp -d)"
+{
+  # the agent's body, without its frontmatter
+  awk 'NR==1&&/^---$/{f=1;next} f&&/^---$/{f=0;next} !f' "${ce}agents/code-reviewer.md"
+  echo
+  echo "Load these skills first: <paths from its skills: line>."
+  echo "Review the uncommitted work in $PWD against {BASE BRANCH}: git diff {BASE BRANCH}, plus"
+  echo "every untracked file. Repo standards: AGENTS.md and .claude/rules/. Your sandbox is"
+  echo "read-only, so don't run Vitest; the author already ran the checks. The task's contract:"
+  cat "{THIS CONTRACT'S PATH}"
+} > "$review/prompt.md"
+codex exec --ephemeral --sandbox read-only -m gpt-6.1-sol -c 'model_reasoning_effort="high"' \
+  -o "$review/review.md" - < "$review/prompt.md"
+```
+
+Fix every finding in `review.md` (its list has no optional tier), or say in the hand-off why a
+finding is wrong. Then rerun the acceptance checks. One review pass only: don't review again
+after the fixes.
+
 ## Hand-off
 
-You're done when the acceptance checks pass or you're blocked. Leave everything uncommitted and
-end with this report as your final message; the orchestrator reviews from it, so be specific
-and name files and symbols.
+You're done when the review's findings are resolved and the acceptance checks pass, or when
+you're blocked. Leave everything uncommitted and end with this report as your final message;
+the orchestrator works from it, so be specific and name files and symbols.
 
 1. Summary: what you built, in two or three sentences.
 2. Files: each file created or changed, with one line on why.
 3. Decisions: choices the contract left open and why you made them; any deviation from the
    plan or contract and the reason; where the skills changed your approach.
 4. Checks: each command you ran and its result (test counts, not just "passed").
-5. Look closer at: the places most likely to be wrong, such as assumptions you couldn't verify,
+5. Review: the review file's path, each finding in a line, and how you resolved it (fixed,
+   or why not).
+6. Look closer at: the places most likely to be wrong, such as assumptions you couldn't verify,
    edge cases you didn't cover, code you're least sure of, tests that are weaker than you'd
    like, and anything in the plan that looked wrong.
-6. Open: what's left undone or blocked, and the questions you'd ask.
+7. Open: what's left undone or blocked, and the questions you'd ask.

@@ -51,15 +51,15 @@ faster than you could write the contract, or when you can't yet say what done lo
    2-4 delegates at once, one worktree each. The digest (result, commands run, files written,
    last message) is the command's output; full logs stay under `$TMPDIR/quickstacks-delegate/`.
 
-4. Review. `success` only means the turn finished. Read the whole hand-off report
-   (`last-message.md` in the run's log directory), then `git -C <worktree> diff` and the new
-   files in full. Check every changed path is in scope, each claim against the code and a rerun
-   of the checks it names, and each "look closer at" item yourself. Then dispatch
-   `ce:code-reviewer` once on the worktree's diff, with the contract, the hand-off report and the
-   skills that apply in its prompt, and send its findings back to Codex as a follow-up contract
-   in the same worktree. That is the one review pass in `rules/agent-ops.md`; don't re-review
-   after the fixes. A diff that took the wrong shape also goes back as a narrower follow-up
-   contract rather than a rewrite.
+4. Review. `success` only means the turn finished. Codex has already run one
+   `ce:code-reviewer` pass on its own diff in a fresh Codex process and resolved the findings
+   (the contract's "Review before hand-off"); that is the one review pass in
+   `rules/agent-ops.md`, so don't dispatch another. Read the hand-off report
+   (`last-message.md` in the run's log directory) first, then the diff and new files, spending
+   your attention on its "look closer at" items, its decisions and any finding it disputed.
+   Check every changed path is in scope. A report without a review section, or a diff that
+   took the wrong shape, goes back as a follow-up contract in the same worktree rather than a
+   rewrite.
 
 5. Refactor pass. Bring the code to the standard you would have written it to, with the Edit
    tool so the lint, typecheck and boundary hooks see every change (none of them ran for

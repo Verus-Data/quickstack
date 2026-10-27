@@ -11,13 +11,6 @@ Load `ce:executing-plans`, then the `delegate` skill, then `ce:architecting-syst
 
 Read the plan, `plans/HANDOFF.md` and the shared contracts the plan cites in the roadmap. Check the plan's claims against the code; ask about real ambiguity before starting. Enter a worktree for the integration branch (`EnterWorktree`), and track each unit as a task.
 
-Look up the installed `ce` skills once, since a tracked file can't name their location:
-
-```bash
-ce=$(ls -d "$HOME"/.claude/plugins/cache/*/ce/*/ | sort -V | tail -1)
-echo "${ce}skills/writing-tests/SKILL.md" "${ce}skills/architecting-systems/SKILL.md"
-```
-
 ## Units and contracts
 
 Split the plan into units per `ce:executing-plans` (one subsystem each, 3-4 tasks at most). For a sub-phase with numbered acceptance tests, rules/cli/testing.md "Process and gate" applies: the first unit is a test-author delegate that writes the plan's acceptance tests and realistic edge cases as tagged, failing tests, and the implementer delegates that follow make them pass without editing those assertions.
@@ -25,19 +18,19 @@ Split the plan into units per `ce:executing-plans` (one subsystem each, 3-4 task
 Each unit gets its own worktree off the integration branch (`git worktree add .claude/worktrees/<unit> -b delegate/<unit>`, then `bun install --frozen-lockfile` there) and a contract filled from `.claude/skills/delegate/contract.md` in the scratchpad. Every contract:
 
 - names the plan file and the sections the unit implements, and the directory or package in scope; Codex chooses internal structure;
-- gives the absolute path of `ce:writing-tests`' SKILL.md (any unit that writes tests) and `ce:architecting-systems`' SKILL.md with its Structure, Coupling and Boundaries references (any unit that adds or changes a module, service, schema or contract), and tells Codex to read and apply them;
 - names the repo rules that apply (rules/cli/*.md, rules/typescript.md, rules/architecture.md, `.claude/skills/effect/SKILL.md`), since Codex reads only AGENTS.md on its own;
-- ends with the template's hand-off report, unchanged.
+- keeps the template's "Skills to apply" (Codex finds `ce:writing-tests` and `ce:architecting-systems` in the plugin cache itself), "Review before hand-off" with the integration branch as the base and the contract's own path filled in, and "Hand-off", unchanged.
+
+Codex finishes a unit only after it has run one `ce:code-reviewer` pass on its own diff, in a fresh Codex process, and resolved every finding. You don't dispatch a reviewer for delegated work; that pass is the one rules/agent-ops.md allows.
 
 Run independent units as 2-4 delegates at once, each `scripts/delegate.sh <contract> --write --worktree <path>` with `run_in_background: true`. A unit that depends on another starts from a worktree branched after the first one is integrated.
 
 ## When a delegate hands back
 
-1. Read its whole hand-off report (`last-message.md` in the run's log directory; the digest prints the path), then the diff and the new files in full. Check each claim and every "look closer" item against the code; rerun the checks it reports.
-2. Dispatch `ce:code-reviewer` once on the unit's diff (`git -C <worktree> diff <integration branch>` plus untracked files), loading `ce:writing-tests`, `ce:architecting-systems` and, where errors changed, `ce:handling-errors` into its prompt, along with the plan section and the hand-off report.
-3. Send every finding back to Codex as a follow-up contract in the same worktree, quoting the findings and the earlier report. Fix a finding yourself only when it is smaller than its contract. The unit isn't finished until its findings are addressed. This is the one review pass rules/agent-ops.md allows: don't re-review after the fixes.
-4. Refactor pass, per the `delegate` skill: bring the code to this repo's standard with Edit, keep the diff surgical, and run `bun run check` in the worktree.
-5. Commit on the unit's branch and merge it into the integration branch. Remove the unit's worktree and branch.
+1. Read its hand-off report (`last-message.md` in the run's log directory; the digest prints the path) first and let it direct your attention. If it has no review section, or a finding is left unresolved without a good reason, send it back with a follow-up contract before reading further.
+2. Read the diff and new files, spending your attention on the "look closer at" items, the decisions it made and the review findings it disputed. Check those against the code; don't re-derive what the report and the review already establish.
+3. Refactor pass, per the `delegate` skill: bring the code to this repo's standard with Edit, keep the diff surgical, and run `bun run check` in the worktree. A problem bigger than a refactor goes back to Codex as a follow-up contract in the same worktree, quoting the report.
+4. Commit on the unit's branch and merge it into the integration branch. Remove the unit's worktree and branch.
 
 Same failure twice from a delegate: stop and ask, as `ce:executing-plans` says. A delegate that went the wrong way gets a narrower contract, not a rewrite by you.
 
@@ -45,4 +38,4 @@ Same failure twice from a delegate: stop and ask, as `ce:executing-plans` says. 
 
 On the integration branch, run `bun run check` and read its counts as rules/cli/verification.md asks, revert-verify each new regression test, and run the changed commands in all three audiences as rules/cli/cli.md "Verifying UX" describes, judging the output as the agent that will use it. Record what the plan got wrong in its "What this plan may get wrong" section, update its `Status:` line and `plans/HANDOFF.md`, then commit, merge to main and push. Remove the integration worktree.
 
-Report to the user: what landed, per unit what Codex did and what you changed in review and refactor, the review findings and how each was resolved, and anything left open.
+Report to the user: what landed, per unit what Codex did, what its review found and how it resolved it, what you changed in refactor, and anything left open.
