@@ -1,4 +1,5 @@
 import { Schema } from "effect";
+import { BRIEF_PATH } from "../project-layout";
 import { AgentId, Kind, Origin } from "./entry";
 
 const EntryRef = Schema.Struct({ kind: Kind, id: Schema.String });
@@ -21,7 +22,7 @@ export const NewResult = Schema.Struct({
    * litter is never listed.
    */
   written: Schema.Array(Schema.String),
-  brief: Schema.Literal(".quickstacks/BRIEF.md"),
+  brief: Schema.Literal(BRIEF_PATH),
   /** `countWords` of the whole brief. */
   briefWords: Schema.Number,
   /** `countWords` of the brief's fixed text. */

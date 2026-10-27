@@ -1,13 +1,13 @@
 ---
 name: quickstacks
-description: Start a new project from a stack and drive it to a verified working state. Use when the user wants a new project set up properly, including tests, lint, CI and agent configuration, or mentions quickstacks or a stack for a new repo.
+description: Start a new project from a stack or add fragments to an existing repo, then drive it to a verified working state. Use for project setup, tests, lint, CI and agent configuration, or when the user mentions quickstacks.
 ---
 
 # quickstacks
 
 ## When to use it
 
-Use quickstacks for a new project from nothing, or when the user asks for a project set up properly. Existing repos aren't supported yet.
+Use quickstacks for a new project from nothing, or when the user asks for a project set up properly. For an existing repo, use `<cli> add <fragment...> --json` to apply fragments without restructuring it. Use `list --json` to choose fragments; inside a quickstacks project, `project.addable` lists those that fit.
 
 A stack is a recipe: dependencies by role, starter files, agent guidance and a definition of done. The CLI writes the brief; you build the project with current versions.
 
@@ -22,6 +22,8 @@ Run `<cli> list --json`. Pick the stack whose description and tags match the req
 ## Start it
 
 Run `<cli> new <stack> <dir> --json`; use `<cli> new <stack> <dir> --sandbox --json` when the user wants the fastest path to something running locally.
+
+After `add`, read the same brief, merge the contributions parked in `.quickstacks/incoming/` while keeping the project's choices, then delete incoming files once merged. Verify checks the whole manifest.
 
 Read `.quickstacks/BRIEF.md`. The brief is the whole task: follow it in order, and ask the user only what it tells you to ask. Use current docs and official generators rather than remembered flags or config formats.
 

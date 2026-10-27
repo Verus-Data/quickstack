@@ -1,6 +1,7 @@
 import { Effect, Schema } from "effect";
 import { TEMPLATE_VARIABLES } from "./core/scaffold/template";
 import { printable } from "./core/text";
+import { BRIEF_PATH, MANIFEST_PATH } from "./project-layout";
 import { Kind, Origin } from "./schemas/entry";
 import { FailureKind, VerifyChange } from "./schemas/verify";
 /**
@@ -23,11 +24,25 @@ export class Usage extends Schema.TaggedError<Usage>()("Usage", {
  * flag (`--with`, `--without`, `--sandbox`, in `id`) that `validate` takes only with `--brief`;
  * `only`, a `verify --only` name that is no check or serve step, with those steps' names in
  * `known` (1.3a); `name` or `author`, a naming flag with an unsupported control character.
+ * `fragment` is an add request for a stack or an applied fragment (listed in `alreadyApplied`);
+ * `agents` and `sandbox` are add flags that disagree with the manifest.
  */
 export const BadInputDetails = Schema.Struct({
   id: Schema.String,
-  flag: Schema.Literals(["scope", "with_without", "dir", "brief", "only", "name", "author"]),
+  flag: Schema.Literals([
+    "scope",
+    "with_without",
+    "dir",
+    "brief",
+    "only",
+    "name",
+    "author",
+    "fragment",
+    "agents",
+    "sandbox",
+  ]),
   known: Schema.optionalKey(Schema.Array(Schema.String)),
+  alreadyApplied: Schema.optionalKey(Schema.Array(Schema.String)),
 });
 export class BadInput extends Schema.TaggedError<BadInput>()("BadInput", {
   details: Schema.optionalKey(BadInputDetails),
@@ -388,7 +403,7 @@ export function detailLines(error: AppError, invocation: string): string[] {
             : details.scaffold === "unfinished"
               ? [
                   "Scaffold: unfinished. An earlier `new` wrote this.",
-                  "Next: continue with .quickstacks/BRIEF.md, or remove the directory to start again.",
+                  `Next: continue with ${BRIEF_PATH}, or remove the directory to start again.`,
                 ]
               : details.scaffold === "green"
                 ? [
@@ -412,7 +427,7 @@ export function detailLines(error: AppError, invocation: string): string[] {
         ];
       if (details.kind === "project")
         return [
-          `Looked for: .quickstacks/manifest.json in ${printable(details.looked ?? ".")} and every directory above it`,
+          `Looked for: ${MANIFEST_PATH} in ${printable(details.looked ?? ".")} and every directory above it`,
           `Next: run ${invocation} verify inside a project ${invocation} new created, or create one with ${invocation} new <stack> <dir>.`,
         ];
       return [
@@ -538,6 +553,19 @@ const shellArg = (text: string) =>
 function badInputLines(details: typeof BadInputDetails.Type): string[] {
   const id = printable(details.id);
   switch (details.flag) {
+    case "fragment":
+      return details.alreadyApplied?.length
+        ? [
+            `Already applied: ${details.alreadyApplied.map(printable).join(", ")}`,
+            "Next: choose unapplied fragments with quickstacks list.",
+          ]
+        : [`Id: ${id}`, "Next: add takes fragments; use quickstacks new for a stack."];
+    case "agents":
+    case "sandbox":
+      return [
+        `Flag: --${details.flag}`,
+        "Next: use the preset and agents recorded in the manifest.",
+      ];
     case "scope":
       return [
         `Flag: --scope ${id}`,

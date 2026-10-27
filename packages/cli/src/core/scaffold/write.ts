@@ -29,6 +29,8 @@ export type ProjectWriter = {
   ) => Effect.Effect<void, PermissionDenied | TargetNotEmpty>;
   /** Replaces a file this writer created, with the same checks. */
   readonly replace: (rel: string, data: Uint8Array) => Effect.Effect<void, PermissionDenied>;
+  /** Rewrites an existing regular file, retaining its original bytes for rollback. */
+  readonly rewrite: (rel: string, data: Uint8Array) => Effect.Effect<void, PermissionDenied>;
   /** Creates a directory (and its parents) under the root. */
   readonly directory: (rel: string) => Effect.Effect<void, PermissionDenied | TargetNotEmpty>;
   /**
@@ -83,6 +85,7 @@ export const openProject = (
      * the parents created for it, each in creation order.
      */
     const files: string[] = [];
+    const backups = new Map<string, { bytes: Uint8Array; mode: number }>();
     const adopted: string[] = [];
     const dirs: string[] = [];
     const chain: string[] = [];
@@ -106,7 +109,30 @@ export const openProject = (
           yield* Effect.ignore(fs.remove(dir, { recursive: true }));
       });
 
+    // Replacing the directory entry keeps a hard-linked parked file from changing live bytes.
+    const atomicReplace = (file: string, bytes: Uint8Array, mode: number) =>
+      Effect.scoped(
+        Effect.gen(function* () {
+          const temporary = yield* fs.makeTempDirectoryScoped({
+            directory: path.dirname(file),
+            prefix: ".quickstacks-",
+          });
+          if (!(yield* isInside(temporary))) return yield* escapes(file);
+          const staged = path.join(temporary, "replacement");
+          yield* fs.writeFile(staged, bytes, { flag: "wx" });
+          yield* fs.chmod(staged, mode & 0o777);
+          if (!(yield* inside(file))) return yield* escapes(file);
+          yield* fs.rename(staged, file);
+          if (!(yield* inside(file))) return yield* escapes(file);
+        }),
+      ).pipe(Effect.catchTag("PlatformError", () => Effect.fail(unwritable(file))));
+
     const rollback = Effect.gen(function* () {
+      for (const [file, backup] of backups) {
+        const info = yield* Effect.option(fs.lstat(file));
+        if ((yield* inside(file)) && info._tag === "Some" && info.value.type === "File")
+          yield* Effect.ignore(atomicReplace(file, backup.bytes, backup.mode));
+      }
       for (const file of [...files].reverse())
         if (yield* inside(file)) yield* Effect.ignore(fs.remove(file));
       for (const dir of [...adopted].reverse()) yield* removeAdopted(dir);
@@ -180,37 +206,42 @@ export const openProject = (
         if (!within(root, real, path.sep)) return yield* escaped;
       });
 
+    // Finish each filesystem mutation and its tracking together. An interrupted async write
+    // can otherwise finish after rollback has already run and leave an untracked file behind.
     const create = (rel: string, data: Uint8Array, executable: boolean) =>
-      Effect.gen(function* () {
-        const parts = segments(rel);
-        if (!parts) return yield* escapes(rel);
-        yield* ensure(parts.slice(0, -1), rel);
-        const file = path.join(root, ...parts);
-        // `wx`: never over an existing file, and never through a symlink in the last segment.
-        const written = yield* Effect.exit(fs.writeFile(file, data, { flag: "wx" }));
-        if (Exit.isFailure(written)) {
-          const exists = written.cause.reasons.some(
-            (reason) => reason._tag === "Fail" && reason.error.reason._tag === "AlreadyExists",
-          );
-          if (exists) return yield* new TargetNotEmpty({ details: { path: root, entries: [rel] } });
-          // Created exclusively, so whatever is there now (a partial write) is ours.
+      Effect.uninterruptible(
+        Effect.gen(function* () {
+          const parts = segments(rel);
+          if (!parts) return yield* escapes(rel);
+          yield* ensure(parts.slice(0, -1), rel);
+          const file = path.join(root, ...parts);
+          // `wx`: never over an existing file, and never through a symlink in the last segment.
+          const written = yield* Effect.exit(fs.writeFile(file, data, { flag: "wx" }));
+          if (Exit.isFailure(written)) {
+            const exists = written.cause.reasons.some(
+              (reason) => reason._tag === "Fail" && reason.error.reason._tag === "AlreadyExists",
+            );
+            if (exists)
+              return yield* new TargetNotEmpty({ details: { path: root, entries: [rel] } });
+            // Created exclusively, so whatever is there now (a partial write) is ours.
+            files.push(file);
+            return yield* unwritable(file);
+          }
+          // The parent was checked before the write; if it has moved out of the project since, the
+          // file landed outside. It is ours (created exclusively), so take it back and refuse.
+          if (!(yield* inside(file))) {
+            yield* Effect.ignore(fs.remove(file));
+            return yield* escapes(path.join(root, rel));
+          }
           files.push(file);
-          return yield* unwritable(file);
-        }
-        // The parent was checked before the write; if it has moved out of the project since, the
-        // file landed outside. It is ours (created exclusively), so take it back and refuse.
-        if (!(yield* inside(file))) {
-          yield* Effect.ignore(fs.remove(file));
-          return yield* escapes(path.join(root, rel));
-        }
-        files.push(file);
-        if (executable) {
-          const info = yield* fs.stat(file).pipe(Effect.mapError(() => unwritable(file)));
-          yield* fs
-            .chmod(file, (info.mode & 0o777) | ((info.mode & 0o444) >> 2))
-            .pipe(Effect.mapError(() => unwritable(file)));
-        }
-      });
+          if (executable) {
+            const info = yield* fs.stat(file).pipe(Effect.mapError(() => unwritable(file)));
+            yield* fs
+              .chmod(file, (info.mode & 0o777) | ((info.mode & 0o444) >> 2))
+              .pipe(Effect.mapError(() => unwritable(file)));
+          }
+        }),
+      );
 
     return {
       root,
@@ -226,12 +257,32 @@ export const openProject = (
             Effect.catchTag("TargetNotEmpty", () => Effect.fail(unwritable(file))),
           );
         }),
+      rewrite: (rel, data) =>
+        Effect.uninterruptible(
+          Effect.gen(function* () {
+            const parts = segments(rel);
+            if (!parts) return yield* escapes(rel);
+            yield* ensure(parts.slice(0, -1), rel).pipe(
+              Effect.catchTag("TargetNotEmpty", () => Effect.fail(unwritable(rel))),
+            );
+            const file = path.join(root, ...parts);
+            const info = yield* fs.lstat(file).pipe(Effect.mapError(() => unwritable(file)));
+            if (info.type !== "File") return yield* escapes(file);
+            if (!backups.has(file) && !files.includes(file)) {
+              const bytes = yield* fs.readFile(file).pipe(Effect.mapError(() => unwritable(file)));
+              backups.set(file, { bytes, mode: info.mode });
+            }
+            yield* atomicReplace(file, data, info.mode);
+          }),
+        ),
       directory: (rel) =>
-        Effect.gen(function* () {
-          const parts = segments(rel);
-          if (!parts) return yield* escapes(rel);
-          yield* ensure(parts, rel);
-        }),
+        Effect.uninterruptible(
+          Effect.gen(function* () {
+            const parts = segments(rel);
+            if (!parts) return yield* escapes(rel);
+            yield* ensure(parts, rel);
+          }),
+        ),
       adopt: (rel) =>
         Effect.sync(() => {
           adopted.push(path.join(root, rel));

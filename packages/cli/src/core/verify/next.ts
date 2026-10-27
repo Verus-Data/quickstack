@@ -1,3 +1,4 @@
+import { BRIEF_PATH } from "../../project-layout";
 import type { FailureKind, Outcome, VerifyResult } from "../../schemas/verify";
 
 /**
@@ -15,7 +16,7 @@ export function nextLine(
     case "failed": {
       const application =
         stages?.base === "green" && stages.app === "failed"
-          ? 'the application section ("Then: the application") of .quickstacks/BRIEF.md'
+          ? `the application section ("Then: the application") of ${BRIEF_PATH}`
           : undefined;
       if (kinds.length && kinds.every((kind) => kind === "env"))
         return `Next: the machine is missing something these steps need (see each reason); install or start it, ${application ? `follow ${application}, ` : ""}then run ${invocation} verify again.`;

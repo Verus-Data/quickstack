@@ -8,6 +8,7 @@ import { renderVerify } from "../core/verify/report";
 import { runVerify } from "../core/verify/run";
 import { acceptChanges, changedResult, checkTamper, createdAtOf } from "../core/verify/tamper";
 import { PermissionDenied, VerifyChanged, VerifyFailed } from "../errors";
+import { MANIFEST_PATH, RUNS_PATH } from "../project-layout";
 import { VerifyResult } from "../schemas/verify";
 import { Host } from "../services/host";
 import { Output } from "../services/output";
@@ -125,6 +126,6 @@ export const verifyCommand = Command.make(
     }),
 ).pipe(
   Command.withDescription(
-    "Run this project's verify steps from .quickstacks/manifest.json (found from here or any directory above): setup, check, serve (each server probed, then stopped), then teardown, which always runs. Prints each command before running it. First checks the steps against the copy recorded when the project was made; changed steps run nothing and exit 5 (VerifyChanged) until a person runs --accept-changes. Every run appends a record to .quickstacks/state/runs.jsonl. Exits 0 when green or partial, 5 with the report on stdout when a step fails or the steps changed.",
+    `Run this project's verify steps from ${MANIFEST_PATH} (found from here or any directory above): setup, check, serve (each server probed, then stopped), then teardown, which always runs. Prints each command before running it. First checks the steps against the copy recorded when the project was made; changed steps run nothing and exit 5 (VerifyChanged) until a person runs --accept-changes. Every run appends a record to ${RUNS_PATH}. Exits 0 when green or partial, 5 with the report on stdout when a step fails or the steps changed.`,
   ),
 );

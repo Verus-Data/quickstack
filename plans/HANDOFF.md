@@ -20,6 +20,19 @@ A maintainer still has to confirm each run, and the other four bundled stacks ha
 - Assumption 1, first result: an agent followed composed briefs of 3,200 to 4,800 words to a green `verify` in 3 to 5 minutes with nothing asked, once the briefs' own contradictions were fixed.
 - D5: the 6,000-word budget held with room to spare for these stacks; no run tested a brief near the limit.
 
+## 3.0 shared pipeline refactor (2026-10-27)
+
+The refactor against `fa2b3e3` is left uncommitted for orchestrator review. `new` and `add`
+share command handoff, project layout, template values and tool lookups; add planning,
+project reading, manifest merging, reporting and writes each have their own module.
+`replaceProjectState` owns scoped state-record restoration. The independent review found
+no additional issues, and lint, typecheck, 14 new tests and 18 binary tests pass.
+
+The gate has 130 passing harness tests and 1,071 passing CLI tests, with one failure:
+`tests/skill.test.ts` requires that the skill omit add and say existing repos are unsupported.
+That contradicts the requested skill update. The skill now documents add within 462 words;
+permission to update those obsolete assertions is pending. Existing tests remain unchanged.
+
 ## Phases 2 and 3 (2026-10-27, in progress)
 
 Phases 2 and 3 are being executed through Codex delegates (`/execute:codex`), one test-author

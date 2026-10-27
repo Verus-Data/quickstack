@@ -28,7 +28,7 @@ type SourceFile = Omit<RenderedFile, "bytes"> &
 
 /** Read once so project-valued and neutral rendering use the same source snapshot. */
 const readFiles = (
-  composition: Composition,
+  composition: Composition<Entry | null>,
 ): Effect.Effect<
   ReadonlyArray<SourceFile>,
   EntryInvalid | PermissionDenied,
@@ -37,7 +37,7 @@ const readFiles = (
   Effect.gen(function* () {
     // Rendering uses checked reads on already composed entries; no roots need to be loaded.
     const registry = yield* Registry.pipe(Effect.provide(Registry.layer([])));
-    const entries = [composition.stack, ...composition.fragments];
+    const entries = [...(composition.stack ? [composition.stack] : []), ...composition.fragments];
     const encoder = new TextEncoder();
     const files: SourceFile[] = [];
     for (const planned of composition.files) {
@@ -88,11 +88,14 @@ const renderFiles = (sources: ReadonlyArray<SourceFile>, values: TemplateValues)
   });
 
 /** Render the entry files only; the CLI's own `.quickstacks/` files are separate. */
-export const composeFiles = (composition: Composition, values: TemplateValues) =>
+export const composeFiles = (composition: Composition<Entry | null>, values: TemplateValues) =>
   Effect.flatMap(readFiles(composition), (sources) => renderFiles(sources, values));
 
 /** Scaffold's files and fingerprint input, rendered from one read of every source. */
-export const composeFilesWithNeutral = (composition: Composition, values: TemplateValues) =>
+export const composeFilesWithNeutral = (
+  composition: Composition<Entry | null>,
+  values: TemplateValues,
+) =>
   Effect.gen(function* () {
     const sources = yield* readFiles(composition);
     return {

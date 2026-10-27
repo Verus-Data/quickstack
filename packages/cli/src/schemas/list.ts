@@ -21,6 +21,13 @@ export const ListRow = Schema.Struct({
 export type ListRow = typeof ListRow.Type;
 
 export const ListResult = Schema.Struct({
+  project: Schema.optionalKey(
+    Schema.Struct({
+      stack: Schema.NullOr(Schema.String),
+      applied: Schema.Array(Schema.String),
+      addable: Schema.Array(Schema.String),
+    }),
+  ),
   /** Stacks first, then fragments; each group sorted by id. */
   entries: Schema.Array(ListRow),
   /** Entries that failed to load; an agent iterating `entries` never meets one. */

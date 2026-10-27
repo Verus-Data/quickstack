@@ -1,4 +1,5 @@
-import { APP_TAG, DEFAULT_STEP_TIMEOUT } from "../../schemas/entry";
+import { APP_TAG, DEFAULT_STEP_TIMEOUT, withStepDefaults } from "../../schemas/entry";
+import type { Manifest } from "../../schemas/manifest";
 import type { ComposedStep, Composition, MissingTool } from "../compose/compose";
 import type { Entry } from "../registry/entry";
 import { nest } from "./headings";
@@ -12,6 +13,14 @@ import { countWords } from "./words";
  */
 export type GitState = { kind: "fresh" } | { kind: "parent"; toplevel: string } | { kind: "none" };
 export type BriefContext = {
+  add?: {
+    applied: ReadonlyArray<string>;
+    stack: string | null;
+    mergeNeeded: ReadonlyArray<{ path: string; incoming: ReadonlyArray<string> }>;
+    missingRequired: ReadonlyArray<{ id: string; command: string }>;
+    digestRecorded: boolean;
+    manifest: Manifest;
+  };
   project: string;
   git: GitState;
   /** Paths quickstacks wrote, relative to the project root. */
@@ -37,7 +46,9 @@ const cell = (text: string) => oneLine(text).replaceAll("|", "\\|");
  * base and the application. `briefWords` counts the whole text; `fixedWords` the lines from
  * `text.ts`, so `fixedWords <= briefWords`.
  */
-export function renderBrief(composition: Composition, context: BriefContext): Brief {
+export function renderBrief(composition: Composition<Entry | null>, context: BriefContext): Brief {
+  if (context.add) return renderAddBrief(composition, context, context.add);
+  if (!composition.stack) throw new Error("A new-project brief requires a stack");
   const segments: Segment[] = [];
   const fixed = (...lines: ReadonlyArray<string>) => {
     for (const text of lines) segments.push({ fixed: true, text });
@@ -314,4 +325,141 @@ function envTable(env: Record<string, string>): string[] {
 function environmentNote(cli: string, keys: ReadonlyArray<string>): string[] {
   const port = keys.find((key) => /PORT/i.test(key));
   return [...(port ? [T.done.ports(cli, port)] : []), T.done.keepDefaults];
+}
+
+/** An add brief includes only the new guidance, but the whole project's definition of done. */
+function renderAddBrief(
+  composition: Composition<Entry | null>,
+  context: BriefContext,
+  add: NonNullable<BriefContext["add"]>,
+): Brief {
+  const segments: Segment[] = [];
+  const fixed = (...lines: string[]) => {
+    for (const text of lines) segments.push({ fixed: true, text });
+  };
+  const data = (...lines: string[]) => {
+    for (const text of lines) segments.push({ fixed: false, text });
+  };
+  const cli = context.invocation;
+  fixed(
+    T.add.title(
+      composition.fragments.map((entry) => entry.id),
+      oneLine(context.project),
+    ),
+    "",
+  );
+  if (composition.untrusted.length) {
+    fixed(T.untrusted.heading, "", T.untrusted.stop);
+    data(
+      ...composition.untrusted.map((entry) =>
+        T.untrusted.entry(entry.kind, entry.id, entry.origin, entry.dir),
+      ),
+    );
+    fixed("", T.untrusted.ask);
+    if (!add.digestRecorded) fixed("", T.add.accept(cli));
+    fixed("");
+  }
+  fixed(
+    T.add.stack(add.stack),
+    T.add.applied(add.applied),
+    T.facts.fragments(composition.fragments.map((entry) => entry.id)),
+    T.facts.preset(composition.preset === "sandbox"),
+    T.facts.agents(composition.agents),
+    T.facts.root,
+  );
+  if (context.written.length) {
+    fixed(T.facts.written);
+    data(...context.written.map((path) => `  - ${T.code(path)}`));
+  }
+  if (cli !== "quickstacks") fixed(T.facts.invocation(cli));
+  fixed(
+    "",
+    T.job(cli)[0] ?? "",
+    "",
+    T.add.job(cli),
+    "",
+    ...T.versions,
+    "",
+    T.ground.heading,
+    "",
+    T.add.git,
+    T.ground.agentsMd,
+    ...T.ground.notes,
+  );
+  if (context.missing.length) fixed(T.ground.missing);
+  if (add.mergeNeeded.length) {
+    fixed("", T.add.merge, "", T.add.mergeTask, "");
+    data(
+      ...add.mergeNeeded.flatMap((item) =>
+        item.incoming.map((incoming) => `- ${T.code(item.path)}: ${T.code(incoming)}`),
+      ),
+    );
+  }
+  if (add.missingRequired.length) {
+    fixed("", T.add.required, "");
+    data(...add.missingRequired.map((item) => `- ${T.code(item.id)}: ${T.code(item.command)}`));
+  }
+  if (composition.decisions.length) {
+    fixed("", T.decisions.heading, "", context.yes ? T.decisions.yes : T.decisions.ask, "");
+    data(...composition.decisions.map((item) => `- ${oneLine(item.text)}`));
+  }
+  if (composition.deps.length || composition.tools.length) {
+    fixed("", T.dependencies.heading, "");
+    data(...composition.deps.map((dep) => `- ${dep.role}: ${dep.names.join(", ")}`));
+    data(
+      ...composition.tools.map(({ tool }) => {
+        const missing = context.missing.find((item) => item.tool === tool);
+        return missing
+          ? T.dependencies.missing(tool, T.installHint(tool), missing.drop)
+          : T.dependencies.found(tool);
+      }),
+    );
+  }
+  for (const entry of composition.fragments) {
+    fixed("", T.sections.fragment(oneLine(entry.meta.name), entry.id));
+    // Retain a fragment's title: in add mode it may carry guidance beyond its registry name.
+    data("", nest(entry.body.replace(/^(\s*)#(?=[ \t])/, "$1##")).trim());
+  }
+  fixed("", T.done.heading, "", T.add.done(cli));
+  const steps: ComposedStep[] = add.manifest.verify.map((step) => ({
+    ...withStepDefaults(step),
+    skipByDefault: step.skipByDefault,
+    owner: { kind: "fragment", id: step.owner },
+  }));
+  if (steps.length) {
+    // Match planVerify: finish the base stage before starting any app phase.
+    const ordered = [false, true].flatMap((app) =>
+      runOrder(steps.filter((step) => step.tags.includes(APP_TAG) === app)),
+    );
+    data("", ...table(ordered));
+    fixed("", T.done.commandsBelow, "");
+    data(...commandFence(ordered));
+  }
+  if (Object.keys(add.manifest.commands).length) {
+    fixed("", T.done.commands, "");
+    data(...commandTable(add.manifest.commands));
+  }
+  if (Object.keys(add.manifest.env).length) {
+    fixed("", T.done.environment, "");
+    data(...envTable(add.manifest.env));
+    fixed("", ...environmentNote(cli, Object.keys(add.manifest.env)));
+  }
+  fixed(
+    "",
+    T.done.rule.run(cli),
+    T.done.rule.create,
+    T.done.rule.weaken,
+    T.done.rule.changed(cli),
+    "",
+    ...T.done.qa,
+  );
+  if (composition.preset === "sandbox") fixed("", ...T.sandbox);
+  const text = `${segments.map((segment) => segment.text).join("\n")}\n`;
+  return {
+    text,
+    briefWords: countWords(text),
+    fixedWords: segments
+      .filter((segment) => segment.fixed)
+      .reduce((sum, segment) => sum + countWords(segment.text), 0),
+  };
 }

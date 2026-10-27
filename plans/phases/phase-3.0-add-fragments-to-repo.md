@@ -1,6 +1,7 @@
 # Phase 3.0: `add`
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: IMPLEMENTED 2026-10-27 (reviewed once; implementation findings fixed; acceptance blocked on locked watcher test 7)
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -215,7 +216,8 @@ Built by 1.1's renderer with `mode: "add"`. Fixed wording lives in `src/core/bri
 | `needsOwnRepo` inside an enclosing repo | `ComposeConflict`, reason `needs_own_repo` | 2 |
 | Step name collision | `ComposeConflict`, reason `step_name` | 2 |
 | `--sandbox` or `--agents` disagree with the manifest | `BadInput` | 2 |
-| Manifest unreadable or newer | `InvalidConfig` | 3 |
+| Manifest corrupt or newer | `InvalidConfig` | 3 |
+| Manifest unreadable (I/O failure, a directory) | `PermissionDenied`, as `readManifest` fails | 6 |
 | `.quickstacks/` or `incoming/` is a symlink, a write escapes the project, a write fails, or the state record can't be rewritten | `PermissionDenied` with `details.path`; rollback as above | 6 |
 
 No new error tags.
@@ -267,8 +269,25 @@ All through `tests/helpers/cli.ts` with the fixture registry and temporary proje
 15. Name inference in repos with no manifest: `package.json` `@acme/web` gives `web` (source `package.json`); `go.mod` `example.com/acme/tool/v2` gives `tool`; `pyproject.toml` with `[project] name = "Data Kit"` gives 1.2a's slug of it (`data-kit`); a malformed `package.json` falls through to the next source with a warning; an empty repo gives the directory basename.
 16. A manifest whose `stack` is an id the fixture registry doesn't have: `add` succeeds with a `stack_unknown` warning, `appliesTo` naming a stack is a warning, and the manifest's `stack` ref is byte-identical afterwards.
 17. A fixture fragment with `requiresTools: [fixture-tool]` and a `PATH` without it: `missingTools` names the tool and fragment, the warning appears on stderr before the merge list in human mode, and the files are still written.
-18. `add --launch codex --json` records `codex` as the handoff preference in the result's `handoff`; `add --yes` and `add --sandbox` both render the brief's take-the-default rule; `add --launch codex --no-launch` exits 2 with `Usage`.
+18. `add --launch codex` with codex absent keeps the preference and prints the prompt (manifest `handoff.kind` is `print`); `add --yes` and `add --sandbox` both render the brief's take-the-default rule; `add --launch codex --json` and `add --launch codex --no-launch` exit 2 with `Usage`, as `new` does.
 19. `list` inside a scaffolded fixture project shows only addable fragments that fit its stack, not ones already applied, with `Next:` lines; outside a project it shows stacks first; with a corrupt manifest it shows 1.0's view and a warning; `list --json` inside a project has the full registry plus `project.addable`.
+
+### Realistic edge cases
+
+20. An incoming-directory symlink pointing inside, outside or to itself refuses before traversal and leaves both trees unchanged.
+21. A symlinked live destination ancestor cannot redirect a write outside the project; the operation refuses and changes neither tree.
+22. A relative `--dir` from another cwd resolves a symlinked project root with spaces, a leading dash and non-ASCII characters, including its project-origin registry.
+23. A corrupt or newer manifest fails `InvalidConfig`, and a directory-valued manifest fails `PermissionDenied`, without writing a replacement.
+24. A file where a destination's parent directory belongs causes rollback, preserving the file, parked JSON, manifest and state record.
+25. Repository variables inherited from a git hook cannot redirect the `needsOwnRepo` probe or writes into another repository.
+26. A project's edited metadata ignore file and pending incoming copies survive an unrelated later add and remain in its merge list.
+27. Existing fragments satisfy requirements and conflicts without being reapplied; personal `always` defaults stay out and step collisions refuse without writes.
+28. Malformed conditional prose in a newly requested fragment fails before any file or metadata is written.
+29. A case-colliding live filename keeps its bytes and receives a parked contribution on case-insensitive volumes, while case-sensitive volumes keep both distinct files.
+30. An unwritable existing state-record directory rolls back project writes and restores parked JSON while preserving the old record.
+31. Explicit sandbox or agent flags that disagree with the recorded project refuse without changing its files or state record.
+32. Empty requests, stack ids and misspelled fragment ids refuse the whole add without writes; misspellings suggest the known fragment.
+33. An unreadable existing manifest is not replaced and no fragment files are written.
 
 ## Exit criteria
 
@@ -281,4 +300,9 @@ All through `tests/helpers/cli.ts` with the fixture registry and temporary proje
 - Parking JSON whole, rather than merging into the live file, may make agents do mechanical merges they get wrong. Watch the run notes; the live-tree rule is worth keeping regardless.
 - `stack: null` projects get no `appliesTo` checking. If fragments routinely assume a stack's layout, briefs may not fit foreign repos; a `--stack` hint is the likely fix.
 - Appending steps assumes phase ordering is enough between old and new steps. A fragment whose setup must run before an existing step needs explicit ordering in the manifest, which is a manifest version bump.
+- 2026-10-27, from the test author: three claims didn't match the code. Item 18 said `add --launch codex --json` records the preference, but `new` refuses `--launch` with `--json` as `Usage`, and `add` follows `new`; item 18 now says so. The error table said an unreadable manifest is `InvalidConfig`, but `readManifest` fails I/O as `PermissionDenied` (6); the table now splits the two. "With a manifest, `add` uses the name it records" assumed a manifest field that didn't exist: `Manifest` gains an optional `name` (additive, schema version unchanged, like `fingerprint`), which `new` and `add` write; a manifest without one (written before this sub-phase) falls back to inference.
 - The untrusted-under-agent rule makes every agent-driven `add` of a project fragment end in a `VerifyChanged` failure until a person acts. That is the intent, but if agents report it as a broken project rather than asking the user, the brief's wording needs work.
+
+- 2026-10-27, implementation: `planAdd` also requires `AppConfig` to construct the git probe's environment through `childEnv`, as the platform boundary requires. Acceptance test 7's directory watcher can deliver the changed-file event after a fast add has completed on macOS; such a run never actually requests interruption. The implementation must still restore every byte when an interruption is delivered during the transaction.
+
+- 2026-10-27, independent review: overwriting a parked inode also changes any live hard link to it. `ProjectWriter.rewrite` therefore stages an exclusive temporary file and renames it over the parked path, preserving permission bits; rollback restores bytes through the same mechanism. This replaces the design's literal in-place write while preserving its classification and rollback contract.

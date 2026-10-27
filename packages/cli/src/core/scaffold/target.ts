@@ -1,5 +1,6 @@
 import { Effect, FileSystem, Path } from "effect";
 import { PermissionDenied, TargetNotEmpty } from "../../errors";
+import { METADATA_DIR } from "../../project-layout";
 import { MANIFEST_PATH, readManifest } from "../manifest";
 import { readProjectState } from "../project-state";
 
@@ -69,9 +70,7 @@ export const inspectTarget = (dir: string) =>
     if (other.length)
       return yield* notEmpty(
         other.slice(0, 10),
-        other.includes(".quickstacks")
-          ? yield* scaffoldOf(path.join(dir, MANIFEST_PATH))
-          : undefined,
+        other.includes(METADATA_DIR) ? yield* scaffoldOf(path.join(dir, MANIFEST_PATH)) : undefined,
       );
     return { path: dir, exists: true, git: names.includes(".git"), nearest: dir } satisfies Target;
   });
