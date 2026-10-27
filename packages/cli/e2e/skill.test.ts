@@ -1,0 +1,64 @@
+import { expect, test } from "bun:test";
+import {
+  chmodSync,
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+const binary = join(import.meta.dir, "../dist/quickstacks");
+const source = join(import.meta.dir, "../skill/SKILL.md");
+async function print(executable: string, home: string) {
+  const child = Bun.spawn([executable, "skill", "install", "--print"], {
+    cwd: home,
+    env: {
+      HOME: home,
+      XDG_CONFIG_HOME: join(home, "config"),
+      NO_COLOR: "1",
+      LOG_LEVEL: "none",
+      PATH: "/usr/bin:/bin",
+    },
+    stdin: "ignore",
+    stdout: "pipe",
+    stderr: "pipe",
+  });
+  const [stdout, stderr, status] = await Promise.all([
+    new Response(child.stdout).text(),
+    new Response(child.stderr).text(),
+    child.exited,
+  ]);
+  return { status, stdout, stderr };
+}
+
+test("the dev binary finds skill/ beside dist/, including after relocation [3.4c#10]", async () => {
+  const root = mkdtempSync(join(tmpdir(), "quickstacks-skill-binary-"));
+  try {
+    const home = join(root, "unrelated cwd");
+    mkdirSync(home);
+    const built = await print(binary, home);
+    expect(built.status).toBe(0);
+    expect(built.stderr).toBe("");
+    expect(built.stdout).toBe(readFileSync(source, "utf8"));
+    expect(existsSync(join(home, ".claude"))).toBe(false);
+
+    // Distinguishable bytes prove lookup follows the executable, not a build-time source path.
+    const prefix = join(root, "relocated package");
+    mkdirSync(join(prefix, "dist"), { recursive: true });
+    mkdirSync(join(prefix, "skill"));
+    const relocated = join(prefix, "dist", "quickstacks");
+    copyFileSync(binary, relocated);
+    chmodSync(relocated, 0o755);
+    const text = `${readFileSync(source, "utf8")}\nRelocated asset marker.\n`;
+    writeFileSync(join(prefix, "skill", "SKILL.md"), text);
+    expect(await print(relocated, home)).toEqual({ status: 0, stdout: text, stderr: "" });
+    expect(existsSync(join(home, ".claude"))).toBe(false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
