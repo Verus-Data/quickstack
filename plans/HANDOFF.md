@@ -43,8 +43,10 @@ reworded for `dist/quickstacks` or deferred in its plan.
   [3.3c](phases/phase-3.3c-service-vendor-and-effect-fragments.md) (the composition and
   safety tests for every bundled entry; bench proofs are the maintainers'),
   [3.4a](phases/phase-3.4a-agent-harness-fragment.md) (the TypeScript destructive guard in
-  `claude-harness`, sharing one shell lexer with the repo's own hooks).
-- In progress: 3.4b.
+  `claude-harness`, sharing one shell lexer with the repo's own hooks),
+  [3.4b](phases/phase-3.4b-native-agent-adapters.md) (Codex, OpenCode and Cursor adapters
+  calling the same shell guards, a reference check per config format, and the skill's Claude
+  Code plugin; publishing it is a manual step in `packages/cli/README.md`).
 - Deferred to phase 4 or later: [3.2a](phases/phase-3.2a-git-sources-and-untrusted-origin.md) and
   [3.2b](phases/phase-3.2b-source-updates-and-trust-report.md), gated on outside demand and open
   question 18.

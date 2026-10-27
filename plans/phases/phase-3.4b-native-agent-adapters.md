@@ -1,6 +1,10 @@
 # Phase 3.4b: Native agent adapters
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: EXECUTED 2026-10-27 (Codex, OpenCode and Cursor adapters for `agent-ops` and the five
+portable fragments, a reference check per format, the Claude Code plugin manifest and its
+publishing procedure). Unproved: the `codex` bench run, OpenCode and Cursor until 2.0b has
+adapters for them, and the first marketplace publication; all three are the maintainers'.
+Drafted 2026-10-26.
 Acceptance tests: traced
 
 | Field | Value |
