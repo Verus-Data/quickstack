@@ -1,4 +1,5 @@
-// Workspace platform, schema, environment, and logging boundaries.
+// Workspace platform, schema, environment, time, runtime and logging boundaries. Each branch has
+// a probe on a real file in tests/hooks/boundaries-lint.test.ts.
 language js
 
 or {
@@ -30,13 +31,63 @@ or {
     }
   },
   `console.$m($args)` as $c where {
-    $filename <: r".*/(?:apps/api|packages/contract)/src/.*",
-    register_diagnostic(span=$c, message="Log with Effect.log* and annotations, never console.")
+    $filename <: r".*/(?:apps/(?:api|web)|packages/contract)/src/.*",
+    register_diagnostic(span=$c, message="Log with Effect.log* and annotations, never console. On the site, render the failure state instead.")
   },
   `fetch($args)` as $f where {
     $filename <: r".*/apps/web/src/.*",
     $filename <: not r".*/apps/web/src/lib/.*",
     register_diagnostic(span=$f, message="Call the API through the client in apps/web/src/lib/api.ts, not a hand-written fetch.")
+  },
+  or {
+    `fetch($args)`,
+    `globalThis.fetch($args)`
+  } as $f where {
+    $filename <: r".*/(?:apps/api|packages/contract)/src/.*",
+    $filename <: not r".*/apps/api/src/platform/.*",
+    register_diagnostic(span=$f, message="Call other services through Effect's HttpClient (provided by the platform entry), so tests can stub it and retries and timeouts apply.")
+  },
+  `Config.$m($args)` as $c where {
+    $filename <: r".*/(?:apps/api|packages/contract)/src/.*",
+    $filename <: not r".*/apps/api/src/config\.ts",
+    register_diagnostic(span=$c, message="Every setting is declared once in apps/api/src/config.ts; yield AppConfig instead of reading Config here.")
+  },
+  `import.meta.env` as $e where {
+    $filename <: r".*/(?:apps/(?:api|web)|packages/contract)/src/.*",
+    $filename <: not r".*/apps/web/src/(?:lib/config|site-config)\.ts",
+    register_diagnostic(span=$e, message="Read PUBLIC_ env in apps/web/src/lib/config.ts and build switches in apps/web/src/site-config.ts only; the API and the contract never read import.meta.env.")
+  },
+  or {
+    `Date.now()`,
+    `globalThis.Date.now()`,
+    `new Date()`,
+    `new Date`,
+    `Math.random()`
+  } as $t where {
+    $filename <: r".*/(?:apps/api|packages/contract)/src/.*",
+    $filename <: not r".*/apps/api/src/platform/.*",
+    register_diagnostic(span=$t, message="Take wall-clock time from Clock and Math.random's numbers from Random, so TestClock and seeded tests can drive them. Ids use crypto.randomUUID().")
+  },
+  `Effect.$run($args)` as $r where {
+    $run <: r"run[A-Z]\w*",
+    $filename <: r".*/(?:apps/(?:api|web)|packages/contract)/src/.*",
+    $filename <: not r".*/apps/(?:api/src/platform|web/src/lib)/.*",
+    register_diagnostic(span=$r, message="Only the platform entry runs a program (on the site, lib/api.ts::runApi); return the Effect and let the caller compose it.")
+  },
+  // Any `.pipe(...)` statement counts on purpose: in these sources pipe builds an Effect or a
+  // Stream, and a dropped one of either never runs.
+  JsExpressionStatement(expression=$e) as $s where {
+    $e <: or {
+      `Effect.$m($args)`,
+      `$x.pipe($args)`
+    },
+    $e <: not `Effect.$run($a)` where { $run <: r"run.*" },
+    $filename <: r".*/(?:apps/(?:api|web)|packages/contract)/src/.*",
+    register_diagnostic(span=$s, message="This Effect is built and dropped, so it never runs. yield* it, or return or compose it.")
+  },
+  `HttpServerResponse.$m` as $h where {
+    $filename <: r".*/apps/api/src/handlers/.*",
+    register_diagnostic(span=$h, message="Handlers return the endpoint's declared success or a tagged error; a hand-built response bypasses the encoder and the OpenAPI document.")
   },
   `process.env` as $e where {
     $filename <: r".*/(?:apps/(?:api|web)|packages/contract)/src/.*",

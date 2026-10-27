@@ -18,7 +18,7 @@ Paths below are relative to `apps/web/`. The site is static HTML built ahead of 
 
 - Build-time data (what a page renders into HTML) comes from files the build reads (`src/data/`, or the output of another build step) and is decoded with the contract's schemas. The build never calls a running API, so `bun run build` works on a clean machine.
 - View-time data comes from an island calling the API. `lib/api.ts` is the only module that builds the client: Effect's typed client over the contract's api, on its fetch-based HTTP client, with a relative base URL so the same build works on any origin. Islands import its functions; they never `fetch` an API path by hand or rebuild a URL from strings.
-- Islands run Effect programs at their edge (run as a promise with an `AbortSignal` from the component's effect cleanup), and render three states: loading, the decoded value, and the failure. A failure shows the envelope's message for a tagged error and a generic line for anything else; it never renders a raw error object.
+- `lib/api.ts` runs Effect programs at the client edge with an `AbortSignal` from the component's effect cleanup; islands call those functions, and render three states: loading, the decoded value, and the failure. A failure shows the envelope's message for a tagged error and a generic line for anything else; it never renders a raw error object.
 - `retryable` on an error decides whether the island offers a retry. Don't retry in a loop on a page someone left open.
 
 ## Configuration

@@ -1,5 +1,7 @@
+import { spawnSync } from "node:child_process";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { bash, denyReason, runHook } from "../helpers/hooks";
+import { bash, denyReason, REPO, runHook } from "../helpers/hooks";
 
 const run = (command: string) => runHook("PreToolUse", "guard-api-commands", bash(command));
 
@@ -8,6 +10,13 @@ const BUN_TEST = "bun test is bun's own test runner";
 const BUN_SERVER = "That runs the server under Bun";
 const SCHEMA = "@effect/schema was folded into effect.";
 const FOREGROUND = "Use bun run dev:bg";
+
+it("names the supported Node recovery command", async () => {
+  const result = await run("bun src/platform/node.ts");
+  expect(result.code).toBe(0);
+  expect(result.stderr).toBe("");
+  expect(denyReason(result)).toContain("bun run dev:server");
+});
 
 describe.concurrent("guard-api-commands denies", () => {
   it.each([
@@ -63,4 +72,18 @@ describe.concurrent("guard-api-commands allows", () => {
     expect(result.code).toBe(0);
     expect(result.stdout).toBe("");
   });
+});
+
+it("keeps the guard within the project complexity limit", () => {
+  const result = spawnSync(
+    join(REPO, "node_modules/.bin/biome"),
+    [
+      "lint",
+      "--only=complexity/noExcessiveCognitiveComplexity",
+      ".claude/hooks/guard-api-commands.ts",
+    ],
+    { cwd: REPO, encoding: "utf8" },
+  );
+  expect(result.error).toBeUndefined();
+  expect(result.status, result.stdout + result.stderr).toBe(0);
 });

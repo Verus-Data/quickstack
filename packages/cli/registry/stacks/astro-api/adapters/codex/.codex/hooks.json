@@ -11,6 +11,17 @@
           }
         ]
       }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if root=\"$(git rev-parse --show-toplevel 2>/dev/null)\" && [ -f \"$root/.claude/hooks/dev-server-status.ts\" ] && command -v bun >/dev/null 2>&1; then bun \"$root/.claude/hooks/dev-server-status.ts\" 2>/dev/null || true; fi",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }

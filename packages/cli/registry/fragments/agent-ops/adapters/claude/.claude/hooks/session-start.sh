@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # SessionStart: a few lines of live state that AGENTS.md can't carry because it
-# is static: the branch, how dirty the tree is, whether .env exists, whether
-# dependencies are installed, whether the services declared in the compose file
-# are running, and whether a generated project still has its brief to follow.
+# is static: the branch, how dirty the tree is, whether dependencies are
+# installed, whether the services declared in the compose file are running, and
+# whether a generated project still has its brief to follow.
+#
+# An example env file does not imply .env is required; the app may use defaults.
 #
 # Plain-text stdout from a SessionStart hook is added to the agent's context, so
 # this hook needs no jq. Cheap: a few git calls and at most two `docker compose`
@@ -42,10 +44,6 @@ fi
 # A project stacks generated and the agent hasn't finished: point at the brief.
 if [ -f .stacks/BRIEF.md ] && { [ ! -s AGENTS.md ] || grep -q 'stacks:fill' AGENTS.md 2>/dev/null; }; then
   say "This project is still being built: read .stacks/BRIEF.md before starting. AGENTS.md is a skeleton until its stacks:fill markers are replaced."
-fi
-
-if [ -f .env.example ] && [ ! -f .env ]; then
-  say ".env is missing. Copy .env.example to .env and fill in local values before running the app."
 fi
 
 # Dependencies: a package.json without node_modules/ or a pyproject.toml without
@@ -99,13 +97,24 @@ for f in compose.yaml compose.yml docker-compose.yaml docker-compose.yml; do
     break
   fi
 done
+# `config` reads only the file (no daemon), so its failure says nothing about Docker. A file that
+# needs variables not available in this session declares no known local
+# services; any other failure is a file that doesn't parse. Only `ps`, which asks the daemon, can
+# find Docker not responding.
 if [ -n "$compose_file" ] && command -v docker >/dev/null 2>&1; then
+  config_rc=0
+  declared=$(with_timeout 5 docker compose -f "$compose_file" config --services) || config_rc=$?
   rc=0
-  declared=$(with_timeout 5 docker compose -f "$compose_file" config --services) || rc=$?
-  if [ "$rc" -ne 0 ]; then
+  if [ "$config_rc" -eq 0 ]; then
+    running=$(with_timeout 5 docker compose -f "$compose_file" ps --services --status running) || rc=$?
+  fi
+  if [ "$config_rc" -ne 0 ]; then
+    if ! grep -qE 'required variable .* is missing a value' <<<"$declared"; then
+      say "docker compose can't read $compose_file, so its services can't be checked. Run docker compose -f $compose_file config to see why."
+    fi
+  elif [ "$rc" -ne 0 ]; then
     say "Docker isn't responding, so the services in $compose_file can't be checked. Tests that need them will fail until Docker is running."
   else
-    running=$(with_timeout 5 docker compose -f "$compose_file" ps --services --status running 2>/dev/null) || running=""
     down=""
     while IFS= read -r svc; do
       # with_timeout merges stderr; compose warnings are not service names.

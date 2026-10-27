@@ -22,6 +22,7 @@ import {
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { type DevServer, orphanedGroups, PID_FILE, readPidFile, runningDevServer } from "./dev-pid";
+import { devStatus, unanswered } from "./dev-status";
 
 process.chdir(join(import.meta.dirname, ".."));
 
@@ -38,23 +39,8 @@ function alive(pid: number): boolean {
   }
 }
 
-// Why /healthz didn't answer OK by `deadline` (at most 5 s per attempt), or undefined when it did.
-// Refused connections and timeouts are expected while the server boots; the reason goes into the
-// message if polling gives up.
-async function unhealthy(port: string, deadline: number): Promise<string | undefined> {
-  const wait = Math.max(1, Math.min(5000, deadline - Date.now()));
-  try {
-    const res = await fetch(`http://localhost:${port}/healthz`, {
-      signal: AbortSignal.timeout(wait),
-    });
-    if (res.ok) return undefined;
-    await res.body?.cancel();
-    return `HTTP ${res.status}`;
-  } catch (error) {
-    const { code, message } = error as NodeJS.ErrnoException;
-    return code ?? message;
-  }
-}
+const unhealthy = (port: string, deadline: number) =>
+  unanswered(`http://localhost:${port}/healthz`, deadline);
 
 // logs/dev.pid names pid: dev.ts writes it once it owns the port and logs/.
 function ours(pid: number): boolean {
@@ -92,7 +78,7 @@ function tail(file: string, lines: number): string {
 function ready({ pid, port }: DevServer): void {
   console.log(`Dev server running: http://localhost:${port} (pid ${pid})`);
   console.log(
-    "Logs: logs/server.jsonl (JSON lines), logs/dev.log (terminal). Stop: bun run dev:stop",
+    "Logs: bun run logs (--help for filters). Status: bun run dev:status. Stop: bun run dev:stop",
   );
 }
 
@@ -201,7 +187,11 @@ if (command === "start") {
   process.exitCode = await start();
 } else if (command === "stop") {
   process.exitCode = await stop();
+} else if (command === "status") {
+  const report = await devStatus();
+  for (const line of report.lines) console.log(line);
+  process.exitCode = report.healthy ? 0 : 1;
 } else {
-  console.error("usage: scripts/dev-bg.ts start|stop");
+  console.error("usage: scripts/dev-bg.ts start|stop|status");
   process.exitCode = 2;
 }

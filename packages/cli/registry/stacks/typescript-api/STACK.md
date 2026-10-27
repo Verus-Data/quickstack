@@ -36,6 +36,8 @@ commands:
   dev: Run the foreground server and preserve logs
   dev:server: Run the server from source on Node, restarting on change
   dev:bg: Start or reuse this checkout's background server
+  logs: Query development records with filters or JSON output
+  dev:status: Report checkout server health and log problems
   dev:stop: Stop this checkout's background server
   build: Bundle the Node server into dist/
   start: Run the built server with optional .env loading
@@ -59,6 +61,8 @@ The core never knows its runtime. Only `src/platform/` imports Node, so the same
 ## Layout
 
 `src/api.ts` is the `HttpApi` definition, composed from one group per resource in `src/api/<resource>.ts`. `src/handlers/<resource>.ts` implements each group. Domain programs and services live in `src/services/`; boundary schemas in `src/schemas/`, one dependency-free file per domain re-exported from `index.ts`. `config.ts`, `errors.ts` and `logging.ts` own those boundaries. `app.ts` builds the platform-free app from the api, its handlers and `AppLayer`. `src/platform/node.ts` is the only entry: it serves `app.ts` with Effect's Node HTTP server, owns the port and graceful shutdown, and is the only module importing `@effect/platform-node` or `node:*`. Tests live in `tests/`, helpers in `tests/helpers/`. Shipped `scripts/dev.ts`, `dev-bg.ts`, `dev-pid.ts` and `prepare.ts` own development process management. Logs live in ignored `logs/`.
+
+Read `docs/api-foundation.md` for lint, testing and development requirements.
 
 ## Setup
 
@@ -93,7 +97,7 @@ The shipped dev wrapper copies terminal output to `logs/dev.log`, rotates prior 
 
 ## Tool configuration and tests
 
-Biome starts from its current generated config: recommended rules as `"rules": { "preset": "recommended" }`, import and export type discipline, organized imports, two spaces, double quotes, width 100, VCS ignores, folder ignores without a trailing glob, and the shipped `biome-plugins/boundaries.grit`. Scope `files.includes` to code and JSON. Check Grit against the installed Biome syntax and preserve each rule when adapting it. Grit sees `process.x` reads and assignments; the boundary hook also catches destructuring. A test in `tests/` writes one fixture per Grit rule into `src/`, runs `biome lint` on the real files (stdin hides plugin diagnostics), and expects one diagnostic per probe and none in `src/platform/`.
+Biome starts from its current generated config: recommended rules as `"rules": { "preset": "recommended" }`, import and export type discipline, organized imports, two spaces, double quotes, width 100, VCS ignores, folder ignores without a trailing glob, and the shipped `biome-plugins/boundaries.grit`. Scope `files.includes` to code and JSON. Check Grit against the installed Biome syntax and preserve each rule when adapting it. Grit sees `process.x` reads and assignments; the boundary hook also catches destructuring. Keep the shipped boundary probes enabled.
 
 TypeScript is two projects, both strict with unchecked index access, verbatim module syntax, erasable syntax only and no emit, and `typecheck` runs both. `tsconfig.json` covers `src/` and `tests/` (minus `tests/hooks/`) with `nodenext` resolution, relative imports with `.ts` extensions (`allowImportingTsExtensions`) and no path aliases, because Node runs the source as written. `tsconfig.tools.json` covers `scripts/`, `.claude/hooks/`, `tests/hooks/` and `tests/helpers/hooks.ts` with `bundler` resolution and Bun's types, because the shipped scripts and hooks import without extensions.
 
@@ -105,7 +109,7 @@ CI sets up Bun from packageManager and Node from .node-version, installs frozen 
 
 ## Commands and gotchas
 
-Wire the declared scripts to Node, Biome, Vitest and the shipped helpers. `start` runs the bundle with Node's optional env-file support and reads `PORT_API`, else `PORT`, else 3000. `build` bundles with Bun targeting Node, without inlining env, so the bundle reads env at runtime. `prepare` invokes `scripts/prepare.ts`; `dev:bg` and `dev:stop` invoke `scripts/dev-bg.ts start` and `stop`. `check` runs lint, typecheck, test and build. `clean` removes only generated project output. Document command names, logs and hook ownership in AGENTS, plus a Debugging section with `jq` queries over `logs/server.jsonl` (one request by `requestId`, errors only, slow requests).
+Wire the declared scripts to Node, Biome, Vitest and the shipped helpers; `logs` runs `scripts/logs.ts`, `dev:status` runs `scripts/dev-bg.ts status`. Agents query these before restarting. `start` runs the bundle with Node's optional env-file support and reads `PORT_API`, else `PORT`, else 3000. `build` bundles with Bun targeting Node, without inlining env, so the bundle reads env at runtime. `prepare` invokes `scripts/prepare.ts`; `dev:bg` and `dev:stop` invoke `scripts/dev-bg.ts start` and `stop`. `check` runs lint, typecheck, test and build. `clean` removes only generated project output. Document command names, logs and hook ownership in AGENTS, plus a Debugging section with `jq` queries over `logs/server.jsonl` (one request by `requestId`, errors only, slow requests).
 
 <!-- stacks:when with=git-hooks -->
 The shipped `scripts/prepare.ts`, run by the `prepare` script after every `bun install`, already runs `lefthook install` (skipped when `CI` is set, lefthook is missing, or `lefthook.yml` doesn't exist yet, and non-fatal when it fails, for example outside a git checkout), so don't add another install step. pre-push runs `bun run typecheck` alongside `bun run test`, in parallel.
@@ -115,4 +119,4 @@ The shipped `scripts/prepare.ts`, run by the `prepare` script after every `bun i
 The generated Effect skill also records, under the installed release's names, every HTTP mechanism `effect-api.md` describes by behavior: the API declaration, error status annotations, server-level middleware, the test client, serving on Node and as a web handler.
 <!-- stacks:end -->
 
-The server and Vitest run on Node: never `bun test`, never `--bun`, and never run the server under Bun to save a step, because a runtime difference then hides until deploy. Bun doesn't pass its loaded `.env` to a Node child. Check current TypeScript, Node and Biome configuration requirements; adapt generated config and record necessary workarounds with their removal condition. The architecture stays Effect-based even when the optional Effect testing fragment is excluded.
+The server and Vitest run on Node: never `bun test`, never `--bun`, and never run the server under Bun to save a step, because runtime differences hide until deploy. Bun doesn't pass its loaded `.env` to a Node child. Record configuration workarounds with their removal condition. The architecture stays Effect-based even when the optional Effect testing fragment is excluded.

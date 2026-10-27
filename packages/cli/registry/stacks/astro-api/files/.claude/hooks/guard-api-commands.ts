@@ -1,4 +1,4 @@
-// PreToolUse (Bash, Claude Code and Codex): deny wrong commands with the fix.
+// PreToolUse (Bash): deny commands that are wrong for this stack, with the fix.
 //
 //   --bun (-b) on vitest or bun run       the server and tests run on Node here; --bun swaps in
 //                                         bun's runtime and hides differences until deploy
@@ -26,35 +26,52 @@ function target(args: string[], skipRun: boolean): string {
   return (skipRun && words[0] === "run" ? words[1] : words[0]) ?? "";
 }
 
-function reasonFor(cmd: Command): string | undefined {
-  const [first = "", ...args] = cmd.argv;
-  const name = basename(first);
-  if (name !== "bun" && name !== "bunx" && name !== "npm" && name !== "pnpm" && name !== "yarn") {
-    return undefined;
-  }
-  const bun = name === "bun" || name === "bunx";
-  const forced = args.includes("--bun") || args.includes("-b");
+const MANAGERS = new Set(["bun", "bunx", "npm", "pnpm", "yarn"]);
+
+/** One rule: the reason a package-manager command (`name` with `args`) is wrong, if it is. */
+type Rule = (name: string, args: string[]) => string | undefined;
+
+const forcedBun: Rule = (name, args) => {
+  if (name !== "bun" && name !== "bunx") return undefined;
+  if (!args.includes("--bun") && !args.includes("-b")) return undefined;
   // Under --bun every script's `node` resolves to Bun, so any `bun run <script>` is wrong; only a
   // file under scripts/ (Bun tooling already) may run that way.
   const runsScript = args.includes("run") && !/^(\.\/)?scripts\//.test(target(args, true));
-  if (bun && forced && (args.some((a) => /(^|\/)vitest$/.test(a)) || runsScript)) {
-    return "The server and vitest run on Node in this project. Drop --bun (use bun run test / bun run dev / bun run build).";
-  }
-  if (name === "bun" && target(args, false) === "test") {
-    return 'bun test is bun\'s own test runner; the tests here are vitest. Use bun run test (add a file path or -t "<name>" to scope it).';
-  }
-  if (name === "bun" && /^(\.\/)?(apps\/api\/)?src\/.*\.ts$/.test(target(args, true))) {
-    return "That runs the server under Bun; it runs on Node here. Use bun run dev:bg (or bun run dev:api).";
-  }
-  if (name !== "bunx" && target(args, true) === "dev") {
-    return "bun run dev runs the dev servers in the foreground and blocks this shell. Use bun run dev:bg (stop them with bun run dev:stop).";
-  }
-  if (
-    name !== "bunx" &&
-    ["add", "install", "i"].includes(target(args, false)) &&
-    args.some((a) => a.includes("@effect/schema"))
-  ) {
-    return '@effect/schema was folded into effect. Import Schema from "effect" instead of installing it.';
+  if (!runsScript && !args.some((a) => /(^|\/)vitest$/.test(a))) return undefined;
+  return "The server and vitest run on Node in this project. Drop --bun (use bun run test / bun run dev / bun run build).";
+};
+
+const bunTest: Rule = (name, args) =>
+  name === "bun" && target(args, false) === "test"
+    ? 'bun test is bun\'s own test runner; the tests here are vitest. Use bun run test (add a file path or -t "<name>" to scope it).'
+    : undefined;
+
+const serverUnderBun: Rule = (name, args) =>
+  name === "bun" && /^(\.\/)?(apps\/api\/)?src\/.*\.ts$/.test(target(args, true))
+    ? "That runs the server under Bun; it runs on Node here. Use bun run dev:bg (or bun run dev:api)."
+    : undefined;
+
+const foregroundDev: Rule = (name, args) =>
+  name !== "bunx" && target(args, true) === "dev"
+    ? "bun run dev runs the dev servers in the foreground and blocks this shell. Use bun run dev:bg (stop them with bun run dev:stop)."
+    : undefined;
+
+const effectSchema: Rule = (name, args) =>
+  name !== "bunx" &&
+  ["add", "install", "i"].includes(target(args, false)) &&
+  args.some((a) => a.includes("@effect/schema"))
+    ? '@effect/schema was folded into effect. Import Schema from "effect" instead of installing it.'
+    : undefined;
+
+const RULES: Rule[] = [forcedBun, bunTest, serverUnderBun, foregroundDev, effectSchema];
+
+function reasonFor(cmd: Command): string | undefined {
+  const [first = "", ...args] = cmd.argv;
+  const name = basename(first);
+  if (!MANAGERS.has(name)) return undefined;
+  for (const rule of RULES) {
+    const reason = rule(name, args);
+    if (reason) return reason;
   }
   return undefined;
 }

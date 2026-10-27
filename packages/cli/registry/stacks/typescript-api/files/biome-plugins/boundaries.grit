@@ -23,6 +23,51 @@ or {
     $filename <: r".*/src/.*",
     register_diagnostic(span=$c, message="Log with Effect.log* and annotations, never console.")
   },
+  or {
+    `fetch($args)`,
+    `globalThis.fetch($args)`
+  } as $f where {
+    $filename <: r".*/src/.*",
+    $filename <: not r".*/src/platform/.*",
+    register_diagnostic(span=$f, message="Call other services through Effect's HttpClient (provided by the platform entry), so tests can stub it and retries and timeouts apply.")
+  },
+  `Config.$m($args)` as $c where {
+    $filename <: r".*/src/.*",
+    $filename <: not r".*/src/config\.ts",
+    register_diagnostic(span=$c, message="Every setting is declared once in src/config.ts; yield AppConfig instead of reading Config here.")
+  },
+  or {
+    `Date.now()`,
+    `globalThis.Date.now()`,
+    `new Date()`,
+    `new Date`,
+    `Math.random()`
+  } as $t where {
+    $filename <: r".*/src/.*",
+    $filename <: not r".*/src/platform/.*",
+    register_diagnostic(span=$t, message="Take wall-clock time from Clock and Math.random's numbers from Random, so TestClock and seeded tests can drive them. Ids use crypto.randomUUID().")
+  },
+  `Effect.$run($args)` as $r where {
+    $run <: r"run[A-Z]\w*",
+    $filename <: r".*/src/.*",
+    $filename <: not r".*/src/platform/.*",
+    register_diagnostic(span=$r, message="Only the platform entry runs a program; return the Effect and let the caller compose it.")
+  },
+  // Any `.pipe(...)` statement counts on purpose: in these sources pipe builds an Effect or a
+  // Stream, and a dropped one of either never runs.
+  JsExpressionStatement(expression=$e) as $s where {
+    $e <: or {
+      `Effect.$m($args)`,
+      `$x.pipe($args)`
+    },
+    $e <: not `Effect.$run($a)` where { $run <: r"run.*" },
+    $filename <: r".*/src/.*",
+    register_diagnostic(span=$s, message="This Effect is built and dropped, so it never runs. yield* it, or return or compose it.")
+  },
+  `HttpServerResponse.$m` as $h where {
+    $filename <: r".*/src/handlers/.*",
+    register_diagnostic(span=$h, message="Handlers return the endpoint's declared success or a tagged error; a hand-built response bypasses the encoder and the OpenAPI document.")
+  },
   `process.env` as $e where {
     $filename <: r".*/src/.*",
     $filename <: not r".*/src/platform/.*",

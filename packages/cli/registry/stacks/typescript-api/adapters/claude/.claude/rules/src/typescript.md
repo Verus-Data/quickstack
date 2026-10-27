@@ -31,4 +31,4 @@ Only the things that are easy to get wrong here. Effect-specific typing is in th
 
 ## Promises
 
-Nothing lints floating promises. Every promise's rejection is handled (await it, return it, or end the chain with `.catch`), and `void` marks a deliberate fire-and-forget. Effect code brings promises in through `Effect.tryPromise`, as `effect-api.md` describes.
+Enable the installed linter's floating-promise rule. Every promise's rejection is handled (await it, return it, or end the chain with `.catch`), and `void` marks a deliberate fire-and-forget. Effect code brings promises in through `Effect.tryPromise`, as `effect-api.md` describes.

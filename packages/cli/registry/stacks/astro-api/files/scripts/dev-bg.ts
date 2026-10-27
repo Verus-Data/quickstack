@@ -8,8 +8,10 @@
 //          doesn't come up.
 //   stop   Stop the dev servers running from this checkout, however they were started (the
 //          same as Ctrl-C in their terminal).
+//   status Whether they run, on which ports, whether each answers, and where the logs are
+//          (scripts/dev-status.ts). Exits 0 only when both answer.
 //
-// Both find the server through logs/dev.pid, which scripts/dev.ts writes while it runs.
+// All three find the server through logs/dev.pid, which scripts/dev.ts writes while it runs.
 import { spawn } from "node:child_process";
 import {
   closeSync,
@@ -23,6 +25,7 @@ import {
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import { type DevServer, orphanedGroups, PID_FILE, readPidFile, runningDevServer } from "./dev-pid";
+import { devStatus, unanswered } from "./dev-status";
 
 process.chdir(join(import.meta.dirname, ".."));
 
@@ -36,22 +39,6 @@ function alive(pid: number): boolean {
     // It exists but belongs to another user.
     if (code === "EPERM") return true;
     throw error;
-  }
-}
-
-// Why a URL didn't answer OK by `deadline` (at most 5 s per attempt), or undefined when it did.
-// Refused connections and timeouts are expected while a server boots; the reason goes into the
-// message if polling gives up.
-async function unanswered(url: string, deadline: number): Promise<string | undefined> {
-  const wait = Math.max(1, Math.min(5000, deadline - Date.now()));
-  try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(wait) });
-    if (res.ok) return undefined;
-    await res.body?.cancel();
-    return `HTTP ${res.status}`;
-  } catch (error) {
-    const { code, message } = error as NodeJS.ErrnoException;
-    return code ?? message;
   }
 }
 
@@ -99,8 +86,14 @@ function ready({ pid, api, web }: DevServer): void {
   console.log(`API running: http://localhost:${api}`);
   console.log(`Site running: http://localhost:${web} (pid ${pid})`);
   console.log(
-    "Logs: logs/server.jsonl (API JSON lines), logs/dev.log (both terminals). Stop: bun run dev:stop",
+    "Logs: bun run logs (--help for filters). Status: bun run dev:status. Stop: bun run dev:stop",
   );
+}
+
+async function status(): Promise<number> {
+  const report = await devStatus();
+  for (const line of report.lines) console.log(line);
+  return report.healthy ? 0 : 1;
 }
 
 async function start(): Promise<number> {
@@ -212,7 +205,9 @@ if (command === "start") {
   process.exitCode = await start();
 } else if (command === "stop") {
   process.exitCode = await stop();
+} else if (command === "status") {
+  process.exitCode = await status();
 } else {
-  console.error("usage: scripts/dev-bg.ts start|stop");
+  console.error("usage: scripts/dev-bg.ts start|stop|status");
   process.exitCode = 2;
 }

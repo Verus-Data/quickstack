@@ -1,18 +1,23 @@
+import assert from "node:assert/strict";
 import { type ChildProcess, spawn, spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
+import { createServer, type Server } from "node:http";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { type Fixture, makeFixture, runHook } from "../helpers/hooks";
 
 let project: Fixture;
-let server: ChildProcess | undefined;
+let children: ChildProcess[] = [];
+let listener: Server | undefined;
 
 beforeEach(() => {
   project = makeFixture();
 });
 afterEach(() => {
-  server?.kill();
-  server = undefined;
+  for (const child of children) child.kill("SIGKILL");
+  children = [];
+  listener?.close();
+  listener = undefined;
   project.cleanup();
 });
 
@@ -34,6 +39,30 @@ const sessionStart = async () => {
   return result.stdout;
 };
 
+/** A stand-in dev process the hook recognizes by its script name, as it does scripts/dev.ts. */
+async function fakeDevProcess(): Promise<number> {
+  const script = put("scripts/dev.ts", "setTimeout(() => {}, 60_000);\n");
+  const child = spawn("bun", [script], { stdio: "ignore" });
+  children.push(child);
+  const pid = child.pid;
+  assert(pid !== undefined);
+  await vi.waitFor(() => {
+    const ps = spawnSync("ps", ["-o", "command=", "-p", String(pid)], { encoding: "utf8" });
+    expect(ps.stdout).toContain("scripts/dev.ts");
+  });
+  return pid;
+}
+
+/** An HTTP server answering 200 on every path, standing in for a healthy dev server. */
+async function healthyServer(): Promise<number> {
+  const server = createServer((_req, res) => res.end("ok"));
+  listener = server;
+  await new Promise<void>((resolve) => server.listen(0, "localhost", resolve));
+  const address = server.address();
+  assert(address && typeof address === "object");
+  return address.port;
+}
+
 describe("dev-server-status", { timeout: 30_000 }, () => {
   it("says nothing without logs/dev.pid", async () => {
     expect(await sessionStart()).toBe("");
@@ -44,23 +73,56 @@ describe("dev-server-status", { timeout: 30_000 }, () => {
     expect(await sessionStart()).toBe("");
   });
 
-  it("says where a running server is and how many warn/error lines its log has", async () => {
-    const script = put("scripts/dev.ts", "setTimeout(() => {}, 60_000);\n");
-    server = spawn("bun", [script], { stdio: "ignore" });
-    const pid = server.pid as number;
-    // Wait until ps shows the process by its script name, which is what the hook looks for.
-    await vi.waitFor(() => {
-      const ps = spawnSync("ps", ["-o", "command=", "-p", String(pid)], { encoding: "utf8" });
-      expect(ps.stdout).toContain("scripts/dev.ts");
-    });
-    put("logs/dev.pid", `${pid} 5999 5998\n`);
+  it("reports ports, health, the logs command and the warn/error count", async () => {
+    const pid = await fakeDevProcess();
+    const port = await healthyServer();
+    // Nothing listens on the site's port.
+    put("logs/dev.pid", `${pid} ${port} 1\n`);
     put(
       "logs/server.jsonl",
-      '{"level":"info","msg":"ok"}\n{"level":"warn","msg":"slow"}\n{"level":"error","msg":"bad"}\n',
+      [
+        '{"time":"2026-01-01T00:00:00.000Z","level":"info","msg":"ok"}',
+        '{"time":"2026-01-01T00:00:01.000Z","level":"warn","msg":"slow"}',
+        "",
+      ].join("\n"),
+    );
+    put(
+      "logs/dev.jsonl",
+      '{"time":"2026-01-01T00:00:02.000Z","level":"error","msg":"[vite] http proxy error","source":"web"}\n',
     );
 
-    expect(await sessionStart()).toContain(
-      `Dev servers are running: the API at http://localhost:5999 and the site at http://localhost:5998 (pid ${pid}); use them rather than starting more. logs/server.jsonl has 2 warn/error line(s) from this run:`,
+    const out = await sessionStart();
+    expect(out).toContain(`Dev servers are running from this checkout (pid ${pid})`);
+    expect(out).toContain(`API   http://localhost:${port}  healthy`);
+    expect(out).toContain("site  http://localhost:1  not answering /");
+    expect(out).toContain("logs  bun run logs");
+    expect(out).toContain("2 warn/error record(s) this run: bun run logs --level warn");
+    expect(out).toContain("Restart with bun run dev:stop, then bun run dev:bg.");
+  });
+
+  it("stays quiet with exit 0 when the report can't be built", async () => {
+    const pid = await fakeDevProcess();
+    const port = await healthyServer();
+    put("logs/dev.pid", `${pid} ${port} ${port}\n`);
+    // Reading a directory as the log fails with EISDIR.
+    mkdirSync(join(project.dir, "logs/server.jsonl"));
+    const result = await runHook(
+      "SessionStart",
+      "dev-server-status",
+      { session_id: "s", hook_event_name: "SessionStart", source: "startup" },
+      { env: { CLAUDE_PROJECT_DIR: project.dir } },
     );
+    expect(result).toMatchObject({ code: 0, stdout: "", stderr: "" });
+  });
+
+  it("tells the agent to stop the servers a killed session left behind", async () => {
+    // A live process group the pid file names, with no dev process behind it.
+    const orphan = spawn("bun", ["-e", "setInterval(() => {}, 1000)"], {
+      detached: true,
+      stdio: "ignore",
+    });
+    children.push(orphan);
+    put("logs/dev.pid", `999999 5999 5998 ${orphan.pid}\n`);
+    expect(await sessionStart()).toContain("Stop them with bun run dev:stop");
   });
 });

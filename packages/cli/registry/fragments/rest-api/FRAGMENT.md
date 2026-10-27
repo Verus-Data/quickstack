@@ -14,7 +14,7 @@ decisions:
 
 # REST resource conventions
 
-Agents name endpoints after the task in front of them (`/getUserData`, `/orders/create`), so an API drifts into verbs and synonyms. The shipped rule (`.claude/rules/rest-api.md`, and the matching Cursor rule and Codex and OpenCode skills) loads when API definitions, routes, handlers or schemas are open: plural domain nouns, the method says what happens, statuses from the project's one error table, one shape per resource, every list paginated. It is framework-neutral; the stack owns how a status or header is declared, where routes live, and the error envelope.
+Agents name endpoints after the task in front of them (`/getUserData`, `/orders/create`), so an API drifts into verbs and synonyms. The shipped rule (`.claude/rules/rest-api.md`, and the matching Cursor rule and Codex and OpenCode skills) loads when API definitions, routes, handlers or schemas are open: plural domain nouns, the method says what happens, statuses from the project's one error table, one shape per resource, every list paginated. It is framework-neutral; the stack owns how a status or header is declared, where routes live, and implementing the shared envelope and cache policy.
 
 When you set up the first resource, check the rule against the installed framework (a 201 with `Location`, rejecting unknown query params without rejecting headers, a wrong method) and record what it does in AGENTS.md rather than editing the rule.
 

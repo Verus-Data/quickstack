@@ -52,3 +52,10 @@ GET, PUT and DELETE are idempotent and GET changes nothing; never put a side eff
 
 - Resources live under the version prefix; health checks and the OpenAPI document don't. Adding an optional field or a new endpoint is compatible. Renaming, removing or retyping a field, changing a status code, or making an optional input required is breaking and needs a new version or a deprecation period, so name things right the first time.
 - The generated OpenAPI document is the contract. Review its diff when an endpoint changes; a path, param or schema name you wouldn't want in public docs is wrong in the code too.
+
+## Request boundary
+
+- Every API error response has one envelope: `{ "error": { "tag", "message", "retryable" } }`. One exhaustive error table owns statuses and retryability, with fixed safe messages. Rewrite framework-generated errors (decode failures and route misses included) at the request boundary. Request decoding is 400; response encoding failures and unexpected defects are generic 500, logged once by class and stack frames without their message.
+- Fill a missing `Cache-Control` on API responses with `no-store`; preserve any endpoint policy and leave a 304 alone. A cacheable endpoint declares and tests its own policy and ETag handling. Static site assets keep their own caching policy.
+- When an API shares an origin with static files, classify reserved API paths centrally before static fallback, using decoded, case-normalized paths. A miss under the version prefix, health path or OpenAPI path gets the error envelope for every method and Accept header, never site HTML. Keep the chosen wrong-method behavior consistent across platform entries.
+- Test the envelope and caching behavior through every server target, including framework errors and route misses. Path params identifying a resource remain valid; static-document publication needs a separate routing design when introduced.

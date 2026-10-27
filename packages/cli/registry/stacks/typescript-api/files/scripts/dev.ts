@@ -5,6 +5,7 @@
 // to logs/*.prev.* so a crash before a restart is still there to read.
 import { spawn, spawnSync } from "node:child_process";
 import {
+  closeSync,
   existsSync,
   mkdirSync,
   openSync,
@@ -14,9 +15,18 @@ import {
   writeSync,
 } from "node:fs";
 import { constants } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { createInterface } from "node:readline";
 import { stripVTControlCharacters } from "node:util";
+import {
+  MAX_LOG_BYTES,
+  OUTPUT_LOG,
+  older,
+  outputRecord,
+  previous,
+  SERVER_LOG,
+  TERMINAL_LOG,
+} from "./dev-logs";
 import { PID_FILE, runningDevServer } from "./dev-pid";
 
 process.chdir(join(import.meta.dirname, ".."));
@@ -42,8 +52,9 @@ if (!lsof.error && lsof.status === 0) {
 }
 
 mkdirSync("logs", { recursive: true });
-if (existsSync("logs/dev.log")) renameSync("logs/dev.log", "logs/dev.prev.log");
-if (existsSync("logs/server.jsonl")) renameSync("logs/server.jsonl", "logs/server.prev.jsonl");
+for (const file of [TERMINAL_LOG, SERVER_LOG, OUTPUT_LOG]) {
+  if (existsSync(file)) renameSync(file, previous(file));
+}
 writeFileSync(PID_FILE, `${process.pid} ${port}\n`);
 
 // The server runs detached, leading its own process group, so a signal reaches exactly the server
@@ -79,7 +90,7 @@ process.on("SIGTERM", () => process.exit(128 + constants.signals.SIGTERM));
 process.on("SIGHUP", () => process.exit(128 + constants.signals.SIGHUP));
 
 // stdout is a pipe for the server, so keep colors on for the terminal (unless NO_COLOR is set).
-const env: NodeJS.ProcessEnv = { ...process.env, PORT_API: port };
+const env: NodeJS.ProcessEnv = { ...process.env, PORT_API: port, LOG_FILE: resolve(SERVER_LOG) };
 if (!env.NO_COLOR) env.FORCE_COLOR ||= "1";
 
 process.stdout.write(
@@ -88,7 +99,21 @@ process.stdout.write(
 
 // Each line goes to the terminal, and a copy without color codes is appended to logs/dev.log.
 // readline also ends a line at a lone \r, so a line redrawn with \r prints as separate lines.
-const log = openSync("logs/dev.log", "a");
+function cappedAppender(file: string): (text: string) => void {
+  let fd = openSync(file, "a");
+  let size = 0;
+  return (text) => {
+    size += writeSync(fd, text);
+    if (size <= MAX_LOG_BYTES) return;
+    closeSync(fd);
+    renameSync(file, older(file));
+    fd = openSync(file, "a");
+    size = 0;
+  };
+}
+
+const log = cappedAppender(TERMINAL_LOG);
+const records = cappedAppender(OUTPUT_LOG);
 const server = spawn(process.execPath, ["run", "dev:server"], {
   env,
   detached: true,
@@ -101,7 +126,10 @@ writeFileSync(PID_FILE, `${process.pid} ${port} ${group ?? ""}\n`);
 for (const stream of [server.stdout, server.stderr]) {
   createInterface({ input: stream, crlfDelay: Number.POSITIVE_INFINITY }).on("line", (line) => {
     process.stdout.write(`${line}\n`);
-    writeSync(log, `${stripVTControlCharacters(line)}\n`);
+    const plain = stripVTControlCharacters(line);
+    log(`${plain}\n`);
+    const record = plain.trim() ? outputRecord("api", plain, new Date()) : undefined;
+    if (record) records(`${JSON.stringify(record)}\n`);
   });
 }
 // Let the process end on its own, so pending stdout writes finish; the exit handler cleans up.

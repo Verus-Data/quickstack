@@ -2,10 +2,13 @@
 // `bun run dev`: the API and the site's dev server, with everything they print (Node, Astro,
 // startup errors, app logs) shown with an [api] or [web] prefix and also saved to logs/dev.log
 // with colors stripped. The API separately writes structured JSON lines to logs/server.jsonl
-// (LOG_FILE). Each start moves the previous run's files to logs/*.prev.* so a crash before a
-// restart is still there to read. When either server exits, the other is stopped too.
+// (LOG_FILE), and every other line either server prints becomes a JSON record in logs/dev.jsonl
+// (scripts/dev-logs.ts; read both with `bun run logs`). Each start moves the previous run's files
+// to logs/*.prev.* so a crash before a restart is still there to read. When either server exits,
+// the other is stopped too.
 import { spawn, spawnSync } from "node:child_process";
 import {
+  closeSync,
   existsSync,
   mkdirSync,
   openSync,
@@ -18,6 +21,15 @@ import { constants } from "node:os";
 import { join, resolve } from "node:path";
 import { createInterface } from "node:readline";
 import { stripVTControlCharacters } from "node:util";
+import {
+  MAX_LOG_BYTES,
+  OUTPUT_LOG,
+  older,
+  outputRecord,
+  previous,
+  SERVER_LOG,
+  TERMINAL_LOG,
+} from "./dev-logs";
 import { PID_FILE, runningDevServer } from "./dev-pid";
 
 process.chdir(join(import.meta.dirname, ".."));
@@ -49,8 +61,9 @@ for (const [name, port, variable] of [
 }
 
 mkdirSync("logs", { recursive: true });
-if (existsSync("logs/dev.log")) renameSync("logs/dev.log", "logs/dev.prev.log");
-if (existsSync("logs/server.jsonl")) renameSync("logs/server.jsonl", "logs/server.prev.jsonl");
+for (const file of [TERMINAL_LOG, SERVER_LOG, OUTPUT_LOG]) {
+  if (existsSync(file)) renameSync(file, previous(file));
+}
 writeFileSync(PID_FILE, `${process.pid} ${api} ${web}\n`);
 
 // Each server runs detached, leading its own process group, so a signal reaches exactly that
@@ -91,21 +104,39 @@ const env: NodeJS.ProcessEnv = {
   ...process.env,
   PORT_API: api,
   PORT_WEB: web,
-  LOG_FILE: resolve("logs/server.jsonl"),
+  LOG_FILE: resolve(SERVER_LOG),
 };
 if (!env.NO_COLOR) env.FORCE_COLOR ||= "1";
 
 process.stdout.write(
-  `  \x1b[2mAPI http://localhost:${api}, site http://localhost:${web}. Logs: logs/dev.log (this terminal), logs/server.jsonl (API JSON lines)\x1b[0m\n`,
+  `  \x1b[2mAPI http://localhost:${api}, site http://localhost:${web}. Logs: bun run logs (filters: --help), logs/dev.log (this terminal)\x1b[0m\n`,
 );
 
+// Appends to a log file that this start rotated, so it begins empty. Past MAX_LOG_BYTES it moves
+// to logs/*.old.* and starts again, so a long session can't grow it without bound (and the
+// session-start status, which scans the file, stays cheap).
+function cappedAppender(file: string): (text: string) => void {
+  let fd = openSync(file, "a");
+  let size = 0;
+  return (text) => {
+    size += writeSync(fd, text);
+    if (size <= MAX_LOG_BYTES) return;
+    closeSync(fd);
+    renameSync(file, older(file));
+    fd = openSync(file, "a");
+    size = 0;
+  };
+}
+
 // Each line goes to the terminal, and a copy without color codes is appended to logs/dev.log.
+// Lines that aren't already API records also become records in logs/dev.jsonl.
 // readline also ends a line at a lone \r, so a line redrawn with \r prints as separate lines.
-const log = openSync("logs/dev.log", "a");
+const log = cappedAppender(TERMINAL_LOG);
+const records = cappedAppender(OUTPUT_LOG);
 const servers = [
   { name: "api", script: "dev:api" },
   { name: "web", script: "dev:web" },
-];
+] as const;
 let open = servers.length;
 for (const { name, script } of servers) {
   const child = spawn(process.execPath, ["run", script], {
@@ -117,7 +148,10 @@ for (const { name, script } of servers) {
   for (const stream of [child.stdout, child.stderr]) {
     createInterface({ input: stream, crlfDelay: Number.POSITIVE_INFINITY }).on("line", (line) => {
       process.stdout.write(`[${name}] ${line}\n`);
-      writeSync(log, `[${name}] ${stripVTControlCharacters(line)}\n`);
+      const plain = stripVTControlCharacters(line);
+      log(`[${name}] ${plain}\n`);
+      const record = plain.trim() ? outputRecord(name, plain, new Date()) : undefined;
+      if (record) records(`${JSON.stringify(record)}\n`);
     });
   }
   child.on("close", (code, signal) => {

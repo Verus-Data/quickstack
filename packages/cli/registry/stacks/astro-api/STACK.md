@@ -48,6 +48,8 @@ commands:
   dev:api: Run the API from source on Node, restarting on change
   dev:web: Run the Astro dev server, proxying API paths to the API
   dev:bg: Start or reuse this checkout's background API and site
+  logs: Query development records with filters or JSON output
+  dev:status: Report checkout server health and log problems
   dev:stop: Stop this checkout's background API and site
   build: Bundle the API into apps/api/dist and build the site into apps/web/dist
   start: Run the built API, serving the built site when STATIC_DIR is set
@@ -66,7 +68,7 @@ commands:
 
 Three bun workspaces. `packages/contract` is the `HttpApi` definition: groups, endpoints, schemas and tagged errors, depending only on `effect`. `apps/api` implements it on Node with Effect and is the only server. `apps/web` is a static Astro site whose React islands call the API through Effect's typed client built from the same contract, so a renamed field or a new error is a type error on both sides. Packages are `@<slug>/contract`, `@<slug>/api` and `@<slug>/web`, using the project slug, and ship TypeScript source with no build step of their own.
 
-Pages are HTML built ahead of time. Anything that must be fresher than the last build comes from an island fetching the API at view time. Add server rendering only for a page that needs per-request data, after asking. The base proving slice is `GET /healthz` end to end: contract, handler, the API's error table, and a home page island showing whether the API answers.
+Pages are HTML built ahead of time. An island fetches data that must be fresher than the build. Add server rendering only for a page that needs per-request data, after asking. The base proving slice is `GET /healthz` end to end: contract, handler, the API's error table, and a home page island showing whether the API answers.
 
 ## Layout
 
@@ -74,12 +76,14 @@ Pages are HTML built ahead of time. Anything that must be fresher than the last 
 package.json         workspaces apps/*, packages/*; root scripts; biome.json; tsconfig.base.json
 tsconfig.tools.json  scripts/, .claude/hooks/, tests/hooks/, tests/helpers/hooks.ts (bundler resolution)
 vitest.config.ts     projects named api (apps/api), web (apps/web) and hooks (tests/)
-scripts/             dev.ts, dev-bg.ts, dev-pid.ts, prepare.ts (shipped)
+scripts/             dev.ts, dev-bg.ts, dev-pid.ts, dev-logs.ts, logs.ts, dev-status.ts, prepare.ts
 packages/contract/src/   api.ts, groups/<resource>.ts, schemas/, errors.ts, index.ts
 apps/api/src/        handlers/<resource>.ts, services/, config.ts, logging.ts, app.ts, platform/node.ts
 apps/api/tests/      helpers/, *.test.ts
 apps/web/src/        pages/, layouts/BaseLayout.astro, components/*.tsx (+ .test.tsx), islands/*.tsx, lib/api.ts, styles/global.css
 ```
+
+Read `docs/api-foundation.md` for lint, testing and development requirements.
 
 ## Setup
 
@@ -107,7 +111,7 @@ Logging: a custom Effect logger writes JSON records with UTC `time`, lowercase `
 
 ## Tool configuration and tests
 
-Biome covers TypeScript, TSX and JSON in every workspace: recommended rules, type-import discipline, organized imports, two spaces, double quotes, width 100 and the shipped `biome-plugins/boundaries.grit`, ignoring `dist/`, `.astro/` and `coverage/`. A hooks-project test lints one real fixture file per Grit rule (stdin hides plugin diagnostics) and expects one diagnostic each, and none for a `platform/` import or `lib/api.ts` fetching. `.astro` files are checked by `astro check`. TypeScript is strict in every project, with unchecked index access, verbatim module syntax, erasable syntax only and no emit:
+Biome covers TypeScript, TSX and JSON in every workspace: recommended rules, type-import discipline, organized imports, two spaces, double quotes, width 100 and the shipped `biome-plugins/boundaries.grit`, ignoring `dist/`, `.astro/` and `coverage/`. Keep the shipped boundary probes enabled. `.astro` files are checked by `astro check`. TypeScript is strict in every project, with unchecked index access, verbatim module syntax, erasable syntax only and no emit:
 
 - contract and API: `nodenext` with `.ts` relative imports and no path aliases
 - site: Astro's strict preset with `jsx: "react-jsx"` and `allowImportingTsExtensions`, since it type-checks the contract's source
@@ -123,7 +127,7 @@ CI sets up Bun from packageManager and Node from .node-version, installs frozen 
 
 ## Commands and gotchas
 
-`dev:api` and `dev:web` run `bun run --cwd` into their workspace; `dev:bg` and `dev:stop` invoke `scripts/dev-bg.ts start` and `stop`. `dev:api` runs `apps/api/src/platform/node.ts` on Node with watch mode on `PORT_API` and `--env-file-if-exists` pointing at the root `.env`. `dev:web` passes `--ignore-lock`, because Astro backgrounds itself when it detects an agent; `astro.config.mjs` sets `server.port` from `PORT_WEB`, falling back to 4321. `build` bundles the API with Bun targeting Node, without inlining env, then runs `astro build`; `start` runs the bundle with the same env-file flag. The shipped dev wrapper runs both servers with prefixed lines, copies them to `logs/dev.log`, points `LOG_FILE` at the root `logs/server.jsonl`, and owns `logs/dev.pid`. Agents use `dev:bg` and `dev:stop`, never broad process killing. AGENTS documents commands, logs, hooks, API conventions and `jq` debugging queries over `logs/server.jsonl`.
+`dev:api` and `dev:web` run `bun run --cwd` into their workspace; `dev:bg` and `dev:stop` invoke `scripts/dev-bg.ts start` and `stop`. `dev:api` runs `apps/api/src/platform/node.ts` on Node with watch mode on `PORT_API` and `--env-file-if-exists` pointing at the root `.env`. `dev:web` passes `--ignore-lock`, because Astro backgrounds itself when it detects an agent; `astro.config.mjs` sets `server.port` from `PORT_WEB`, falling back to 4321. `build` bundles the API with Bun targeting Node, without inlining env, then runs `astro build`; `start` runs the bundle with the same env-file flag. The shipped wrapper owns checkout servers and capped logs (`dev.log`, `dev.jsonl`, `server.jsonl`), preserving the previous run. Wire `logs` to `scripts/logs.ts` and `dev:status` to `scripts/dev-bg.ts status`. Agents use `dev:bg`, `dev:stop`, `dev:status` and `logs --help`; document them in AGENTS.
 
 <!-- stacks:when with=git-hooks -->
 The shipped `scripts/prepare.ts` already runs `lefthook install` after every `bun install` (skipped in CI or without lefthook), so don't add another install step. pre-push runs `bun run typecheck` alongside `bun run test`.
