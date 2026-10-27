@@ -6,6 +6,7 @@ import { AgentId, type DetectedAgent } from "./schemas/entry";
 import { SLUG } from "./version";
 export type Environment = Record<string, string | undefined>;
 export type Paths = {
+  home: string;
   config: string;
   data: string;
   cache: string;
@@ -140,6 +141,7 @@ export function configLayer(env: Environment = process.env) {
         const registry = yield* read(text("QUICKSTACK_REGISTRY_DIR"));
         return {
           config: path.join(config, SLUG, "config.json"),
+          home,
           data,
           cache,
           state,

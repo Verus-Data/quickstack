@@ -1,4 +1,4 @@
-import { Effect, Option, Path, Schema } from "effect";
+import { Effect, FileSystem, Option, Path, Schema, Terminal } from "effect";
 import { CliError, Flag } from "effect/cli";
 import { AppConfig } from "../config";
 import {
@@ -6,14 +6,18 @@ import {
   candidates,
   decideHandoff,
   type HandoffDecision,
+  handoffRecord,
   LAUNCH_ARGS,
+  pickerQuestion,
+  pickerText,
   renderHandoff,
 } from "../core/handoff";
-import { MANIFEST_PATH, readManifest, writeManifest } from "../core/manifest";
+import { encodeManifest, MANIFEST_PATH, readManifest } from "../core/manifest";
+import { openProject } from "../core/scaffold/write";
 import { shownPath } from "../core/shown-path";
 import { printable } from "../core/text";
-import { PermissionDenied, Usage } from "../errors";
-import { AgentId } from "../schemas/entry";
+import { BrokenPipe, Interrupted, PermissionDenied, Usage } from "../errors";
+import { AgentId, Harness } from "../schemas/entry";
 import type { NewResult } from "../schemas/new";
 import { Host } from "../services/host";
 import { Invocation } from "../services/invocation";
@@ -31,6 +35,18 @@ const agentValue = (option: string, value: string) =>
           option,
           value,
           expected: "claude, codex, opencode or cursor",
+          kind: "flag",
+        }),
+      );
+
+const harnessValue = (value: string) =>
+  Schema.is(Harness)(value)
+    ? Effect.succeed(value)
+    : Effect.fail(
+        new CliError.InvalidValue({
+          option: "launch",
+          value,
+          expected: Harness.literals.join(", "),
           kind: "flag",
         }),
       );
@@ -62,14 +78,14 @@ export const projectFlags = (command: "new" | "add") => ({
   ),
   launch: Flag.String("launch").pipe(
     Flag.withDescription(
-      `The agent to hand the project to: claude, codex, opencode or cursor. Default: the agents setting, then claude, codex, opencode, cursor, whichever is on PATH first. ${command === "new" ? "Never with --json, --no-launch or --dry-run." : "Never with --json or --no-launch."}`,
+      `The harness to hand the project to: claude, codex, opencode, cursor, copilot or codex-app (macOS). Default: the first configured agent on PATH; otherwise one found harness launches, and a person with several agents and none configured is asked. ${command === "new" ? "Never with --json, --no-launch or --dry-run." : "Never with --json or --no-launch."}`,
     ),
-    Flag.mapEffect((value) => agentValue("launch", value)),
+    Flag.mapEffect(harnessValue),
     Flag.optional,
   ),
   noLaunch: Flag.Boolean("no-launch").pipe(
     Flag.withDescription(
-      "Don't start an agent; print the prompt to give one. --json, a detected agent session or a non-terminal never starts one either.",
+      "Don't start an agent; print the prompt to give one. Otherwise a person with several agents and none configured is asked. --json, a detected agent session or a non-terminal never starts one either.",
     ),
     Flag.withDefault(false),
   ),
@@ -77,7 +93,7 @@ export const projectFlags = (command: "new" | "add") => ({
 
 /** Validate preferences and capture the inputs used when composition supplies its trust marks. */
 export const prepareHandoff = (
-  flags: { launch: Option.Option<AgentId>; noLaunch: boolean; dryRun?: boolean },
+  flags: { launch: Option.Option<Harness>; noLaunch: boolean; dryRun?: boolean },
   json: boolean,
 ) =>
   Effect.gen(function* () {
@@ -85,16 +101,13 @@ export const prepareHandoff = (
     yield* validatePreferences(flags, json);
     const host = yield* Host;
     const config = yield* AppConfig;
-    const processes = yield* Processes;
     const detected = yield* config.agent;
     const configured = (yield* config.get).agents ?? [];
     const launch = !flags.noLaunch && !flags.dryRun;
-    const found = new Map<AgentId, string>();
-    if (detected === "none" && !json && launch)
-      for (const agent of candidates(preferred, configured)) {
-        const bin = yield* processes.which(LAUNCH_ARGS[agent].bin);
-        if (Option.isSome(bin)) found.set(agent, bin.value);
-      }
+    const found =
+      detected === "none" && !json && launch
+        ? yield* findHarnesses(candidates(preferred, configured))
+        : new Map<Harness, string>();
     return (untrusted: ReadonlyArray<string>): HandoffDecision =>
       flags.dryRun
         ? { kind: "print", reason: "no-launch", untrusted }
@@ -112,14 +125,51 @@ export const prepareHandoff = (
           });
   });
 
-const recordPrinted = (file: string) =>
-  readManifest(file).pipe(
-    Effect.flatMap((manifest) =>
-      manifest.handoff
-        ? writeManifest(file, { ...manifest, handoff: { kind: "print", at: manifest.handoff.at } })
-        : Effect.void,
-    ),
-    Effect.ignore,
+const findHarnesses = Effect.fn("handoff.findHarnesses")(function* (
+  agents: ReadonlyArray<Harness>,
+) {
+  const processes = yield* Processes;
+  const found = new Map<Harness, string>();
+  for (const agent of agents) {
+    const launcher = LAUNCH_ARGS[agent];
+    const bin = yield* launcher.via === "terminal"
+      ? processes.which(launcher.bin)
+      : findApp(launcher.app);
+    if (Option.isSome(bin)) found.set(agent, bin.value);
+  }
+  return found;
+});
+
+const findApp = Effect.fn("handoff.findApp")(function* (app: string) {
+  const host = yield* Host;
+  if (host.platform !== "darwin") return Option.none<string>();
+  const processes = yield* Processes;
+  if (Option.isNone(yield* processes.which("open"))) return Option.none<string>();
+  const fs = yield* FileSystem.FileSystem;
+  const path = yield* Path.Path;
+  const paths = yield* (yield* AppConfig).paths;
+  for (const file of [path.join("/Applications", app), path.join(paths.home, "Applications", app)])
+    if (yield* fs.exists(file)) return Option.some(file);
+  return Option.none<string>();
+});
+
+const recordHandoff = (project: string, decision: HandoffDecision) =>
+  Effect.scoped(
+    Effect.gen(function* () {
+      const path = yield* Path.Path;
+      const manifest = yield* readManifest(path.join(project, MANIFEST_PATH));
+      if (!manifest.handoff) return;
+      const writer = yield* openProject(project);
+      yield* writer.rewrite(
+        MANIFEST_PATH,
+        new TextEncoder().encode(
+          encodeManifest({
+            ...manifest,
+            handoff: handoffRecord(decision, manifest.handoff.at),
+          }),
+        ),
+      );
+    }),
   );
 
 export type SummaryContext = {
@@ -127,6 +177,130 @@ export type SummaryContext = {
   audience: Audience;
   untrusted: NewResult["untrusted"];
 };
+
+const chooseHarness = Effect.fn("handoff.chooseHarness")(function* (
+  decision: Extract<HandoffDecision, { kind: "choose" }>,
+) {
+  const terminal = yield* Terminal.Terminal;
+  yield* displayPicker(terminal, `\n${pickerText(decision.options.map((option) => option.agent))}`);
+  for (let attempt = 0; attempt < 2; attempt++) {
+    yield* displayPicker(terminal, pickerQuestion(decision.options.length));
+    const answer = yield* terminal.readLine.pipe(
+      Effect.map(Option.some),
+      Effect.catchTag("QuitError", () => Effect.succeed(Option.none<string>())),
+      Effect.mapError(() => new Interrupted()),
+    );
+    if (Option.isNone(answer)) break;
+    const value = answer.value.trim();
+    if (value !== "" && !/^[1-9]\d*$/.test(value)) continue;
+    const selected = decision.options[value === "" ? 0 : Number(value) - 1];
+    if (selected) return selected;
+  }
+  return {
+    kind: "print",
+    reason: "not-chosen",
+    untrusted: decision.untrusted,
+  } satisfies HandoffDecision;
+});
+
+const displayPicker = (terminal: Terminal.Terminal, text: string) =>
+  terminal.display(text).pipe(
+    Effect.mapError((error) => {
+      const cause = error.reason.cause;
+      return typeof cause === "object" &&
+        cause !== null &&
+        "code" in cause &&
+        cause.code === "EPIPE"
+        ? new BrokenPipe()
+        : new PermissionDenied({ details: { reason: "write" } });
+    }),
+  );
+
+const launchTerminal = Effect.fn("handoff.launchTerminal")(function* (
+  decision: Extract<HandoffDecision, { kind: "launch"; via: "terminal" }>,
+  project: string,
+) {
+  const config = yield* AppConfig;
+  const processes = yield* Processes;
+  const status = yield* processes
+    .interactive({
+      bin: decision.bin,
+      args: [...decision.args],
+      cwd: project,
+      env: config.childEnv([]),
+    })
+    .pipe(
+      Effect.catchTag("SpawnFailed", (failure) =>
+        Effect.andThen(
+          recordHandoff(project, {
+            kind: "print",
+            reason: "not-chosen",
+            untrusted: [],
+          }).pipe(Effect.ignore),
+          failure.errno === "EACCES"
+            ? Effect.fail(
+                new PermissionDenied({ details: { reason: "launch", path: decision.bin } }),
+              )
+            : Effect.die(failure),
+        ),
+      ),
+    );
+  yield* (yield* Invocation).exitWith(status);
+});
+
+const launchApp = Effect.fn("handoff.launchApp")(function* (
+  project: string,
+  context: Parameters<typeof renderHandoff>[1],
+) {
+  const config = yield* AppConfig;
+  const processes = yield* Processes;
+  const result = yield* processes
+    .exec({
+      argv: ["open", LAUNCH_ARGS["codex-app"].url(project, agentPrompt(context.invocation))],
+      cwd: project,
+      env: config.childEnv([]),
+    })
+    .pipe(
+      Effect.map((result) => result.exitCode === 0),
+      Effect.catchTag("SpawnFailed", () => Effect.succeed(false)),
+    );
+  if (result) return;
+  const printed = { kind: "print", reason: "not-chosen", untrusted: [] } satisfies HandoffDecision;
+  yield* recordHandoff(project, printed).pipe(Effect.ignore);
+  yield* (yield* Output).result(null, renderHandoff(printed, context));
+});
+
+const resolveChoice = Effect.fn("handoff.resolveChoice")(function* (
+  decision: HandoffDecision,
+  project: string,
+  summary: string,
+) {
+  if (decision.kind !== "choose") return decision;
+  const output = yield* Output;
+  yield* output.result(null, summary);
+  yield* output.flushNow;
+  const selected = yield* chooseHarness(decision);
+  const terminal = yield* Terminal.Terminal;
+  yield* displayPicker(terminal, "\n");
+  yield* recordHandoff(project, selected);
+  return selected;
+});
+
+const summaryTrust = Effect.fn("handoff.summaryTrust")(function* (
+  untrusted: NewResult["untrusted"],
+) {
+  const output = yield* Output;
+  const host = yield* Host;
+  if (output.audience !== "agent") return untrusted;
+  return yield* Effect.forEach(untrusted, (entry) =>
+    Effect.map(shownPath(host.cwd, entry.dir), (dir) => ({ ...entry, dir })),
+  );
+});
+
+const launchText = (decision: Extract<HandoffDecision, { kind: "launch" }>, shown: string) =>
+  decision.via === "app"
+    ? `Opening the Codex app on ${printable(shown)}...`
+    : `Launching ${printable(decision.bin)} in ${printable(shown)}...`;
 
 /** Render the result, then print the next task or give the terminal to the selected agent. */
 export const completeHandoff = (input: {
@@ -139,22 +313,25 @@ export const completeHandoff = (input: {
   encode: (handoff: NewResult["handoff"]) => unknown;
 }) =>
   Effect.gen(function* () {
-    const { decision } = input;
+    const host = yield* Host;
+    const output = yield* Output;
+    const shown = yield* shownPath(host.cwd, input.project);
+    const untrusted = yield* summaryTrust(input.untrusted);
+    const summary = input.render({ shown, audience: output.audience, untrusted });
+    const choosing = input.decision.kind === "choose";
+    const decision = yield* resolveChoice(input.decision, input.project, summary);
     const invocation = yield* Invocation;
     yield* invocation.annotate({
       handoff: decision.kind,
       ...(decision.kind === "print" ? {} : { agent: decision.agent }),
     });
-    const host = yield* Host;
-    const output = yield* Output;
-    const shown = yield* shownPath(host.cwd, input.project);
-    const untrusted =
-      output.audience === "agent"
-        ? yield* Effect.forEach(input.untrusted, (entry) =>
-            Effect.map(shownPath(host.cwd, entry.dir), (dir) => ({ ...entry, dir })),
-          )
-        : input.untrusted;
-    const summary = input.render({ shown, audience: output.audience, untrusted });
+    const context = {
+      shown,
+      invocation: host.invocation,
+      audience: output.audience,
+      agent: input.agent,
+    };
+    const prefix = choosing ? "" : `${summary}\n\n`;
     if (decision.kind !== "launch") {
       yield* output.result(
         input.encode({
@@ -162,43 +339,18 @@ export const completeHandoff = (input: {
           untrusted: [...decision.untrusted],
           prompt: agentPrompt(host.invocation),
         }),
-        input.preview
-          ? summary
-          : `${summary}\n\n${renderHandoff(decision, { shown, invocation: host.invocation, audience: output.audience, agent: input.agent })}`,
+        input.preview ? summary : `${prefix}${renderHandoff(decision, context)}`,
       );
       return;
     }
-    yield* output.result(
-      null,
-      `${summary}\n\nLaunching ${printable(decision.bin)} in ${printable(shown)}...`,
-    );
+    yield* output.result(null, `${prefix}${launchText(decision, shown)}`);
     yield* output.flushNow;
-    const config = yield* AppConfig;
-    const path = yield* Path.Path;
-    const status = yield* (yield* Processes)
-      .interactive({
-        bin: decision.bin,
-        args: [...decision.args],
-        cwd: input.project,
-        env: config.childEnv([]),
-      })
-      .pipe(
-        Effect.catchTag("SpawnFailed", (failure) =>
-          Effect.andThen(
-            recordPrinted(path.join(input.project, MANIFEST_PATH)),
-            failure.errno === "EACCES"
-              ? Effect.fail(
-                  new PermissionDenied({ details: { reason: "launch", path: decision.bin } }),
-                )
-              : Effect.die(failure),
-          ),
-        ),
-      );
-    yield* invocation.exitWith(status);
+    if (decision.via === "app") yield* launchApp(input.project, context);
+    else yield* launchTerminal(decision, input.project);
   });
 
 function validatePreferences(
-  flags: { launch: Option.Option<AgentId>; noLaunch: boolean; dryRun?: boolean },
+  flags: { launch: Option.Option<Harness>; noLaunch: boolean; dryRun?: boolean },
   json: boolean,
 ) {
   return Effect.gen(function* () {

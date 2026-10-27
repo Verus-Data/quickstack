@@ -85,6 +85,10 @@ The full table, the JSON error envelope and the signal rules are in [Output and 
 
 ## Agent adapters
 
+At a terminal, `new` and `add` launch the first available agent in your `agents` setting. Otherwise a single found harness launches immediately, and several show a numbered picker after the summary. The order is Claude Code, Codex CLI, OpenCode, Cursor CLI, Copilot CLI, then the Codex app on macOS. Enter picks the first row; EOF or two invalid answers print the prompt. Your choice isn't saved.
+
+`--launch claude|codex|opencode|cursor|copilot|codex-app` selects a harness explicitly; `--no-launch` prints the prompt. Copilot starts with `copilot -i <prompt>`. The Codex app requires `open` on PATH and `Codex.app` in `/Applications` or `$HOME/Applications`; its launch exits 0, including an opener failure, which prints the prompt. Terminal launches return the agent's status. A detected agent, `--json`, pipes, previews and untrusted entries never ask or launch. Copilot and the Codex app are launch targets only; `--agents` and the `agents` setting still accept the four adapter ids below.
+
 Separately from who drives, `--agents` chooses which agents' config files a project gets: Claude Code settings and hooks, Codex config, OpenCode permissions, Cursor rules. It doesn't change which agent `new` launches (`--launch` does). The default is `claude`. Every target gets `AGENTS.md`, guard scripts are shared under `.claude/hooks/`, and only the selected agents get their own config.
 
 ```sh

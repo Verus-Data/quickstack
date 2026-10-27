@@ -12,17 +12,20 @@ export function humanPlan(options: {
   platform: NodeJS.Platform;
   env: Readonly<Record<string, string | undefined>>;
 }): HumanPlan {
-  const { args, command, platform } = options;
+  const { command, platform } = options;
+  const args = options.args.filter((arg) => arg !== "--allow-launch");
   const sub = args.find((arg) => !arg.startsWith("-"));
-  const launchAllowed = args.some(
-    (arg) =>
-      ["--no-launch", "--dry-run", "--json", "--help", "-h"].includes(arg) ||
-      arg.startsWith("--launch"),
-  );
+  const launchAllowed =
+    options.args.includes("--allow-launch") ||
+    args.some(
+      (arg) =>
+        ["--no-launch", "--dry-run", "--json", "--help", "-h"].includes(arg) ||
+        arg.startsWith("--launch"),
+    );
   if ((sub === "new" || sub === "add") && !launchAllowed) {
     return {
       error:
-        "human: new and add launch your coding agent in a terminal; add --no-launch to QA the output, or pass --launch <agent> to test the launch on purpose.",
+        "human: new and add launch your coding agent in a terminal; add --no-launch to QA the output, or pass --launch <agent> or --allow-launch to test the launch on purpose.",
     };
   }
   let argv: string[];

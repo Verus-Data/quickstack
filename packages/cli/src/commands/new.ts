@@ -94,7 +94,7 @@ export const newCommand = Command.make(
     }),
 ).pipe(
   Command.withDescription(
-    `Start a project from a stack: write its starter files and ${BRIEF_PATH}, the task for your coding agent. Runs nothing from the stack; verify is the definition of done. Exits 0 on success, 2 on bad input, an unknown entry, a non-empty target (TargetNotEmpty) or conflicting fragments (ComposeConflict), 3 on bad configuration, 6 when a write is refused, 130 when interrupted; after launching an agent, the agent's own status.`,
+    `Start a project from a stack: write its starter files and ${BRIEF_PATH}, the task for your coding agent. Runs nothing from the stack; verify is the definition of done. Exits 0 on success, 2 on bad input, an unknown entry, a non-empty target (TargetNotEmpty) or conflicting fragments (ComposeConflict), 3 on bad configuration, 6 when a write is refused, 130 when interrupted; after launching a terminal agent, the agent's own status; an app launch exits 0.`,
   ),
   Command.withShortDescription("Start a project from a stack and write its brief."),
   Command.withExamples(({ commandPath }) => [

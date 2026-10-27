@@ -376,7 +376,7 @@ describe("printing the prompt", () => {
     expect(stderr).toBe("");
     expect(status).toBe(0);
     expect(stdout).toContain(
-      "No agent CLI found on PATH (looked for claude, codex, opencode, cursor-agent).\nNext: open app",
+      "No agent CLI found on PATH (looked for claude, codex, opencode, cursor-agent, copilot).\nNext: open app",
     );
   });
 

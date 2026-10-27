@@ -8,7 +8,7 @@ import {
   LAUNCH_ARGS,
   renderHandoff,
 } from "../src/core/handoff";
-import { AgentId, DetectedAgent } from "../src/schemas/entry";
+import { AgentId, DetectedAgent, Harness } from "../src/schemas/entry";
 
 const prompt = agentPrompt("quickstack");
 const base: HandoffInput = {
@@ -74,9 +74,9 @@ describe("decideHandoff, first matching rule wins [1.4#1]", () => {
       { kind: "print", reason: "untrusted", untrusted: ["local"] },
     ],
     [
-      "the first agent found",
+      "the only agent found",
       {},
-      { kind: "launch", agent: "claude", bin: "/bin/claude", args: [prompt] },
+      { kind: "launch", agent: "claude", via: "terminal", bin: "/bin/claude", args: [prompt] },
     ],
     [
       "configured agents come first",
@@ -87,10 +87,16 @@ describe("decideHandoff, first matching rule wins [1.4#1]", () => {
           ["opencode", "/bin/opencode"],
         ]),
       },
-      { kind: "launch", agent: "opencode", bin: "/bin/opencode", args: ["--prompt", prompt] },
+      {
+        kind: "launch",
+        agent: "opencode",
+        via: "terminal",
+        bin: "/bin/opencode",
+        args: ["--prompt", prompt],
+      },
     ],
     [
-      "then the default order",
+      "several found and none configured: choose, in the default order (4.4c)",
       {
         configured: ["cursor"],
         found: new Map([
@@ -98,7 +104,14 @@ describe("decideHandoff, first matching rule wins [1.4#1]", () => {
           ["claude", "/bin/claude"],
         ]),
       },
-      { kind: "launch", agent: "claude", bin: "/bin/claude", args: [prompt] },
+      {
+        kind: "choose",
+        options: [
+          { kind: "launch", agent: "claude", via: "terminal", bin: "/bin/claude", args: [prompt] },
+          { kind: "launch", agent: "codex", via: "terminal", bin: "/bin/codex", args: [prompt] },
+        ],
+        untrusted: [],
+      },
     ],
     [
       "--launch is tried alone",
@@ -108,7 +121,13 @@ describe("decideHandoff, first matching rule wins [1.4#1]", () => {
     [
       "--launch found",
       { preferred: "cursor", found: new Map([["cursor", "/bin/cursor-agent"]]) },
-      { kind: "launch", agent: "cursor", bin: "/bin/cursor-agent", args: [prompt] },
+      {
+        kind: "launch",
+        agent: "cursor",
+        via: "terminal",
+        bin: "/bin/cursor-agent",
+        args: [prompt],
+      },
     ],
     [
       "nothing on PATH",
@@ -149,10 +168,11 @@ it.prop("a detected agent is always inside-agent [1.4#2]", [input], ([value]) =>
     });
 });
 
-test("every agent id has a launch row [1.4#1]", () => {
-  expect(Object.keys(LAUNCH_ARGS).sort()).toEqual([...AgentId.literals].sort());
-  expect(LAUNCH_ARGS.opencode.args("p")).toEqual(["--prompt", "p"]);
-  expect(LAUNCH_ARGS.cursor.bin).toBe("cursor-agent");
+test("every harness has a launch row [1.4#1]", () => {
+  expect(Object.keys(LAUNCH_ARGS).sort()).toEqual([...Harness.literals].sort());
+  const { opencode, cursor } = LAUNCH_ARGS;
+  expect(opencode.via === "terminal" && opencode.args("p")).toEqual(["--prompt", "p"]);
+  expect(cursor.via === "terminal" && cursor.bin).toBe("cursor-agent");
 });
 
 test("the prompt names the invocation, so an npx project names the pinned version [1.4#10]", () => {
