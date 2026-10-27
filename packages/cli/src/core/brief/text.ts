@@ -1,10 +1,4 @@
-import {
-  BRIEF_PATH,
-  INCOMING,
-  MANIFEST_PATH,
-  METADATA_DIR,
-  NOTES_PATH,
-} from "../../project-layout";
+import { INCOMING, MANIFEST_PATH, METADATA_DIR, NOTES_PATH } from "../../project-layout";
 /**
  * Every fixed sentence of the brief, so its wording can be read and reviewed in one place.
  * `cli` is `Host.invocation`; `code` wraps a value as inline code. Nothing else in the CLI writes
@@ -76,7 +70,7 @@ export const ground = {
   agentsMd:
     "- Keep `AGENTS.md` true: every command it lists exists, and it describes the project as built.",
   notes: [
-    `- Both \`${BRIEF_PATH}\` and \`${NOTES_PATH}\` are git-ignored: read the brief and keep notes here, outside worktrees:`,
+    `- Keep \`${NOTES_PATH}\` here as you work; git worktrees lack it and the brief (both git-ignored):`,
     "  - Under `## Findings`, add a line whenever this brief is ambiguous, wrong, names something that doesn't exist or made you guess, and whenever an instruction stopped you making a mistake.",
     "  - Under `## Asked`, add a line with the time whenever you ask the user something or the user tells you something unprompted. An empty `## Asked` means no interventions.",
   ],

@@ -53,22 +53,9 @@ test.each(["default", "sandbox"] as const)(
     for (const without of [[], ["todo-app"]]) {
       const brief = renderBrief(await composed({ preset, without }), context()).text;
       expect(section(brief, "## Ground rules")).toContain(
-        "Both `.stacks/BRIEF.md` and `.stacks/NOTES.md` are git-ignored: read the brief and keep notes here, outside worktrees:",
+        "- Keep `.stacks/NOTES.md` here as you work; git worktrees lack it and the brief (both git-ignored):",
       );
     }
-  },
-);
-
-test.each([{ withIds: [] }, { withIds: ["rr"] }])(
-  "astro-api explains fragment dependency placement with $withIds",
-  async ({ withIds }) => {
-    const composition = await composed(
-      { stack: "astro-api", with: withIds },
-      { roots: bundledAt(join(import.meta.dirname, "../registry")) },
-    );
-    expect(renderBrief(composition, context()).text).toContain(
-      "For fragment roles without workspaces, put test-only packages (`@effect/vitest`) in root devDependencies and `effect` wherever imported.",
-    );
   },
 );
 

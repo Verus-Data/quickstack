@@ -84,9 +84,7 @@ apps/web/src/        pages/, layouts/BaseLayout.astro, components/*.tsx (+ .test
 
 ## Setup
 
-For fragment roles without workspaces, put test-only packages (`@effect/vitest`) in root devDependencies and `effect` wherever imported.
-
-1. Write the root `package.json` (`private`, `"type": "module"`, workspaces, the current Bun `packageManager`, the declared scripts) and one per workspace. Node LTS goes in `.node-version` and `engines.node`. Install compatible versions together, checking peer ranges. Pin `@types/node` to the `.node-version` major.
+1. Write the root `package.json` (`private`, `"type": "module"`, workspaces, the current Bun `packageManager`, the declared scripts) and one per workspace. Node LTS goes in `.node-version` and `engines.node`. Install compatible versions together, checking peer ranges. Pin `@types/node` to the `.node-version` major. The `dev` and `typescript` roles name no workspace: `@effect/vitest` goes in root devDependencies, `effect` in each workspace importing it.
 2. Create the site with create-astro (`bunx create-astro@latest`, minimal template, no install, git or agent files) in a temp directory, move it into `apps/web` without overwriting, then add React and Tailwind the way `astro add` currently does.
 3. Generate the TypeScript, Biome, Astro and Vitest config described below, checked against the installed versions. Confirm Node runs `apps/api/src/platform/node.ts` with type stripping, including its imports of the contract's `.ts` source through the workspace link. If it doesn't, record the fix under Build workarounds.
 4. Implement the proving slice: the `Health` group with `GET /healthz` returning `{"status":"ok"}` in the contract, then its handler, config, logging, `app.ts` and the Node entry in the API. On the site, a `BaseLayout`, an `index.astro` and an `ApiStatus` island.
