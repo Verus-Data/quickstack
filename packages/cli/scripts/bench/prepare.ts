@@ -1,0 +1,274 @@
+import { Clock, Duration, Effect, FileSystem, Option, Path, Schema } from "effect";
+import { AppConfig } from "../../src/config";
+import { type ComposeOptions, compose } from "../../src/core/compose/compose";
+import { fingerprint } from "../../src/core/fingerprint";
+import { readManifest } from "../../src/core/manifest";
+import { Registry } from "../../src/core/registry/registry";
+import { NewResult } from "../../src/schemas/new";
+import { Host } from "../../src/services/host";
+import { type Captured, Processes } from "../../src/services/processes";
+import type { AgentAdapter } from "./agents";
+import { freePort, shellArg, snapshot } from "./files";
+import type { Options } from "./options";
+
+const State = Schema.fromJsonString(
+  Schema.Struct({
+    with: Schema.Array(Schema.String),
+    ports: Schema.Record(Schema.String, Schema.String),
+    fixedWords: Schema.Number,
+    note: Schema.optionalKey(Schema.String),
+  }),
+);
+
+export const requireSuccess = (result: Captured, label: string) =>
+  result.exitCode === 0 && !result.timedOut && !result.truncated
+    ? Effect.succeed(result.stdout.trim())
+    : Effect.fail(new Error(`${label} failed: ${result.stderr || result.stdout}`));
+
+export const prepare = (options: Options, adapters: readonly AgentAdapter[]) =>
+  Effect.gen(function* () {
+    const date = new Date(yield* Clock.currentTimeMillis).toISOString().slice(0, 10);
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const host = yield* Host;
+    const config = yield* AppConfig;
+    const processes = yield* Processes;
+    const captured = config.childEnv([]);
+    const detected = yield* config.agent;
+    const chosen = options.agent ?? (adapters.some((a) => a.id === detected) ? detected : "claude");
+    const adapter = adapters.find((a) => a.id === chosen);
+    if (!adapter) return yield* Effect.fail(new Error(`Unsupported agent: ${chosen}`));
+    const token = captured[adapter.auth.env];
+    if (!token?.trim())
+      return yield* Effect.fail(new Error(`Set ${adapter.auth.env} using ${adapter.auth.obtain}`));
+    const found = yield* processes.which(adapter.binary);
+    if (Option.isNone(found))
+      return yield* Effect.fail(new Error(`${adapter.binary} is not on PATH`));
+
+    // Construct every environment through config, retaining only the explicit allowlist.
+    const environment = (set: Record<string, string> = {}) =>
+      config.childEnv(Object.keys(captured), {
+        ...Object.fromEntries(
+          ["PATH", "TMPDIR", "LANG"].flatMap((key) =>
+            captured[key] === undefined ? [] : [[key, captured[key]]],
+          ),
+        ),
+        DO_NOT_TRACK: "1",
+        ...set,
+      });
+    const preflightEnv = environment(captured.HOME ? { HOME: captured.HOME } : {});
+    const exec = (argv: readonly [string, ...string[]], cwd = host.cwd) =>
+      processes
+        .exec({ argv, cwd, env: preflightEnv, timeout: Duration.seconds(60) })
+        .pipe(Effect.flatMap((result) => requireSuccess(result, argv[0])));
+    const version = yield* exec([found.value, ...adapter.versionArgs]);
+    const agentVersion = version.match(/\d+\.\d+[^\s)]*/)?.[0] ?? version;
+    if (!agentVersion) return yield* Effect.fail(new Error("Agent version is empty"));
+    const repo = yield* exec(["git", "rev-parse", "--show-toplevel"]);
+    const repoCommit = yield* exec(["git", "rev-parse", "HEAD"], repo);
+    const dirty = yield* exec(["git", "status", "--porcelain", "--", "packages/cli/"], repo);
+    if (dirty) return yield* Effect.fail(new Error("Uncommitted changes under packages/cli/"));
+    const packageRoot = path.join(repo, "packages/cli");
+    const registry = path.join(packageRoot, "registry");
+    const selection: ComposeOptions = {
+      stack: options.stack,
+      with: options.with,
+      without: [],
+      preset: options.preset,
+      agents: [adapter.id],
+      always: [],
+      mode: "new",
+    };
+    const { composition, added } = yield* Effect.gen(function* () {
+      const composition = yield* compose(selection);
+      const baseline = yield* compose({ ...selection, with: [] });
+      const defaults = new Set(baseline.fragments.map((entry) => entry.id));
+      return {
+        composition,
+        added: options.with.filter(
+          (id) => !defaults.has(id) && composition.fragments.some((entry) => entry.id === id),
+        ),
+      };
+    }).pipe(Effect.provide(Registry.layer([{ origin: "bundled", path: registry }])));
+
+    let root: string;
+    let ports: Record<string, string>;
+    let fixedWords: number;
+    let previousNote: string | undefined;
+    let scaffold: NewResult | undefined;
+    if (options.existing) {
+      root = yield* fs.realPath(path.resolve(host.cwd, options.existing));
+      const kept = yield* Effect.gen(function* () {
+        const manifest = yield* readManifest(path.join(root, "run/.quickstacks/manifest.json"));
+        const state = yield* fs
+          .readFileString(path.join(root, "bench/state.json"))
+          .pipe(Effect.flatMap(Schema.decodeUnknownEffect(State)));
+        return { manifest, state };
+      }).pipe(Effect.mapError(() => new Error("Invalid existing bench manifest or kept state")));
+      if (
+        kept.manifest.stack?.id !== options.stack ||
+        kept.manifest.preset !== options.preset ||
+        kept.manifest.agents.length !== 1 ||
+        kept.manifest.agents[0] !== adapter.id ||
+        JSON.stringify(kept.state.with) !== JSON.stringify(added)
+      )
+        return yield* Effect.fail(
+          new Error("Existing stack, fragments, preset or agent do not match"),
+        );
+      const current = yield* fingerprint(composition).pipe(
+        Effect.provide(Registry.layer([{ origin: "bundled", path: registry }])),
+      );
+      if (kept.manifest.fingerprint !== current)
+        return yield* Effect.fail(
+          new Error("Existing fingerprint differs from current composition"),
+        );
+      ports = { ...kept.state.ports };
+      fixedWords = kept.state.fixedWords;
+      previousNote = kept.state.note;
+    } else {
+      const created = yield* Effect.acquireRelease(
+        fs.makeTempDirectory({
+          ...(captured.TMPDIR ? { directory: captured.TMPDIR } : {}),
+          prefix: "quickstacks-bench-",
+        }),
+        (directory) =>
+          options.keep ? Effect.void : fs.remove(directory, { recursive: true }).pipe(Effect.orDie),
+      );
+      // The real path, so every path the agent is given matches what `pwd` prints there
+      // (macOS's TMPDIR is under /var, a symlink to /private/var).
+      root = yield* fs.realPath(created);
+      ports = {};
+      fixedWords = 0;
+    }
+    if (options.existing && !options.keep)
+      yield* Effect.addFinalizer(() => fs.remove(root, { recursive: true }).pipe(Effect.orDie));
+    const home = path.join(root, "home");
+    const prefix = path.join(root, "prefix");
+    const cli = path.join(prefix, "bin/quickstacks");
+    const project = path.join(root, "run");
+    const bench = path.join(root, "bench");
+    const env = environment({
+      PATH: `${path.join(prefix, "bin")}:${captured.PATH ?? "/usr/bin:/bin"}`,
+      HOME: home,
+      XDG_CONFIG_HOME: path.join(home, "config"),
+      XDG_DATA_HOME: path.join(home, "data"),
+      XDG_STATE_HOME: path.join(home, "state"),
+      XDG_CACHE_HOME: path.join(home, "cache"),
+    });
+    if (!options.existing) {
+      for (const directory of [
+        home,
+        bench,
+        path.join(prefix, "bin"),
+        ...Object.entries(env)
+          .filter(([key]) => key.startsWith("XDG_"))
+          .map(([, value]) => value),
+      ])
+        yield* fs.makeDirectory(directory, { recursive: true });
+      for (const key of Object.keys(composition.env)
+        .filter((key) => key.startsWith("PORT_"))
+        .sort()) {
+        let port: string;
+        do {
+          port = yield* freePort();
+        } while (Object.values(ports).includes(port));
+        ports[key] = port;
+      }
+      if (!options.cli) yield* exec(["bun", "run", "build"], repo);
+      yield* fs.copyFile(
+        options.cli
+          ? path.resolve(host.cwd, options.cli)
+          : path.join(packageRoot, "dist/quickstacks"),
+        cli,
+      );
+      yield* fs.chmod(cli, 0o755);
+      yield* fs.copy(registry, path.join(prefix, "registry"));
+      scaffold = yield* processes
+        .exec({
+          argv: [
+            cli,
+            "new",
+            options.stack,
+            "run",
+            options.preset === "sandbox" ? "--sandbox" : "--yes",
+            "--agents",
+            adapter.id,
+            "--no-launch",
+            "--json",
+            ...(options.with.length ? ["--with", options.with.join(",")] : []),
+          ],
+          cwd: root,
+          env: { ...env, ...ports },
+          timeout: Duration.minutes(2),
+        })
+        .pipe(
+          Effect.flatMap((result) => requireSuccess(result, "new")),
+          Effect.flatMap(Schema.decodeUnknownEffect(Schema.fromJsonString(NewResult))),
+        );
+      fixedWords = scaffold.fixedWords;
+      yield* fs.writeFileString(
+        path.join(bench, "state.json"),
+        JSON.stringify({
+          with: added,
+          ports,
+          fixedWords,
+        }),
+      );
+      yield* fs.writeFileString(
+        path.join(bench, "verify"),
+        `#!/bin/sh\ndate -u +%Y-%m-%dT%H:%M:%SZ >> ${shellArg(path.join(bench, "verify.log"))}; exec env ${Object.entries(
+          ports,
+        )
+          .map(([key, value]) => shellArg(`${key}=${value}`))
+          .join(" ")} ${shellArg(cli)} verify "$@"\n`,
+      );
+      yield* fs.chmod(path.join(bench, "verify"), 0o755);
+      yield* fs.writeFileString(
+        path.join(bench, "BENCH.md"),
+        `# Bench run
+
+- Nobody will answer you. Never ask the user a question. Choose the brief's default or the most conventional choice and carry on. Add each question under ## Asked in .quickstacks/NOTES.md, followed by default: and your choice.
+- Keep .quickstacks/NOTES.md as the brief describes, including ## Findings.
+- Run verify with ${path.join(bench, "verify")}.
+- Never edit .quickstacks/manifest.json. Never fake a credential or stub a service the brief says to use for real.
+- Stop when verify is green.
+`,
+      );
+    }
+    const manifest = yield* readManifest(path.join(project, ".quickstacks/manifest.json"));
+    return {
+      options,
+      date,
+      added,
+      adapter,
+      binary: found.value,
+      agentVersion,
+      repo,
+      repoCommit,
+      registry,
+      root,
+      project,
+      bench,
+      cli,
+      env: { ...env, ...ports },
+      token,
+      ports,
+      fixedWords,
+      previousNote,
+      // Fresh runs keep precisely what new returned; continuations retain that manifest.
+      fingerprint: scaffold?.fingerprint ?? manifest.fingerprint ?? "",
+      briefWords: scaffold?.briefWords ?? manifest.briefWords,
+      cliVersion: manifest.cli,
+      before: yield* snapshot(project),
+      shippedHooks: composition.files
+        .filter((file) => file.path.startsWith(`.${adapter.id}/hooks/`))
+        .map((file) => path.basename(file.path)),
+      agentChoice: options.agent
+        ? "explicit --agent"
+        : detected === chosen
+          ? "detected agent marker"
+          : "default fallback to claude",
+    };
+  });
+
+export type Prepared = Effect.Success<ReturnType<typeof prepare>>;

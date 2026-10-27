@@ -1,14 +1,15 @@
 # Phase 2.0b: Bench
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: BLOCKED 2026-10-27 (implementation and review fixes done; locked-test corrections needed)
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
-| Goal | A maintainer reruns any bundled stack with one command on their own machine: a local script packs the CLI, scaffolds the stack with `new --sandbox` (or, with `--preset default`, `new --yes`), drives the maintainer's own agent headlessly with token auth (D24), runs `verify` itself, and appends a `LedgerRecord` and a run note, with interventions counted from the agent's `## Asked` log |
+| Goal | A maintainer reruns any bundled stack with one command on their own machine: a local script builds the CLI from the working tree, scaffolds the stack with `new --sandbox` (or, with `--preset default`, `new --yes`), drives the maintainer's own agent headlessly with token auth (D24), runs `verify` itself, and appends a `LedgerRecord` and a run note, with interventions counted from the agent's `## Asked` log |
 | Traces to | "The only quality signal the product has is manual and nobody has time to run it"; success rows "The agent finishes without help" and "It's faster than by hand"; assumption 1's test: "Run each bundled stack to green and count hesitations and skipped instructions" |
-| Depends on | [2.0c](phase-2.0c-run-ledger.md) (`LedgerRecord`, `appendRecord`, `quickstacks runs --json`, `countAsked`), [2.0a](phase-2.0a-composed-files-and-fingerprint.md) (`fingerprint` in `new --json`), [0.2](phase-0.2-npm-distribution-artifact.md) (packing the CLI with `bun pm pack`; the bench runs a tarball packed from source, not a published release), [0.3b](phase-0.3b-processes-and-signals.md) (`Processes`), [1.4](phase-1.4-handoff-and-entry-points.md) (`agentPrompt`) |
+| Depends on | [2.0c](phase-2.0c-run-ledger.md) (`LedgerRecord`, `appendRecord`, `quickstacks runs --json`, `countAsked`), [2.0a](phase-2.0a-composed-files-and-fingerprint.md) (`fingerprint` in `new --json`), [0.3b](phase-0.3b-processes-and-signals.md) (`Processes`), [1.4](phase-1.4-handoff-and-entry-points.md) (`agentPrompt`) |
 | Blocks | [5.1](phase-5.1-scheduled-canary.md) (schedules this script on an isolated machine); [3.3a](phase-3.3a-release-and-deploy-fragments.md) and [3.3c](phase-3.3c-service-vendor-and-effect-fragments.md) (bundled fragment expansion, which bench with `--preset default` as well), [3.3b](phase-3.3b-bundled-stack-expansion.md), [3.4a](phase-3.4a-agent-harness-fragment.md), [3.4b](phase-3.4b-native-agent-adapters.md), [3.5a](phase-3.5a-app-entry-kind.md) and [3.5b](phase-3.5b-two-phase-brief.md) (each new entry lands with a bench run); evidence for [4.3](phase-4.3-mcp-server.md) (bench notes, open question 15) |
-| Decisions needed | D24 (headless auth by long-lived token in the environment; if declined, the bench has no supported way to log in and only the fake-agent tests can be built). Open question 11 (full-permission local runs on a maintainer's machine; blocks this sub-phase starting, owner: the maintainers; if the answer is no, the bench needs an isolated runner like 5.1's before any real run). Open question 12 (whether a maintainer reads every bench run to relabel `partial`; blocks the exit, owner: the maintainers; if only failing and regression runs get a read, `partial` is under-counted and the run note says the run wasn't reviewed) |
+| Decisions needed | D24 (headless auth by long-lived token in the environment; if declined, the bench has no supported way to log in and only the fake-agent tests can be built). Open question 11 answered 2026-10-27: the maintainers approved building the bench and running it locally with full permissions. Open question 12 (whether a maintainer reads every bench run to relabel `partial`; blocks the exit, owner: the maintainers; if only failing and regression runs get a read, `partial` is under-counted and the run note says the run wasn't reviewed) |
 | Settles | The bench's command line and steps; the `BENCH.md` rules, including the `## Asked` log; how a run is classified into 2.0c's `result` values; the agent adapter table (`claude` and `codex`) and each agent's auth mechanism; continuing a kept run; hook detection; that bench runs send no telemetry; why the bench doesn't breach D2 |
 
 ## Scope
@@ -52,16 +53,16 @@ permissions (below). The throwaway directory and `HOME` keep the maintainer's ow
 settings and agent hooks out of the run so results are reproducible; they are not a
 security boundary, and an agent with full permissions can still read the real home by
 absolute path ([Trust model](../roadmap.md#trust-model), point 8). Whether that risk is
-acceptable for local runs is [open question 11](../risks-and-open-questions.md#open-questions-for-the-maintainers);
-building starts only once the maintainers answer it. Unattended runs get real isolation in
-5.1.
+acceptable for local runs was [open question 11](../risks-and-open-questions.md#open-questions-for-the-maintainers).
+On 2026-10-27 the maintainers approved building the bench and running it locally.
+Unattended runs get real isolation in 5.1.
 
 ### Command
 
 ```
 bun scripts/bench.ts <stack> [--with a,b] [--preset sandbox|default]
                      [--agent claude|codex] [--max-minutes 60]
-                     [--cli <tarball>] [--existing <dir>] [--keep] [--no-record]
+                     [--cli <binary>] [--existing <dir>] [--keep] [--no-record]
 ```
 
 `--agent` defaults to the agent the bench was started from, when `AppConfig.agent` names
@@ -71,7 +72,8 @@ which rule picked it. `--preset` (default `sandbox`) picks the composition the b
 scaffolds: `sandbox` runs `new --sandbox`, the D20 gate composition; `default` runs
 `new --yes`, so every decision takes its default and the default preset's prose is what
 the agent reads. The preset is recorded in the ledger key, so the two never mix.
-`--cli` uses an already packed tarball instead of packing.
+`--cli` uses an already compiled dev binary instead of building; the bundled registry
+comes from the working tree beside it.
 `--existing <dir>` continues a run kept with `--keep` (below). `--no-record` runs
 everything but writes no ledger record or run note (for trying a change). The script is written with Effect, uses the `Processes` service (roadmap,
 [Contracts: Process service](../roadmap.md#types-and-schemas)) for every child process, and
@@ -86,8 +88,10 @@ it in-process.
    the run refuses if `packages/cli/` has uncommitted changes, because a record must name
    the commit that ran. Any failure stops here with the agent's or git's own message,
    exit 1, nothing written.
-2. **Artifact.** Pack the CLI the way 0.2 does (`bun pm pack`), or take `--cli`, and
-   install it into a temporary prefix with `npm install --global --prefix`. Every
+2. **Artifact.** Build the working tree with `bun run build` (producing
+   `packages/cli/dist/quickstacks`), or take the compiled binary from `--cli`. Copy the
+   binary to `<prefix>/bin/quickstacks` and the bundled `registry/` beside `bin/` in a fresh
+   temporary prefix, as the 1.6b gate runs did. Install no `scripts/` or `src/` files. Every
    `quickstacks` call below is that installed binary, never source.
 3. **Environment.** A throwaway root with `run/` (the project), `home/` (`HOME`, with fresh
    `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`, `XDG_CACHE_HOME` under it) and
@@ -96,8 +100,8 @@ it in-process.
    adapter's one token variable, `DO_NOT_TRACK=1`, and the adapter's debug-log variable
    when it has one (step 7). `DO_NOT_TRACK=1` means no `quickstacks` the agent runs, and
    none the bench runs itself, ever sends telemetry once a telemetry client exists (4.1a):
-   bench installs would otherwise dominate small cells in later stats, and the tarball
-   the bench installs is a release build that would send. Nothing else is passed: no `GH_TOKEN`, no model API keys
+   bench installs would otherwise dominate small cells in later stats, and later release builds
+   the bench installs would send. Nothing else is passed: no `GH_TOKEN`, no model API keys
    such as `ANTHROPIC_API_KEY` (which some agents would prefer over the token), and none of
    the agent session markers in `config.ts::AgentMarkers`, so a bench started from inside
    an agent session doesn't look nested.
@@ -204,7 +208,7 @@ export type AgentAdapter = {
 | Agent | Binary and headless mode | Auth mechanism (D24) | Result |
 |---|---|---|---|
 | `claude` | `claude -p <prompt> --output-format json --dangerously-skip-permissions` | `CLAUDE_CODE_OAUTH_TOKEN`, a long-lived token from `claude setup-token` | Final JSON object: `is_error` and `subtype` (`success`, or an `error_*` value), `num_turns`. Debug log: the `--debug` output to a file under `bench/`, from which hook runs are read |
-| `codex` | `codex exec <prompt> --json` with its full-access sandbox mode | The token variable its headless login documents, obtained through its own login flow (D24); confirmed when the adapter is written | Final JSONL event: success or error and the turn count. Hook detection only if its log records hook runs; otherwise `hooksFired: null` |
+| `codex` | `codex exec <prompt> --json` with its full-access sandbox mode | `CODEX_ACCESS_TOKEN`, as documented by `codex login --with-access-token` in codex-cli 0.164.0 (D24) | Final JSONL event: success or error and the turn count. Hook detection only if its log records hook runs; otherwise `hooksFired: null` |
 | others | Added one row at a time | Must be a token passed by environment through the agent's own headless flow. An agent that only offers a refreshable credential file can't be benched | Per agent |
 
 Flags and field names are confirmed against the installed agent when the adapter is
@@ -236,9 +240,9 @@ in open question 11.
 D2 is about the product: the CLI never calls an LLM and never runs a command from an
 entry. The bench is a development script in the repo, started deliberately by a
 maintainer, that starts the agent the maintainer already has, as they would by hand. The
-CLI it drives is the packed artifact and still runs nothing from an entry; the agent runs
-the generators, and the CLI runs only the manifest's steps under `verify`. The bench never
-ships in the package (`files` excludes `scripts/`), and no CLI command imports it.
+CLI it drives is the installed dev binary and still runs nothing from an entry; the agent runs
+the generators, and the CLI runs only the manifest's steps under `verify`. The installed
+prefix contains no `scripts/` or `src/` files, and no CLI command imports the bench.
 
 ### Failure modes
 
@@ -258,8 +262,7 @@ ships in the package (`files` excludes `scripts/`), and no CLI command imports i
 
 - Headless runs use full permissions in a throwaway directory and `HOME`, and that is not
   called isolation. Reason above; [open question 11](../risks-and-open-questions.md#open-questions-for-the-maintainers)
-  decides whether it stands, including the alternative of an allowlisted mode with an
-  explicit opt-in for full permissions.
+  was answered on 2026-10-27: build the bench and run it locally with full permissions.
 - Bench runs never send telemetry (`DO_NOT_TRACK=1` in the child environment). Reason:
   maintainer reruns of one stack would concentrate its cells and say nothing about users.
 - The bench brief lives outside the project. Reason: it must not change the project's
@@ -303,7 +306,7 @@ test. The tests use a fixture stack whose verify passes when two files exist.
 8. `--no-record` writes no ledger record and no run note.
 9. The `claude` adapter's `readResult` parses the recorded output sample, success and
    error.
-10. The packed tarball contains no `scripts/` files.
+10. The bench's installed prefix holds the compiled binary and `registry/` and no `scripts/` or `src/` files.
 11. The fake's env dump contains `DO_NOT_TRACK=1`, and every `quickstacks` the bench
     runs itself is spawned with `DO_NOT_TRACK=1` in its environment.
 12. `--existing` on a kept root continues the run and appends one record with
@@ -320,6 +323,21 @@ test. The tests use a fixture stack whose verify passes when two files exist.
 16. `--preset default` scaffolds with `--yes` and no `--sandbox`, and the record's
     `preset` is `default`; without `--preset` the record's `preset` is `sandbox`.
 
+### Realistic edge cases
+
+17. A symlinked kept root with spaces, quotes, a leading dash and Unicode continues from another working directory.
+18. Inherited git repository variables and missing or relative XDG paths cannot redirect preflight or the fresh child environment.
+19. An existing partial root with a missing or undecodable manifest, or a file in place of `.quickstacks/`, is refused without changing it.
+20. Cancellation while the build is blocked kills that process, cleans the throwaway root and writes no record or note.
+21. Cancellation after the agent and its descendant are blocked kills both, removes the throwaway root and preserves unrelated files.
+22. An undecodable ledger remains unchanged; exit 3 still leaves the complete run note and prints a recoverable record to stderr.
+23. An agent that writes only ignored `NOTES.md` before an error is `fail`, not `infra`.
+24. A kept root with different added fragments is refused unchanged.
+25. A missing agent binary or failed version command is a preflight failure with no files written.
+26. Missing, malformed, truncated or contradictory agent output cannot certify success; a later Codex error wins over an earlier completion.
+27. Default cleanup removes the throwaway root after recording the full notes.
+28. A second run on the same date appends a distinct note and record without overwriting the earlier note.
+
 ## Exit criteria
 
 Agent-owned:
@@ -331,13 +349,22 @@ Agent-owned:
 Maintainer-owned, as in 1.6b's agent split (an agent can drive the terminal, but a person
 confirms the run and reads the notes):
 
-- Open questions 11 and 12 answered and recorded.
+- Open question 11 answered 2026-10-27 (local full-permission runs approved); question 12 still needs an answer.
 - One real bench run per bundled stack with the `claude` adapter, each appended to the
   ledger with its run note, and each note read (and relabeled `partial` if needed).
 - At least one real bench run with the `codex` adapter on one bundled stack, recorded
   the same way, so the second adapter is proved against a real agent before 3.4b uses it.
 
 ## What this plan may get wrong
+
+- 2026-10-27: The locked helper passes a fallible output flush to an infallible runner;
+  the first bench test compares brief word counts across parent and fresh git contexts;
+  kept-root and binary comparisons enumerate compiled-binary buffers and exhaust Node's
+  heap, including a 16 GB retry. These acceptance blockers need the test owner's correction.
+  The implementation leaves the locked files unchanged.
+
+- 2026-10-27: The bench uses the dev build and a fresh binary-plus-registry prefix until
+  0.2 lands; packing returns with 0.2.
 
 - Headless agent modes differ in what they allow and report. The adapter table absorbs the
   differences, but an agent without a headless mode or an env-passed token can't be

@@ -15,7 +15,7 @@ Every note records the fields below; 2.0c's ledger import skips a note that lack
 |---|---|
 | Stack and fragments | The composition, with preset |
 | Repo commit | The quickstacks commit the CLI and registry were built from, so 2.0c can recompute the fingerprint |
-| CLI | How it was run: the packed tarball's file digest, or `npx quickstacks@<version>` |
+| CLI | How it was run: the compiled dev binary and working registry (until 0.2), the packed tarball's file digest, or `npx quickstacks@<version>` |
 | Agent | Agent and version, interactive or headless |
 | Brief size | `briefWords` and `fixedWords` from `new --json` |
 | Times | `new` to first passing `test`-layer step, `new` to first green `verify` (from the state record) |
@@ -25,3 +25,9 @@ Every note records the fields below; 2.0c's ledger import skips a note that lack
 | Findings | The `## Findings` lines worth acting on, each with the fix it led to |
 | Final verify record (optional) | The last line of `.quickstacks/state/runs.jsonl`, pasted as JSON; 2.0c's import fills `run` from it |
 | Agent minutes (optional) | Wall-clock minutes the agent ran; 2.0c's import fills `agentMinutes` from it |
+
+Bench notes also record the agent selection rule, how it ended, turns, hook names
+(`unknown` when detection is unavailable), the verify-wrapper call count beside agent
+verify runs, and whether the note has been reviewed. Continuations link the earlier
+note in both directions and add one intervention; timings stay relative to the original
+scaffold. App runs include time to the first green base from the run history.
