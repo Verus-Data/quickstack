@@ -6,9 +6,9 @@ Status: DRAFT 2026-10-26 (not agreed)
 |---|---|
 | Goal | A maintainer can build, sign and deploy by hand a static, content-addressed registry index of official stacks whose compositions passed a ledger run, each stack carrying its last ledger run and the fragment digests that passed, served as static assets with cache headers from host config |
 | Traces to | "Stacks don't rot: A stack that passed last month still passes this month without a prose change." Assumption 6: "no public registry exists yet". The agent's frustration with "ambiguity", which a visible last run reduces when two stacks fit |
-| Depends on | 4.0b (the host and its static assets directory), 4.0a (`canonicalBundle`, `bundleDigest`, `EntryBundle`), 2.0a (`composeFiles`, `fingerprint`), 2.0c (`LedgerRecord` and the ledger reader), 2.2 ("changed since last green" uses the same fingerprint match), D21 (signed index, proposed), open question 14 (proven-only serving) |
+| Depends on | 4.0b (the host and its static assets directory), 4.0a (`canonicalBundle`, `bundleDigest`, `EntryBundle`), 2.0a (`composeFiles`, `fingerprint`), 2.0c (`LedgerRecord` and the ledger reader), 2.2 ("changed since last green" uses the same fingerprint match), D21 (signed index), open question 14 (proven-only serving) |
 | Blocks | 4.0d, 4.0e (the official-names file and directory pages extend this build), 5.2 |
-| Decisions needed | D21. If declined, the index ships unsigned and 4.0d must treat every index entry as untrusted (trust model point 7 falls away and point 2 covers it). Open question 14: if the maintainers want every validated revision served, drop the proof rule and carry-forward; entries then carry `lastRun: null` when unproven, and the `composition` map is still required |
+| Decisions needed | None: D21 (signed) and open question 14 (proven only, with carry-forward) were decided 2026-10-27 |
 | Settles | The index and envelope format; which content the index serves; how unproven content is handled; the build command and how it signs; key handling in phase 4 |
 
 ## Scope
@@ -173,7 +173,6 @@ Over a fixture registry, fixture ledger and, for carry-forward, a real local HTT
 ## Exit criteria
 
 - Acceptance tests pass; `bun run check` green from the repo root.
-- D21 and open question 14 answered by the maintainers.
 - A maintainer has deployed the index once by hand, and `build:index --check` passes against the live host.
 
 ## What this plan may get wrong

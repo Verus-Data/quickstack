@@ -884,7 +884,7 @@ question 9).
 | D18 | Entry format v1, amended 2026-10-26 (snake_case keys, literal dotfiles, `package_scope`, apps as fragments, `expect`) | 1.1 starts; 1.6a bringing the catalog into v1 | Proposed; amendment is an agent proposal |
 | D19 | Project-origin entries untrusted by default | 1.0 | Proposed |
 | D20 | MVP gate rule | 1.6b | Proposed |
-| D21 | Signed default index | 4.0c, 4.0d | Proposed |
+| D21 | Signed default index | 4.0c, 4.0d | Decided 2026-10-27, with open question 14 (proven only) |
 | D22 | macOS and Linux on Node only | 0.2 | Proposed |
 | D23 | Demo first: CI and scheduled inference in phase 5 | The roadmap order; 0.2 and 1.6c scope | Proposed; this roadmap is written to it |
 | D24 | Headless agent auth by long-lived token, never copied credential files | 2.0b, 5.1 | Proposed |

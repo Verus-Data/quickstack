@@ -98,7 +98,8 @@ say so and keep their numbers, because plans link to them by number.
     [4.0c](phases/phase-4.0c-registry-index.md): an index entry carries the
     digests of the composition that passed, and the last proven entry is carried forward
     when the current content isn't proven. Blocks 4.0c and
-    [4.0d](phases/phase-4.0d-cli-remote-origin.md).
+    [4.0d](phases/phase-4.0d-cli-remote-origin.md). Answered 2026-10-27: yes, proven only,
+    with carry-forward; recorded with D21 in the decisions log.
 15. What starts the MCP server ([4.3](phases/phase-4.3-mcp-server.md))? Revised proposal:
     documented agent struggles with the shell path (2.0b bench notes, issues), or a user
     asking for a client that has no shell tool. A majority of handoffs from inside an agent
