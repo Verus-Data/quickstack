@@ -1,6 +1,7 @@
 # Phase 2.0a: Composed files and fingerprint
 
 Status: DRAFT 2026-10-26 (not agreed)
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -133,7 +134,7 @@ code moved.
 | Case | Handling | Exit |
 |---|---|---|
 | A template variable missing from `NEUTRAL_VARS` or the project's vars | `EntryInvalid` from `composeFiles` (1.2a's `template` reason) | 2 |
-| A source file vanished between compose and render | `EntryInvalid` (`decode`), nothing written by `new` | 2 |
+| A source file vanished between compose and render | `EntryInvalid` (`missing`), nothing written by `new` | 2 |
 
 ### Decided here
 
@@ -170,6 +171,14 @@ code moved.
 3. `new --json` and the written manifest carry the same `fingerprint`, equal to
    `fingerprint` of the same composition.
 
+### Realistic edge cases
+
+4. Paths with spaces, leading dashes and non-ASCII names, plus quotes and backslashes in template values, remain literal when rendered and written from a different working directory.
+5. A symlinked bundled root renders like its real path; a source directory replaced by a symlink after composition is rejected without following it.
+6. A source removed between composition and rendering fails with `EntryInvalid` (`missing`), without writing a project.
+7. An unknown template variable fails with `EntryInvalid` (`template`) before `new` writes anything and preserves an existing target's OS litter.
+8. A pre-existing OS-litter file blocking a later output directory causes rollback of earlier writes and preserves the existing file and a sibling outside the target.
+
 ## Exit criteria
 
 - `bun run check` green from the repo root.
@@ -192,3 +201,22 @@ code moved.
   variable set, so `NEUTRAL_VARS` holds it (empty), which keeps a fingerprint independent
   of the user's scope. Check the merge marker and the
   owner spelling against the shipped `compose.ts` before building on them.
+- 2026-10-27 (found writing the tests): the template variable type is
+  `TemplateValues` in `scaffold/template.ts`, not `TemplateVars`. A merge `PlannedFile`
+  keeps only its first writer as `owner`, so the `+`-joined owner needs `compose` to
+  carry every writer. A source file gone at render time is `EntryInvalid` reason
+  `missing`, the registry's existing reason for it, not `decode`.
+- 2026-10-27 (implementation): `composeFiles` builds `Registry.layer([])` for the
+  registry's checked reads without loading roots; the composition already holds its
+  entries. Registry reads can also fail with `PermissionDenied` (an unreadable source),
+  which `composeFiles` and `fingerprint` pass through unchanged (exit 6, as for every
+  other unreadable entry), so their error type is `EntryInvalid | PermissionDenied`, not
+  the `EntryInvalid` the design above shows. `PlannedFile.owners` carries all writers,
+  including the sole writer of a copy or template, while `owner` remains the first writer.
+- 2026-10-27 (independent review): calling `composeFiles` and then `fingerprint`
+  separately rereads sources, so an edit between them can record a fingerprint for bytes
+  `new` did not write. `composeFilesWithNeutral` now reads sources once and uses the same
+  renderer for project and neutral values; `fingerprintFromFiles` hashes that retained
+  neutral output. The public `composeFiles(c, vars)` and `fingerprint(c)` interfaces stay
+  available. A regression edits real source files during project rendering and checks
+  that the neutral fingerprint still describes the retained content.

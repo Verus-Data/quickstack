@@ -1,6 +1,6 @@
 import { Clock, Effect, Exit, FileSystem, Option, Path, Schema } from "effect";
 import { AppConfig } from "../../config";
-import { BadInput, ComposeConflict, EntryInvalid, InvalidConfig } from "../../errors";
+import { BadInput, ComposeConflict, InvalidConfig } from "../../errors";
 import { NpmScope } from "../../schemas/config";
 import type { AgentId } from "../../schemas/entry";
 import type { NewResult } from "../../schemas/new";
@@ -8,17 +8,17 @@ import { Host } from "../../services/host";
 import { Processes } from "../../services/processes";
 import { type GitState, renderBrief } from "../brief/render";
 import { targetAgents } from "../compose/agents";
-import { type Composition, compose, dropFlags, missingTools } from "../compose/compose";
+import { compose, dropFlags, missingTools } from "../compose/compose";
+import { composeFilesWithNeutral } from "../compose/files";
+import { fingerprintFromFiles } from "../fingerprint";
 import { type HandoffDecision, handoffRecord } from "../handoff";
 import { buildManifest, encodeManifest, MANIFEST_PATH } from "../manifest";
 import { removeProjectState, writeProjectState } from "../project-state";
-import type { Entry } from "../registry/entry";
-import { Registry } from "../registry/registry";
 import { hasControl } from "../text";
 import { gitInit, gitInstalled, gitUserName, probeGit } from "./git";
 import { envPrefix, slug } from "./slug";
 import { inspectTarget } from "./target";
-import { authorValue, renderTemplate, type TemplateValues } from "./template";
+import { authorValue, type TemplateValues } from "./template";
 import { openProject } from "./write";
 
 export type NewOptions = {
@@ -62,7 +62,6 @@ export const scaffold = (options: NewOptions) =>
     const host = yield* Host;
     const path = yield* Path.Path;
     const fs = yield* FileSystem.FileSystem;
-    const registry = yield* Registry;
     const processes = yield* Processes;
     const settings = yield* (yield* AppConfig).get;
 
@@ -131,7 +130,8 @@ export const scaffold = (options: NewOptions) =>
       author,
       year: String(new Date(yield* Clock.currentTimeMillis).getUTCFullYear()),
     };
-    const files = yield* renderFiles(composition, registry, values);
+    const { files, neutralFiles } = yield* composeFilesWithNeutral(composition, values);
+    const contentFingerprint = fingerprintFromFiles(composition, neutralFiles);
 
     const written = [
       ...files.map((file) => file.path),
@@ -159,12 +159,16 @@ export const scaffold = (options: NewOptions) =>
     const decision = options.handoff(composition.untrusted.map((entry) => entry.id));
     const built = yield* buildManifest(composition, { briefWords: rendered.briefWords });
     // Outside the step digest (Trust model point 5), so filling it changes no digest.
-    const manifest = { ...built, handoff: handoffRecord(decision, built.createdAt) };
+    const manifest = {
+      ...built,
+      fingerprint: contentFingerprint,
+      handoff: handoffRecord(decision, built.createdAt),
+    };
 
     const state = yield* Effect.scoped(
       Effect.gen(function* () {
         const writer = yield* openProject(dir);
-        for (const file of files) yield* writer.write(file.path, file.data, file.executable);
+        for (const file of files) yield* writer.write(file.path, file.bytes, file.executable);
         yield* writer.write(IGNORE_PATH, encoder.encode(IGNORE));
         yield* writer.write(BRIEF_PATH, encoder.encode(rendered.text));
         yield* writer.write(NOTES_PATH, encoder.encode(NOTES));
@@ -204,6 +208,7 @@ export const scaffold = (options: NewOptions) =>
 
     const result = {
       project: dir,
+      fingerprint: contentFingerprint,
       stack: composition.stack.id,
       fragments: composition.fragments.map((fragment) => fragment.id),
       preset,
@@ -223,63 +228,4 @@ export const scaffold = (options: NewOptions) =>
       stateRecord: state.written,
     } satisfies Scaffolded["result"];
     return { result, decision } satisfies Scaffolded;
-  });
-
-type FileToWrite = { path: string; data: Uint8Array; executable: boolean };
-
-/**
- * Every planned file's final bytes, before anything is written: copies byte for byte, templates
- * rendered (an unknown variable is `EntryInvalid` `template`), merges as composed.
- */
-const renderFiles = (
-  composition: Composition,
-  registry: Registry["Service"],
-  values: TemplateValues,
-) =>
-  Effect.gen(function* () {
-    const entries: ReadonlyArray<Entry> = [composition.stack, ...composition.fragments];
-    const files: FileToWrite[] = [];
-    for (const planned of composition.files) {
-      const executable = (planned.mode & 0o111) !== 0;
-      const owner = entries.find(
-        (entry) => entry.kind === planned.owner.kind && entry.id === planned.owner.id,
-      );
-      // `compose` already refused reserved paths (`reserved_path`) and clashing ones.
-      if (!owner)
-        return yield* new ComposeConflict({
-          details: {
-            reason: "file_owner",
-            ...(planned.owner.kind === "stack"
-              ? { stack: planned.owner.id, ids: [] }
-              : { ids: [planned.owner.id] }),
-            path: planned.path,
-          },
-        });
-      if (planned.kind === "merge") {
-        files.push({
-          path: planned.path,
-          data: encoder.encode(planned.content ?? ""),
-          executable,
-        });
-        continue;
-      }
-      const source = planned.source?.file ?? "";
-      if (planned.kind === "copy") {
-        files.push({ path: planned.path, data: yield* registry.bytes(owner, source), executable });
-        continue;
-      }
-      const result = renderTemplate(yield* registry.read(owner, source), values);
-      if ("unknown" in result)
-        return yield* new EntryInvalid({
-          details: {
-            id: owner.id,
-            origin: owner.origin,
-            reason: "template",
-            path: source,
-            line: result.line,
-          },
-        });
-      files.push({ path: planned.path, data: encoder.encode(result.text), executable });
-    }
-    return files;
   });

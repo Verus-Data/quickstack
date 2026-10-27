@@ -7,6 +7,8 @@ const EntryRef = Schema.Struct({ kind: Kind, id: Schema.String });
 export const NewResult = Schema.Struct({
   /** The project root, absolute. */
   project: Schema.String,
+  /** The composition rendered with neutral template values, hashed as sha256. */
+  fingerprint: Schema.String,
   stack: Schema.String,
   /** Composition order. */
   fragments: Schema.Array(Schema.String),
