@@ -18,7 +18,8 @@ const gitLine = (result: Pick<NewResult, "warnings" | "git" | "dryRun">) => {
   return "git not found; no repository";
 };
 
-const warningLine = (warning: NewResult["warnings"][number]) => {
+/** One warning as a sentence; `new` and `add` share it, and an unknown code prints as data. */
+export const warningLine = (warning: { code: string; id: string }) => {
   const id = printable(warning.id);
   switch (warning.code) {
     case "always_not_applicable":
@@ -32,10 +33,16 @@ const warningLine = (warning: NewResult["warnings"][number]) => {
     case "git_init_failed":
     case "git_unusable":
       return `${warning.code}: see the Git line`;
+    case "stack_unknown":
+      return `the manifest's stack ${id} is in no registry; composed without it`;
+    case "name_unreadable":
+      return `couldn't read the project name from ${id}`;
+    default:
+      return `${printable(warning.code)}: ${id}`;
   }
 };
 
-const missingLine = (item: NewResult["missingTools"][number]) => {
+export const missingLine = (item: NewResult["missingTools"][number]) => {
   const owners = item.owners.map((owner) => printable(owner.id)).join(", ");
   const skip = item.drop
     .map(({ id, flag }) =>
