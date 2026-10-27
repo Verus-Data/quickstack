@@ -1,6 +1,7 @@
 # Phase 2.0c: Run ledger
 
 Status: DRAFT 2026-10-26 (not agreed)
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -283,7 +284,19 @@ Human `list` shows `proven <date>` for `pass`, `<result> <date>` otherwise, or `
    `fingerprint` computed at the first commit and differs from the current one; a note
    missing the repo commit is skipped with exit 1; importing the same note twice adds one
    record.
-6. The packed tarball contains `registry/runs.json` and no `scripts/` files.
+6. The compiled binary (`bun run build` makes `packages/cli/dist/quickstacks`) reads
+   the `registry/runs.json` it ships with, so `./dist/quickstacks list --json` shows a
+   bundled stack's `lastRun`.
+
+### Realistic edge cases
+
+7. `runs` finds the project and its state through a symlinked nested cwd with spaces and non-ASCII names under an agent marker.
+8. Missing, empty, malformed or newer history and ledger files, including a directory at the ledger path, do not invent proof or overwrite existing state.
+9. `NOTES.md` counts only non-empty list items under `## Asked`, excluding wrapped prose and later headings; an empty or absent section counts zero.
+10. Import skips an unknown commit or an old undecodable registry, continues with valid notes, handles paths with spaces and leading dashes, and dry-run leaves the working tree unchanged.
+11. An append that cannot write keeps the existing ledger and unrelated files and leaves no temporary file behind.
+12. A run with a green base and failed app remains a failed run in `runs`, and `LedgerRecord` preserves its optional `stages` unchanged.
+13. Import maps partial, failed, infra and manifest-only green outcomes honestly, leaving absent optional final records and agent minutes null.
 
 ## Exit criteria
 
@@ -295,6 +308,7 @@ Human `list` shows `proven <date>` for `pass`, `<result> <date>` otherwise, or `
 
 ## What this plan may get wrong
 
+- 2026-10-27: The tarball content check waits for 0.2; work currently runs from the compiled dev build.
 - Old run notes may lack a field the import needs. The import skips rather than guesses,
   so a skipped gate run has to be rerun or its note completed by hand from the kept
   project.
