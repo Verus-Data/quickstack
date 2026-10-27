@@ -117,6 +117,20 @@ if [ -n "$compose_file" ] && command -v docker >/dev/null 2>&1; then
   fi
 fi
 
+# rr's remote hosts need the SSH agent, and Claude Code's sandbox can't reach every agent socket a
+# session inherits. macOS's own agent is reachable, so an opted-in clone exports its socket for
+# every Bash command (Claude Code runs CLAUDE_ENV_FILE before each one).
+if [ -n "${CLAUDE_ENV_FILE:-}" ] &&
+  [ "$(git config --type=bool --get quickstacks.rr 2>/dev/null || true)" = true ] &&
+  command -v launchctl >/dev/null 2>&1; then
+  agent_sock=$(launchctl print "gui/$(id -u)/com.openssh.ssh-agent" 2>/dev/null |
+    awk '/SSH_AUTH_SOCK =>/ { print $3 }') || agent_sock=""
+  agent_sock=${agent_sock%%$'\n'*}
+  if [ -S "$agent_sock" ] && SSH_AUTH_SOCK=$agent_sock ssh-add -l >/dev/null 2>&1; then
+    printf 'export SSH_AUTH_SOCK=%q\n' "$agent_sock" >>"$CLAUDE_ENV_FILE" || true
+  fi
+fi
+
 [ "${#lines[@]}" -eq 0 ] && exit 0
 printf '%s\n' "${lines[@]}"
 exit 0

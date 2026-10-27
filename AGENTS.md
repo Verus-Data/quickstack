@@ -85,6 +85,8 @@ rr is opt-in per clone and off by default: `git config quickstacks.rr true` turn
 
 Output is rr's JSON phase events on stderr, then the command's own output, then a `result` event whose `details.summary` has the test counts and `details.log_file` the full log; the exit code is the command's. `rr check` prints nothing on stdout: its `result` event lists `passed`/`total` partitions, each failed partition's host, `log_file` and parsed failures, and `details.log_dir`, which holds one log per partition. Read the counts as `.claude/rules/cli/verification.md` asks. rr needs its hosts in `~/.rr/config.yaml` and a reachable SSH agent. If `rr` isn't installed, or it fails before running the command (exit 1 with an error envelope such as `SSH_AUTH_FAILED` or `HOST_NOT_FOUND`), say so and run the same `bun run` command locally; never report a local run as an rr run. A single scoped test file, lint and typecheck are cheap enough to run locally.
 
+In Claude Code, the session-start hook exports macOS's own ssh-agent socket for an opted-in clone, because the Bash sandbox can't reach every agent socket a session inherits; rr then runs inside the sandbox. A session started before opting in picks it up on its next start or `/clear`.
+
 ## Architecture map (packages/cli)
 
 Paths below are relative to `packages/cli/`.
