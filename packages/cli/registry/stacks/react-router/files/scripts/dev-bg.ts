@@ -9,7 +9,7 @@
 //          as Ctrl-C in its terminal).
 //
 // Both find the server through logs/dev.pid, which scripts/dev.ts writes while it runs.
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { closeSync, existsSync, mkdirSync, openSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
@@ -130,10 +130,6 @@ async function start(): Promise<number> {
   return 1;
 }
 
-function pgidOf(pid: number): string {
-  return spawnSync("ps", ["-o", "pgid=", "-p", String(pid)], { encoding: "utf8" }).stdout.trim();
-}
-
 function signal(target: number, sig: NodeJS.Signals): void {
   try {
     process.kill(target, sig);
@@ -151,19 +147,16 @@ async function stop(quiet = false): Promise<number> {
     return 0;
   }
   const { pid, port } = running;
-  const pgid = pgidOf(pid);
-  const target = pgid && pgid !== pgidOf(process.pid) ? -Number(pgid) : pid;
-  // SIGINT, like Ctrl-C: dev.ts lets the server shut down and finish writing logs/dev.log.
-  signal(target, "SIGINT");
+  // Only dev.ts's pid: its group can be the shell that started it. SIGINT, like Ctrl-C: dev.ts
+  // passes it to the server's own group and finishes writing logs/dev.log.
+  signal(pid, "SIGINT");
   await waitExit(pid, 10);
   if (alive(pid)) {
-    signal(target, "SIGTERM");
+    signal(pid, "SIGTERM");
     await waitExit(pid, 5);
   }
   if (alive(pid)) {
-    console.error(
-      `The dev server (pid ${pid}, process group ${pgid}) didn't exit; port ${port} may still be taken.`,
-    );
+    console.error(`The dev server (pid ${pid}) didn't exit; port ${port} may still be taken.`);
     return 1;
   }
   say(`Stopped the dev server on port ${port} (pid ${pid}).`);

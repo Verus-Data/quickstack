@@ -46,26 +46,37 @@ if (existsSync("logs/dev.log")) renameSync("logs/dev.log", "logs/dev.prev.log");
 if (existsSync("logs/server.jsonl")) renameSync("logs/server.jsonl", "logs/server.prev.jsonl");
 writeFileSync(PID_FILE, `${process.pid} ${port}\n`);
 
-// On any exit (an uncaught throw included), take the rest of the process group (the server and
-// its children) down too, so a `kill` of this script alone can't leave Vite holding the port with
-// no pid file pointing at it. Registered only now, so a refusal above leaves the pid file alone.
-let exiting = false;
+// The server runs detached, leading its own process group, so a signal reaches exactly the server
+// and its children, never the shell or tool that started this script.
+let group: number | undefined;
+function signalServer(sig: NodeJS.Signals): void {
+  if (group === undefined) return;
+  try {
+    process.kill(-group, sig);
+  } catch (error) {
+    // Already gone.
+    if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
+  }
+}
+
+// On any exit (an uncaught throw included), take the server and its children down too, so a
+// `kill` of this script alone can't leave Vite holding the port with no pid file pointing at it.
+// Registered only now, so a refusal above leaves the pid file alone.
 process.on("exit", () => {
-  exiting = true;
   rmSync(PID_FILE, { force: true });
-  // Signals this process too; the SIGTERM handler ignores it once `exiting` is set.
-  process.kill(0, "SIGTERM");
+  signalServer("SIGTERM");
 });
-// Ctrl-C reaches the server too (same process group). Keep copying its shutdown output, for
-// at most 5 seconds.
+// Ctrl-C reaches only this script (the server is in its own group), so pass it on. Keep copying
+// its shutdown output, for at most 5 seconds.
 let interrupted = false;
 process.on("SIGINT", () => {
   if (interrupted) return;
   interrupted = true;
+  signalServer("SIGINT");
   setTimeout(() => process.exit(130), 5000).unref();
 });
-process.on("SIGTERM", () => exiting || process.exit(128 + constants.signals.SIGTERM));
-process.on("SIGHUP", () => exiting || process.exit(128 + constants.signals.SIGHUP));
+process.on("SIGTERM", () => process.exit(128 + constants.signals.SIGTERM));
+process.on("SIGHUP", () => process.exit(128 + constants.signals.SIGHUP));
 
 // stdout is a pipe for the server, so keep colors on for the terminal (unless NO_COLOR is set).
 const env = { ...process.env };
@@ -80,8 +91,10 @@ process.stdout.write(
 const log = openSync("logs/dev.log", "a");
 const server = spawn(process.execPath, ["run", "dev:server", "--port", port, "--strictPort"], {
   env,
+  detached: true,
   stdio: ["inherit", "pipe", "pipe"],
 });
+group = server.pid;
 for (const stream of [server.stdout, server.stderr]) {
   createInterface({ input: stream, crlfDelay: Number.POSITIVE_INFINITY }).on("line", (line) => {
     process.stdout.write(`${line}\n`);
