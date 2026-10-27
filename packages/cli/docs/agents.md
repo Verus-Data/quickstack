@@ -1,0 +1,103 @@
+# Using quickstacks with a coding agent
+
+This page is for the person setting up an agent to use quickstacks. The agent itself never reads it: everything an agent needs is in the CLI's own output (`quickstacks` with no arguments, and `<command> --help`) and in the skill. This page explains how to give your agent that, and what it will do with it.
+
+## Two ways in
+
+You can start the project and hand it over, or let the agent start it.
+
+If you run `quickstacks new <stack> <dir>` yourself, quickstacks writes the project and starts your agent in it with one instruction: read `.quickstacks/BRIEF.md` and carry it out. The [quick start](quickstart.md) covers this path. The agent needs no setup; the brief is the whole task.
+
+If you want to say "start me a Go CLI with tests" in a chat with your agent, the agent needs to know quickstacks exists. That's what the skill is for.
+
+## Install the skill
+
+The skill is one Markdown file, under 600 words, that tells an agent when to reach for quickstacks and how to run it: pick a stack, write the project, follow the brief, loop on verify, never weaken verify. Claude Code loads it automatically when a request matches its description.
+
+```sh
+quickstacks skill install            # ~/.claude/skills/quickstacks/SKILL.md, for every project
+quickstacks skill install --project  # .claude/skills/ in the current repository only
+```
+
+Running it again is safe: an identical file is left alone, and a file you've edited is kept unless you pass `--force`.
+
+For Claude Code there's also a plugin that carries the same skill; it will be listed in the quickstacks marketplace once that's published.
+
+Other agents (Codex, OpenCode, Cursor) have their own places for instructions. Print the skill and put it where your agent reads skills or rules:
+
+```sh
+quickstacks skill install --print > SKILL.md
+```
+
+## What the agent does
+
+With the skill loaded, a request like "set up a TypeScript CLI properly" goes like this:
+
+```mermaid
+sequenceDiagram
+  actor You
+  participant A as Agent
+  participant Q as quickstacks
+  You->>A: "set up a TypeScript CLI properly"
+  A->>Q: list --json
+  Q-->>A: stacks and fragments
+  A->>You: "typescript-cli, because ..."
+  A->>Q: new typescript-cli my-cli --json
+  Q-->>A: NewResult, BRIEF.md written
+  A->>You: the brief's decisions (unless --sandbox or --yes)
+  You-->>A: answers
+  loop until green
+    A->>A: build from BRIEF.md
+    A->>Q: verify
+    Q-->>A: failed steps, or green
+  end
+  A->>You: summary: stack, decisions, what's left
+```
+
+1. The agent runs `quickstacks list --json`, picks a stack, and tells you which one and why, naming a close second if there is one. It won't pick an untrusted entry unless you named it.
+2. It runs `quickstacks new <stack> <dir> --json`, or adds `--sandbox` if you asked for the quickest local setup.
+3. It reads `.quickstacks/BRIEF.md` and follows it. It asks you only the decisions the brief tells it to ask; with `--sandbox` or `--yes` there are none.
+4. It runs `quickstacks verify`, fixes what fails, and runs it again until the outcome is `green`.
+5. It works through the brief's after-green list (manual QA, checking the docs) and summarizes for you: the stack, the decisions it took, anything left undone, and where it noted problems with the brief (`.quickstacks/NOTES.md`).
+
+For an existing repository, step 2 is `quickstacks add <fragment...> --json` instead, and the agent also merges the files `add` parked under `.quickstacks/incoming/`.
+
+The rules the agent follows are in [the skill](../skill/SKILL.md) and in the guide `quickstacks` prints with no arguments. The two that matter to you: the agent may never edit the verify steps or the manifest, and if verify reports `VerifyChanged`, it stops and asks you. Only you can accept changed steps, by running `quickstacks verify --accept-changes` at your own terminal.
+
+## What the agent sees
+
+quickstacks detects that it's running under an agent (from markers such as `CLAUDECODE` or `AI_AGENT`, or simply because stdout isn't a terminal) and prints agent output: the same result as the human text, with the noise cut. With `--json` it gets one JSON object per command instead, decoded against a published schema.
+
+When a command fails, the agent gets an exit code that tells it what to do next:
+
+| Exit | The agent should |
+| --- | --- |
+| 0 | Continue. For `verify`, check the outcome: only `green` is done |
+| 2 | Fix the input: a typo'd id, a bad flag, a non-empty target directory |
+| 3 | Fix the configuration or the manifest |
+| 5 | Read the verify report on stdout and fix what it names |
+| 6 | Ask you: something needs a person's permission |
+| 130 | Nothing; the run was interrupted |
+
+The full table, the JSON error envelope and the signal rules are in [Output and errors](reference/output.md).
+
+## Agent adapters
+
+Separately from who drives, `--agents` chooses which agents' config files a project gets: Claude Code settings and hooks, Codex config, OpenCode permissions, Cursor rules. It doesn't change which agent `new` launches (`--launch` does). The default is `claude`. Every target gets `AGENTS.md`, guard scripts are shared under `.claude/hooks/`, and only the selected agents get their own config.
+
+```sh
+quickstacks new typescript-cli my-cli --agents claude,codex
+```
+
+The adapters install guardrails, such as hooks that block destructive commands and secret writes, and lint-on-write where the agent supports it. How strongly each agent enforces them varies:
+
+| Agent | Enforced guards and instructions | Proof |
+| --- | --- | --- |
+| Claude Code (`claude`) | Destructive-command and secret-write hooks; lint-on-write, format-on-stop; CLAUDE.md imports AGENTS.md and path rules carry instructions | Bench adapter exists; see the composition's ledger record |
+| Codex (`codex`) | Bash and apply_patch guards after hook trust; workspace-write sandbox, on-request approvals; AGENTS.md and project skills carry instructions; lint and format are instructions | Bench adapter exists; a real pass with hooks firing is still required |
+| OpenCode (`opencode`) | Permissions and plugin callback guards; lint-on-write, format-on-idle; AGENTS.md and project skills carry instructions | Unproved: there is no OpenCode bench adapter yet; composition and offline callbacks only |
+| Cursor (`cursor`) | preToolUse shell and write guards; always-applied MDC instructions; lint and format are instructions | Unproved: there is no Cursor bench adapter yet; composition and offline hooks only |
+
+Codex project hooks need review and trust through `/hooks` before they run, and hook discovery in a linked git worktree still needs checking against a live agent (offline payload tests cover the protocol decisions). OpenCode targets its documented local-plugin format; Claude marketplace settings and the TypeScript harness extensions aren't carried over to the other agents. A blocked action means the agent should ask you.
+
+Format references: [Codex config](https://developers.openai.com/codex/config-advanced/), [Codex hooks](https://developers.openai.com/codex/hooks/), [Codex skills](https://developers.openai.com/codex/skills/), [OpenCode permissions](https://opencode.ai/docs/permissions/), [plugins](https://opencode.ai/docs/plugins/), [formatters](https://opencode.ai/docs/formatters/), [skills](https://opencode.ai/docs/skills/), [Cursor hooks](https://cursor.com/docs/hooks) and [rules](https://cursor.com/docs/rules).

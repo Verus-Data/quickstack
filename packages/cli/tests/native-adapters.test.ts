@@ -210,7 +210,7 @@ test.each(
 );
 
 test("the agent table distinguishes enforcement, instructions and unproved runs [3.4b#10]", () => {
-  const readme = readFileSync(join(bundled, "..", "README.md"), "utf8");
+  const readme = readFileSync(join(bundled, "..", "docs", "agents.md"), "utf8");
   for (const agent of ["claude", ...nativeAgents]) {
     const row = readme
       .split("\n")
