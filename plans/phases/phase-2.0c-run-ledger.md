@@ -77,6 +77,7 @@ export const LedgerRecord = Schema.Struct({
   agentMinutes: Schema.NullOr(Schema.Number), // wall clock of the agent process; null if not measured
   interventions: Schema.NullOr(Schema.Number),// lines under "## Asked"; null without NOTES.md
   note: Schema.optional(Schema.String),       // path of the run note under plans/runs/
+  analysis: Schema.optional(AnalysisSummary),// 2.3's measurement of the project the run produced
 });
 
 export const Ledger = Schema.Struct({
@@ -106,6 +107,16 @@ shows only in the record's `stages`.
 `interventions` is not part of `result`. The success measure "finishes without help" is
 the share of `pass` records with `interventions: 0`; D20's gate needs that plus a `pass`.
 `null` means there was no `NOTES.md`, which is not evidence of no questions.
+
+`analysis` is [2.3](phase-2.3-code-analysis-records.md)'s record of the project the run produced —
+layout, language mix, test ratio, and whatever the local analyzers found — attached here rather
+than kept in a file of its own, so a stack's history is one file. It is optional and decodes
+leniently: a record written by a CLI that predates 2.3 has no `analysis`, and that is not staleness.
+Consumers read it through this field, never by re-measuring the project: the bench (2.0b) compares
+consecutive records to answer "does the same stack still produce the same shape", the canary (5.1)
+compares across months, and the stats rollup (4.2a) groups by stack and preset. The SARIF log itself
+is not stored here — `analysis.sarif` is a path relative to the ledger file, so the ledger stays
+readable and the full findings stay in a format a scoring layer already understands.
 
 `run` is `null` only for an imported gate run whose note doesn't carry the final
 verify's `runs.jsonl` line, and `agentMinutes` is `null` only when the note doesn't

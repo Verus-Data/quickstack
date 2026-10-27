@@ -30,6 +30,10 @@ In:
 - Runner state: a dedicated clone, a local outbox, a lock.
 - Classification of each record against the previous one for the same key, with
   infrastructure failures kept out of rot.
+- A comparison of the analysis record ([2.3](phase-2.3-code-analysis-records.md)) a run carries
+  against the previous record for the same stack, preset and agent: a stack whose layout, language
+  mix or test ratio drifts while `verify` stays green is reported separately from a stack that
+  fails, because it is the earlier signal.
 - Reports: one ledger PR, kept current; an issue per stack when rot or a regression is
   found; a `canary-infra` issue for infrastructure failures.
 - Caps on wall time per run and runs per week.

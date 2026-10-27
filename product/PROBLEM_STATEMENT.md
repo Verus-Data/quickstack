@@ -60,10 +60,13 @@ Measured per stack, not per release.
 | The agent finishes without help | Fraction of `new --sandbox` runs that reach a green `verify` with no user intervention |
 | It's faster than by hand | Median time from `new` to green `verify` (target: under 20 minutes for a sandbox run) |
 | The result is complete | Every shipped stack's verify covers install, lint, typecheck, test, and a dev-server probe where there is a server |
+| The result is consistent | Sandbox runs of the same stack agree on layout, language mix and test ratio |
 | Stacks don't rot | A stack that passed last month still passes this month without a prose change |
 | People write their own | Stacks and fragments in `~/.stacks` and third-party sources, not only the bundled registry |
 
-None of these are collected today. Opt-in telemetry would cover the first two; a scheduled canary is the only way to get the fourth.
+None of these are collected today. Opt-in telemetry would cover the first two; the scheduled canary
+(5.1) is the only way to get "stacks don't rot"; consistency of the produced artifact is measured by
+the analysis record a run carries (2.3).
 
 ## Assumptions
 

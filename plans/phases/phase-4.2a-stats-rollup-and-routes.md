@@ -18,6 +18,10 @@ In:
 - An hourly and a daily rollup step in the Worker's scheduled entry writing `window_metrics`, both under 4.1c's `maintenance_lease`.
 - Wilson intervals, per-contributor caps, suppression and the publishing gate.
 - `StatsSummary` and `StatsDetail` schemas in `packages/format` (additive).
+- Distribution of the analysis record ([2.3](phase-2.3-code-analysis-records.md)) over the ledger's
+  `analysis` fields: language mix, test ratio and project size per stack and preset, so the
+  directory can show what a stack produces rather than only that it passes. Weighted scores are
+  computed from stored records at read time, never written back (D29).
 - `GET /v1/stats/summary`, `GET /v1/stats/stacks/:id`, `GET /v1/stats/fragments/:id`.
 
 Out:

@@ -19,6 +19,10 @@ In:
   stack end to end with one agent and records the result.
 - `packages/cli/scripts/bench/agents.ts`, the adapter table.
 - The bench brief `BENCH.md` the agent reads alongside `.quickstacks/BRIEF.md`.
+- The analysis record for the project the run produced ([2.3](phase-2.3-code-analysis-records.md)),
+  attached to each `LedgerRecord` it appends, and a comparison against the previous record for the
+  same stack and preset: layout, language mix and test ratio should agree run to run, and a
+  disagreement is reported as a finding of the bench rather than left for someone to notice.
 - Tests with scripted fake agents.
 
 Out:
