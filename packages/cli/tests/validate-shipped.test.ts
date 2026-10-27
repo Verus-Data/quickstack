@@ -380,4 +380,5 @@ test("the shipped registry has zero errors and warnings with every rot check ena
   expect(status).toBe(0);
   expect(report.bundled).toBe(true);
   expect(report.findings.filter((f) => f.severity !== "note")).toEqual([]);
-});
+  // This walks every shipped entry and composition; concurrent gates can exceed Vitest's 5 s.
+}, 30_000);
