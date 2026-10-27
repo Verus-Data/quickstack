@@ -1,6 +1,7 @@
 # Phase 4.4c: Pick the agent harness at handoff
 
 Status: EXECUTING
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -110,6 +111,16 @@ The picker is gated only by `decideHandoff`'s inputs, the same gate launching al
 7. `codex-app` is detected only with platform `darwin`, `open` on PATH and `Codex.app` under `$HOME/Applications`; launching it runs `open` with a `codex://new` URL whose decoded `path` and `prompt` are the project directory and the agent prompt, and records `codex`. Off macOS, `--launch codex-app` prints with `agent-not-found` and the app line.
 8. `new --json` output decodes with `NewResult`, `stacks schema new` lists the new harness ids and reason, and `--agents copilot` is still rejected as a usage error.
 9. Against the built package under a pseudo-terminal, with two fake agents on PATH, picking the second gives that agent the terminal: a line typed after the pick reaches the agent's stdin.
+
+### Realistic edge cases
+
+10. With several harnesses installed, JSON, no-launch, dry-run, non-terminal stdin and untrusted entries never ask or launch, even with an explicit harness where allowed.
+11. Unavailable configured agents fall through to the picker; the first available configured agent wins in settings order, and an explicit launch bypasses both settings and the picker.
+12. An invalid answer gets one retry that can select a valid row; numeric prefixes, fractions, zero and out-of-range rows are invalid.
+13. A project reached through a symlink and named with spaces, quotes and non-ASCII characters reaches the selected terminal agent as its real cwd with the prompt intact.
+14. If the app opener exits non-zero or disappears after detection, the project stays, the manifest records print, the prompt is printed and the CLI exits 0.
+15. Adding a fragment uses the same picker after its summary, preserves existing project files and leaves the manifest step digest unchanged by the choice.
+16. Choosing a harness does not save a preference or change adapter targets; a second invocation asks again and existing configuration bytes stay unchanged.
 
 ## What this plan may get wrong
 

@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { NodeServices } from "@effect/platform-node";
-import { Effect, type Exit, Layer, type Scope } from "effect";
+import { Effect, type Exit, Layer, type Scope, Terminal } from "effect";
 import { AppConfig, type Environment } from "../../src/config";
 import { hasFlag, main } from "../../src/main";
 import { NetLayer } from "../../src/platform/net";
@@ -29,6 +29,13 @@ export function ndjson(text: string): unknown[] {
         .map((line) => JSON.parse(line) as unknown)
     : [];
 }
+/** A fresh script per invocation; an exhausted queue behaves like terminal EOF. */
+export function scriptedTerminal(
+  answers: ReadonlyArray<string | Effect.Effect<string, Terminal.QuitError>> = [],
+) {
+  const displayed: string[] = [];
+  return { answers: [...answers], displayed, reads: 0 };
+}
 export async function runCli(
   args: readonly string[],
   options: {
@@ -41,6 +48,7 @@ export async function runCli(
     /** Runs before each write is captured; a rejection fails that write as the real stream would. */
     stdout?: Writer;
     stderr?: Writer;
+    terminal?: ReturnType<typeof scriptedTerminal>;
   } = {},
 ) {
   const temp = options.home ? undefined : tempDir();
@@ -59,8 +67,28 @@ export async function runCli(
     capture(stdout, options.stdout),
     capture(stderr, options.stderr),
   );
+  const script = options.terminal ?? scriptedTerminal();
+  const terminal = Layer.effect(
+    Terminal.Terminal,
+    Effect.map(Terminal.Terminal, (live) =>
+      Terminal.make({
+        ...live,
+        readLine: Effect.suspend(() => {
+          script.reads++;
+          const answer = script.answers.shift();
+          if (answer === undefined) return Effect.fail(new Terminal.QuitError());
+          return typeof answer === "string" ? Effect.succeed(answer) : answer;
+        }),
+        display: (text) =>
+          Effect.promise(async () => {
+            await capture(stdout, options.stdout)(text);
+            script.displayed.push(text);
+          }),
+      }),
+    ),
+  ).pipe(Layer.provideMerge(NodeServices.layer));
   const platform = Layer.mergeAll(
-    NodeServices.layer,
+    terminal,
     Host.memory({ platform: "test-node", cwd: home, authoring: guide, ...options.host }),
     Foreground.layer(Foreground.make()),
     NetLayer,
