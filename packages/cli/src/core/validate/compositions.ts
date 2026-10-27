@@ -50,6 +50,25 @@ export const bodyChecks: Check = (view) =>
 const subject = (stack: string, preset: string, added?: string) =>
   `${stack} (${preset})${added === undefined ? "" : ` + ${added}`}`;
 
+/** Defaults an explicit addition replaces; required fragments can never be dropped. */
+export function replacementDefaults(view: Omit<View, "composed">, stack: Stack, id: string) {
+  const fragment = (id: string) =>
+    view.all.find(
+      (entry): entry is Entry & { meta: FragmentMeta } =>
+        "meta" in entry && entry.meta.kind === "fragment" && entry.id === id,
+    );
+  const added = fragment(id);
+  return stack.meta.fragments.default.filter((other) => {
+    if (stack.meta.fragments.required.includes(other)) return false;
+    const existing = fragment(other);
+    return (
+      (added?.meta.category === "app" && existing?.meta.category === "app") ||
+      (added?.meta.conflicts.includes(other) ?? false) ||
+      (existing?.meta.conflicts.includes(id) ?? false)
+    );
+  });
+}
+
 /**
  * The compositions each validated stack is budgeted in: its required and default fragments (with
  * any default app), then each optional fragment and each app that fits it added on its own, all
@@ -58,7 +77,7 @@ const subject = (stack: string, preset: string, added?: string) =>
  * defaults it conflicts with, in either direction, and an added app replaces default apps, since
  * one composition holds at most one. An optional id that names no fragment is `referenceChecks`'.
  */
-function plans(view: View, stack: Stack) {
+export function compositionPlans(view: Omit<View, "composed">, stack: Stack) {
   const { required, optional } = stack.meta.fragments;
   const defaults = stack.meta.fragments.default;
   const fragments = new Map(
@@ -72,10 +91,6 @@ function plans(view: View, stack: Stack) {
     meta.appliesTo.length === 0 ||
     meta.appliesTo.includes(stack.id) ||
     stack.meta.tags.some((tag) => meta.appliesTo.includes(tag));
-  const isApp = (id: string) => fragments.get(id)?.meta.category === "app";
-  const conflicting = (a: string, b: string) =>
-    (fragments.get(a)?.meta.conflicts.includes(b) ?? false) ||
-    (fragments.get(b)?.meta.conflicts.includes(a) ?? false);
   const apps = [...fragments.values()]
     .filter(({ item, meta }) => meta.category === "app" && fits(meta) && view.inRoot(item))
     .map(({ item }) => item.id);
@@ -88,16 +103,13 @@ function plans(view: View, stack: Stack) {
     ...extras.map((id) => ({
       added: id,
       with: [id],
-      without: defaults.filter(
-        (other) =>
-          !required.includes(other) && ((isApp(id) && isApp(other)) || conflicting(id, other)),
-      ),
+      without: replacementDefaults(view, stack, id),
     })),
   ];
 }
 
 /** A compose failure as one line: what failed and the ids involved, never file content. */
-function describe(error: ComposeFailure): { check: string; message: string } {
+export function describe(error: ComposeFailure): { check: string; message: string } {
   switch (error._tag) {
     case "ComposeConflict": {
       const details = error.details;
@@ -197,7 +209,7 @@ export const compositionChecks: Check = (view) =>
       for (const preset of view.composition ? [view.composition.preset] : PRESETS) {
         for (const plan of view.composition
           ? [{ added: undefined, with: [], without: [] }]
-          : plans(view, stack)) {
+          : compositionPlans(view, stack)) {
           const name = subject(stack.id, preset, plan.added);
           const composed = yield* Effect.result(
             view.composition

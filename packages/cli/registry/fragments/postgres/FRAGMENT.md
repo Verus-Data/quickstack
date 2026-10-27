@@ -6,7 +6,7 @@ category: service
 name: PostgreSQL
 description: A local Postgres service in Docker Compose with healthchecks and a separate fast test instance, a migration tool for the stack's language, and a test harness that gives every test file its own database cloned from a migrated template.
 tags: [database, postgres, service]
-applies_to: [python-react, api]
+applies_to: [python-react]
 requires_tools: [docker]
 tools: [docker]
 deps:

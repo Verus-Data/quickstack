@@ -1,6 +1,7 @@
 # Phase 2.2: Deterministic rot checks
 
 Status: DRAFT 2026-10-26 (not agreed)
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -203,9 +204,11 @@ and notes print in 1.5's notes section. No `ValidateReport` field is added.
 
 ## Acceptance tests
 
-1. Composition and content checks, one fixture each: `compose-each` fails for an
-   optional fragment that conflicts with one stack's default (and passes for the stack it
-   doesn't conflict with); `conditional-dead-branch` is a warning for a `stack=<go-stack>`
+1. Composition and content checks, one fixture each: `compose-each` reports an undeclared
+   file collision between an unlisted tag-applicable fragment and a stack's defaults. A
+   listed optional fragment's collision is reported once by 1.5's `compose` check, and a
+   stack without the colliding default passes. Declared conflicts replace defaults in either
+   direction, matching 1.5, and give no finding; `conditional-dead-branch` is a warning for a `stack=<go-stack>`
    block in a fragment whose `applies_to` is `[python]`, and a note when `<go-stack>` could add
    it with `--with`; `undeclared-command` fires on `make lnt` where `commands` has `lint`,
    and not on `make lint`; `template-expression` fires on `${{ github }}` in a `.tmpl` and
@@ -235,6 +238,14 @@ and notes print in 1.5's notes section. No `ValidateReport` field is added.
 8. `ledger-schema`: an undecodable `runs.json` is an error and exit 2; a record with
    `schemaVersion: 2` alone gives no finding.
 9. The bundled registry: zero errors and zero warnings under the new checks.
+
+### Realistic edge cases
+
+10. A symlinked registry root and shipped paths with spaces, leading dashes and non-ASCII text preserve source locations and findings.
+11. Validation from another working directory under agent markers and repository-selecting git variables reads the requested checkout and never executes verify steps.
+12. CRLF text, backtick and tilde fences, IPv4 addresses and phrase word boundaries produce no spurious prose findings.
+13. Malformed reference JSON reports `ref-json` once per file, skips cascading reference checks and still checks valid sibling files.
+14. Existing ledger state distinguishes missing, empty, invalid v1 and newer records; added-fragment runs are excluded, and latest pass selection honors date and file order.
 
 ## Exit criteria
 
@@ -272,3 +283,27 @@ and notes print in 1.5's notes section. No `ValidateReport` field is added.
   apps: an app fragment is composed with each stack it applies to, alone, since at most
   one app fits a composition (1.1). The catalog is now the whole bundled catalog from
   1.6a, not three stacks, so the size concern above arrives with 1.6a rather than 3.3a.
+
+- Implementation: `template-expression` excludes the fixed template variable names. A
+  known substitution after `$` is intentional shell text (the bundled installer documents
+  `$` followed by its generated env prefix), rather than a bare Actions context.
+- Implementation: fragment coverage exempts keys already declared by the stack. Apps can
+  describe how they extend the stack's `check`; this is still the stack-owned aggregate,
+  not another deliverable that needs a duplicate verify run.
+- Implementation: `composeFiles` can reject an unknown template variable after `compose`
+  succeeds. The rendered-files check reports that as `compose` with the source path and
+  line; 1.5's composition check alone never rendered templates.
+- 2026-10-27: the orchestrator resolved the optional-conflict policy in favor of 1.5's
+  replacement rule. `compose-each` drops conflicting defaults in either direction and
+  checks only compositions 1.5 has not already budgeted; listed defects retain 1.5's
+  check id without a duplicate. Acceptance 1 now uses undeclared file collisions, plus
+  a passing declared-conflict case. Applicable combinations also get the composed brief budget.
+- 2026-10-27: corrected the six version-sensitive fixtures to put adapter examples under
+  `adapters/codex/nested/`, preserving two warnings without colliding with `files/<name>`.
+- Validation now caches checked registry file listings and source reads within one
+  invocation. The full concurrent suite exceeded a bundled fixture's five-second timeout
+  without that cache. Neutral rendering still goes exclusively through `composeFiles`.
+
+- 2026-10-27: checking previously unbudgeted combinations found `mobile-expo --with effect`
+  above 6,000 words. Condensed overlapping Effect and Schema guidance without narrowing
+  applicability or changing the budget; the bundled registry remains at zero errors/warnings.

@@ -11,6 +11,8 @@ tools: [bun]
 decisions:
   - "Release targets: darwin arm64 and x64, Linux x64 and arm64 with glibc (default). Defer musl and Windows."
   - "Releases repository: package scope/project slug on GitHub (default). Record confirmation under Pending user actions."
+verify:
+  - { name: release-build-all, layer: build, run: bun run build:all }
 commands:
   build:all: Compile each release target and write SHA256SUMS
 ---

@@ -43,3 +43,29 @@ export function nest(body: string, level = 3): string {
     })
     .join("\n");
 }
+
+/** Markdown lines outside fenced examples, retaining their source line numbers. */
+export function proseLines(text: string): Array<{ text: string; line: number }> {
+  const result: Array<{ text: string; line: number }> = [];
+  let fence: string | undefined;
+  text.split("\n").forEach((raw, index) => {
+    const line = raw.replace(/\r$/, "");
+    const marker = FENCE.exec(line)?.[1];
+    if (fence !== undefined) {
+      if (
+        marker !== undefined &&
+        marker[0] === fence[0] &&
+        marker.length >= fence.length &&
+        line.trim().length === marker.length
+      )
+        fence = undefined;
+      return;
+    }
+    if (marker) {
+      fence = marker;
+      return;
+    }
+    result.push({ text: line, line: index + 1 });
+  });
+  return result;
+}

@@ -6,6 +6,8 @@ import type { Processes } from "../../services/processes";
 import type { Composition } from "../compose/compose";
 import { type Entry, type Kind, markdownFile, type RejectedEntry } from "../registry/entry";
 import type { Registry } from "../registry/registry";
+import type { composedFiles } from "./composed";
+import type { EntrySources } from "./sources";
 
 /**
  * What every check reads. `entries` and `rejected` are the validated set (under the root, and
@@ -20,6 +22,8 @@ export type View = {
   entries: ReadonlyArray<Entry>;
   rejected: ReadonlyArray<RejectedEntry>;
   all: ReadonlyArray<Entry | RejectedEntry>;
+  sources: ReadonlyMap<string, EntrySources>;
+  composed: ReturnType<typeof composedFiles>;
   /** Whether an entry under the root is in the validated set (false for all but `only`). */
   wanted: (item: { kind: Kind; id: string }) => boolean;
   /** Whether an entry of the resolution set lives under the validated root. */
@@ -42,5 +46,5 @@ export function finding(
 }
 
 /** The entry's markdown file, relative to the root. */
-export const entryFile = (view: View, entry: { kind: Kind; dir: string }) =>
+export const entryFile = (view: Pick<View, "file">, entry: { kind: Kind; dir: string }) =>
   view.file(entry, markdownFile(entry.kind));
