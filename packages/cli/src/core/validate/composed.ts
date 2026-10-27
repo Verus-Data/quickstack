@@ -6,6 +6,7 @@ import { targetAgents } from "../compose/agents";
 import { type ComposeOptions, type Composition, compose } from "../compose/compose";
 import { composeFiles, NEUTRAL_VARS, type RenderedFile } from "../compose/files";
 import type { Entry } from "../registry/entry";
+import { Registry } from "../registry/registry";
 import { compositionPlans, describe } from "./compositions";
 import type { Source } from "./sources";
 import { type Check, entryFile, finding, type View } from "./view";
@@ -104,7 +105,8 @@ const renderAdapter = (view: SourceView, run: AdapterRun, state: RenderState) =>
         recordComposeFailure(view, run, error, state);
       return;
     }
-    const files = yield* Effect.result(composeFiles(result.success, NEUTRAL_VARS));
+    const registry = yield* Registry;
+    const files = yield* Effect.result(composeFiles(result.success, NEUTRAL_VARS, registry));
     if (Result.isSuccess(files)) {
       state.snapshots.push({ composition: result.success, files: files.success });
     } else if (

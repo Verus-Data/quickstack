@@ -26,17 +26,21 @@ export const NEUTRAL_VARS: Readonly<TemplateValues> = Object.freeze({
 type SourceFile = Omit<RenderedFile, "bytes"> &
   ({ bytes: Uint8Array } | { template: { text: string; entry: Entry; source: string } });
 
+const fileReader = (registry?: Registry["Service"]) =>
+  registry ? Effect.succeed(registry) : Registry.pipe(Effect.provide(Registry.layer([])));
+
 /** Read once so project-valued and neutral rendering use the same source snapshot. */
 const readFiles = (
   composition: Composition<Entry | null>,
+  registry?: Registry["Service"],
 ): Effect.Effect<
   ReadonlyArray<SourceFile>,
   EntryInvalid | PermissionDenied,
   FileSystem.FileSystem | Path.Path
 > =>
   Effect.gen(function* () {
-    // Rendering uses checked reads on already composed entries; no roots need to be loaded.
-    const registry = yield* Registry.pipe(Effect.provide(Registry.layer([])));
+    // Validation shares its snapshot; standalone rendering checks the current source files.
+    const reader = yield* fileReader(registry);
     const entries = [...(composition.stack ? [composition.stack] : []), ...composition.fragments];
     const encoder = new TextEncoder();
     const files: SourceFile[] = [];
@@ -57,10 +61,10 @@ const readFiles = (
       // An unreadable source stays the registry's `PermissionDenied`, as everywhere else.
       const source = planned.source?.file ?? "";
       if (planned.kind === "copy") {
-        files.push({ ...file, bytes: new Uint8Array(yield* registry.bytes(entry, source)) });
+        files.push({ ...file, bytes: new Uint8Array(yield* reader.bytes(entry, source)) });
         continue;
       }
-      const text = yield* registry.read(entry, source);
+      const text = yield* reader.read(entry, source);
       files.push({ ...file, template: { text, entry, source } });
     }
     return files.sort((a, b) => {
@@ -91,8 +95,11 @@ const renderFiles = (sources: ReadonlyArray<SourceFile>, values: TemplateValues)
   });
 
 /** Render the entry files only; the CLI's own `.quickstacks/` files are separate. */
-export const composeFiles = (composition: Composition<Entry | null>, values: TemplateValues) =>
-  Effect.flatMap(readFiles(composition), (sources) => renderFiles(sources, values));
+export const composeFiles = (
+  composition: Composition<Entry | null>,
+  values: TemplateValues,
+  registry?: Registry["Service"],
+) => Effect.flatMap(readFiles(composition, registry), (sources) => renderFiles(sources, values));
 
 /** Scaffold's files and fingerprint input, rendered from one read of every source. */
 export const composeFilesWithNeutral = (
