@@ -55,7 +55,7 @@ backend-format: ## ruff format + ruff check --fix
 	cd backend && uv run ruff format . && uv run ruff check --fix .
 
 backend-typecheck: ## mypy strict
-	cd backend && uv run mypy app tests
+	cd backend && uv run mypy app tests scripts
 
 backend-test: ## pytest (parallel)
 	cd backend && uv run pytest -n auto
