@@ -1,6 +1,7 @@
 # Phase 4.0a: The format package
 
 Status: DRAFT 2026-10-26 (not agreed)
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -105,6 +106,16 @@ Rules (roadmap, Contracts: Canonical bundle): files sorted by path using byte or
 3. `canonicalBundle`: the same files in a different order give identical bytes; a CRLF file and its LF copy give different digests; a binary file round-trips through `base64`; property test over random file sets that decode-then-canonicalize is stable.
 4. `BundlePath` rejects `../x`, `/x`, `a/../../x`, `a\\b` and an empty string.
 5. The packed `@stacks/format` tarball holds only `dist/`, `package.json` and the license; installed into a temporary project under Node 22 with no TypeScript loader, `import { bundleDigest, Manifest } from "@stacks/format"` runs and decodes a fixture manifest, and the declarations typecheck a consumer file with `tsc`.
+
+### Realistic edge cases
+
+6. A literal dotfile path (`files/.gitignore`) stays literal in canonical bytes and survives decoding.
+7. Changing only a file's executable bit changes the canonical bytes and digest.
+8. An empty file stays present with empty UTF-8 content and differs from an absent file.
+9. Non-ASCII paths sort by UTF-8 byte order, including paths whose UTF-16 order differs.
+10. Invalid UTF-8 bytes stay lossless as base64; valid UTF-8 supplied as base64 canonicalizes to utf8.
+11. A NUL anywhere in a bundle path is rejected at decode time.
+12. Spaces and leading dashes in ordinary relative paths survive canonicalization unchanged.
 
 ## Exit criteria
 
