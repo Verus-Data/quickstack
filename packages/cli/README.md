@@ -77,6 +77,7 @@ The core loop: `new <stack>` writes the starter files and `.quickstacks/BRIEF.md
 | `react-router` | React Router framework mode with SSR, Effect services, typed HTTP errors, Tailwind and shadcn | `openrouter-chat` |
 | `tauri-react` | Tauri desktop app: Rust crates behind a thin shell, typed IPC, a React frontend with a mock transport | |
 | `typescript-cli` | Bun-compiled TypeScript CLI on Effect with typed errors, safe output and logs | `openrouter-chat-cli` |
+| `typescript-mcp` | Stdio MCP server on Effect: typed tools and a markdown resource, Vitest units, a real client handshake | |
 
 `quickstacks list` shows each stack's fragments; `validate` reports every stack's composed brief size in both presets.
 
