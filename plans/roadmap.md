@@ -19,7 +19,8 @@ are closed. After it, the order is local proof, then reach, then scale, then aut
 2. Phase 3: existing repos and authors. `add`, personal and team stacks, authoring
    tools, (only once someone outside asks) git sources, and a wider bundled catalog with
    native config for more agents and apps built on stacks.
-3. Phase 4: the hosted side. An Effect API in `packages/api` that serves a signed
+3. Phase 4: the hosted side. An Effect API in the private `stacks-api` repository
+   (D35), on Node first and Workers later, that serves a signed
    registry index, opt-in or opt-out usage telemetry (the maintainers' call) with
    integrity checks and a launch runbook, public stats, a browsable directory, dependency
    trends, and an MCP server in `packages/mcp` once there is evidence agents want one.
@@ -183,16 +184,17 @@ a maintainer by hand; CI builds and deploys are 5.2.
 
 | Sub-phase | Goal | Traces to | Depends on | Status |
 |---|---|---|---|---|
-| [4.0a The format package](phases/phase-4.0a-format-package.md) | Extract the entry, manifest and run-record schemas to a private `packages/format` and add `canonicalBundle`/`bundleDigest`, bundled into the CLI, with the CLI suite unchanged | D11 ("shared code gets its own package") | 1.3b, 1.6b | Not started |
-| [4.0b API skeleton and hosting spike](phases/phase-4.0b-api-skeleton-and-hosting-spike.md) | `packages/api` on Effect's HTTP modules serving `/healthz`, its own gate, a Workers spike that answers open questions 16 and 17 | "no public registry exists yet"; D16 | 4.0a, D16 | Not started |
+| [4.0a The format package](phases/phase-4.0a-format-package.md) | Extract the entry, manifest and run-record schemas to `packages/format`, published so the API's repository can depend on it (D35), and add `canonicalBundle`/`bundleDigest`, bundled into the CLI, with the CLI suite unchanged | D11 ("shared code gets its own package") | 1.3b, 1.6b | Not started |
+| [4.0b API skeleton on Node](phases/phase-4.0b-api-skeleton-on-node.md) | The private `stacks-api` bun workspace, from the `astro-api` stack (`apps/api`, `apps/web`, `packages/contract`), serving `/healthz`, the signed index files and a minimal built Astro site as a Node server on a maintainers' host, with the runtime and static serving only in `apps/api/src/platform/` | "no public registry exists yet"; D35 | D35; the `astro-api` stack committed in this repository | Not started |
+| [4.0f Workers migration](phases/phase-4.0f-workers-migration.md) | Move the API to Cloudflare Workers with an empty D1 database and the static assets layer by adding a Worker platform entry, after a spike that answers open questions 16 and 17; every storage- or telemetry-backed sub-phase starts after it | D16, D35 | 4.0b; 4.0c and 4.0e if they have landed (their static output moves with it) | Deferred 2026-10-27 (until after the hackathon demo; the API runs on Node until then) |
 | [4.0c Registry index](phases/phase-4.0c-registry-index.md) | A static, content-addressed, signed index (D21) of proven compositions with each stack's last ledger run, built, signed inline and deployed by a maintainer, with `build:index --check` against the live host | "Stacks don't rot" made visible | 4.0b, 4.0a, 2.0a, 2.0c, 2.2 | Not started |
-| [4.0e Official names and directory](phases/phase-4.0e-official-names-and-directory.md) | The same build writes the signed `v1/names.json` (every official id and step name from every `v*` tag and index entry) and a static directory page per indexed stack, deployed by hand with the index | "Stacks don't rot" made visible; "None of these are collected today" (4.1c's official names) | 4.0c, 1.6c | Not started |
+| [4.0e Official names and directory](phases/phase-4.0e-official-names-and-directory.md) | The same build writes the signed `v1/names.json` (every official id and step name from every `v*` tag and index entry) and the index data `stacks-api/apps/web` builds a static directory page per indexed stack from, deployed by hand with the index | "Stacks don't rot" made visible; "None of these are collected today" (4.1c's official names) | 4.0c, 1.6c | Not started |
 | [4.0d The CLI's remote origin](phases/phase-4.0d-cli-remote-origin.md) | The CLI reads the index with a cache, signature check, bounded refresh, backoff and `--offline`, so official stacks update without a CLI release | "Stacks don't rot"; the agent's frustration with ambiguity | 4.0c, 0.3b, 1.3a | Not started |
 | [4.1a Telemetry client](phases/phase-4.1a-telemetry-cli-client.md) | Consent checked at enqueue and at flush, first-run notice, random ids outside the project, events, a spool, purge on disable | "None of these are collected today"; success rows 1, 2 and 5; D9 instrumentation | 4.0a, D17; soft 3.0, 3.1a, 3.1b, 4.0d (each hook or field lands only once its owner has) | Not started |
-| [4.1b Telemetry ingest and storage](phases/phase-4.1b-telemetry-ingest-and-storage.md) | `POST /v1/events` with per-event validation, idempotent D1 storage through `effect/sql`, released-version checks, rate limits and hashed networks | Same as 4.1a | 4.1a, 4.0b, D17 | Not started |
+| [4.1b Telemetry ingest and storage](phases/phase-4.1b-telemetry-ingest-and-storage.md) | `POST /v1/events` with per-event validation, idempotent D1 storage through `effect/sql`, released-version checks, rate limits and hashed networks | Same as 4.1a | 4.1a, 4.0b, 4.0f, D17 | Not started |
 | [4.1c Telemetry maintenance and retention](phases/phase-4.1c-telemetry-maintenance-and-retention.md) | The scheduled Worker entry under a lease: archive, verified pruning, hash expiry, official-name refresh from the signed names file, registry snapshots, a last-success marker | Same as 4.1a | 4.1b, 4.0e (the signed names file) | Not started |
 | [4.1d Telemetry integrity and alerts](phases/phase-4.1d-telemetry-integrity-and-alerts.md) | Exclusions applied to stored rows, sequence checks, a recheck queue that rebuilds projects, install maturity, internal daily counts, anomaly flags and one alert line | "None of these are collected today"; the trust job | 4.1c | Not started |
-| [4.1e Telemetry launch and runbook](phases/phase-4.1e-telemetry-launch-and-runbook.md) | The ordered launch procedure with checks, the ingest smoke from a reserved excluded id, production acceptance, alert routing, read-only queries and rollback; collection is live before any release enables it | The trust job; "None of these are collected today" | 4.1b, 4.1c, 4.1d, 4.0e, 1.6c | Not started |
+| [4.1e Telemetry launch and runbook](phases/phase-4.1e-telemetry-launch-and-runbook.md) | The ordered launch procedure with checks, the ingest smoke from a reserved excluded id, production acceptance, alert routing, read-only queries and rollback; collection is live before any release enables it | The trust job; "None of these are collected today" | 4.1b, 4.1c, 4.1d, 4.0e, 4.0f, 1.6c | Not started |
 | [4.2a Stats rollup and routes](phases/phase-4.2a-stats-rollup-and-routes.md) | Window metrics over finalized days with per-contributor caps, small-cell suppression, and stats routes read by `list` and `show` | The agent picking a stack; success row 5 | 4.1c, 4.1d, 4.0c | Not started |
 | [4.2b Stats in the CLI and directory](phases/phase-4.2b-stats-in-cli-and-directory.md) | `stats` in `list --json` and stats sections on the directory | Same as 4.2a | 4.2a, 4.0d, 4.0e, 3.1a | Not started |
 | [4.2c Directory browsing](phases/phase-4.2c-directory-browsing.md) | Sorted list views (default, most used, highest success, trending, newest), tag, fragment and agent pages, and pages kept for removed stacks, all static; the telemetry-free views ship without D17 | The agent picking a stack; success row 5; "Stacks don't rot" | 4.2b, 4.0c, 4.0e, 4.1d; D17 for the telemetry views | Not started |
@@ -202,7 +204,6 @@ a maintainer by hand; CI builds and deploys are 5.2.
 | [4.4a Human styling and live progress](phases/phase-4.4a-human-styling-and-live-progress.md) | Human audience only: colored status words decided once in Output, a live progress line for `verify` and `new`, and width-aware wrapping, with no new dependency and json and agent bytes unchanged | The human audience ("Three audiences" in `rules/cli/cli.md`); agents are the main users, so this lands late | 1.2a, 1.3a, 3.1a | Not started |
 | [4.4b Interactive pickers](phases/phase-4.4b-interactive-pickers.md) | Human audience only: `new`, `add` and `create` with missing arguments at a terminal offer effect/cli `Prompt` pickers and echo the equivalent command; agents, `--json`, CI and pipes keep the `Usage` error | Same as 4.4a; D9 (the direct-CLI entry point) | 1.2a, 1.4, 3.0, 3.1b; 4.4a soft | Not started |
 | [4.4c Agent picker at handoff](phases/phase-4.4c-agent-picker.md) | `new` and `add` at a terminal with several agent harnesses installed and none configured ask which one gets the project; `Harness` adds Copilot CLI and the macOS Codex app as launch-only targets; agents, `--json` and pipes keep today's handoff | D9 (handoff to whatever agent is on PATH) | 1.4, 3.0 | Executed 2026-10-27 |
-
 ### Phase 5: CI and scheduled inference
 
 Goal: everything the earlier phases do by hand runs by itself, without moving inference
@@ -213,7 +214,7 @@ schedules and secrets around behavior that already exists and is already tested 
 |---|---|---|---|---|
 | [5.0 CI release and checks](phases/phase-5.0-ci-release-and-checks.md) | A tag-driven release workflow with npm provenance, an `e2e-node22` job in `ci-ok`, and the bundled registry's `validate` and rot checks as CI steps | Entry point `npx stacks`; D12 | 1.6c | Not started |
 | [5.1 Scheduled canary](phases/phase-5.1-scheduled-canary.md) | Scheduled bench runs of every bundled stack on an isolated maintainer-controlled machine, with infra failures kept apart from rot and a report when a passing stack stops passing | "How does a stack prove it still works?"; success row 4; assumption 2 | 2.0b, 5.0, D15, D24 | Not started |
-| [5.2 CI index build and deploy](phases/phase-5.2-ci-index-build-and-deploy.md) | Build, sign and deploy the index and the API from CI with the signing key as a deploy secret | "Stacks don't rot" made visible without a maintainer at a keyboard | 4.0c, 4.0e, 4.0d, 5.0; 4.1e soft | Not started |
+| [5.2 CI index build and deploy](phases/phase-5.2-ci-index-build-and-deploy.md) | Build, sign and deploy the static index output from CI with the signing key as a deploy secret; the API deploys from `stacks-api`'s own CI | "Stacks don't rot" made visible without a maintainer at a keyboard | 4.0c, 4.0e, 4.0d, 5.0; 4.1e soft | Not started |
 
 ### Release: the final step
 
@@ -356,8 +357,8 @@ flowchart LR
   p20c --> p35b
   p13b --> p40a[4.0a format package]
   p16b --> p40a
-  p40a --> p40b[4.0b API skeleton]
-  p40b --> p40c[4.0c index]
+  p40b[4.0b API skeleton] --> p40c[4.0c index]
+  p40b --> p40f[4.0f Workers migration]
   p40a --> p40c
   p20a --> p40c
   p20c --> p40c
@@ -374,10 +375,12 @@ flowchart LR
   p40d -.-> p41a
   p41a --> p41b[4.1b ingest + storage]
   p40b --> p41b
+  p40f --> p41b
   p41b --> p41c[4.1c maintenance]
   p40e --> p41c
   p41c --> p41d[4.1d integrity + alerts]
   p41d --> p41e[4.1e launch + runbook]
+  p40f --> p41e
   p41b --> p41e
   p41c --> p41e
   p40e --> p41e
@@ -416,8 +419,7 @@ flowchart LR
   p31b --> p44b
   p44a -.-> p44b
   p14 --> p44c[4.4c agent picker]
-  p30 --> p44c
-  p16c --> p50[5.0 CI release + checks]
+  p30 --> p44c  p16c --> p50[5.0 CI release + checks]
   p50 --> p51[5.1 canary]
   p20b --> p51
   p50 --> p52[5.2 CI index deploy]
@@ -446,8 +448,8 @@ What can run in parallel, given one agent per sub-phase:
 | Phase 2 and 3 | 3.0 alongside phase 2, after 1.6b | `src/core/scaffold/` (3.0 adds the parking path) |
 | Phase 3 | 3.1a alongside 3.0 once 2.0c lands; 3.1b and 3.1c after 3.1a | `src/commands/new.ts`: 3.1b adds `--preset` and the `preset` default, 3.1c adds `--dry-run`, `--name` and `--author`, 3.0 adds nothing there; merge 3.1b and 3.1c by hand |
 | Phase 3, content | 3.3a, 3.3b, 3.4a, 3.4b, 3.4c and 3.5b in parallel after 2.0b and 2.2; 3.3c after 3.3a | `packages/cli/registry/fragments/agent-ops/` (3.4a and 3.4b both edit it; merge by hand); `registry/runs.json` (append only); `src/core/validate/` (3.3a, 3.4b and 3.5b each add checks); the package `files` list (3.4c adds `skill/`). 3.5b touches verify: land it alone or rebase. 3.3b must not change the bytes of existing stack entries; shared fragments gain only `tag=` blocks that leave existing stacks' composed briefs unchanged |
-| Phase 4 | 4.0b and 4.1a after 4.0a; 4.0d after 4.0c | `packages/format` is additive only once 4.0a lands: 4.0c adds the index schema and keys, 4.0e the names schema, 4.1a the event schema, 4.2a the stats schema; nobody changes an existing export |
-| Phase 4, telemetry | 4.1d after 4.1c, then 4.1e; 4.2c and 4.2d in parallel after 4.2b and 4.1e; 4.2e after 4.2d | `packages/api/src/maintenance/maintain.ts` and the scheduled entry (4.1d adds a step before archive, 4.2a the hourly rollup under the same lease); `packages/api/src/stats/rollup.ts` (4.2c adds co-occurrence, 4.2e the dependency dimensions, both additive); `packages/cli/scripts/site/` and the index build (4.2c pages, 4.2d the allowlist); `packages/api/wrangler.jsonc` routes and the `STATS_ENABLED` (4.2c) and `DEPS_ENABLED` (4.2e) vars |
+| Phase 4 | 4.0b once the `astro-api` stack is committed (D35); 4.1a after 4.0a; 4.0d after 4.0c; 4.0f after the hackathon demo, before 4.1b and every other storage- or telemetry-backed sub-phase | `packages/format` is additive only once 4.0a lands: 4.0c adds the index schema and keys, 4.0e the names schema, 4.1a the event schema, 4.2a the stats schema; nobody changes an existing export |
+| Phase 4, telemetry | 4.1d after 4.1c, then 4.1e; 4.2c and 4.2d in parallel after 4.2b and 4.1e; 4.2e after 4.2d | `stacks-api/apps/api/src/maintenance/maintain.ts` and the scheduled entry (4.1d adds a step before archive, 4.2a the hourly rollup under the same lease); `stacks-api/apps/api/src/stats/rollup.ts` (4.2c adds co-occurrence, 4.2e the dependency dimensions, both additive); `stacks-api/apps/web` pages and its site config (4.2b stats sections, 4.2c views and the `STATS_ENABLED` switch, 4.2e dependency pages and `DEPS_ENABLED`); the index build in this repository (4.2d the allowlist) |
 | Phase 5 | 5.0 any time after 1.6c; 5.1 and 5.2 after 5.0 | `.github/workflows/` |
 
 Two orderings, decided here:
@@ -575,11 +577,15 @@ names.
 | Telemetry event | `packages/format::TelemetryEvent` | Closed schema with `schemaVersion`. Event types `new`, `add`, `verify`, `show`, `error`; `new` and `add` carry `source`, `origin` and `nonOfficial` counts. Every field names the metric or internal count that reads it (4.1a's field-consumer table); `preset` and `fingerprint` on `new` are read by 4.2a's per-preset and per-composition breakdowns. Each released `schemaVersion` is frozen as `packages/format/schemas/telemetry-event.v<N>.json` with an equality test; 4.2d adds `deps` under version 2 (D25) | 4.1a; 4.1b, 4.1d, 4.2a, 4.2d |
 | Stats summary and detail | `packages/format::StatsSummary`, `StatsDetail` | `StatsSummary` is what `GET /v1/stats/summary` returns and `list --json` shows, with `through` (the last finalized UTC day) and `entryPoints`; 4.2c adds an optional `trending` per entry. `StatsDetail` is what the detail routes return and `show --json` shows. Every value has the `{ value, suppressed }` shape. A route with no named reader isn't built | 4.2a; 4.2b, 4.2c |
 | Dependency allowlist | `packages/format::DependencyAllowlist` (`formatVersion: 1`, `names` per ecosystem `npm`, `pypi`, `go`, `crates`) at `v1/allowlist.json`, served at `GET /v1/allowlist` | Signed with the index key in the same envelope; built from `packages/cli/registry/allowlist.json`, where the maintainers list names per ecosystem; the build fails when a bundled entry's `deps` name appears in no ecosystem. Ingest reads it through 4.1c's `IndexAssets` with the signature verified. Only names on it are ever sent (D25) | 4.2d; 4.1b ingest, 4.2e |
-| API service keys | `stacks/api/<Name>` (for example `stacks/api/EventStore`; `MaintenanceStore` from 4.1c, `IntegrityStore` from 4.1d) | Namespaced like the CLI's `stacks/<Name>` | 4.0b; 4.1b, 4.1c, 4.1d, 4.2a |
+| Directory data | `packages/format::DirectoryData` at `v1/directory.json` | Each entry's added date (from this repository's git) and each removed entry's record and last static content, from `packages/cli/registry/removed.json`. Signed with the index key in the same envelope; `stacks-api/apps/web` reads it at build time and fails on a bad signature | 4.2c; 5.2 |
+| Dependency stats | `packages/format::StatsDeps`, `StatsDep`, optional `StatsDetail.deps`, at `GET /v1/stats/deps/:ecosystem` and `/v1/stats/deps/:ecosystem/:name` | Same `{ value, suppressed }` shape and gate as 4.2a's routes; the site build is the named reader, the CLI never calls them | 4.2e |
+| API service keys | `stacks-api/<Name>`, the scaffolded rule's `<project>/<Name>` (for example `stacks-api/EventStore`; `MaintenanceStore` from 4.1c, `IntegrityStore` from 4.1d) | Namespaced, so they never collide with the CLI's `stacks/<Name>` | 4.0b; 4.1b, 4.1c, 4.1d, 4.2a |
 | API base URL | `AppConfig.apiUrl`, from the `DEFAULT_API_URL` constant `bin.ts` passes in | No environment variable changes it; only the test helper overrides it, the same way as `INDEX_PUBLIC_KEYS` | 4.2b; 4.2d |
-| Worker feature switches | `STATS_ENABLED`, `DEPS_ENABLED` vars in `packages/api/wrangler.jsonc` | A view behind a switch that is off is not registered and falls through to the assets 404 | 4.2c, 4.2e |
-| API error table | `packages/api/src/errors.ts::apiErrorTable` | One exhaustive row per tag with status and `retryable`; see [API error tags](#api-error-tags) | 4.0b; 4.1b extends it |
-| API tables | `packages/api/migrations/` | 4.1b: `events` (with `asn`, `received_at`, and one `excluded` column set by `ingest/classify.ts::classify`, first match wins in the order `excluded_install`, `excluded_network`, `excluded_asn`, `unreleased_version`, `cap`, `implausible`; 4.1c may clear only `unreleased_version` and then re-runs `classify`), `projects` (with `preset`, `scaffold_at`, `verify_runs_to_green`; other per-project attributes are read from the `new` event's payload within 28 days), rebuilt only by `store/projects.ts::rebuildProject`, which 4.1c and 4.1d call, `official_names(kind, name, stack, first_seen, last_seen)`, `released_versions`, `rate_counts`, `exclusions` (kinds `install`, `network`, `asn`). 4.1c: `registry_snapshots`, `maintenance_lease`, `maintenance_state` (`last_success`, `last_rollup` (written by 4.2a's hourly step, read by 4.1d's stale-rollup flag), `names_digest`, `names_last_outcome`, `lease_held_count`), read and written through `stacks/api/MaintenanceStore`. 4.1d: `recheck_queue`, `daily_metrics`, `anomaly_flags`, `installs` (`first_seen_at`; install maturity is `installs.first_seen_at <= projects.scaffold_at - 24h` in 4.1d, 4.2a and 4.2c), which are internal and read by no public route. 4.2a: `window_metrics`. 4.2d: `event_deps`, `project_deps` (`event_deps` is pruned with `events` by 4.1c's prune). An event stored with any `excluded` value never creates or updates a `projects` row; 4.1d's recheck queue rebuilds affected rows while raw events exist (90 days), after which `projects` is final. Every scheduled step, including 4.2a's rollup, runs under the `maintenance_lease` | 4.1b, 4.1c, 4.1d; 4.2a (lease, `installs` for maturity, `registry_snapshots` for change markers), 4.2c (`installs`) |
+| Site feature switches | `STATS_ENABLED`, `DEPS_ENABLED`, declared with `astro:env` `envField` (`context: "server"`) and read only in `stacks-api/apps/web/src/site-config.ts` | A page behind a switch that is off is not built: it is a route whose `getStaticPaths` returns `[]`, so its path falls through to the static 404 on Node and on Workers | `stacks-api/apps/web`; 4.2c, 4.2e |
+| API error table | `stacks-api/packages/contract/src/errors.ts::apiErrorTable` | One exhaustive row per tag with status and `retryable`; see [API error tags](#api-error-tags) | 4.0b; 4.1b extends it |
+| API error envelope | `stacks-api/packages/contract/src/errors.ts::ApiErrorEnvelope`, `{ error: { tag, message, retryable } }` | The same field names as the CLI's `ErrorEnvelope` without `next` and `details`; `message` is fixed per tag; every non-2xx API response carries it | 4.0b |
+| Published format package | `@stacks/format` on npm, built `dist/` JS plus `.d.ts`; the workspace resolves source and npm resolves `dist/` through exports conditions | Additive changes are minor versions and existing exports never change. `stacks-api` depends on it through an npm alias, so the import name stays `@stacks/format`, with a caret range. A maintainer publishes by hand until 5.0, and each additive sub-phase (4.0c, 4.0e, 4.1a, 4.2a, 4.2d) publishes before the API uses its addition | 4.0a; 4.0c, 4.0e, 4.1a, 4.2a, 4.2d |
+| API tables | `stacks-api/apps/api/migrations/` | 4.1b: `events` (with `asn`, `received_at`, and one `excluded` column set by `ingest/classify.ts::classify`, first match wins in the order `excluded_install`, `excluded_network`, `excluded_asn`, `unreleased_version`, `cap`, `implausible`; 4.1c may clear only `unreleased_version` and then re-runs `classify`), `projects` (with `preset`, `scaffold_at`, `verify_runs_to_green`; other per-project attributes are read from the `new` event's payload within 28 days), rebuilt only by `store/projects.ts::rebuildProject`, which 4.1c and 4.1d call, `official_names(kind, name, stack, first_seen, last_seen)`, `released_versions`, `rate_counts`, `exclusions` (kinds `install`, `network`, `asn`). 4.1c: `registry_snapshots`, `maintenance_lease`, `maintenance_state` (`last_success`, `last_rollup` (written by 4.2a's hourly step, read by 4.1d's stale-rollup flag), `names_digest`, `names_last_outcome`, `lease_held_count`), read and written through `stacks-api/MaintenanceStore`. 4.1d: `recheck_queue`, `daily_metrics`, `anomaly_flags`, `installs` (`first_seen_at`; install maturity is `installs.first_seen_at <= projects.scaffold_at - 24h` in 4.1d, 4.2a and 4.2c), which are internal and read by no public route. 4.2a: `window_metrics`. 4.2d: `event_deps`, `project_deps` (`event_deps` is pruned with `events` by 4.1c's prune). An event stored with any `excluded` value never creates or updates a `projects` row; 4.1d's recheck queue rebuilds affected rows while raw events exist (90 days), after which `projects` is final. Every scheduled step, including 4.2a's rollup, runs under the `maintenance_lease` | 4.1b, 4.1c, 4.1d; 4.2a (lease, `installs` for maturity, `registry_snapshots` for change markers), 4.2c (`installs`) |
 | Smoke install id | `00000000-0000-4000-8000-000000000001` | Listed in `exclusions` by a migration, so smoke traffic never counts | 4.1e; 5.2 |
 
 ### Error tags
@@ -648,7 +654,7 @@ Names to use: `EntryInvalid` (not `InvalidEntry`), `ComposeConflict` (not
 | `validate` severities | `error` (exit 2), `warning` (fails the bundled registry's zero-warning gate), `note` (never affects exit or the gate) | 1.5, 2.2 |
 | Telemetry from maintainer runs | The bench (2.0b) sets `DO_NOT_TRACK=1` in the agent's child environment, so every `stacks` the agent runs sends nothing; the canary (5.1) runs through the bench and asserts it. Smoke events use the excluded smoke install id | 2.0b, 5.1, 4.1e |
 | Run evidence | Gate and bench run notes in [plans/runs/](runs/README.md) `<date>-<stack>.md`, each with the repo commit; 1.6b's notes are also the evidence for D5; the ledger (above) | 1.6b, 2.0c |
-| New dependencies | `yaml` (1.0). Any other new runtime dependency needs a line in that sub-phase's design saying why the standard library and Effect aren't enough. Known ones: `wrangler` and `@cloudflare/vitest-pool-workers` as dev dependencies (4.0b), the D1 driver for `effect/sql` (4.1b), `smol-toml` for reading TOML, added once to the root catalog by 3.0 and reused by 4.2d for `Cargo.toml` and `pyproject.toml`. Scripts in `scripts/` use Effect and `Processes`; GitHub is called with `gh` (5.1) | each owner |
+| New dependencies | `yaml` (1.0). Any other new runtime dependency needs a line in that sub-phase's design saying why the standard library and Effect aren't enough. Known ones, all in `stacks-api` and never in this repository's root catalog: `@effect/platform-node`, Astro, React and Tailwind (4.0b, from the `astro-api` stack), `wrangler`, `@cloudflare/vitest-pool-workers` and the D1 driver for `effect/sql` (4.0f); `smol-toml` for reading TOML, added once to the root catalog by 3.0 and reused by 4.2d for `Cargo.toml` and `pyproject.toml`. Scripts in `scripts/` use Effect and `Processes`; GitHub is called with `gh` (5.1) | each owner |
 
 ## Repository and stack
 
@@ -677,10 +683,15 @@ What the base gives the product, and why it fits:
 | CI | One `check` job on Ubuntu and macOS (lint, typecheck, hook tests, coverage, e2e) behind one required `ci-ok`. Root scripts fan out with `bun run --filter '*'`, so a new package's tests run in CI without a workflow change | No sub-phase before phase 5 edits `.github/workflows/` (D23) |
 
 The repository layout is settled (D11): a bun workspace over `packages/*`.
-`packages/cli` is the `stacks` package. `packages/api` and `packages/mcp` exist as
-placeholders and get their real contents in 4.0b and 4.3. Code that two packages need goes
+`packages/cli` is the `stacks` package. `packages/mcp` exists as a placeholder and
+gets its real contents in 4.3. The API is not in this repository: it lives in the private
+`stacks-api` repository (D35), a bun workspace (`apps/api`, `apps/web`,
+`packages/contract`) scaffolded from the bundled `astro-api` stack, which builds on the
+backend-only `typescript-api`; its plans stay here. The index and `names.json` are still
+built and signed here, because they need CLI code; only the HTML pages live there. Code that two packages need goes
 in its own package, extracted when the second one needs it: the entry, manifest and
-run-record schemas move to `packages/format` in 4.0a, not before; `fingerprint` and
+run-record schemas move to `packages/format` in 4.0a, not before, and that package is
+published because the API's repository consumes it; `fingerprint` and
 `composeFiles` stay in the CLI. The root
 owns the harness (`.claude/`, `tests/hooks/`, lefthook, CI), `biome.json`,
 `tsconfig.base.json`, and scripts that fan out with `bun run --filter '*'`. Root `dev` uses
@@ -796,7 +807,7 @@ question 9).
 | D13 | The three MVP stacks and their word targets; amended 2026-10-26 so 1.6a brings the whole catalog into v1 and validates it | 1.6a (drafting can start after 1.0) | Proposed; amendment is an agent proposal |
 | D14 | Changed verify steps fail verify | 1.3b | Proposed |
 | D15 | Where the canary runs, on whose agent account, with what isolation and token | 5.1 | Proposed |
-| D16 | API hosting | 4.0b | Proposed |
+| D16 | API hosting | 4.0f | Decided 2026-10-27 (with D35): Workers with D1 in production, after a Node interim |
 | D17 | Telemetry consent model | 4.1a | Proposed; also [open question 5](risks-and-open-questions.md#open-questions-for-the-maintainers) |
 | D18 | Entry format v1, amended 2026-10-26 (snake_case keys, literal dotfiles, `package_scope`, apps as fragments, `expect`) | 1.1 starts; 1.6a bringing the catalog into v1 | Proposed; amendment is an agent proposal |
 | D19 | Project-origin entries untrusted by default | 1.0 | Proposed |

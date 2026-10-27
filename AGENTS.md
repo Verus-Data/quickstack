@@ -2,7 +2,7 @@
 
 ## Overview
 
-A bun workspace; every package is in `packages/<name>/`. `packages/cli` is `stacks`, the CLI: Effect 4 commands/services, doctor/version, lazy configuration, safe output and logs. Bun bundles the Node ESM package; Node 24 runs Vitest. There is no product code, vendor, release tooling or network requirement. `packages/api` (`@stacks/api`) and `packages/mcp` (`@stacks/mcp`) are placeholders with no code or scripts. Code two packages share goes in its own package, never imported across another package's `src/`. How the monorepo works and how to add a package: README.md, "Monorepo".
+A bun workspace; every package is in `packages/<name>/`. `packages/cli` is `stacks`, the CLI: Effect 4 commands/services, doctor/version, lazy configuration, safe output and logs. Bun bundles the Node ESM package; Node 24 runs Vitest. There is no product code, vendor, release tooling or network requirement. `packages/mcp` (`@stacks/mcp`) is a placeholder with no code or scripts. The hosted API lives in a separate private repository, `stacks-api` (plans README, D35); its plans stay in `plans/`. Code two packages share goes in its own package, never imported across another package's `src/`. How the monorepo works and how to add a package: README.md, "Monorepo".
 
 The root owns the harness: `.claude/`, lefthook, CI, the root `biome.json`, `tsconfig.base.json`, and the root test suite in `tests/`: the hook tests in `tests/hooks/`, the delegate runner's in `tests/scripts/` and the check in `tests/acceptance/` that traces each plan's acceptance tests to tagged CLI tests. Each package owns its source, tests, `tsconfig.json` (extending `../../tsconfig.base.json`) and any Biome plugins in a nested `biome.json` (`"root": false, "extends": "//"`). See docs/harness.md.
 
@@ -11,7 +11,7 @@ The root owns the harness: `.claude/`, lefthook, CI, the root `biome.json`, `tsc
 | Path | What it holds |
 | --- | --- |
 | `packages/cli/` | The CLI: `src/` (see "Architecture map"), `tests/` (Vitest on Node), `e2e/` (Bun tests, installed Node package), `registry/` (the bundled stacks, fragments and `runs.json` ledger), `skill/` (the agent skill), `docs/` (user docs: quick start, concepts, agents, architecture, the reference pages under `docs/reference/`, maintaining, and `authoring.md`, the one doc the package ships), `scripts/` (build, bench, ledger import), `biome-plugins/` (Grit boundary rules) |
-| `packages/api/`, `packages/mcp/` | Placeholders |
+| `packages/mcp/` | Placeholder |
 | `plans/` | `HANDOFF.md` (start here), `README.md` (conventions, decisions log), `roadmap.md` (phases, shared contracts table, error tags), `phases/` (one file per sub-phase), `runs/` (reviewed bench notes), `requirements.md`, `risks-and-open-questions.md` |
 | `product/` | Problem statement, pitch, demo outline |
 | `docs/harness.md` | Who owns which part of the harness |

@@ -12,10 +12,6 @@
         "vitest": "catalog:",
       },
     },
-    "packages/api": {
-      "name": "@stacks/api",
-      "version": "0.0.0",
-    },
     "packages/cli": {
       "name": "@steamfield/stacks",
       "version": "0.2.0",
@@ -146,8 +142,6 @@
     "@rolldown/binding-win32-x64-msvc": ["@rolldown/binding-win32-x64-msvc@1.2.14", "", { "os": "win32", "cpu": "x64" }, "sha512-9mE94bf2GZUaR/fUSXCMpBoWkctu421Mi0ORpm4zqfbkjKep7RxzPFa5etcGs5h+2KApoWBOA/hAJa/7saGgEQ=="],
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.1", "", {}, "sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw=="],
-
-    "@stacks/api": ["@stacks/api@workspace:packages/api"],
 
     "@stacks/mcp": ["@stacks/mcp@workspace:packages/mcp"],
 

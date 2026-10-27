@@ -1,0 +1,51 @@
+// API platform, schema, environment, and logging boundaries.
+language js
+
+or {
+  or {
+    JsModuleSource() as $src,
+    `import($src)`
+  } where {
+    $filename <: r".*/src/.*",
+    or {
+      and {
+        $src <: r"[\"'](?:node:[^\"']+|bun|bun:[^\"']*|@effect/platform-(?:node|bun)[^\"']*)[\"']",
+        $filename <: not r".*/src/platform/.*",
+        register_diagnostic(span=$src, message="Runtime imports belong in src/platform/; use Effect's FileSystem, Path and HttpClient services elsewhere.")
+      },
+      and {
+        $src <: r"[\"'](?:zod|zod/[^\"']*|@effect/schema[^\"']*)[\"']",
+        register_diagnostic(span=$src, message="Use Schema from effect at project-owned boundaries.")
+      }
+    }
+  },
+  `console.$m($args)` as $c where {
+    $filename <: r".*/src/.*",
+    register_diagnostic(span=$c, message="Log with Effect.log* and annotations, never console.")
+  },
+  `process.env` as $e where {
+    $filename <: r".*/src/.*",
+    $filename <: not r".*/src/platform/.*",
+    register_diagnostic(span=$e, message="Only src/platform/ reads process.env; config.ts reads through Effect Config.")
+  },
+  or {
+    `process.$x`,
+    `process.$x = $v`,
+    `globalThis.process`,
+    `const $x = process`,
+    `let $x = process`
+  } as $p where {
+    $p <: not `process.env`,
+    $filename <: r".*/src/.*",
+    $filename <: not r".*/src/platform/.*",
+    register_diagnostic(span=$p, message="The process global belongs to src/platform/.")
+  },
+  or {
+    `Bun.$x`,
+    `globalThis.Bun`
+  } as $b where {
+    $filename <: r".*/src/.*",
+    $filename <: not r".*/src/platform/.*",
+    register_diagnostic(span=$b, message="The Bun global belongs to src/platform/.")
+  }
+}

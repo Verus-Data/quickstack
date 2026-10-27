@@ -1,0 +1,110 @@
+#!/usr/bin/env bun
+// `bun run dev`: the dev server, with everything it prints (Node, startup errors, app logs)
+// also saved to logs/dev.log with colors stripped. The app separately writes
+// structured JSON lines to logs/server.jsonl. Each start moves the previous run's files
+// to logs/*.prev.* so a crash before a restart is still there to read.
+import { spawn, spawnSync } from "node:child_process";
+import {
+  existsSync,
+  mkdirSync,
+  openSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+  writeSync,
+} from "node:fs";
+import { constants } from "node:os";
+import { join } from "node:path";
+import { createInterface } from "node:readline";
+import { stripVTControlCharacters } from "node:util";
+import { PID_FILE, runningDevServer } from "./dev-pid";
+
+process.chdir(join(import.meta.dirname, ".."));
+
+const port = process.env.PORT_API || "3000";
+
+// Check before rotating, so a second `bun run dev` (on any port) can't move a running
+// server's logs away. logs/dev.pid holds "<pid> <port>" while a server from this checkout runs.
+const other = runningDevServer();
+if (other) {
+  console.error(
+    `A dev server from this checkout is already running on port ${other.port} (pid ${other.pid}). Its logs are in logs/; stop it with bun run dev:stop.`,
+  );
+  process.exit(1);
+}
+// A missing lsof sets `error`; skip the check then.
+const lsof = spawnSync("lsof", ["-nP", `-iTCP:${port}`, "-sTCP:LISTEN"], { stdio: "ignore" });
+if (!lsof.error && lsof.status === 0) {
+  console.error(
+    `Port ${port} is already in use by another process. Pick another with PORT_API=<port>, or run bun run dev:stop if a killed dev session left it running.`,
+  );
+  process.exit(1);
+}
+
+mkdirSync("logs", { recursive: true });
+if (existsSync("logs/dev.log")) renameSync("logs/dev.log", "logs/dev.prev.log");
+if (existsSync("logs/server.jsonl")) renameSync("logs/server.jsonl", "logs/server.prev.jsonl");
+writeFileSync(PID_FILE, `${process.pid} ${port}\n`);
+
+// The server runs detached, leading its own process group, so a signal reaches exactly the server
+// and its children, never the shell or tool that started this script.
+let group: number | undefined;
+function signalServer(sig: NodeJS.Signals): void {
+  if (group === undefined) return;
+  try {
+    process.kill(-group, sig);
+  } catch (error) {
+    // Already gone.
+    if ((error as NodeJS.ErrnoException).code !== "ESRCH") throw error;
+  }
+}
+
+// On any exit (an uncaught throw included), take the server and its children down too, so a
+// `kill` of this script alone can't leave Node holding the port with no pid file pointing at it.
+// Registered only now, so a refusal above leaves the pid file alone.
+process.on("exit", () => {
+  rmSync(PID_FILE, { force: true });
+  signalServer("SIGTERM");
+});
+// Ctrl-C reaches only this script (the server is in its own group), so pass it on. Keep copying
+// its shutdown output, for at most 5 seconds.
+let interrupted = false;
+process.on("SIGINT", () => {
+  if (interrupted) return;
+  interrupted = true;
+  signalServer("SIGINT");
+  setTimeout(() => process.exit(130), 5000).unref();
+});
+process.on("SIGTERM", () => process.exit(128 + constants.signals.SIGTERM));
+process.on("SIGHUP", () => process.exit(128 + constants.signals.SIGHUP));
+
+// stdout is a pipe for the server, so keep colors on for the terminal (unless NO_COLOR is set).
+const env: NodeJS.ProcessEnv = { ...process.env, PORT_API: port };
+if (!env.NO_COLOR) env.FORCE_COLOR ||= "1";
+
+process.stdout.write(
+  "  \x1b[2mLogs: logs/dev.log (this terminal), logs/server.jsonl (JSON lines)\x1b[0m\n",
+);
+
+// Each line goes to the terminal, and a copy without color codes is appended to logs/dev.log.
+// readline also ends a line at a lone \r, so a line redrawn with \r prints as separate lines.
+const log = openSync("logs/dev.log", "a");
+const server = spawn(process.execPath, ["run", "dev:server"], {
+  env,
+  detached: true,
+  stdio: ["inherit", "pipe", "pipe"],
+});
+group = server.pid;
+// Name the server's group too, so bun run dev:stop can still stop it if this script is killed
+// with SIGKILL and its exit handler never runs.
+writeFileSync(PID_FILE, `${process.pid} ${port} ${group ?? ""}\n`);
+for (const stream of [server.stdout, server.stderr]) {
+  createInterface({ input: stream, crlfDelay: Number.POSITIVE_INFINITY }).on("line", (line) => {
+    process.stdout.write(`${line}\n`);
+    writeSync(log, `${stripVTControlCharacters(line)}\n`);
+  });
+}
+// Let the process end on its own, so pending stdout writes finish; the exit handler cleans up.
+server.on("close", (code, signal) => {
+  process.exitCode = code ?? 128 + (signal ? constants.signals[signal] : 0);
+});

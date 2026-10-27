@@ -4,23 +4,24 @@ Status: DRAFT 2026-10-26 (not agreed)
 
 | Field | Value |
 |---|---|
-| Goal | The rollup turns 4.2d's dependency reports into per-dependency and per-ecosystem numbers (how many projects use it, which majors, how that is moving, what it is used with, how it does per stack), under 4.2a's caps, suppression and publishing gate, and the directory shows them on static, Worker-filled pages and in a dependencies section on each stack page |
+| Goal | The rollup turns 4.2d's dependency reports into per-dependency and per-ecosystem numbers (how many projects use it, which majors, how that is moving, what it is used with, how it does per stack), under 4.2a's caps, suppression and publishing gate, and the directory in `stacks-api/apps/web` shows them on static pages built from two dependency stats routes, and in a dependencies section on each stack page |
 | Traces to | Assumption 2, "version-less prose rots much more slowly than versioned templates": a stack author sees which majors agents install today for their stack, and when that shifts, without rerunning anything. The stack author: "a way to know a stack still produces a working project without running it by hand" |
-| Depends on | 4.2d (the dependency reports and tables), 4.2a (the rollup, caps, suppression, gate and lease), 4.2c soft (page templates and the browse links; without it the pages stand alone) |
+| Depends on | 4.2d (the dependency reports and tables), 4.2a (the rollup, caps, suppression, gate and lease), 4.2b (the build-time stats fetch and rebuild schedule), 4.2c soft (the browse links; without it the pages stand alone) |
 | Blocks | Nothing |
 | Decisions needed | D25 and D17, through 4.2d. The thresholds below reuse 4.2a's; any new one is listed here for the maintainers |
-| Settles | Dependency metrics and their definitions, transitions, co-installed dependency lift, the dependency pages, and that no dependency route exists |
+| Settles | Dependency metrics and their definitions, transitions, co-installed dependency lift, the dependency pages, and the two dependency stats routes the site reads |
 
 ## Scope
 
 In:
 
 - New dimensions in 4.2a's daily rollup step: `dep`, `dep_major`, `dep_stack`, `dep_transition`, `dep_cooccur`, `ecosystem`.
-- Pages `/deps/`, `/deps/<ecosystem>/`, `/deps/<ecosystem>/<name>/`, rendered by the Worker from `window_metrics`, and a dependencies section on `/stacks/<id>/` through a second marker.
+- `GET /v1/stats/deps/:ecosystem` (the ecosystem's numbers and its dependencies with their metrics) and `GET /v1/stats/deps/:ecosystem/:name` (one dependency's metrics), returning `StatsDeps` and `StatsDep` from `packages/format` (additive), with the same `{ value, suppressed }` shape and gate as 4.2a's routes. The site build is their named reader; the CLI doesn't call them.
+- Astro pages in `stacks-api/apps/web` at `/deps/`, `/deps/<ecosystem>/`, `/deps/<ecosystem>/<name>/`, built from those routes, and a dependencies section on `/stacks/<id>/` from the stack detail route's added `deps` field.
 
 Out:
 
-- Any API route for dependency stats. No client reads one: the CLI doesn't show dependency numbers, and the pages render from `window_metrics` in the Worker like 4.2b's stats sections. Add a route when a named client needs it.
+- Dependency numbers in the CLI.
 - Dependency numbers in `list --json` or `show`.
 - Advisories, licenses or any data about a dependency that doesn't come from these reports.
 
@@ -63,29 +64,30 @@ The stack page section is the reason this exists: it tells a stack author, for e
 - `/deps/`: one link per ecosystem with its project count.
 - `/deps/<ecosystem>/`: top 50 dependencies by reporting projects, recent major transitions, links to each dependency page.
 - `/deps/<ecosystem>/<name>/`: the metrics above, the stacks whose projects use it most, and the computed and through dates.
-- `/stacks/<id>/`: a `<!-- stacks:deps -->` marker added to 4.0e's template, filled with the stack's top dependencies, their major shares and the with-and-without green rates.
+- `/stacks/<id>/`: a dependencies section component added to 4.0e's stack page, filled with the stack's top dependencies, their major shares and the with-and-without green rates, from an optional `deps` field on `StatsDetail` (additive).
 
-All are rendered by the Worker with the same plain marker replacement as 4.2b, every value escaped (package names come from the allowlist, but are escaped anyway), `Cache-Control: public, max-age=3600`, no client-side JavaScript. Which dependency pages answer, decided here:
+All are built by the site at build time and rebuilt on 4.2b's schedule, every value escaped by Astro (package names come from the allowlist, but are escaped anyway), with 4.0e's `_headers` page rule and no island. The site builds a page for every allowlisted name in the signed allowlist (4.2d), so which dependency pages exist, decided here:
 
-| Case | Response |
+| Case | Page |
 |---|---|
-| Name not on the current allowlist | 404 `NotFound` envelope |
-| Allowlisted name, publishing gate not met | 200 with 4.2b's fixed sentence, "Not enough runs yet to publish numbers for this dependency." |
-| Allowlisted name, gate met, every cell suppressed (including a name no project reported) | 200 with the same fixed sentence |
-| Allowlisted name, gate met, some cell published | 200 with the published cells, suppressed ones shown as hidden |
+| Name not on the current allowlist | Not built: the static 404 |
+| Allowlisted name, publishing gate not met | Built with 4.2b's fixed sentence, "Not enough runs yet to publish numbers for this dependency." |
+| Allowlisted name, gate met, every cell suppressed (including a name no project reported) | Built with the same fixed sentence |
+| Allowlisted name, gate met, some cell published | Built with the published cells, suppressed ones shown as hidden |
 
-The pages are switched by the `DEPS_ENABLED` Worker config var in `packages/api/wrangler.jsonc`, the same way 4.2c's views use `STATS_ENABLED`: when it isn't `"true"`, the Worker doesn't handle `/deps/*`, the paths fall through to the assets layer's 404, and the stack page's deps marker is left empty.
+The routes answer the same cases: 404 `NotFound` for a name not on the allowlist, otherwise 200 with every value suppressed or published. The pages are behind the `DEPS_ENABLED` site switch (roadmap, Contracts: Site feature switches), the same way 4.2c's views use `STATS_ENABLED`: when it is off, no `/deps/*` page is built, the paths return the static 404, and the stack page's dependencies section is empty.
 
 ## Files and areas touched
 
 | Path | Change |
 |---|---|
-| `packages/api/src/stats/deps.ts`, `src/stats/rollup.ts` | Dependency dimensions in the daily step |
-| `packages/api/src/handlers/deps.ts`, `src/stats/render.ts` | Pages and the stack page section |
-| `packages/cli/scripts/site/` | The `stacks:deps` marker in the stack page template |
-| `packages/api/wrangler.jsonc` | `/deps/*` routes before assets; the `DEPS_ENABLED` var |
-| `packages/api/tests/deps-stats.test.ts` | New |
-| `AGENTS.md`, the directory's about text | Definitions in the words above |
+| `stacks-api/apps/api/src/stats/deps.ts`, `src/stats/rollup.ts` | Dependency dimensions in the daily step |
+| `stacks-api/apps/api/src/handlers/deps.ts`, `stacks-api/packages/contract/src/api.ts` | The two dependency stats routes and `deps` on the stack detail route |
+| `packages/format/src/stats.ts` | `StatsDeps`, `StatsDep`, optional `StatsDetail.deps` (additive, published before the API uses them) |
+| `stacks-api/apps/web/src/pages/deps/`, `src/components/DepsSection.astro` | The pages and the stack page section |
+| `stacks-api/apps/web/astro.config.mjs`, `apps/web/src/site-config.ts` | The `DEPS_ENABLED` switch (`astro:env` `envField`, `context: "server"`) |
+| `stacks-api/apps/api/tests/deps-stats.test.ts`, `apps/web/tests/deps-pages.test.ts` | New |
+| `stacks-api/AGENTS.md`, the directory's about text | Definitions in the words above |
 
 ## Acceptance tests
 
@@ -94,18 +96,19 @@ The pages are switched by the `DEPS_ENABLED` Worker config var in `packages/api/
 - One install with 20 projects using X counts 3; a dependency with an effective sample under 5 is suppressed on every page.
 - Lift over a seeded window matches a hand computation; a pair under the sample floor is not shown.
 - The with-and-without green rate appears only when both cells pass the rate thresholds.
-- Before the publishing gate is met, `/deps/npm/react/` shows the fixed sentence.
-- An allowlisted dependency no project reported, after the gate is met, shows the fixed sentence; a name not on the allowlist returns 404; with `DEPS_ENABLED` unset, `/deps/npm/` returns the assets 404; a name with `<` in a fixture is escaped; no response contains `<script>`.
-- No route under `/v1/` returns dependency numbers.
-- Under the local Workers runtime, the daily trigger writes the dependency rows and `/deps/npm/` renders them with the cache header.
+- Before the publishing gate is met, the built `/deps/npm/react/` shows the fixed sentence.
+- An allowlisted dependency no project reported, after the gate is met, shows the fixed sentence; a name not on the allowlist has no page and `GET /v1/stats/deps/npm/<name>` returns 404; with `DEPS_ENABLED` off, no `/deps/` page is built and `/deps/npm/` returns the static 404; a name with `<` in a fixture is escaped; no built dependency page contains `<script>`.
+- Only `/v1/stats/deps/*` and `StatsDetail.deps` carry dependency numbers; every response decodes with its `packages/format` schema.
+- Under the local Workers runtime, the daily trigger writes the dependency rows and `GET /v1/stats/deps/npm` returns them with the cache header; the site built against that runtime renders them on `/deps/npm/`.
 
 ## Exit criteria
 
-- Acceptance tests pass; `bun run check` green from the repo root.
-- The directory's about text and `AGENTS.md` define every dependency metric.
+- Acceptance tests pass; `bun run check` green in `stacks-api`, and from this repository's root for the `packages/format` additions.
+- The directory's about text and `stacks-api/AGENTS.md` define every dependency metric.
 
 ## What this plan may get wrong
 
 - With few stacks and a 7-day report spacing, dependency cells will be small for a long time. The gate and suppression handle that; the pages may stay at "Not enough runs yet" well after stack stats are public.
 - Adoption and drop depend on projects that keep reporting. A project that stops verifying looks like neither, which undercounts drops; the definitions say so on the page.
+- 2026-10-27: the plan had no dependency route, because the Worker rendered the pages from `window_metrics` directly. Under D35 the pages are built by the site, which needs the numbers over HTTP, so two read routes and `StatsDetail.deps` exist with the site build as their reader.
 - The with-and-without green rate invites a causal reading it doesn't support. The page states it is a comparison of projects, not an effect of the dependency.

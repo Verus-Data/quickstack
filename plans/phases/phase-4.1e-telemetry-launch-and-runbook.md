@@ -6,24 +6,24 @@ Status: DRAFT 2026-10-26 (not agreed)
 |---|---|
 | Goal | A maintainer can take telemetry from an empty account to live collection in one written procedure, with a check at every step, and a CLI that turns collection on is published only after the server has accepted, stored and maintained real events; the same document is the runbook for alerts, exclusions and rollback |
 | Traces to | The trust job: "the user wants to start work in a project they don't have to audit first", which here means the privacy promise is live and checked before the first event is sent. "None of these are collected today" |
-| Depends on | [4.1b](phase-4.1b-telemetry-ingest-and-storage.md), [4.1c](phase-4.1c-telemetry-maintenance-and-retention.md), [4.1d](phase-4.1d-telemetry-integrity-and-alerts.md) (everything the procedure deploys and checks), [4.0e](phase-4.0e-official-names-and-directory.md) (the signed `names.json` it deploys, and `build:index --check`), [1.6c](phase-1.6c-first-release.md) (the manual release procedure the enabling release follows until 5.0's workflow exists), D16, D17 |
+| Depends on | [4.1b](phase-4.1b-telemetry-ingest-and-storage.md), [4.1c](phase-4.1c-telemetry-maintenance-and-retention.md), [4.1d](phase-4.1d-telemetry-integrity-and-alerts.md) (everything the procedure deploys and checks), [4.0e](phase-4.0e-official-names-and-directory.md) (the signed `names.json` it deploys, and `build:index --check`), [1.6c](phase-1.6c-first-release.md) (the manual release procedure the enabling release follows until 5.0's workflow exists), [4.0f](phase-4.0f-workers-migration.md) (the Worker, its D1 database and the maintainers' domain routed to it), D17 |
 | Blocks | The CLI release that ships 4.1a with collection enabled; [4.2a](phase-4.2a-stats-rollup-and-routes.md) has nothing to publish before it |
-| Decisions needed | D17 (if declined, this file is dropped). D16 decides the provisioning commands; this file assumes Workers, D1 and R2. The alert destination (a choice for the maintainers, listed in the procedure) |
+| Decisions needed | D17 (if declined, this file is dropped). The host is Workers with D1 (D16, moved in 4.0f) and R2 for the archive (4.1c). The alert destination (a choice for the maintainers, listed in the procedure) |
 | Settles | The launch order, the reserved smoke install id, the production acceptance check, where alerts go, the read-only queries for the internal tables, and what a rollback does to clients |
 
 ## Scope
 
 In:
 
-- The procedure and runbook in `packages/api/README.md` ("Telemetry launch" and "Telemetry runbook").
+- The procedure and runbook in `stacks-api/apps/api/README.md` ("Telemetry launch" and "Telemetry runbook").
 - A migration adding the reserved smoke install id to `exclusions`.
-- `packages/api/scripts/smoke.ts`: posts the fixed smoke event and checks it, used by hand here and by 5.2's post-deploy step.
-- `packages/api/scripts/queries/`: the read-only SQL files the runbook names.
+- `stacks-api/apps/api/scripts/smoke.ts`: posts the fixed smoke event and checks it, used by hand here and by `stacks-api`'s CI after each deploy.
+- `stacks-api/apps/api/scripts/queries/`: the read-only SQL files the runbook names.
 - The production acceptance check, run once by a maintainer and recorded in a run note.
 
 Out:
 
-- CI deploys and CI smoke checks (5.2 runs `smoke.ts` after a CI deploy).
+- CI deploys and CI smoke checks (`stacks-api`'s own CI runs `smoke.ts` after an API deploy; 5.2 deploys only the index).
 - Any new route, table column or client behaviour. A gap found here goes back to the sub-phase that owns it.
 - Publishing stats (4.2a, which waits for its own gate).
 
@@ -43,23 +43,23 @@ Each step has a check; a failed check stops the procedure.
 
 | # | Step | Check |
 |---|---|---|
-| 1 | Create the D1 database and the private R2 bucket; bind both in `wrangler.jsonc` | `wrangler d1 list` and `wrangler r2 bucket list` show them; the bucket has no public access and no custom domain |
+| 1 | Create the private R2 bucket and bind it in `apps/api/wrangler.jsonc` beside the D1 database 4.0f created | `wrangler d1 list` and `wrangler r2 bucket list` show them; the bucket has no public access and no custom domain |
 | 2 | Apply remote migrations (`wrangler d1 migrations apply --remote`), including this sub-phase's smoke-id migration | `scripts/queries/tables.sql` lists every table from 4.1b, 4.1c and 4.1d; `exclusions` holds the smoke id |
-| 3 | Deploy the API to its `workers.dev` address, with the index from [4.0c](phase-4.0c-registry-index.md) and `names.json` from [4.0e](phase-4.0e-official-names-and-directory.md), before the secret exists | `GET /v1/names.json` verifies with `build:index --check` (which checks `index.json` and `names.json`, 4.0e); `GET /healthz` returns 200 with `maintenanceFresh: false` (no run yet); `bun run --cwd packages/api smoke -- --host https://<worker>.workers.dev` gets 503 from `/v1/events` (secret missing, 4.1b) |
+| 3 | Deploy this version of the API, checked first on its `workers.dev` address, with the index from [4.0c](phase-4.0c-registry-index.md) and `names.json` from [4.0e](phase-4.0e-official-names-and-directory.md), before the secret exists | `GET /v1/names.json` verifies with `build:index --check` (which checks `index.json` and `names.json`, 4.0e); `GET /healthz` returns 200 with `maintenanceFresh: false` (no run yet); `bun run smoke -- --host https://<worker>.workers.dev` in `stacks-api` gets 503 from `/v1/events` (secret missing, 4.1b) |
 | 4 | Set `NETWORK_HASH_KEY` with `wrangler secret put` from a freshly generated 32-byte random value, stored in the maintainers' password manager | The same smoke run now gets 202 with `rejected: []`, and both events are stored `excluded_install` |
-| 5 | Attach the API domain chosen under D16 | `GET /healthz` on the domain returns 200 |
+| 5 | Confirm the maintainers' domain routes to the Worker (4.0f moved it) and serves this deploy | `GET /healthz` on the domain returns 200 with the `maintenanceFresh` field, which only this version has |
 | 6 | Confirm anonymous JSON POSTs reach the Worker on the domain: no bot challenge, WAF rule or "under attack" mode on `/v1/events` | `curl -X POST -H 'content-type: application/json' --data '{"events":[]}' https://<host>/v1/events` returns the 400 `BadInput` envelope from the Worker, not an HTML challenge page |
 | 7 | Wait for one scheduled run (or trigger it once from the dashboard) | `scripts/queries/state.sql`: `official_names` and `released_versions` non-empty, one `registry_snapshots` row, `last_success` set; `/healthz` reports `maintenanceFresh: true` |
-| 8 | Ingest smoke on the domain: `bun run --cwd packages/api smoke -- --host https://<host>` | 202 with `rejected: []`; both events stored with `excluded = 'excluded_install'`; no `projects` row for the smoke id |
+| 8 | Ingest smoke on the domain: `bun run smoke -- --host https://<host>` in `stacks-api` | 202 with `rejected: []`; both events stored with `excluded = 'excluded_install'`; no `projects` row for the smoke id |
 | 9 | Production acceptance (below) | All of its checks pass; a run note is written |
 | 10 | Route alerts (below) | A `test` flag raised with `scripts/queries/test-flag.sql` reaches the destination within an hour |
-| 11 | Publish the CLI release that enables collection, by the current release procedure ([1.6c](phase-1.6c-first-release.md), or [5.0](phase-5.0-ci-release-and-checks.md)'s workflow once it exists) | `npx stacks@<version> telemetry status --json` on a clean machine reports `not_notified`, then `enabled` after one run |
+| 11 | Publish the CLI release that enables collection, by the current release procedure ([1.6c](phase-1.6c-first-release.md), or [5.0](phase-5.0-ci-release-and-checks.md)'s workflow once it exists) | `npx @steamfield/stacks@<version> telemetry status --json` on a clean machine reports `not_notified`, then `enabled` after one run |
 
-The secret is set after the first deploy on purpose: the 503 before it and the 202 after it prove that ingest refuses to store unhashed networks and that the secret is the one the Worker reads. The domain and its security settings come last, once the Worker itself is known to work.
+The secret is set after the first deploy on purpose: the 503 before it and the 202 after it prove that ingest refuses to store unhashed networks and that the secret is the one the Worker reads. The domain's security settings come last, once the Worker itself is known to work.
 
 ### Reserved smoke install id
 
-`00000000-0000-4000-8000-000000000001`. A migration inserts it into `exclusions` as kind `install` with reason `smoke`, so 4.1b stores every event from it excluded and it never builds a project or reaches a metric. `smoke.ts` posts one fixed `new` event and one fixed `verify` event from it with fresh event ids and a `cliVersion` that is a published version of `stacks` (the latest, read from the npm registry), so it is in `released_versions` once 4.1c has run and the stored reason is `excluded_install` by the exclusions rule alone; 4.1b's precedence puts `excluded_install` first in any case, then reads them back through `scripts/queries/smoke.sql` (run with `wrangler d1 execute --remote`, not through any route) and checks they were stored excluded. 5.2 runs the same script after every CI deploy. A real client can't produce this id: 4.1a generates random v4 UUIDs, and the id's random bits are all zero.
+`00000000-0000-4000-8000-000000000001`. A migration inserts it into `exclusions` as kind `install` with reason `smoke`, so 4.1b stores every event from it excluded and it never builds a project or reaches a metric. `smoke.ts` posts one fixed `new` event and one fixed `verify` event from it with fresh event ids and a `cliVersion` that is a published version of `@steamfield/stacks` (the latest, read from the npm registry), so it is in `released_versions` once 4.1c has run and the stored reason is `excluded_install` by the exclusions rule alone; 4.1b's precedence puts `excluded_install` first in any case, then reads them back through `scripts/queries/smoke.sql` (run with `wrangler d1 execute --remote`, not through any route) and checks they were stored excluded. `stacks-api`'s own CI runs the same script after every API deploy. A real client can't produce this id: 4.1a generates random v4 UUIDs, and the id's random bits are all zero.
 
 ### Production acceptance
 
@@ -100,11 +100,11 @@ If the API must be rolled back or taken down after the enabling release: deploy 
 
 | Path | Change |
 |---|---|
-| `packages/api/README.md` | "Telemetry launch" and "Telemetry runbook" sections |
-| `packages/api/migrations/` | Smoke install id in `exclusions` |
-| `packages/api/scripts/smoke.ts`, `package.json` (`smoke`) | New |
-| `packages/api/scripts/queries/` | The read-only queries and `test-flag.sql` |
-| `packages/api/tests/smoke.test.ts` | New |
+| `stacks-api/apps/api/README.md` | "Telemetry launch" and "Telemetry runbook" sections |
+| `stacks-api/apps/api/migrations/` | Smoke install id in `exclusions` |
+| `stacks-api/apps/api/scripts/smoke.ts`, `package.json` (`smoke`) | New |
+| `stacks-api/apps/api/scripts/queries/` | The read-only queries and `test-flag.sql` |
+| `stacks-api/apps/api/tests/smoke.test.ts` | New |
 | `plans/runs/` | The acceptance run note |
 | `AGENTS.md` | Pending user actions: the launch steps not yet done |
 
@@ -119,7 +119,7 @@ Locally, under the Wrangler local runtime with local D1 and R2:
 
 ## Exit criteria
 
-- Acceptance tests pass; `bun run check` green from the repo root.
+- Acceptance tests pass; `bun run check` green in `stacks-api`.
 - The maintainers have run the procedure against production through step 10, with the acceptance run note in `plans/runs/`.
 - The alert destination and uptime check are configured and written into the README.
 - Only then is the enabling release published (step 11).

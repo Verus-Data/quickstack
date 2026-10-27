@@ -90,7 +90,7 @@ export class IntegrityStore extends Context.Service<IntegrityStore, {
   readonly takeBatch: (size: number) => Effect.Effect<ReadonlyArray<ProjectKey>, StoreUnavailable>;
   readonly writeMetrics: (day: string, rows: ReadonlyArray<DailyMetric>) => Effect.Effect<void, StoreUnavailable>;
   readonly writeFlags: (day: string, flags: ReadonlyArray<AnomalyFlag>) => Effect.Effect<void, StoreUnavailable>;
-}>()("stacks/api/IntegrityStore") {
+}>()("stacks-api/IntegrityStore") {
   static memory: () => Layer.Layer<IntegrityStore>;
   static d1: Layer.Layer<IntegrityStore, never, SqlClient.SqlClient>;
 }
@@ -102,14 +102,14 @@ export class IntegrityStore extends Context.Service<IntegrityStore, {
 
 | Path | Change |
 |---|---|
-| `packages/api/src/integrity/` | `exclusions.ts`, `sequence.ts`, `recheck.ts`, `installs.ts`, `metrics.ts`, `flags.ts`, `alert.ts`, `index.ts` |
-| `packages/api/src/store/integrity.ts` | `IntegrityStore` (memory and D1) |
-| `packages/api/src/maintenance/maintain.ts`, `versions.ts` | `maintain` calls `integrity` before the archive step; the released-versions step enqueues re-included pairs instead of calling `rebuildProject` |
-| `packages/api/src/handlers/health.ts` | `maintenanceFresh` boolean |
-| `packages/api/migrations/` | `recheck_queue`, `daily_metrics`, `anomaly_flags`, `installs` |
-| `packages/api/tests/integrity.test.ts` | New |
-| `.claude/rules/api/` | These tables have no public route; alert lines carry no ids |
-| `AGENTS.md` | The integrity steps and the alert field |
+| `stacks-api/apps/api/src/integrity/` | `exclusions.ts`, `sequence.ts`, `recheck.ts`, `installs.ts`, `metrics.ts`, `flags.ts`, `alert.ts`, `index.ts` |
+| `stacks-api/apps/api/src/store/integrity.ts` | `IntegrityStore` (memory and D1) |
+| `stacks-api/apps/api/src/maintenance/maintain.ts`, `versions.ts` | `maintain` calls `integrity` before the archive step; the released-versions step enqueues re-included pairs instead of calling `rebuildProject` |
+| `stacks-api/apps/api/src/handlers/health.ts` | `maintenanceFresh` boolean |
+| `stacks-api/apps/api/migrations/` | `recheck_queue`, `daily_metrics`, `anomaly_flags`, `installs` |
+| `stacks-api/apps/api/tests/integrity.test.ts` | New |
+| `stacks-api/.claude/rules/api/` | These tables have no public route; alert lines carry no ids |
+| `stacks-api/AGENTS.md` | The integrity steps and the alert field |
 
 ## Acceptance tests
 
@@ -127,11 +127,11 @@ With the in-memory stores and `TestClock`, and once under the local Workers runt
 - Each anomaly kind except `test` is raised by a seeded fixture and not by the same fixture one step under its threshold; `test` is raised only by `test-flag.sql`. `names_last_outcome = 'invalid'` raises `names_refresh_failed`; `lease_held_count = 3` raises `lease_held_streak`.
 - A run with one flag logs exactly one line with an `alert` field matching the closed schema; scanning it finds no install id, network hash or ASN. A run with no flags logs no `alert` field.
 - `last_success` set 27 hours before the run raises `stale_success`; `/healthz` reports `maintenanceFresh: false`.
-- No route in `src/api.ts` reads `daily_metrics`, `anomaly_flags`, `installs` or `recheck_queue` (a test over the route table's service dependencies).
+- No route in `packages/contract/src/api.ts` reads `daily_metrics`, `anomaly_flags`, `installs` or `recheck_queue` (a test over the route table's service dependencies).
 
 ## Exit criteria
 
-- Acceptance tests pass; `bun run check` green from the repo root.
+- Acceptance tests pass; `bun run check` green in `stacks-api`.
 - The maintainers agree the anomaly thresholds and the maturity rule, or change them in this file.
 - One scheduled run under the local Workers runtime completes `integrity` and 4.1c's steps inside one lease.
 

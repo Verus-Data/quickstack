@@ -106,10 +106,9 @@ say so and keep their numbers, because plans link to them by number.
     the trigger. Without telemetry, the two evidence sources above are enough. Blocks 4.3.
 16. If D17 is declined, does the API still need a Worker at all, or does static hosting of
     the index and directory cover phase 4? Blocks
-    [4.0b](phases/phase-4.0b-api-skeleton-and-hosting-spike.md); the spike answers it.
-17. Does the Cloudflare Workers Vitest pool run with the repo's Vitest 5 on Node? If not,
-    API tests need another harness or D16 changes. Blocks 4.0b; the spike answers it
-    first.
+    [4.0f](phases/phase-4.0f-workers-migration.md); its spike answers it.
+17. Does the Cloudflare Workers Vitest pool run with the API's Vitest 5 on Node? If not,
+    API tests need another harness. Blocks 4.0f; its spike answers it first.
 18. Should git sources keep the user's global git credential helper (so private repos
     work) or run with it disabled? Blocks
     [3.2a](phases/phase-3.2a-git-sources-and-untrusted-origin.md).

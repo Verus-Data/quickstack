@@ -9,6 +9,28 @@ Start here, then read repo `AGENTS.md`, the README's
 next steps, who owns each. When it grows past a couple of screens, move the dated detail
 to `archive/` and leave a link.
 
+## The API moved to a private repository (2026-10-27)
+
+D35: the hosted API is `stacks-api`, a separate private repository, so its source isn't
+public; `packages/api` is gone and phase 4's plans stay here, with API paths written
+`stacks-api/apps/api/...`. It is a bun workspace: `apps/api` (the Effect `HttpApi`
+server), `apps/web` (an Astro static site with React islands and Tailwind, which now holds
+the directory, browse, stats and dependency pages) and `packages/contract` (the `HttpApi`
+definition both apps import). It runs as a Node server on a maintainers' host first (4.0b,
+"API skeleton on Node"), serving only `/healthz`, the signed index files and the built site;
+the Workers spike and move are 4.0f, deferred until after the hackathon demo. Every storage-
+or telemetry-backed sub-phase (4.1b onward) starts after 4.0f, on D1, so no data ever moves
+between hosts. The index and `names.json` are still built and signed here. `@stacks/format`
+(4.0a) is now published, with a `dist/` build, because the API consumes it across repositories.
+
+The bundled `astro-api` stack is what `stacks-api` is scaffolded from; it builds on the
+backend-only `typescript-api`. Until a CLI release includes it, scaffold from this checkout:
+`bun run dev new astro-api <path>` (next session, for the new repository). Neither stack has
+a bench run yet, so `list` shows them unproven; that first build is the bench. The backend
+ships Claude rules for Effect HTTP APIs, REST resource naming, testing through HTTP with
+real layers, verification and TypeScript, `/add-resource` and `/add-service` commands, and
+boundary and command guards with tests.
+
 ## Agent picker (2026-10-27)
 
 [4.4c](phases/phase-4.4c-agent-picker.md) landed: at a terminal with several harnesses and
