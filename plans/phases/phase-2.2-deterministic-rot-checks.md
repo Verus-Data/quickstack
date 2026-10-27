@@ -1,6 +1,8 @@
 # Phase 2.2: Deterministic rot checks
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: EXECUTED 2026-10-27 (every rot check and the ledger notes; `compose-each` follows 1.5's
+optional-replaces-default rule; bundled registry at zero errors and warnings after four catalog
+fixes, including condensed Effect guidance a maintainer should reread; reviewed once and fixed)
 Acceptance tests: traced
 
 | Field | Value |

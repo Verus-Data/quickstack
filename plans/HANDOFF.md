@@ -33,8 +33,10 @@ reworded for `dist/quickstacks` or deferred in its plan.
   [3.1c](phases/phase-3.1c-new-dry-run-and-naming.md) (`new --dry-run`),
   [2.0c](phases/phase-2.0c-run-ledger.md) (the run ledger, `runs`, seeded from the 1.6b notes),
   [3.0](phases/phase-3.0-add-fragments-to-repo.md) (`add`),
-  [3.1a](phases/phase-3.1a-show-and-preview.md) (`show` and the brief preview).
-- In progress: 2.2, 2.0b; then 3.1b, 3.4a, 3.4b and 3.3a-c.
+  [3.1a](phases/phase-3.1a-show-and-preview.md) (`show` and the brief preview),
+  [2.2](phases/phase-2.2-deterministic-rot-checks.md) (rot checks; reread the condensed
+  `effect` and `effect-schema` guidance it trimmed to fit `mobile-expo --with effect`).
+- In progress: 2.0b, 3.1b; then 3.4a, 3.4b and 3.3a-c.
 - Deferred to phase 4 or later: [3.2a](phases/phase-3.2a-user-sources.md) and
   [3.2b](phases/phase-3.2b-source-trust-and-updates.md), gated on outside demand and open
   question 18.
