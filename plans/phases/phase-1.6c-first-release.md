@@ -1,6 +1,9 @@
 # Phase 1.6c: First release
 
-Status: DRAFT 2026-10-26 (not agreed). Moved 2026-10-26 to the end of the plan (number
+Status: EXECUTED 2026-10-27: `@steamfield/stacks` 0.1.0 published by hand from the packed
+tarball (D34, which waives D20's gate). Not done: the gate run repeated from the packed
+tarball; the release was checked by a manual QA pass over the installed package instead.
+Earlier status: DRAFT 2026-10-26 (not agreed). Moved 2026-10-26 to the end of the plan (number
 kept): with 0.2 and the npm reservation it is the final step before public release, after
 the roadmap's feature gaps. It now depends on 0.2 directly, and if 1.6b ran from the
 compiled binary it repeats at least one gate run from the packed tarball before

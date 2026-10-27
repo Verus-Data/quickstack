@@ -9,6 +9,27 @@ Start here, then read repo `AGENTS.md`, the README's
 next steps, who owns each. When it grows past a couple of screens, move the dated detail
 to `archive/` and leave a link.
 
+## 0.1.0 released (2026-10-27)
+
+The CLI is on npm as `@steamfield/stacks` 0.1.0 and installs the `stacks` command (D34:
+npm refused the unscoped `quickstack`). It is a Node 22+ ESM bundle (`dist/cli.mjs` behind
+the `dist/stacks` entry), packed reproducibly by `bun run pack`; tag `v0.1.0`. The product,
+`.quickstack/`, `QUICKSTACK_*` and the skill name keep quickstack. A manual QA pass over the
+installed package found one blocker (`validate` with no path checked nothing), fixed before
+publishing. Open from that pass, next release:
+
+- Under npx, `--help` USAGE and EXAMPLES still say `stacks` (static effect/cli names); the
+  guide, brief and `Next:` lines use the npx form.
+- `invocationFor` knows only `_npx`: a project-local install, `pnpm dlx` or `yarn dlx` prints
+  bare `stacks`, which isn't on PATH there.
+- Scaffolded `AGENTS.md` and `.claude/README.md` (agent-ops) hard-code `stacks verify`.
+- An unknown flag (`list --bogus`) gets no `details` naming it.
+- The packed `package.json` keeps dev `scripts` and `devDependencies`.
+- `bun.lock` still lists the workspace bin as `dist/stacks.mjs`; bun won't rewrite it until a
+  dependency changes.
+- 1.6c's gate rerun from the packed tarball was not done; release automation and provenance
+  stay with 5.0.
+
 ## User documentation (2026-10-27)
 
 The CLI's user docs live in `packages/cli/docs/` (index: `docs/README.md`): quick start,

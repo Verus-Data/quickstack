@@ -99,7 +99,7 @@ product behavior yet.
 |---|---|---|---|---|
 | [0.0 Decisions and name](phases/phase-0.0-decisions-and-npm-name.md) | `quickstack` reserved on npm; the MVP-gating proposals decided or deferred with a reason; A2-A4 reviewed; first stack named | Open question "Is the npm name available?"; open questions on brief budget and registry audience | nothing | In progress (owner: maintainers). Name check done; npm reservation and non-blocking decisions deferred 2026-10-26 |
 | [0.1 Repo baseline](phases/phase-0.1-repo-baseline.md) | The ported base, workspace move and review fixes committed, CI `ci-ok` green on `main` | "What has to be true for it to be worth building": a trustworthy base (D10, D11) | nothing | Executed 2026-10-26 |
-| [0.2 Distribution](phases/phase-0.2-npm-distribution-artifact.md) | A1 answered: a Node ESM bundle packed with `bun pm pack`, a Node floor check before Effect loads, bundled assets found at runtime, local e2e against the packed tarball | Open question on the npm name; the README's first command `npx quickstack new` | 0.0 (A1, D12, D22), 0.1 | Deferred 2026-10-26 to the final step before public release, with the npm reservation and 1.6c (see below) |
+| [0.2 Distribution](phases/phase-0.2-npm-distribution-artifact.md) | A1 answered: a Node ESM bundle packed with `bun pm pack`, a Node floor check before Effect loads, bundled assets found at runtime, local e2e against the packed tarball | Open question on the npm name; the README's first command `npx quickstack new` | 0.0 (A1, D12, D22), 0.1 | Executed 2026-10-27: shipped as `@steamfield/stacks` 0.1.0 (D34) |
 | [0.3a Errors and output](phases/phase-0.3a-errors-and-output.md) | A2 and A4: one error table, closed `details`, exit 5, results kept on report-carrying failures, live progress on stderr | Agent as the main reader ("a verify command that doesn't exist", "ambiguity") | 0.1 | Executed 2026-10-26 |
 | [0.3b Processes and signals](phases/phase-0.3b-processes-and-signals.md) | The `Processes` service (process groups, bounded tails, drain, `which`) and A3, the signal policy for interactive children | The CLI hands off "to the agent the user already has"; verify runs long commands | 0.3a | Executed 2026-10-26 |
 
@@ -223,7 +223,7 @@ only its place in the order changed (2026-10-26).
 
 | Sub-phase | Goal | Traces to | Depends on | Status |
 |---|---|---|---|---|
-| [1.6c First release](phases/phase-1.6c-first-release.md) | Name reserved, A2-A4 and the gate recorded, then a manual `npm publish` of the packed tarball, checked with `npx quickstack@latest`. If 1.6b ran from the compiled binary, at least one gate run is repeated from the packed tarball first | The README's first command `npx quickstack new` | 1.6b, 0.2, 0.0 (name, D20, A2-A4), and every row in Feature gaps below | Not started; moved to the end 2026-10-26 |
+| [1.6c First release](phases/phase-1.6c-first-release.md) | Name reserved, A2-A4 and the gate recorded, then a manual `npm publish` of the packed tarball, checked with `npx quickstack@latest`. If 1.6b ran from the compiled binary, at least one gate run is repeated from the packed tarball first | The README's first command `npx quickstack new` | 1.6b, 0.2, 0.0 (name, D20, A2-A4), and every row in Feature gaps below | Executed 2026-10-27: `@steamfield/stacks` 0.1.0 published (D34); the packed-tarball gate rerun was not done |
 
 4.1e, 4.3 and 5.0 need a published package and come after 1.6c. 3.3a, 3.3c, 3.4c and 4.0e
 still list 1.6c and simply follow it. 3.0 and 4.0a needed only the gated core loop, and

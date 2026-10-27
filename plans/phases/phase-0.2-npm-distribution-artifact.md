@@ -1,9 +1,7 @@
 # Phase 0.2: Distribution
 
-Status: DEFERRED 2026-10-26 in the roadmap pending release orchestration. Implementation
-is under review on 2026-10-27 under the npm contract: A1 (a), D12, D22 and D23 are
-approved. The orchestrator must advance this status and its roadmap row together;
-the roadmap is outside this contract's edit scope. Publishing remains 1.6c.
+Status: EXECUTED 2026-10-27. The Node ESM bundle shipped as `@steamfield/stacks` 0.1.0, installed
+as the `stacks` command (D34). A1 (a), D12, D22 and D23 are approved. Publishing was 1.6c.
 
 | Field | Value |
 |---|---|
