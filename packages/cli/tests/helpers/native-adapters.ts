@@ -1,5 +1,14 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, readFileSync, realpathSync } from "node:fs";
+import {
+  closeSync,
+  mkdirSync,
+  mkdtempSync,
+  openSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
 import { Schema } from "effect";
 import { expect } from "vitest";
@@ -105,24 +114,34 @@ export function runGuard(options: {
 }) {
   const tmp = join(options.project, "..", "hook-tmp");
   mkdirSync(tmp, { recursive: true });
-  const result = spawnSync("/bin/sh", ["-c", options.command], {
-    cwd: options.project,
-    input: JSON.stringify(options.payload),
-    encoding: "utf8",
-    timeout: 10_000,
-    env: {
-      HOME: options.project,
-      PATH: process.env.PATH ?? "",
-      TMPDIR: tmp,
-      ...(options.agent === "claude" ? { CLAUDE_PROJECT_DIR: options.project } : {}),
-      ...(options.agent === "cursor"
-        ? { CLAUDE_PROJECT_DIR: options.project, CURSOR_PROJECT_DIR: options.project }
-        : {}),
-    },
-  });
-  expect(result.error).toBeUndefined();
-  expect(result.signal).toBeNull();
-  return result;
+  const inputDir = mkdtempSync(join(tmp, "input-"));
+  const payload = join(inputDir, "payload.json");
+  writeFileSync(payload, JSON.stringify(options.payload), { mode: 0o600 });
+  const input = openSync(payload, "r");
+  try {
+    // Missing guards exit without reading stdin; a file avoids racing that exit with a pipe write.
+    const result = spawnSync("/bin/sh", ["-c", options.command], {
+      cwd: options.project,
+      stdio: [input, "pipe", "pipe"],
+      encoding: "utf8",
+      timeout: 10_000,
+      env: {
+        HOME: options.project,
+        PATH: process.env.PATH ?? "",
+        TMPDIR: tmp,
+        ...(options.agent === "claude" ? { CLAUDE_PROJECT_DIR: options.project } : {}),
+        ...(options.agent === "cursor"
+          ? { CLAUDE_PROJECT_DIR: options.project, CURSOR_PROJECT_DIR: options.project }
+          : {}),
+      },
+    });
+    expect(result.error).toBeUndefined();
+    expect(result.signal).toBeNull();
+    return result;
+  } finally {
+    closeSync(input);
+    rmSync(inputDir, { recursive: true, force: true });
+  }
 }
 
 const Deny = Schema.Struct({

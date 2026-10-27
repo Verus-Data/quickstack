@@ -1,7 +1,7 @@
 import { Effect, Path } from "effect";
 import type { Finding } from "../../schemas/validate";
 import type { Entry } from "../registry/entry";
-import { shellWords } from "./commands";
+import { shellWords } from "../shell";
 import { type Composed, sourceOf, uniqueFindings } from "./composed";
 import { type Check, finding, type View } from "./view";
 

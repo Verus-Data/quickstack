@@ -225,10 +225,13 @@ test("a manifest from a newer quickstacks is InvalidConfig with its schemaVersio
   expect(exit).toEqual(Exit.fail(new InvalidConfig({ details: { path, schemaVersion: 2 } })));
 });
 
-test("a missing manifest is NotFound; an unreadable one is PermissionDenied read", async () => {
+test("a missing manifest is NotFound", async () => {
   const path = join(temp(), "manifest.json");
   expect(await runWith(readManifest(path))).toEqual(Exit.fail(new NotFound()));
-  if (asRoot) return;
+});
+
+test.skipIf(asRoot)("an unreadable manifest is PermissionDenied read", async () => {
+  const path = join(temp(), "manifest.json");
   writeFileSync(path, "{}");
   chmodSync(path, 0o000);
   expect(await runWith(readManifest(path))).toEqual(

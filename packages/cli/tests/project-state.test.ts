@@ -126,7 +126,7 @@ test("a project id that isn't a valid id is never turned into a path: no write, 
   expect(await succeed(runWith(readProjectState("../escaped"), stateEnv(state)))).toBeUndefined();
 });
 
-test("an unwritable state directory gives written: false and leaves nothing behind", async () => {
+test("a file blocking the state directory gives written: false", async () => {
   const manifest = await manifestOf();
   const { via } = project(manifest);
   const file = join(temp(), "a-file");
@@ -134,19 +134,26 @@ test("an unwritable state directory gives written: false and leaves nothing behi
   expect(await succeed(runWith(writeProjectState(manifest, via), stateEnv(file)))).toEqual({
     written: false,
   });
-  if (asRoot) return;
-  const locked = join(temp(), "projects-locked");
-  mkdirSync(join(locked, "quickstacks", "projects"), { recursive: true });
-  chmodSync(join(locked, "quickstacks", "projects"), 0o500);
-  try {
-    expect(await succeed(runWith(writeProjectState(manifest, via), stateEnv(locked)))).toEqual({
-      written: false,
-    });
-    expect(readdirSync(join(locked, "quickstacks", "projects"))).toEqual([]);
-  } finally {
-    chmodSync(join(locked, "quickstacks", "projects"), 0o700);
-  }
 });
+
+test.skipIf(asRoot)(
+  "an unwritable state directory gives written: false and leaves nothing behind",
+  async () => {
+    const manifest = await manifestOf();
+    const { via } = project(manifest);
+    const locked = join(temp(), "projects-locked");
+    mkdirSync(join(locked, "quickstacks", "projects"), { recursive: true });
+    chmodSync(join(locked, "quickstacks", "projects"), 0o500);
+    try {
+      expect(await succeed(runWith(writeProjectState(manifest, via), stateEnv(locked)))).toEqual({
+        written: false,
+      });
+      expect(readdirSync(join(locked, "quickstacks", "projects"))).toEqual([]);
+    } finally {
+      chmodSync(join(locked, "quickstacks", "projects"), 0o700);
+    }
+  },
+);
 
 test("a link planted at the record's path is replaced, never written through", async () => {
   const manifest = await manifestOf();

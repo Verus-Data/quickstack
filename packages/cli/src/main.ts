@@ -1,4 +1,4 @@
-import { Cause, Clock, Console, Effect, Exit, Logger, References } from "effect";
+import { Cause, Clock, Console, Effect, Exit, Logger, Random, References } from "effect";
 import { CliError, Command } from "effect/cli";
 import { cli } from "./cli";
 import { AppConfig, type LogSettings } from "./config";
@@ -95,7 +95,7 @@ export function main(
       const config = yield* AppConfig;
       const settings = yield* config.logging;
       const started = yield* Clock.currentTimeMillis;
-      const invocationId = `${started}-${Math.random().toString(36).slice(2, 10)}`;
+      const invocationId = `${started}-${(yield* Random.next).toString(36).slice(2, 10)}`;
       const framework: string[] = [];
       const captured = captureConsole(framework);
       const reported = Invocation.make();
@@ -247,7 +247,7 @@ const writeFailure = (
     // The details didn't encode against their closed schema: report a defect instead.
     error = new Defect();
     const defect = defectTrace(Cause.squash(written.cause));
-    yield* output.error(error, invocation).pipe(Effect.catchCause(() => Effect.void));
+    yield* output.error(error, invocation).pipe(Effect.ignoreCause);
     return { error, defect, unwritten };
   });
 
@@ -260,7 +260,7 @@ const flushSuccess = (invocation: string): Effect.Effect<WriteOutcome, never, Ou
     if (failure?.error instanceof BrokenPipe) return { closed: true };
     const error = failure ? (knownError(failure.error) ?? new Defect()) : new Defect();
     const defect = error instanceof Defect ? defectTrace(Cause.squash(flushed.cause)) : undefined;
-    yield* output.error(error, invocation).pipe(Effect.catchCause(() => Effect.void));
+    yield* output.error(error, invocation).pipe(Effect.ignoreCause);
     return { error, defect };
   });
 

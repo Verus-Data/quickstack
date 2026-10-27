@@ -11,7 +11,7 @@ import {
 } from "../core/validate/report";
 import { resolveTarget, type Target } from "../core/validate/target";
 import { BadInput, ValidationFailed } from "../errors";
-import { BriefPreview, ValidateReport } from "../schemas/validate";
+import { BriefPreview, type Severity, ValidateReport } from "../schemas/validate";
 import { Host } from "../services/host";
 import { Output } from "../services/output";
 
@@ -36,7 +36,7 @@ const printPreview = (target: Target, options: Parameters<typeof previewBrief>[1
     const preview = yield* previewBrief(target, options);
     yield* output.result(Schema.encodeSync(BriefPreview)(preview), renderPreviewBrief(preview));
     if (output.audience === "human") yield* output.progress(renderPreview(preview));
-    const count = (severity: string) =>
+    const count = (severity: Severity) =>
       preview.findings.filter((finding) => finding.severity === severity).length;
     if (count("error")) {
       // A closed diagnostic stream must not replace the kept-result validation failure.
@@ -110,7 +110,7 @@ export const validateCommand = Command.make(
           root: output.audience === "agent" ? yield* shownPath(host.cwd, report.root) : report.root,
         }),
       );
-      const count = (severity: string) =>
+      const count = (severity: Severity) =>
         report.findings.filter((finding) => finding.severity === severity).length;
       if (count("error"))
         return yield* new ValidationFailed({

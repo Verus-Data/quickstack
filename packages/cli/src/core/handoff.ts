@@ -1,6 +1,7 @@
 import { BRIEF_PATH } from "../project-layout";
 import type { AgentId, DetectedAgent } from "../schemas/entry";
 import type { Audience } from "../services/output";
+import { shellArg } from "./shell";
 import { printable } from "./text";
 
 /** Why `new` printed the prompt instead of launching an agent. */
@@ -39,7 +40,7 @@ export const LAUNCH_ARGS: Readonly<
 };
 
 /** Tried after `Settings.agents`, when `--launch` isn't given. */
-export const LAUNCH_ORDER: ReadonlyArray<AgentId> = ["claude", "codex", "opencode", "cursor"];
+const LAUNCH_ORDER: ReadonlyArray<AgentId> = ["claude", "codex", "opencode", "cursor"];
 
 /** The one prompt every outcome gives the agent. No quotes or backticks, so it pastes into a shell. */
 export const agentPrompt = (invocation: string) =>
@@ -101,9 +102,6 @@ export const handoffRecord = (decision: HandoffDecision, at: string) => ({
   at,
 });
 
-/** A directory as a shell argument: plain when it is safe, else single-quoted. */
-const shellArg = (text: string) =>
-  /^[A-Za-z0-9._/+-]+$/.test(text) ? text : `'${text.replaceAll("'", "'\\''")}'`;
 /** A prompt as a shell argument: double quotes read better when nothing inside expands. */
 const quote = (text: string) =>
   /^[A-Za-z0-9._/+-]+$/.test(text) || !/^[^"$`\\!]*$/.test(text) ? shellArg(text) : `"${text}"`;

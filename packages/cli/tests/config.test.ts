@@ -53,3 +53,17 @@ test("building a config layer never opens a broken config file", async () => {
     dir.cleanup();
   }
 });
+
+test("a LOG_LEVEL that names an Object.prototype key falls back to warn", async () => {
+  for (const raw of ["constructor", "__proto__", "toString"]) {
+    const level = await Effect.runPromise(
+      Effect.gen(function* () {
+        return (yield* (yield* AppConfig).logging).level;
+      }).pipe(
+        Effect.provide(AppConfig.memory({ LOG_LEVEL: raw })),
+        Effect.provide(NodeServices.layer),
+      ),
+    );
+    expect(level).toBe("Warn");
+  }
+});
