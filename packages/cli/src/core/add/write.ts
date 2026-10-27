@@ -84,7 +84,10 @@ export const applyAdd = (input: {
           destination: incoming,
           rewrite: action === "merge",
         })),
-      ].sort((a, b) => (a.file.path < b.file.path ? -1 : a.file.path > b.file.path ? 1 : 0));
+      ].sort((a, b) => {
+        if (a.file.path < b.file.path) return -1;
+        return a.file.path > b.file.path ? 1 : 0;
+      });
       for (const operation of operations) {
         if (operation.rewrite) yield* writer.rewrite(operation.destination, operation.bytes);
         else

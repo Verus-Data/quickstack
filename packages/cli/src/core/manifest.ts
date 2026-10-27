@@ -32,7 +32,10 @@ export function canonicalJson(value: unknown): string {
   if (value !== null && typeof value === "object") {
     const entries = Object.entries(value)
       .filter(([, item]) => item !== undefined)
-      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+      .sort(([a], [b]) => {
+        if (a < b) return -1;
+        return a > b ? 1 : 0;
+      });
     return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`).join(",")}}`;
   }
   return JSON.stringify(value);

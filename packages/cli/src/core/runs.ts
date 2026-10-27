@@ -5,6 +5,12 @@ import { locateManifest, readManifest } from "./manifest";
 import { findProjectState } from "./project-state";
 import { printable } from "./text";
 
+function nextFence(fence: string | undefined, marker: string): string | undefined {
+  if (!fence) return marker;
+  if (marker[0] === fence[0] && marker.length >= fence.length) return undefined;
+  return fence;
+}
+
 /** Nonempty list items in Asked, up to the next heading; fenced examples aren't questions. */
 export function countAsked(markdown: string): number {
   let asked = false;
@@ -13,8 +19,7 @@ export function countAsked(markdown: string): number {
   for (const line of markdown.split(/\r?\n/)) {
     const marker = /^\s{0,3}(`{3,}|~{3,})/.exec(line)?.[1];
     if (marker) {
-      if (!fence) fence = marker;
-      else if (marker[0] === fence[0] && marker.length >= fence.length) fence = undefined;
+      fence = nextFence(fence, marker);
       continue;
     }
     if (fence) continue;

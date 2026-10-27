@@ -15,7 +15,7 @@ import type { NewResult } from "../../schemas/new";
 import { Host } from "../../services/host";
 import { type GitState, renderBrief } from "../brief/render";
 import { targetAgents } from "../compose/agents";
-import { compose, dropFlags } from "../compose/compose";
+import { type Composition, compose, dropFlags } from "../compose/compose";
 import { composeFilesWithNeutral } from "../compose/files";
 import { missingToolsOnPath } from "../compose/tools";
 import { fingerprintFromFiles } from "../fingerprint";
@@ -23,11 +23,11 @@ import { type HandoffDecision, handoffRecord } from "../handoff";
 import { buildManifest, encodeManifest, MANIFEST_PATH } from "../manifest";
 import { removeProjectState, writeProjectState } from "../project-state";
 import { hasControl } from "../text";
-import { gitInit, gitInstalled, probeGit } from "./git";
+import { type GitProbe, gitInit, gitInstalled, probeGit } from "./git";
 import { slug } from "./slug";
 import { inspectTarget } from "./target";
 import { templateOverrides, templateValues } from "./values";
-import { openProject } from "./write";
+import { openProject, type ProjectWriter } from "./write";
 
 export type NewOptions = {
   stack: string;
@@ -54,7 +54,31 @@ export type NewOptions = {
 /** What `new` wrote or planned, and the handoff the command carries out next. */
 export type Scaffolded = { result: Omit<NewResult, "handoff">; decision: HandoffDecision };
 
+function scaffoldPreset(options: NewOptions, setting: NewOptions["preset"]) {
+  return options.preset ?? (options.sandbox ? "sandbox" : (setting ?? "default"));
+}
+
 const encoder = new TextEncoder();
+
+const checkOwnRepo = (composition: Composition, git: GitProbe) =>
+  Effect.gen(function* () {
+    // A repository rooted at the target is the project's own, so it can hold these fragments.
+    if (git.state.kind === "parent" && !git.own && composition.needsOwnRepo.length) {
+      const owners = composition.needsOwnRepo.map((id) => ({ kind: "fragment" as const, id }));
+      const drop = dropFlags(composition, owners);
+      return yield* new ComposeConflict({
+        details: {
+          reason: "needs_own_repo",
+          ids: [...composition.needsOwnRepo],
+          path: git.state.toplevel,
+          fix:
+            drop.length && drop.every((item) => item.flag === "without")
+              ? drop.map((item) => `--without ${item.id}`)
+              : [],
+        },
+      });
+    }
+  });
 
 /**
  * `new`: compose, check the target, render every file in memory, then write the entry files and
@@ -80,7 +104,7 @@ export const scaffold = (options: NewOptions) =>
     const name = options.name ?? basename;
 
     // Explicit flags (including --sandbox), then the setting, then default.
-    const preset = options.preset ?? (options.sandbox ? "sandbox" : (settings.preset ?? "default"));
+    const preset = scaffoldPreset(options, settings.preset);
     const composition = yield* compose({
       stack: options.stack,
       with: options.with,
@@ -94,22 +118,7 @@ export const scaffold = (options: NewOptions) =>
     const target = yield* inspectTarget(dir);
     const installed = yield* gitInstalled;
     const git = yield* probeGit(target, installed);
-    // A repository rooted at the target is the project's own, so it can hold these fragments.
-    if (git.state.kind === "parent" && !git.own && composition.needsOwnRepo.length) {
-      const owners = composition.needsOwnRepo.map((id) => ({ kind: "fragment" as const, id }));
-      const drop = dropFlags(composition, owners);
-      return yield* new ComposeConflict({
-        details: {
-          reason: "needs_own_repo",
-          ids: [...composition.needsOwnRepo],
-          path: git.state.toplevel,
-          fix:
-            drop.length && drop.every((item) => item.flag === "without")
-              ? drop.map((item) => `--without ${item.id}`)
-              : [],
-        },
-      });
-    }
+    yield* checkOwnRepo(composition, git);
 
     const missing = yield* missingToolsOnPath(composition);
 
@@ -156,6 +165,28 @@ export const scaffold = (options: NewOptions) =>
       { path: NOTES_PATH, bytes: encoder.encode(NOTES), executable: false },
     ];
     const manifestBytes = encoder.encode(encodeManifest(manifest));
+    const initializeGit = (writer: ProjectWriter) =>
+      Effect.gen(function* () {
+        // Adopted first, so an interrupt while git runs also takes its `.git` away; but only a
+        // `.git` that wasn't there before git ran is ours to take.
+        const dotGit = path.join(writer.root, ".git");
+        const ours = Option.isNone(yield* Effect.option(fs.lstat(dotGit)));
+        if (ours) yield* writer.adopt(".git");
+        const code = yield* gitInit(writer.root);
+        if (code !== 0) {
+          // Whatever part of a `.git` the failed init left is no repository.
+          if (ours) yield* writer.discard(".git");
+          gitState = { kind: "none" };
+          warnings.push({ code: "git_init_failed", id: "git", exitCode: code });
+          rendered = brief(gitState);
+          yield* writer.replace(BRIEF_PATH, encoder.encode(rendered.text));
+          // Only the count changed; the digest, and so the state record, stay as written.
+          yield* writer.replace(
+            MANIFEST_PATH,
+            encoder.encode(encodeManifest({ ...manifest, briefWords: rendered.briefWords })),
+          );
+        }
+      });
     // A preview stops at the writer boundary, after the same composition and rendering.
     const state = options.dryRun
       ? { written: false }
@@ -173,27 +204,7 @@ export const scaffold = (options: NewOptions) =>
               writeProjectState(manifest, path.join(writer.root, MANIFEST_PATH)),
               (write, exit) => (Exit.isSuccess(exit) ? Effect.void : removeProjectState(write)),
             );
-            if (git.init) {
-              // Adopted first, so an interrupt while git runs also takes its `.git` away; but only a
-              // `.git` that wasn't there before git ran is ours to take.
-              const dotGit = path.join(writer.root, ".git");
-              const ours = Option.isNone(yield* Effect.option(fs.lstat(dotGit)));
-              if (ours) yield* writer.adopt(".git");
-              const code = yield* gitInit(writer.root);
-              if (code !== 0) {
-                // Whatever part of a `.git` the failed init left is no repository.
-                if (ours) yield* writer.discard(".git");
-                gitState = { kind: "none" };
-                warnings.push({ code: "git_init_failed", id: "git", exitCode: code });
-                rendered = brief(gitState);
-                yield* writer.replace(BRIEF_PATH, encoder.encode(rendered.text));
-                // Only the count changed; the digest, and so the state record, stay as written.
-                yield* writer.replace(
-                  MANIFEST_PATH,
-                  encoder.encode(encodeManifest({ ...manifest, briefWords: rendered.briefWords })),
-                );
-              }
-            }
+            if (git.init) yield* initializeGit(writer);
             return record;
           }),
         );

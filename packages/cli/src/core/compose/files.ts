@@ -52,18 +52,21 @@ const readFiles = (
       };
       if (planned.kind === "merge") {
         files.push({ ...file, bytes: encoder.encode(planned.content ?? "") });
-      } else {
-        // An unreadable source stays the registry's `PermissionDenied`, as everywhere else.
-        const source = planned.source?.file ?? "";
-        if (planned.kind === "copy") {
-          files.push({ ...file, bytes: new Uint8Array(yield* registry.bytes(entry, source)) });
-        } else {
-          const text = yield* registry.read(entry, source);
-          files.push({ ...file, template: { text, entry, source } });
-        }
+        continue;
       }
+      // An unreadable source stays the registry's `PermissionDenied`, as everywhere else.
+      const source = planned.source?.file ?? "";
+      if (planned.kind === "copy") {
+        files.push({ ...file, bytes: new Uint8Array(yield* registry.bytes(entry, source)) });
+        continue;
+      }
+      const text = yield* registry.read(entry, source);
+      files.push({ ...file, template: { text, entry, source } });
     }
-    return files.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+    return files.sort((a, b) => {
+      if (a.path < b.path) return -1;
+      return a.path > b.path ? 1 : 0;
+    });
   });
 
 /** The single renderer, shared by standalone composition and scaffold's two value sets. */

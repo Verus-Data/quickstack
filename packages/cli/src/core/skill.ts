@@ -74,15 +74,33 @@ export const installSkill = (options: { project: boolean; force: boolean; print:
           Effect.map((real) => within(writer.root, real, path.sep)),
           Effect.mapError(denied),
         );
-        const info = yield* fs
-          .lstat(file)
-          .pipe(
-            Effect.catch((error) =>
-              error.reason._tag === "NotFound" ? Effect.succeed(undefined) : Effect.fail(denied()),
-            ),
-          );
-        if (info?.type === "SymbolicLink") return yield* escaped();
-        if (info && info.type !== "File") return yield* occupied("non-file");
+        const replaceSkill = (bytes: Uint8Array) =>
+          Effect.gen(function* () {
+            // Stage through the safe writer, then rename: a failed write keeps the user's copy.
+            const suffix = (yield* Random.nextIntBetween(0, 0xffffff)).toString(16);
+            const temporary = `quickstacks/.SKILL.${suffix}.tmp`;
+            yield* writer.write(temporary, bytes);
+            if (!(yield* parentInside)) return yield* escaped();
+            const latest = yield* fs.lstat(file).pipe(Effect.mapError(denied));
+            if (latest.type === "SymbolicLink") return yield* escaped();
+            if (latest.type !== "File") return yield* occupied("non-file");
+            yield* fs.rename(path.join(writer.root, temporary), file).pipe(Effect.mapError(denied));
+          });
+        const inspectSkill = Effect.gen(function* () {
+          const info = yield* fs
+            .lstat(file)
+            .pipe(
+              Effect.catch((error) =>
+                error.reason._tag === "NotFound"
+                  ? Effect.succeed(undefined)
+                  : Effect.fail(denied()),
+              ),
+            );
+          if (info?.type === "SymbolicLink") return yield* escaped();
+          if (info && info.type !== "File") return yield* occupied("non-file");
+          return info;
+        });
+        const info = yield* inspectSkill;
         const bytes = new TextEncoder().encode(text);
         if (info) {
           const current = yield* fs.readFile(file).pipe(Effect.mapError(denied));
@@ -90,15 +108,7 @@ export const installSkill = (options: { project: boolean; force: boolean; print:
             return { path: target, action: "unchanged" } satisfies SkillResult;
           if (!options.force) return yield* occupied();
 
-          // Stage through the safe writer, then rename: a failed write keeps the user's copy.
-          const suffix = (yield* Random.nextIntBetween(0, 0xffffff)).toString(16);
-          const temporary = `quickstacks/.SKILL.${suffix}.tmp`;
-          yield* writer.write(temporary, bytes);
-          if (!(yield* parentInside)) return yield* escaped();
-          const latest = yield* fs.lstat(file).pipe(Effect.mapError(denied));
-          if (latest.type === "SymbolicLink") return yield* escaped();
-          if (latest.type !== "File") return yield* occupied("non-file");
-          yield* fs.rename(path.join(writer.root, temporary), file).pipe(Effect.mapError(denied));
+          yield* replaceSkill(bytes);
         } else {
           yield* writer.write("quickstacks/SKILL.md", bytes);
         }

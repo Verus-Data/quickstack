@@ -86,12 +86,36 @@ function matches(condition: Condition, context: ConditionContext): boolean {
 /** A well-formed block: its `when` and `end` lines (1-based in the body) and its condition. */
 export type ConditionalBlock = { start: number; end: number; condition: Condition };
 
+type MarkerState = {
+  open: { line: number; condition: Condition } | undefined;
+  blocks: ConditionalBlock[];
+};
+
+function scanMarker(
+  match: RegExpExecArray,
+  line: number,
+  state: MarkerState,
+): ConditionalError | undefined {
+  const [, directive = "", rest = ""] = match;
+  if (directive === "when") {
+    if (state.open) return { line, problem: "nested" };
+    const condition = parseCondition(rest);
+    if (typeof condition === "string") return { line, problem: condition };
+    state.open = { line, condition };
+  } else if (directive === "end") {
+    if (!state.open) return { line, problem: "stray_end" };
+    state.blocks.push({ start: state.open.line, end: line, condition: state.open.condition });
+    state.open = undefined;
+  } else if (!isFill(directive)) return { line, problem: "unknown_marker" };
+  return undefined;
+}
+
 /** Every block in `body`, in order, or the first malformed marker. */
 export function scanConditionals(
   body: string,
 ): { blocks: ReadonlyArray<ConditionalBlock> } | ConditionalError {
   const blocks: ConditionalBlock[] = [];
-  let open: { line: number; condition: Condition } | undefined;
+  const state: MarkerState = { open: undefined, blocks };
   for (const [i, text] of body.split("\n").entries()) {
     const line = i + 1;
     const match = MARKER.exec(text);
@@ -99,19 +123,10 @@ export function scanConditionals(
       if (/<!--\s*quickstacks:(?:when|end)\b/.test(text)) return { line, problem: "not_alone" };
       continue;
     }
-    const [, directive = "", rest = ""] = match;
-    if (directive === "when") {
-      if (open) return { line, problem: "nested" };
-      const condition = parseCondition(rest);
-      if (typeof condition === "string") return { line, problem: condition };
-      open = { line, condition };
-    } else if (directive === "end") {
-      if (!open) return { line, problem: "stray_end" };
-      blocks.push({ start: open.line, end: line, condition: open.condition });
-      open = undefined;
-    } else if (!isFill(directive)) return { line, problem: "unknown_marker" };
+    const problem = scanMarker(match, line, state);
+    if (problem) return problem;
   }
-  if (open) return { line: open.line, problem: "unclosed" };
+  if (state.open) return { line: state.open.line, problem: "unclosed" };
   return { blocks };
 }
 

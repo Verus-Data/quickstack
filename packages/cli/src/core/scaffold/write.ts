@@ -48,6 +48,12 @@ export type ProjectWriter = {
 const missing = (error: PlatformError.PlatformError) =>
   error.reason._tag === "NotFound" || error.reason._tag === "BadResource";
 
+const alreadyExists = (exit: Exit.Exit<unknown, PlatformError.PlatformError>) =>
+  Exit.isFailure(exit) &&
+  exit.cause.reasons.some(
+    (reason) => reason._tag === "Fail" && reason.error.reason._tag === "AlreadyExists",
+  );
+
 /** Whether `path` is `root` or under it; both are real paths. */
 export function within(root: string, path: string, separator: string): boolean {
   return path === root || path.startsWith(root.endsWith(separator) ? root : root + separator);
@@ -139,21 +145,27 @@ export function openProject(
         }),
       ).pipe(Effect.catchTag("PlatformError", () => Effect.fail(unwritable(file))));
 
-    const rollback = Effect.gen(function* () {
+    const restoreBackups = Effect.gen(function* () {
       for (const [file, backup] of backups) {
         const info = yield* Effect.option(fs.lstat(file));
         if ((yield* inside(file)) && info._tag === "Some" && info.value.type === "File")
           yield* Effect.ignore(atomicReplace(file, backup.bytes, backup.mode));
       }
-      for (const file of [...files].reverse())
-        if (yield* inside(file)) yield* Effect.ignore(fs.remove(file));
-      for (const dir of [...adopted].reverse()) yield* removeAdopted(dir);
+    });
+    const removeDirectories = Effect.gen(function* () {
       // Only an empty directory goes: anything else in it isn't ours.
       for (const dir of [...dirs].reverse())
         if ((yield* isDirectory(dir)) && (yield* inside(dir))) yield* removeEmptyDirectory(dir);
       // The root and the parents made for it sit outside the root by definition.
       for (const dir of [...chain].reverse())
         if (yield* isDirectory(dir)) yield* removeEmptyDirectory(dir);
+    });
+    const rollback = Effect.gen(function* () {
+      yield* restoreBackups;
+      for (const file of [...files].reverse())
+        if (yield* inside(file)) yield* Effect.ignore(fs.remove(file));
+      for (const dir of [...adopted].reverse()) yield* removeAdopted(dir);
+      yield* removeDirectories;
     });
     yield* Effect.addFinalizer((exit) => (Exit.isSuccess(exit) ? Effect.void : rollback));
 
@@ -192,6 +204,43 @@ export function openProject(
         ? undefined
         : parts;
     };
+    const checkDirectoryInside = (at: string, rel: string) =>
+      Effect.gen(function* () {
+        if (!(yield* isInside(at))) return yield* escapes(path.join(root, rel));
+      });
+    const createDirectory = (at: string, rel: string) =>
+      Effect.gen(function* () {
+        yield* fs
+          .makeDirectory(at)
+          .pipe(
+            Effect.mapError((error) =>
+              error.reason._tag === "AlreadyExists"
+                ? new TargetNotEmpty({ details: { path: root, entries: [rel] } })
+                : unwritable(at),
+            ),
+          );
+        dirs.push(at);
+        yield* checkDirectoryInside(at, rel);
+      });
+    const directoryType = (at: string) =>
+      fs.lstat(at).pipe(
+        Effect.map((value) => value.type),
+        Effect.catch((error) =>
+          missing(error) ? Effect.succeed("Missing" as const) : Effect.fail(unwritable(at)),
+        ),
+      );
+    const ensureDirectory = (at: string, rel: string) =>
+      Effect.gen(function* () {
+        const info = yield* directoryType(at);
+        if (info === "Missing") return yield* createDirectory(at, rel);
+        if (info === "SymbolicLink") {
+          yield* checkDirectoryInside(at, rel);
+          return;
+        }
+        if (info !== "Directory")
+          return yield* new TargetNotEmpty({ details: { path: root, entries: [rel] } });
+      });
+
     /**
      * Creates the directories down to `parts`. A symlink on the way is resolved before anything
      * is made beneath it, and each directory made is checked right after, so no directory is ever
@@ -203,31 +252,47 @@ export function openProject(
         let at = root;
         for (const part of parts) {
           at = path.join(at, part);
-          const info = yield* fs.lstat(at).pipe(
-            Effect.map((value) => value.type),
-            Effect.catch((error) =>
-              missing(error) ? Effect.succeed("Missing" as const) : Effect.fail(unwritable(at)),
-            ),
-          );
-          if (info === "Missing") {
-            yield* fs
-              .makeDirectory(at)
-              .pipe(
-                Effect.mapError((error) =>
-                  error.reason._tag === "AlreadyExists"
-                    ? new TargetNotEmpty({ details: { path: root, entries: [rel] } })
-                    : unwritable(at),
-                ),
-              );
-            dirs.push(at);
-            if (!(yield* isInside(at))) return yield* escaped;
-          } else if (info === "SymbolicLink") {
-            if (!(yield* isInside(at))) return yield* escaped;
-          } else if (info !== "Directory")
-            return yield* new TargetNotEmpty({ details: { path: root, entries: [rel] } });
+          yield* ensureDirectory(at, rel);
         }
         const real = yield* fs.realPath(at).pipe(Effect.mapError(() => unwritable(at)));
         if (!within(root, real, path.sep)) return yield* escaped;
+      });
+
+    const writeExclusive = (file: string, rel: string, data: Uint8Array) =>
+      Effect.gen(function* () {
+        // `wx`: never over an existing file, and never through a symlink in the last segment.
+        const written = yield* Effect.exit(
+          fs.writeFile(file, data, { flag: "wx" }).pipe(
+            Effect.onExit((exit) =>
+              Effect.sync(() => {
+                const exists = alreadyExists(exit);
+                // Even cancelled I/O may already have created bytes. Track it in the finalizer,
+                // which also runs when an adapter restores interruption inside the mutation.
+                if (!exists) files.push(file);
+              }),
+            ),
+          ),
+        );
+        if (Exit.isFailure(written)) {
+          const exists = alreadyExists(written);
+          if (exists) return yield* new TargetNotEmpty({ details: { path: root, entries: [rel] } });
+          // Created exclusively, so whatever is there now (a partial write) is ours.
+          return yield* unwritable(file);
+        }
+      });
+
+    const setPermissions = (file: string, permissions: boolean | number) =>
+      Effect.gen(function* () {
+        if (permissions !== false) {
+          const mode =
+            typeof permissions === "number"
+              ? permissions & 0o777
+              : yield* fs.stat(file).pipe(
+                  Effect.map((info) => (info.mode & 0o777) | ((info.mode & 0o444) >> 2)),
+                  Effect.mapError(() => unwritable(file)),
+                );
+          yield* fs.chmod(file, mode).pipe(Effect.mapError(() => unwritable(file)));
+        }
       });
 
     // Finish each filesystem mutation and its tracking together. An interrupted async write
@@ -239,49 +304,14 @@ export function openProject(
           if (!parts) return yield* escapes(rel);
           yield* ensure(parts.slice(0, -1), rel);
           const file = path.join(root, ...parts);
-          // `wx`: never over an existing file, and never through a symlink in the last segment.
-          const written = yield* Effect.exit(
-            fs.writeFile(file, data, { flag: "wx" }).pipe(
-              Effect.onExit((exit) =>
-                Effect.sync(() => {
-                  const exists =
-                    Exit.isFailure(exit) &&
-                    exit.cause.reasons.some(
-                      (reason) =>
-                        reason._tag === "Fail" && reason.error.reason._tag === "AlreadyExists",
-                    );
-                  // Even cancelled I/O may already have created bytes. Track it in the finalizer,
-                  // which also runs when an adapter restores interruption inside the mutation.
-                  if (!exists) files.push(file);
-                }),
-              ),
-            ),
-          );
-          if (Exit.isFailure(written)) {
-            const exists = written.cause.reasons.some(
-              (reason) => reason._tag === "Fail" && reason.error.reason._tag === "AlreadyExists",
-            );
-            if (exists)
-              return yield* new TargetNotEmpty({ details: { path: root, entries: [rel] } });
-            // Created exclusively, so whatever is there now (a partial write) is ours.
-            return yield* unwritable(file);
-          }
+          yield* writeExclusive(file, rel, data);
           // The parent was checked before the write; if it has moved out of the project since, the
           // file landed outside. It is ours (created exclusively), so take it back and refuse.
           if (!(yield* inside(file))) {
             yield* Effect.ignore(fs.remove(file));
             return yield* escapes(path.join(root, rel));
           }
-          if (permissions !== false) {
-            const mode =
-              typeof permissions === "number"
-                ? permissions & 0o777
-                : yield* fs.stat(file).pipe(
-                    Effect.map((info) => (info.mode & 0o777) | ((info.mode & 0o444) >> 2)),
-                    Effect.mapError(() => unwritable(file)),
-                  );
-            yield* fs.chmod(file, mode).pipe(Effect.mapError(() => unwritable(file)));
-          }
+          yield* setPermissions(file, permissions);
         }),
       );
 

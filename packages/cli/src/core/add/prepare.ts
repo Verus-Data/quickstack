@@ -59,11 +59,13 @@ export const prepareAdd = (options: AddOptions, project: AddProject) =>
     });
     const plan = yield* planAdd({ root: options.root, composition, rendered: files });
     const built = yield* buildManifest(composition, { briefWords: 0, mode: "add" });
-    for (const step of built.verify)
-      if (previous?.verify.some((old) => old.name === step.name))
-        return yield* new ComposeConflict({
-          details: { reason: "step_name", ids: [step.owner], step: step.name },
-        });
+    const conflicting = built.verify.find((step) =>
+      previous?.verify.some((old) => old.name === step.name),
+    );
+    if (conflicting)
+      return yield* new ComposeConflict({
+        details: { reason: "step_name", ids: [conflicting.owner], step: conflicting.name },
+      });
     const added = composition.fragments.map((entry) => entry.id);
     const present = new Set([...existing, ...added]);
     const missingRequired =

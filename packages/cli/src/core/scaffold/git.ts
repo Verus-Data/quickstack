@@ -32,8 +32,10 @@ type Finished = { exitCode: number; timedOut: boolean; tail: string };
 const ok = (finished: Finished | undefined): finished is Finished =>
   finished !== undefined && finished.exitCode === 0 && !finished.timedOut;
 /** A git command's exit code for a warning: 124 for a timeout, none when it couldn't start. */
-const exitOf = (finished: Finished | undefined) =>
-  finished === undefined ? undefined : finished.timedOut ? 124 : finished.exitCode;
+const exitOf = (finished: Finished | undefined) => {
+  if (finished === undefined) return undefined;
+  return finished.timedOut ? 124 : finished.exitCode;
+};
 
 const toplevelOf = (finished: Finished | undefined) =>
   ok(finished) ? finished.tail.trim().split("\n").at(-1) || undefined : undefined;
@@ -56,6 +58,26 @@ export type GitProbe = {
   warning?: NewResult["warnings"][number];
 };
 
+function withoutToplevel(target: Target, found: Finished | undefined, none: GitProbe): GitProbe {
+  const unenclosed =
+    found !== undefined &&
+    found.exitCode !== 0 &&
+    !found.timedOut &&
+    found.tail.includes(NOT_A_REPOSITORY);
+  // A `.git` in the target that git doesn't see as a repository is not ours to init over.
+  if (unenclosed && !target.git)
+    return { state: { kind: "fresh" } as GitState, init: true, own: false };
+  const exitCode = exitOf(found);
+  return {
+    ...none,
+    warning: {
+      code: "git_unusable" as const,
+      id: "git",
+      ...(exitCode === undefined ? {} : { exitCode }),
+    },
+  };
+}
+
 /**
  * Where the target stands with git, before anything is written: `none` without git; `parent`
  * inside another work tree, or in its own `.git` that already has commits (`own` then); `fresh`
@@ -77,23 +99,7 @@ export const probeGit = (
     const found = yield* git(TOPLEVEL, target.nearest);
     const toplevel = toplevelOf(found);
     if (!toplevel) {
-      const unenclosed =
-        found !== undefined &&
-        found.exitCode !== 0 &&
-        !found.timedOut &&
-        found.tail.includes(NOT_A_REPOSITORY);
-      // A `.git` in the target that git doesn't see as a repository is not ours to init over.
-      if (unenclosed && !target.git)
-        return { state: { kind: "fresh" } as GitState, init: true, own: false };
-      const exitCode = exitOf(found);
-      return {
-        ...none,
-        warning: {
-          code: "git_unusable" as const,
-          id: "git",
-          ...(exitCode === undefined ? {} : { exitCode }),
-        },
-      };
+      return withoutToplevel(target, found, none);
     }
     const real = (at: string) => fs.realPath(at).pipe(Effect.orElseSucceed(() => at));
     const own = target.exists && (yield* real(toplevel)) === (yield* real(target.path));

@@ -121,7 +121,17 @@ const copySnapshot = (kind: Kind, id: string, from: Origin, yes: boolean) =>
           }),
         ),
       );
-      if (!entry.trusted) {
+      const confirmAnswer = Effect.gen(function* () {
+        const output = yield* Output;
+
+        yield* output.note(trustQuestion);
+        const answer = yield* (yield* Terminal.Terminal).readLine.pipe(
+          Effect.mapError(() => new Interrupted()),
+        );
+        if (!/^(?:y|yes)$/i.test(answer.trim()))
+          return yield* new BadInput({ details: { id, flag: "confirmation" } });
+      });
+      const confirmCopy = Effect.gen(function* () {
         const agent = yield* config.agent;
         if (agent !== "none" || !host.stdinIsTTY)
           return yield* new PermissionDenied({
@@ -134,15 +144,9 @@ const copySnapshot = (kind: Kind, id: string, from: Origin, yes: boolean) =>
           ...roots.filter((root) => root.origin !== from),
         ]);
         yield* output.note(renderShow(report, host.invocation));
-        if (!yes) {
-          yield* output.note(trustQuestion);
-          const answer = yield* (yield* Terminal.Terminal).readLine.pipe(
-            Effect.mapError(() => new Interrupted()),
-          );
-          if (!/^(?:y|yes)$/i.test(answer.trim()))
-            return yield* new BadInput({ details: { id, flag: "confirmation" } });
-        }
-      }
+        if (!yes) yield* confirmAnswer;
+      });
+      if (!entry.trusted) yield* confirmCopy;
       const tree = yield* registry.tree(entry);
       const files = yield* Effect.forEach(tree.files, (file) =>
         registry
