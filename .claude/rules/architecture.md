@@ -6,7 +6,7 @@ The skill gives general structure. This rule carries the constraints it can't kn
 
 ## Product constraints
 
-The CLI executes nothing it reads and never calls an LLM (plans README decision D2; roadmap "Trust model", point 1). `list`, `show`, `new`, `add`, `validate` and `create` read, compose and write entries; only `verify` runs commands, and only the steps in the project's own manifest. A design that runs a generator, an install script or a hook from an entry is wrong, however convenient.
+The CLI executes nothing it reads and never calls an LLM (plans README decision D2; roadmap "Trust model", point 1). `list`, `show`, `new`, `add`, `validate` and `create` read, compose and write entries; only `verify` runs commands, and only the steps in the project's own manifest. `update` is the one other command that runs a program: it makes one request to the npm registry and calls `npm` with fixed arguments and a checked version, only when a person runs it. A design that runs a generator, an install script or a hook from an entry is wrong, however convenient.
 
 Humans own what lasts and agents own what ages (plans README "Product to preserve"). Composition, layout, enforcement and the definition of done belong in stacks and in the CLI. Versions, generator flags and config formats belong to the agent. A feature that pins a version or freezes a config format in the CLI or in `files/` is drifting toward a template engine, which the product says it isn't.
 

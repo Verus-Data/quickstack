@@ -35,6 +35,7 @@ test("the published error table, written out row by row", () => {
     NotConfigured: { exit: 3, retryable: false, keepsResult: false },
     InvalidConfig: { exit: 3, retryable: false, keepsResult: false },
     UpstreamUnavailable: { exit: 4, retryable: true, keepsResult: false },
+    UpdateFailed: { exit: 6, retryable: false, keepsResult: false },
     VerifyFailed: { exit: 5, retryable: false, keepsResult: true },
     VerifyChanged: { exit: 5, retryable: false, keepsResult: true },
     PermissionDenied: { exit: 6, retryable: false, keepsResult: false },

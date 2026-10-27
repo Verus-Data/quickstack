@@ -9,6 +9,14 @@ Start here, then read repo `AGENTS.md`, the README's
 next steps, who owns each. When it grows past a couple of screens, move the dated detail
 to `archive/` and leave a link.
 
+## `stacks update` (2026-10-27)
+
+[4.4d](phases/phase-4.4d-self-update.md) landed (D31): `stacks update` reads the latest
+version from the npm registry and upgrades a global npm install in place; npx and other
+installs get the command to run; an agent gets `PermissionDenied` (exit 6) unless it passes
+`--check`. Release 0.3.0 carries it. Not checked live: a real `npm install -g` replacing the
+running package (tests use a fake npm).
+
 ## Agent picker (2026-10-27)
 
 [4.4c](phases/phase-4.4c-agent-picker.md) landed: at a terminal with several harnesses and

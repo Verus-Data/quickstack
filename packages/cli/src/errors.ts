@@ -108,9 +108,23 @@ export class InvalidConfig extends Schema.TaggedError<InvalidConfig>()("InvalidC
 }) {
   override readonly message = "Configuration is invalid.";
 }
+export const UpstreamUnavailableDetails = Schema.Struct({
+  service: Schema.Literals(["npm-registry"]),
+  status: Schema.optionalKey(Schema.Number),
+});
+export const UpdateFailedDetails = Schema.Struct({
+  command: Schema.String,
+  exitCode: Schema.optionalKey(Schema.Number),
+  timedOut: Schema.optionalKey(Schema.Boolean),
+});
+export class UpdateFailed extends Schema.TaggedError<UpdateFailed>()("UpdateFailed", {
+  details: Schema.optionalKey(UpdateFailedDetails),
+}) {
+  override readonly message = "Update failed.";
+}
 export class UpstreamUnavailable extends Schema.TaggedError<UpstreamUnavailable>()(
   "UpstreamUnavailable",
-  {},
+  { details: Schema.optionalKey(UpstreamUnavailableDetails) },
 ) {
   override readonly message = "Upstream service is unavailable.";
 }
@@ -143,8 +157,8 @@ export class VerifyChanged extends Schema.TaggedError<VerifyChanged>()("VerifyCh
  * `escape`: a write would land outside the project (its real path isn't under the project's).
  * `blocked`: a live file or directory blocks a planned add path; `path` is the blocker.
  * `unwritable`: the project directory or a file in it couldn't be created or written.
- * `agent` and `no-tty`: a confirmation only a person at a terminal may give (Trust model, point 4)
- * was asked for under a detected agent, or without a terminal on stdin.
+ * `agent`: an action reserved for a person was requested under a detected agent.
+ * `no-tty`: a confirmation was requested without a terminal on stdin (Trust model, point 4).
  * `state-unwritable`: the state record (`path`) couldn't be written, so nothing was confirmed.
  * `launch`: the agent CLI `new` hands off to (`path`) was found but couldn't be executed (1.4).
  */
@@ -305,6 +319,7 @@ export const errorClasses = [
   NotConfigured,
   InvalidConfig,
   UpstreamUnavailable,
+  UpdateFailed,
   VerifyFailed,
   VerifyChanged,
   PermissionDenied,
@@ -325,6 +340,7 @@ export const ErrorTag = Schema.Literals([
   "NotConfigured",
   "InvalidConfig",
   "UpstreamUnavailable",
+  "UpdateFailed",
   "VerifyFailed",
   "VerifyChanged",
   "PermissionDenied",
@@ -345,6 +361,7 @@ export const errorTable = {
   NotConfigured: { exit: 3, retryable: false, keepsResult: false },
   InvalidConfig: { exit: 3, retryable: false, keepsResult: false },
   UpstreamUnavailable: { exit: 4, retryable: true, keepsResult: false },
+  UpdateFailed: { exit: 6, retryable: false, keepsResult: false },
   VerifyFailed: { exit: 5, retryable: false, keepsResult: true },
   VerifyChanged: { exit: 5, retryable: false, keepsResult: true },
   PermissionDenied: { exit: 6, retryable: false, keepsResult: false },
@@ -415,7 +432,21 @@ export function failureGuide(error: AppError, invocation: string): FailureGuide 
     case "NotConfigured":
       return guide([], `run ${invocation} doctor to see the configuration it reads.`);
     case "UpstreamUnavailable":
-      return guide([], "wait a moment, then run the same command again.");
+      return guide(
+        [
+          ...(error.details ? ["Service: npm registry"] : []),
+          ...(error.details?.status === undefined ? [] : [`Status: ${error.details.status}`]),
+        ],
+        "wait a moment, then run the same command again.",
+      );
+    case "UpdateFailed":
+      return guide(
+        [
+          ...(error.details?.exitCode === undefined ? [] : [`npm exit: ${error.details.exitCode}`]),
+          ...(error.details?.timedOut ? ["npm timed out."] : []),
+        ],
+        `run ${error.details?.command ?? "the npm install"} yourself to see npm's output.`,
+      );
     case "Interrupted":
       return guide([], "run the same command again when you're ready.");
     case "Defect":
@@ -715,6 +746,8 @@ export const ErrorEnvelope = Schema.Struct({
     next: Schema.optionalKey(Schema.String),
     details: Schema.optionalKey(
       Schema.Union([
+        UpstreamUnavailableDetails,
+        UpdateFailedDetails,
         UsageDetails,
         BadInputDetails,
         NotFoundDetails,
@@ -766,8 +799,11 @@ export function encodeDetails(error: AppError): Effect.Effect<unknown, Schema.Sc
       return encodeClosed(VerifyFailedDetails, error.details);
     case "VerifyChanged":
       return encodeClosed(VerifyChangedDetails, error.details);
-    case "NotConfigured":
     case "UpstreamUnavailable":
+      return encodeClosed(UpstreamUnavailableDetails, error.details);
+    case "UpdateFailed":
+      return encodeClosed(UpdateFailedDetails, error.details);
+    case "NotConfigured":
     case "Interrupted":
     case "Defect":
     case "BrokenPipe":

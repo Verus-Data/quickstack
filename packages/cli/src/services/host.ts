@@ -12,6 +12,8 @@ export type HostInfo = {
    * The bundled registry root, resolved by bin.ts; core code never computes it.
    */
   registry: string;
+  /** The running package root, resolved by bin.ts. */
+  packageRoot: string;
   /** The bundled skill directory, resolved by bin.ts beside the registry. */
   skill: string;
   /** The authoring guide, resolved by bin.ts beside the registry and skill. */
@@ -29,6 +31,7 @@ export class Host extends Context.Service<Host, HostInfo>()("stacks/Host") {
       stdinIsTTY: false,
       stdoutIsTTY: false,
       registry: "/test/registry",
+      packageRoot: "/test/package",
       skill: "/test/skill",
       authoring: "/test/docs/authoring.md",
       invocation: "stacks",

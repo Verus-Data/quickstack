@@ -87,6 +87,7 @@ const exits: Record<string, ReadonlyArray<number>> = {
   schema: [0, 2, 130],
   show: [0, 2, 3, 6, 130],
   "skill install": [0, 2, 6, 130],
+  update: [0, 4, 6, 130],
   validate: [0, 2, 3, 6, 130],
   verify: [0, 2, 3, 5, 6, 130],
 };

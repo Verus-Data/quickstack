@@ -1,6 +1,5 @@
-// The network layers `verify`'s probes use: an HttpClient over the runtime's `fetch` (Bun's in the
-// binary, Node's under Vitest) that never follows a redirect, so a local probe can't be sent to
-// another host, and TCP sockets over `node:net` (Bun implements it too) for port checks.
+// HTTP for verify probes and update's registry request, over Node's fetch without redirects,
+// so a local probe can't be sent to another host; TCP sockets supply port checks.
 import { makeNet } from "@effect/platform-bun/BunSocket";
 import { Layer } from "effect";
 import { FetchHttpClient } from "effect/http";
