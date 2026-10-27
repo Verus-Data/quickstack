@@ -15,7 +15,7 @@
     "test": "bun run test:unit",
     "test:unit": "vitest run",
     "test:watch": "vitest --watch",
-    "test:macos": "vitest run -t '\\(macOS\\)'",
+    "test:macos": "vitest run -t '\\(macOS\\)' $(grep -rlF --include='*.test.ts' '(macOS)' tests)",
     "coverage": "vitest run --coverage",
     "e2e": "bun run pack && bun test ./e2e",
     "check": "bun run lint && bun run typecheck && bun run test && bun run e2e",
