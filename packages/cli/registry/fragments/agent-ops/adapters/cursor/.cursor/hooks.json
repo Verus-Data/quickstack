@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "command": "bash \"${CURSOR_PROJECT_DIR}/.cursor/hooks/guard.sh\"",
+        "matcher": "^(Shell|Write|Edit)$",
+        "failClosed": true
+      }
+    ]
+  }
+}

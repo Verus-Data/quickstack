@@ -14,7 +14,8 @@ import { afterEach, expect, test } from "vitest";
 import { tempDir } from "./helpers/cli";
 
 const fragments = join(import.meta.dirname, "../registry/fragments");
-const shellSource = join(fragments, "agent-ops/adapters/claude/.claude/hooks");
+// 3.4b moved the shell guards to files/ so every agent's adapter reaches them by path.
+const shellSource = join(fragments, "agent-ops/files/.claude/hooks");
 const harnessSource = join(fragments, "claude-harness/adapters/claude/.claude/hooks");
 const Payload = Schema.Struct({
   session_id: Schema.String,
