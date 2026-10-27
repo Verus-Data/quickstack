@@ -44,13 +44,18 @@ export function humanPlan(options: {
 }
 
 if (import.meta.main) {
-  const binary = join(import.meta.dirname, "..", "dist", "quickstack");
+  const binary = join(import.meta.dirname, "..", "dist", "quickstack.mjs");
   if (!existsSync(binary)) {
-    console.error("human: dist/quickstack is missing; run bun run build first.");
+    console.error("human: dist/quickstack.mjs is missing; run bun run build first.");
+    process.exit(2);
+  }
+  const node = Bun.which("node");
+  if (!node) {
+    console.error("human: node is not on PATH; Node 22 or newer is required.");
     process.exit(2);
   }
   const plan = humanPlan({
-    command: [binary],
+    command: [node, binary],
     args: process.argv.slice(2),
     platform: process.platform,
     env: process.env,

@@ -29,8 +29,25 @@ test("doctor runs under Node and respects human/JSON result contracts", async ()
   expect(JSON.parse(json.stdout)).toMatchObject({
     version: VERSION,
     platform: "test-node",
-    compiled: false,
     configErrors: [],
+  });
+});
+test("the scoped npm package keeps the quickstack command and config paths", async () => {
+  const dir = tempDir();
+  dirs.push(dir);
+  const help = await runCli(["--help"], { home: dir.path });
+  expect(help.status).toBe(0);
+  expect(help.stderr).toBe("");
+  expect(help.stdout).toContain("quickstack <subcommand>");
+  expect(help.stdout).not.toContain("@quickstack/cli");
+  const doctor = await runCli(["doctor", "--json"], { home: dir.path });
+  expect(doctor.status).toBe(0);
+  expect(doctor.stderr).toBe("");
+  expect(JSON.parse(doctor.stdout).paths).toMatchObject({
+    config: join(dir.path, "config/quickstack/config.json"),
+    data: join(dir.path, ".local/share/quickstack"),
+    cache: join(dir.path, ".cache/quickstack"),
+    user: join(dir.path, "config/quickstack"),
   });
 });
 test.each([

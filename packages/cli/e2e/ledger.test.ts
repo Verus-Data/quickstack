@@ -15,10 +15,11 @@ import { Schema } from "effect";
 import type { LedgerRecord } from "../src/schemas/ledger";
 import { ListResult } from "../src/schemas/list";
 
-const binary = join(import.meta.dir, "../dist/quickstack");
+import { binary, packageRoot, scratchPath } from "./package";
+
 const registry = join(import.meta.dir, "../registry");
 
-test("the compiled binary reads its shipped ledger, including after relocation [2.0c#6]", async () => {
+test("the installed package reads its shipped ledger, including after relocation [2.0c#6]", async () => {
   const root = mkdtempSync(join(tmpdir(), "quickstack-ledger-binary-"));
   try {
     const home = join(root, "unrelated cwd");
@@ -31,7 +32,7 @@ test("the compiled binary reads its shipped ledger, including after relocation [
           XDG_CONFIG_HOME: join(home, "config"),
           NO_COLOR: "1",
           LOG_LEVEL: "none",
-          PATH: "/usr/bin:/bin",
+          PATH: scratchPath,
         },
         stdin: "ignore",
         stdout: "pipe",
@@ -77,8 +78,9 @@ test("the compiled binary reads its shipped ledger, including after relocation [
 
     const prefix = join(root, "relocated package");
     mkdirSync(join(prefix, "dist"), { recursive: true });
-    const relocated = join(prefix, "dist/quickstack");
+    const relocated = join(prefix, "dist/quickstack.mjs");
     copyFileSync(binary, relocated);
+    copyFileSync(join(packageRoot, "dist/cli.mjs"), join(prefix, "dist/cli.mjs"));
     chmodSync(relocated, 0o755);
     cpSync(registry, join(prefix, "registry"), { recursive: true });
     const marker = { ...latest, date: "2099-01-01", result: "fail" };

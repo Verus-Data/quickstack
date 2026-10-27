@@ -1,20 +1,58 @@
-import { mkdirSync, rmSync } from "node:fs";
-import { name } from "../package.json";
+import {
+  appendFileSync,
+  chmodSync,
+  copyFileSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+} from "node:fs";
+import { join } from "node:path";
+
+function dependencyNotices(metafile: Bun.BuildMetafile): string {
+  const roots = Object.keys(metafile.inputs).flatMap((input) => {
+    const root = /^(.*node_modules\/(?:@[^/]+\/)?[^/]+)\//.exec(input)?.[1];
+    return root ? [root] : [];
+  });
+  return [...new Set(roots)]
+    .sort()
+    .map((root) => {
+      const notices = readdirSync(root)
+        .filter((file) => /^(?:licen[cs]e|notice|copying)(?:[.-]|$)/i.test(file))
+        .sort();
+      if (!notices.length) throw new Error(`Bundled dependency has no license notice: ${root}`);
+      const name = root.slice(root.lastIndexOf("node_modules/") + "node_modules/".length);
+      return `${name}\n\n${notices.map((file) => readFileSync(join(root, file), "utf8")).join("\n\n")}`;
+    })
+    .join("\n\n");
+}
 
 mkdirSync("dist", { recursive: true });
+// Remove the retired standalone artifact when rebuilding an existing checkout.
+rmSync("dist/quickstack", { force: true });
 const result = await Bun.build({
   entrypoints: ["src/bin.ts"],
-  minify: true,
-  sourcemap: "linked",
-  compile: {
-    outfile: `dist/${name}`,
-    autoloadDotenv: false,
-    autoloadBunfig: false,
-    autoloadPackageJson: false,
-    autoloadTsconfig: false,
+  outdir: "dist",
+  naming: "cli.mjs",
+  target: "node",
+  format: "esm",
+  packages: "bundle",
+  define: {
+    PACKAGED_GITIGNORES: JSON.stringify(
+      readdirSync("registry", { recursive: true, encoding: "utf8" })
+        .filter((file) => file.endsWith("/.gitignore"))
+        .sort(),
+    ),
   },
+  minify: true,
+  sourcemap: "none",
+  metafile: true,
 });
-if (!result.success) throw new AggregateError(result.logs, "Binary build failed");
-for (const output of result.outputs)
-  if (output.kind === "sourcemap") rmSync(output.path, { force: true });
-rmSync(`dist/${name}.map`, { force: true });
+if (!result.success) throw new AggregateError(result.logs, "Node bundle build failed");
+if (!result.metafile) throw new Error("Node bundle has no dependency manifest");
+appendFileSync(
+  "dist/cli.mjs",
+  `\n/*\nThird-party notices\n\n${dependencyNotices(result.metafile).replaceAll("*/", "* /")}\n*/\n`,
+);
+copyFileSync("scripts/node-entry.mjs", "dist/quickstack.mjs");
+chmodSync("dist/quickstack.mjs", 0o755);

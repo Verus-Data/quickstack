@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const binary = join(import.meta.dir, "../dist/quickstack");
+import { binary, scratchPath } from "./package";
 
 function sample(args: readonly string[]) {
   const home = mkdtempSync(join(tmpdir(), "cli-binary-budget-"));
@@ -16,7 +16,7 @@ function sample(args: readonly string[]) {
         XDG_STATE_HOME: join(home, "state"),
         LOG_LEVEL: "none",
         NO_COLOR: "1",
-        PATH: "/usr/bin:/bin",
+        PATH: scratchPath,
       },
       stdin: "ignore",
       stdout: "pipe",

@@ -306,7 +306,7 @@ test("an explicitly added app gets a split brief, the 9000-word cap and a finger
   expect(base).not.toContain("entry-command --application");
   expect(application).toContain("application-check");
   expect(application).toContain("entry-command --application");
-  expect(application).toContain(T.application.done(`npx -y quickstack@${VERSION}`));
+  expect(application).toContain(T.application.done(`npx -y @quickstack/cli@${VERSION}`));
   expect(report.brief.indexOf("Build the small public interface.")).toBeLessThan(
     report.brief.indexOf("APPLICATION BODY"),
   );

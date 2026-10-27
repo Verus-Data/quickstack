@@ -26,8 +26,8 @@ Use Bun 1.4.2 and Node 24 LTS. Install lefthook (`brew install lefthook` on macO
 ```sh
 bun install
 bun run dev doctor            # the CLI from source
-bun run build                 # compile dist/quickstack
-./dist/quickstack --version
+bun run build                 # compile dist/quickstack.mjs
+node dist/quickstack.mjs --version
 bun run check                 # this package's gate
 ```
 

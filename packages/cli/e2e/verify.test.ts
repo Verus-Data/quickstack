@@ -1,13 +1,14 @@
 import { describe, expect, test } from "bun:test";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Schema } from "effect";
 import { digestSteps, encodeManifest, MANIFEST_PATH } from "../src/core/manifest";
 import type { Manifest } from "../src/schemas/manifest";
-import { VerifyResult } from "../src/schemas/verify";
+import { RunRecord, VerifyResult } from "../src/schemas/verify";
 
-const binary = join(import.meta.dir, "../dist/quickstack");
+import { binary, node, npmCli, scratchPath, tarball } from "./package";
 
 const unsigned: Manifest = {
   schemaVersion: 1,
@@ -50,6 +51,98 @@ const unsigned: Manifest = {
 /** The fixture with the digest `new` would have recorded for its steps. */
 const project: Manifest = { ...unsigned, verifyDigest: digestSteps(unsigned) };
 
+test("one SIGINT through npm exec records interruption and runs teardown", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "quickstack-npm-signal-"));
+  const manifest = {
+    ...unsigned,
+    verify: [
+      {
+        ...unsigned.verify[0],
+        name: "wait",
+        phase: "check",
+        run: "touch ready; sleep 60",
+        owner: "fixture-stack",
+        skipByDefault: false,
+      },
+      {
+        ...unsigned.verify[2],
+        name: "clean",
+        phase: "teardown",
+        run: "touch torn",
+        owner: "fixture-stack",
+        skipByDefault: false,
+      },
+    ],
+  } satisfies Manifest;
+  mkdirSync(join(dir, ".quickstack"));
+  writeFileSync(
+    join(dir, MANIFEST_PATH),
+    encodeManifest({ ...manifest, verifyDigest: digestSteps(manifest) }),
+  );
+  const child = spawn(
+    node,
+    [
+      npmCli,
+      "exec",
+      "--offline",
+      "--yes",
+      "--package",
+      tarball,
+      "--",
+      "quickstack",
+      "verify",
+      "--json",
+    ],
+    {
+      cwd: dir,
+      detached: true,
+      env: {
+        HOME: dir,
+        PATH: scratchPath,
+        LOG_LEVEL: "none",
+        npm_config_cache: join(dir, "cache"),
+        npm_config_update_notifier: "false",
+        npm_config_loglevel: "silent",
+      },
+      stdio: ["ignore", "pipe", "pipe"],
+    },
+  );
+  let stdout = "";
+  let stderr = "";
+  child.stdout.on("data", (chunk) => {
+    stdout += chunk;
+  });
+  child.stderr.on("data", (chunk) => {
+    stderr += chunk;
+  });
+  const exited = new Promise<number | null>((resolve, reject) => {
+    child.once("error", reject);
+    child.once("close", resolve);
+  });
+  try {
+    const deadline = Date.now() + 15_000;
+    while (!existsSync(join(dir, "ready"))) {
+      if (child.exitCode !== null || Date.now() >= deadline)
+        throw new Error(`npm exec never started verify: ${stderr}`);
+      await Bun.sleep(20);
+    }
+    if (child.pid === undefined) throw new Error("npm exec has no pid");
+    process.kill(-child.pid, "SIGINT");
+    expect(await exited).toBe(130);
+    expect(stdout).toBe("");
+    expect(stderr.trim().split("\n").at(-1)).toContain('"tag":"Interrupted"');
+    expect(existsSync(join(dir, "torn"))).toBe(true);
+    const record = Schema.decodeUnknownSync(RunRecord)(
+      JSON.parse(readFileSync(join(dir, ".quickstack/state/runs.jsonl"), "utf8").trim()),
+    );
+    expect(record.outcome).toBe("interrupted");
+  } finally {
+    if (child.exitCode === null && child.pid !== undefined) process.kill(-child.pid, "SIGKILL");
+    await exited;
+    rmSync(dir, { recursive: true, force: true });
+  }
+}, 30_000);
+
 describe("verify from the real binary", () => {
   test("one passing and one failing step exit 5 with the result on stdout [1.3a#21]", async () => {
     const dir = mkdtempSync(join(tmpdir(), "cli-binary-verify-"));
@@ -65,7 +158,7 @@ describe("verify from the real binary", () => {
           XDG_CONFIG_HOME: join(dir, "config"),
           LOG_LEVEL: "none",
           NO_COLOR: "1",
-          PATH: "/usr/bin:/bin",
+          PATH: scratchPath,
           CLAUDECODE: "1",
         },
         stdout: "pipe",
@@ -122,7 +215,7 @@ describe("verify from the real binary", () => {
           XDG_STATE_HOME: join(dir, "state"),
           LOG_LEVEL: "none",
           NO_COLOR: "1",
-          PATH: "/usr/bin:/bin",
+          PATH: scratchPath,
         },
         stdout: "pipe",
         stderr: "pipe",

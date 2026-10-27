@@ -1,9 +1,9 @@
-// A stand-in for bin.ts in tests/signals.test.ts: the real signal policy, the real Bun platform
+// A stand-in for bin.ts in tests/signals.test.ts: the real signal policy, the real Node platform
 // layer and the live Processes service, running one scenario instead of the command tree.
 // Usage: bun tests/fixtures/signals.ts <interactive|late-copy|start|slow> <dir>
 import { existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { BunServices } from "@effect/platform-bun";
+import { NodeServices } from "@effect/platform-node";
 import { Duration, Effect, Layer } from "effect";
 import { AppConfig } from "../../src/config";
 import { installSignalPolicy } from "../../src/platform/signals";
@@ -18,7 +18,7 @@ const holder = Foreground.make();
 let childSigintAt = 0;
 const layer = Processes.layer.pipe(
   Layer.provideMerge(Layer.mergeAll(AppConfig.layer(), Foreground.layer(holder))),
-  Layer.provideMerge(BunServices.layer),
+  Layer.provideMerge(NodeServices.layer),
 );
 const program = Effect.gen(function* () {
   const processes = yield* Processes;

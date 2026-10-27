@@ -26,7 +26,7 @@ Run a core program directly with `Effect.runPromise(program.pipe(Effect.provide(
 
 Unit tests are for pure functions with no services: schema decoding, error-to-exit-code tables, formatting. Property tests use `@effect/vitest`.
 
-E2E is `bun test ./e2e` against the compiled binary. It covers what only the real artifact can show: startup, signals, the environment, and that Bun's runtime config autoload is disabled. Build first, spawn the binary with an environment assembled from scratch, and keep these tests few.
+E2E is `bun test ./e2e` against the installed Node package. It covers startup, signals, the environment, and the runtime guards. Pack first, install offline and spawn the package bin with an environment assembled from scratch, and keep these tests few.
 
 ## Fakes: what you may replace
 
@@ -59,7 +59,7 @@ Check findings, not just the happy result. When a command reports problems (`val
 
 ## Manual QA as the user
 
-Agents are this CLI's main user, so the agent building a command is also its first user. Before a sub-phase is called done, run the changed command for real, as `rules/cli/cli.md` "Verifying UX" describes: through `bun run dev` or the compiled binary, in human and `--json` modes, on success and on the realistic failures above.
+Agents are this CLI's main user, so the agent building a command is also its first user. Before a sub-phase is called done, run the changed command for real, as `rules/cli/cli.md` "Verifying UX" describes: through `bun run dev` or the installed Node package, in human and `--json` modes, on success and on the realistic failures above.
 
 Then judge it as the agent that will depend on it. Could I pick the next step from this output alone? Is anything missing, noisy, ambiguous or surprising? Would I want a different flag, default, message or exit code? Does the JSON give me what I need to branch without parsing prose? Fix what fails that judgement, or record it with a reason in the plan's "What this plan may get wrong". The implementer's report ends with a short QA note: the commands run, what it judged, and what it changed.
 

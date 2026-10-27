@@ -41,11 +41,11 @@ bun install
 bun run build
 ```
 
-The binary is `packages/cli/dist/quickstack`. Put it on your PATH with a symlink, not a copy. The binary finds its bundled stacks in `packages/cli/registry/` next to its real location, and a copy elsewhere can't see them:
+The binary is `packages/cli/dist/quickstack.mjs`. Put it on your PATH with a symlink, not a copy. The binary finds its bundled stacks in `packages/cli/registry/` next to its real location, and a copy elsewhere can't see them:
 
 ```sh
 mkdir -p ~/.local/bin
-ln -s "$PWD/packages/cli/dist/quickstack" ~/.local/bin/quickstack
+ln -s "$PWD/packages/cli/dist/quickstack.mjs" ~/.local/bin/quickstack
 quickstack --version
 ```
 

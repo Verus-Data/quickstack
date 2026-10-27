@@ -16,6 +16,7 @@ import { Schema } from "effect";
 import { afterAll, test as baseTest, describe, expect, vi } from "vitest";
 import type { AgentAdapter } from "../scripts/bench/agents";
 import { AgentMarkers } from "../src/config";
+import { shellArg } from "../src/core/shell";
 import { Manifest } from "../src/schemas/manifest";
 import { NewResult } from "../src/schemas/new";
 import { ProjectRuns } from "../src/schemas/runs";
@@ -685,10 +686,13 @@ test("a second same-day run appends a distinct note without overwriting the firs
   expect(readFileSync(join(f.root, first.note), "utf8")).toBe(contents);
 }, 60_000);
 
-test("--cli installs a supplied dev binary without rebuilding it [2.0b#10]", async ({ space }) => {
+test("--cli installs a supplied Node entry and bundle without rebuilding it [2.0b#10]", async ({
+  space,
+}) => {
   const f = benchFixture(space, compiled);
-  const binary = join(f.base, "supplied CLI café");
+  const binary = join(f.base, "supplied CLI café.mjs");
   cpSync(compiled(), binary);
+  cpSync(join(dirname(compiled()), "cli.mjs"), join(f.base, "cli.mjs"));
   // Any unexpected rebuild fails loudly instead of silently exercising the default path.
   writeFileSync(join(f.bin, "bun"), "#!/bin/sh\necho unexpected-rebuild >&2\nexit 77\n", {
     mode: 0o755,
@@ -699,6 +703,7 @@ test("--cli installs a supplied dev binary without rebuilding it [2.0b#10]", asy
   if (!installed) throw new Error("supplied binary was not invoked");
   const hash = (file: string) => createHash("sha256").update(readFileSync(file)).digest("hex");
   expect(hash(installed)).toBe(hash(binary));
+  expect(hash(join(dirname(installed), "cli.mjs"))).toBe(hash(join(f.base, "cli.mjs")));
 }, 60_000);
 
 test("continuation compares against the current working registry, not the kept artifact [2.0b#12]", async ({
@@ -721,6 +726,17 @@ test("continuation compares against the current working registry, not the kept a
   expect(digests(root)).toEqual(before);
   expect(f.notes()).toEqual([]);
   expect(existsSync(join(f.registry, "runs.json"))).toBe(false);
+}, 60_000);
+
+test("the bench resolves a Node shim before replacing HOME", async ({ space }) => {
+  const f = benchFixture(space, compiled);
+  writeFileSync(
+    join(f.bin, "node"),
+    `#!/bin/sh\n[ "$HOME" = ${shellArg(f.env.HOME ?? "")} ] || exit 77\nexec ${shellArg(process.execPath)} "$@"\n`,
+    { mode: 0o755 },
+  );
+  passed(await f.invoke(["--keep"]));
+  expect(record(f)).toMatchObject({ result: "pass" });
 }, 60_000);
 
 describe("build paths", () => {
@@ -777,7 +793,7 @@ describe("build paths", () => {
     expect(f.cliCalls().filter((call) => call.args.includes("verify"))).toHaveLength(2);
   }, 60_000);
 
-  test("the fresh prefix contains the dev-compiled binary and registry with no source or scripts [2.0b#10]", async ({
+  test("the fresh prefix contains the Node bundle and registry with no source or scripts [2.0b#10]", async ({
     space,
   }) => {
     const f = benchFixture(space);
@@ -789,10 +805,11 @@ describe("build paths", () => {
     const installed = executables[0];
     if (!installed) throw new Error("no installed binary was invoked");
     const prefix = dirname(dirname(installed));
-    expect(installed).toBe(join(prefix, "bin/quickstack"));
+    expect(installed).toBe(join(prefix, "dist/quickstack.mjs"));
     expect(prefix).not.toBe(f.packageRoot);
     const hash = (file: string) => createHash("sha256").update(readFileSync(file)).digest("hex");
-    expect(hash(installed)).toBe(hash(join(f.packageRoot, "dist/quickstack")));
+    expect(hash(installed)).toBe(hash(join(f.packageRoot, "dist/quickstack.mjs")));
+    expect(hash(join(prefix, "dist/cli.mjs"))).toBe(hash(join(f.packageRoot, "dist/cli.mjs")));
     expect(readFileSync(join(prefix, "registry/stacks/sample/STACK.md"), "utf8")).toBe(
       readFileSync(join(f.registry, "stacks/sample/STACK.md"), "utf8"),
     );

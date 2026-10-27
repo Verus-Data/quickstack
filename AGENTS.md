@@ -2,7 +2,7 @@
 
 ## Overview
 
-A bun workspace; every package is in `packages/<name>/`. `packages/cli` is `quickstack`, the CLI: Effect 4 commands/services, doctor/version, lazy configuration, safe output and logs. Bun compiles the executable; Node 24 runs Vitest. There is no product code, vendor, release tooling or network requirement. `packages/api` (`@quickstack/api`) and `packages/mcp` (`@quickstack/mcp`) are placeholders with no code or scripts. Code two packages share goes in its own package, never imported across another package's `src/`. How the monorepo works and how to add a package: README.md, "Monorepo".
+A bun workspace; every package is in `packages/<name>/`. `packages/cli` is `quickstack`, the CLI: Effect 4 commands/services, doctor/version, lazy configuration, safe output and logs. Bun bundles the Node ESM package; Node 24 runs Vitest. There is no product code, vendor, release tooling or network requirement. `packages/api` (`@quickstack/api`) and `packages/mcp` (`@quickstack/mcp`) are placeholders with no code or scripts. Code two packages share goes in its own package, never imported across another package's `src/`. How the monorepo works and how to add a package: README.md, "Monorepo".
 
 The root owns the harness: `.claude/`, lefthook, CI, the root `biome.json`, `tsconfig.base.json`, and the root test suite in `tests/`: the hook tests in `tests/hooks/`, the delegate runner's in `tests/scripts/` and the check in `tests/acceptance/` that traces each plan's acceptance tests to tagged CLI tests. Each package owns its source, tests, `tsconfig.json` (extending `../../tsconfig.base.json`) and any Biome plugins in a nested `biome.json` (`"root": false, "extends": "//"`). See docs/harness.md.
 
@@ -10,7 +10,7 @@ The root owns the harness: `.claude/`, lefthook, CI, the root `biome.json`, `tsc
 
 | Path | What it holds |
 | --- | --- |
-| `packages/cli/` | The CLI: `src/` (see "Architecture map"), `tests/` (Vitest on Node), `e2e/` (Bun, compiled binary), `registry/` (the bundled stacks, fragments and `runs.json` ledger), `skill/` (the agent skill), `docs/` (user docs: quick start, concepts, agents, architecture, the reference pages under `docs/reference/`, maintaining, and `authoring.md`, the one doc the binary ships), `scripts/` (build, bench, ledger import), `biome-plugins/` (Grit boundary rules) |
+| `packages/cli/` | The CLI: `src/` (see "Architecture map"), `tests/` (Vitest on Node), `e2e/` (Bun tests, installed Node package), `registry/` (the bundled stacks, fragments and `runs.json` ledger), `skill/` (the agent skill), `docs/` (user docs: quick start, concepts, agents, architecture, the reference pages under `docs/reference/`, maintaining, and `authoring.md`, the one doc the package ships), `scripts/` (build, bench, ledger import), `biome-plugins/` (Grit boundary rules) |
 | `packages/api/`, `packages/mcp/` | Placeholders |
 | `plans/` | `HANDOFF.md` (start here), `README.md` (conventions, decisions log), `roadmap.md` (phases, shared contracts table, error tags), `phases/` (one file per sub-phase), `runs/` (reviewed bench notes), `requirements.md`, `risks-and-open-questions.md` |
 | `product/` | Problem statement, pitch, demo outline |
@@ -44,7 +44,7 @@ Root commands run from the repo root and fan out to every workspace package (`bu
 | `bun run dev validate [path]` | Check a registry or one entry (no path: the bundled one). Exit 0 clean, 2 on any error finding (`ValidationFailed`, report kept on stdout) or a bad path, 6 unreadable root. `--brief <stack> [--with ..] [--without ..] [--sandbox]` prints the canonical composed brief; JSON includes findings and fingerprint. Errors retain the brief on stdout; agent mode prints only the brief, without word counts; size counts go to human stderr only. A relative path resolves against the directory you ran it from |
 | `bun run dev runs [--json]` | Summarize the nearest project’s own verify history, trusted state timings and NOTES Asked count; exit 2 outside a project |
 | `bun run dev verify [--only ..] [--skip-tag ..] [--all] [--accept-changes]` | Run the nearest project's manifest steps from the directory you ran it in. Exit 0 green or partial, 5 on a failed step (`VerifyFailed`) or changed steps (`VerifyChanged`, nothing run), both with the result kept on stdout, 2 outside a project, 3 bad manifest or a newer state record, 6 `--accept-changes` under an agent or without a TTY on stdin, 130 interrupted (teardown still ran) |
-| `bun run build` | Build every package (the CLI compiles `packages/cli/dist/quickstack`) |
+| `bun run build` | Build every package (the CLI bundles `packages/cli/dist/cli.mjs` with the `dist/quickstack.mjs` Node entry) |
 | `bun run typecheck` | Root harness tsc, then each package's |
 | `bun run lint` | Biome over the whole repo, with each package's nested plugins |
 | `bun run format` | Safe fixes and formatting |
@@ -62,10 +62,11 @@ In `packages/cli/` (run there):
 | --- | --- |
 | `bun run test:unit tests/cli.test.ts` | Single test file |
 | `bun run test:watch` | Watch Vitest tests |
-| `bun run e2e` | Compile, then bun test ./e2e |
-| `bun run human -- <args>` | The compiled binary in human mode (pseudo-terminal, agent markers removed); `new` and `add` need `--no-launch` |
-| `./dist/quickstack --version` | Bundled version |
-| `./dist/quickstack doctor --json` | Compiled local diagnostics |
+| `bun run pack` | Build, pack with Bun, preserve registry dotfiles, and write the tarball's sha256 under `dist/pack/` |
+| `bun run e2e` | Pack, install offline, then bun test ./e2e against the installed Node package |
+| `bun run human -- <args>` | The Node bundle in human mode (pseudo-terminal, agent markers removed); `new` and `add` need `--no-launch` |
+| `node dist/quickstack.mjs --version` | Bundled version |
+| `node dist/quickstack.mjs doctor --json` | Packaged local diagnostics |
 | `bun run check` | This package's gate only |
 
 ## Test runs
@@ -81,7 +82,7 @@ rr is opt-in per clone and off by default: `git config quickstack.rr true` turns
 | `rr test` | Root tests, then every package's tests |
 | `rr test-cli tests/<file>.test.ts` | CLI Vitest tests, optionally narrowed (`rr test-cli -- -t "<name>"`) |
 | `rr test-hooks` | Root tests only |
-| `rr e2e` | Compile and run the binary e2e tests |
+| `rr e2e` | Pack and run the installed-package e2e tests |
 
 Output is rr's JSON phase events on stderr, then the command's own output, then a `result` event whose `details.summary` has the test counts and `details.log_file` the full log; the exit code is the command's. `rr check` prints nothing on stdout: its `result` event lists `passed`/`total` partitions, each failed partition's host, `log_file` and parsed failures, and `details.log_dir`, which holds one log per partition. Read the counts as `.claude/rules/cli/verification.md` asks. rr needs its hosts in `~/.rr/config.yaml` and a reachable SSH agent. If `rr` isn't installed, or it fails before running the command (exit 1 with an error envelope such as `SSH_AUTH_FAILED` or `HOST_NOT_FOUND`), say so and run the same `bun run` command locally; never report a local run as an rr run. A single scoped test file, lint and typecheck are cheap enough to run locally.
 
@@ -91,7 +92,7 @@ In Claude Code, the session-start hook exports macOS's own ssh-agent socket for 
 
 Paths below are relative to `packages/cli/`.
 
-- `src/bin.ts`: Bun/platform/Host/writer boundary, the per-invocation `Foreground` holder, signal policy wiring and exit status.
+- `src/bin.ts`: Node/platform/Host/writer boundary, the bundled-registry filename adapter, the per-invocation `Foreground` holder, signal policy wiring and exit status.
 - `src/main.ts`: one invocation, framework Console capture, safe outcome and logging.
 - `src/cli.ts`, `commands/doctor.ts`, `commands/guide.ts`, `commands/list.ts`, `commands/new.ts`, `commands/add.ts`, `commands/validate.ts`, `commands/verify.ts`, `commands/skill.ts`: real Effect command tree and thin handlers. `commands/runs.ts` reports project run history. `commands/schema.ts` prints the JSON Schema of each `--json` result, the error envelope and verify's events, from `core/result-schemas.ts::RESULT_SCHEMAS` (`jsonSchema`). `commands/root.ts::root` is the root with its shared `--json` flag, which a handler reads with `yield* root`; the root with no subcommand prints the agent guide.
 - `src/commands/handoff.ts`: `projectFlags`, `prepareHandoff` and `completeHandoff` own the shared flag parsing, handoff preferences, result presentation and interactive launch flow for `new` and `add`; previews force a printed plan.
@@ -104,7 +105,7 @@ Paths below are relative to `packages/cli/`.
 - `src/core/create.ts`: `createEntry` writes a skeleton or a whole copy through `openProject` in exclusive mode; `Registry.tree` owns source traversal. `src/core/create-text.ts` owns the skeleton text; `src/schemas/create.ts::CreateResult` returns absolute entry and authoring-guide paths. Untrusted copies show the full `showReport` before a person confirms. `Settings.preset` defaults `new`; explicit `--preset` or `--sandbox` wins, then the setting, then default. Preview ignores the setting; add uses the manifest. `packages/cli/docs/authoring.md` is the shipped authoring guide.
 - `src/core/show.ts`: `showReport` builds `ShowReport` using list metadata and ledger selection; `core/show-report.ts::renderShow` prints every guidance branch, command and shipped file. `commands/show.ts` owns parsing and presentation.
 - `src/core/ledger.ts`: `readLedger` decodes the `Ledger` envelope then individual `LedgerRecord`s, returning newer/invalid counts; `latestRecord` matches stack, added fragments, preset and agent; `appendRecord` preserves raw skipped records and replaces the ledger atomically. `registry/runs.json` ships with the registry; `list` attaches its latest default-composition record only to bundled stacks. `scripts/ledger-import.ts` (`bun run ledger:import <notes>... [--dry-run]`) imports gate notes at their git commits through `Processes`, outside the shipped command tree; `scripts/ledger-note.ts::parseLedgerNote` owns parsing the gate-note format.
-- `scripts/bench.ts` (`bun run bench <stack> [--agent claude|codex] [--no-record] [--keep]`) is the maintainer-only headless bench. It builds or takes `--cli`, installs the compiled dev binary with the working registry in a throwaway prefix, scaffolds, runs the adapter under a time limit, verifies independently and records through `appendRecord`. `scripts/bench/` owns preparation, adapters, execution, verification/classification and run notes. Claude uses `CLAUDE_CODE_OAUTH_TOKEN` (`claude setup-token`); Codex uses `CODEX_ACCESS_TOKEN` (`codex login --with-access-token`). Only the selected token reaches the agent. The fresh `HOME` is not a security boundary; these are full-permission local runs. Tests use fake agents and credentials only.
+- `scripts/bench.ts` (`bun run bench <stack> [--agent claude|codex] [--no-record] [--keep]`) is the maintainer-only headless bench. It builds or takes `--cli`, installs the Node entry and bundle with the working registry, skill and guide in a throwaway prefix, scaffolds, runs the adapter under a time limit, verifies independently and records through `appendRecord`. `scripts/bench/` owns preparation, adapters, execution, verification/classification and run notes. Claude uses `CLAUDE_CODE_OAUTH_TOKEN` (`claude setup-token`); Codex uses `CODEX_ACCESS_TOKEN` (`codex login --with-access-token`). Only the selected token reaches the agent. The fresh `HOME` is not a security boundary; these are full-permission local runs. Tests use fake agents and credentials only.
 - `src/core/runs.ts`: `projectRuns` reads the nearest manifest, its history, trusted project state and notes into `ProjectRuns`; `countAsked` counts nonempty list items under `## Asked`. `commands/runs.ts` prints the summary.
 - `src/core/fingerprint.ts`: `fingerprint`, a length-prefixed sha256 over composed entry kinds, ids, canonical decoded frontmatter and bodies, the preset and `composeFiles` with `NEUTRAL_VARS`. `fingerprintFromFiles` hashes an already neutral-rendered snapshot for scaffold. `new --json` and the manifest carry it; project settings and fixed CLI brief text are excluded.
 - `src/core/brief/`: `render.ts` (`renderBrief`, pure over a `Composition`), `text.ts` (every fixed sentence of the brief), `words.ts` (`countWords`), `headings.ts` (`nest`), `paths.ts` (`collapsePaths`).
@@ -122,7 +123,7 @@ Paths below are relative to `packages/cli/`.
 - `src/errors.ts`, `logging.ts`, `runtime.ts`, `version.ts`: stable boundaries.
 - `src/schemas/add.ts::AddResult` records new files, skips, parked merges, retained commands, warnings, name provenance, tamper/state/digest status and handoff.
 - `src/schemas/`: config/report schemas and their types; `entry.ts` is entry format v1 (`StackMeta`, `FragmentMeta`, `VerifyStep`, `AgentId`, `DetectedAgent`, `withStepDefaults`), `list.ts` the `list --json` result, `new.ts` the `new --json` result (`NewResult`), `guide.ts` the guide's `--json` result (`GuideResult`), `manifest.ts` the project manifest (`Manifest`, `ManifestStep`, `EntryRef`; optional `name`, written by `new` and `add`, with inference for older manifests) and `verify.ts` the `verify --json` result (`VerifyResult`, `StepResult`, `FailureKind`, `VerifyChange`, `TamperCheck`) and the run record (`RunRecord`, `RunStep`).
-- `tests/`, `e2e/`: Node programs/hook tests and Bun standalone binary tests.
+- `tests/`, `e2e/`: Node programs/hook tests and Bun tests of the installed Node package.
 - `scripts/`, `biome-plugins/`: lifecycle/build and enforced boundaries.
 - Repo root: `.claude/`, `.github/`, `docs/`, `tests/hooks/`, `tests/acceptance/`: adapter, CI, harness guide, hook tests and the acceptance trace.
 
@@ -138,7 +139,7 @@ Strict TypeScript 7: unchecked indices, verbatim modules, erasable syntax, expli
 
 Lint catches size; these are the placement mistakes it can't, each found in review here, with the fix.
 
-- A fallback beside a service field. A default path or value computed next to a `Host` or config field (from `import.meta.url`, say) hides a missing input and breaks in the compiled binary. Make the field required, set it in `bin.ts`, and give tests their value in `tests/helpers/cli.ts`.
+- A fallback beside a service field. A default path or value computed next to a `Host` or config field (from `import.meta.url`, say) hides a missing input and breaks in the packaged bundle. Make the field required, set it in `bin.ts`, and give tests their value in `tests/helpers/cli.ts`.
 - A shared helper left in its first user's module. When a second command needs a helper from `commands/new.ts`, move it to the module named for its concept (as `commands/handoff.ts` holds the flow `new` and `add` share), not an import from the other command.
 - A growing `Effect.gen` body. A new case gets a named step (a function returning an Effect, or a small pure function) called from the body, not another branch inline. The body reads as the command's sequence of steps.
 - Registry-wide work on a per-entry path. A command that needs one entry or composition reads and checks only that one; whole-registry passes belong to `validate` of a registry and to tests. Ask how the cost grows with the registry.
@@ -153,7 +154,7 @@ Lint catches size; these are the placement mistakes it can't, each found in revi
 
 `tests/helpers/cli.ts` invokes the real command tree with real NodeServices and injected Output/Host; no module mocks. Setup isolates HOME/XDG and clears credentials before app imports. Tests cover streams, parser failures, config laziness/caching, all error mappings, scope disposal, cancellation, EPIPE, logging and sink failures. Property tests use @effect/vitest; timers use TestClock. Hook tests execute actual helpers; all Grit rules are probed on real files.
 
-Bun tests only `./e2e` after compiling. Binary tests spawn the artifact with an environment built from scratch, including hostile local dotenv/bunfig files to prove autoload is disabled. Never use unscoped bun test, --bun with Vitest, or weaken tests. A bug fix starts with a failing regression.
+Bun tests only `./e2e` after packing. Package tests install the tarball offline and spawn its bin under Node with an environment built from scratch, including hostile local dotenv/bunfig files. They find Node through `QUICKSTACK_E2E_NODE` or PATH and require version 22 or newer. Never use unscoped bun test, --bun with Vitest, or weaken tests. A bug fix starts with a failing regression.
 
 ## Error handling
 
@@ -181,13 +182,13 @@ Install lefthook on PATH (e.g. brew install lefthook), then bun install. Pre-com
 
 ## Build workarounds
 
-No patches, pinned prereleases or disabled rules. Every shared dependency version lives once, in the root `workspaces.catalog`; packages depend on `catalog:`. Effect packages resolve together at stable 4.0.6 with compatible 4.x ranges, Vitest/coverage 5.x. The generated type config targets current TypeScript 7. Bun compile disables all runtime config autoload and removes its linked sourcemap output intentionally.
+No patches, pinned prereleases or disabled rules. Every shared dependency version lives once, in the root `workspaces.catalog`; packages depend on `catalog:`. Effect packages resolve together at stable 4.0.6 with compatible 4.x ranges, Vitest/coverage 5.x. The generated type config targets current TypeScript 7. Bun builds one minified Node ESM bundle without a sourcemap. The entry refuses Bun and Node below 22 before importing it. Packing escapes registry `.gitignore` assets as `.gitignore.quickstack` because packers and npm installers drop the literal name; bin's filesystem layer restores the logical name only inside the bundled registry.
 
 The shipped dev wrapper was adapted to forward directly delivered SIGINT/SIGTERM/SIGHUP, with a reproducing subprocess test. Reassess/remove local adaptation when upstream provides equivalent signal forwarding. Biome stdin suppresses useful plugin diagnostics, so boundary tests use actual temporary files; no Grit rule was removed.
 
 ## Deferred
 
-Application features, install/update distribution and release workflow (decision A1, open in `plans/`), and SHA-pinned CI actions.
+Application features, publishing/update distribution and the release workflow, and SHA-pinned CI actions. A1's Node ESM package is implemented; publishing remains the maintainer's step.
 
 ## Delegates
 

@@ -1,11 +1,9 @@
 # Phase 0.2: Distribution
 
-Status: DEFERRED 2026-10-26 by the maintainers: distribution is not needed for the
-prototype. Packaging, the npm name reservation and publishing
-([1.6c](phase-1.6c-first-release.md)) are together the final step before public release,
-after the roadmap's feature gaps, not before [1.6b](phase-1.6b-mvp-gate-runs.md) (whose
-gate runs can use the compiled binary). Still a DRAFT (not agreed); needs A1, D12, D22
-and D23 decided first. The file keeps its number because many phase files cite "0.2".
+Status: DEFERRED 2026-10-26 in the roadmap pending release orchestration. Implementation
+is under review on 2026-10-27 under the npm contract: A1 (a), D12, D22 and D23 are
+approved. The orchestrator must advance this status and its roadmap row together;
+the roadmap is outside this contract's edit scope. Publishing remains 1.6c.
 
 | Field | Value |
 |---|---|
@@ -257,6 +255,66 @@ Not `.github/workflows/`.
 - `AGENTS.md` updated as listed above.
 
 ## What this plan may get wrong
+
+- Recorded 2026-10-27, scoped-package follow-up: npm refused the unscoped name.
+  The npm package is `@quickstack/cli` with public access; the command, storage paths
+  and environment variables stay `quickstack`. Tarballs use `quickstack-cli-<version>.tgz`,
+  and npx briefs use `npx -y @quickstack/cli@<version> verify`. The command/storage slug
+  is independent of package metadata. The root and package licenses remain Apache-2.0,
+  with the package license copied byte for byte from the root license on main.
+  An offline npx run confirmed `_npx/<cache>/node_modules/@quickstack/cli/` and the
+  scoped verify line in the generated brief. The six frozen canonical brief digests
+  changed only by the package spelling, verified by reversing that substitution.
+
+- Verified 2026-10-27: the installed-package suite passed on Node 22.23.3 with
+  `QUICKSTACK_E2E_NODE` set explicitly (33 tests). The root gate passed
+  all five rr partitions on macOS and Linux. First-user QA installed the tarball with
+  npm and ran root/help, list, show, preview, new, verify and usage failures in all
+  three audiences. Verify correctly failed the unimplemented project's install step
+  with exit 5 and a kept result. No output-contract change was needed. Warm `--version`
+  startup on the same machine (20 samples after one warmup) had median 43.0 ms for the
+  previous compiled executable and 68.3 ms for the installed Node entry.
+- Recorded 2026-10-27: npm's `npx --yes /absolute/path/package.tgz` shortcut tries to
+  execute the local tarball (exit 126) before loading package metadata. The explicit
+  `file:/absolute/path/package.tgz` spec installs and runs through npx correctly;
+  its generated brief contains `npx -y @quickstack/cli@0.1.0 verify`. The package-name
+  invocation after publication remains the goal; no npm behavior is patched here.
+- Recorded 2026-10-27 after the independent review: the e2e scratch PATH pins the
+  selected Node with a `node` symlink, including an override named `node22`. The bench
+  resolves and validates Node under the original HOME before constructing its clean
+  environment. The build uses Bun's input manifest to append every bundled package's
+  complete license/notice files as a comment in cli.mjs; the exact shipped file list
+  stays unchanged. All three findings have reproducing, revert-verified tests.
+  A final regression also pins the escaped paths into the bundle at build time, so
+  an author's literal `.gitignore.quickstack` filename stays literal; source development
+  has no escaped paths. The Homebrew Node override fixture retains its sibling library
+  directory, which that interpreter needs when copied under a different filename.
+
+- Recorded 2026-10-27: phases 1–3 already landed. Host already had registry, skill,
+  authoring and invocation; only compiled was removed. The shipped assets include
+  registry, skill and docs/authoring.md, plus LICENSE. The registry is a full catalog,
+  not a stub. Existing relocation, ledger, skill and signal tests now use the installed
+  package. NodeServices also works under `bun run dev`. The existing network adapter
+  still imports BunSocket's re-export of the shared Node TCP constructor, so
+  `@effect/platform-bun` remains a devDependency until that last import is migrated;
+  changing `src/platform/net.ts` is outside this contract's named source files.
+  The bench copies the two-file Node artifact and current registry, skill and
+  authoring guide into its prefix and invokes it with the found Node through a shell
+  launcher; independent verify still uses that installed copy. `human` also finds Node.
+- Recorded 2026-10-27: Bun 1.4.2 omits literal `.gitignore` files, and npm drops them
+  even if appended to the archive. The pack script appends their unchanged bytes under
+  `.gitignore.quickstack` before hashing; bin's filesystem adapter decodes those names
+  only inside its bundled registry. `show`, composition and `create --from bundled`
+  therefore expose the original names. No entry format or author files change. A raw
+  `bun pm pack --dry-run` lists the unaugmented allowlist; the final tarball test checks
+  the complete list with exactly these seven escapes, and every installed asset digest.
+  Standard POSIX tar appends members without changing Bun's resolved manifest or modes.
+- Recorded 2026-10-27: the root harness typechecks with the shared `@types/node` 22
+  catalog, so a named CLI catalog is unnecessary. Node/npm on PATH can be version-manager
+  wrappers: e2e asks Node for process.execPath and locates npm's JS entry in that install.
+- Recorded 2026-10-27: LICENSE existed at the root as Apache 2.0; the follow-up
+  preserves that license and copies the exact root text into the package. User-facing installation prose
+  remains for the orchestrator; only retired executable paths were corrected here.
 
 - Recorded 2026-10-27: `packages/cli/README.md` is now a short entry page, and user docs
   live in `packages/cli/docs/`. The install, pack and manual Node 22 e2e instructions this

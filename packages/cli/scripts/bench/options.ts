@@ -7,7 +7,7 @@ export const help = `Usage: bun scripts/bench.ts <stack> [options]
 --preset <preset>     sandbox (default) or default
 --agent <agent>       claude or codex (default: detected agent, else claude)
 --max-minutes <n>     Agent wall-clock limit, including fractional minutes (default: 60)
---cli <binary>        Install this compiled dev binary instead of building
+--cli <entry.mjs>     Install this Node entry and its sibling cli.mjs instead of building
 --existing <dir>      Continue a kept bench root with matching composition
 --keep                Keep the throwaway root
 --no-record           Skip the run note and ledger write

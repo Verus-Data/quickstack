@@ -8,7 +8,8 @@ import { Manifest } from "../src/schemas/manifest";
 import { NewResult } from "../src/schemas/new";
 import { VerifyEvent, VerifyResult } from "../src/schemas/verify";
 
-const binary = join(import.meta.dir, "../dist/quickstack");
+import { binary, scratchPath } from "./package";
+
 const modules = join(import.meta.dir, "../node_modules");
 const vitest = join(
   dirname(fileURLToPath(import.meta.resolve("vitest/package.json"))),
@@ -38,7 +39,7 @@ test("the compiled binary ships a runnable hook suite and a harness-owned test s
       XDG_CONFIG_HOME: join(home, "config"),
       XDG_DATA_HOME: join(home, "data"),
       XDG_STATE_HOME: join(home, "state"),
-      PATH: `${dirname(process.execPath)}:${process.env.PATH ?? "/usr/bin:/bin"}`,
+      PATH: `${scratchPath}:${process.env.PATH ?? "/usr/bin:/bin"}`,
       NO_COLOR: "1",
       LOG_LEVEL: "none",
       GIT_CONFIG_NOSYSTEM: "1",
