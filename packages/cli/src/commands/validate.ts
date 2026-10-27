@@ -1,5 +1,6 @@
 import { Effect, Option, Schema } from "effect";
 import { Argument, Command, Flag } from "effect/cli";
+import { shownPath } from "../core/shown-path";
 import { validate } from "../core/validate/index";
 import { previewBrief } from "../core/validate/preview";
 import { renderPreview, renderReport } from "../core/validate/report";
@@ -76,7 +77,13 @@ export const validateCommand = Command.make(
         : report.sizes.find((row) => row.kind === "composed")?.entry;
       yield* output.result(
         Schema.encodeSync(ValidateReport)(report),
-        renderReport(report, { invocation: host.invocation, path, firstStack }),
+        renderReport(report, {
+          invocation: host.invocation,
+          path,
+          firstStack,
+          audience: output.audience,
+          root: output.audience === "agent" ? yield* shownPath(host.cwd, report.root) : report.root,
+        }),
       );
       const count = (severity: string) =>
         report.findings.filter((finding) => finding.severity === severity).length;

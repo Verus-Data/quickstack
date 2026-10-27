@@ -1,8 +1,9 @@
-import { Effect, Option, Path, Schema } from "effect";
+import { Effect, Option, Schema } from "effect";
 import { Argument, CliError, Command, Flag } from "effect/cli";
 import { defaultRoots, Registry } from "../core/registry/registry";
 import { scaffold } from "../core/scaffold/new";
 import { renderNew } from "../core/scaffold/report";
+import { shownPath } from "../core/shown-path";
 import { AgentId } from "../schemas/entry";
 import { NewResult } from "../schemas/new";
 import { Host } from "../services/host";
@@ -77,7 +78,7 @@ export const newCommand = Command.make(
   (flags) =>
     Effect.gen(function* () {
       const host = yield* Host;
-      const path = yield* Path.Path;
+      const output = yield* Output;
       const result = yield* scaffold({
         stack: flags.stack,
         dir: Option.getOrUndefined(flags.dir),
@@ -88,16 +89,17 @@ export const newCommand = Command.make(
         agents: flags.agents.length ? flags.agents : undefined,
         scope: Option.getOrUndefined(flags.scope),
       }).pipe(Effect.provide(Registry.layer(yield* defaultRoots)));
-      const relative = path.relative(host.cwd, result.project);
-      const shown =
-        relative === ""
-          ? "."
-          : relative.startsWith("..") || path.isAbsolute(relative)
-            ? result.project
-            : relative;
-      yield* (yield* Output).result(
+      const shown = yield* shownPath(host.cwd, result.project);
+      // An agent gets every path short when it can be; a human also sees where the project is.
+      const untrusted =
+        output.audience === "agent"
+          ? yield* Effect.forEach(result.untrusted, (entry) =>
+              Effect.map(shownPath(host.cwd, entry.dir), (dir) => ({ ...entry, dir })),
+            )
+          : result.untrusted;
+      yield* output.result(
         Schema.encodeSync(NewResult)(result),
-        renderNew(result, { shown }),
+        renderNew({ ...result, untrusted }, { shown, audience: output.audience }),
       );
     }),
 ).pipe(

@@ -7,6 +7,7 @@ import {
   readdirSync,
   readFileSync,
   realpathSync,
+  rmSync,
   statSync,
   symlinkSync,
   writeFileSync,
@@ -19,7 +20,7 @@ import * as T from "../src/core/brief/text";
 import { countWords } from "../src/core/brief/words";
 import { missingTools } from "../src/core/compose/compose";
 import { NewResult } from "../src/schemas/new";
-import { quiet, runCli, tempDir } from "./helpers/cli";
+import { quiet, runCli, tempDir, terminal } from "./helpers/cli";
 import { bundledAt, composeExit } from "./helpers/compose";
 import { gitShim, NOT_A_REPO, spawnGit } from "./helpers/git";
 import { copyEntry, minimal, newRegistry, writeEntry } from "./helpers/registry";
@@ -47,13 +48,20 @@ async function newCli(
     registry?: string;
     env?: Record<string, string>;
     signal?: AbortSignal;
+    /** A terminal and no agent: human output. Without it, the output is an agent's. */
+    human?: boolean;
+    cwd?: string;
   } = {},
 ) {
   const home = options.home ?? setup();
   const result = await runCli(["new", ...args], {
     home,
     env: { ...quiet, ...options.env },
-    host: { registry: options.registry ?? newRegistry, cwd: home },
+    host: {
+      registry: options.registry ?? newRegistry,
+      cwd: options.cwd ?? home,
+      ...(options.human ? terminal : {}),
+    },
     ...(options.signal ? { signal: options.signal } : {}),
   });
   return { ...result, home };
@@ -209,11 +217,14 @@ describe("new writes a project", () => {
   });
 
   test("human output lists the files collapsed, the brief, missing tools with skip flags, and the next step", async () => {
-    const { status, stdout, stderr, home } = await newCli(["fixture-stack", "app", "--sandbox"]);
+    const { status, stdout, stderr, home } = await newCli(["fixture-stack", "app", "--sandbox"], {
+      human: true,
+    });
     expect(stderr).toBe("");
     expect(status).toBe(0);
     expect(stdout).toContain("Created app from fixture-stack (sandbox).");
     expect(stdout).toContain(`Project: ${join(home, "app")}\n`);
+    expect(stdout).toMatch(/\nWrote \d+ files:\n {2}\.claude\//);
     expect(stdout).toContain("Fragments: base-req, hooked, own-repo, ran-check, tooled");
     expect(stdout).toContain("Git: git not found; no repository");
     expect(stdout).toMatch(/Brief: \.quickstacks\/BRIEF\.md \(\d+ words\)/);
@@ -232,11 +243,15 @@ describe("new writes a project", () => {
     const elsewhere = tempDir();
     dirs.push(elsewhere);
     const app = join(elsewhere.path, "app");
-    const { status, stdout, stderr } = await newCli(["fixture-stack", app], { home });
-    expect(stderr).toBe("");
-    expect(status).toBe(0);
-    expect(stdout).toContain(`Created ${app} from fixture-stack.\n`);
-    expect(stdout).not.toContain("Project:");
+    for (const human of [true, false]) {
+      rmSync(app, { recursive: true, force: true });
+      const { status, stdout, stderr } = await newCli(["fixture-stack", app], { home, human });
+      expect(stderr).toBe("");
+      expect(status).toBe(0);
+      expect(stdout).toContain(`Created ${app} from fixture-stack.\n`);
+      expect(stdout).toContain(`Next: cd ${app}, then`);
+      expect(stdout).not.toContain("Project:");
+    }
   });
 
   test("missing tools are in the result and the brief; a stack's tool has no skip flag [1.2a#8] [1.2a#16]", async () => {
@@ -319,7 +334,7 @@ describe("new refuses before writing", () => {
       },
     });
     expect(readdirSync(app).sort()).toEqual([".DS_Store", "keep.txt"]);
-    const human = await newCli(["fixture-stack", "app"], { home });
+    const human = await newCli(["fixture-stack", "app"], { home, human: true });
     expect(human.status).toBe(2);
     expect(human.stdout).toBe("");
     expect(human.stderr).toBe(
@@ -439,7 +454,7 @@ describe("new refuses before writing", () => {
         details: { suggestions: [], id: "bogus", kind: "fragment" },
       });
       expect(existsSync(join(json.home, "app"))).toBe(false);
-      const human = await newCli(["fixture-stack", "app", flag, "bogus"]);
+      const human = await newCli(["fixture-stack", "app", flag, "bogus"], { human: true });
       expect(human.status).toBe(2);
       expect(human.stdout).toBe("");
       expect(human.stderr).toBe(
@@ -483,7 +498,11 @@ describe("new refuses before writing", () => {
     const stack = writeEntry(registry, "stack", "sneaky", minimal("stack", "sneaky"));
     mkdirSync(join(stack, "files", ".GIT"), { recursive: true });
     writeFileSync(join(stack, "files", ".GIT", "config"), "planted");
-    const { status, stdout, stderr } = await newCli(["sneaky", "app"], { home, registry });
+    const { status, stdout, stderr } = await newCli(["sneaky", "app"], {
+      home,
+      registry,
+      human: true,
+    });
     expect(status).toBe(2);
     expect(stdout).toBe("");
     expect(stderr).toBe(
@@ -765,7 +784,11 @@ describe.skipIf(!hasGit)("new and git", () => {
       },
     });
     expect(existsSync(join(repo, "app"))).toBe(false);
-    const human = await newCli(["fixture-stack", "repo/app"], { home, env: withGit });
+    const human = await newCli(["fixture-stack", "repo/app"], {
+      home,
+      env: withGit,
+      human: true,
+    });
     expect(human.stderr).toContain(
       "  Next: run again with --without own-repo, or pick a directory outside that repository.\n",
     );
@@ -872,7 +895,11 @@ describe("git init failing or interrupted", () => {
     const brief = readFileSync(join(app, ".quickstacks/BRIEF.md"), "utf8");
     expect(brief).toContain(T.ground.git({ kind: "none" }));
     expect(countWords(brief)).toBe(result.briefWords);
-    const human = await newCli(["fixture-stack", "app2"], { home, env: { PATH: bin } });
+    const human = await newCli(["fixture-stack", "app2"], {
+      home,
+      env: { PATH: bin },
+      human: true,
+    });
     expect(human.stdout).toContain("Git: git init failed (exit 1); no repository\n");
     expect(human.stdout).not.toContain("Warnings:");
     expect(human.stdout).not.toContain("git init failed;");
@@ -964,7 +991,11 @@ describe("git init failing or interrupted", () => {
     expect(result.git).toBe("none");
     expect(result.warnings).toEqual([{ code: "git_unusable", id: "git", exitCode: 128 }]);
     expect(existsSync(marker)).toBe(false);
-    const human = await newCli(["fixture-stack", "app2"], { home, env: { PATH: bin } });
+    const human = await newCli(["fixture-stack", "app2"], {
+      home,
+      env: { PATH: bin },
+      human: true,
+    });
     expect(human.status).toBe(0);
     expect(human.stdout).toContain(
       "Git: git couldn't tell whether this is inside a repository (exit 128); none used. Run git status in the project to see git's error\n",

@@ -6,7 +6,7 @@ import { afterEach, expect, test } from "vitest";
 import { countWords } from "../src/core/brief/words";
 import { BUDGET } from "../src/core/validate/budget";
 import { BriefPreview, type Finding, ValidateReport } from "../src/schemas/validate";
-import { quiet, runCli, tempDir, writeError } from "./helpers/cli";
+import { quiet, runCli, tempDir, terminal, writeError } from "./helpers/cli";
 import { spawnGit } from "./helpers/git";
 import { minimal, realRegistry, writeEntry } from "./helpers/registry";
 
@@ -100,7 +100,7 @@ test("a clean registry validates with no findings, exit 0, and a size row per co
 test("human mode groups findings by entry, prints sizes and a total, and suggests --brief", async () => {
   const root = temp();
   stack(root, "clean");
-  const result = await run([root]);
+  const result = await run([root], { host: terminal });
   expect(result.status).toBe(0);
   expect(result.stdout).toContain(`Validated ${root}: 1 stack, 0 fragments`);
   expect(result.stdout).toMatch(/Sizes \(words\)\n {2}clean body +\d+ \/ 2,000\n/);
@@ -125,7 +125,7 @@ test("errors keep the report on stdout, end stderr with the ValidationFailed env
       details: { errors: 1, warnings: 0 },
     },
   });
-  const human = await run([root]);
+  const human = await run([root], { host: terminal });
   expect(human.status).toBe(2);
   expect(human.stdout).toContain(
     "stack broken\n  error    decision-default  stacks/broken/STACK.md: decisions[0] names no",
@@ -133,7 +133,8 @@ test("errors keep the report on stdout, end stderr with the ValidationFailed env
   expect(human.stdout).toContain(
     `Next: fix the errors above, then run quickstacks validate ${root}`,
   );
-  expect(human.stderr).toBe("Validation failed.\n  Errors: 1, warnings: 0\n");
+  // The report's last lines already give the counts; the envelope's details keep them for --json.
+  expect(human.stderr).toBe("Validation failed.\n");
 });
 
 test("entries that don't load are findings, and the rest of the registry still reports [1.5#1] [1.5#9]", async () => {
@@ -902,7 +903,7 @@ test("control characters from an entry are escaped in human output [1.5#10]", as
     "",
     `${SETUP}<!-- quickstacks:when tag=\u001b[31m -->\nx\n<!-- quickstacks:end -->\n`,
   );
-  const result = await run([root]);
+  const result = await run([root], { host: terminal });
   expect(result.stdout).toContain("tag=\\u001b[31m is a tag no stack declares");
   expect(result.stdout).not.toContain("\u001b");
   const brief = await run([root, "--brief", "sneaky"]);
@@ -1070,7 +1071,10 @@ test("the realistic fixture registry validates without errors, its app brief ins
 });
 
 test("--brief prints the composed brief and its counts, and --json decodes as a BriefPreview [1.5#13]", async () => {
-  const human = await run(["--brief", "typescript-cli", "--sandbox"], { registry: realRegistry });
+  const human = await run(["--brief", "typescript-cli", "--sandbox"], {
+    registry: realRegistry,
+    host: terminal,
+  });
   expect(human.status).toBe(0);
   expect(human.stdout).toMatch(/^# /);
   expect(human.stdout).toContain("## Sandbox");
@@ -1163,3 +1167,64 @@ it.effect("validate --help documents the path and every flag", () =>
       expect(result.stdout).toContain(word);
   }),
 );
+
+test("for an agent, no size table when every size is within budget; JSON keeps every size", async () => {
+  const root = temp();
+  stack(root, "clean");
+  const agent = await run(["."], { home: root });
+  expect(agent.status).toBe(0);
+  expect(agent.stderr).toBe("");
+  expect(agent.stdout).toBe(
+    [
+      "Validated .: 1 stack, 0 fragments",
+      "",
+      "1 stack, 0 fragments: 0 errors, 0 warnings, 0 notes",
+      "Next: quickstacks validate . --brief clean --sandbox",
+      "",
+    ].join("\n"),
+  );
+  const json = await report(["."], { home: root });
+  expect(json.report.sizes.map((row) => `${row.entry} ${row.kind}`)).toEqual([
+    "clean body",
+    "clean composed",
+    "clean composed",
+  ]);
+});
+
+test("for an agent, only the sizes over their limit, and the counts once", async () => {
+  const root = temp();
+  stack(root, "long", "", `${SETUP}\n${words(2100)}\n`);
+  stack(root, "short");
+  const agent = await run([root]);
+  expect(agent.status).toBe(2);
+  expect(agent.stdout).toMatch(/\nSizes \(words\)\n {2}long body {2}2,1\d\d \/ 2,000 {3}over\n\n/);
+  expect(agent.stdout).not.toContain("short body");
+  expect(agent.stdout).toContain("2 stacks, 0 fragments: 1 error, 0 warnings, 0 notes\n");
+  // The report on stdout ends with the counts, so stderr only names the failure.
+  expect(agent.stderr).toBe("Validation failed.\n");
+  const human = await run([root], { host: terminal });
+  expect(human.stdout).toMatch(/\n {2}short body +\d+ \/ 2,000\n/);
+  expect(human.stdout).toMatch(/\n {2}long body +2,1\d\d \/ 2,000 {3}over\n/);
+});
+
+test("for an agent, the root is relative to the working directory, and absolute outside it", async () => {
+  const home = temp();
+  const root = join(home, "my registry");
+  stack(root, "clean");
+  const inside = await run([root], { home });
+  expect(inside.stdout).toMatch(/^Validated my registry: 1 stack, 0 fragments\n/);
+  const outside = await run([root]);
+  expect(outside.stdout.startsWith(`Validated ${root}: 1 stack`)).toBe(true);
+  // Real paths that differ from the given one (/var and /private/var on macOS) still nest.
+  const real = await run([realpathSync(root)], { home });
+  expect(real.stdout).toMatch(/^Validated my registry: 1 stack/);
+  const linked = join(temp(), "link");
+  symlinkSync(home, linked);
+  const viaLink = await run([root], { home: linked });
+  expect(viaLink.stdout).toMatch(/^Validated my registry: 1 stack/);
+  // A human and --json keep the absolute root.
+  const human = await run([root], { home, host: terminal });
+  expect(human.stdout.startsWith(`Validated ${root}: 1 stack`)).toBe(true);
+  const json = await report([root], { home });
+  expect(json.report.root).toBe(root);
+});

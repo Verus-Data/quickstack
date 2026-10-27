@@ -29,7 +29,6 @@ const holder = Foreground.make();
 const platform = Layer.mergeAll(
   BunServices.layer,
   Foreground.layer(holder),
-  output,
   Host.layer({
     platform: process.platform,
     executable: process.execPath,
@@ -45,7 +44,7 @@ const platform = Layer.mergeAll(
     invocation: "quickstacks",
   }),
 );
-const layer = Layer.provideMerge(AppLayer(), platform);
+const layer = Layer.provideMerge(AppLayer(output), platform);
 const controller = new AbortController();
 const removeSignalPolicy = installSignalPolicy(holder, () => controller.abort());
 try {

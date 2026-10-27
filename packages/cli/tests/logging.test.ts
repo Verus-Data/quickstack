@@ -5,7 +5,7 @@ import { Effect, Layer } from "effect";
 import { expect, test } from "vitest";
 import { entry, Logging } from "../src/logging";
 import { Output } from "../src/services/output";
-import { ndjson, runCli, tempDir } from "./helpers/cli";
+import { ndjson, runCli, tempDir, terminal } from "./helpers/cli";
 
 const record = () =>
   entry({
@@ -29,6 +29,7 @@ test("command logs include duration, outcome and shared invocation id", async ()
   const result = await runCli(["doctor"], {
     env: { LOG_LEVEL: "info", QUICKSTACKS_LOG_FORMAT: "json" },
     program: Effect.logInfo("child"),
+    host: terminal,
   });
   const records = ndjson(result.stderr);
   expect(records).toHaveLength(2);

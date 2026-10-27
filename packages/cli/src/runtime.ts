@@ -1,13 +1,17 @@
 import { Cause, Effect, Exit, Layer } from "effect";
 import { AppConfig, type Environment } from "./config";
 import { Logging } from "./logging";
+import type { Host } from "./services/host";
+import type { Output } from "./services/output";
 import { Processes } from "./services/processes";
-/** Config, logging and Processes; the platform supplies FileSystem, Path, Output, Host and Foreground. */
-export const AppLayer = (env?: Environment) =>
-  Processes.layer.pipe(
-    Layer.provideMerge(
-      Layer.merge(env === undefined ? AppConfig.layer() : AppConfig.memory(env), Logging.layer),
-    ),
+/**
+ * Config, `output` (built over config and Host, so it can resolve the audience), logging and
+ * Processes; the platform supplies FileSystem, Path, Host and Foreground.
+ */
+export const AppLayer = (output: Layer.Layer<Output, never, Host | AppConfig>, env?: Environment) =>
+  Layer.merge(Processes.layer, Logging.layer).pipe(
+    Layer.provideMerge(output),
+    Layer.provideMerge(env === undefined ? AppConfig.layer() : AppConfig.memory(env)),
   );
 
 // An interrupted fiber remains interrupted after main finishes its masked cleanup.

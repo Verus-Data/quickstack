@@ -19,7 +19,7 @@ import {
   VerifyFailed,
 } from "../src/errors";
 import { Output } from "../src/services/output";
-import { ndjson, quiet, runCli, tempDir, writeError } from "./helpers/cli";
+import { ndjson, quiet, runCli, tempDir, terminal, writeError } from "./helpers/cli";
 
 const reported = errorClasses.map((Class) => new Class()).filter((e) => !(e instanceof BrokenPipe));
 test("the published error table, written out row by row", () => {
@@ -96,7 +96,11 @@ test("details go into the JSON envelope and as indented lines in human mode", as
       details: { reason: "write", path: "/private/target" },
     },
   });
-  const human = await runCli([], { program: Effect.fail(denied()), env: quiet });
+  const human = await runCli([], {
+    program: Effect.fail(denied()),
+    env: quiet,
+    host: terminal,
+  });
   expect(human.status).toBe(6);
   expect(human.stderr).toBe("Permission denied.\n  Path: /private/target\n");
 });
@@ -111,7 +115,7 @@ test.each([
   ],
 ] as const)("PermissionDenied %s ends with a Next line", async (reason, lines) => {
   const error = new PermissionDenied({ details: { reason, path: "/work/app" } });
-  const human = await runCli([], { program: Effect.fail(error), env: quiet });
+  const human = await runCli([], { program: Effect.fail(error), env: quiet, host: terminal });
   expect(human.status).toBe(6);
   expect(human.stdout).toBe("");
   expect(human.stderr).toBe(`Permission denied.\n  Path: /work/app\n  ${lines}\n`);
@@ -120,7 +124,7 @@ test("a Next line names the CLI the way it was invoked", async () => {
   const human = await runCli([], {
     program: Effect.fail(new NotFound({ details: { suggestions: [] } })),
     env: quiet,
-    host: { invocation: "npx quickstacks" },
+    host: { ...terminal, invocation: "npx quickstacks" },
   });
   expect(human.status).toBe(2);
   expect(human.stdout).toBe("");
@@ -163,7 +167,7 @@ test("EntryInvalid details name the entry in the envelope and in human mode", as
       details: { id: "bun-web", origin: "user", reason: "symlink", path: "files/link" },
     },
   });
-  const human = await runCli([], { program: Effect.fail(error), env: quiet });
+  const human = await runCli([], { program: Effect.fail(error), env: quiet, host: terminal });
   expect(human.stderr).toBe(
     "Entry is invalid.\n  Entry: bun-web (user, symlink)\n  Path: files/link\n",
   );
@@ -245,9 +249,10 @@ test.each([
     "Not found.\n  Looked for: /work/regsitry\n  Next: pass a registry root (a directory holding stacks/ or fragments/) or an entry directory inside one.\n",
   ],
   [
-    "ValidationFailed with its counts",
+    // The report on stdout already ends with the counts, so the text modes don't repeat them.
+    "ValidationFailed with its counts in the envelope only",
     new ValidationFailed({ details: { errors: 3, warnings: 1 } }),
-    "Validation failed.\n  Errors: 3, warnings: 1\n",
+    "Validation failed.\n",
   ],
 ] as const)(
   "%s: details in the envelope, detail lines in human mode",
@@ -258,10 +263,12 @@ test.each([
     expect(JSON.parse(json.stderr)).toEqual({
       error: { tag: error._tag, message: error.message, retryable: false, details: error.details },
     });
-    const text = await runCli([], { program: Effect.fail(error), env: quiet });
-    expect(text.status).toBe(2);
-    expect(text.stdout).toBe("");
-    expect(text.stderr).toBe(human);
+    for (const host of [terminal, {}]) {
+      const text = await runCli([], { program: Effect.fail(error), env: quiet, host });
+      expect(text.status).toBe(2);
+      expect(text.stdout).toBe("");
+      expect(text.stderr).toBe(human);
+    }
   },
 );
 test.each([
