@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { NodeServices } from "@effect/platform-node";
 import { Clock, Effect, Layer } from "effect";
 import { TestClock } from "effect/testing";
-import { afterEach, expect, test } from "vitest";
+import { afterAll, afterEach, expect, test } from "vitest";
 import { runBench } from "../scripts/bench";
 import { agents } from "../scripts/bench/agents";
 import { NetLayer } from "../src/platform/net";
@@ -11,10 +11,13 @@ import { AppLayer, runInvocation } from "../src/runtime";
 import { Host } from "../src/services/host";
 import { Output } from "../src/services/output";
 import { Foreground } from "../src/services/processes";
-import { benchFixture, passed, sample } from "./helpers/bench";
+import { benchCli, benchFixture, passed, sample } from "./helpers/bench";
 import { runRecords, workspace } from "./helpers/verify";
 
 const space = workspace();
+const artifacts = workspace();
+const compiled = benchCli(artifacts);
+afterAll(() => artifacts.release());
 afterEach(() => space.release());
 
 test.each(["claude", "codex"] as const)(
@@ -33,7 +36,7 @@ test.each(["claude", "codex"] as const)(
 );
 
 test("a run crossing UTC midnight retains its start date", async () => {
-  const f = benchFixture(space);
+  const f = benchFixture(space, compiled);
   let ended = false;
   const adapters = agents.map((adapter) => ({
     ...adapter,
@@ -57,7 +60,8 @@ test("a run crossing UTC midnight retains its start date", async () => {
     yield* after.setTime(Date.parse("2026-10-28T00:00:01Z"));
     const current = () => (ended ? after : before);
     const millis = () => current().currentTimeMillisUnsafe();
-    return yield* runBench(["sample"], adapters).pipe(
+    return yield* runBench(["sample", "--cli", compiled()], adapters).pipe(
+      f.observeChildren,
       Effect.provideService(Clock.Clock, {
         monotonicTimeNanosUnsafe: () => live.monotonicTimeNanosUnsafe(),
         monotonicTimeNanos: live.monotonicTimeNanos,
@@ -84,7 +88,7 @@ test("a run crossing UTC midnight retains its start date", async () => {
 }, 60_000);
 
 test("time to a green base uses the elapsed completion time once", async () => {
-  const f = benchFixture(space);
+  const f = benchFixture(space, compiled);
   const entry = join(f.registry, "fragments/extra/FRAGMENT.md");
   writeFileSync(
     entry,
@@ -106,7 +110,7 @@ test("time to a green base uses the elapsed completion time once", async () => {
 }, 60_000);
 
 test("requesting a default fragment preserves the default ledger key [2.0b#1]", async () => {
-  const f = benchFixture(space);
+  const f = benchFixture(space, compiled);
   const entry = join(f.registry, "stacks/sample/STACK.md");
   writeFileSync(
     entry,
@@ -122,7 +126,7 @@ test("requesting a default fragment preserves the default ledger key [2.0b#1]", 
 }, 60_000);
 
 test("an agent replacing the metadata directory still records a failed run [2.0b#4]", async () => {
-  const f = benchFixture(space);
+  const f = benchFixture(space, compiled);
   f.configure("write-error");
   const binary = join(f.bin, "claude");
   writeFileSync(

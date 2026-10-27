@@ -13,14 +13,14 @@ import {
 } from "node:fs";
 import { dirname, isAbsolute, join, relative } from "node:path";
 import { Schema } from "effect";
-import { afterEach, expect, test, vi } from "vitest";
+import { afterAll, test as baseTest, describe, expect, vi } from "vitest";
 import type { AgentAdapter } from "../scripts/bench/agents";
 import { AgentMarkers } from "../src/config";
 import { Manifest } from "../src/schemas/manifest";
 import { NewResult } from "../src/schemas/new";
 import { ProjectRuns } from "../src/schemas/runs";
 import { projectFiles } from "./fixtures/composed-files";
-import { type BenchFixture, benchFixture, NOTES, passed } from "./helpers/bench";
+import { type BenchFixture, benchCli, benchFixture, NOTES, passed } from "./helpers/bench";
 import { alive, runCli } from "./helpers/cli";
 import { readManifestAt, readPid, runRecords, workspace } from "./helpers/verify";
 
@@ -33,8 +33,20 @@ const digests = (root: string) =>
       .digest("hex"),
   ]);
 
-const space = workspace();
-afterEach(() => space.release());
+const artifacts = workspace();
+const compiled = benchCli(artifacts);
+// Bound child-process load; the build group runs after the shared-artifact cases.
+vi.setConfig({ maxConcurrency: 2 });
+const benchTest = baseTest.extend("space", async ({ task: _task }, { onCleanup }) => {
+  const space = workspace();
+  onCleanup(() => space.release());
+  return space;
+});
+const test = benchTest.concurrent;
+afterAll(() => {
+  artifacts.release();
+  vi.resetConfig();
+});
 
 function kept(f: BenchFixture, agent = "claude") {
   return dirname(f.observe(agent).cwd);
@@ -99,67 +111,18 @@ function commitRun(f: BenchFixture) {
 }
 
 // Import inside each test so every acceptance case reports the missing entry point independently.
-test("a successful agent is independently verified and recorded with real measurements [2.0b#1]", async () => {
-  const f = benchFixture(space);
-  const expected = await baseline(f);
-  passed(await f.invoke(["--agent", "claude", "--keep"]));
-  const root = kept(f);
-  const row = record(f);
-  const history = runRecords(join(root, "run"));
-  expect(history).toHaveLength(2);
-  expect(row).toMatchObject({
-    stack: "sample",
-    with: [],
-    preset: "sandbox",
-    agent: "claude",
-    agentVersion: "1.2.3",
-    repoCommit: f.commit,
-    fingerprint: expected.fingerprint,
-    briefWords: expected.briefWords,
-    mode: "headless",
-    result: "pass",
-    agentEnded: "exit",
-    interventions: 1,
-    verifyRuns: 1,
-    run: history.at(-1),
-  });
-  expect(row.fingerprint).toMatch(/^sha256:[a-f0-9]{64}$/);
-  expect(row.run).toMatchObject({ outcome: "green", tamperCheck: "full", scope: "full" });
-  expect(row.agentMinutes).toEqual(expect.any(Number));
-  expect(row.agentMinutes).toBeGreaterThanOrEqual(0);
-  const runs = await summary(f, root);
-  expect(row.minutesToGreen).toBe(runs.minutesToGreen);
-  expect(row.minutesToFirstTest).toBe(runs.minutesToFirstTest);
-  expect(row.minutesToGreen).not.toBeNull();
-  expect(row.minutesToFirstTest).not.toBeNull();
-  expect(row.verifyRuns).toBe(runs.verifyRuns - 1);
-  const prompt = f.observe().args.find((arg) => arg.includes("BENCH.md"));
-  expect(prompt).toContain(join(root, "bench/BENCH.md"));
-  const benchBrief = readFileSync(join(root, "bench/BENCH.md"), "utf8");
-  expect(benchBrief).toContain("## Asked");
-  expect(benchBrief).toContain(".quickstacks/NOTES.md");
-  expect(benchBrief).toContain(".quickstacks/manifest.json");
-  expect(benchBrief).toContain(join(root, "bench/verify"));
-  expect(projectFiles(join(root, "run")).some((path) => /BENCH\.md|bench\/verify/.test(path))).toBe(
-    false,
-  );
-  const markdown = note(f);
-  expect(markdown).toContain(NOTES);
-  expect(markdown).toContain(JSON.stringify(history.at(-1)));
-  expect(readFileSync(join(root, "bench/verify.log"), "utf8").trim().split("\n")).toHaveLength(1);
-  expect(f.cliCalls().filter((call) => call.args.includes("verify"))).toHaveLength(2);
-}, 60_000);
-
-test("editing the manifest fails the independent tamper check [2.0b#2]", async () => {
-  const f = benchFixture(space);
+test("editing the manifest fails the independent tamper check [2.0b#2]", async ({ space }) => {
+  const f = benchFixture(space, compiled);
   f.configure("tamper");
   passed(await f.invoke(["--keep"]));
   expect(record(f)).toMatchObject({ result: "fail", run: { outcome: "changed" } });
   expect(record(f).run).toEqual(runRecords(join(kept(f), "run")).at(-1));
 }, 60_000);
 
-test("a fractional-minute timeout kills the agent and its descendant, then verifies [2.0b#3]", async () => {
-  const f = benchFixture(space);
+test("a fractional-minute timeout kills the agent and its descendant, then verifies [2.0b#3]", async ({
+  space,
+}) => {
+  const f = benchFixture(space, compiled);
   f.configure("block");
   await import("../scripts/bench");
   const unrelated = spawn(
@@ -199,30 +162,30 @@ test("a fractional-minute timeout kills the agent and its descendant, then verif
   expect(runRecords(join(kept(f), "run"))).toHaveLength(1);
 }, 60_000);
 
-test.each([
+test.for([
   { scenario: "infra", result: "infra" },
   { scenario: "write-error", result: "fail" },
 ] as const)(
   "$scenario is classified by actual project writes [2.0b#4]",
-  async ({ scenario, result }) => {
-    const f = benchFixture(space);
+  { timeout: 60_000 },
+  async ({ scenario, result }, { space }) => {
+    const f = benchFixture(space, compiled);
     f.configure(scenario);
     passed(await f.invoke(["--keep"]));
     expect(record(f)).toMatchObject({ result, agentEnded: "error" });
     expect(runRecords(join(kept(f), "run"))).toHaveLength(1);
   },
-  60_000,
 );
 
-test("missing notes produce unknown interventions [2.0b#5]", async () => {
-  const f = benchFixture(space);
+test("missing notes produce unknown interventions [2.0b#5]", async ({ space }) => {
+  const f = benchFixture(space, compiled);
   f.configure("no-notes");
   passed(await f.invoke());
   expect(record(f)).toMatchObject({ result: "pass", interventions: null });
 }, 60_000);
 
-test("the agent sees only the selected fake token and a fresh home [2.0b#6]", async () => {
-  const f = benchFixture(space);
+test("the agent sees only the selected fake token and a fresh home [2.0b#6]", async ({ space }) => {
+  const f = benchFixture(space, compiled);
   const markers = Object.fromEntries(
     AgentMarkers.map((marker) => [marker.name, marker.equals ?? "1"]),
   );
@@ -269,10 +232,11 @@ test("the agent sees only the selected fake token and a fresh home [2.0b#6]", as
   expect(projectFiles(join(root, "home"))).not.toContain(".codex/auth.json");
 }, 60_000);
 
-test.each(["token", "dirty"])(
+test.for(["token", "dirty"])(
   "preflight refuses %s without writing anything [2.0b#7]",
-  async (kind) => {
-    const f = benchFixture(space);
+  { timeout: 60_000 },
+  async (kind, { space }) => {
+    const f = benchFixture(space, compiled);
     if (kind === "dirty") writeFileSync(join(f.packageRoot, "uncommitted.txt"), "dirty\n");
     const before = f.snapshot();
     const result = await f.invoke(["--agent", "claude"], {
@@ -285,11 +249,12 @@ test.each(["token", "dirty"])(
     );
     assertNoWrites(f, before);
   },
-  60_000,
 );
 
-test("no-record still runs the full bench and writes neither ledger nor note [2.0b#8]", async () => {
-  const f = benchFixture(space);
+test("no-record still runs the full bench and writes neither ledger nor note [2.0b#8]", async ({
+  space,
+}) => {
+  const f = benchFixture(space, compiled);
   passed(await f.invoke(["--no-record", "--keep"]));
   expect(existsSync(join(f.registry, "runs.json"))).toBe(false);
   expect(f.notes()).toEqual([]);
@@ -297,33 +262,10 @@ test("no-record still runs the full bench and writes neither ledger nor note [2.
   expect(f.cliCalls().some((call) => call.args.includes("runs"))).toBe(true);
 }, 60_000);
 
-test("the fresh prefix contains the dev-compiled binary and registry with no source or scripts [2.0b#10]", async () => {
-  const f = benchFixture(space);
-  passed(await f.invoke(["--keep"]));
-  const calls = f.cliCalls();
-  expect(calls.length).toBeGreaterThanOrEqual(4);
-  const executables = [...new Set(calls.map((call) => realpathSync(call.executable)))];
-  expect(executables).toHaveLength(1);
-  const installed = executables[0];
-  if (!installed) throw new Error("no installed binary was invoked");
-  const prefix = dirname(dirname(installed));
-  expect(installed).toBe(join(prefix, "bin/quickstacks"));
-  expect(prefix).not.toBe(f.packageRoot);
-  const hash = (file: string) => createHash("sha256").update(readFileSync(file)).digest("hex");
-  expect(hash(installed)).toBe(hash(join(f.packageRoot, "dist/quickstacks")));
-  expect(readFileSync(join(prefix, "registry/stacks/sample/STACK.md"), "utf8")).toBe(
-    readFileSync(join(f.registry, "stacks/sample/STACK.md"), "utf8"),
-  );
-  expect(
-    projectFiles(prefix).filter((path) =>
-      path.split("/").some((part) => ["scripts", "src"].includes(part)),
-    ),
-  ).toEqual([]);
-  expect(existsSync(join(prefix, "registry"))).toBe(true);
-}, 60_000);
-
-test("telemetry opt-out reaches the agent and every real CLI invocation [2.0b#11]", async () => {
-  const f = benchFixture(space);
+test("telemetry opt-out reaches the agent and every real CLI invocation [2.0b#11]", async ({
+  space,
+}) => {
+  const f = benchFixture(space, compiled);
   passed(await f.invoke(["--keep"], { env: { DO_NOT_TRACK: "0" } }));
   expect(f.observe().env.DO_NOT_TRACK).toBe("1");
   const calls = f.cliCalls();
@@ -335,8 +277,10 @@ test("telemetry opt-out reaches the agent and every real CLI invocation [2.0b#11
   for (const call of calls) expect(call.env.DO_NOT_TRACK, call.args.join(" ")).toBe("1");
 }, 60_000);
 
-test("continuing a kept run reuses its home and artifact and counts an intervention [2.0b#12]", async () => {
-  const f = benchFixture(space);
+test("continuing a kept run reuses its home and artifact and counts an intervention [2.0b#12]", async ({
+  space,
+}) => {
+  const f = benchFixture(space, compiled);
   passed(await f.invoke(["--keep"]));
   const first = record(f);
   const root = kept(f);
@@ -375,10 +319,11 @@ test("continuing a kept run reuses its home and artifact and counts an intervent
   expect(markdown).toContain(first.note.split("/").at(-1));
 }, 60_000);
 
-test.each(["stack", "fingerprint"])(
+test.for(["stack", "fingerprint"])(
   "a kept root with stale %s is refused unchanged [2.0b#12]",
-  async (field) => {
-    const f = benchFixture(space);
+  { timeout: 60_000 },
+  async (field, { space }) => {
+    const f = benchFixture(space, compiled);
     passed(await f.invoke(["--no-record", "--keep"]));
     const root = kept(f);
     const file = join(root, "run/.quickstacks/manifest.json");
@@ -399,11 +344,12 @@ test.each(["stack", "fingerprint"])(
     expect(f.notes()).toEqual([]);
     expect(existsSync(join(f.registry, "runs.json"))).toBe(false);
   },
-  60_000,
 );
 
-test("only executed shipped hooks are recorded, without duplicates [2.0b#13]", async () => {
-  const f = benchFixture(space);
+test("only executed shipped hooks are recorded, without duplicates [2.0b#13]", async ({
+  space,
+}) => {
+  const f = benchFixture(space, compiled);
   passed(await f.invoke());
   expect(record(f)).toMatchObject({ hooksFired: expect.any(Array) });
   const row = record(f);
@@ -413,8 +359,10 @@ test("only executed shipped hooks are recorded, without duplicates [2.0b#13]", a
   expect(hooks.toSorted()).toEqual(["block-destructive.sh", "session-start.sh"]);
 }, 60_000);
 
-test("an adapter that cannot read hooks records unknown rather than an empty list [2.0b#13]", async () => {
-  const f = benchFixture(space);
+test("an adapter that cannot read hooks records unknown rather than an empty list [2.0b#13]", async ({
+  space,
+}) => {
+  const f = benchFixture(space, compiled);
   const { agents } = await import("../scripts/bench/agents");
   const adapters = agents.map((adapter: AgentAdapter) => ({ ...adapter, readHooks: undefined }));
   passed(await f.invoke(["--agent", "codex"], { adapters }));
@@ -422,7 +370,7 @@ test("an adapter that cannot read hooks records unknown rather than an empty lis
   expect("hooksFired" in row ? row.hooksFired : undefined).toBeNull();
 }, 60_000);
 
-test.each([
+test.for([
   { env: { CODEX_THREAD_ID: "fixture-thread" }, flag: [], agent: "codex" },
   { env: { AI_AGENT: "other-tool" }, flag: [], agent: "claude" },
   { env: {}, flag: [], agent: "claude" },
@@ -430,8 +378,9 @@ test.each([
   { env: { CLAUDECODE: "1" }, flag: ["--agent", "codex"], agent: "codex" },
 ])(
   "auto-pick $agent with $env and $flag [2.0b#14]",
-  async ({ env, flag, agent }) => {
-    const f = benchFixture(space);
+  { timeout: 60_000 },
+  async ({ env, flag, agent }, { space }) => {
+    const f = benchFixture(space, compiled);
     passed(await f.invoke(flag, { env }));
     expect(record(f)).toMatchObject({ agent, agentVersion: "1.2.3" });
     const observed = f.observe(agent);
@@ -444,13 +393,13 @@ test.each([
     ).toBeUndefined();
     expect(note(f)).toMatch(flag.length ? /explicit|--agent/i : /detect|marker|default|fallback/i);
   },
-  60_000,
 );
 
-test.each(["default", "sandbox"])(
+test.for(["default", "sandbox"])(
   "preset %s selects the matching new flags and ledger key [2.0b#16]",
-  async (preset) => {
-    const f = benchFixture(space);
+  { timeout: 60_000 },
+  async (preset, { space }) => {
+    const f = benchFixture(space, compiled);
     passed(await f.invoke(preset === "default" ? ["--preset", "default"] : []));
     expect(record(f).preset).toBe(preset);
     const call = f
@@ -463,11 +412,12 @@ test.each(["default", "sandbox"])(
       expect.arrayContaining(["--no-launch", "--json", "--agents", "claude"]),
     );
   },
-  60_000,
 );
 
-test("a symlinked kept root with quotes, spaces and Unicode works from another cwd [2.0b#17]", async () => {
-  const f = benchFixture(space);
+test("a symlinked kept root with quotes, spaces and Unicode works from another cwd [2.0b#17]", async ({
+  space,
+}) => {
+  const f = benchFixture(space, compiled);
   passed(await f.invoke(["--no-record", "--keep"]));
   const root = kept(f);
   const link = join(f.base, "-kept 'café' root");
@@ -478,8 +428,10 @@ test("a symlinked kept root with quotes, spaces and Unicode works from another c
   expect(record(f)).toMatchObject({ result: "pass", continued: true, interventions: 2 });
 }, 60_000);
 
-test("git wrapper variables and relative XDG values cannot redirect the bench [2.0b#18]", async () => {
-  const f = benchFixture(space);
+test("git wrapper variables and relative XDG values cannot redirect the bench [2.0b#18]", async ({
+  space,
+}) => {
+  const f = benchFixture(space, compiled);
   passed(
     await f.invoke(["--keep"], {
       cwd: join(f.root, "plans"),
@@ -500,10 +452,11 @@ test("git wrapper variables and relative XDG values cannot redirect the bench [2
   expect(f.git("rev-parse", "HEAD")).toBe(f.commit);
 }, 60_000);
 
-test.each(["missing", "invalid", "file"])(
+test.for(["missing", "invalid", "file"])(
   "a partial kept root with %s manifest is left intact [2.0b#19]",
-  async (kind) => {
-    const f = benchFixture(space);
+  { timeout: 60_000 },
+  async (kind, { space }) => {
+    const f = benchFixture(space, compiled);
     const root = join(f.base, "partial-root");
     const run = join(root, "run");
     mkdirSync(run, { recursive: true });
@@ -523,54 +476,12 @@ test.each(["missing", "invalid", "file"])(
     expect(existsSync(join(f.registry, "runs.json"))).toBe(false);
     expect(f.cliCalls()).toEqual([]);
   },
-  60_000,
 );
 
-test("aborting a blocked build cleans only the bench's temporary files [2.0b#20]", async () => {
-  const f = benchFixture(space);
-  const { execFileSync } = await import("node:child_process");
-  const realBun = execFileSync("/bin/sh", ["-c", "command -v bun"], { encoding: "utf8" }).trim();
-  const shim = join(f.bin, "bun");
-  const marker = join(f.observations, "build-blocked");
-  const pidFile = space.trackPid(join(f.observations, "build.pid"));
-  writeFileSync(
-    shim,
-    `#!${process.execPath}\nconst {writeFileSync}=require('node:fs');
-if(process.argv.includes('build')) {
-  writeFileSync(${JSON.stringify(pidFile)}, String(process.pid));
-  writeFileSync(${JSON.stringify(marker)}, 'ready');
-  setInterval(()=>{},1000);
-} else {
-  const r=require('node:child_process').spawnSync(${JSON.stringify(realBun)},process.argv.slice(2),{stdio:'inherit',env:process.env});
-  process.exit(r.status ?? 1);
-}\n`,
-    { mode: 0o755 },
-  );
-  const controller = new AbortController();
-  // Load before starting the owned promise: a missing module must be the red failure, not a marker timeout.
-  await import("../scripts/bench");
-  const pending = f.invoke([], { signal: controller.signal });
-  try {
-    await vi.waitFor(() => expect(existsSync(marker)).toBe(true), { timeout: 15_000 });
-  } finally {
-    controller.abort();
-    await pending;
-  }
-  const result = await pending;
-  expect(result.status).toBe(130);
-  expect(result.stdout).toBe("");
-  expect(result.stderr).toBe("");
-  const pid = readPid(pidFile);
-  expect(pid).toBeDefined();
-  if (!pid) throw new Error("build shim did not start");
-  await vi.waitFor(() => expect(alive(pid)).toBe(false), { timeout: 5_000 });
-  expect(readdirSync(f.tmp)).toEqual([]);
-  expect(f.notes()).toEqual([]);
-  expect(existsSync(join(f.registry, "runs.json"))).toBe(false);
-}, 60_000);
-
-test("aborting a blocked agent cleans its process tree and root and preserves unrelated files [2.0b#21]", async () => {
-  const f = benchFixture(space);
+test("aborting a blocked agent cleans its process tree and root and preserves unrelated files [2.0b#21]", async ({
+  space,
+}) => {
+  const f = benchFixture(space, compiled);
   f.configure("block");
   const sentinel = join(f.tmp, "unrelated.txt");
   writeFileSync(sentinel, "keep me\n");
@@ -600,8 +511,10 @@ test("aborting a blocked agent cleans its process tree and root and preserves un
   expect(existsSync(join(f.registry, "runs.json"))).toBe(false);
 }, 60_000);
 
-test("an undecodable ledger is preserved while the run note and recoverable record survive [2.0b#22]", async () => {
-  const f = benchFixture(space);
+test("an undecodable ledger is preserved while the run note and recoverable record survive [2.0b#22]", async ({
+  space,
+}) => {
+  const f = benchFixture(space, compiled);
   const file = join(f.registry, "runs.json");
   writeFileSync(file, "{broken ledger\n");
   f.git("add", "packages/cli/registry/runs.json");
@@ -628,15 +541,19 @@ test("an undecodable ledger is preserved while the run note and recoverable reco
   expect(markdown).toContain(JSON.stringify(runRecords(join(kept(f), "run")).at(-1)));
 }, 60_000);
 
-test("writing only ignored NOTES before an error is fail rather than infra [2.0b#23]", async () => {
-  const f = benchFixture(space);
+test("writing only ignored NOTES before an error is fail rather than infra [2.0b#23]", async ({
+  space,
+}) => {
+  const f = benchFixture(space, compiled);
   f.configure("notes-error");
   passed(await f.invoke());
   expect(record(f)).toMatchObject({ result: "fail", agentEnded: "error", interventions: 1 });
 }, 60_000);
 
-test("continuation refuses different added fragments without changing a kept root [2.0b#24]", async () => {
-  const f = benchFixture(space);
+test("continuation refuses different added fragments without changing a kept root [2.0b#24]", async ({
+  space,
+}) => {
+  const f = benchFixture(space, compiled);
   passed(await f.invoke(["--no-record", "--keep", "--with", "extra"]));
   const root = kept(f);
   const before = digests(root);
@@ -649,10 +566,11 @@ test("continuation refuses different added fragments without changing a kept roo
   expect(existsSync(join(f.registry, "runs.json"))).toBe(false);
 }, 60_000);
 
-test.each(["missing-binary", "version-error"])(
+test.for(["missing-binary", "version-error"])(
   "preflight reports %s and writes nothing [2.0b#25]",
-  async (kind) => {
-    const f = benchFixture(space);
+  { timeout: 60_000 },
+  async (kind, { space }) => {
+    const f = benchFixture(space, compiled);
     if (kind === "missing-binary") {
       rmSync(join(f.bin, "claude"));
       // Restrict PATH so a real installed agent can never be used as fallback.
@@ -674,13 +592,13 @@ test.each(["missing-binary", "version-error"])(
     );
     assertNoWrites(f, before);
   },
-  60_000,
 );
 
-test.each(["malformed", "nonzero"] as const)(
+test.for(["malformed", "nonzero"] as const)(
   "%s agent output cannot certify a passing run [2.0b#26]",
-  async (scenario) => {
-    const f = benchFixture(space);
+  { timeout: 60_000 },
+  async (scenario, { space }) => {
+    const f = benchFixture(space, compiled);
     f.configure(scenario);
     passed(await f.invoke());
     expect(record(f)).toMatchObject({
@@ -688,11 +606,12 @@ test.each(["malformed", "nonzero"] as const)(
       agentEnded: "error",
     });
   },
-  60_000,
 );
 
-test("default cleanup removes the root after writing a complete note [2.0b#27]", async () => {
-  const f = benchFixture(space);
+test("default cleanup removes the root after writing a complete note [2.0b#27]", async ({
+  space,
+}) => {
+  const f = benchFixture(space, compiled);
   passed(await f.invoke());
   expect(existsSync(kept(f))).toBe(false);
   expect(readdirSync(f.tmp)).toEqual([]);
@@ -700,8 +619,10 @@ test("default cleanup removes the root after writing a complete note [2.0b#27]",
   expect(f.ledger()).toHaveLength(1);
 }, 60_000);
 
-test("a second same-day run appends a distinct note without overwriting the first [2.0b#28]", async () => {
-  const f = benchFixture(space);
+test("a second same-day run appends a distinct note without overwriting the first [2.0b#28]", async ({
+  space,
+}) => {
+  const f = benchFixture(space, compiled);
   const date = "2026-10-27";
   passed(await f.invoke([], { date }));
   const first = record(f);
@@ -719,13 +640,10 @@ test("a second same-day run appends a distinct note without overwriting the firs
   expect(readFileSync(join(f.root, first.note), "utf8")).toBe(contents);
 }, 60_000);
 
-test("--cli installs a supplied dev binary without rebuilding it [2.0b#10]", async () => {
-  const f = benchFixture(space);
-  const { execFileSync } = await import("node:child_process");
-  execFileSync("bun", ["run", "build"], { cwd: f.root, env: f.env, timeout: 60_000 });
+test("--cli installs a supplied dev binary without rebuilding it [2.0b#10]", async ({ space }) => {
+  const f = benchFixture(space, compiled);
   const binary = join(f.base, "supplied CLI café");
-  cpSync(join(f.packageRoot, "dist/quickstacks"), binary);
-  rmSync(join(f.packageRoot, "dist/quickstacks"));
+  cpSync(compiled(), binary);
   // Any unexpected rebuild fails loudly instead of silently exercising the default path.
   writeFileSync(join(f.bin, "bun"), "#!/bin/sh\necho unexpected-rebuild >&2\nexit 77\n", {
     mode: 0o755,
@@ -738,8 +656,10 @@ test("--cli installs a supplied dev binary without rebuilding it [2.0b#10]", asy
   expect(hash(installed)).toBe(hash(binary));
 }, 60_000);
 
-test("continuation compares against the current working registry, not the kept artifact [2.0b#12]", async () => {
-  const f = benchFixture(space);
+test("continuation compares against the current working registry, not the kept artifact [2.0b#12]", async ({
+  space,
+}) => {
+  const f = benchFixture(space, compiled);
   passed(await f.invoke(["--no-record", "--keep"]));
   const root = kept(f);
   const manifest = readManifestAt(join(root, "run"));
@@ -757,3 +677,130 @@ test("continuation compares against the current working registry, not the kept a
   expect(f.notes()).toEqual([]);
   expect(existsSync(join(f.registry, "runs.json"))).toBe(false);
 }, 60_000);
+
+describe("build paths", () => {
+  test("a successful agent is independently verified and recorded with real measurements [2.0b#1]", async ({
+    space,
+  }) => {
+    const f = benchFixture(space);
+    const expected = await baseline(f);
+    passed(await f.invoke(["--agent", "claude", "--keep"]));
+    const root = kept(f);
+    const row = record(f);
+    const history = runRecords(join(root, "run"));
+    expect(history).toHaveLength(2);
+    expect(row).toMatchObject({
+      stack: "sample",
+      with: [],
+      preset: "sandbox",
+      agent: "claude",
+      agentVersion: "1.2.3",
+      repoCommit: f.commit,
+      fingerprint: expected.fingerprint,
+      briefWords: expected.briefWords,
+      mode: "headless",
+      result: "pass",
+      agentEnded: "exit",
+      interventions: 1,
+      verifyRuns: 1,
+      run: history.at(-1),
+    });
+    expect(row.fingerprint).toMatch(/^sha256:[a-f0-9]{64}$/);
+    expect(row.run).toMatchObject({ outcome: "green", tamperCheck: "full", scope: "full" });
+    expect(row.agentMinutes).toEqual(expect.any(Number));
+    expect(row.agentMinutes).toBeGreaterThanOrEqual(0);
+    const runs = await summary(f, root);
+    expect(row.minutesToGreen).toBe(runs.minutesToGreen);
+    expect(row.minutesToFirstTest).toBe(runs.minutesToFirstTest);
+    expect(row.minutesToGreen).not.toBeNull();
+    expect(row.minutesToFirstTest).not.toBeNull();
+    expect(row.verifyRuns).toBe(runs.verifyRuns - 1);
+    const prompt = f.observe().args.find((arg) => arg.includes("BENCH.md"));
+    expect(prompt).toContain(join(root, "bench/BENCH.md"));
+    const benchBrief = readFileSync(join(root, "bench/BENCH.md"), "utf8");
+    expect(benchBrief).toContain("## Asked");
+    expect(benchBrief).toContain(".quickstacks/NOTES.md");
+    expect(benchBrief).toContain(".quickstacks/manifest.json");
+    expect(benchBrief).toContain(join(root, "bench/verify"));
+    expect(
+      projectFiles(join(root, "run")).some((path) => /BENCH\.md|bench\/verify/.test(path)),
+    ).toBe(false);
+    const markdown = note(f);
+    expect(markdown).toContain(NOTES);
+    expect(markdown).toContain(JSON.stringify(history.at(-1)));
+    expect(readFileSync(join(root, "bench/verify.log"), "utf8").trim().split("\n")).toHaveLength(1);
+    expect(f.cliCalls().filter((call) => call.args.includes("verify"))).toHaveLength(2);
+  }, 60_000);
+
+  test("the fresh prefix contains the dev-compiled binary and registry with no source or scripts [2.0b#10]", async ({
+    space,
+  }) => {
+    const f = benchFixture(space);
+    passed(await f.invoke(["--keep"]));
+    const calls = f.cliCalls();
+    expect(calls.length).toBeGreaterThanOrEqual(4);
+    const executables = [...new Set(calls.map((call) => realpathSync(call.executable)))];
+    expect(executables).toHaveLength(1);
+    const installed = executables[0];
+    if (!installed) throw new Error("no installed binary was invoked");
+    const prefix = dirname(dirname(installed));
+    expect(installed).toBe(join(prefix, "bin/quickstacks"));
+    expect(prefix).not.toBe(f.packageRoot);
+    const hash = (file: string) => createHash("sha256").update(readFileSync(file)).digest("hex");
+    expect(hash(installed)).toBe(hash(join(f.packageRoot, "dist/quickstacks")));
+    expect(readFileSync(join(prefix, "registry/stacks/sample/STACK.md"), "utf8")).toBe(
+      readFileSync(join(f.registry, "stacks/sample/STACK.md"), "utf8"),
+    );
+    expect(
+      projectFiles(prefix).filter((path) =>
+        path.split("/").some((part) => ["scripts", "src"].includes(part)),
+      ),
+    ).toEqual([]);
+    expect(existsSync(join(prefix, "registry"))).toBe(true);
+  }, 60_000);
+
+  test("aborting a blocked build cleans only the bench's temporary files [2.0b#20]", async ({
+    space,
+  }) => {
+    const f = benchFixture(space);
+    const { execFileSync } = await import("node:child_process");
+    const realBun = execFileSync("/bin/sh", ["-c", "command -v bun"], { encoding: "utf8" }).trim();
+    const shim = join(f.bin, "bun");
+    const marker = join(f.observations, "build-blocked");
+    const pidFile = space.trackPid(join(f.observations, "build.pid"));
+    writeFileSync(
+      shim,
+      `#!${process.execPath}\nconst {writeFileSync}=require('node:fs');
+if(process.argv.includes('build')) {
+  writeFileSync(${JSON.stringify(pidFile)}, String(process.pid));
+  writeFileSync(${JSON.stringify(marker)}, 'ready');
+  setInterval(()=>{},1000);
+} else {
+  const r=require('node:child_process').spawnSync(${JSON.stringify(realBun)},process.argv.slice(2),{stdio:'inherit',env:process.env});
+  process.exit(r.status ?? 1);
+}\n`,
+      { mode: 0o755 },
+    );
+    const controller = new AbortController();
+    // Load before starting the owned promise: a missing module must be the red failure, not a marker timeout.
+    await import("../scripts/bench");
+    const pending = f.invoke([], { signal: controller.signal });
+    try {
+      await vi.waitFor(() => expect(existsSync(marker)).toBe(true), { timeout: 15_000 });
+    } finally {
+      controller.abort();
+      await pending;
+    }
+    const result = await pending;
+    expect(result.status).toBe(130);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toBe("");
+    const pid = readPid(pidFile);
+    expect(pid).toBeDefined();
+    if (!pid) throw new Error("build shim did not start");
+    await vi.waitFor(() => expect(alive(pid)).toBe(false), { timeout: 5_000 });
+    expect(readdirSync(f.tmp)).toEqual([]);
+    expect(f.notes()).toEqual([]);
+    expect(existsSync(join(f.registry, "runs.json"))).toBe(false);
+  }, 60_000);
+});

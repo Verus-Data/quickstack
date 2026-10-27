@@ -8,13 +8,21 @@ import { gitShim } from "./helpers/git";
 // where a run's agent stopped, guessed or worked around the brief.
 const bundled = join(import.meta.dirname, "..", "registry");
 
-async function brief(stack: string): Promise<string> {
-  const result = await runCli(["validate", "--brief", stack, "--sandbox", "--json"], {
+// The preview is read-only and deterministic, so each stack's brief is composed once per file
+// rather than once per test (about thirty full validations otherwise, slow under the full gate).
+const briefs = new Map<string, Promise<string>>();
+function brief(stack: string): Promise<string> {
+  const cached = briefs.get(stack);
+  if (cached) return cached;
+  const composed = runCli(["validate", "--brief", stack, "--sandbox", "--json"], {
     env: { ...quiet, PATH: process.env.PATH ?? "" },
     host: { registry: bundled },
+  }).then((result) => {
+    expect(result.status).toBe(0);
+    return (JSON.parse(result.stdout) as { brief: string }).brief;
   });
-  expect(result.status).toBe(0);
-  return (JSON.parse(result.stdout) as { brief: string }).brief;
+  briefs.set(stack, composed);
+  return composed;
 }
 
 test("go-cli gives a module path to fall back on instead of stopping to ask for an owner", async () => {

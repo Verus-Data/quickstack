@@ -15,7 +15,7 @@ import { Clock, Effect, Layer, Schema } from "effect";
 import { TestClock } from "effect/testing";
 import { expect } from "vitest";
 import type { AgentAdapter } from "../../scripts/bench/agents";
-import type { Environment } from "../../src/config";
+import { AppConfig, type Environment } from "../../src/config";
 import { NetLayer } from "../../src/platform/net";
 import { AppLayer, runInvocation } from "../../src/runtime";
 import { Ledger, LedgerRecord } from "../../src/schemas/ledger";
@@ -80,14 +80,31 @@ function onDate(date: string | undefined) {
     });
 }
 
-/** Real sources are copied and compiled in a disposable repo; the only added code observes env at bin.ts. */
-export function benchFixture(space: ReturnType<typeof workspace>) {
+/** Lazily compile one observing binary in the test file's artifact workspace. */
+export function benchCli(space: ReturnType<typeof workspace>) {
+  let binary: string | undefined;
+  return () => {
+    if (binary) return binary;
+    const fixture = benchFixture(space);
+    execFileSync("bun", ["run", "build"], {
+      cwd: fixture.root,
+      env: fixture.env,
+      timeout: 60_000,
+    });
+    binary = join(fixture.packageRoot, "dist/quickstacks");
+    return binary;
+  };
+}
+
+/** Build cases own their sources; other cases install the file's shared observing binary. */
+export function benchFixture(space: ReturnType<typeof workspace>, compiled?: () => string) {
   const base = space.dir();
   const root = join(base, "repo with spaces café");
   const home = join(base, "maintainer-home");
   const tmp = join(base, "throwaway roots");
   const bin = join(base, "tool-bin");
   const observations = join(base, "observations");
+  const cliLog = join(observations, "cli.jsonl");
   for (const dir of [root, home, tmp, bin, observations]) mkdirSync(dir, { recursive: true });
   const env: Record<string, string> = {
     HOME: home,
@@ -100,6 +117,7 @@ export function benchFixture(space: ReturnType<typeof workspace>) {
     LANG: "C.UTF-8",
     NO_COLOR: "1",
     LOG_LEVEL: "none",
+    QUICKSTACKS_BENCH_OBSERVE: cliLog,
     CLAUDE_CODE_OAUTH_TOKEN: "fake-claude-token-for-tests",
     CODEX_ACCESS_TOKEN: "fake-codex-token-for-tests",
     GIT_CONFIG_NOSYSTEM: "1",
@@ -113,7 +131,7 @@ export function benchFixture(space: ReturnType<typeof workspace>) {
     execFileSync("git", args, { cwd: root, env, encoding: "utf8" }).trim();
   const packageRoot = join(root, "packages/cli");
   mkdirSync(join(packageRoot, "scripts"), { recursive: true });
-  cpSync(join(cli, "src"), join(packageRoot, "src"), { recursive: true });
+  if (!compiled) cpSync(join(cli, "src"), join(packageRoot, "src"), { recursive: true });
   for (const file of ["package.json", "tsconfig.base.json"])
     cpSync(resolve(cli, "../..", file), join(root, file));
   for (const file of ["package.json", "tsconfig.json", "scripts/build.ts"])
@@ -121,18 +139,19 @@ export function benchFixture(space: ReturnType<typeof workspace>) {
   symlinkSync(join(cli, "node_modules"), join(packageRoot, "node_modules"), "dir");
   symlinkSync(resolve(cli, "../../node_modules"), join(root, "node_modules"), "dir");
   writeFileSync(join(root, ".gitignore"), "node_modules\ndist/\n");
-  const cliLog = join(observations, "cli.jsonl");
   // The probe is compiled into the real artifact. It doesn't replace commands or their outputs.
-  const sourceBin = join(packageRoot, "src/bin.ts");
-  const source = readFileSync(sourceBin, "utf8");
-  const firstLine = source.indexOf("\n");
-  const shebang = source.startsWith("#!") ? source.slice(0, firstLine + 1) : "";
-  const body = source.slice(shebang.length);
-  writeFileSync(
-    sourceBin,
-    `${shebang}import { appendFileSync as observeBenchChild } from "node:fs";\n` +
-      `observeBenchChild(${JSON.stringify(cliLog)}, JSON.stringify({ args: process.argv.slice(2), cwd: process.cwd(), executable: process.execPath, env: process.env }) + "\\n");\n${body}`,
-  );
+  if (!compiled) {
+    const sourceBin = join(packageRoot, "src/bin.ts");
+    const source = readFileSync(sourceBin, "utf8");
+    const firstLine = source.indexOf("\n");
+    const shebang = source.startsWith("#!") ? source.slice(0, firstLine + 1) : "";
+    const body = source.slice(shebang.length);
+    writeFileSync(
+      sourceBin,
+      `${shebang}import { appendFileSync as observeBenchChild } from "node:fs";\n` +
+        `if (process.env.QUICKSTACKS_BENCH_OBSERVE) observeBenchChild(process.env.QUICKSTACKS_BENCH_OBSERVE, JSON.stringify({ args: process.argv.slice(2), cwd: process.cwd(), executable: process.execPath, env: process.env }) + "\\n");\n${body}`,
+    );
+  }
   const registry = join(packageRoot, "registry");
   const stack = writeEntry(
     registry,
@@ -240,6 +259,21 @@ export function benchFixture(space: ReturnType<typeof workspace>) {
       .filter(Boolean)
       .sort()
       .map((file) => [file, readFileSync(join(root, file)).toString("base64")]);
+  // Retain only this observation variable beyond the bench's production environment allowlist.
+  const observeChildren = <A, E, R>(program: Effect.Effect<A, E, R>) =>
+    program.pipe(
+      Effect.provideServiceEffect(
+        AppConfig,
+        Effect.map(AppConfig, (config) => ({
+          ...config,
+          childEnv: (remove, set) =>
+            config.childEnv(remove, {
+              ...set,
+              QUICKSTACKS_BENCH_OBSERVE: cliLog,
+            }),
+        })),
+      ),
+    );
   const invoke = async (
     args: readonly string[] = [],
     options: {
@@ -259,7 +293,11 @@ export function benchFixture(space: ReturnType<typeof workspace>) {
       Host.memory({ cwd: options.cwd ?? root, registry }),
     );
     const status = await runInvocation(
-      runBench(["sample", ...args], options.adapters).pipe(
+      runBench(
+        ["sample", ...(compiled && !args.includes("--cli") ? ["--cli", compiled()] : []), ...args],
+        options.adapters,
+      ).pipe(
+        observeChildren,
         onDate(options.date),
         Effect.tap(() => Effect.flatMap(Output, (out) => out.flush)),
         Effect.provide(
@@ -297,6 +335,7 @@ export function benchFixture(space: ReturnType<typeof workspace>) {
     childPid,
     blocked,
     observations,
+    observeChildren,
   };
 }
 export type BenchFixture = ReturnType<typeof benchFixture>;
