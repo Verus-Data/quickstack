@@ -27,15 +27,17 @@ Phase 1 round 1 ([1.0](phases/phase-1.0-entry-format-and-registry.md),
 [1.1](phases/phase-1.1-composition-and-brief.md),
 [1.2a](phases/phase-1.2a-new-scaffold-and-templates.md),
 [1.2b](phases/phase-1.2b-manifest-state-and-detection.md) and
-[1.5](phases/phase-1.5-validate-and-brief-budget.md)) is executed on branch
-`feat/phase-1`, has had its one batch review, and the review's fixes are being applied.
+[1.5](phases/phase-1.5-validate-and-brief-budget.md)) is executed, batch-reviewed once
+with its fixes applied, and merged to `main` (PR #4).
 Before it started, D18 (entry format v1) was amended on 2026-10-26:
 snake_case frontmatter, literal dotfiles, `package_scope` in v1, apps as
 `category: app` fragments, and `expect` on serve steps. That is an agent's proposal and
 still needs the maintainers' agreement; it supersedes D26 and D28, withdraws 3.5a and
-re-scopes 1.6a to bring the whole bundled catalog into v1 and validate it. The CLI still has only
-`doctor` and `--version` on `main`, run from the repo (`bun run dev`) or the compiled
-binary. The repo is a bun-workspace monorepo (D11): the CLI is `packages/cli`, with
+re-scopes 1.6a to bring the whole bundled catalog into v1 and validate it. The CLI on `main`
+has `doctor`, `--version`, `list`, `new` and `validate`, run from the repo (`bun run dev`) or
+the compiled binary; `verify` (1.3a) is next. The bundled registry holds its first stack,
+`typescript-cli`, with the fragments it names, and validates clean; conditional blocks for stacks
+and tags it doesn't have yet were trimmed and come back when 1.6a brings those in. The repo is a bun-workspace monorepo (D11): the CLI is `packages/cli`, with
 `packages/api` and `packages/mcp` as placeholders.
 
 Three foundation questions are product design and are open architecture questions A2-A4
