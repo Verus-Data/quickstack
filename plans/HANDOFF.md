@@ -65,8 +65,8 @@ reworded for `dist/quickstacks` or deferred in its plan.
     fallback before the plugin is published.
   - `.rr.yaml` names one maintainer's hosts (rr is opt-in per clone, `git config
     quickstacks.rr true`); another maintainer who opts in needs hosts with the same names.
-  - The repo's own shell hooks (`.claude/hooks/*.sh`) have drifted from the shipped ones;
-    `tests/hooks/harness-sync.test.ts` checks only `_lib.ts` and `_shell.ts`.
+  - Decided 2026-10-27: the repo's hooks stay separate from the shipped ones and its destructive
+    guard stays looser (docs/harness.md, "Repo hooks and shipped hooks").
   - Cursor's `Write` payload for an edit to an existing file isn't recorded; the fixture
     follows the docs. Record a live payload to confirm the secrets guard sees edits.
   - `list` still shows the three 1.6b stacks as proven while `validate` notes their

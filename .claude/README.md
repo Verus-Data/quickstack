@@ -4,7 +4,7 @@ CLAUDE.md imports canonical AGENTS.md. docs/harness.md describes ownership. The 
 
 | Hook | Purpose |
 | --- | --- |
-| session-start.sh | Repository, dependency, jq and environment advisory |
+| session-start.sh | Repository, dependency, jq and environment advisory; exports macOS's ssh-agent socket for rr in an opted-in clone |
 | project-status.ts | Bun version mismatch and newly appended warn/error logs |
 | block-destructive.sh | Destructive command deny/near-miss checks |
 | detect-secrets.sh | Credential-shaped edit guard |

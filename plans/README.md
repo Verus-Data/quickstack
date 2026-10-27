@@ -79,8 +79,11 @@ then it moves here with an ID that never changes.
 Every plan file opens with a status line, updated as work lands:
 
 ```
-Status: DRAFT <date> | AGREED <date> | IN PROGRESS <date> | EXECUTING | EXECUTED <date> | PARTIALLY EXECUTED (what was deferred and why)
+Status: DRAFT <date> | AGREED <date> | IN PROGRESS <date> | EXECUTING | EXECUTED <date> | PARTIALLY EXECUTED (what was deferred and why) | DEFERRED <date> (why, and until when) | WITHDRAWN <date> (why)
 ```
+
+`tests/acceptance/status.test.ts` checks each plan's Status keyword and date against its roadmap
+row.
 
 `DRAFT` is written but not agreed with the maintainers. `IN PROGRESS` is for a file whose
 work is owned by people rather than an agent (0.0's reviews and decisions). Anything after

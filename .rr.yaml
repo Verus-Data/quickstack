@@ -11,8 +11,14 @@ version: 1
 # (8 GB), which other projects share, so one heavy suite runs per host at a time. A machine whose
 # global config has no `mbp` host adds its own local host under that name.
 #
-# The m1 hosts are too slow for the CLI suite (bench.test.ts alone takes m1-mini about 45 s), so
-# every task except the light ones is pinned to `hosts: [mbp, m4-mini]`, and rr only picks a pinned
+# Measured 2026-10-27, seconds from rr's details.exec_duration_s (no sync or lock wait):
+# Host       CLI+install #1  CLI+install #2  bench.test.ts
+# mbp                 37.25           36.35          13.13
+# m4-mini             33.84           32.49          26.52
+# m1-mini             52.65           54.12          35.12
+# CLI excludes tests/bench.test.ts; both CLI runs include bun install --frozen-lockfile.
+# m1-mini is slower on both partitions, supporting the CLI pins to [mbp, m4-mini].
+# Every task except the light ones is pinned to `hosts: [mbp, m4-mini]`, and rr only picks a pinned
 # host for it. A new task needs a pin too, or it can land on an m1. m1-linux (aarch64 Linux, as
 # CI's ubuntu job) is a production serving box: keep it to the light partitions.
 hosts:
