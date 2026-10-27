@@ -30,7 +30,7 @@ Write `.github/workflows/ci.yml`. Check each action's latest major tag before wr
 <!-- quickstacks:end -->
 <!-- quickstacks:when preset=sandbox -->
 
-Sandbox: keep the workflow minimal, with `timeout-minutes` per job. Major-tag action refs are fine; list SHA pinning under Deferred.
+Sandbox: keep the workflow minimal, with `timeout-minutes` per job. Major-tag action refs are fine (where an action publishes none, pin its latest release tag); list SHA pinning under Deferred.
 <!-- quickstacks:end -->
 
 <!-- quickstacks:when tag=monorepo -->

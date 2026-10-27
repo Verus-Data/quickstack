@@ -10,7 +10,7 @@ deps:
   test: [github.com/stretchr/testify]
 tools: [go, make, git, golangci-lint]
 decisions:
-  - "Module path: github.com/<owner>/<project-slug> (default), owner from `gh api user -q .login` or the git remote, never the author's display name. Ask if neither exists."
+  - "Module path: github.com/<owner>/<project-slug> (default), owner from `gh api user -q .login` or the git remote, never the author's display name. If neither exists, use the bare `<project-slug>` (it builds and installs locally) and list the path under decisions to revisit."
   - "Binary name: the project slug (default; the Makefile's BIN)."
   - "Config: YAML at ~/.config/<binary>/config.yaml plus an optional project-local file (default), or env and flags only."
   - "Output: human with --json (default), or JSON with --pretty."

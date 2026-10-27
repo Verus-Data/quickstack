@@ -72,7 +72,7 @@ src/styles/global.css        Tailwind entry, typography plugin, theme tokens
 
 ## Setup
 
-1. Run create-astro (`bun create astro`) non-interactively into a temp directory (for example `.astro-init/`) with the minimal template and without its AI/agent files, git init, or install. Skipping the AI files (a `--no-ai`-style flag in current versions) avoids an `AGENTS.md`/`CLAUDE.md` collision with the ones already here. Move its files to the root without overwriting: merge its `.gitignore` entries, discard its README, set `package.json` `name` to the project slug, then delete the temp dir.
+1. Run create-astro (`bunx create-astro@latest`; `bun create` swallows its `--yes`) non-interactively into a temp directory (for example `.astro-init/`) with the minimal template and without its AI/agent files, git init, or install. Skipping the AI files (a `--no-ai`-style flag in current versions) avoids an `AGENTS.md`/`CLAUDE.md` collision with the ones already here. Move its files to the root without overwriting: merge its `.gitignore` entries, discard its README, set `package.json` `name` to the project slug, then delete the temp dir.
 2. `bun install`, then `astro add` mdx, react, sitemap non-interactively. Add Tailwind the way `astro add` currently does (its Vite plugin) and enable the typography plugin the way the installed Tailwind expects.
 3. Add `@astrojs/rss`, `@astrojs/check`, and the test deps. Set `packageManager` in `package.json` to the installed bun version.
 4. Write the config, schema, `lib/posts.ts`, layout, pages, components, and two sample posts (one `published`, one `draft`).
@@ -95,12 +95,12 @@ src/styles/global.css        Tailwind entry, typography plugin, theme tokens
 - **astro.config.mjs**: `output: "static"`, `site`, `trailingSlash` and `build.format` per the decision, integrations mdx, react, sitemap (filtered), Tailwind in `vite.plugins`, Shiki with light and dark themes.
 - **tsconfig.json**: Astro's strict preset, `jsx: "react-jsx"`, `jsxImportSource: "react"`, `@/*` -> `src/*`.
 - **vitest.config.ts**: built with Astro's `getViteConfig()`; `happy-dom`, `globals: true`, a setup file importing jest-dom's vitest matchers, include `src/**/*.test.{ts,tsx}`, v8 coverage, and every vendor key (`PUBLIC_POSTHOG_KEY`) set to `""` in `test.env`.
-- **Prettier** with the Astro plugin: `make format` writes, `make lint` checks.
+- **Prettier** with the Astro plugin: `make format` writes, `make lint` checks. `.prettierignore` covers build output, `.quickstacks/` and `.claude/`.
 
 ## Testing
 
 - `make check` (astro check) type-checks and validates content.
-- vitest: `lib/posts.ts` logic against in-memory entries; the schema (valid passes, missing title and unknown status fail); and a test that parses every post's frontmatter with a real YAML parser (the `yaml` package, not a regex: Prettier rewrites quotes) and validates it with the schema.
+- vitest: `lib/posts.ts` logic against in-memory entries (a test file whose imports reach `astro:content` starts with `// @vitest-environment node`, since happy-dom makes it client-side); the schema (valid passes, missing title and unknown status fail); and a test that parses every post's frontmatter with a real YAML parser (the `yaml` package, not a regex: Prettier rewrites quotes) and validates it with the schema.
 - Testing Library per component (post list omits drafts, post layout renders heading and metadata).
 - `make build` is the integration test (every route, RSS, sitemap, OG).
 
