@@ -2,7 +2,7 @@ import { Effect } from "effect";
 import type { ConditionalProblem } from "../../errors";
 import type { Finding } from "../../schemas/validate";
 import { type Condition, scanConditionals } from "../compose/conditionals";
-import { type Entry, markdownFile } from "../registry/entry";
+import { type Entry, isStack, markdownFile } from "../registry/entry";
 import { Registry } from "../registry/registry";
 import { type Check, entryFile, finding, type View } from "./view";
 
@@ -26,11 +26,7 @@ const PROBLEMS: Record<ConditionalProblem, string> = {
 export const conditionalChecks: Check = (view) =>
   Effect.gen(function* () {
     const findings: Finding[] = [];
-    const tags = new Set(
-      view.all.flatMap((item) =>
-        "meta" in item && item.meta.kind === "stack" ? item.meta.tags : [],
-      ),
-    );
+    const tags = new Set(view.all.filter(isStack).flatMap((item) => item.meta.tags));
     for (const entry of view.entries)
       findings.push(...(yield* entryConditionalFindings(view, entry, tags)));
     return { findings };

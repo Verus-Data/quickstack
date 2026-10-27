@@ -1,11 +1,11 @@
 import { Effect, Result } from "effect";
 import type { ComposeConflict, EntryInvalid } from "../../errors";
-import { AgentId, type StackMeta } from "../../schemas/entry";
+import { AgentId } from "../../schemas/entry";
 import type { Finding } from "../../schemas/validate";
 import { targetAgents } from "../compose/agents";
 import { type ComposeOptions, type Composition, compose } from "../compose/compose";
 import { composeFiles, NEUTRAL_VARS, type RenderedFile } from "../compose/files";
-import type { Entry } from "../registry/entry";
+import { type Entry, isStack } from "../registry/entry";
 import { Registry } from "../registry/registry";
 import { compositionPlans, describe } from "./compositions";
 import type { Source } from "./sources";
@@ -49,10 +49,7 @@ function compositionRuns(view: SourceView): CompositionRun[] {
         },
       ]
     : view.all
-        .filter(
-          (item): item is Entry & { meta: StackMeta } =>
-            "meta" in item && item.meta.kind === "stack",
-        )
+        .filter(isStack)
         .flatMap((stack) =>
           (["default", "sandbox"] as const).flatMap((preset) =>
             compositionPlans(view, stack).map((plan) => ({ stack, preset, plan })),

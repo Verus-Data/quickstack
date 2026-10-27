@@ -340,20 +340,15 @@ export class Registry extends Context.Service<
           });
 
         const load = Effect.gen(function* () {
-          const found = new Map<string, Array<{ root: RegistryRoot; candidate: Candidate }>>();
-          const loadRoots = Effect.gen(function* () {
-            for (const root of roots) {
-              const strict = root.origin === "project";
-              if (strict && (yield* linked(root.path))) {
-                skipped.push({ reason: "symlink", origin: root.origin, dir: root.path });
-                continue;
-              }
-              for (const { kind, dir } of kinds) {
-                yield* loadKind(root, kind, dir, found);
-              }
+          const found = new Map<string, RootCandidate[]>();
+          for (const root of roots) {
+            const strict = root.origin === "project";
+            if (strict && (yield* linked(root.path))) {
+              skipped.push({ reason: "symlink", origin: root.origin, dir: root.path });
+              continue;
             }
-          });
-          yield* loadRoots;
+            for (const { kind, dir } of kinds) yield* loadKind(root, kind, dir, found);
+          }
           return registryWinners(found);
         });
         /** Filled while `load` runs; read only after it has. */
@@ -367,11 +362,7 @@ export class Registry extends Context.Service<
         const checked = <A>(
           entry: Entry,
           source: string,
-          read: (
-            file: string,
-            denied: (at: string) => PermissionDenied,
-            missing: EntryInvalid,
-          ) => Effect.Effect<A, EntryInvalid | PermissionDenied>,
+          read: (file: string) => Effect.Effect<A, PlatformError.PlatformError>,
         ) =>
           Effect.gen(function* () {
             const invalid = (reason: "symlink" | "missing", at: string) =>
@@ -395,7 +386,12 @@ export class Registry extends Context.Service<
                 );
               if (info.type === "SymbolicLink") return yield* invalid("symlink", rel);
             }
-            return yield* read(path.join(entry.dir, source), denied, invalid("missing", source));
+            const file = path.join(entry.dir, source);
+            return yield* read(file).pipe(
+              Effect.mapError((error) =>
+                notFound(error) ? invalid("missing", source) : denied(file),
+              ),
+            );
           });
 
         const tree = (entry: Entry) =>
@@ -464,18 +460,8 @@ export class Registry extends Context.Service<
                 .sort((a, b) => (a.source < b.source ? -1 : 1));
             }),
           tree,
-          read: (entry, source) =>
-            checked(entry, source, (file, denied, missing) =>
-              fs
-                .readFileString(file)
-                .pipe(Effect.mapError((error) => (notFound(error) ? missing : denied(file)))),
-            ),
-          bytes: (entry, source) =>
-            checked(entry, source, (file, denied, missing) =>
-              fs
-                .readFile(file)
-                .pipe(Effect.mapError((error) => (notFound(error) ? missing : denied(file)))),
-            ),
+          read: (entry, source) => checked(entry, source, (file) => fs.readFileString(file)),
+          bytes: (entry, source) => checked(entry, source, (file) => fs.readFile(file)),
         };
       }),
     );

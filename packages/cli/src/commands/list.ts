@@ -1,5 +1,6 @@
 import { Effect, Option, Path, Schema } from "effect";
 import { Argument, Command, Flag } from "effect/cli";
+import { fitsStack } from "../core/compose/compose";
 import { readLedger } from "../core/ledger";
 import { type Group, groups, listResult, renderList, toRow, wrap } from "../core/list";
 import { MANIFEST_PATH, readManifest } from "../core/manifest";
@@ -117,10 +118,7 @@ function projectChoices(
     (row) =>
       row.kind === "fragment" &&
       !applied.includes(row.id) &&
-      (!stack ||
-        !row.appliesTo?.length ||
-        row.appliesTo.includes(stack.id) ||
-        row.appliesTo.some((tag) => stack.tags.includes(tag))),
+      (!stack || fitsStack(row.appliesTo ?? [], stack)),
   );
   const project = manifest
     ? { stack: manifest.stack?.id ?? null, applied, addable: addable.map((row) => row.id) }

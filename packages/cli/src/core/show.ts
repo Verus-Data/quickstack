@@ -7,11 +7,11 @@ import type { ShowReport } from "../schemas/show";
 import { Output } from "../services/output";
 import { countWords } from "./brief/words";
 import { targetAgents } from "./compose/agents";
-import { compose } from "./compose/compose";
+import { compose, fitsStack } from "./compose/compose";
 import { fingerprint } from "./fingerprint";
 import { lastDefaultRecord, latestMatchingRecord, readLedger } from "./ledger";
 import { toRow } from "./list";
-import { type Entry, isRejected, outputPath, type RejectedEntry } from "./registry/entry";
+import { type Entry, isStack, outputPath, type RejectedEntry } from "./registry/entry";
 import { defaultRoots, Registry, type RegistryRoot, type RegistryRoots } from "./registry/registry";
 import { closest } from "./suggest";
 import { printable } from "./text";
@@ -91,15 +91,9 @@ function selectionMetadata(entry: Entry, all: ReadonlyArray<Entry | RejectedEntr
         requiresTools: meta.requiresTools,
         needsOwnRepo: meta.needsOwnRepo,
         fits: all
-          .filter(
-            (item) =>
-              !isRejected(item) &&
-              item.kind === "stack" &&
-              (!meta.appliesTo.length ||
-                meta.appliesTo.includes(item.id) ||
-                item.meta.tags.some((tag) => meta.appliesTo.includes(tag))),
-          )
-          .map((item) => item.id),
+          .filter(isStack)
+          .filter((stack) => fitsStack(meta.appliesTo, { id: stack.id, tags: stack.meta.tags }))
+          .map((stack) => stack.id),
       };
 }
 
@@ -160,22 +154,20 @@ const bundledLastRun = (entry: Entry, records: ReadonlyArray<LedgerRecord>) =>
         ? lastDefaultRecord(records, entry.id)
         : latestMatchingRecord(candidates, () => true);
     if (!record) return null;
-    const stack = record.stack;
-    const added = record.with;
+    const run = {
+      date: record.date,
+      result: record.result,
+      fingerprint: record.fingerprint,
+      agent: record.agent,
+      preset: record.preset,
+      ...(entry.kind === "fragment" ? { stack: record.stack } : {}),
+    };
     if (record.preset !== "default" && record.preset !== "sandbox")
-      return {
-        date: record.date,
-        result: record.result,
-        fingerprint: record.fingerprint,
-        agent: record.agent,
-        preset: record.preset,
-        ...(entry.kind === "fragment" ? { stack } : {}),
-        sameContent: false,
-      };
+      return { ...run, sameContent: false };
     const current = yield* Effect.result(
       compose({
-        stack,
-        with: added,
+        stack: record.stack,
+        with: record.with,
         without: [],
         preset: record.preset,
         agents: [record.agent],
@@ -184,12 +176,7 @@ const bundledLastRun = (entry: Entry, records: ReadonlyArray<LedgerRecord>) =>
       }).pipe(Effect.flatMap(fingerprint)),
     );
     return {
-      date: record.date,
-      result: record.result,
-      fingerprint: record.fingerprint,
-      agent: record.agent,
-      preset: record.preset,
-      ...(entry.kind === "fragment" ? { stack } : {}),
+      ...run,
       sameContent: Result.isSuccess(current) && current.success === record.fingerprint,
     };
   });
@@ -199,16 +186,10 @@ const entryLastRun = (
   records: ReadonlyArray<LedgerRecord>,
   bundled: RegistryRoot | undefined,
 ) =>
-  Effect.gen(function* () {
-    let lastRun: ShowReport["lastRun"] = null;
-    if (entry.origin === "bundled" && bundled) {
-      // A bundled run is compared only to bundled inputs, never a local shadow of a fragment.
-      lastRun = yield* bundledLastRun(entry, records).pipe(
-        Effect.provide(Registry.layer([bundled])),
-      );
-    }
-    return lastRun;
-  });
+  entry.origin === "bundled" && bundled
+    ? // A bundled run is compared only to bundled inputs, never a local shadow of a fragment.
+      bundledLastRun(entry, records).pipe(Effect.provide(Registry.layer([bundled])))
+    : Effect.succeed(null);
 
 function lastRunLine(lastRun: ShowReport["lastRun"]): string {
   if (!lastRun) return "Last run: none";
