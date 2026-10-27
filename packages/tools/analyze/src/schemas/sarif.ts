@@ -1,3 +1,7 @@
+// Deliberate subset of SARIF 2.1.0 — the authority is the OASIS JSON schema at
+// https://docs.oasis-open.org/sarif/sarif/v2.1.0/cs01/schemas/sarif-schema-2.1.0.json
+// Extend this only when a reader actually needs a field, never speculatively.
+
 export type SarifLogLevel = "note" | "warning" | "error" | undefined;
 
 export type ArtifactLocation = {
@@ -7,12 +11,10 @@ export type ArtifactLocation = {
 
 export type PhysicalLocation = {
   readonly artifactLocation?: ArtifactLocation;
-  readonly region?: { readonly startLine?: number; readonly startColumn?: number };
 };
 
 export type Location = {
   readonly physicalLocation?: PhysicalLocation;
-  readonly logicalLocations?: ReadonlyArray<{ readonly name?: string }>;
 };
 
 export type Result = {
@@ -23,26 +25,13 @@ export type Result = {
   readonly partialFingerprints?: Readonly<Record<string, string>>;
 };
 
-export type ReportingDescriptor = {
-  readonly id?: string;
-  readonly name?: string;
-  readonly shortDescription?: { readonly text?: string };
-  readonly helpUri?: string;
-};
-
 export type ToolDriver = {
   readonly name?: string;
   readonly version?: string;
-  readonly semanticVersion?: string;
-  readonly informationUri?: string;
-  readonly rules?: ReadonlyArray<ReportingDescriptor>;
 };
-
-export type ToolComponent = ToolDriver;
 
 export type Tool = {
   readonly driver?: ToolDriver;
-  readonly extensions?: ReadonlyArray<ToolComponent>;
 };
 
 export type Invocation = {
@@ -50,14 +39,10 @@ export type Invocation = {
   readonly exitCode?: number;
   readonly startTimeUtc?: string;
   readonly endTimeUtc?: string;
-  readonly toolExecutionSuccessful?: boolean;
 };
 
 export type Artifact = {
   readonly location?: ArtifactLocation;
-  readonly length?: number;
-  readonly hashes?: Readonly<Record<string, string>>;
-  readonly sourceLanguage?: string;
 };
 
 export type OriginalUriBaseId = { readonly uri?: string; readonly uriBaseId?: string };
@@ -75,7 +60,6 @@ export type SarifLog = {
   readonly version: string;
   readonly $schema?: string;
   readonly runs: ReadonlyArray<Run>;
-  readonly inlineExternalProperties?: ReadonlyArray<unknown>;
   readonly properties?: Readonly<Record<string, unknown>>;
 };
 

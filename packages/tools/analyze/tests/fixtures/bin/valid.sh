@@ -1,2 +1,0 @@
-#!/usr/bin/env bash
-echo '{"version":"2.1.0","$schema":"https://docs.oasis-open.org/sarif/sarif/v2.1.0/cs01/schemas/sarif-schema-2.1.0.json","runs":[{"tool":{"driver":{"name":"fake-valid","version":"9.9.9"}},"results":[{"ruleId":"FAKE-R1","level":"note","message":{"text":"fake finding"},"locations":[{"physicalLocation":{"artifactLocation":{"uri":"src/add.ts"}}}]}],"artifacts":[{"location":{"uri":"src/add.ts"}}]}]}'

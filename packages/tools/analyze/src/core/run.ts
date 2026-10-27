@@ -4,7 +4,7 @@ import { sarifSchemaUri } from "../schemas/sarif";
 import type { Attribution } from "./attribution";
 import type { DigestResult } from "./digest";
 import type { Metrics } from "./inventory";
-import type { ToolLedgerEntry } from "./tools";
+import type { ToolLedgerEntry, ToolNotRunEntry } from "./tools";
 import { rewriteRunUris } from "./uri";
 
 export const RECORD_VERSION = 1;
@@ -17,6 +17,7 @@ export type AssembleInput = {
   readonly metrics: Metrics;
   readonly attribution: Attribution;
   readonly tools: readonly ToolLedgerEntry[];
+  readonly adapterOrder: readonly string[];
   readonly toolRuns: readonly SarifRun[];
   readonly sarifInputs: readonly { readonly id: string; readonly log: SarifLog }[];
   readonly createdAt: string;
@@ -59,6 +60,30 @@ function attributionBlock(attribution: Attribution): Record<string, unknown> {
   return out;
 }
 
+function toolsNotRunBlock(
+  tools: readonly ToolLedgerEntry[],
+  adapterOrder: readonly string[],
+): ToolNotRunEntry[] {
+  // A tool that ran successfully is not listed here: its own SARIF run already
+  // carries its identity, version and findings, so repeating them in this block
+  // would be duplicated bookkeeping that drifts.
+  const order = new Map<string, number>();
+  for (let i = 0; i < adapterOrder.length; i += 1) {
+    order.set(adapterOrder[i] ?? "", i);
+  }
+  return tools
+    .filter((e) => e.status !== "ran")
+    .map((e) => {
+      const entry: ToolNotRunEntry = {
+        id: e.id,
+        status: e.status as ToolNotRunEntry["status"],
+        ...(e.reason !== undefined ? { reason: e.reason } : {}),
+      };
+      return entry;
+    })
+    .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+}
+
 export function assemble(input: AssembleInput): SarifLog {
   const base = fileUri(input.targetAbs);
   const envelopeRun: SarifRun = {
@@ -66,7 +91,6 @@ export function assemble(input: AssembleInput): SarifLog {
       driver: {
         name: DRIVER_NAME,
         version: DRIVER_VERSION,
-        rules: [],
       },
     },
     invocations: [
@@ -92,7 +116,7 @@ export function assemble(input: AssembleInput): SarifLog {
         },
         attribution: attributionBlock(input.attribution),
         metrics: metricsBlock(input.metrics),
-        tools: input.tools,
+        toolsNotRun: toolsNotRunBlock(input.tools, input.adapterOrder),
       },
     },
   };

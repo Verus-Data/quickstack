@@ -2,6 +2,12 @@ import { createHash } from "node:crypto";
 import { type Dirent, readdirSync, readFileSync, statSync } from "node:fs";
 import { normalize, relative, resolve, sep } from "node:path";
 
+// The ignore policy lives here, not in the target's .gitignore: the target may
+// not be a git repository at all (a freshly built project, a temp directory, an
+// unpacked tarball), nested repositories each carry their own ignore rules, and
+// the digest has to be identical on any machine. A closed, documented list is
+// the only way to keep that contract. Honouring a target's own .gitignore when
+// one exists would be a later feature, not a silent fallback.
 export const EXCLUDED_NAMES = new Set([
   ".git",
   "node_modules",

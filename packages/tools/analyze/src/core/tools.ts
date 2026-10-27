@@ -1,9 +1,17 @@
 import { spawn } from "node:child_process";
 import { accessSync, constants, existsSync, readFileSync } from "node:fs";
 import { delimiter, resolve, sep } from "node:path";
-import { isExecutable } from "../runtime";
-import { countResults, type SarifLog, type SarifRun, validateSarif } from "../schemas/sarif";
+import { type SarifLog, type SarifRun, validateSarif } from "../schemas/sarif";
 import { rewriteRunUris } from "./uri";
+
+function isExecutable(path: string): boolean {
+  try {
+    accessSync(path, constants.X_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 export const DEFAULT_TOOLS_JSON_PATH = resolve(
   import.meta.dirname ?? ".",
@@ -25,20 +33,24 @@ export type ToolEntry = {
 
 export type ToolStatus = "ran" | "absent" | "failed" | "timeout" | "skipped";
 
+export type ToolNotRunStatus = "absent" | "skipped" | "failed" | "timeout";
+
+export type ToolNotRunEntry = {
+  readonly id: string;
+  readonly status: ToolNotRunStatus;
+  readonly reason?: string;
+};
+
 export type ToolLedgerEntry = {
   readonly id: string;
   readonly status: ToolStatus;
-  readonly version?: string;
-  readonly durationMs: number;
-  readonly resultCount: number;
   readonly reason?: string;
-  readonly truncated?: boolean;
-  readonly exitCode?: number;
 };
 
 export type ToolRunResult = {
   readonly ledger: readonly ToolLedgerEntry[];
   readonly runs: readonly SarifRun[];
+  readonly adapterOrder: readonly string[];
 };
 
 const STDOUT_CAP_BYTES = 32 * 1024 * 1024;
@@ -205,18 +217,6 @@ function spawnCapturing(
   });
 }
 
-async function probeVersion(
-  binary: string,
-  argv: readonly string[],
-  cwd: string,
-): Promise<string | undefined> {
-  const result = await spawnCapturing(binary, argv, cwd, 10000);
-  if (result.ok) {
-    return result.stdout.trim().split("\n")[0]?.slice(0, 120);
-  }
-  return undefined;
-}
-
 export async function runTools(
   targetAbs: string,
   toolIds: readonly string[],
@@ -234,22 +234,17 @@ export async function runTools(
       ledger.push({
         id: tool.id,
         status: "skipped",
-        durationMs: 0,
-        resultCount: 0,
         reason: "not-selected",
       });
     }
   }
 
   for (const tool of selected) {
-    const start = Date.now();
     const resolved = resolveBinary(tool.binary);
     if (resolved === undefined) {
       ledger.push({
         id: tool.id,
         status: "absent",
-        durationMs: Date.now() - start,
-        resultCount: 0,
       });
       continue;
     }
@@ -259,26 +254,16 @@ export async function runTools(
       ledger.push({
         id: tool.id,
         status: "failed",
-        durationMs: Date.now() - start,
-        resultCount: 0,
         reason: "not-executable",
       });
       continue;
     }
-    const version =
-      tool.versionArgv.length > 0
-        ? await probeVersion(resolved, tool.versionArgv, targetAbs)
-        : undefined;
     const argv = substituteArgv(tool.sarifArgv, targetAbs);
     const result = await spawnCapturing(resolved, argv, targetAbs, tool.timeoutMs);
-    const durationMs = Date.now() - start;
     if (!result.ok) {
       ledger.push({
         id: tool.id,
         status: result.reason === "timeout" ? "timeout" : "failed",
-        version,
-        durationMs,
-        resultCount: 0,
         reason: result.reason === "timeout" ? "timeout" : result.message,
       });
       continue;
@@ -288,11 +273,7 @@ export async function runTools(
       ledger.push({
         id: tool.id,
         status: "failed",
-        version,
-        durationMs,
-        resultCount: 0,
         reason: `exit-code:${exitCode}`,
-        exitCode,
       });
       continue;
     }
@@ -303,11 +284,7 @@ export async function runTools(
       ledger.push({
         id: tool.id,
         status: "failed",
-        version,
-        durationMs,
-        resultCount: 0,
         reason: `invalid-sarif: ${error instanceof Error ? error.message : "invalid JSON"}`,
-        exitCode,
       });
       continue;
     }
@@ -316,11 +293,7 @@ export async function runTools(
       ledger.push({
         id: tool.id,
         status: "failed",
-        version,
-        durationMs,
-        resultCount: 0,
         reason: `invalid-sarif: ${validation.reason}`,
-        exitCode,
       });
       continue;
     }
@@ -331,13 +304,8 @@ export async function runTools(
     ledger.push({
       id: tool.id,
       status: "ran",
-      version,
-      durationMs,
-      resultCount: countResults(log),
-      truncated: result.truncated || undefined,
-      exitCode,
     });
   }
 
-  return { ledger, runs };
+  return { ledger, runs, adapterOrder: all.map((t) => t.id) };
 }

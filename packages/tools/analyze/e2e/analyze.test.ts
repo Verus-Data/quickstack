@@ -79,7 +79,7 @@ describe("e2e analyze entry point", () => {
     }
   });
 
-  test("a default run has one ledger entry per configured tool (fails if the table is not found)", async () => {
+  test("a default run accounts for every configured tool (ran or in toolsNotRun)", async () => {
     const dir = mkdtempSync(join(tmpdir(), "analyze-e2e-ledger-"));
     try {
       copyTree(TREE, dir);
@@ -87,15 +87,22 @@ describe("e2e analyze entry point", () => {
       expect(status).toBe(0);
       const log = JSON.parse(stdout) as SarifLog;
       const qs = log.runs[0]?.properties as
-        | { quickstacks?: { tools?: Array<{ id: string; status: string }> } }
+        | { quickstacks?: { toolsNotRun?: Array<{ id: string; status: string }> } }
         | undefined;
-      const tools = qs?.quickstacks?.tools ?? [];
+      const toolsNotRun = qs?.quickstacks?.toolsNotRun ?? [];
       const configured = loadTools(DEFAULT_TOOLS_JSON_PATH);
+      const configuredIds = new Set(configured.map((t) => t.id));
       expect(configured.length).toBe(6);
-      expect(tools.length).toBe(configured.length);
-      const ids = tools.map((t) => t.id).sort();
-      const configuredIds = configured.map((t) => t.id).sort();
-      expect(JSON.stringify(ids)).toBe(JSON.stringify(configuredIds));
+      // Every toolsNotRun entry must be a configured adapter id.
+      for (const entry of toolsNotRun) {
+        expect(configuredIds.has(entry.id)).toBe(true);
+      }
+      // A tool that ran is absent from toolsNotRun; its SARIF run follows the
+      // envelope. So the number that ran is configured.length - toolsNotRun.length,
+      // and that many (or more) non-envelope runs must exist.
+      const ranCount = configured.length - toolsNotRun.length;
+      expect(ranCount).toBeGreaterThanOrEqual(0);
+      expect(log.runs.length - 1).toBeGreaterThanOrEqual(ranCount);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

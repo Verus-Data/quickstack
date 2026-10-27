@@ -35,11 +35,12 @@ symmetry with the rest of the CLI surface; it is the default.
 
 ## The record shape
 
-One log per run. `runs[0]` is the **envelope**: the inventory metrics, the tool
-ledger and the attribution. `runs[1..n]` are each tool's own log and any
-`--sarif` logs adopted from elsewhere, all passed through with artifact URIs
-rewritten to be relative to the target root and the absolute base recorded in
-`originalUriBaseIds`.
+One log per run. `runs[0]` is the **envelope**: the inventory metrics, the
+tools that did *not* run, and the attribution. `runs[1..n]` are each tool's
+own log and any `--sarif` logs adopted from elsewhere, all passed through with
+artifact URIs rewritten to be relative to the target root and the absolute
+base recorded in `originalUriBaseIds`. A tool that ran successfully is **not**
+listed in the envelope — its own SARIF run is its record.
 
 ```json
 {
@@ -47,7 +48,7 @@ rewritten to be relative to the target root and the absolute base recorded in
   "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/cs01/schemas/sarif-schema-2.1.0.json",
   "runs": [
     {
-      "tool": { "driver": { "name": "quickstacks-analyze", "version": "0.1.0", "rules": [] } },
+      "tool": { "driver": { "name": "quickstacks-analyze", "version": "0.1.0" } },
       "invocations": [{ "executionSuccessful": true, "startTimeUtc": "...", "endTimeUtc": "..." }],
       "results": [],
       "originalUriBaseIds": { "%SRCROOT%": { "uri": "file:///abs/path/" } },
@@ -59,7 +60,11 @@ rewritten to be relative to the target root and the absolute base recorded in
           "target": { "digest": "sha256:...", "files": 6, "bytes": 918, "excluded": ["node_modules", "dist", ".git", "coverage", "vendor", "target"], "skippedSymlinks": 0 },
           "attribution": { "kind": "manifest|label|none", "stack": "...", "with": [], "preset": "...", "agent": "...", "fingerprint": "sha256:..." },
           "metrics": { "files": 6, "bytes": 918, "lines": 46, "codeLines": 29, "blankLines": 6, "commentLines": 6, "byLanguage": { "typescript": 48, "python": 22, "go": 15 }, "testRatio": 0.3333, "testFiles": 1, "sourceFiles": 3, "markers": { "TODO": 3, "FIXME": 2, "HACK": 0, "XXX": 0 }, "largestFiles": [], "manifests": ["go.mod", "package.json"] },
-          "tools": [{ "id": "semgrep", "status": "ran", "version": "1.x", "durationMs": 812, "resultCount": 3 }]
+          "toolsNotRun": [
+            { "id": "semgrep", "status": "absent" },
+            { "id": "eslint", "status": "skipped", "reason": "not-selected" },
+            { "id": "trivy", "status": "failed", "reason": "exit-code:2" }
+          ]
         }
       }
     }
@@ -89,20 +94,26 @@ A record with no tools installed is still a useful record, so tier 0 always runs
 
 ## Tool statuses
 
+A tool that ran successfully is **not** listed in `properties.quickstacks.toolsNotRun`
+— its own SARIF run is its record, so listing it again would be duplicated
+bookkeeping that drifts. Only tools that did *not* run appear, each with an
+`id`, a `status`, and a `reason` when applicable. Entries are sorted by the
+adapter order in `tools.json` so two runs of the same input produce the same
+order.
+
 | Status | Meaning |
 |---|---|
-| `ran` | The binary resolved and emitted valid SARIF 2.1.0. A non-zero exit with valid SARIF is `ran` — the exit code is recorded as `exitCode` on the ledger entry, not treated as failure |
 | `absent` | The binary was not found on `PATH`; never an error |
-| `failed` | No parseable SARIF was emitted: the tool exited with no stdout, emitted invalid JSON, or emitted a foreign SARIF version. `reason` carries the detail (`exit-code:N`, `invalid-sarif: ...`) |
-| `timeout` | The tool exceeded its `timeoutMs` and was killed by process group |
 | `skipped` | `--tool` was given and this adapter was not selected; `reason` is `not-selected` |
+| `failed` | No parseable SARIF was emitted: the tool exited with no stdout, emitted invalid JSON, or emitted a foreign SARIF version. `reason` carries the detail (`exit-code:N`, `invalid-sarif: …`) |
+| `timeout` | The tool exceeded its `timeoutMs` and was killed by process group |
 
 A non-zero exit with valid SARIF 2.1.0 is a successful measurement with
 findings — that is how ruff, eslint, semgrep, golangci-lint and gitleaks signal
-"something was found". The runner records `ran`, keeps the findings, and stores
-the observed exit code as `exitCode` so the number is not lost. Findings never
-change the command exit code. `truncated: true` on a ledger entry means the
-tool's stdout exceeded the 32 MiB cap.
+"something was found". The runner records `ran`, keeps the findings in the
+tool's own SARIF run, and the tool does not appear in `toolsNotRun`. Findings
+never change the command exit code. A truncated run (stdout exceeded the 32 MiB
+cap) is still `ran`; the cap is a safety measure, not a failure.
 
 ## Metric definitions (tier 0)
 

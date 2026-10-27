@@ -2,7 +2,7 @@
 import { parse } from "./cli";
 import { exitCode, type Outcome, usageError } from "./errors";
 import { main } from "./main";
-import { defaultWriters, writeStderr } from "./output";
+import { defaultWriters } from "./output";
 
 const controller = new AbortController();
 const abort = (): void => controller.abort();
@@ -12,7 +12,7 @@ process.on("SIGTERM", abort);
 try {
   const result = parse(process.argv.slice(2));
   if (!result.ok) {
-    await writeStderr(defaultWriters, `error: ${result.reason}\n`);
+    await defaultWriters.stderr(`error: ${result.reason}\n`);
     process.exitCode = exitCode(usageError(result.reason));
   } else {
     const outcome: Outcome = await main(result.parsed);
@@ -20,7 +20,7 @@ try {
   }
 } catch (error) {
   const message = error instanceof Error ? error.message : "unexpected defect";
-  await writeStderr(defaultWriters, `error: ${message}\n`);
+  await defaultWriters.stderr(`error: ${message}\n`);
   process.exitCode = 1;
 } finally {
   process.off("SIGINT", abort);
