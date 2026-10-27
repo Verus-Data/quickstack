@@ -1,6 +1,7 @@
 # Phase 3.1c: `new --dry-run` and naming options
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: EXECUTED 2026-10-27 (`new --dry-run`, `--name`, `--author`, the full slug table;
+reviewed once and fixed). The shared human file listing with 3.1a's preview lands with 3.1a
 Acceptance tests: traced
 
 | Field | Value |
