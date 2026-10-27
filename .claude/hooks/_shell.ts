@@ -20,6 +20,8 @@ export type Command = {
   argv: string[];
   /** Per argv word, whether any part of it was quoted (a quoted * is not a glob). */
   quoted: boolean[];
+  /** Per argv word, whether it contains unresolved shell expansion syntax. */
+  expands: boolean[];
   /** Assignments before the command word (GIT_DIR=x git ...). */
   env: string[];
   /** Redirect targets (> /dev/sda). */
@@ -36,7 +38,7 @@ export type Command = {
   opaque?: boolean;
 };
 
-type Word = { text: string; quoted: boolean };
+type Word = { text: string; quoted: boolean; expands: boolean };
 type Simple = {
   words: Word[];
   redirects: string[];
@@ -128,6 +130,7 @@ class Lexer {
   private word = "";
   private inWord = false;
   private quoted = false;
+  private expands = false;
   private redirectNext = false;
   private i: number;
   /** Set on reaching the ) that closes a substitution body: the index just past it. */
@@ -147,7 +150,7 @@ class Lexer {
     while (this.i < this.n) {
       const c = this.src.charAt(this.i);
       if (!this.token(c)) {
-        this.add(c);
+        this.add(c, false, /[*?[{$~]/.test(c));
         this.i++;
       }
       if (this.closedAt !== undefined) return this.closedAt;
@@ -190,26 +193,28 @@ class Lexer {
     };
   }
 
-  private add(text: string, isQuoted = false) {
+  private add(text: string, isQuoted = false, expansion = false) {
     this.word += text;
     this.inWord = true;
     if (isQuoted) this.quoted = true;
+    if (expansion) this.expands = true;
   }
 
-  /** Add the source up to `end` to the word as it stands, and continue from there. */
+  /** Add an expansion's source up to `end` to the word, and continue from there. */
   private takeUntil(end: number) {
-    this.add(this.src.slice(this.i, end));
+    this.add(this.src.slice(this.i, end), false, true);
     this.i = end;
   }
 
   private endWord() {
     if (!this.inWord) return;
     if (this.redirectNext) this.cmd.redirects.push(this.word);
-    else this.cmd.words.push({ text: this.word, quoted: this.quoted });
+    else this.cmd.words.push({ text: this.word, quoted: this.quoted, expands: this.expands });
     this.redirectNext = false;
     this.word = "";
     this.inWord = false;
     this.quoted = false;
+    this.expands = false;
   }
 
   private endCmd(pipe = false) {
@@ -308,7 +313,7 @@ class Lexer {
     else if (d === "$" && src.charAt(i + 1) === "(") this.takeUntil(this.nested(i + 2));
     else if (d === "`") this.takeUntil(this.backtickBody(i + 1));
     else {
-      this.add(d);
+      this.add(d, false, d === "$");
       this.i++;
     }
   }
@@ -431,7 +436,9 @@ function simples(src: string): { list: Simple[]; parents: Map<number, number> } 
     // Even without quotes the parentheses don't close: read each line as one command.
     return {
       list: src.split("\n").map((line) => ({
-        words: line.split(/[ \t]+/).map((text) => ({ text, quoted: false })),
+        words: line
+          .split(/[ \t]+/)
+          .map((text) => ({ text, quoted: false, expands: /[*?[{$~]/.test(text) })),
         redirects: [],
         heredocs: [],
         scope: 0,
@@ -536,6 +543,7 @@ function opaque(ctx: Context): Command {
   return {
     argv: [],
     quoted: [],
+    expands: [],
     env: [],
     redirects: [],
     stdin: [],
@@ -597,6 +605,7 @@ function expand(src: string, ctx: Context, walk: Walk, stdin: string[] = []): vo
       const cmd: Command = {
         argv: words.map((w) => w.text),
         quoted: words.map((w) => w.quoted),
+        expands: words.map((w) => w.expands),
         env: simple.words
           .slice(0, start)
           .map((w) => w.text)
@@ -739,6 +748,7 @@ function follow(cmd: Command, walk: Walk): void {
       ...cmd,
       argv: argv.slice(from),
       quoted: cmd.quoted.slice(from),
+      expands: cmd.expands.slice(from),
       env: [],
       ...extra,
     };
