@@ -24,6 +24,15 @@ import { type BenchFixture, benchFixture, NOTES, passed } from "./helpers/bench"
 import { alive, runCli } from "./helpers/cli";
 import { readManifestAt, readPid, runRecords, workspace } from "./helpers/verify";
 
+/** Every file under a root with its sha256: a kept root holds the compiled binary, too big to diff. */
+const digests = (root: string) =>
+  projectFiles(root).map((path) => [
+    path,
+    createHash("sha256")
+      .update(readFileSync(join(root, path)))
+      .digest("hex"),
+  ]);
+
 const space = workspace();
 afterEach(() => space.release());
 
@@ -57,7 +66,9 @@ async function baseline(f: BenchFixture, preset = "sandbox") {
       "--json",
       ...(preset === "sandbox" ? ["--sandbox"] : ["--yes"]),
     ],
-    { home: f.home, env: f.env, host: { cwd: f.root, registry: f.registry } },
+    // From the throwaway directory, as the bench scaffolds: inside the repo the brief would
+    // describe a parent repository and count different words.
+    { home: f.home, env: f.env, host: { cwd: f.tmp, registry: f.registry } },
   );
   expect(result.status).toBe(0);
   expect(result.stderr).toBe("");
@@ -377,16 +388,14 @@ test.each(["stack", "fingerprint"])(
         ? { ...manifest, stack: { id: "another-stack", origin: "bundled", trusted: true } }
         : { ...manifest, fingerprint: `sha256:${"0".repeat(64)}` };
     writeFileSync(file, JSON.stringify(Schema.encodeSync(Manifest)(changed)));
-    const before = projectFiles(root).map((path) => [path, readFileSync(join(root, path))]);
+    const before = digests(root);
     const result = await f.invoke(["--existing", root]);
     expect(result.status).toBe(1);
     expect(result.stdout).toBe("");
     expect(result.stderr).toMatch(
       field === "stack" ? /stack|match/i : /fingerprint|composition|content/i,
     );
-    expect(projectFiles(root).map((path) => [path, readFileSync(join(root, path))])).toEqual(
-      before,
-    );
+    expect(digests(root)).toEqual(before);
     expect(f.notes()).toEqual([]);
     expect(existsSync(join(f.registry, "runs.json"))).toBe(false);
   },
@@ -504,14 +513,12 @@ test.each(["missing", "invalid", "file"])(
       mkdirSync(join(run, ".quickstacks"));
       if (kind === "invalid") writeFileSync(join(run, ".quickstacks/manifest.json"), "{unfinished");
     }
-    const before = projectFiles(root).map((path) => [path, readFileSync(join(root, path))]);
+    const before = digests(root);
     const result = await f.invoke(["--existing", root]);
     expect(result.status).toBe(1);
     expect(result.stdout).toBe("");
     expect(result.stderr).toMatch(/manifest|kept|existing/i);
-    expect(projectFiles(root).map((path) => [path, readFileSync(join(root, path))])).toEqual(
-      before,
-    );
+    expect(digests(root)).toEqual(before);
     expect(f.notes()).toEqual([]);
     expect(existsSync(join(f.registry, "runs.json"))).toBe(false);
     expect(f.cliCalls()).toEqual([]);
@@ -632,12 +639,12 @@ test("continuation refuses different added fragments without changing a kept roo
   const f = benchFixture(space);
   passed(await f.invoke(["--no-record", "--keep", "--with", "extra"]));
   const root = kept(f);
-  const before = projectFiles(root).map((path) => [path, readFileSync(join(root, path))]);
+  const before = digests(root);
   const result = await f.invoke(["--existing", root]);
   expect(result.status).toBe(1);
   expect(result.stdout).toBe("");
   expect(result.stderr).toMatch(/fragment|composition|match|with/i);
-  expect(projectFiles(root).map((path) => [path, readFileSync(join(root, path))])).toEqual(before);
+  expect(digests(root)).toEqual(before);
   expect(f.notes()).toEqual([]);
   expect(existsSync(join(f.registry, "runs.json"))).toBe(false);
 }, 60_000);
@@ -727,7 +734,8 @@ test("--cli installs a supplied dev binary without rebuilding it [2.0b#10]", asy
   expect(record(f)).toMatchObject({ result: "pass" });
   const installed = f.cliCalls()[0]?.executable;
   if (!installed) throw new Error("supplied binary was not invoked");
-  expect(readFileSync(installed)).toEqual(readFileSync(binary));
+  const hash = (file: string) => createHash("sha256").update(readFileSync(file)).digest("hex");
+  expect(hash(installed)).toBe(hash(binary));
 }, 60_000);
 
 test("continuation compares against the current working registry, not the kept artifact [2.0b#12]", async () => {
@@ -740,12 +748,12 @@ test("continuation compares against the current working registry, not the kept a
   f.git("add", "packages/cli/registry");
   f.git("commit", "--quiet", "-m", "fixture: changed current composition");
   expect((await baseline(f)).fingerprint).not.toBe(manifest.fingerprint);
-  const before = projectFiles(root).map((path) => [path, readFileSync(join(root, path))]);
+  const before = digests(root);
   const result = await f.invoke(["--existing", root]);
   expect(result.status).toBe(1);
   expect(result.stdout).toBe("");
   expect(result.stderr).toMatch(/fingerprint|composition|content/i);
-  expect(projectFiles(root).map((path) => [path, readFileSync(join(root, path))])).toEqual(before);
+  expect(digests(root)).toEqual(before);
   expect(f.notes()).toEqual([]);
   expect(existsSync(join(f.registry, "runs.json"))).toBe(false);
 }, 60_000);

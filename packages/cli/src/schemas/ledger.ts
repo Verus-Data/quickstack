@@ -27,6 +27,8 @@ export const LedgerRecord = Schema.Struct({
   agentMinutes: Schema.NullOr(Schema.Number),
   interventions: Schema.NullOr(Schema.Number),
   note: Schema.optionalKey(Schema.String),
+  hooksFired: Schema.optionalKey(Schema.NullOr(Schema.Array(Schema.String))),
+  continued: Schema.optionalKey(Schema.Boolean),
 });
 export type LedgerRecord = typeof LedgerRecord.Type;
 

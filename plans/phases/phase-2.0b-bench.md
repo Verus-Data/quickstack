@@ -1,6 +1,6 @@
 # Phase 2.0b: Bench
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: BLOCKED 2026-10-27 (implementation and review fixes done; locked-test corrections needed)
 Acceptance tests: traced
 
 | Field | Value |
@@ -9,7 +9,7 @@ Acceptance tests: traced
 | Traces to | "The only quality signal the product has is manual and nobody has time to run it"; success rows "The agent finishes without help" and "It's faster than by hand"; assumption 1's test: "Run each bundled stack to green and count hesitations and skipped instructions" |
 | Depends on | [2.0c](phase-2.0c-run-ledger.md) (`LedgerRecord`, `appendRecord`, `quickstacks runs --json`, `countAsked`), [2.0a](phase-2.0a-composed-files-and-fingerprint.md) (`fingerprint` in `new --json`), [0.3b](phase-0.3b-processes-and-signals.md) (`Processes`), [1.4](phase-1.4-handoff-and-entry-points.md) (`agentPrompt`) |
 | Blocks | [5.1](phase-5.1-scheduled-canary.md) (schedules this script on an isolated machine); [3.3a](phase-3.3a-release-and-deploy-fragments.md) and [3.3c](phase-3.3c-service-vendor-and-effect-fragments.md) (bundled fragment expansion, which bench with `--preset default` as well), [3.3b](phase-3.3b-bundled-stack-expansion.md), [3.4a](phase-3.4a-agent-harness-fragment.md), [3.4b](phase-3.4b-native-agent-adapters.md), [3.5a](phase-3.5a-app-entry-kind.md) and [3.5b](phase-3.5b-two-phase-brief.md) (each new entry lands with a bench run); evidence for [4.3](phase-4.3-mcp-server.md) (bench notes, open question 15) |
-| Decisions needed | D24 (headless auth by long-lived token in the environment; if declined, the bench has no supported way to log in and only the fake-agent tests can be built). Open question 11 (full-permission local runs on a maintainer's machine; blocks this sub-phase starting, owner: the maintainers; if the answer is no, the bench needs an isolated runner like 5.1's before any real run). Open question 12 (whether a maintainer reads every bench run to relabel `partial`; blocks the exit, owner: the maintainers; if only failing and regression runs get a read, `partial` is under-counted and the run note says the run wasn't reviewed) |
+| Decisions needed | D24 (headless auth by long-lived token in the environment; if declined, the bench has no supported way to log in and only the fake-agent tests can be built). Open question 11 answered 2026-10-27: the maintainers approved building the bench and running it locally with full permissions. Open question 12 (whether a maintainer reads every bench run to relabel `partial`; blocks the exit, owner: the maintainers; if only failing and regression runs get a read, `partial` is under-counted and the run note says the run wasn't reviewed) |
 | Settles | The bench's command line and steps; the `BENCH.md` rules, including the `## Asked` log; how a run is classified into 2.0c's `result` values; the agent adapter table (`claude` and `codex`) and each agent's auth mechanism; continuing a kept run; hook detection; that bench runs send no telemetry; why the bench doesn't breach D2 |
 
 ## Scope
@@ -53,9 +53,9 @@ permissions (below). The throwaway directory and `HOME` keep the maintainer's ow
 settings and agent hooks out of the run so results are reproducible; they are not a
 security boundary, and an agent with full permissions can still read the real home by
 absolute path ([Trust model](../roadmap.md#trust-model), point 8). Whether that risk is
-acceptable for local runs is [open question 11](../risks-and-open-questions.md#open-questions-for-the-maintainers);
-building starts only once the maintainers answer it. Unattended runs get real isolation in
-5.1.
+acceptable for local runs was [open question 11](../risks-and-open-questions.md#open-questions-for-the-maintainers).
+On 2026-10-27 the maintainers approved building the bench and running it locally.
+Unattended runs get real isolation in 5.1.
 
 ### Command
 
@@ -208,7 +208,7 @@ export type AgentAdapter = {
 | Agent | Binary and headless mode | Auth mechanism (D24) | Result |
 |---|---|---|---|
 | `claude` | `claude -p <prompt> --output-format json --dangerously-skip-permissions` | `CLAUDE_CODE_OAUTH_TOKEN`, a long-lived token from `claude setup-token` | Final JSON object: `is_error` and `subtype` (`success`, or an `error_*` value), `num_turns`. Debug log: the `--debug` output to a file under `bench/`, from which hook runs are read |
-| `codex` | `codex exec <prompt> --json` with its full-access sandbox mode | The token variable its headless login documents, obtained through its own login flow (D24); confirmed when the adapter is written | Final JSONL event: success or error and the turn count. Hook detection only if its log records hook runs; otherwise `hooksFired: null` |
+| `codex` | `codex exec <prompt> --json` with its full-access sandbox mode | `CODEX_ACCESS_TOKEN`, as documented by `codex login --with-access-token` in codex-cli 0.164.0 (D24) | Final JSONL event: success or error and the turn count. Hook detection only if its log records hook runs; otherwise `hooksFired: null` |
 | others | Added one row at a time | Must be a token passed by environment through the agent's own headless flow. An agent that only offers a refreshable credential file can't be benched | Per agent |
 
 Flags and field names are confirmed against the installed agent when the adapter is
@@ -262,8 +262,7 @@ prefix contains no `scripts/` or `src/` files, and no CLI command imports the be
 
 - Headless runs use full permissions in a throwaway directory and `HOME`, and that is not
   called isolation. Reason above; [open question 11](../risks-and-open-questions.md#open-questions-for-the-maintainers)
-  decides whether it stands, including the alternative of an allowlisted mode with an
-  explicit opt-in for full permissions.
+  was answered on 2026-10-27: build the bench and run it locally with full permissions.
 - Bench runs never send telemetry (`DO_NOT_TRACK=1` in the child environment). Reason:
   maintainer reruns of one stack would concentrate its cells and say nothing about users.
 - The bench brief lives outside the project. Reason: it must not change the project's
@@ -350,13 +349,19 @@ Agent-owned:
 Maintainer-owned, as in 1.6b's agent split (an agent can drive the terminal, but a person
 confirms the run and reads the notes):
 
-- Open questions 11 and 12 answered and recorded.
+- Open question 11 answered 2026-10-27 (local full-permission runs approved); question 12 still needs an answer.
 - One real bench run per bundled stack with the `claude` adapter, each appended to the
   ledger with its run note, and each note read (and relabeled `partial` if needed).
 - At least one real bench run with the `codex` adapter on one bundled stack, recorded
   the same way, so the second adapter is proved against a real agent before 3.4b uses it.
 
 ## What this plan may get wrong
+
+- 2026-10-27: The locked helper passes a fallible output flush to an infallible runner;
+  the first bench test compares brief word counts across parent and fresh git contexts;
+  kept-root and binary comparisons enumerate compiled-binary buffers and exhaust Node's
+  heap, including a 16 GB retry. These acceptance blockers need the test owner's correction.
+  The implementation leaves the locked files unchanged.
 
 - 2026-10-27: The bench uses the dev build and a fresh binary-plus-registry prefix until
   0.2 lands; packing returns with 0.2.

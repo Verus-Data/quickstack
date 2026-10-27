@@ -55,6 +55,24 @@ skipped. Incomplete notes are reported, other notes continue, and any failure ex
 initial `--` before passing arguments to a script, so single-dash note names are also
 accepted directly. Use `./` for a note name that collides with a long option.
 
+## Maintainer bench
+
+From this package, `bun run bench <stack> --agent claude --keep` builds the dev binary,
+installs it with the working registry into a throwaway prefix, scaffolds the stack,
+runs the agent headlessly and verifies independently. `--cli <binary>` skips the build;
+`--preset default` uses defaults instead of sandbox, `--with a,b` adds fragments,
+`--max-minutes 60` sets the time limit, and `--no-record` skips the ledger and run note.
+`--existing <kept-root>` continues matching content and adds one intervention.
+The package must be clean before a run. Read every generated note under `plans/runs/`
+and its `registry/runs.json` record before committing; a green verify can still need
+relabeling as `partial` after review. The bench never commits anything.
+
+Auth is `CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token`, or `CODEX_ACCESS_TOKEN`
+as documented by `codex login --with-access-token`. Only the selected token reaches
+the agent; no credentials or settings are copied. The fresh `HOME` and project are
+not a security boundary: local runs give the agent full permissions. Child processes
+get `DO_NOT_TRACK=1`. Fake-agent tests need no account or real token.
+
 ## Starting a project with an agent
 
 There are two ways in: run the CLI yourself, or install the skill once and ask your coding agent to start a project. The skill ships with the next release; npm publication is deferred. These are the packaged entry points:

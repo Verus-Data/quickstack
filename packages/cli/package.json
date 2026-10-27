@@ -19,7 +19,8 @@
     "e2e": "bun run build && bun test ./e2e",
     "check": "bun run lint && bun run typecheck && bun run test && bun run e2e",
     "clean": "bun scripts/clean.ts",
-    "ledger:import": "bun scripts/ledger-import.ts"
+    "ledger:import": "bun scripts/ledger-import.ts",
+    "bench": "bun scripts/bench.ts"
   },
   "dependencies": {
     "@effect/platform-bun": "catalog:",

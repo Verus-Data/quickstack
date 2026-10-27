@@ -266,6 +266,9 @@ export function benchFixture(space: ReturnType<typeof workspace>) {
           Layer.provideMerge(AppLayer(output.layer, { ...env, ...options.env }), platform),
         ),
         Effect.scoped,
+        // The bench maps its own failures to a status; the memory Output's flush and the
+        // layers' typed failures can't happen here, so any that did is a defect.
+        Effect.orDie,
       ),
       options.signal,
     );
