@@ -30,7 +30,7 @@ Product planning lives in `plans/`; start with [plans/HANDOFF.md](plans/HANDOFF.
 
 ## Commands
 
-Root commands run from the repo root and fan out to every workspace package (`bun run --filter '*' <script>`); preserve the runner split. An agent runs the whole-suite scripts (`check`, `test`, `test:hooks`, `test:unit` without a file, `coverage`, `e2e`) through rr instead ("Test runs" below); the command guard denies them locally.
+Root commands run from the repo root and fan out to every workspace package (`bun run --filter '*' <script>`); preserve the runner split. In a clone opted in to rr, an agent runs the whole-suite scripts (`check`, `test`, `test:hooks`, `test:unit` without a file, `coverage`, `e2e`) through rr instead, and the command guard denies them locally ("Test runs" below).
 
 | Command (repo root) | Purpose |
 | --- | --- |
@@ -69,7 +69,9 @@ In `packages/cli/` (run there):
 
 ## Test runs
 
-Several agents and delegates often work at once, and parallel gates on one laptop starve each other into timeouts. Run the full gate and whole test suites through [rr](https://github.com/rileyhilliard/rr): `.rr.yaml` runs the task on the first free host (the dev machine in place, or a synced remote) under a per-host lock, so concurrent runs queue. All worktrees share one remote copy per host.
+Several agents and delegates often work at once, and parallel gates on one laptop starve each other into timeouts. A clone that has test hosts runs the full gate and whole test suites through [rr](https://github.com/rileyhilliard/rr): `.rr.yaml` runs the task on the first free host (the dev machine in place, or a synced remote) under a per-host lock, so concurrent runs queue. All worktrees share one remote copy per host.
+
+rr is opt-in per clone and off by default: `git config quickstacks.rr true` turns it on (stored in the clone's `.git/config`, so every worktree of the clone shares it and nothing is committed), and `git config --unset quickstacks.rr` turns it off. Check with `git config --get quickstacks.rr`. Opted in, the command guard denies local whole-suite runs and names the rr task; opted out, run the `bun run` commands above. "The gate" in contracts and skills means `rr check` in an opted-in clone and `bun run check` otherwise.
 
 | Command (repo root) | Runs |
 | --- | --- |
@@ -185,7 +187,7 @@ Application features, install/update distribution and release workflow (decision
 
 ## Delegates
 
-Claude Code orchestrates; Codex takes the coding tasks Claude delegates (`scripts/delegate.sh`, workflow in `.claude/skills/delegate/SKILL.md`). A delegate is trusted like Claude Code and works in its own worktree from a contract file with full access (network, `bun add`, git, the whole gate). It leaves its changes uncommitted and doesn't push, because Claude reviews, refactors and commits them, and it keeps to the contract's scope. A dependency it adds keeps shared versions in the root `workspaces.catalog`. Of the Claude hooks, only the command guard runs for a delegate (`.codex/hooks.json` wires `.claude/hooks/guard-commands.ts` for Codex's Bash tool; Codex reads it from the main checkout, so it lands there before it applies). The lint, typecheck and boundary hooks don't, so a delegate runs the contract's checks itself (`bun run lint`, `bun run typecheck`, the named tests and `rr check`) and reports each result; Claude reviews, refactors and commits. `.claude/rules/` is Claude's: a contract names the rule files that apply to the task. Before handing back, a delegate runs one review in a fresh Codex process with `.claude/agents/code-reviewer.md` as its prompt.
+Claude Code orchestrates; Codex takes the coding tasks Claude delegates (`scripts/delegate.sh`, workflow in `.claude/skills/delegate/SKILL.md`). A delegate is trusted like Claude Code and works in its own worktree from a contract file with full access (network, `bun add`, git, the whole gate). It leaves its changes uncommitted and doesn't push, because Claude reviews, refactors and commits them, and it keeps to the contract's scope. A dependency it adds keeps shared versions in the root `workspaces.catalog`. Of the Claude hooks, only the command guard runs for a delegate (`.codex/hooks.json` wires `.claude/hooks/guard-commands.ts` for Codex's Bash tool; Codex reads it from the main checkout, so it lands there before it applies). The lint, typecheck and boundary hooks don't, so a delegate runs the contract's checks itself (`bun run lint`, `bun run typecheck`, the named tests and the gate, "Test runs") and reports each result; Claude reviews, refactors and commits. `.claude/rules/` is Claude's: a contract names the rule files that apply to the task. Before handing back, a delegate runs one review in a fresh Codex process with `.claude/agents/code-reviewer.md` as its prompt.
 
 ## Pending user actions
 

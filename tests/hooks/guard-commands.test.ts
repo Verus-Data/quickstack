@@ -17,7 +17,12 @@ describe("shared package manager guard", () => {
   );
 });
 
-describe("whole test suites run through rr", () => {
+/** A clone's rr opt-in (`git config quickstacks.rr`), set through git's env config so it wins. */
+const rrOptIn = (value: string) => ({
+  env: { GIT_CONFIG_COUNT: "1", GIT_CONFIG_KEY_0: "quickstacks.rr", GIT_CONFIG_VALUE_0: value },
+});
+
+describe("whole test suites run through rr in a clone that opts in", () => {
   it.each([
     "bun run check",
     "bun run test",
@@ -34,9 +39,9 @@ describe("whole test suites run through rr", () => {
     "npx vitest",
     "cd packages/cli && bun test ./e2e",
   ])("denies %s", async (command) => {
-    expect(denyReason(await runHook("PreToolUse", "guard-commands", bash(command)))).toContain(
-      "rr check",
-    );
+    expect(
+      denyReason(await runHook("PreToolUse", "guard-commands", bash(command), rrOptIn("true"))),
+    ).toContain("rr check");
   });
   it.each([
     "rr check",
@@ -53,8 +58,14 @@ describe("whole test suites run through rr", () => {
     "git commit -m 'run bun run check before pushing'",
   ])("allows %s", async (command) => {
     expect(
-      denyReason(await runHook("PreToolUse", "guard-commands", bash(command))),
+      denyReason(await runHook("PreToolUse", "guard-commands", bash(command), rrOptIn("true"))),
     ).toBeUndefined();
+  });
+  it.each(["false", ""])("leaves whole suites local when quickstacks.rr is %j", async (value) => {
+    for (const command of ["bun run check", "cd packages/cli && bun run test:unit"])
+      expect(
+        denyReason(await runHook("PreToolUse", "guard-commands", bash(command), rrOptIn(value))),
+      ).toBeUndefined();
   });
 });
 

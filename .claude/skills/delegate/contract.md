@@ -57,7 +57,7 @@ Run, from the worktree root, and iterate until they pass:
 {e.g. bun run --cwd packages/cli test:unit tests/<file>.test.ts}
 bun run lint
 bun run typecheck
-rr check        # the full gate on a test host, queued (AGENTS.md "Test runs")
+rr check        # the gate, queued on the test hosts; `bun run check` in a clone without rr (AGENTS.md "Test runs")
 ```
 
 Then QA it as its first user, before the review. Build (`bun run build`) and run each command

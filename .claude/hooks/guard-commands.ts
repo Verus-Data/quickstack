@@ -1,3 +1,4 @@
+import { spawnSync } from "node:child_process";
 import { basename } from "node:path";
 import { deny, readPayload, text } from "./_lib";
 import { commands } from "./_shell";
@@ -10,7 +11,8 @@ const inPlaceFlag = (arg: string) =>
   /^-[a-zA-Z]*i/.test(arg) || arg === "--in-place" || arg.startsWith("--in-place=");
 
 // Parallel agents running whole suites on one laptop starve each other into timeouts; rr queues
-// them on the test hosts. A scoped file is cheap and stays local.
+// them on the test hosts. A clone opts in with `git config quickstacks.rr true` (shared by its
+// worktrees, never committed); without it, whole suites run locally. A scoped file always does.
 const RR =
   'BLOCKED: Whole test suites run through rr, which queues them across the test hosts: `rr check` for the gate, `rr test-cli`, `rr test-hooks` or `rr e2e` for one suite (AGENTS.md "Test runs"). A single test file runs locally (`bun run test:unit tests/<file>.test.ts` in packages/cli). If rr is missing or fails before running, say so and rerun with QUICKSTACKS_LOCAL_GATE=1 in front.';
 const SUITES = new Set(["check", "test", "e2e", "coverage"]);
@@ -44,10 +46,15 @@ function wholeSuite(argv: readonly string[]): boolean {
 const unscopedVitest = (args: readonly string[]) =>
   operands(args).filter((arg) => arg !== "run").length === 0;
 
+const optedIntoRr = () =>
+  spawnSync("git", ["config", "--type=bool", "--get", "quickstacks.rr"], {
+    encoding: "utf8",
+  }).stdout.trim() === "true";
+
 const command = text(readPayload()?.tool_input?.command);
 const localGate = /(^|[\s;&|(])QUICKSTACKS_LOCAL_GATE=1\s/.test(command ?? "");
 for (const { argv, stdin } of commands(command ?? "")) {
-  if (!localGate && wholeSuite(argv)) {
+  if (!localGate && wholeSuite(argv) && optedIntoRr()) {
     deny(RR);
     break;
   }

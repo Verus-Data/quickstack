@@ -101,7 +101,8 @@ Steps:
 4. Run them and confirm each fails for the expected reason (missing module or export, or wrong
    behaviour), not a test bug. Typecheck failures from imports of not-yet-existing modules are
    expected; anything else in `bun run typecheck` or `bun run lint` must be clean in your files.
-5. Run `rr test-hooks` from the repo root: the acceptance trace must pass, which
+5. Run the root tests from the repo root (`rr test-hooks`, or `bun run test:hooks` in a clone
+   without rr; AGENTS.md "Test runs"): the acceptance trace must pass, which
    proves every number has a tagged test.
 
 ## Do not
