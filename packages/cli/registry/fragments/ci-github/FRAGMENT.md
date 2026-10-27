@@ -21,7 +21,7 @@ Write `.github/workflows/ci.yml`. Check each action's latest major tag before wr
 
 ## What to add
 
-- **Triggers**: `push` to the default branch, `pull_request`, `workflow_dispatch`; never `pull_request_target`. **Permissions**: top-level `contents: read`, more only at job level.
+- **Triggers**: `push` to the repo's current branch (`git branch --show-current`; `new` keeps git's default name), `pull_request`, `workflow_dispatch`; never `pull_request_target`. **Permissions**: top-level `contents: read`, more only at job level.
 - **Jobs call the project's make targets (or package.json scripts, where the stack has no Makefile)**, never re-implemented inline; a CI-only check gets a target or script first. Official setup actions, versions read from the project, frozen-lockfile installs.
 - **Generated-code drift**: if generated code is committed, regenerate and fail on `git diff --exit-code`.
 <!-- quickstacks:when preset=default -->

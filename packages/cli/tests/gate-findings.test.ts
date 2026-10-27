@@ -169,3 +169,14 @@ test("astro-blog builds canonical URLs without file-style output's .html", async
 test("astro-blog's vitest.config.ts references vitest's config types", async () => {
   expect(await brief("astro-blog")).toContain('`/// <reference types="vitest/config" />`');
 });
+
+test("CI triggers on the branch the new repo is actually on, not an assumed main", async () => {
+  expect(await brief("astro-blog")).toContain(
+    "`push` to the repo's current branch (`git branch --show-current`; `new` keeps git's default name)",
+  );
+});
+
+test("python-react's Makefile type-checks the backend scripts too", async () => {
+  const makefile = readFileSync(join(await scaffold("python-react"), "Makefile"), "utf8");
+  expect(makefile).toContain("uv run mypy app tests scripts");
+});
