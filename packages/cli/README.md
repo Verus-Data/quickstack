@@ -57,6 +57,7 @@ At a human terminal, status words use color, `verify` and `new` show live progre
 | `tauri-react` | Tauri desktop app: Rust crates behind a thin shell, typed IPC, a React frontend with a mock transport | |
 | `typescript-api` | Node HTTP API on Effect's HttpApi: REST resource conventions, one error-status table, request logs, a core that also runs as a fetch handler | |
 | `typescript-cli` | Bun-compiled TypeScript CLI on Effect with typed errors, safe output and logs | `openrouter-chat-cli` |
+| `typescript-mcp` | Stdio MCP server on Effect: typed tools and a markdown resource, Vitest units, a real client handshake | |
 
 `stacks list` shows each stack's fragments; `validate` reports every stack's composed brief size in both presets.
 
