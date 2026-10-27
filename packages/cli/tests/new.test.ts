@@ -416,14 +416,36 @@ describe("new refuses before writing", () => {
     expect(stdout).toBe("");
     expect(envelope(stderr).error).toMatchObject({
       tag: "NotFound",
-      details: { suggestions: ["fixture-stack"] },
+      details: { suggestions: ["fixture-stack"], id: "fixture-stak", kind: "stack" },
     });
     const far = await newCli(["nope"]);
     expect(far.status).toBe(2);
     expect(far.stdout).toBe("");
     expect(far.stderr).toBe(
-      "Not found.\n  Next: quickstacks list shows every stack and fragment.\n",
+      "Not found.\n  Stack: nope\n  Next: quickstacks list shows every stack and fragment.\n",
     );
+  });
+
+  test("an unknown --with or --without id is NotFound naming the fragment, not the stack", async () => {
+    for (const flag of ["--with", "--without"]) {
+      const json = await newCli(["fixture-stack", "app", flag, "bogus", "--json"]);
+      expect(json.status).toBe(2);
+      expect(json.stdout).toBe("");
+      expect(json.stderr.trim().split("\n")).toHaveLength(1);
+      expect(envelope(json.stderr).error).toEqual({
+        tag: "NotFound",
+        message: "Not found.",
+        retryable: false,
+        details: { suggestions: [], id: "bogus", kind: "fragment" },
+      });
+      expect(existsSync(join(json.home, "app"))).toBe(false);
+      const human = await newCli(["fixture-stack", "app", flag, "bogus"]);
+      expect(human.status).toBe(2);
+      expect(human.stdout).toBe("");
+      expect(human.stderr).toBe(
+        "Not found.\n  Fragment: bogus\n  Next: quickstacks list shows every stack and fragment.\n",
+      );
+    }
   });
 
   test("an entry file under .quickstacks/ or .git/, in any case and at any depth, is reserved_path: the CLI owns them", async () => {

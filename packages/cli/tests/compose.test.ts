@@ -394,18 +394,20 @@ test("a file named only .tmpl is a plain copy, never a template with an empty pa
 
 test("suggestions: unknown stack and fragment ids fail NotFound with close known ids only [1.1#19]", async () => {
   expect(await composeExit({ stack: "web-stak" })).toEqual(
-    Exit.fail(new NotFound({ details: { suggestions: ["web-stack"] } })),
+    Exit.fail(
+      new NotFound({ details: { suggestions: ["web-stack"], id: "web-stak", kind: "stack" } }),
+    ),
   );
   for (const flag of ["with", "without"] as const)
     expect(await composeExit({ [flag]: ["lnt"] })).toEqual(
-      Exit.fail(new NotFound({ details: { suggestions: ["lint"] } })),
+      Exit.fail(new NotFound({ details: { suggestions: ["lint"], id: "lnt", kind: "fragment" } })),
     );
   // A stack id is not a fragment id.
   expect(await composeExit({ with: ["misfit-stack"] })).toEqual(
-    Exit.fail(new NotFound({ details: { suggestions: [] } })),
+    Exit.fail(new NotFound({ details: { suggestions: [], id: "misfit-stack", kind: "fragment" } })),
   );
   expect(await composeExit({ with: ["zzzzzzzz"] })).toEqual(
-    Exit.fail(new NotFound({ details: { suggestions: [] } })),
+    Exit.fail(new NotFound({ details: { suggestions: [], id: "zzzzzzzz", kind: "fragment" } })),
   );
 });
 
@@ -414,7 +416,7 @@ test("--without a known fragment that isn't selected composes with a warning [1.
   expect(composition.warnings).toEqual([{ code: "without_not_selected", id: "hooks-a" }]);
 });
 
-test("the NotFound envelope carries only its suggestions [1.1#19]", async () => {
+test("the NotFound envelope carries its suggestions and the id and kind it didn't find [1.1#19]", async () => {
   const program = compose({
     stack: "fixtrue-stack",
     with: [],
@@ -432,7 +434,7 @@ test("the NotFound envelope carries only its suggestions [1.1#19]", async () => 
       tag: "NotFound",
       message: "Not found.",
       retryable: false,
-      details: { suggestions: [] },
+      details: { suggestions: [], id: "fixtrue-stack", kind: "stack" },
     },
   });
   const close = compose({
@@ -447,7 +449,7 @@ test("the NotFound envelope carries only its suggestions [1.1#19]", async () => 
   const human = await runCli([], { program: close, env: quiet });
   expect(human.status).toBe(2);
   expect(human.stderr).toBe(
-    "Not found.\n  Did you mean: web-stack?\n  Next: quickstacks list shows every stack and fragment.\n",
+    "Not found.\n  Stack: web-stakc\n  Did you mean: web-stack?\n  Next: quickstacks list shows every stack and fragment.\n",
   );
 });
 

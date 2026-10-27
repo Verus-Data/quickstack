@@ -330,7 +330,7 @@ export class Registry extends Context.Service<
                 const at = "rejected" in value ? value.rejected : value;
                 return at.kind === kind && at.id === id;
               });
-              if (!item) return yield* new NotFound();
+              if (!item) return yield* new NotFound({ details: { suggestions: [], id, kind } });
               if (!("rejected" in item)) return item;
               const { rejected, reason } = item;
               if (reason === "unreadable")

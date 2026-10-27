@@ -1103,7 +1103,7 @@ test("--brief failures are compose's own: an unknown stack suggests the close on
   expect(result.stdout).toBe("");
   expect(JSON.parse(result.stderr).error).toMatchObject({
     tag: "NotFound",
-    details: { suggestions: ["typescript-cli"] },
+    details: { suggestions: ["typescript-cli"], id: "typscript-cli", kind: "stack" },
   });
 });
 
@@ -1142,16 +1142,16 @@ test("an unknown --brief id under a root list doesn't read points at validate fo
   expect(result.stdout).toBe("");
   expect(JSON.parse(result.stderr).error).toMatchObject({
     tag: "NotFound",
-    details: { suggestions: ["typescript-cli"], root },
+    details: { suggestions: ["typescript-cli"], id: "typscript-cli", kind: "stack", root },
   });
   const human = await run([root, "--brief", "typscript-cli"], { home });
   expect(human.stderr).toBe(
-    `Not found.\n  Did you mean: typescript-cli?\n  Next: quickstacks validate ${root} lists the ids under that root.\n`,
+    `Not found.\n  Stack: typscript-cli\n  Did you mean: typescript-cli?\n  Next: quickstacks validate ${root} lists the ids under that root.\n`,
   );
   // The bundled registry is what `list` shows, so its hint stays `list`.
   const bundled = await run(["--brief", "typscript-cli"], { registry: realRegistry });
   expect(bundled.stderr).toBe(
-    "Not found.\n  Did you mean: typescript-cli?\n  Next: quickstacks list shows every stack and fragment.\n",
+    "Not found.\n  Stack: typscript-cli\n  Did you mean: typescript-cli?\n  Next: quickstacks list shows every stack and fragment.\n",
   );
 });
 

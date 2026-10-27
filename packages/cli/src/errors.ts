@@ -1,7 +1,7 @@
 import { Effect, Schema } from "effect";
 import { TEMPLATE_VARIABLES } from "./core/scaffold/template";
 import { printable } from "./core/text";
-import { Origin } from "./schemas/entry";
+import { Kind, Origin } from "./schemas/entry";
 /** An unknown subcommand: what was typed and up to three close known names (`core/suggest.ts`). */
 export const UsageDetails = Schema.Struct({
   command: Schema.String,
@@ -32,8 +32,14 @@ export class BadInput extends Schema.TaggedError<BadInput>()("BadInput", {
  * path a lookup expected to find (validate's path argument, 1.5); `root` is the registry root an
  * id was looked up in when it isn't the usual set (`validate <root> --brief`).
  */
+/**
+ * `id` and `kind`: the stack or fragment id that wasn't found, so a caller can tell a wrong stack
+ * from a wrong `--with`/`--without` id.
+ */
 export const NotFoundDetails = Schema.Struct({
   suggestions: Schema.Array(Schema.String),
+  id: Schema.optionalKey(Schema.String),
+  kind: Schema.optionalKey(Kind),
   looked: Schema.optionalKey(Schema.String),
   root: Schema.optionalKey(Schema.String),
 });
@@ -324,6 +330,11 @@ export function detailLines(error: AppError, invocation: string): string[] {
       if (!details) return [];
       return [
         ...(details.looked ? [`Looked for: ${printable(details.looked)}`] : []),
+        ...(details.id !== undefined
+          ? [
+              `${details.kind === "fragment" ? "Fragment" : details.kind === "stack" ? "Stack" : "Id"}: ${printable(details.id)}`,
+            ]
+          : []),
         ...(details.suggestions.length
           ? [`Did you mean: ${details.suggestions.map(printable).join(", ")}?`]
           : []),

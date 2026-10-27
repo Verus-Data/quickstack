@@ -152,7 +152,7 @@ export const compose = (
       listed.filter((item) => item.kind === kind && !isRejected(item)).map((item) => item.id);
     const fragmentIds = new Set(known("fragment"));
     const missing = (id: string, kind: Kind) =>
-      new NotFound({ details: { suggestions: closest(id, usable(kind)) } });
+      new NotFound({ details: { suggestions: closest(id, usable(kind)), id, kind } });
 
     // Ids the user typed are checked before anything is selected.
     if (!known("stack").includes(options.stack)) return yield* missing(options.stack, "stack");
