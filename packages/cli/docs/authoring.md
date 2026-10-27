@@ -39,7 +39,9 @@ An app is a fragment with `category: app`; fill its `applies_to` with a stack id
 Keep Setup numbered. Tell the agent to inspect current generator help and run the
 generator non-interactively into a subdirectory before moving its output into place.
 Do not freeze generator flags. Declare exactly one task-runner tag, `make` or `scripts`,
-and list every project command used by verify in `commands`.
+and list every project command used by verify in `commands`. A `scripts` stack's install
+step runs the package manager (`bun install`) and declares no `install` command: a
+`package.json` script named `install` runs during every install, so it recurses.
 
 Verify calls project commands and covers install, lint, typecheck and test layers.
 Add build, docs and application checks when they prove a deliverable. A server probe:

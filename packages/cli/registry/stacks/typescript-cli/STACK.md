@@ -27,7 +27,6 @@ verify:
     layer: check
     run: "test -s README.md && ! grep -n 'stacks:fill' README.md"
 commands:
-  install: Install dependencies with bun
   dev: Run the CLI from source with checkout-local logs and data
   build: Compile the host binary
   typecheck: Run tsc without emitting

@@ -32,7 +32,6 @@ verify:
     layer: check
     run: "test -s README.md && ! grep -n 'stacks:fill' README.md"
 commands:
-  install: Install dependencies with bun
   dev: Run React Router in the local Workers runtime
   build: Build the Worker and browser assets
   typecheck: Generate Worker and route types, then run tsc

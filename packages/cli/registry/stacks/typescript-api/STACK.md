@@ -33,7 +33,6 @@ verify:
     layer: check
     run: "test -s README.md && ! grep -n 'stacks:fill' README.md"
 commands:
-  install: Install dependencies with bun
   dev: Run the foreground server and preserve logs
   dev:server: Run the server from source on Node, restarting on change
   dev:bg: Start or reuse this checkout's background server

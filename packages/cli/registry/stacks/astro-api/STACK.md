@@ -44,7 +44,6 @@ verify:
     layer: check
     run: "test -s README.md && ! grep -n 'stacks:fill' README.md"
 commands:
-  install: Install every workspace's dependencies with bun
   dev: Run the API and the site in the foreground and preserve logs
   dev:api: Run the API from source on Node, restarting on change
   dev:web: Run the Astro dev server, proxying API paths to the API
