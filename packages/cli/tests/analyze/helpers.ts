@@ -1,6 +1,8 @@
 import { NodeServices } from "@effect/platform-node";
 import { Effect, type Exit, type FileSystem, Layer, type Path, type Scope } from "effect";
 import { AppConfig, type Environment } from "../../src/config";
+import { AppLayer } from "../../src/runtime";
+import { Host } from "../../src/services/host";
 import { Output, type Writer } from "../../src/services/output";
 import { Foreground, Processes } from "../../src/services/processes";
 
@@ -43,13 +45,13 @@ export function runAnalyze<A, E>(
     async (text) => {
       into.push(text);
     };
-  const appLayer = Processes.layer.pipe(Layer.provideMerge(AppConfig.memory(env)));
+  const output = Output.layer(false, writer(stdout), writer(stderr));
   const platform = Layer.mergeAll(
     NodeServices.layer,
+    Host.memory(),
     Foreground.layer(Foreground.make()),
-    Output.layer(false, writer(stdout), writer(stderr)),
   );
-  const layer = Layer.provideMerge(appLayer, platform);
+  const layer = Layer.provideMerge(AppLayer(output, env), platform);
   return Effect.runPromiseExit(program.pipe(Effect.scoped, Effect.provide(layer))).then((exit) => ({
     exit,
     capture: { stdout: stdout.join(""), stderr: stderr.join("") },

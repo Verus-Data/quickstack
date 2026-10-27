@@ -8,12 +8,12 @@ import { dirname, isAbsolute, resolve } from "node:path";
 // --label <string> to label attribution when no manifest is present.
 import { BunServices } from "@effect/platform-bun";
 import { Effect, Exit, Layer } from "effect";
-import { AppConfig } from "../src/config";
 import { analyze } from "../src/core/analyze";
 import { type AppError, exitCode as exitCodeOf } from "../src/errors";
-import { Logging } from "../src/logging";
+import { AppLayer } from "../src/runtime";
+import { Host } from "../src/services/host";
 import { Output, type Writer } from "../src/services/output";
-import { Foreground, Processes } from "../src/services/processes";
+import { Foreground } from "../src/services/processes";
 
 export type Parsed = {
   readonly target: string;
@@ -173,15 +173,23 @@ process.stdout.on("error", () => {});
 process.stderr.on("error", () => {});
 
 const holder = Foreground.make();
-const appLayer = Processes.layer.pipe(
-  Layer.provideMerge(Layer.merge(AppConfig.layer(), Logging.layer)),
-);
+const output = Output.layer(false, writer(process.stdout), writer(process.stderr));
 const platform = Layer.mergeAll(
   BunServices.layer,
   Foreground.layer(holder),
-  Output.layer(false, writer(process.stdout), writer(process.stderr)),
+  Host.layer({
+    platform: process.platform,
+    executable: process.execPath,
+    compiled: false,
+    cwd: process.cwd(),
+    stdinIsTTY: process.stdin.isTTY === true,
+    stdoutIsTTY: process.stdout.isTTY === true,
+    registry: "",
+    skill: "",
+    invocation: "bun scripts/analyze.ts",
+  }),
 );
-const layer = Layer.provideMerge(appLayer, platform);
+const layer = Layer.provideMerge(AppLayer(output), platform);
 
 if (import.meta.main) {
   const result = parse(process.argv.slice(2));
