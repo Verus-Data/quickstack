@@ -464,9 +464,9 @@ Found executing, 2026-10-26:
   `install`, `lint`, `typecheck`, `test`, `build`, `serve` and `docs` don't describe a step
   that checks a file is there or a config is wired (six of the realistic fixture's seven
   warnings are such steps), and the zero-warning gate for bundled entries pushes authors to pick a wrong
-  layer just to clear `step-layer`. The vocabulary is unchanged for now; the maintainers
-  choose between adding a `check` layer through the roadmap's "Verify step `layer`"
-  contract row, or downgrading `step-layer` to a note (HANDOFF next steps).
+  layer just to clear `step-layer`. Resolved 2026-10-26: the maintainers added a `check`
+  layer through the roadmap's "Verify step `layer`" contract row. `step-layer` stays a
+  warning, and `check` isn't a D7 layer, so `verify-layers` doesn't ask for one.
 
 Found in the batch review, 2026-10-26:
 

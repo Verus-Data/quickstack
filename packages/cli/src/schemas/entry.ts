@@ -26,6 +26,7 @@ const Duration = Schema.String.check(
   Schema.isPattern(/^\d+(?:ms|s|m)$/, { expected: "a duration such as 500ms, 90s or 10m" }),
 );
 const Phase = Schema.Literals(["setup", "check", "serve", "teardown"]);
+/** `check` is a file or config check (a README with no fill markers, hooks defined). */
 const StepLayer = Schema.Literals([
   "install",
   "lint",
@@ -34,6 +35,7 @@ const StepLayer = Schema.Literals([
   "build",
   "serve",
   "docs",
+  "check",
 ]);
 export const Category = Schema.Literals([
   "agent-ops",

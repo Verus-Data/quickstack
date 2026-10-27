@@ -684,6 +684,25 @@ describe("template variables", () => {
     expect(readdirSync(home).filter((entry) => entry.startsWith("bad"))).toEqual([]);
   });
 
+  test("a .gitignore shipped as .gitignore.tmpl with no tokens is written as .gitignore, unchanged", async () => {
+    const home = setup();
+    const registry = join(home, "registry");
+    const stack = writeEntry(registry, "stack", "ignores", minimal("stack", "ignores"));
+    mkdirSync(join(stack, "files"));
+    // Braces that aren't a token, a negation and a trailing-space escape stay as written.
+    const rules = "node_modules/\n.env.*\n!.env.example\n# {not a token}\nkeep\\ \n";
+    writeFileSync(join(stack, "files", ".gitignore.tmpl"), rules);
+    const { status, stdout, stderr } = await newCli(["ignores", "app", "--json"], {
+      home,
+      registry,
+    });
+    expect(status).toBe(0);
+    expect(stderr).toBe("");
+    expect(decode(stdout).written).toContain(".gitignore");
+    expect(readFileSync(join(home, "app", ".gitignore"), "utf8")).toBe(rules);
+    expect(existsSync(join(home, "app", ".gitignore.tmpl"))).toBe(false);
+  });
+
   test("project_name is the directory's base name; slug and env prefix follow it [1.2a#12]", async () => {
     const run = await newCli(["fixture-stack", "nested/My App", "--json"]);
     expect(run.status).toBe(0);

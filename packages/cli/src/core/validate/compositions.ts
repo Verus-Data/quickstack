@@ -182,6 +182,8 @@ export const compositionChecks: Check = (view) =>
     for (const stack of stacks) {
       const file = entryFile(view, stack);
       const missing = new Map<string, Preset[]>();
+      // Missing layers that a step of the same name, with no layer, probably meant to cover.
+      const unlabeled = new Set<string>();
       // One finding per failure, naming every preset it happened in.
       const failed = new Map<
         string,
@@ -248,8 +250,15 @@ export const compositionChecks: Check = (view) =>
               }),
             );
           if (plan.added === undefined)
-            for (const layer of missingLayers(stack, composition))
+            for (const layer of missingLayers(stack, composition)) {
               missing.set(layer, [...(missing.get(layer) ?? []), preset]);
+              if (
+                baseSteps(composition).some(
+                  (step) => step.name === layer && step.layer === undefined,
+                )
+              )
+                unlabeled.add(layer);
+            }
         }
       }
       for (const { check, added, message, presets } of failed.values())
@@ -283,18 +292,20 @@ export const compositionChecks: Check = (view) =>
             message:
               layer === "serve"
                 ? `no serve step with expect, which a stack tagged web or api needs (${presets.join(", ")})`
-                : `no verify step with layer ${layer} (${presets.join(", ")})`,
+                : `no verify step with layer ${layer} (${presets.join(", ")})${unlabeled.has(layer) ? `; step ${layer} has no layer: add layer: ${layer} to it` : ""}`,
           }),
         );
     }
     return { findings, sizes };
   });
 
+/** The steps D7 counts: not an app's, and not skipped by default. */
+const baseSteps = (composition: Composition) =>
+  composition.verify.filter((step) => !step.tags.includes(APP_TAG) && !step.skipByDefault);
+
 /** D7 layers the stack's own default composition doesn't cover; app steps don't count. */
 function missingLayers(stack: Stack, composition: Composition): string[] {
-  const steps = composition.verify.filter(
-    (step) => !step.tags.includes(APP_TAG) && !step.skipByDefault,
-  );
+  const steps = baseSteps(composition);
   const layers = new Set(steps.map((step) => step.layer));
   const missing: string[] = LAYERS.filter((layer) => !layers.has(layer));
   const served = steps.some((step) => step.phase === "serve" && step.expect);
