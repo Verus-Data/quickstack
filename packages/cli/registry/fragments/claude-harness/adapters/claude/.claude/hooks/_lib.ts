@@ -1,5 +1,4 @@
-// Shared helpers for TypeScript hooks, run by Bun with the JSON payload on stdin. Settings wire
-// the hooks directly except guard-commands.ts, delegated from agent-ops's block-destructive.sh.
+// Shared helpers for TypeScript hooks, run by Bun with the JSON payload on stdin.
 // node: APIs only, so tsc checks these with the project's @types/node.
 import { type ChildProcess, spawn, spawnSync } from "node:child_process";
 import {
