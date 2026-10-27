@@ -19,6 +19,42 @@ bun run build
 
 `doctor` reports version, platform, compiled status, executable/config/data/working paths, the user entry directory, the bundled registry and skill paths (and whether each exists), and safe configuration errors. A missing configuration file is fine. A malformed optional file is reported in `configErrors` while doctor exits successfully; help and version do not open that file.
 
+## Project run history and the bundled ledger
+
+`quickstacks runs [--json]` finds the nearest project and reports its stack, fingerprint,
+creation time, handoff kind, brief words, verify count, last outcome, timings, interventions,
+state-record availability and skipped history lines. It reads the project’s
+`.quickstacks/state/runs.jsonl` and `NOTES.md`. Timings come only from the out-of-project
+state record; unavailable timings or notes stay unknown. Invalid or newer history lines
+are counted and skipped. Outside a project it exits 2 with `NotFound`. A newer state schema exits 3 with
+`InvalidConfig`. Moving a project retains its timings through its project id.
+
+Each bundled stack in `list --json` carries `lastRun: { date, result, agent, preset,
+fingerprint } | null`, the latest run of its default composition across agents and presets.
+When the registry has a ledger, text output labels it `proven <date>` for a pass, `<result> <date>` otherwise, or `unproven`.
+Other origins and fragments have no proof. This describes the recorded run; it does not
+claim the current stack still has that fingerprint.
+
+The reviewed ledger is `registry/runs.json`. From this package, import gate notes with:
+
+```sh
+bun run ledger:import ../../plans/runs/2026-10-27-*.md
+bun run ledger:import ../../plans/runs/2026-10-27-*.md --dry-run
+```
+
+The development script discovers the repo from cwd, archives only the registry at each
+note’s commit into a temporary directory and fingerprints it with the current composition
+code. A contradictory Outcome row and final verify record are reported and skipped; a
+maintainer’s explicit `partial` remains partial even when verify is green. The driving agent
+is independent of adapter targets: targets default to `claude`; notes for an override can
+include a `Target agents` table row with comma-separated ids such as `codex`, `claude`.
+It records only added fragments in `with`, removing fragments already selected by
+the default composition at that commit. Existing `(repoCommit, stack, date)` records are
+skipped. Incomplete notes are reported, other notes continue, and any failure exits 1.
+`--dry-run` prints a JSON array and writes no ledger; `--` ends options. Bun consumes an
+initial `--` before passing arguments to a script, so single-dash note names are also
+accepted directly. Use `./` for a note name that collides with a long option.
+
 ## Starting a project with an agent
 
 There are two ways in: run the CLI yourself, or install the skill once and ask your coding agent to start a project. The skill ships with the next release; npm publication is deferred. These are the packaged entry points:

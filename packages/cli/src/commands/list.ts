@@ -1,5 +1,6 @@
 import { Effect, Option, Schema } from "effect";
 import { Argument, Command } from "effect/cli";
+import { readLedger } from "../core/ledger";
 import { type Group, groups, listResult, renderList, toRow } from "../core/list";
 import { type Entry, isRejected } from "../core/registry/entry";
 import { defaultRoots, Registry } from "../core/registry/registry";
@@ -31,12 +32,18 @@ export const listCommand = Command.make(
           details: { command: typed, suggestions: closest(typed, groups) },
         });
       const host = yield* Host;
+      const roots = yield* defaultRoots;
+      const bundled = roots.find((root) => root.origin === "bundled");
+      const ledger = bundled ? yield* readLedger(bundled.path) : undefined;
+      const records = ledger?.records ?? [];
       const items = yield* Registry.pipe(
         Effect.flatMap((registry) => registry.all),
-        Effect.provide(Registry.layer(yield* defaultRoots)),
+        Effect.provide(Registry.layer(roots)),
       );
-      const result = listResult(items, typed);
-      const all = items.filter((item): item is Entry => !isRejected(item)).map(toRow);
+      const result = listResult(items, typed, records);
+      const all = items
+        .filter((item): item is Entry => !isRejected(item))
+        .map((entry) => toRow(entry, records));
       const output = yield* Output;
       const agent = output.audience === "agent";
       // A human's descriptions wrap to the terminal; an agent's stay on one line each.
@@ -56,6 +63,7 @@ export const listCommand = Command.make(
           group: typed,
           width,
           invocation: host.invocation,
+          ledgerPresent: ledger?.present ?? false,
         }),
       );
     }),

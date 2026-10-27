@@ -1,5 +1,6 @@
 import { Schema } from "effect";
 import { Category, Kind, Origin } from "./entry";
+import { LastRun } from "./ledger";
 
 export const ListRow = Schema.Struct({
   id: Schema.String,
@@ -14,8 +15,8 @@ export const ListRow = Schema.Struct({
   origin: Origin,
   trusted: Schema.Boolean,
   shadows: Schema.Array(Origin),
-  /** Always null until the run ledger (2.0c) fills it. */
-  lastRun: Schema.Null,
+  /** Latest bundled default-composition run, over every preset and agent. */
+  lastRun: Schema.NullOr(LastRun),
 });
 export type ListRow = typeof ListRow.Type;
 
