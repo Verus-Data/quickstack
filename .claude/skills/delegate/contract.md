@@ -65,6 +65,8 @@ bun run check   # the full gate, before finishing a feature
 - commit or push (leave the changes for review)
 - disable a lint rule, weaken a test or add a cast to get green
 - add features, options or abstractions the goal doesn't need
+- mention any repository outside this one in a tracked file; a reference repo named in "Read
+  first" is for you only
 
 ## Review before hand-off
 
@@ -93,7 +95,10 @@ codex exec --ephemeral --sandbox read-only -m gpt-6.1-sol -c 'model_reasoning_ef
 ```
 
 Fix every finding in `review.md` (its list has no optional tier), or say in the hand-off why a
-finding is wrong. A finding about a locked file is a note for the orchestrator, not an edit. Then rerun the acceptance checks. One review pass only: don't review again
+finding is wrong. A finding about a locked file is a note for the orchestrator, not an edit. A
+finding that is a bug gets a regression test in the repo before its fix (a new test file when the
+natural one is locked), revert-verified; a probe in a temp script doesn't count. Then rerun the
+acceptance checks. One review pass only: don't review again
 after the fixes.
 
 ## Hand-off

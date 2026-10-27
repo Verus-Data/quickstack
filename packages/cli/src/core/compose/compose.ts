@@ -42,6 +42,8 @@ export type PlannedFile = {
   path: string;
   /** The writing entry; for a merge, the first writer. */
   owner: EntryRef;
+  /** Every writer in composition order, including the first. */
+  owners: ReadonlyArray<EntryRef>;
   kind: "copy" | "template" | "merge";
   /** Copy and template: where the bytes come from. */
   source?: { entry: EntryRef; file: string };
@@ -458,6 +460,7 @@ function planFiles(
         planned.push({
           path,
           owner: ref(first.entry),
+          owners: [ref(first.entry)],
           kind: first.template ? "template" : "copy",
           source: { entry: ref(first.entry), file: first.source },
           mode: first.mode,
@@ -488,6 +491,7 @@ function planFiles(
       planned.push({
         path,
         owner: ref(first.entry),
+        owners: writers.map((writer) => ref(writer.entry)),
         kind: "merge",
         content: `${JSON.stringify(merged, null, 2)}\n`,
         mode: first.mode,

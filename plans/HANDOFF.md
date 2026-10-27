@@ -9,6 +9,24 @@ Start here, then read repo `AGENTS.md`, the README's
 next steps, who owns each. When it grows past a couple of screens, move the dated detail
 to `archive/` and leave a link.
 
+## Phases 2 and 3 (2026-10-27, in progress)
+
+Phases 2 and 3 are being executed through Codex delegates (`/execute:codex`), one test-author
+then one implementer per sub-phase, merged to `main` as each lands. Work runs off the dev build
+and the compiled binary: there is no packed tarball until 0.2, so every tarball check is
+reworded for `dist/quickstacks` or deferred in its plan.
+
+- Executed: [2.0a](phases/phase-2.0a-composed-files-and-fingerprint.md) (composed files and
+  the fingerprint), [3.5b](phases/phase-3.5b-two-phase-brief.md) (base then app stages in
+  `verify`), [3.4c](phases/phase-3.4c-agent-skill.md) (the agent skill and `skill install`).
+- In progress: 3.0 (`add`), 2.0c (run ledger), 3.1c (`new --dry-run`); then 3.1a, 2.2, 2.0b,
+  3.1b, 3.4a, 3.4b and 3.3a-c.
+- Deferred to phase 4 or later: [3.2a](phases/phase-3.2a-user-sources.md) and
+  [3.2b](phases/phase-3.2b-source-trust-and-updates.md), gated on outside demand and open
+  question 18.
+- Left to maintainers: the real bench runs beyond a few seed runs, and the proofs that need
+  them (3.3a-c, parts of 3.4a, 3.4b, 3.5b and 2.0b).
+
 ## Current state (2026-10-26)
 
 Phase 0's agent work is merged to `main`, with `ci-ok` green on Ubuntu and macOS (so the

@@ -42,7 +42,8 @@ export function renderTemplate(
 ): { text: string } | { unknown: string; line: number } {
   for (const match of text.matchAll(TOKEN)) {
     const name = match[1] ?? "";
-    if (!known(name)) return { unknown: name, line: text.slice(0, match.index).split("\n").length };
+    if (!known(name) || typeof values[name] !== "string")
+      return { unknown: name, line: text.slice(0, match.index).split("\n").length };
   }
   return { text: text.replace(TOKEN, (_, name: string) => (known(name) ? values[name] : "")) };
 }

@@ -103,6 +103,7 @@ export const recordRun = (
       cli: VERSION,
       agent: yield* config.agent,
       outcome: result.outcome,
+      ...(result.stages ? { stages: result.stages } : {}),
       scope: result.scope,
       tamperCheck: context.tamper.tamperCheck,
       acceptedChanges: context.acceptedChanges,

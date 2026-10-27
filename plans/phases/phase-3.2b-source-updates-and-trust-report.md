@@ -1,6 +1,6 @@
 # Phase 3.2b: Source updates and the trust report
 
-Status: DRAFT 2026-10-26 (not agreed). Gated with 3.2a: starts only after 3.2a, which waits for outside demand and open question 18.
+Status: DEFERRED 2026-10-27 to phase 4 or later, with 3.2a. Gated: starts only after 3.2a, which waits for outside demand and open question 18.
 
 | Field | Value |
 |---|---|

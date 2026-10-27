@@ -1,6 +1,9 @@
 # Phase 3.4c: The agent skill
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: EXECUTED 2026-10-27 (`skill/SKILL.md`, `skill install`, `doctor`'s skill check;
+reviewed once and fixed). The tarball's `files` entry waits for 0.2; the compiled binary finds
+the skill beside it
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -170,8 +173,21 @@ Through `tests/helpers/cli.ts::runCli` with temporary HOME and XDG directories.
    skipped as root) exits 6.
 9. With `Host.skill` pointing at a missing directory, `skill install` fails `NotFound` and
    `doctor --json` reports `skill.found: false`.
-10. e2e: the packed tarball contains `package/skill/SKILL.md`, and the installed package's
-    `skill install --print` prints it.
+10. Bun e2e: `bun run build` produces `packages/cli/dist/quickstacks`; the compiled
+    binary finds `skill/` beside `dist/`, as it finds the bundled registry, and
+    `./dist/quickstacks skill install --print` prints it, including after relocation.
+
+### Realistic edge cases
+
+11. Installation is allowed under a detected agent, with or without a terminal on stdout.
+12. `--project` handles spaces, leading dashes and non-ASCII path names through a symlinked cwd.
+13. `--force` refuses a final `SKILL.md` symlink outside the skills root without changing its referent.
+14. A dotfiles symlink above the skills root is supported; installation stays under that root's real path.
+15. A directory occupying `SKILL.md` fails `TargetNotEmpty`, even with `--force`, preserving its contents.
+16. Inherited `GIT_DIR` and `GIT_WORK_TREE` cannot redirect `--project` to another repository.
+17. Missing `HOME` refuses a user install with `PermissionDenied`, without falling back to another home.
+18. `--print` bypasses HOME and target lookup, even with `--project --force` and a blocked target path.
+19. A partial earlier install with unrelated files fills only `SKILL.md` and preserves those files.
 
 ## Exit criteria
 
@@ -180,6 +196,25 @@ Through `tests/helpers/cli.ts::runCli` with temporary HOME and XDG directories.
 - The HANDOFF notes that the skill ships in the next release.
 
 ## What this plan may get wrong
+
+- 2026-10-27: The safe writer's `replace` only replaces files it created in the same
+  scope. Forced skill installs instead stage a fresh file through that writer and rename
+  it over the checked regular target, preserving the existing copy if staging fails.
+  This retains the writer's documented path-based race limitation; it cannot provide
+  `openat` guarantees against another process swapping directories during a write.
+- 2026-10-27: `NotFoundDetails` requires `suggestions` and has no `path`; the skill
+  adds optional `path` and retains `suggestions: []`. Permission failures keep the
+  existing required `reason` alongside `path`. `TargetNotEmptyDetails` adds optional
+  `blocker: "non-file"` for directory blockers so text output doesn't suggest a forced
+  replacement that cannot work. No error tag changes.
+- 2026-10-27: Checked the personal/project skill locations and `name`/`description`
+  frontmatter against [Claude Code's skill docs](https://code.claude.com/docs/en/skills).
+
+- 2026-10-27: Phase 0.2 and npm publication are deferred; work uses the dev build, so
+  acceptance test 10 checks the compiled binary's adjacent skill lookup instead of a
+  packed tarball. Packaging assertions wait for 0.2, and so does the package `files`
+  list: the package has none yet, and 0.2 adds it with `skill` beside `dist` and
+  `registry`.
 
 - Claude Code's skill locations and frontmatter fields are assumed from its current docs.
   Check them when this is built; the install targets are one table in `skill.ts`.

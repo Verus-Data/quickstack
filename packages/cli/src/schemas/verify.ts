@@ -56,13 +56,18 @@ export type VerifyChange = typeof VerifyChange.Type;
 export const TamperCheck = Schema.Literals(["full", "manifest-only"]);
 export type TamperCheck = typeof TamperCheck.Type;
 
+const outcome = Schema.Literals(["green", "partial", "failed", "changed", "interrupted"]);
+const stages = Schema.Struct({ base: outcome, app: Schema.NullOr(outcome) });
+
 /**
  * `verify --json`'s result. `green` is a full run with every step that ran passing and the tamper
  * check passed; `partial` is a `--only` or `--skip-tag` run that passed, which never counts as
  * green; `changed` is a run stopped before any step because the steps changed (D14).
  */
 export const VerifyResult = Schema.Struct({
-  outcome: Schema.Literals(["green", "partial", "failed", "changed", "interrupted"]),
+  outcome,
+  /** Only for manifests with app-tagged steps; null means the app stage did not run. */
+  stages: Schema.optionalKey(stages),
   scope: Schema.Literals(["full", "partial"]),
   steps: Schema.Array(StepResult),
   totals: Schema.Struct({
@@ -112,7 +117,9 @@ export const RunRecord = Schema.Struct({
   /** The quickstacks version that ran. */
   cli: Schema.String,
   agent: DetectedAgent,
-  outcome: Schema.Literals(["green", "partial", "failed", "changed", "interrupted"]),
+  outcome,
+  /** Only for manifests with app-tagged steps; null means the app stage did not run. */
+  stages: Schema.optionalKey(stages),
   scope: Schema.Literals(["full", "partial"]),
   tamperCheck: TamperCheck,
   /** This run began with `--accept-changes`. */
