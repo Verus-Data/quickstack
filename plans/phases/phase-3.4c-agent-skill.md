@@ -195,9 +195,24 @@ Through `tests/helpers/cli.ts::runCli` with temporary HOME and XDG directories.
 
 ## What this plan may get wrong
 
+- 2026-10-27: The safe writer's `replace` only replaces files it created in the same
+  scope. Forced skill installs instead stage a fresh file through that writer and rename
+  it over the checked regular target, preserving the existing copy if staging fails.
+  This retains the writer's documented path-based race limitation; it cannot provide
+  `openat` guarantees against another process swapping directories during a write.
+- 2026-10-27: `NotFoundDetails` requires `suggestions` and has no `path`; the skill
+  adds optional `path` and retains `suggestions: []`. Permission failures keep the
+  existing required `reason` alongside `path`. `TargetNotEmptyDetails` adds optional
+  `blocker: "non-file"` for directory blockers so text output doesn't suggest a forced
+  replacement that cannot work. No error tag changes.
+- 2026-10-27: Checked the personal/project skill locations and `name`/`description`
+  frontmatter against [Claude Code's skill docs](https://code.claude.com/docs/en/skills).
+
 - 2026-10-27: Phase 0.2 and npm publication are deferred; work uses the dev build, so
   acceptance test 10 checks the compiled binary's adjacent skill lookup instead of a
-  packed tarball. Packaging assertions wait for 0.2.
+  packed tarball. Packaging assertions wait for 0.2, and so does the package `files`
+  list: the package has none yet, and 0.2 adds it with `skill` beside `dist` and
+  `registry`.
 
 - Claude Code's skill locations and frontmatter fields are assumed from its current docs.
   Check them when this is built; the install targets are one table in `skill.ts`.

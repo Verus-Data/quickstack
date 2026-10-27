@@ -19,6 +19,10 @@ bun run dev doctor --json   # the CLI from source
 bun run check               # lint, typecheck, root tests, every package's tests and e2e
 ```
 
+Choose a destination outside this checkout. Start a project yourself with `bun run dev new astro-blog "$HOME/quickstacks-projects/my-blog"`, or run `bun run dev skill install` once and ask your coding agent to start one. The skill guides it through choosing a stack, reading the brief and building until verify passes. Use `--project` to install it only for the current repo, or `--print` to copy it elsewhere.
+
+The skill ships in the next release. Once npm publication lands, the two entry points are `npx quickstacks new astro-blog my-blog` and `npx quickstacks skill install`.
+
 See [AGENTS.md](AGENTS.md) for the full command list.
 
 ## Monorepo
