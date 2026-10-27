@@ -5,36 +5,82 @@ description: Load before changing CLI programs, services, configuration, schemas
 
 # Effect 4 in this CLI
 
-Checked against effect, @effect/platform-bun, @effect/platform-node and @effect/vitest 4.0.6. Package exports and installed matching declarations are authoritative. Resolve an import with import.meta.resolve before searching its `.d.ts`; do not infer paths from an older prerelease. Consult installed effect/ai-docs/src and https://effect.website for current-major context. Recheck these notes with each dependency bump.
+Checked against effect, @effect/platform-bun, @effect/platform-node and @effect/vitest 4.0.6. Recheck with each dependency bump.
 
-## Verified entry points
+The authoritative sources are the installed package, in this order: its declarations, its own agent guide (`node_modules/effect/AGENTS.md`) and its worked examples (`node_modules/effect/ai-docs/src/`), resolved from `packages/cli`. Web pages, blog posts and model memory mix Effect 3 with 4.0 prereleases. Before using a name you didn't see in this repo's code, confirm it exists: `node --input-type=module -e 'import * as E from "effect"; console.log("catchAll" in E.Effect)'` from `packages/cli`.
 
-- Command, Flag and CliError: `effect/cli` (direct paths include effect/cli/Command and effect/cli/Flag).
-- FileSystem, Path, Stdio, Context, Schema, Config, Effect: effect exports.
-- TestClock: `effect/testing` or `effect/testing/TestClock`.
-- BunServices: @effect/platform-bun; NodeServices: @effect/platform-node.
-- Test integrations: @effect/vitest. CLI/platform APIs remain marked unstable in these stable package declarations; check installed APIs.
+## Names that don't exist in 4.0.6
 
-## Commands and services
+| Don't write (Effect 3 or a 4.0 prerelease) | Write |
+| --- | --- |
+| `Context.Tag`, `Context.GenericTag`, `Effect.Service`, `Effect.Tag`, `ServiceMap` | `class X extends Context.Service<X, Shape>()("quickstacks/X")` |
+| `Layer.scoped` | `Layer.effect` (it removes `Scope` from the layer's requirements itself) |
+| `Effect.catchAll`, `catchAllCause`, `catchAllDefect` | `Effect.catch`, `catchCause`, `catchDefect` |
+| `Effect.either`, `Either` | `Effect.result`, `Result` (`.success` / `.failure`, `Result.isFailure`) |
+| `Effect.async` | `Effect.callback((resume, signal) => ...)`, returning a cleanup Effect |
+| `Effect.fork`, `forkDaemon` | `forkChild`, `forkScoped`, `forkDetach` (below) |
+| `Effect.zipRight`, `tapErrorCause` | `Effect.andThen`, `tapCause` |
+| `Schema.TaggedErrorClass`, `Schema.ErrorClass` | `Schema.TaggedError<X>()("X", fields)` |
+| `@effect/schema`, `Schema.decodeUnknown`, `Schema.parseJson` | `Schema` from `effect`, `decodeUnknownEffect`, `Schema.fromJsonString` |
+| `Schema.Union(a, b)`, `Schema.Literal("a", "b")` | `Schema.Union([a, b])`, `Schema.Literals(["a", "b"])` |
+| `Config.string` | `Config.String` (constructors are capitalized) |
 
-Command.make builds real commands; withSubcommands composes the tree. withSharedFlags makes flags available before/after subcommands. Flag.Boolean requires an explicit fallback when omitted: use withDefault(false). Command.runWith accepts raw argument arrays and `{version,renderErrors:false}`. ShowHelp with no nested errors is successful help; with errors it is failure. Framework help uses Console.log, so main captures Console and discards it on failure. Output owns application writes.
+`Schema.optionalKey` is an exact optional key (absent, never `undefined`); `Schema.optional` also admits `undefined`. Fields in this repo's schemas use `optionalKey`.
 
-Services use Context.Service<Self,Shape>() with namespaced identifiers. Capture dependencies in Layer.effect; this API handles Scope requirements from acquireRelease (do not use an old Layer.scoped recipe). Allocate new state per build. Effect.cached returns a lazy cached Effect; config caches live inside a layer, never global state. Layer identity memoizes within a build; separate invocations build fresh scopes. Effect.fn can name effectful functions. Execute only at runInvocation, the one outer boundary.
+## Entry points
 
-Effect.fail/Schema.TaggedError are typed failures; Effect.die is a defect. catchTag/catchTags handle selected tags, catchCause handles all reasons at an owning boundary. Effect.result returns Result with Success.success or Failure.failure, not Either. Runtime Exit has Success.value and Failure.cause; Cause.reasons can be narrowed with isFailReason/isDieReason/isInterruptReason. Pending interrupts may remain after masked cleanup: runInvocation maps that final interruption to 130.
+`Effect`, `Context`, `Layer`, `Schema`, `Config`, `FileSystem`, `Path`, `Clock`, `Random`, `Result`, `Exit`, `Cause` from `effect`; `Command`, `Flag`, `CliError` from `effect/cli`; `FetchHttpClient` from `effect/http`; `TestClock` from `effect/testing`; `BunServices` from @effect/platform-bun, `NodeServices` from @effect/platform-node (only `bin.ts`, `src/platform/` and tests); `it`, `assert`, `layer` from @effect/vitest. The CLI, HTTP and socket modules are marked unstable; check their declarations rather than assuming a shape.
 
-Scope owns finalizers and child fibers. forkChild/forkScoped differ from old fork recipes; observe every fork using join or an owning boundary. Effect.callback takes resume and AbortSignal and can return cleanup; capture context before leaving the Effect and reenter that context, not another ambient runtime. tryPromise receives a signal; pass it to real cancellable I/O. runPromiseExit accepts signal. BunRuntime.runMain supports disableErrorReporting but is not used here: main/runInvocation own outcomes without duplicate runtime logging.
+## Services and layers
+
+A service is `Context.Service<Self, Shape>()("quickstacks/Name")` with static layer factories (`layer`, `memory`, `fixed`). The layer's `Effect.gen` yields every dependency once and returns the shape; methods close over those values, so a method's requirements are `never` (or `Scope` when it hands back a scoped resource, like `Processes.start`). Don't `yield*` a service inside a method, a loop or a pure helper: pure code (rendering, composition text, decisions) takes values.
+
+State is per invocation. `bin.ts` builds the layers once per process and `tests/helpers/cli.ts` builds them once per `runCli`, so any state belongs inside the layer's constructor: a closure variable, a `Ref`, or `Effect.cached` for lazy work done once (`AppConfig.get`, `Registry`'s `load`). Never a module-level `let`, `Map` or array, and never a cache added to a service object to skip work its layer already caches. A `Registry.get` that kept a mutable snapshot on the instance was reverted for this: `load` is already cached per build, and a second cache only adds staleness and ordering bugs. If repeated work is the problem, put `Effect.cached` in the layer.
+
+A layer value is built once per memo map, and a nested `Effect.provide` forks the enclosing memo map. Providing a constant layer (`Logging.layer`) again inside a program that already has it hands back the outer instance and its state. When each call needs its own instance, provide a factory's new layer (`Registry.layer(roots)`) or wrap it in `Layer.fresh`.
+
+## Effectful functions
+
+For a reusable function returning an Effect, `Effect.fn("module.name")(function* (args) { ... })` names it for traces; `Effect.fnUntraced` is the same without the span, for small internal helpers. Extra behaviour goes in as further arguments to `Effect.fn` (`Effect.fn("x")(body, Effect.mapError(...))`), and `Effect.fn.Return<A, E, R>` annotates the return type. Most existing code is `(args) => Effect.gen(...)`: use `Effect.fn` for new functions and ones you are already rewriting, and don't convert untouched functions in bulk.
+
+A growing `Effect.gen` body gets named steps, each a function returning an Effect, so the body reads as the command's sequence. Effects run only at the outer boundary: `runtime.ts::runInvocation` for the CLI and each script's own entry point. No `Effect.runPromise`, `runSync` or `runFork` inside Effect code or inside a callback; capture the services a later callback needs while still in Effect.
+
+## Errors
+
+Expected failures are the `Schema.TaggedError` classes in `errors.ts`, failed with `return yield* new Tag({ ... })`. Map a platform or parse error to a tag where its meaning is known (`Effect.mapError`, `catchTag`, `catchTags`), choosing the tag by what the caller should do next.
+
+`Effect.catch`, `catchTag`, `orElseSucceed` and `ignore` see only typed failures; defects pass through, as intended. `catchCause` and `ignoreCause` also swallow defects and interruption: use them only for best-effort writes whose failure can't change the outcome (a log sink, a fallback envelope), as `main.ts` and `logging.ts` do. `Effect.die` and `orDie` are for broken invariants and values the CLI built itself, never for user input.
+
+A throw inside `Effect.gen` is a defect (exit 1). Wrap throwing code in `Effect.try({ try, catch })`, or `Result.try` in pure code, and decode input inside Effect code with `Schema.decodeUnknownEffect`. `decodeUnknownSync` and `encodeSync` are for module-level constants and for encoding a report the CLI built, where failure is a bug.
+
+`Effect.result` gives a `Result` (`.success`, `.failure`); `Effect.exit` gives an `Exit` (`.value`, `.cause`). Inspect a cause through `cause.reasons` with `Cause.isFailReason`, `isDieReason`, `isInterruptReason`, and `Cause.hasInterruptsOnly`. A pending interrupt can survive masked cleanup; `runInvocation` maps it to 130.
+
+## Resources and concurrency
+
+A resource is acquired inside a `Scope`: `Effect.acquireRelease(acquire, (value, exit) => release)` or `Effect.addFinalizer((exit) => ...)`, closed by `Effect.scoped` or the layer. Acquisition is uninterruptible, so do the write that needs undoing inside `acquire`, and let the release read `exit` to undo only on failure or interruption (`replaceProjectState`, `openProject`).
+
+`forkChild` is interrupted with its parent fiber, `forkScoped` with the `Scope` in context, and `forkDetach` has no owner, so don't use it here. Observe every fork: join it, or let its scope end it. `Effect.callback`'s returned Effect runs on interruption, so cancel the underlying source there. `Effect.uninterruptibleMask(restore)` is how `main` guarantees output settles after an interrupted command.
+
+Time and randomness in Effect code come from `Clock.currentTimeMillis`, `Effect.sleep`, `Effect.timeoutOption` and `Random`, never `Date.now`, timers or `Math.random`, so TestClock drives them. `src/platform/` is the exception: its synchronous Node callbacks read the wall clock.
+
+## Commands
+
+`Command.make` builds commands and `withSubcommands` composes the tree; `withSharedFlags` puts a flag before or after subcommands. `Flag.Boolean` needs `withDefault(false)` (flag constructors are capitalized too). `Command.runWith` takes raw arguments and `{ version, renderErrors: false }`. Framework help goes through `Console.log`, which `main` captures and discards on failure; Output owns every application write.
+
+Read flag values from the handler's parsed config, and parser failures from `CliError` fields (`InvalidValue.option`, `.kind`, `.value`, `.expected`; `UnknownSubcommand.subcommand`, `.parent`; `ShowHelp.commandPath`, `.errors`). Never re-parse argv to recover them. The two existing argv reads are the exceptions, and nothing else joins them: `bin.ts` reads `--json` before parsing because Output's audience has to exist when the parser fails, and `main.ts::hasFlag`/`rootHelp` check `--help` and `--version` because those built-in action flags print and succeed without returning a command path.
 
 ## Config, logs and clock
 
-Config.String and other constructors are capitalized in this major. Normalize blank env values, then build a fresh ConfigProvider.fromEnvRecord; config.ts is the only ordinary env reader. Layer building never reads fallible config files. Schema decoding is lazy inside commands. Paths/log settings are read independently; invalid level safely falls back.
+Build a fresh `ConfigProvider.fromEnvRecord` from blank-normalized env; `config.ts` is the only env reader. Layer building never reads fallible config files; schema decoding stays lazy inside commands, and paths and log settings are read independently (an invalid level falls back).
 
-Logger.make gets date, logLevel, message, cause and fiber. Read annotations through fiber.getRef(References.CurrentLogAnnotations); use References.MinimumLogLevel for filtering. Levels are title-case values inside Effect, lowercased in JSON. Queue plain sanitized entries in the logger callback; flush them with captured FileSystem/Output services, avoiding new runtimes in callbacks. Clock.currentTimeMillis and Effect.sleep are test-clock driven.
+`Logger.make` receives date, logLevel, message, cause and fiber. Read annotations with `fiber.getRef(References.CurrentLogAnnotations)` and filter with `References.MinimumLogLevel`. Levels are title case inside Effect and lowercased in JSON. The logger callback queues plain sanitized entries; flushing uses the captured FileSystem and Output, never a new runtime.
 
-## Schemas and testing
+## Schemas
 
-Schema.Struct describes DTOs and Class describes identities/behavior. Schema/type share a name. Brand domain identifiers with Schema.brand and use TaggedError for safe typed failures. Decode unknown values using decodeUnknownEffect; encode at output. Refinements are `.check(Schema.makeFilter(...))`; metadata is `.annotate`. Keep metadata on its intended node, especially around checks.
+`Schema.Struct` for DTOs, `Schema.Class` for identities with behaviour; schema and type share a name. Brand domain ids with `Schema.brand`. Refinements are `.check(Schema.makeFilter(...))` or a built-in check (`Schema.isPattern`); metadata is `.annotate` on the node it describes. Decode unknown input at the boundary with `decodeUnknownEffect`; encode at output.
 
-Schema.toJsonSchemaDocument returns a document with `.schema`; onExcessProperty:error closes objects and should also be used during decoding when extras must fail. Identifiers influence refs; avoid tool-facing identifiers unless the consumer supports refs. Schema.toStandardSchemaV1 adapts Standard Schema consumers. Never install @effect/schema.
+`Schema.toJsonSchemaDocument` returns a document with `.schema`; `onExcessProperty: "error"` closes objects, and decoding needs it too when extras must fail. Identifiers produce refs, so avoid them on tool-facing schemas unless the consumer handles refs.
 
-@effect/vitest `it.effect` supplies test scope/time; TestClock.adjust advances timers. Fork timers before advancing and join them afterwards. When real I/O intervenes, wait on an observed condition, not guessed sleeps. `it.prop` and `it.effect.prop` accept schemas/arbitraries for property checks. it.layer intentionally shares services across tests; fresh layers prove isolation. A separately run runtime uses live services, independent of the surrounding test clock. Assert failures and defects using Exit/Cause or through runCli's actual exit/stream contract.
+## Testing
+
+@effect/vitest's `it.effect` supplies a scope and TestClock; `TestClock.adjust` advances it. Fork the sleeping fiber, adjust, then join. `it.live` uses the real clock. When real I/O intervenes, wait on an observed condition, not a guessed sleep. `it.prop` and `it.effect.prop` take schemas or arbitraries. `layer(...)` shares one built layer across a `describe`, which contradicts this repo's fresh-layer rule for stateful services; build a fresh layer per test instead. A separately run runtime uses live services, whatever the surrounding test clock. Assert failures and defects through `Exit`/`Cause` or through `runCli`'s exit and streams.
