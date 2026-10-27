@@ -18,7 +18,7 @@ import type { Composition } from "../src/core/compose/compose";
 import { composeFiles, NEUTRAL_VARS, type RenderedFile } from "../src/core/compose/files";
 import { envPrefix, slug } from "../src/core/scaffold/slug";
 import type { TemplateValues } from "../src/core/scaffold/template";
-import type { EntryInvalid } from "../src/errors";
+import type { EntryInvalid, PermissionDenied } from "../src/errors";
 import {
   BINARY,
   composition,
@@ -34,7 +34,7 @@ const space = workspace();
 afterEach(() => space.release());
 
 const render = (c: Composition, vars: TemplateValues = NEUTRAL_VARS) =>
-  Effect.runPromise<ReadonlyArray<RenderedFile>, EntryInvalid>(
+  Effect.runPromise<ReadonlyArray<RenderedFile>, EntryInvalid | PermissionDenied>(
     composeFiles(c, vars).pipe(Effect.provide(NodeServices.layer)),
   );
 const text = (file: RenderedFile | undefined) => {

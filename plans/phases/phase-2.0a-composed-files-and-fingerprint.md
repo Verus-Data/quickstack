@@ -206,3 +206,17 @@ code moved.
   keeps only its first writer as `owner`, so the `+`-joined owner needs `compose` to
   carry every writer. A source file gone at render time is `EntryInvalid` reason
   `missing`, the registry's existing reason for it, not `decode`.
+- 2026-10-27 (implementation): `composeFiles` builds `Registry.layer([])` for the
+  registry's checked reads without loading roots; the composition already holds its
+  entries. Registry reads can also fail with `PermissionDenied` (an unreadable source),
+  which `composeFiles` and `fingerprint` pass through unchanged (exit 6, as for every
+  other unreadable entry), so their error type is `EntryInvalid | PermissionDenied`, not
+  the `EntryInvalid` the design above shows. `PlannedFile.owners` carries all writers,
+  including the sole writer of a copy or template, while `owner` remains the first writer.
+- 2026-10-27 (independent review): calling `composeFiles` and then `fingerprint`
+  separately rereads sources, so an edit between them can record a fingerprint for bytes
+  `new` did not write. `composeFilesWithNeutral` now reads sources once and uses the same
+  renderer for project and neutral values; `fingerprintFromFiles` hashes that retained
+  neutral output. The public `composeFiles(c, vars)` and `fingerprint(c)` interfaces stay
+  available. A regression edits real source files during project rendering and checks
+  that the neutral fingerprint still describes the retained content.

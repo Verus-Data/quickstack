@@ -9,7 +9,7 @@ import { type Composition, missingTools } from "../src/core/compose/compose";
 import { composeFiles, NEUTRAL_VARS, type RenderedFile } from "../src/core/compose/files";
 import { fingerprint } from "../src/core/fingerprint";
 import { TEMPLATE_VARIABLES } from "../src/core/scaffold/template";
-import type { EntryInvalid } from "../src/errors";
+import type { EntryInvalid, PermissionDenied } from "../src/errors";
 import { Manifest } from "../src/schemas/manifest";
 import {
   BODY,
@@ -27,9 +27,11 @@ import { writeEntry } from "./helpers/registry";
 const space = workspace();
 afterEach(() => space.release());
 const hash = (c: Composition) =>
-  Effect.runPromise<string, EntryInvalid>(fingerprint(c).pipe(Effect.provide(NodeServices.layer)));
+  Effect.runPromise<string, EntryInvalid | PermissionDenied>(
+    fingerprint(c).pipe(Effect.provide(NodeServices.layer)),
+  );
 const files = (c: Composition) =>
-  Effect.runPromise<ReadonlyArray<RenderedFile>, EntryInvalid>(
+  Effect.runPromise<ReadonlyArray<RenderedFile>, EntryInvalid | PermissionDenied>(
     composeFiles(c, NEUTRAL_VARS).pipe(Effect.provide(NodeServices.layer)),
   );
 
