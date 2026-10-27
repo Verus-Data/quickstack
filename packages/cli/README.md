@@ -65,6 +65,25 @@ quickstacks new <stack> [dir]    # dir defaults to <stack>; `.` is the current d
 - Every write is checked against the project's real path, so nothing lands outside it (`PermissionDenied`, reason `escape`). A failure or Ctrl+C removes everything `new` wrote, the state record included.
 - Missing tools never fail `new`: they are listed in the result and the brief, with the `--without` flag that would drop the fragment needing one.
 
+## Verifying a project
+
+```sh
+quickstacks verify                 # every step, from the project root or any directory below it
+  --only lint,test                 # only these check and serve steps (repeatable); setup and teardown still run
+  --skip-tag slow                  # leave out steps with this tag (repeatable)
+  --all                            # also run steps skipped by default (prod steps in a --sandbox project)
+  --json                           # one VerifyResult object
+```
+
+`verify` finds the nearest `.quickstacks/manifest.json` walking up from the current directory and runs only the steps it lists, printing each command before running it. Nothing else runs.
+
+- Phases run in order. `setup` stops at its first failure and skips the check and serve steps; every `check` step runs, so one run reports every failing check; each `serve` step is started, probed and stopped; `teardown` always runs, after a failure or a Ctrl+C too.
+- Steps run through `/bin/sh -c` in the project root (or the step's `cwd`, which must resolve inside the project) with stdin closed, in their own process group. Their environment is the caller's, minus every agent session marker (`CLAUDECODE` and the rest), with the manifest's `env` filling keys the caller doesn't set: `PORT_WEB=5187 quickstacks verify` moves a port.
+- Each setup, check and teardown step has its `timeout` (default 10m). A step that leaves a process holding its output is stopped 2 s after its shell exits and gets a note; its own exit status still decides it. Exit 127 is reported as a missing command (`failureKind: "env"`).
+- A serve step's `expect.http` (with `${VAR}` expanded from the step environment) must be an `http` URL on `localhost`, `127.0.0.1` or `::1`. Verify fails the step without starting it when that port already answers, then polls the URL every 500 ms until any status below 500, for up to `within` (default 60s). Serve commands must stay in the foreground: one that exits before its probe passes fails, and so does a server still answering on the port after its process group was stopped.
+- Outcomes: `green` (exit 0) is a full run with every step that ran passing. A passing `--only` or `--skip-tag` run is `partial` (exit 0), which never counts as done. A failed step is `failed`: exit 5 (`VerifyFailed`) with the full result still on stdout, each failed step's `failureKind` (`step`, `env`, `timeout`) and output tail in it, and the error envelope naming the failed steps as the last stderr line. Ctrl+C is exit 130 after teardown. Outside a project is `NotFound` (2); a manifest that doesn't decode is `InvalidConfig` (3).
+- Human mode streams each step's output to stderr, prefixed with its name, and ends a run that isn't green with a `Next:` line.
+
 ## Validating a registry
 
 ```sh

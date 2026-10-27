@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, test } from "vitest";
 import { tempDir } from "./helpers/cli";
@@ -53,6 +53,29 @@ test.each(probes)("Grit enforces %s", (source, message) => {
   const result = lint("src/core/probe.ts", source);
   expect(result.stdout + result.stderr).toContain(message);
   expect(result.status).not.toBe(0);
+});
+test("a verify probe that imports @effect/platform-node fails lint [1.3a#20]", () => {
+  const result = lint(
+    "src/core/verify/probe.ts",
+    'import { NodeHttpClient } from "@effect/platform-node"; export { NodeHttpClient };',
+  );
+  expect(result.stdout + result.stderr).toContain("Node process APIs belong");
+  expect(result.status).not.toBe(0);
+});
+test("core/verify/probe.ts imports nothing from node: or @effect/platform-node [1.3a#20]", () => {
+  const source = readFileSync(join(pkg, "src/core/verify/probe.ts"), "utf8");
+  const specifiers = [...source.matchAll(/(?:from|import)\s*\(?\s*["']([^"']+)["']/g)].map(
+    (match) => match[1] ?? "",
+  );
+  expect(specifiers.length).toBeGreaterThan(0);
+  expect(
+    specifiers.filter(
+      (name) =>
+        name.startsWith("node:") ||
+        name.startsWith("@effect/platform-node") ||
+        name.startsWith("@effect/platform-bun"),
+    ),
+  ).toEqual([]);
 });
 test.each(nodeProcess)("Grit allows %s in src/platform/process.ts", (source) => {
   const result = lint("src/platform/process.ts", source);

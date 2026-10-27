@@ -1,0 +1,101 @@
+import { describe, expect, test } from "bun:test";
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { Schema } from "effect";
+import { encodeManifest, MANIFEST_PATH } from "../src/core/manifest";
+import type { Manifest } from "../src/schemas/manifest";
+import { VerifyResult } from "../src/schemas/verify";
+
+const binary = join(import.meta.dir, "../dist/quickstacks");
+
+const project: Manifest = {
+  schemaVersion: 1,
+  projectId: "0f8fad5b-d9cb-469f-a165-70867728950e",
+  createdAt: "2026-10-26T09:00:00.000Z",
+  cli: "0.0.0",
+  mode: "new",
+  preset: "default",
+  agents: ["claude"],
+  stack: { id: "fixture-stack", origin: "bundled", trusted: true },
+  fragments: [],
+  env: {},
+  commands: {},
+  verify: [
+    {
+      name: "lint",
+      phase: "check",
+      run: "echo lint-ok",
+      owner: "fixture-stack",
+      skipByDefault: false,
+    },
+    {
+      name: "test",
+      phase: "check",
+      run: "echo test-broke; exit 1",
+      owner: "fixture-stack",
+      skipByDefault: false,
+    },
+    {
+      name: "clean",
+      phase: "teardown",
+      run: "touch torn",
+      owner: "fixture-stack",
+      skipByDefault: false,
+    },
+  ],
+  verifyDigest: "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  briefWords: 0,
+};
+
+describe("verify from the real binary", () => {
+  test("one passing and one failing step exit 5 with the result on stdout [1.3a#21]", async () => {
+    const dir = mkdtempSync(join(tmpdir(), "cli-binary-verify-"));
+    try {
+      const root = join(dir, "app");
+      mkdirSync(join(root, ".quickstacks"), { recursive: true });
+      mkdirSync(join(root, "src"));
+      writeFileSync(join(root, MANIFEST_PATH), encodeManifest(project));
+      const child = Bun.spawn([binary, "verify", "--json"], {
+        cwd: join(root, "src"),
+        env: {
+          HOME: dir,
+          XDG_CONFIG_HOME: join(dir, "config"),
+          LOG_LEVEL: "none",
+          NO_COLOR: "1",
+          PATH: "/usr/bin:/bin",
+          CLAUDECODE: "1",
+        },
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+      const [stdout, stderr, status] = await Promise.all([
+        new Response(child.stdout).text(),
+        new Response(child.stderr).text(),
+        child.exited,
+      ]);
+      expect(status).toBe(5);
+      const result = Schema.decodeUnknownSync(VerifyResult)(JSON.parse(stdout), {
+        onExcessProperty: "error",
+      });
+      expect(result.outcome).toBe("failed");
+      expect(result.steps.map((s) => [s.name, s.status])).toEqual([
+        ["lint", "passed"],
+        ["test", "failed"],
+        ["clean", "passed"],
+      ]);
+      expect(result.steps.find((s) => s.name === "test")?.outputTail).toContain("test-broke");
+      expect(existsSync(join(root, "torn"))).toBe(true);
+      expect(JSON.parse(stderr.trim().split("\n").at(-1) ?? "")).toEqual({
+        error: {
+          tag: "VerifyFailed",
+          message: "Verify failed.",
+          retryable: false,
+          details: { failed: [{ name: "test", failureKind: "step", exitCode: 1 }] },
+        },
+      });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+});

@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { BunServices } from "@effect/platform-bun";
 import { Effect, Layer } from "effect";
 import { hasFlag, main } from "./main";
+import { NetLayer } from "./platform/net";
 import { installSignalPolicy } from "./platform/signals";
 import { AppLayer, runInvocation } from "./runtime";
 import { Host } from "./services/host";
@@ -29,6 +30,7 @@ const holder = Foreground.make();
 const platform = Layer.mergeAll(
   BunServices.layer,
   Foreground.layer(holder),
+  NetLayer,
   output,
   Host.layer({
     platform: process.platform,

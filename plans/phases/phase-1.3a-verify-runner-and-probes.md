@@ -1,8 +1,9 @@
 # Phase 1.3a: `verify` runner and probes
 
-Status: DRAFT 2026-10-26 (not agreed). Revised 2026-10-26 for the amended D18: a serve
-step's probe is `expect: { http, within }`, and built-in file checks are out of v1 (an
-open additive item below)
+Status: EXECUTED 2026-10-26 on feat/phase-1-finish (awaiting review). Revised 2026-10-26 for
+the amended D18: a serve step's probe is `expect: { http, within }`, and built-in file checks
+are out of v1 (an open additive item below)
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -387,3 +388,37 @@ stripped by `tests/helpers/cli.ts`, and the marker test sets them on purpose.
   roadmap's Schema versions rule is a D18 amendment and a `schema_version` bump.
 - 2026-10-26: `probe: { url, within }` became `expect: { http, within }`. Behavior is
   unchanged; only the key names moved.
+- 2026-10-26, found while executing. The network layers aren't `NodeHttpClient` and
+  `NodeSocket` from `@effect/platform-node`: that package is a dev dependency (the binary runs
+  on Bun), and in effect 4.0.6 the modules are `effect/http` and `effect/socket`, not
+  `effect/unstable/*`. `src/platform/net.ts::NetLayer` uses `FetchHttpClient` (fetch exists in
+  both Bun and Node; redirects are not followed, so a local probe can't be bounced to another
+  host) and `makeNet` from `@effect/platform-bun/BunSocket` (a re-export of the shared
+  `node:net` socket, which loads under Node too). effect's `Socket` is one connection, not a
+  connector, so core gets the small `services/net.ts::Tcp` service (`connect(host, port)`)
+  instead; the roadmap gained a "Network layers" contracts row. A proxy set in the caller's
+  environment (`HTTP_PROXY`) may still be read by the runtime's fetch; not seen, not handled.
+- 2026-10-26: the unknown `--only` name is `BadInput` with `details: { id, flag: "only",
+  known }`, not `{ known }`: `BadInputDetails` is one closed struct whose `id` and `flag` are
+  required, so `only` became a `flag` value and `known` an optional key (roadmap Error tags
+  row updated). `known` lists the check and serve steps, sorted; naming a setup or teardown
+  step is an unknown name, since those always run.
+- 2026-10-26: a manifest that fails to decode is `InvalidConfig` with `details: { path }` (or
+  `{ path, schemaVersion }`), 1.2b's `InvalidConfigDetails`, not `{ path, field }`; the struct
+  has no `field` and a decode issue's path isn't needed to fix a hand-edited manifest.
+- 2026-10-26: the missing-manifest `NotFound` sets `kind: "project"` (the details' `kind`
+  widened from the entry kinds) so `detailLines` can tell it from validate's missing path,
+  whose `Next:` line is about registry roots. `NotFound`'s message stays fixed ("Not found.");
+  `quickstacks new` is named in the human `Next:` line, not the message.
+- 2026-10-26: decided while executing. A skipped step carries a fixed `reason` (`not selected
+  by --only`, `tagged <t>; --skip-tag leaves it out`, `skipped by default in this preset;
+  --all runs it`, `an earlier setup step failed`, `the run was interrupted`). A
+  `skipByDefault` step named in `--only` is still skipped without `--all`, so `--only` can't
+  run a prod step in a sandbox project. `outputTail` is only on failed steps; a timed-out
+  step reports no `exitCode` (the status is the CLI's own kill). A plain non-zero exit's
+  reason is `exited with status <n>`. An unresolved `${VAR}` in a probe is `env`; a non-local
+  or non-http URL is `step`. Serve steps don't stream their output live, because
+  `Processes.start` has no output callback; their tail is in the result.
+- 2026-10-26: the left-running port check runs only after a probe passed. A serve command
+  that backgrounds itself and exits 0 fails with the early-exit reason; the server it left
+  is not named, and the next run reports `port <n> already in use`.

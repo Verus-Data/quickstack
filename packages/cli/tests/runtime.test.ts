@@ -4,6 +4,7 @@ import { expect, test } from "vitest";
 import { AppConfig } from "../src/config";
 import { BrokenPipe } from "../src/errors";
 import { main } from "../src/main";
+import { NetLayer } from "../src/platform/net";
 import { AppLayer } from "../src/runtime";
 import { Host } from "../src/services/host";
 import { Output } from "../src/services/output";
@@ -61,6 +62,7 @@ test("actual EPIPE from Output writer is quiet", async () => {
     output,
     Host.memory(),
     Foreground.layer(Foreground.make()),
+    NetLayer,
   );
   expect(
     await Effect.runPromise(

@@ -2,6 +2,7 @@ import { Effect, Schema } from "effect";
 import { TEMPLATE_VARIABLES } from "./core/scaffold/template";
 import { printable } from "./core/text";
 import { Kind, Origin } from "./schemas/entry";
+import { FailureKind } from "./schemas/verify";
 /** An unknown subcommand: what was typed and up to three close known names (`core/suggest.ts`). */
 export const UsageDetails = Schema.Struct({
   command: Schema.String,
@@ -16,11 +17,14 @@ export class Usage extends Schema.TaggedError<Usage>()("Usage", {
  * `id`: the argument the input was wrong about. `flag` says which input it is: `scope`, a
  * `--scope` value that isn't an npm scope; `with_without`, a fragment id given to both `--with`
  * and `--without`; `dir`, a project directory whose name has a control character; `brief`, a
- * flag (`--with`, `--without`, `--sandbox`, in `id`) that `validate` takes only with `--brief`.
+ * flag (`--with`, `--without`, `--sandbox`, in `id`) that `validate` takes only with `--brief`;
+ * `only`, a `verify --only` name that is no check or serve step, with those steps' names in
+ * `known` (1.3a).
  */
 export const BadInputDetails = Schema.Struct({
   id: Schema.String,
-  flag: Schema.Literals(["scope", "with_without", "dir", "brief"]),
+  flag: Schema.Literals(["scope", "with_without", "dir", "brief", "only"]),
+  known: Schema.optionalKey(Schema.Array(Schema.String)),
 });
 export class BadInput extends Schema.TaggedError<BadInput>()("BadInput", {
   details: Schema.optionalKey(BadInputDetails),
@@ -34,12 +38,13 @@ export class BadInput extends Schema.TaggedError<BadInput>()("BadInput", {
  */
 /**
  * `id` and `kind`: the stack or fragment id that wasn't found, so a caller can tell a wrong stack
- * from a wrong `--with`/`--without` id.
+ * from a wrong `--with`/`--without` id. `kind: "project"` (1.3a, with no `id`): `verify` found no
+ * `.quickstacks/manifest.json` walking up from `looked`.
  */
 export const NotFoundDetails = Schema.Struct({
   suggestions: Schema.Array(Schema.String),
   id: Schema.optionalKey(Schema.String),
-  kind: Schema.optionalKey(Kind),
+  kind: Schema.optionalKey(Schema.Literals([...Kind.literals, "project"])),
   looked: Schema.optionalKey(Schema.String),
   root: Schema.optionalKey(Schema.String),
 });
@@ -70,8 +75,19 @@ export class UpstreamUnavailable extends Schema.TaggedError<UpstreamUnavailable>
 ) {
   override readonly message = "Upstream service is unavailable.";
 }
-/** Details schemas are defined in 1.3a; until then the tag carries none. */
-export class VerifyFailed extends Schema.TaggedError<VerifyFailed>()("VerifyFailed", {}) {
+/** The failed steps, in run order: names, kinds and exit codes only, never their output. */
+export const VerifyFailedDetails = Schema.Struct({
+  failed: Schema.Array(
+    Schema.Struct({
+      name: Schema.String,
+      failureKind: FailureKind,
+      exitCode: Schema.optionalKey(Schema.Number),
+    }),
+  ),
+});
+export class VerifyFailed extends Schema.TaggedError<VerifyFailed>()("VerifyFailed", {
+  details: Schema.optionalKey(VerifyFailedDetails),
+}) {
   override readonly message = "Verify failed.";
 }
 /** Details schemas are defined in 1.3b; until then the tag carries none. */
@@ -328,6 +344,11 @@ export function detailLines(error: AppError, invocation: string): string[] {
       // `list` doesn't read; otherwise an id missing from the registries `list` shows.
       const details = error.details;
       if (!details) return [];
+      if (details.kind === "project")
+        return [
+          `Looked for: .quickstacks/manifest.json in ${printable(details.looked ?? ".")} and every directory above it`,
+          `Next: run ${invocation} verify inside a project ${invocation} new created, or create one with ${invocation} new <stack> <dir>.`,
+        ];
       return [
         ...(details.looked ? [`Looked for: ${printable(details.looked)}`] : []),
         ...(details.id !== undefined
@@ -404,9 +425,19 @@ export function detailLines(error: AppError, invocation: string): string[] {
             ]),
       ];
     }
+    case "VerifyFailed":
+      return error.details?.failed.length
+        ? [
+            `Failed: ${error.details.failed
+              .map(
+                (step) =>
+                  `${printable(step.name)} (${step.failureKind}${step.exitCode === undefined ? "" : `, exit ${step.exitCode}`})`,
+              )
+              .join(", ")}`,
+          ]
+        : [];
     case "NotConfigured":
     case "UpstreamUnavailable":
-    case "VerifyFailed":
     case "VerifyChanged":
     case "Interrupted":
     case "Defect":
@@ -441,6 +472,14 @@ function badInputLines(details: typeof BadInputDetails.Type): string[] {
         `Flag: ${id}`,
         "Next: --with, --without and --sandbox need --brief <stack>; add it, or drop the flag.",
       ];
+    case "only":
+      return [
+        `Flag: --only ${id}`,
+        ...(details.known?.length
+          ? [`Check and serve steps: ${details.known.map(printable).join(", ")}`]
+          : ["This project has no check or serve steps."]),
+        "Next: pass --only names from that list; setup and teardown steps always run.",
+      ];
   }
 }
 const encodeClosed = <S extends Schema.Top>(schema: S, value: S["Type"] | undefined) =>
@@ -471,9 +510,10 @@ export function encodeDetails(error: AppError): Effect.Effect<unknown, Schema.Sc
       return encodeClosed(ValidationFailedDetails, error.details);
     case "InvalidConfig":
       return encodeClosed(InvalidConfigDetails, error.details);
+    case "VerifyFailed":
+      return encodeClosed(VerifyFailedDetails, error.details);
     case "NotConfigured":
     case "UpstreamUnavailable":
-    case "VerifyFailed":
     case "VerifyChanged":
     case "Interrupted":
     case "Defect":

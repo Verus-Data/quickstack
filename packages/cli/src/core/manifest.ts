@@ -1,5 +1,14 @@
 import { createHash } from "node:crypto";
-import { Clock, Effect, FileSystem, type PlatformError, Random, Schema } from "effect";
+import {
+  Clock,
+  Effect,
+  FileSystem,
+  Option,
+  Path,
+  type PlatformError,
+  Random,
+  Schema,
+} from "effect";
 import { InvalidConfig, NotFound, PermissionDenied } from "../errors";
 import { withStepDefaults } from "../schemas/entry";
 import { Manifest, type ManifestStep } from "../schemas/manifest";
@@ -147,6 +156,30 @@ export const readManifest = (
     return yield* Schema.decodeUnknownEffect(Manifest)(unknown, {
       onExcessProperty: "error",
     }).pipe(Effect.mapError(() => invalid()));
+  });
+
+/**
+ * The nearest project at or above `start`: the first directory, walking up, holding
+ * `.quickstacks/manifest.json` as a file. `root` and `path` keep `start`'s spelling (resolved, not
+ * real-pathed). None is `NotFound` with `kind: "project"` and `looked: start`.
+ */
+export const locateManifest = (
+  start: string,
+): Effect.Effect<{ root: string; path: string }, NotFound, FileSystem.FileSystem | Path.Path> =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const from = path.resolve(start);
+    let dir = from;
+    while (true) {
+      const candidate = path.join(dir, MANIFEST_PATH);
+      const info = yield* Effect.option(fs.stat(candidate));
+      if (Option.isSome(info) && info.value.type === "File") return { root: dir, path: candidate };
+      const parent = path.dirname(dir);
+      if (parent === dir) break;
+      dir = parent;
+    }
+    return yield* new NotFound({ details: { suggestions: [], kind: "project", looked: from } });
   });
 
 /**

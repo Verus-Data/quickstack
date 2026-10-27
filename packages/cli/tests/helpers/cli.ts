@@ -5,6 +5,7 @@ import { NodeServices } from "@effect/platform-node";
 import { Effect, type Exit, Layer, type Scope } from "effect";
 import { AppConfig, type Environment } from "../../src/config";
 import { hasFlag, main } from "../../src/main";
+import { NetLayer } from "../../src/platform/net";
 import { AppLayer, runInvocation } from "../../src/runtime";
 import { Host, type HostInfo } from "../../src/services/host";
 import { Output, type Writer } from "../../src/services/output";
@@ -57,6 +58,7 @@ export async function runCli(
     ),
     Host.memory({ platform: "test-node", cwd: home, ...options.host }),
     Foreground.layer(Foreground.make()),
+    NetLayer,
   );
   try {
     const status = await runInvocation(
