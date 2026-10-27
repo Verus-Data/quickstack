@@ -134,6 +134,8 @@ const bashVersion = spawnSync(bash, ["-c", 'echo "$BASH_VERSION"'], {
 function pathWithoutJq() {
   const bin = join(temp(), "no-jq-bin");
   mkdirSync(bin);
+  // Tracked by name: existsSync follows links, so a dangling one on PATH would be linked twice.
+  const linked = new Set<string>();
   for (const dir of (process.env.PATH ?? "").split(delimiter)) {
     let names: string[] = [];
     try {
@@ -142,7 +144,8 @@ function pathWithoutJq() {
       continue;
     }
     for (const name of names) {
-      if (name === "jq" || existsSync(join(bin, name))) continue;
+      if (name === "jq" || linked.has(name)) continue;
+      linked.add(name);
       symlinkSync(join(dir, name), join(bin, name));
     }
   }
