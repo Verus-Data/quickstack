@@ -28,6 +28,14 @@ test.each([
   ["$((1<<2))", "$((1<<2))", false, true],
   ['"$((1<<2))"', "$((1<<2))", true, true],
   ['""', "", true, false],
+  ["$'push'", "push", true, false],
+  [String.raw`$'\x72\155'`, "rm", true, false],
+  [String.raw`pre$'\u0066\U00000069'x`, "prefix", true, false],
+  [String.raw`$'\a\b\e\E\f\n\r\t\v\\\'\"\?'`, "\x07\b\x1b\x1b\f\n\r\t\v\\'\"?", true, false],
+  ["$'$TARGET*'", "$TARGET*", true, false],
+  [String.raw`$'\q'`, String.raw`\q`, true, false],
+  [String.raw`$'\x'`, String.raw`\x`, true, true],
+  [String.raw`$'\U00110000'`, String.raw`\U00110000`, true, true],
 ])("tracks expansion and quoting for %s", (source, word, quoted, expands) => {
   const command = commands(`echo ${source} tail`).find((cmd) => cmd.argv[0] === "echo");
   expect(command).toMatchObject({
@@ -35,6 +43,12 @@ test.each([
     quoted: [false, quoted, false],
     expands: [false, expands, false],
   });
+});
+
+test("an undecodable ANSI-C command word is opaque", () => {
+  expect(commands(String.raw`$'\x' argument`)).toContainEqual(
+    expect.objectContaining({ opaque: true }),
+  );
 });
 
 test("expansion metadata resets between words, redirects and commands", () => {

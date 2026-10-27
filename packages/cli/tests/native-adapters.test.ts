@@ -26,6 +26,17 @@ const configs = {
 const Hook = Schema.Struct({ command: Schema.String });
 const JsonObject = Schema.Record(Schema.String, Schema.Unknown);
 
+test.each(["openrouter-chat", "openrouter-chat-cli"])(
+  "Cursor requests the long %s rule by description",
+  (fragment) => {
+    const meta = instructionMetadata(
+      join(bundled, "fragments", fragment, "adapters/cursor/.cursor/rules", `${fragment}.mdc.tmpl`),
+    );
+    expect(meta.alwaysApply).toBe(false);
+    expect(meta.description).toEqual(expect.stringMatching(/\S/));
+  },
+);
+
 function instructionMetadata(file: string) {
   const text = readFileSync(file, "utf8");
   const header = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/.exec(text);

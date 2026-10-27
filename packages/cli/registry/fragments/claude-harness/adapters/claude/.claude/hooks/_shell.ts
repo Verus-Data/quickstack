@@ -36,6 +36,11 @@ export type Command = {
   dir: string | null | undefined;
   /** Too deeply nested or too long to follow; guards treat it as destructive. */
   opaque?: boolean;
+  /** Programs supplying a pipe or process substitution to this command. */
+  inputPrograms?: string[];
+  /** An asynchronous pipeline in a function body can recursively exhaust processes. */
+  background?: boolean;
+  functionName?: string;
 };
 
 type Word = { text: string; quoted: boolean; expands: boolean };
@@ -45,12 +50,67 @@ type Simple = {
   heredocs: string[];
   scope: number;
   pipedFrom?: Simple;
+  inputs?: Simple[];
+  background?: boolean;
+  functionName?: string;
 };
 
 const BLANK = new Set([" ", "\t", "\r", "\v", "\f"]);
 const WORD_END = new Set([...BLANK, "\n", ";", "&", "|", "<", ">", "(", ")"]);
 
 class Unbalanced extends Error {}
+
+const ANSI_ESCAPES: Readonly<Record<string, string>> = {
+  a: "\x07",
+  b: "\b",
+  e: "\x1b",
+  E: "\x1b",
+  f: "\f",
+  n: "\n",
+  r: "\r",
+  t: "\t",
+  v: "\v",
+  "\\": "\\",
+  "'": "'",
+  '"': '"',
+  "?": "?",
+};
+
+/** One Bash ANSI-C escape, without its backslash; undefined means it cannot be decoded. */
+function ansiEscape(sequence: string): string | undefined {
+  const literal = ANSI_ESCAPES[sequence];
+  if (literal !== undefined) return literal;
+  if (/^[0-7]+$/.test(sequence)) return String.fromCharCode(Number.parseInt(sequence, 8) & 255);
+  if (/^[xuU]/.test(sequence)) {
+    if (sequence.length === 1) return undefined;
+    const code = Number.parseInt(sequence.slice(1), 16);
+    return code <= 0x10ffff && !(code >= 0xd800 && code <= 0xdfff)
+      ? String.fromCodePoint(code)
+      : undefined;
+  }
+  if (sequence.startsWith("c")) {
+    if (sequence.length === 1) return undefined;
+    return String.fromCharCode(
+      sequence === "c?" ? 127 : sequence.charAt(1).toUpperCase().charCodeAt(0) & 31,
+    );
+  }
+  return `\\${sequence}`;
+}
+
+function ansiWord(source: string): Word {
+  let expands = false;
+  const text = source.replace(
+    /\\(x[\da-fA-F]{0,2}|u[\da-fA-F]{0,4}|U[\da-fA-F]{0,8}|[0-7]{1,3}|c[\s\S]?|[\s\S])/g,
+    (raw: string, sequence: string) => {
+      const decoded = ansiEscape(sequence);
+      if (decoded !== undefined) return decoded;
+      expands = true;
+      return raw;
+    },
+  );
+  // Bash ends this quoted segment at the first NUL, then resumes after its closing quote.
+  return { text: text.split("\0")[0] ?? "", quoted: true, expands };
+}
 
 /** Shared by the lex calls for one line: output, whether quotes count, and subshell scopes. */
 type Lexing = { raw: boolean; out: Simple[]; parents: Map<number, number> };
@@ -125,7 +185,10 @@ class Lexer {
   private readonly n: number;
   private readonly stopAtParen: boolean;
   private readonly scopes: number[];
+  private readonly scopeStarts: number[];
   private readonly pending: Heredoc[] = [];
+  private readonly functions: { brace: number; name: string }[] = [];
+  private braces = 0;
   private cmd: Simple;
   private word = "";
   private inWord = false;
@@ -142,6 +205,7 @@ class Lexer {
     this.n = source.src.length;
     this.stopAtParen = source.stopAtParen;
     this.scopes = [source.scope];
+    this.scopeStarts = [lx.out.length];
     this.i = source.start;
     this.cmd = this.fresh();
   }
@@ -165,6 +229,7 @@ class Lexer {
     return (
       this.newline(c) ||
       this.escape(c) ||
+      this.ansiQuoted() ||
       this.singleQuoted(c) ||
       this.doubleQuoted(c) ||
       this.arithmetic() ||
@@ -172,6 +237,8 @@ class Lexer {
       this.backtick(c) ||
       this.comment(c) ||
       this.blank(c) ||
+      this.functionDefinition(c) ||
+      this.brace(c) ||
       this.subshell(c) ||
       this.pipe(c) ||
       this.separator(c) ||
@@ -184,11 +251,13 @@ class Lexer {
   }
 
   private fresh(pipedFrom?: Simple): Simple {
+    const functionName = this.functions.at(-1)?.name;
     return {
       words: [],
       redirects: [],
       heredocs: [],
       scope: this.current,
+      ...(functionName ? { functionName } : {}),
       ...(pipedFrom ? { pipedFrom } : {}),
     };
   }
@@ -217,10 +286,13 @@ class Lexer {
     this.expands = false;
   }
 
-  private endCmd(pipe = false) {
+  private endCmd(pipe = false, background = false) {
     this.endWord();
     const done = this.cmd.words.length > 0 || this.cmd.redirects.length > 0 ? this.cmd : undefined;
-    if (done) this.lx.out.push(done);
+    if (done) {
+      done.background = background;
+      this.lx.out.push(done);
+    }
     this.cmd = this.fresh(pipe ? done : undefined);
   }
 
@@ -290,6 +362,19 @@ class Lexer {
     return true;
   }
 
+  private ansiQuoted(): boolean {
+    if (this.lx.raw || !this.src.startsWith("$'", this.i)) return false;
+    let end = this.i + 2;
+    while (end < this.n && this.src.charAt(end) !== "'") {
+      end += this.src.charAt(end) === "\\" ? 2 : 1;
+    }
+    if (end >= this.n) throw new Unbalanced();
+    const word = ansiWord(this.src.slice(this.i + 2, end));
+    this.add(word.text, true, word.expands);
+    this.i = end + 1;
+    return true;
+  }
+
   private doubleQuoted(c: string): boolean {
     if (this.lx.raw || c !== '"') return false;
     this.add("", true);
@@ -329,7 +414,12 @@ class Lexer {
   /** $( ) command substitution, <( ) and >( ) process substitution. */
   private substitution(c: string): boolean {
     if (!"$<>".includes(c) || this.src.charAt(this.i + 1) !== "(") return false;
-    this.takeUntil(this.nested(this.i + 2));
+    const start = this.lx.out.length;
+    const end = this.nested(this.i + 2);
+    if (c === "<") {
+      this.cmd.inputs = [...(this.cmd.inputs ?? []), ...this.lx.out.slice(start)];
+    }
+    this.takeUntil(end);
     return true;
   }
 
@@ -356,13 +446,54 @@ class Lexer {
     if (c !== "(" && c !== ")") return false;
     this.endCmd();
     this.i++;
-    if (c === "(") this.scopes.push(newScope(this.lx, this.current));
-    else if (this.scopes.length > 1) this.scopes.pop();
+    if (c === "(") {
+      this.scopes.push(newScope(this.lx, this.current));
+      this.scopeStarts.push(this.lx.out.length);
+    } else if (this.scopes.length > 1) this.closeSubshell();
     else {
       if (this.stopAtParen) this.closedAt = this.i;
       return true;
     }
     this.cmd = this.fresh();
+    return true;
+  }
+
+  private closeSubshell() {
+    const start = this.scopeStarts.pop() ?? this.lx.out.length;
+    if (/^[ \t]*&(?!&)/.test(this.src.slice(this.i))) {
+      for (const command of this.lx.out.slice(start)) command.background = true;
+    }
+    this.scopes.pop();
+  }
+
+  private functionDefinition(c: string): boolean {
+    if (c !== "(") return false;
+    const name = this.inWord ? this.word : this.cmd.words.at(-1)?.text;
+    const words = this.cmd.words.length + Number(this.inWord);
+    const expected = this.cmd.words[0]?.text === "function" ? 2 : 1;
+    if (!name || words !== expected) return false;
+    const header = /^\(\s*\)\s*\{/.exec(this.src.slice(this.i));
+    if (!header) return false;
+    this.endCmd();
+    this.functions.push({ brace: ++this.braces, name });
+    this.cmd = this.fresh();
+    this.i += header[0].length;
+    return true;
+  }
+
+  private brace(c: string): boolean {
+    if (this.inWord || !"{}".includes(c)) return false;
+    if (!this.cmd.words.every((word) => KEYWORDS.has(word.text))) return false;
+    const next = this.src.charAt(this.i + 1);
+    if (next && !WORD_END.has(next)) return false;
+    this.endCmd();
+    if (c === "{") this.braces++;
+    else {
+      if (this.functions.at(-1)?.brace === this.braces) this.functions.pop();
+      this.braces--;
+    }
+    this.cmd = this.fresh();
+    this.i++;
     return true;
   }
 
@@ -377,7 +508,7 @@ class Lexer {
 
   private separator(c: string): boolean {
     if (c !== ";" && !(c === "&" && this.src.charAt(this.i + 1) !== ">")) return false;
-    this.endCmd();
+    this.endCmd(false, c === "&");
     this.i++;
     return true;
   }
@@ -475,6 +606,7 @@ const WRAPPERS = new Set([
   "ionice",
   "timeout",
   "stdbuf",
+  "busybox",
 ]);
 const ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/;
 
@@ -595,32 +727,53 @@ function expand(src: string, ctx: Context, walk: Walk, stdin: string[] = []): vo
   const scopeOf = scopeDirs(ctx.dir, parents);
   for (const simple of list) {
     const scope = scopeOf(simple.scope);
-    const input = [...simple.heredocs, ...stdin, ...pipedInput(simple.pipedFrom)];
-    for (const start of commandStarts(simple.words)) {
-      if (--walk.budget.commands < 0) {
-        walk.out.push(opaque(ctx));
-        return;
-      }
-      const words = simple.words.slice(start);
-      const cmd: Command = {
-        argv: words.map((w) => w.text),
-        quoted: words.map((w) => w.quoted),
-        expands: words.map((w) => w.expands),
-        env: simple.words
-          .slice(0, start)
-          .map((w) => w.text)
-          .filter((t) => ASSIGNMENT.test(t)),
-        redirects: simple.redirects,
-        stdin: input,
-        viaXargs: ctx.viaXargs,
-        remote: ctx.remote,
-        dir: scope.dir,
-      };
-      walk.out.push(cmd);
-      follow(cmd, walk);
-    }
+    if (!expandSimple(simple, { ...ctx, dir: scope.dir }, walk, stdin)) return;
     changeDirectory(scope, simple.words);
   }
+}
+
+function expandSimple(simple: Simple, ctx: Context, walk: Walk, stdin: string[]): boolean {
+  const input = [...simple.heredocs, ...stdin, ...pipedInput(simple.pipedFrom)];
+  for (const start of commandStarts(simple.words)) {
+    if (--walk.budget.commands < 0) {
+      walk.out.push(opaque(ctx));
+      return false;
+    }
+    const words = simple.words.slice(start);
+    if (ASSIGNMENT.test(words[0]?.text ?? "")) continue;
+    if (words[0]?.expands) {
+      walk.out.push(opaque(ctx));
+      continue;
+    }
+    const cmd: Command = {
+      argv: words.map((w) => w.text),
+      quoted: words.map((w) => w.quoted),
+      expands: words.map((w) => w.expands),
+      env: simple.words
+        .slice(0, start)
+        .map((w) => w.text)
+        .filter((t) => ASSIGNMENT.test(t)),
+      redirects: simple.redirects,
+      stdin: input,
+      viaXargs: ctx.viaXargs,
+      remote: ctx.remote,
+      dir: ctx.dir,
+      inputPrograms: inputPrograms(simple),
+      background: simple.background ?? false,
+      ...(simple.functionName ? { functionName: simple.functionName } : {}),
+    };
+    walk.out.push(cmd);
+    follow(cmd, walk);
+  }
+  return true;
+}
+
+function inputPrograms(simple: Simple): string[] {
+  const inputs = [...(simple.inputs ?? [])];
+  if (simple.pipedFrom) inputs.push(simple.pipedFrom);
+  return inputs.flatMap((input) =>
+    commandStarts(input.words).map((start) => basename(input.words[start]?.text ?? "")),
+  );
 }
 
 /** What a command piped into another feeds it: a heredoc, or the text echo or printf prints. */

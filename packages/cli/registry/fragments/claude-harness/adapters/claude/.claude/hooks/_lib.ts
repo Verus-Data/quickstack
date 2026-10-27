@@ -17,6 +17,7 @@ import { stripVTControlCharacters } from "node:util";
 
 export type ToolInput = {
   command?: unknown;
+  working_directory?: unknown;
   file_path?: unknown;
   content?: unknown;
   new_string?: unknown;
