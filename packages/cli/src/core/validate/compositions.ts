@@ -6,11 +6,11 @@ import type {
   NotFound,
   PermissionDenied,
 } from "../../errors";
-import { APP_TAG, type StackMeta } from "../../schemas/entry";
+import { APP_TAG, type FragmentMeta, type StackMeta } from "../../schemas/entry";
 import type { Finding, SizeRow } from "../../schemas/validate";
 import { countWords } from "../brief/words";
 import { targetAgents } from "../compose/agents";
-import { type Composition, compose } from "../compose/compose";
+import { type ComposeWarning, type Composition, compose } from "../compose/compose";
 import type { Entry } from "../registry/entry";
 import { bodyLimit, canonicalBrief, composedLimit } from "./budget";
 import { type Check, entryFile, finding, type View } from "./view";
@@ -53,46 +53,45 @@ const subject = (stack: string, preset: string, added?: string) =>
 /**
  * The compositions each validated stack is budgeted in: its required and default fragments (with
  * any default app), then each optional fragment and each app that fits it added on its own, all
- * in both presets. When one app is added, default apps are left out, since one composition holds
- * at most one.
+ * in both presets. Apps come from the validated root (or the stack's own `optional`), so the
+ * compositions don't depend on what else this machine holds. An added fragment replaces the
+ * defaults it conflicts with, in either direction, and an added app replaces default apps, since
+ * one composition holds at most one. An optional id that names no fragment is `referenceChecks`'.
  */
 function plans(view: View, stack: Stack) {
   const { required, optional } = stack.meta.fragments;
   const defaults = stack.meta.fragments.default;
-  const fits = (meta: Entry["meta"]) =>
-    meta.kind === "fragment" &&
-    (meta.appliesTo.length === 0 ||
-      meta.appliesTo.includes(stack.id) ||
-      stack.meta.tags.some((tag) => meta.appliesTo.includes(tag)));
-  const isApp = (id: string) =>
-    view.all.some(
-      (item) =>
-        item.kind === "fragment" &&
-        item.id === id &&
-        "meta" in item &&
-        item.meta.kind === "fragment" &&
-        item.meta.category === "app",
-    );
-  const apps = view.all
-    .filter(
-      (item): item is Entry =>
-        item.kind === "fragment" &&
-        "meta" in item &&
-        item.meta.kind === "fragment" &&
-        item.meta.category === "app" &&
-        fits(item.meta),
-    )
-    .map((item) => item.id);
-  const extras = [...new Set([...optional, ...apps])]
+  const fragments = new Map(
+    view.all.flatMap((item) =>
+      item.kind === "fragment" && "meta" in item && item.meta.kind === "fragment"
+        ? [[item.id, { item, meta: item.meta }] as const]
+        : [],
+    ),
+  );
+  const fits = (meta: FragmentMeta) =>
+    meta.appliesTo.length === 0 ||
+    meta.appliesTo.includes(stack.id) ||
+    stack.meta.tags.some((tag) => meta.appliesTo.includes(tag));
+  const isApp = (id: string) => fragments.get(id)?.meta.category === "app";
+  const conflicting = (a: string, b: string) =>
+    (fragments.get(a)?.meta.conflicts.includes(b) ?? false) ||
+    (fragments.get(b)?.meta.conflicts.includes(a) ?? false);
+  const apps = [...fragments.values()]
+    .filter(({ item, meta }) => meta.category === "app" && fits(meta) && view.inRoot(item))
+    .map(({ item }) => item.id);
+  const known = new Set(view.all.filter((item) => item.kind === "fragment").map((item) => item.id));
+  const extras = [...new Set([...optional.filter((id) => known.has(id)), ...apps])]
     .filter((id) => !required.includes(id) && !defaults.includes(id))
     .sort();
-  const defaultApps = defaults.filter(isApp);
   return [
     { added: undefined, with: [], without: [] },
     ...extras.map((id) => ({
       added: id,
       with: [id],
-      without: isApp(id) ? defaultApps : [],
+      without: defaults.filter(
+        (other) =>
+          !required.includes(other) && ((isApp(id) && isApp(other)) || conflicting(id, other)),
+      ),
     })),
   ];
 }
@@ -134,12 +133,34 @@ function describe(error: ComposeFailure): { check: string; message: string } {
 }
 
 /**
- * The per-entry checks already report an invalid entry under the root (its conditional markers
- * and merged JSON); compose failing on the same thing would say it again.
+ * Whether another check of this run already reports what made compose fail, so saying it again
+ * would be noise: a validated entry's conditional markers or merged JSON, a fragment the load
+ * checks rejected, or an id a validated entry names that `referenceChecks` found unknown.
  */
 function reportedElsewhere(view: View, error: ComposeFailure): boolean {
+  if (error._tag === "ComposeConflict") {
+    const details = error.details;
+    if (details?.reason !== "requires") return false;
+    // A requires edge: the stack (or the first fragment) names the last id.
+    const target = details.ids.at(-1);
+    const requirer =
+      details.stack !== undefined
+        ? { kind: "stack", id: details.stack }
+        : { kind: "fragment", id: details.ids[0] };
+    const known = view.all.some((item) => item.kind === "fragment" && item.id === target);
+    return (
+      !known &&
+      view.entries.some((entry) => entry.kind === requirer.kind && entry.id === requirer.id)
+    );
+  }
   if (error._tag !== "EntryInvalid" || !error.details) return false;
   const { id, origin, reason } = error.details;
+  if (
+    view.rejected.some(
+      (item) => item.kind === "fragment" && item.id === id && item.origin === origin,
+    )
+  )
+    return true;
   return (
     (reason === "conditional" || reason === "merge_json") &&
     view.entries.some((entry) => entry.id === id && entry.origin === origin)
@@ -165,6 +186,11 @@ export const compositionChecks: Check = (view) =>
       const failed = new Map<
         string,
         { check: string; added: string | undefined; message: string; presets: Preset[] }
+      >();
+      // Compose warnings, once per code and id, naming every preset they came up in.
+      const warned = new Map<
+        string,
+        ComposeWarning & { added: string | undefined; presets: Preset[] }
       >();
       for (const preset of PRESETS) {
         for (const plan of plans(view, stack)) {
@@ -194,6 +220,12 @@ export const compositionChecks: Check = (view) =>
             continue;
           }
           const composition = composed.success;
+          for (const warning of composition.warnings) {
+            const key = `${warning.code}\0${warning.id}`;
+            const prior = warned.get(key);
+            if (prior) prior.presets.push(preset);
+            else warned.set(key, { ...warning, added: plan.added, presets: [preset] });
+          }
           const brief = canonicalBrief(composition);
           const limit = composedLimit(composition);
           sizes.push({
@@ -227,6 +259,19 @@ export const compositionChecks: Check = (view) =>
             severity: "error",
             file,
             message: `${subject(stack.id, presets.join(", "), added)}: ${message}`,
+          }),
+        );
+      // The stack lists a fragment that doesn't fit it: an error, like any other broken listing.
+      for (const { code, id, added, presets } of warned.values())
+        findings.push(
+          finding(stack, {
+            check: code === "with_not_applicable" ? "optional-fits" : "compose",
+            severity: "error",
+            file,
+            message:
+              code === "with_not_applicable"
+                ? `fragments.optional names ${id}, whose applies_to matches neither this stack nor its tags`
+                : `${subject(stack.id, presets.join(", "), added)}: compose warns ${code.replaceAll("_", " ")}: ${id}`,
           }),
         );
       for (const [layer, presets] of missing)

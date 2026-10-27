@@ -6,7 +6,7 @@ import { afterEach, expect, test } from "vitest";
 import { countWords } from "../src/core/brief/words";
 import { BUDGET } from "../src/core/validate/budget";
 import { BriefPreview, type Finding, ValidateReport } from "../src/schemas/validate";
-import { quiet, runCli, tempDir } from "./helpers/cli";
+import { quiet, runCli, tempDir, writeError } from "./helpers/cli";
 import { spawnGit } from "./helpers/git";
 import { minimal, realRegistry, writeEntry } from "./helpers/registry";
 
@@ -448,19 +448,108 @@ test("unknown-reference covers fragments.*, requires, conflicts and applies_to, 
   ]);
 });
 
-test("a compose failure is one finding per composition, naming the presets it fails in", async () => {
+test("an optional fragment that conflicts with a default replaces it, in either direction", async () => {
   const root = temp();
-  stack(root, "torn", "fragments:\n  default: [a]\n  optional: [b]");
+  stack(root, "swap", "fragments:\n  default: [a, d, kept]\n  optional: [b]");
   fragment(root, "a");
   fragment(root, "b", "conflicts: [a]");
+  fragment(root, "d", "conflicts: [b]");
+  fragment(root, "kept");
+  const { status, report: got } = await report([root]);
+  expect(status).toBe(0);
+  expect(got.findings).toEqual([]);
+  expect(got.sizes.filter((row) => row.kind === "composed").map((row) => row.with)).toEqual([
+    undefined,
+    "b",
+    undefined,
+    "b",
+  ]);
+});
+
+test("a compose failure that remains is one finding per composition, naming the presets it fails in", async () => {
+  const root = temp();
+  stack(root, "torn", "fragments:\n  required: [r]\n  default: [a]\n  optional: [b]");
+  fragment(root, "r");
+  fragment(root, "a");
+  // A required fragment can't be dropped, so this conflict stays.
+  fragment(root, "b", "conflicts: [r]");
   const { status, report: got } = await report([root]);
   expect(status).toBe(2);
-  expect(only(got.findings, "compose").map((finding) => finding.message)).toEqual([
-    "torn (default, sandbox) + b: can't compose (conflicts): a, b",
+  expect(got.findings.map((finding) => [finding.check, finding.entry, finding.message])).toEqual([
+    ["compose", "torn", "torn (default, sandbox) + b: can't compose (conflicts): b, r"],
   ]);
   expect(got.sizes.filter((row) => row.kind === "composed").map((row) => row.with)).toEqual([
     undefined,
     undefined,
+  ]);
+});
+
+test("an optional fragment that doesn't apply to its stack is an error on the stack", async () => {
+  const root = temp();
+  stack(root, "terminal", "fragments:\n  optional: [web-only]");
+  fragment(root, "web-only", "applies_to: [web]");
+  stack(root, "site", "", SETUP, "[web, scripts]");
+  const { status, report: got } = await report([root]);
+  expect(status).toBe(2);
+  expect(
+    got.findings.map((finding) => [
+      finding.severity,
+      finding.check,
+      finding.entry,
+      finding.message,
+    ]),
+  ).toEqual([
+    [
+      "error",
+      "verify-layers",
+      "site",
+      "no serve step with expect, which a stack tagged web or api needs (default, sandbox)",
+    ],
+    [
+      "error",
+      "optional-fits",
+      "terminal",
+      "fragments.optional names web-only, whose applies_to matches neither this stack nor its tags",
+    ],
+  ]);
+});
+
+test("an unknown or rejected id a stack names is reported once, by its own check", async () => {
+  const root = temp();
+  stack(root, "ghostly", "fragments:\n  default: [ghost]");
+  stack(root, "phantom", "fragments:\n  optional: [phantm]");
+  stack(root, "uses-bad", "fragments:\n  default: [bad]");
+  writeEntry(root, "fragment", "bad", minimal("fragment", "bad", "colour: red"));
+  const { status, report: got } = await report([root]);
+  expect(status).toBe(2);
+  expect(checks(got.findings)).toEqual([
+    "error unknown-reference ghostly",
+    "error unknown-reference phantom",
+    "error schema bad",
+  ]);
+  // Validating the stack alone doesn't report the rejected fragment, so compose still does.
+  const alone = await report([join(root, "stacks", "uses-bad")]);
+  expect(alone.report.findings.map((finding) => [finding.check, finding.message])).toEqual([
+    ["compose", "uses-bad (default, sandbox): user entry bad is invalid (decode) at FRAGMENT.md"],
+  ]);
+});
+
+test("apps are enumerated from the validated root, not from every origin", async () => {
+  const home = temp();
+  const bundled = join(home, "bundled");
+  app(bundled, "elsewhere-app", "cli");
+  const user = join(home, "authoring");
+  stack(user, "mine");
+  app(user, "local-app", "mine");
+  const { status, report: got } = await report([user], { home, registry: bundled });
+  expect(status).toBe(0);
+  expect(
+    got.sizes.filter((row) => row.kind === "composed").map((row) => [row.preset, row.with]),
+  ).toEqual([
+    ["default", undefined],
+    ["default", "local-app"],
+    ["sandbox", undefined],
+    ["sandbox", "local-app"],
   ]);
 });
 
@@ -632,6 +721,142 @@ test("conditional prose: syntax with its file line and 1.1's problem code, unkno
   expect(only(got.findings, "compose")).toEqual([]);
 });
 
+test("a with= or stack= id that resolves only in another origin is a resolved-outside-root note", async () => {
+  const home = temp();
+  const bundled = join(home, "bundled");
+  fragment(bundled, "shared");
+  stack(bundled, "far-stack");
+  const user = join(home, "authoring");
+  stack(
+    user,
+    "mine",
+    "",
+    `${SETUP}<!-- quickstacks:when with=shared stack=far-stack -->\nx\n<!-- quickstacks:end -->\n`,
+  );
+  const { status, report: got } = await report([user], { home, registry: bundled });
+  expect(status).toBe(0);
+  expect(got.findings.map((finding) => [finding.severity, finding.check, finding.message])).toEqual(
+    [
+      [
+        "note",
+        "resolved-outside-root",
+        "stack=far-stack names a stack found in the bundled registry",
+      ],
+      [
+        "note",
+        "resolved-outside-root",
+        "with=shared names a fragment found in the bundled registry",
+      ],
+    ],
+  );
+});
+
+test("a directory under stacks/ or fragments/ with no markdown file, or the other kind's, is that kind's entry", async () => {
+  const root = temp();
+  stack(root, "fine");
+  mkdirSync(join(root, "stacks", "empty"));
+  const misplaced = join(root, "fragments", "misplaced");
+  mkdirSync(misplaced, { recursive: true });
+  writeFileSync(join(misplaced, "STACK.md"), `---\n${minimal("stack", "misplaced")}\n---\n`);
+  const empty = await report([join(root, "stacks", "empty")]);
+  expect(empty.status).toBe(2);
+  expect(empty.report.findings.map((f) => [f.check, f.kind, f.entry, f.message])).toEqual([
+    ["schema", "stack", "empty", "STACK.md is missing"],
+  ]);
+  const wrong = await report([misplaced]);
+  expect(wrong.status).toBe(2);
+  expect(wrong.report.findings.map((f) => [f.check, f.kind, f.entry, f.message])).toEqual([
+    ["schema", "fragment", "misplaced", "FRAGMENT.md is missing"],
+  ]);
+});
+
+test("a stacks/ the project registry skips as a symlink is one registry finding, not a newer schema_version per entry", async () => {
+  const home = temp();
+  const elsewhere = join(home, "elsewhere");
+  stack(elsewhere, "linked");
+  const project = join(home, ".quickstacks");
+  mkdirSync(project);
+  symlinkSync(join(elsewhere, "stacks"), join(project, "stacks"));
+  writeEntry(
+    project,
+    "fragment",
+    "newer",
+    minimal("fragment", "newer").replace(/^schema_version: 1/, "schema_version: 2"),
+  );
+  const { status, report: got } = await report([project], { home });
+  expect(status).toBe(2);
+  expect(got.findings.map((f) => [f.check, f.kind, f.entry, f.file, f.message])).toEqual([
+    [
+      "symlink",
+      undefined,
+      undefined,
+      "stacks",
+      "stacks/ is a symlink, which a project registry never follows; its entries are skipped",
+    ],
+    [
+      "schema",
+      "fragment",
+      "newer",
+      "fragments/newer/FRAGMENT.md",
+      "schema_version is newer than this CLI reads; update quickstacks",
+    ],
+  ]);
+});
+
+test("the Next line uses the invocation and escapes control characters in the echoed path", async () => {
+  const home = temp();
+  const root = join(home, "odd\u001bname");
+  stack(root, "clean");
+  const clean = await run([root], { home, host: { invocation: "npx -y quickstacks@9.9.9" } });
+  expect(clean.status).toBe(0);
+  expect(clean.stdout).not.toContain("\u001b");
+  expect(clean.stdout).toContain(
+    `Next: npx -y quickstacks@9.9.9 validate '${home}/odd\\u001bname' --brief clean --sandbox`,
+  );
+  stack(root, "broken", "decisions: [Pick a database]");
+  const failed = await run([root], { home, host: { invocation: "npx -y quickstacks@9.9.9" } });
+  expect(failed.status).toBe(2);
+  expect(failed.stdout).not.toContain("\u001b");
+  expect(failed.stdout).toContain(
+    `Next: fix the errors above, then run npx -y quickstacks@9.9.9 validate '${home}/odd\\u001bname'`,
+  );
+});
+
+test("a closed stdout keeps the failure's exit 2 and still writes the envelope", async () => {
+  const root = temp();
+  stack(root, "broken", "decisions: [Pick a database]");
+  const result = await runCli(["validate", root, "--json"], {
+    home: temp(),
+    env: quiet,
+    stdout: async () => {
+      throw writeError("EPIPE");
+    },
+  });
+  expect(result.status).toBe(2);
+  expect(result.stdout).toBe("");
+  expect(JSON.parse(result.stderr.trim().split("\n").at(-1) ?? "").error).toMatchObject({
+    tag: "ValidationFailed",
+    details: { errors: 1, warnings: 0 },
+  });
+});
+
+test("--brief takes --with as a comma list and --without, like new", async () => {
+  const root = temp();
+  stack(root, "base", "fragments:\n  default: [helper]\n  optional: [one, two]");
+  fragment(root, "helper");
+  fragment(root, "one");
+  fragment(root, "two");
+  const result = await run([root, "--brief", "base", "--with", "one,two", "--without", "helper"]);
+  expect(result.status).toBe(0);
+  expect(result.stdout).toContain("\nFragments: one, two\n");
+  const json = await run([root, "--brief", "base", "--with", "one", "--with", "two", "--json"]);
+  expect(Schema.decodeUnknownSync(BriefPreview)(JSON.parse(json.stdout)).fragments).toEqual([
+    "helper",
+    "one",
+    "two",
+  ]);
+});
+
 test("control characters from an entry are escaped in human output", async () => {
   const root = temp();
   stack(
@@ -668,7 +893,7 @@ test.skipIf(git.status !== 0)(
         entry: "hides",
         file: "stacks/hides/files/.env.example.tmpl",
         message:
-          "git ignores .env.example.tmpl here, so it never reaches a commit; check the entry's own files/.gitignore",
+          "git ignores .env.example.tmpl here (rule .env.* in stacks/hides/files/.gitignore), so it never reaches a commit",
       },
     ]);
     // Outside a checkout there is nothing to check.
@@ -678,6 +903,51 @@ test.skipIf(git.status !== 0)(
     writeFileSync(join(copy, "files", ".gitignore"), ".env.*\n");
     writeFileSync(join(copy, "files", ".env.example.tmpl"), "KEY=\n");
     expect(only((await report([plain], { env })).report.findings, "git-ignored")).toEqual([]);
+  },
+);
+
+test.skipIf(git.status !== 0)(
+  "git-ignored blames only ignore rules inside the entry: a root under an ignored directory is not flagged",
+  async () => {
+    const repo = temp();
+    spawnGit(["init", "-q", repo]);
+    writeFileSync(join(repo, ".gitignore"), "vendor/\n");
+    const root = join(repo, "vendor", "registry");
+    const entry = stack(root, "hides");
+    mkdirSync(join(entry, "files"));
+    writeFileSync(join(entry, "files", ".gitignore"), ".env.*\n");
+    writeFileSync(join(entry, "files", ".env.example.tmpl"), "KEY=\n");
+    const env = { PATH: process.env.PATH ?? "" };
+    const { status, report: got } = await report([root], { env });
+    expect(status).toBe(0);
+    expect(only(got.findings, "git-ignored")).toEqual([]);
+  },
+);
+
+test.skipIf(git.status !== 0)(
+  "git-ignored matches paths with spaces and leading dashes, and names the rule's file",
+  async () => {
+    const repo = temp();
+    spawnGit(["init", "-q", repo]);
+    // A rule outside the entry ignores this file too, but isn't the entry's doing.
+    writeFileSync(join(repo, ".gitignore"), "outside.tmpl\n");
+    const entry = stack(repo, "odd");
+    mkdirSync(join(entry, "files"));
+    writeFileSync(join(entry, "files", ".gitignore"), "my notes.tmpl\n-dash.tmpl\n");
+    for (const name of ["my notes.tmpl", "-dash.tmpl", "outside.tmpl", "kept.tmpl"])
+      writeFileSync(join(entry, "files", name), "x\n");
+    const env = { PATH: process.env.PATH ?? "" };
+    const { report: got } = await report([repo], { env });
+    expect(only(got.findings, "git-ignored").map((f) => [f.file, f.message])).toEqual([
+      [
+        "stacks/odd/files/-dash.tmpl",
+        "git ignores -dash.tmpl here (rule -dash.tmpl in stacks/odd/files/.gitignore), so it never reaches a commit",
+      ],
+      [
+        "stacks/odd/files/my notes.tmpl",
+        "git ignores my notes.tmpl here (rule my notes.tmpl in stacks/odd/files/.gitignore), so it never reaches a commit",
+      ],
+    ]);
   },
 );
 

@@ -1,4 +1,4 @@
-import { Effect, FileSystem, Path } from "effect";
+import { Effect, Path } from "effect";
 import type { Finding } from "../../schemas/validate";
 import { markdownFile } from "../registry/entry";
 import { Registry } from "../registry/registry";
@@ -26,7 +26,6 @@ function rejectedCheck(reason: string | undefined, error: string) {
 export const loadChecks: Check = (view) =>
   Effect.gen(function* () {
     const registry = yield* Registry;
-    const fs = yield* FileSystem.FileSystem;
     const path = yield* Path.Path;
     const findings: Finding[] = [];
     for (const rejected of view.rejected) {
@@ -48,32 +47,30 @@ export const loadChecks: Check = (view) =>
         }),
       );
     }
-    // A directory with no entry and no rejection was skipped for a newer `schema_version`.
-    const seen = new Set(
-      [...view.entries, ...view.rejected].map((item) => `${item.kind}/${item.id}`),
-    );
-    for (const { kind, dir } of [
-      { kind: "stack", dir: "stacks" },
-      { kind: "fragment", dir: "fragments" },
-    ] as const) {
-      const parent = path.join(view.root, dir);
-      const names = yield* fs.readDirectory(parent).pipe(Effect.orElseSucceed(() => []));
-      for (const id of [...names].sort()) {
-        if (seen.has(`${kind}/${id}`) || !view.wanted({ kind, id })) continue;
-        const info = yield* Effect.option(fs.lstat(path.join(parent, id)));
-        if (info._tag === "None" || info.value.type !== "Directory") continue;
-        findings.push(
-          finding(
-            { kind, id },
-            {
-              check: "schema",
-              severity: "error",
-              file: `${dir}/${id}/${markdownFile(kind)}`,
-              message: "schema_version is newer than this CLI reads; update quickstacks",
-            },
-          ),
-        );
+    // What the registry skipped under the root: a newer `schema_version`, or (in a project root) a
+    // symlinked root, `stacks/` or `fragments/`, which it never follows.
+    for (const skipped of yield* registry.skipped) {
+      if (skipped.reason === "symlink") {
+        const rel = path.relative(view.root, skipped.dir);
+        if (rel.startsWith("..") || path.isAbsolute(rel)) continue;
+        const name = rel === "" ? "the registry root" : `${rel.split(path.sep).join("/")}/`;
+        findings.push({
+          check: "symlink",
+          severity: "error",
+          file: rel.split(path.sep).join("/") || ".",
+          message: `${name} is a symlink, which a project registry never follows; its entries are skipped`,
+        });
+        continue;
       }
+      if (!view.inRoot(skipped) || !view.wanted(skipped)) continue;
+      findings.push(
+        finding(skipped, {
+          check: "schema",
+          severity: "error",
+          file: view.file(skipped, markdownFile(skipped.kind)),
+          message: "schema_version is newer than this CLI reads; update quickstacks",
+        }),
+      );
     }
     return { findings };
   });

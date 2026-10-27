@@ -76,7 +76,7 @@ export function renderReport(
     "",
     `${counted}: ${plural(errors, "error")}, ${plural(tally("warning"), "warning")}, ${plural(tally("note"), "note")}`,
   );
-  const target = options.path === undefined ? "" : ` ${shellWord(options.path)}`;
+  const target = options.path === undefined ? "" : ` ${shellWord(printable(options.path))}`;
   if (errors)
     out.push(`Next: fix the errors above, then run ${options.invocation} validate${target}`);
   else if (options.firstStack !== undefined)

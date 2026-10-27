@@ -115,6 +115,8 @@ Envelope: `schemaVersion`, `eventId` (UUID, the server's idempotency key), `type
 
 `origin` is `bundled` or `index` when every entry came from that origin, `mixed` when the official entries came from both. `nonOfficial` is `{ user, project, source }`: how many entries came from each non-official origin, counts only, never ids (the never-sent list below still holds). An event with any non-official entry still sends `stack: "custom"` for it.
 
+The `verify` event carries no `stages` (3.5b's optional `RunRecord.stages`): `outcome` is the whole run's, so a run with a green base and a failing app stage sends `failed`.
+
 Only `green` counts as green anywhere downstream. "Env blocked" is not sent; 4.2a derives it from the step results.
 
 Every field names its reader. A field with no reader isn't sent; a new reader for an unsent field is a new field and a schema version.

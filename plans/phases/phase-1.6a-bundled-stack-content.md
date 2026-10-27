@@ -1,7 +1,7 @@
 # Phase 1.6a: Bundled catalog in format v1
 
 Status: DRAFT 2026-10-26 (not agreed). Re-scoped 2026-10-26 by the roadmap to "Bundled
-catalog: port and validate": bring the whole bundled catalog into entry format v1 as
+catalog: bring into v1 and validate": bring the whole bundled catalog into entry format v1 as
 amended and pass `validate`, recording each composed size, instead of writing three
 stacks to D13's word targets. Body rewritten to match 2026-10-26
 
@@ -11,7 +11,7 @@ stacks to D13's word targets. Body rewritten to match 2026-10-26
 | Traces to | Assumption "Agents can follow a 3,000 to 10,000 word brief faithfully ... The first assumption is the one to test next"; D5 (the budget hypothesis 1.6b's runs test); open question "Who is the bundled registry for?"; success row "The result is complete" |
 | Depends on | 1.5 (`validate`, the budget and the canonical render). Writing entries can start now: 1.0 fixed the format in code and 1.1 the composition. The composition tests run `new`, so they land with or after 1.2a |
 | Blocks | 1.6d (its hooks ship in `agent-ops` and are tested on files the gate stacks write), 1.6b (the gate runs these stacks), and the per-entry bench proofs in 3.3a, 3.3b, 3.3c, 3.4a and 3.5b |
-| Decisions needed | D6 and D13 as amended: which entries the catalog holds is the maintainers' choice, including whether personal-tooling entries ship (roadmap, Feature gaps). D5 before the zero-warning gate means anything: the roadmap's Feature gaps row proposes larger caps (an app body and a composed brief with an app) that D5 doesn't have yet. D20, if it keeps gating every bundled stack, makes 1.6b one run per catalog stack |
+| Decisions needed | D6 and D13 as amended: which entries the catalog holds is the maintainers' choice, including whether personal-tooling entries ship (roadmap, Feature gaps). D5 as amended 2026-10-26: the caps 1.5 enforces (stack body 2,000, fragment 1,000, app body 3,000, composed 6,000, 9,000 with an app) are still a proposal the maintainers haven't agreed. D20, if it keeps gating every bundled stack, makes 1.6b one run per catalog stack |
 | Settles | The catalog's v1 form; each stack's measured composed size per preset, with and without its app where it offers one; [open question 4](../risks-and-open-questions.md#open-questions-for-the-maintainers) as far as content goes |
 
 ## Where this fits
@@ -161,9 +161,9 @@ Each size must be under 1.5's caps. For a brief that isn't:
 - If a stack still can't fit, move a default fragment to optional and record why next to
   D13; the composed size it lands at is a D5 data point.
 - A brief with an app is the known pressure point: 1.1 measured its realistic fixture at
-  about 6,000 words with the app, over D5's 5,000, almost all of it entry prose. The
-  roadmap's Feature gaps row proposes separate caps for an app; until D5 settles them,
-  1.5's zero-warning gate can't pass on a catalog with an app, and this plan can't exit.
+  about 6,000 words with the app, almost all of it entry prose. D5 as amended gives a
+  composition with an app 9,000 words, and 1.5's `validate` passes that fixture; an app
+  brief over 9,000 is cut like any other.
 
 ### Dotfiles and packing
 
@@ -181,7 +181,7 @@ the tarball tests wait with it.
 | Case | What happens |
 |---|---|
 | A stack is over its cap in either preset | Cut prose; if it still doesn't fit, a default fragment becomes optional and D13 records why |
-| A brief with an app is over the composed cap | Record the size; the app caps are a D5 decision (roadmap, Feature gaps), not something to cut toward |
+| A brief with an app is over its 9,000-word cap | Cut prose, as for any other brief; record the size, since it is a D5 data point |
 | An entry needs a check v1 doesn't have | Write it as a command; note the case under 1.3a's built-in-checks item |
 | A shipped file fails the stack's own lint | Fix the file; it is a stack bug |
 | Git ignores a file under `packages/cli/registry/` | The fixture guard fails; fix the entry's `.gitignore` pattern or the file name |

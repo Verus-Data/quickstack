@@ -1,6 +1,6 @@
 # Phase 1.5: `validate` and the brief budget
 
-Status: EXECUTED 2026-10-26 on feat/phase-1.5 (awaiting batch review)
+Status: EXECUTED 2026-10-26 on feat/phase-1 (merged from feat/phase-1.5; batch-reviewed once, fixes being applied)
 
 | Field | Value |
 |---|---|
@@ -258,6 +258,7 @@ error naming the layer. A `serve` step without a probe is already a schema error
 | `merge-json` | error | An entry's own copy of a `merge` file doesn't parse as JSON, checked per entry even when no budgeted composition includes it. A `.tmpl` on a merge path is already 1.1's `merge_template` |
 | `git-ignored` | warning | Inside a git checkout, git ignores one of an entry's files, so it never reaches a commit (see "Decided here") |
 | `compose` | error | Composing a budgeted composition fails (1.1's `ComposeConflict`, `EntryInvalid` or `NotFound`), with the error's `details` reason and parties |
+| `optional-fits` | error | A stack's `fragments.optional` names a fragment whose `applies_to` matches neither the stack nor its tags (1.1's `with_not_applicable` warning; added in the batch review) |
 | `budget-body`, `budget-composed` | error | Over the D5 limits |
 | `verify-layers` | error | D7 layer missing |
 
@@ -457,3 +458,36 @@ Found executing, 2026-10-26:
   without `--stdin` git exits 128. The check passes paths as arguments with
   `core.quotePath=false` and reads newline-separated output, so a path holding a newline
   or a quote goes unreported.
+- **The step-layer vocabulary has no honest value for a file-existence or config check.**
+  `install`, `lint`, `typecheck`, `test`, `build`, `serve` and `docs` don't describe a step
+  that checks a file is there or a config is wired (six of the realistic fixture's seven
+  warnings are such steps), and the zero-warning gate for bundled entries pushes authors to pick a wrong
+  layer just to clear `step-layer`. The vocabulary is unchanged for now; the maintainers
+  choose between adding a `check` layer through the roadmap's "Verify step `layer`"
+  contract row, or downgrading `step-layer` to a note (HANDOFF next steps).
+
+Found in the batch review, 2026-10-26:
+
+- **An optional fragment can replace a default.** Each added composition now leaves out
+  every default that conflicts with the added fragment (either direction), as an added app
+  already left out default apps; only a conflict that remains (with a required fragment,
+  say) is a `compose` finding. The earlier version reported a false conflict.
+- **Compose warnings were dropped.** An optional fragment whose `applies_to` doesn't fit
+  its stack is now an `optional-fits` error on the stack; any other compose warning is a
+  `compose` error.
+- **Duplicates.** An unknown id a validated entry names (`unknown-reference`) and a
+  rejected root fragment a stack names (its load finding) are no longer reported again as
+  `compose` failures; an unknown optional id gets no composition at all.
+- **Apps come from the validated root** (or the stack's own `optional`), not every origin,
+  so the budgeted compositions don't depend on the machine.
+- **`git-ignored` reads `check-ignore -v`** and reports only rules from a .gitignore inside
+  the entry's own directory, naming the rule and its file; a root under an ignored
+  directory isn't flagged.
+- **A directory under `stacks/` or `fragments/`** given to `validate` is that kind's entry
+  even with its markdown file missing or the other kind's in place, so it gets the normal
+  finding instead of `NotFound`.
+- **The newer-`schema_version` finding** comes from what the registry skipped
+  (`Registry.skipped`), not from a directory with no entry; a project root's symlinked
+  `stacks/` or `fragments/` is its own `symlink` finding.
+- **`with=` and `stack=` ids** found only in another origin get the same
+  `resolved-outside-root` note as frontmatter references.

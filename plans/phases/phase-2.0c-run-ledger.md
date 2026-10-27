@@ -98,6 +98,11 @@ export const Ledger = Schema.Struct({
 classifies runs over time (canary infra, timeouts, flaky stacks) is 5.1's design; it reads
 these values and doesn't change them.
 
+A run whose base stage is green and whose app stage failed (3.5b's optional
+`RunRecord.stages`) has outcome `failed`: `runs` counts it in `verifyRuns`, `lastOutcome` is
+`failed`, and the ledger `result` is `fail` like any other failed verify; the green base
+shows only in the record's `stages`.
+
 `interventions` is not part of `result`. The success measure "finishes without help" is
 the share of `pass` records with `interventions: 0`; D20's gate needs that plus a `pass`.
 `null` means there was no `NOTES.md`, which is not evidence of no questions.
