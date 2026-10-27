@@ -89,9 +89,9 @@ export const readManifestAt = (root: string): Manifest =>
     onExcessProperty: "error",
   });
 
-/** `.quickstack/state/runs.jsonl` under `root`, each line decoded as a `RunRecord`. */
+/** `.stacks/state/runs.jsonl` under `root`, each line decoded as a `RunRecord`. */
 export function runRecords(root: string): RunRecord[] {
-  const file = join(root, ".quickstack", "state", "runs.jsonl");
+  const file = join(root, ".stacks", "state", "runs.jsonl");
   if (!existsSync(file)) return [];
   return readFileSync(file, "utf8")
     .split("\n")
@@ -101,13 +101,13 @@ export function runRecords(root: string): RunRecord[] {
     );
 }
 
-/** Writes `.quickstack/manifest.json` under `root` and returns its path. */
+/** Writes `.stacks/manifest.json` under `root` and returns its path. */
 export function writeProject(
   root: string,
   steps: StepInput[],
   overrides: Partial<Manifest> = {},
 ): string {
-  mkdirSync(join(root, ".quickstack"), { recursive: true });
+  mkdirSync(join(root, ".stacks"), { recursive: true });
   const path = join(root, MANIFEST_PATH);
   writeFileSync(path, encodeManifest(manifest(steps, overrides)));
   return path;

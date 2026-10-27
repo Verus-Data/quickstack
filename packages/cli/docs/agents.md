@@ -6,7 +6,7 @@ This page is for the person setting up an agent to use quickstack. The agent its
 
 You can start the project and hand it over, or let the agent start it.
 
-If you run `stacks new <stack> <dir>` yourself, quickstack writes the project and starts your agent in it with one instruction: read `.quickstack/BRIEF.md` and carry it out. The [quick start](quickstart.md) covers this path. The agent needs no setup; the brief is the whole task.
+If you run `stacks new <stack> <dir>` yourself, quickstack writes the project and starts your agent in it with one instruction: read `.stacks/BRIEF.md` and carry it out. The [quick start](quickstart.md) covers this path. The agent needs no setup; the brief is the whole task.
 
 If you want to say "start me a Go CLI with tests" in a chat with your agent, the agent needs to know quickstack exists. That's what the skill is for.
 
@@ -58,11 +58,11 @@ sequenceDiagram
 
 1. The agent runs `stacks list --json`, picks a stack, and tells you which one and why, naming a close second if there is one. It won't pick an untrusted entry unless you named it.
 2. It runs `stacks new <stack> <dir> --json`, or adds `--sandbox` if you asked for the quickest local setup.
-3. It reads `.quickstack/BRIEF.md` and follows it. It asks you only the decisions the brief tells it to ask; with `--sandbox` or `--yes` there are none.
+3. It reads `.stacks/BRIEF.md` and follows it. It asks you only the decisions the brief tells it to ask; with `--sandbox` or `--yes` there are none.
 4. It runs `stacks verify`, fixes what fails, and runs it again until the outcome is `green`.
-5. It works through the brief's after-green list (manual QA, checking the docs) and summarizes for you: the stack, the decisions it took, anything left undone, and where it noted problems with the brief (`.quickstack/NOTES.md`).
+5. It works through the brief's after-green list (manual QA, checking the docs) and summarizes for you: the stack, the decisions it took, anything left undone, and where it noted problems with the brief (`.stacks/NOTES.md`).
 
-For an existing repository, step 2 is `stacks add <fragment...> --json` instead, and the agent also merges the files `add` parked under `.quickstack/incoming/`.
+For an existing repository, step 2 is `stacks add <fragment...> --json` instead, and the agent also merges the files `add` parked under `.stacks/incoming/`.
 
 The rules the agent follows are in [the skill](../skill/SKILL.md) and in the guide `stacks` prints with no arguments. The two that matter to you: the agent may never edit the verify steps or the manifest, and if verify reports `VerifyChanged`, it stops and asks you. Only you can accept changed steps, by running `stacks verify --accept-changes` at your own terminal.
 

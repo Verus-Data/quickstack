@@ -74,7 +74,7 @@ test("one SIGINT through npm exec records interruption and runs teardown", async
       },
     ],
   } satisfies Manifest;
-  mkdirSync(join(dir, ".quickstack"));
+  mkdirSync(join(dir, ".stacks"));
   writeFileSync(
     join(dir, MANIFEST_PATH),
     encodeManifest({ ...manifest, verifyDigest: digestSteps(manifest) }),
@@ -133,7 +133,7 @@ test("one SIGINT through npm exec records interruption and runs teardown", async
     expect(stderr.trim().split("\n").at(-1)).toContain('"tag":"Interrupted"');
     expect(existsSync(join(dir, "torn"))).toBe(true);
     const record = Schema.decodeUnknownSync(RunRecord)(
-      JSON.parse(readFileSync(join(dir, ".quickstack/state/runs.jsonl"), "utf8").trim()),
+      JSON.parse(readFileSync(join(dir, ".stacks/state/runs.jsonl"), "utf8").trim()),
     );
     expect(record.outcome).toBe("interrupted");
   } finally {
@@ -148,7 +148,7 @@ describe("verify from the real binary", () => {
     const dir = mkdtempSync(join(tmpdir(), "cli-binary-verify-"));
     try {
       const root = join(dir, "app");
-      mkdirSync(join(root, ".quickstack"), { recursive: true });
+      mkdirSync(join(root, ".stacks"), { recursive: true });
       mkdirSync(join(root, "src"));
       writeFileSync(join(root, MANIFEST_PATH), encodeManifest(project));
       const child = Bun.spawn([binary, "verify", "--json"], {
@@ -199,7 +199,7 @@ describe("verify from the real binary", () => {
     const dir = mkdtempSync(join(tmpdir(), "cli-binary-verify-"));
     try {
       const root = join(dir, "app");
-      mkdirSync(join(root, ".quickstack"), { recursive: true });
+      mkdirSync(join(root, ".stacks"), { recursive: true });
       const edited = {
         ...project,
         verify: project.verify.map((step) =>
@@ -235,7 +235,7 @@ describe("verify from the real binary", () => {
       expect(JSON.parse(stderr.trim().split("\n").at(-1) ?? "")).toMatchObject({
         error: { tag: "VerifyChanged", details: { against: "manifest", reason: "digest" } },
       });
-      expect(existsSync(join(root, ".quickstack", "state", "runs.jsonl"))).toBe(true);
+      expect(existsSync(join(root, ".stacks", "state", "runs.jsonl"))).toBe(true);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

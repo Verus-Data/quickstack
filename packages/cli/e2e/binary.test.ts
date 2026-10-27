@@ -230,15 +230,15 @@ describe("installed Node package", () => {
       expect(result.status).toBe(0);
       const created = JSON.parse(result.stdout);
       expect(created).toMatchObject({ project: app, stack: "fixture-stack", preset: "sandbox" });
-      expect(created.written).toContain(".quickstack/BRIEF.md");
+      expect(created.written).toContain(".stacks/BRIEF.md");
       for (const rel of created.written) expect(existsSync(join(app, rel))).toBe(true);
       expect(readFileSync(join(app, "README.md"), "utf8")).toStartWith("# app\n");
       expect(statSync(join(app, ".githooks/pre-commit")).mode & 0o111).not.toBe(0);
       expect(existsSync(join(app, "ran"))).toBe(false);
       expect(created.stateRecord).toBe(true);
-      expect(created.written).toContain(".quickstack/manifest.json");
+      expect(created.written).toContain(".stacks/manifest.json");
       const manifest = Schema.decodeUnknownSync(Manifest)(
-        JSON.parse(readFileSync(join(app, ".quickstack/manifest.json"), "utf8")),
+        JSON.parse(readFileSync(join(app, ".stacks/manifest.json"), "utf8")),
         { onExcessProperty: "error" },
       );
       expect(manifest).toMatchObject({ schemaVersion: 1, mode: "new", preset: "sandbox" });

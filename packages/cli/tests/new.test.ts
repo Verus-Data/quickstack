@@ -92,10 +92,10 @@ const expectedWritten = [
   ".githooks/pre-commit",
   ".github/workflows/ci.yml",
   ".gitignore",
-  ".quickstack/.gitignore",
-  ".quickstack/BRIEF.md",
-  ".quickstack/NOTES.md",
-  ".quickstack/manifest.json",
+  ".stacks/.gitignore",
+  ".stacks/BRIEF.md",
+  ".stacks/NOTES.md",
+  ".stacks/manifest.json",
   "README.md",
   "plain.txt",
 ];
@@ -120,7 +120,7 @@ describe("new writes a project", () => {
       preset: "sandbox",
       agents: ["claude"],
       written: expectedWritten,
-      brief: ".quickstack/BRIEF.md",
+      brief: ".stacks/BRIEF.md",
       untrusted: [],
       warnings: [],
       git: "none",
@@ -131,7 +131,7 @@ describe("new writes a project", () => {
         reason: "json",
         untrusted: [],
         prompt:
-          "Read .quickstack/BRIEF.md and carry it out. It's your full task for this project; you're done when stacks verify passes.",
+          "Read .stacks/BRIEF.md and carry it out. It's your full task for this project; you're done when stacks verify passes.",
       },
     });
     expect(tree(app)).toEqual([
@@ -143,12 +143,12 @@ describe("new writes a project", () => {
       ".github/workflows",
       ".github/workflows/ci.yml",
       ".gitignore",
-      ".quickstack",
-      ".quickstack/.gitignore",
-      ".quickstack/BRIEF.md",
-      ".quickstack/NOTES.md",
-      ".quickstack/manifest.json",
-      ".quickstack/state",
+      ".stacks",
+      ".stacks/.gitignore",
+      ".stacks/BRIEF.md",
+      ".stacks/NOTES.md",
+      ".stacks/manifest.json",
+      ".stacks/state",
       "README.md",
       "plain.txt",
     ]);
@@ -185,13 +185,13 @@ describe("new writes a project", () => {
     // The hook stays executable; ordinary files don't become so.
     expect(statSync(join(app, ".githooks/pre-commit")).mode & 0o111).not.toBe(0);
     expect(statSync(join(app, "README.md")).mode & 0o111).toBe(0);
-    // .quickstack/: the ignore file, the notes with both headings, an empty state/.
-    expect(read(".quickstack/.gitignore")).toBe("/BRIEF.md\n/NOTES.md\n/state/\n/incoming/\n");
-    expect(read(".quickstack/NOTES.md")).toContain("## Findings");
-    expect(read(".quickstack/NOTES.md")).toContain("## Asked");
-    expect(readdirSync(join(app, ".quickstack/state"))).toEqual([]);
+    // .stacks/: the ignore file, the notes with both headings, an empty state/.
+    expect(read(".stacks/.gitignore")).toBe("/BRIEF.md\n/NOTES.md\n/state/\n/incoming/\n");
+    expect(read(".stacks/NOTES.md")).toContain("## Findings");
+    expect(read(".stacks/NOTES.md")).toContain("## Asked");
+    expect(readdirSync(join(app, ".stacks/state"))).toEqual([]);
     // The brief is renderBrief's for the same composition, and both counts are its counts.
-    const brief = read(".quickstack/BRIEF.md");
+    const brief = read(".stacks/BRIEF.md");
     expect(countWords(brief)).toBe(result.briefWords);
     const composed = await composeExit(
       { stack: "fixture-stack", preset: "sandbox" },
@@ -215,7 +215,7 @@ describe("new writes a project", () => {
     const { status, home } = await newCli(["fixture-stack", "app", "--json"], { env: withGit });
     expect(status).toBe(0);
     const app = join(home, "app");
-    expect(readFileSync(join(app, ".quickstack/BRIEF.md"), "utf8")).toContain("touch ran");
+    expect(readFileSync(join(app, ".stacks/BRIEF.md"), "utf8")).toContain("touch ran");
     for (const dir of [home, app])
       for (const name of ["ran", "ran-stack"]) expect(existsSync(join(dir, name))).toBe(false);
   });
@@ -231,7 +231,7 @@ describe("new writes a project", () => {
     expect(stdout).toMatch(/\nWrote \d+ files:\n {2}\.claude\//);
     expect(stdout).toContain("Fragments: base-req, hooked, own-repo, ran-check, tooled");
     expect(stdout).toContain("Git: git not found; no repository");
-    expect(stdout).toMatch(/Brief: \.quickstack\/BRIEF\.md \(\d+ words\)/);
+    expect(stdout).toMatch(/Brief: \.stacks\/BRIEF\.md \(\d+ words\)/);
     expect(stdout).toContain("  qs-stack-tool not found (needed by fixture-stack)\n");
     expect(stdout).toContain(
       "  qs-fragment-tool not found (needed by tooled; skip with --without tooled)\n",
@@ -239,8 +239,8 @@ describe("new writes a project", () => {
     // 1.4: no terminal here, so the prompt is printed with an example command.
     expect(stdout.trimEnd().split("\n").slice(-3)).toEqual([
       "Next: open app in your coding agent and give it this prompt:",
-      "  Read .quickstack/BRIEF.md and carry it out. It's your full task for this project; you're done when stacks verify passes.",
-      `For example: cd app && claude "Read .quickstack/BRIEF.md and carry it out. It's your full task for this project; you're done when stacks verify passes."`,
+      "  Read .stacks/BRIEF.md and carry it out. It's your full task for this project; you're done when stacks verify passes.",
+      `For example: cd app && claude "Read .stacks/BRIEF.md and carry it out. It's your full task for this project; you're done when stacks verify passes."`,
     ]);
   });
 
@@ -271,7 +271,7 @@ describe("new writes a project", () => {
         drop: [{ id: "tooled", flag: "without" }],
       },
     ]);
-    const brief = readFileSync(join(home, "app/.quickstack/BRIEF.md"), "utf8");
+    const brief = readFileSync(join(home, "app/.stacks/BRIEF.md"), "utf8");
     expect(brief).toContain("`qs-fragment-tool`: not found.");
     expect(brief).toContain(T.ground.missing);
   });
@@ -280,7 +280,7 @@ describe("new writes a project", () => {
     const brief = async (args: string[]) => {
       const { status, home } = await newCli(["fixture-stack", "app", ...args]);
       expect(status).toBe(0);
-      return readFileSync(join(home, "app/.quickstack/BRIEF.md"), "utf8");
+      return readFileSync(join(home, "app/.stacks/BRIEF.md"), "utf8");
     };
     for (const args of [["--sandbox"], ["--yes"]]) {
       const text = await brief(args);
@@ -476,12 +476,12 @@ describe("new refuses before writing", () => {
     }
   });
 
-  test("an entry file under .quickstack/ or .git/, in any case and at any depth, is reserved_path: the CLI owns them", async () => {
+  test("an entry file under .stacks/ or .git/, in any case and at any depth, is reserved_path: the CLI owns them", async () => {
     for (const reserved of [
-      ".quickstack/BRIEF.md",
+      ".stacks/BRIEF.md",
       ".git/hooks/pre-commit",
       ".GIT/config",
-      ".Quickstack/BRIEF.md",
+      ".Stacks/BRIEF.md",
       "vendor/.Git/HEAD",
       "git~1/config",
       ".git. /config",
@@ -510,7 +510,7 @@ describe("new refuses before writing", () => {
     }
   });
 
-  test("a reserved path in human mode says the CLI owns .git/ and .quickstack/", async () => {
+  test("a reserved path in human mode says the CLI owns .git/ and .stacks/", async () => {
     const home = setup();
     const registry = join(home, "registry");
     const stack = writeEntry({
@@ -534,7 +534,7 @@ describe("new refuses before writing", () => {
         "  Reason: reserved_path",
         "  Stack: sneaky",
         "  Path: .GIT/config",
-        "  The CLI owns .git/ and .quickstack/ in a project; no entry may write under them, in any letter case.",
+        "  The CLI owns .git/ and .stacks/ in a project; no entry may write under them, in any letter case.",
         "  Next: remove or rename that file in the entry.",
         "",
       ].join("\n"),
@@ -894,7 +894,7 @@ describe.skipIf(!hasGit)("new and git", () => {
     expect(ok.status).toBe(0);
     expect(decode(ok.stdout).git).toBe("parent");
     expect(existsSync(join(repo, "app", ".git"))).toBe(false);
-    expect(readFileSync(join(repo, "app/.quickstack/BRIEF.md"), "utf8")).toContain(
+    expect(readFileSync(join(repo, "app/.stacks/BRIEF.md"), "utf8")).toContain(
       "inside the git repository at",
     );
   });
@@ -947,7 +947,7 @@ describe.skipIf(!hasGit)("new and git", () => {
     const result = decode(stdout);
     expect(result.git).toBe("parent");
     expect(result.fragments).toContain("own-repo");
-    expect(readFileSync(join(app, ".quickstack/BRIEF.md"), "utf8")).toContain(
+    expect(readFileSync(join(app, ".stacks/BRIEF.md"), "utf8")).toContain(
       "don't commit without asking the user",
     );
     expect(spawnGit(["rev-parse", "HEAD"], { cwd: app }).stdout.toString()).toBe(head);
@@ -986,7 +986,7 @@ describe("git init failing or interrupted", () => {
     expect(result.warnings).toEqual([{ code: "git_init_failed", id: "git", exitCode: 1 }]);
     const app = join(home, "app");
     for (const rel of result.written) expect(existsSync(join(app, rel))).toBe(true);
-    const brief = readFileSync(join(app, ".quickstack/BRIEF.md"), "utf8");
+    const brief = readFileSync(join(app, ".stacks/BRIEF.md"), "utf8");
     expect(brief).toContain(T.ground.git({ kind: "none" }));
     expect(countWords(brief)).toBe(result.briefWords);
     const human = await newCli(["fixture-stack", "app2"], {
@@ -1063,7 +1063,7 @@ describe("git init failing or interrupted", () => {
     const result = decode(stdout);
     expect(result.git).toBe("none");
     expect(result.warnings).toEqual([{ code: "git_unusable", id: "git", exitCode: 128 }]);
-    expect(readFileSync(join(app, ".quickstack/BRIEF.md"), "utf8")).toContain(
+    expect(readFileSync(join(app, ".stacks/BRIEF.md"), "utf8")).toContain(
       T.ground.git({ kind: "none" }),
     );
   }, 15000);
@@ -1129,7 +1129,7 @@ describe("a real CLI process", () => {
       child?.on("close", resolve);
     });
     await vi.waitFor(() => expect(existsSync(marker)).toBe(true), { timeout: 10000 });
-    expect(existsSync(join(home, "app", ".quickstack", "BRIEF.md"))).toBe(true);
+    expect(existsSync(join(home, "app", ".stacks", "BRIEF.md"))).toBe(true);
     expect(statSync(join(home, "app", ".git")).isDirectory()).toBe(true);
     const records = join(home, ".local", "state", "quickstack", "projects");
     expect(readdirSync(records)).toHaveLength(1);

@@ -9,7 +9,7 @@ const result: Omit<AddResult, "handoff"> = {
   alreadyApplied: [],
   written: ["ci.yml"],
   skipped: ["same.txt"],
-  mergeNeeded: [{ path: "README.md", incoming: [".quickstack/incoming/README.md"] }],
+  mergeNeeded: [{ path: "README.md", incoming: [".stacks/incoming/README.md"] }],
   missingRequired: [{ id: "required", command: "stacks add required" }],
   commandsKept: [],
   warnings: [
@@ -28,7 +28,7 @@ const result: Omit<AddResult, "handoff"> = {
   tamperCheck: null,
   stateRecord: true,
   digestRecorded: false,
-  brief: ".quickstack/BRIEF.md",
+  brief: ".stacks/BRIEF.md",
   briefWords: 123,
   untrusted: [{ id: "ci", kind: "fragment", origin: "project", dir: "local/ci" }],
 };
@@ -49,11 +49,11 @@ test("the add summary keeps the shown path, merge task and actionable confirmati
       "Warning: the manifest's stack gone-stack is in no registry; composed without it",
       "",
       "Merge needed",
-      "  README.md: .quickstack/incoming/README.md",
+      "  README.md: .stacks/incoming/README.md",
       "Missing required: required. Next: stacks add required",
       "Untrusted: ci (project): local/ci",
       "Stop: ask the user to review the new steps and run npx -y quickstack@0.1.0 verify --accept-changes in their terminal.",
-      "Brief: .quickstack/BRIEF.md",
+      "Brief: .stacks/BRIEF.md",
     ].join("\n"),
   );
   expect(renderAdd(result, { ...context, audience: "human" })).toBe(text);

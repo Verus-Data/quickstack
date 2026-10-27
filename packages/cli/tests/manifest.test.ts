@@ -31,7 +31,7 @@ const asRoot = process.getuid?.() === 0;
 test("a manifest built from a real composition writes, reads back unchanged and carries its digest", async () => {
   const manifest = await manifestOf({ preset: "sandbox" }, 4321);
   const project = temp();
-  mkdirSync(join(project, ".quickstack"));
+  mkdirSync(join(project, ".stacks"));
   const path = join(project, MANIFEST_PATH);
   writeFileSync(path, encodeManifest(manifest));
   const read = await succeed(runWith(readManifest(path)));

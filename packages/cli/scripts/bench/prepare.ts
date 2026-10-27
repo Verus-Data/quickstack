@@ -136,7 +136,7 @@ export const prepare = (options: Options, adapters: readonly AgentAdapter[]) =>
       if (options.existing) {
         root = yield* fs.realPath(path.resolve(host.cwd, options.existing));
         const kept = yield* Effect.gen(function* () {
-          const manifest = yield* readManifest(path.join(root, "run/.quickstack/manifest.json"));
+          const manifest = yield* readManifest(path.join(root, "run/.stacks/manifest.json"));
           const state = yield* fs
             .readFileString(path.join(root, "bench/state.json"))
             .pipe(Effect.flatMap(Schema.decodeUnknownEffect(State)));
@@ -279,16 +279,16 @@ export const prepare = (options: Options, adapters: readonly AgentAdapter[]) =>
         path.join(bench, "BENCH.md"),
         `# Bench run
 
-- Nobody will answer you. Never ask the user a question. Choose the brief's default or the most conventional choice and carry on. Add each question under ## Asked in .quickstack/NOTES.md, followed by default: and your choice.
-- Keep .quickstack/NOTES.md as the brief describes, including ## Findings.
+- Nobody will answer you. Never ask the user a question. Choose the brief's default or the most conventional choice and carry on. Add each question under ## Asked in .stacks/NOTES.md, followed by default: and your choice.
+- Keep .stacks/NOTES.md as the brief describes, including ## Findings.
 - Run verify with ${path.join(bench, "verify")}.
-- Never edit .quickstack/manifest.json. Never fake a credential or stub a service the brief says to use for real.
+- Never edit .stacks/manifest.json. Never fake a credential or stub a service the brief says to use for real.
 - Stop when verify is green.
 `,
       );
     });
     if (!options.existing) yield* scaffoldFresh;
-    const manifest = yield* readManifest(path.join(project, ".quickstack/manifest.json"));
+    const manifest = yield* readManifest(path.join(project, ".stacks/manifest.json"));
     const runEvidence = Effect.gen(function* () {
       return {
         // Fresh runs keep precisely what new returned; continuations retain that manifest.

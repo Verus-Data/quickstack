@@ -14,9 +14,9 @@ function project() {
   const home = space.dir();
   const root = space.dir();
   const manifest = writeRecordedProject(root, home, []);
-  const notes = join(root, ".quickstack/NOTES.md");
-  const history = join(root, ".quickstack/state/runs.jsonl");
-  mkdirSync(join(root, ".quickstack/state"));
+  const notes = join(root, ".stacks/NOTES.md");
+  const history = join(root, ".stacks/state/runs.jsonl");
+  mkdirSync(join(root, ".stacks/state"));
   const invoke = (args = ["--json"], human = false) =>
     runCli(["runs", ...args], {
       home,

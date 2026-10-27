@@ -191,7 +191,7 @@ quickstack reads entries from three places, called roots, and the first one that
 
 | Origin | Where | Trusted |
 | --- | --- | --- |
-| `project` | `.quickstack/stacks/` and `.quickstack/fragments/` in the current directory | No |
+| `project` | `.stacks/stacks/` and `.stacks/fragments/` in the current directory | No |
 | `user` | `~/.config/quickstack/` (or `$XDG_CONFIG_HOME/quickstack/`) | Yes |
 | `bundled` | The registry shipped with the CLI | Yes |
 
@@ -221,7 +221,7 @@ Your own stacks and fragments go in the user root. `stacks create stack my-api` 
 
 ## The brief
 
-`new` and `add` write `.quickstack/BRIEF.md`, the agent's entire task. It's assembled from fixed CLI text and the composed entries:
+`new` and `add` write `.stacks/BRIEF.md`, the agent's entire task. It's assembled from fixed CLI text and the composed entries:
 
 1. A header: stack, fragments, preset, target agents, and the files quickstack wrote.
 2. "Your job", "Versions" and "Ground rules": the same for every project. Use current versions, prefer official generators, never weaken verify.
@@ -234,15 +234,15 @@ Briefs are long, often 4,000 words or more, and that's deliberate. The agent rea
 
 ## The project after `new`
 
-`new` leaves a normal project with a `.quickstack/` directory:
+`new` leaves a normal project with a `.stacks/` directory:
 
 | Path | What it holds | Committed |
 | --- | --- | --- |
-| `.quickstack/manifest.json` | The stack, fragments, preset, agents, commands, environment defaults and verify steps, plus a digest of the steps | Yes |
-| `.quickstack/BRIEF.md` | The agent's task | No |
-| `.quickstack/NOTES.md` | The agent's notes: questions it asked under "Asked", problems with the brief under "Findings" | No |
-| `.quickstack/state/runs.jsonl` | One line per verify run | No |
-| `.quickstack/incoming/` | Files `add` couldn't write because the project already had them | No |
+| `.stacks/manifest.json` | The stack, fragments, preset, agents, commands, environment defaults and verify steps, plus a digest of the steps | Yes |
+| `.stacks/BRIEF.md` | The agent's task | No |
+| `.stacks/NOTES.md` | The agent's notes: questions it asked under "Asked", problems with the brief under "Findings" | No |
+| `.stacks/state/runs.jsonl` | One line per verify run | No |
+| `.stacks/incoming/` | Files `add` couldn't write because the project already had them | No |
 
 The manifest is the part that lasts. It's committed with the project, so anyone who clones it can run `stacks verify` and get the same checks.
 

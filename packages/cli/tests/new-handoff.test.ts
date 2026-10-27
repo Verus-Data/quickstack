@@ -28,7 +28,7 @@ function temp() {
 }
 const terminal = { stdinIsTTY: true, stdoutIsTTY: true } satisfies Partial<HostInfo>;
 const PROMPT =
-  "Read .quickstack/BRIEF.md and carry it out. It's your full task for this project; you're done when stacks verify passes.";
+  "Read .stacks/BRIEF.md and carry it out. It's your full task for this project; you're done when stacks verify passes.";
 const asRoot = process.getuid?.() === 0;
 
 /** `new fixture-stack app --sandbox ...` in a fresh HOME (also its cwd) with `bin` as the whole PATH. */
@@ -59,10 +59,10 @@ const envelope = (stderr: string) =>
   JSON.parse(stderr.trim().split("\n").at(-1) ?? "") as {
     error: { tag: string; message: string; details?: unknown };
   };
-/** A project-origin fragment in `home`'s `.quickstack/`, which is never trusted. */
+/** A project-origin fragment in `home`'s `.stacks/`, which is never trusted. */
 function localFragment(home: string) {
   writeEntry({
-    root: join(home, ".quickstack"),
+    root: join(home, ".stacks"),
     kind: "fragment",
     dir: "local-extra",
     frontmatter: minimal("fragment", "local-extra"),
@@ -78,7 +78,7 @@ describe("inside an agent", () => {
     const tail = stdout.trimEnd().split("\n").at(-1);
     // The project is under the working directory, so it is named relative to it.
     expect(tail).toBe(
-      "NEXT STEP FOR THE AGENT: read .quickstack/BRIEF.md now and carry it out, working in app. Loop on stacks verify until it passes. Don't stop here to report back; the brief says when to ask the user.",
+      "NEXT STEP FOR THE AGENT: read .stacks/BRIEF.md now and carry it out, working in app. Loop on stacks verify until it passes. Don't stop here to report back; the brief says when to ask the user.",
     );
     expect(stdout).not.toContain(app);
     const manifest = manifestOf(app);
@@ -147,7 +147,7 @@ describe("inside an agent", () => {
     expect(human.stderr).toBe("");
     expect(human.status).toBe(0);
     expect(human.stdout.trimEnd().split("\n").at(-1)).toBe(
-      "STOP: this project uses entries this machine hasn't trusted: local-extra. Don't start. Show the user the list and .quickstack/BRIEF.md's first section, and continue only if they confirm.",
+      "STOP: this project uses entries this machine hasn't trusted: local-extra. Don't start. Show the user the list and .stacks/BRIEF.md's first section, and continue only if they confirm.",
     );
     const other = temp();
     const json = await newCli([...localFragment(other), "--json"], {

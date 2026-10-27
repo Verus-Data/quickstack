@@ -365,8 +365,8 @@ test.each([
   ["validate", "--brief", "unknown"],
 ])("%s %s preserves existing files and state [3.1a#19]", async (...args) => {
   const { home, registry, entry } = fixture();
-  mkdirSync(join(home, ".quickstack", "state"), { recursive: true });
-  writeFileSync(join(home, ".quickstack", "state", "runs.jsonl"), "partial prior run\n");
+  mkdirSync(join(home, ".stacks", "state"), { recursive: true });
+  writeFileSync(join(home, ".stacks", "state", "runs.jsonl"), "partial prior run\n");
   mkdirSync(join(home, ".git"));
   writeFileSync(join(home, ".git", "HEAD"), "broken git state\n");
   shipped(entry, "files/README.md.tmpl", "# {{ project_name }}\n");

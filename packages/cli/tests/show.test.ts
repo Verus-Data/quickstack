@@ -97,7 +97,7 @@ test("user shadows and project entries never inherit a bundled run [3.1a#3]", as
   const user = join(home, "config", "quickstack");
   const userEntry = stack(user);
   writeLedger(user, [record]);
-  const projectEntry = stack(join(home, ".quickstack"), "local");
+  const projectEntry = stack(join(home, ".stacks"), "local");
   expect(await showReport(await show(["sample"]))).toMatchObject({
     origin: "user",
     trusted: true,

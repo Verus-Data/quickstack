@@ -50,7 +50,7 @@ async function newProject(home: string, registry: string, dir: string, flags: st
     NewResult,
   );
   const manifest = Schema.decodeUnknownSync(Manifest)(
-    JSON.parse(readFileSync(join(result.project, ".quickstack/manifest.json"), "utf8")),
+    JSON.parse(readFileSync(join(result.project, ".stacks/manifest.json"), "utf8")),
   );
   expect(manifest.preset).toBe(result.preset);
   return { result, manifest, brief: readFileSync(join(result.project, result.brief), "utf8") };

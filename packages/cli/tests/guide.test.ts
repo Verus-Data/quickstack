@@ -8,7 +8,7 @@ import { runCli } from "./helpers/cli";
 
 const decode = (stdout: string) => Schema.decodeUnknownSync(GuideResult)(JSON.parse(stdout));
 const FOOTER =
-  "Start here (agents): stacks list --json, pick a stack and tell the user why,\nthen stacks new <stack> <dir> --sandbox --json, then follow .quickstack/BRIEF.md\nuntil stacks verify is green. Run stacks with no arguments for the full guide.";
+  "Start here (agents): stacks list --json, pick a stack and tell the user why,\nthen stacks new <stack> <dir> --sandbox --json, then follow .stacks/BRIEF.md\nuntil stacks verify is green. Run stacks with no arguments for the full guide.";
 
 test("quickstack with no arguments prints the agent guide, under 250 words, with the trust and VerifyChanged rules [1.4#11]", async () => {
   const { status, stdout, stderr } = await runCli([]);

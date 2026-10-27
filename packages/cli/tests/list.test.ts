@@ -31,7 +31,7 @@ function setup() {
   return {
     home: dir.path,
     user: join(dir.path, "config", "quickstack"),
-    project: join(dir.path, ".quickstack"),
+    project: join(dir.path, ".stacks"),
   };
 }
 async function list(
@@ -592,7 +592,7 @@ test("a symlinked project root is not read, with a warning", async () => {
     dir: "outside",
     frontmatter: minimal("stack", "outside"),
   });
-  symlinkSync(elsewhere, join(home, ".quickstack"));
+  symlinkSync(elsewhere, join(home, ".stacks"));
   const result = await list(["--json"], {
     home,
     env: { LOG_LEVEL: "warn", QUICKSTACK_LOG_FILE: join(home, "log.jsonl") },

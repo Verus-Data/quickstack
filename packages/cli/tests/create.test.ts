@@ -45,7 +45,7 @@ async function validate(home: string, target: string) {
 }
 function source(home: string, kind: "stack" | "fragment" = "stack", id = "x") {
   return writeEntry({
-    root: join(home, ".quickstack"),
+    root: join(home, ".stacks"),
     kind,
     dir: id,
     frontmatter: minimal(kind, id),
@@ -353,7 +353,7 @@ describe("create an entry", () => {
     async ({ env, stdinIsTTY, reason }) => {
       const home = createWorkspace();
       source(home);
-      const before = entrySnapshot(join(home, ".quickstack"));
+      const before = entrySnapshot(join(home, ".stacks"));
       const error = createFailure(
         await createCli(home, ["create", "stack", "x", "--from", "project", "--yes", "--json"], {
           env,
@@ -364,7 +364,7 @@ describe("create an entry", () => {
       );
       expect(error.details).toMatchObject({ reason });
       expect(existsSync(userRoot(home))).toBe(false);
-      expect(entrySnapshot(join(home, ".quickstack"))).toEqual(before);
+      expect(entrySnapshot(join(home, ".stacks"))).toEqual(before);
     },
   );
 

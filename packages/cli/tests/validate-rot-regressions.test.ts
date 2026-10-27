@@ -187,14 +187,14 @@ test.each([
 test("adapter-specific compose errors retain the unsafe file's source", async () => {
   const root = space.temp();
   const entry = stack(root);
-  ship(entry, "adapters/codex/.quickstack/unsafe.txt", "Reserved metadata.\n");
+  ship(entry, "adapters/codex/.stacks/unsafe.txt", "Reserved metadata.\n");
   findingsAre((await validate(root)).report.findings, [
     [
       "compose",
       "error",
       {
         entry: "sample",
-        file: "stacks/sample/adapters/codex/.quickstack/unsafe.txt",
+        file: "stacks/sample/adapters/codex/.stacks/unsafe.txt",
         text: ["reserved_path"],
       },
     ],

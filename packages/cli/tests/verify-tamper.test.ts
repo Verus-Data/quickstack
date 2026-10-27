@@ -479,7 +479,7 @@ describe("--accept-changes", () => {
       const before = readFileSync(project.file, "utf8");
       const manifestFile = join(project.root, MANIFEST_PATH);
       chmodSync(manifestFile, 0o400);
-      chmodSync(join(project.root, ".quickstack"), 0o500);
+      chmodSync(join(project.root, ".stacks"), 0o500);
       try {
         const result = await verify(["--accept-changes", "--json"], {
           cwd: project.root,
@@ -490,7 +490,7 @@ describe("--accept-changes", () => {
         expect(envelope(result.stderr)).toMatchObject({ error: { tag: "PermissionDenied" } });
         expect(readFileSync(project.file, "utf8")).toBe(before);
       } finally {
-        chmodSync(join(project.root, ".quickstack"), 0o700);
+        chmodSync(join(project.root, ".stacks"), 0o700);
         chmodSync(manifestFile, 0o600);
       }
     },

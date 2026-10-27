@@ -269,7 +269,7 @@ describe("a target that already holds a scaffold", () => {
         tag: "TargetNotEmpty",
         message: "The target directory is not empty.",
         retryable: false,
-        next: "continue with .quickstack/BRIEF.md, or remove the directory to start again.",
+        next: "continue with .stacks/BRIEF.md, or remove the directory to start again.",
         details: {
           path: app,
           entries: [
@@ -277,7 +277,7 @@ describe("a target that already holds a scaffold", () => {
             ".githooks",
             ".github",
             ".gitignore",
-            ".quickstack",
+            ".stacks",
             "README.md",
             "plain.txt",
           ],
@@ -292,9 +292,9 @@ describe("a target that already holds a scaffold", () => {
       [
         "The target directory is not empty.",
         `  Path: ${app}`,
-        "  Contains: .claude, .githooks, .github, .gitignore, .quickstack, README.md, plain.txt",
+        "  Contains: .claude, .githooks, .github, .gitignore, .stacks, README.md, plain.txt",
         "  Scaffold: unfinished. An earlier `new` wrote this.",
-        "  Next: continue with .quickstack/BRIEF.md, or remove the directory to start again.",
+        "  Next: continue with .stacks/BRIEF.md, or remove the directory to start again.",
         "",
       ].join("\n"),
     );
@@ -338,9 +338,9 @@ describe("a target that already holds a scaffold", () => {
     expect(await scaffoldOf()).toBe("unfinished");
 
     const bare = join(home, "bare");
-    mkdirSync(join(bare, ".quickstack"), { recursive: true });
+    mkdirSync(join(bare, ".stacks"), { recursive: true });
     const run = await newCli(["fixture-stack", "bare", "--json"], { home });
     expect(run.status).toBe(2);
-    expect(envelope(run.stderr).error.details).toEqual({ path: bare, entries: [".quickstack"] });
+    expect(envelope(run.stderr).error.details).toEqual({ path: bare, entries: [".stacks"] });
   });
 });

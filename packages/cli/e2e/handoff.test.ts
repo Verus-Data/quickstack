@@ -45,10 +45,10 @@ test("inside an agent session, the binary prints the next step and records it in
     expect(stderr).toBe("");
     expect(status).toBe(0);
     expect(stdout.trimEnd().split("\n").at(-1)).toStartWith(
-      "NEXT STEP FOR THE AGENT: read .quickstack/BRIEF.md now and carry it out",
+      "NEXT STEP FOR THE AGENT: read .stacks/BRIEF.md now and carry it out",
     );
     const manifest = Schema.decodeUnknownSync(Manifest)(
-      JSON.parse(readFileSync(join(home, "app", ".quickstack/manifest.json"), "utf8")),
+      JSON.parse(readFileSync(join(home, "app", ".stacks/manifest.json"), "utf8")),
       { onExcessProperty: "error" },
     );
     expect(manifest.handoff).toMatchObject({ kind: "inside-agent", agent: "claude" });

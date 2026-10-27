@@ -25,19 +25,19 @@ Run `<cli> list --json`. Pick the stack whose description and tags match the req
 
 Run `<cli> new <stack> <dir> --json`; use `<cli> new <stack> <dir> --sandbox --json` when the user wants the fastest path to something running locally. Add `--dry-run` to preview the files and brief size without writing anything.
 
-After `add`, read the same brief, merge the contributions parked in `.quickstack/incoming/` while keeping the project's choices, then delete incoming files once merged. Verify checks the whole manifest.
+After `add`, read the same brief, merge the contributions parked in `.stacks/incoming/` while keeping the project's choices, then delete incoming files once merged. Verify checks the whole manifest.
 
-Read `.quickstack/BRIEF.md`. The brief is the whole task: follow it in order, and ask the user only what it tells you to ask. Use current docs and official generators rather than remembered flags or config formats.
+Read `.stacks/BRIEF.md`. The brief is the whole task: follow it in order, and ask the user only what it tells you to ask. Use current docs and official generators rather than remembered flags or config formats.
 
 ## Loop to green
 
 Run `<cli> verify` from the project root with your shell tool's longest timeout. Read the failing step's name, command and output tail; fix the code or config it exercises, never the step, and run it again. Done is exit 0 with outcome `green`.
 ## Never weaken verify
 
-Don't edit `.quickstack/manifest.json`. Never edit the steps or weaken the definition of done: don't make commands pass without doing their job, skip tests, lower lint settings until they report nothing, or serve a stub instead of the app.
+Don't edit `.stacks/manifest.json`. Never edit the steps or weaken the definition of done: don't make commands pass without doing their job, skip tests, lower lint settings until they report nothing, or serve a stub instead of the app.
 
 If verify fails with `VerifyChanged`, stop. Don't edit the steps back and forth, and don't run `<cli> verify --accept-changes` yourself: it refuses agents. Tell the user which steps or settings changed and that only they can accept the changes from their own terminal, or undo them. Then wait.
 
 ## Finish
 
-Follow the brief's after-green list, including manual QA and checking the project documentation. Then summarize for the user: the stack and why, the decisions taken with their defaults, anything left undone, and where the brief's problems were noted (`.quickstack/NOTES.md`).
+Follow the brief's after-green list, including manual QA and checking the project documentation. Then summarize for the user: the stack and why, the decisions taken with their defaults, anything left undone, and where the brief's problems were noted (`.stacks/NOTES.md`).

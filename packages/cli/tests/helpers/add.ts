@@ -78,13 +78,9 @@ export function put(root: string, path: string, bytes: string | Uint8Array) {
 }
 export const read = (root: string, path: string) => readFileSync(join(root, path), "utf8");
 export function projectFragment(project: AddProject) {
-  cpSync(
-    join(fixtures, "add-project", "fragments"),
-    join(project.root, ".quickstack", "fragments"),
-    {
-      recursive: true,
-    },
-  );
+  cpSync(join(fixtures, "add-project", "fragments"), join(project.root, ".stacks", "fragments"), {
+    recursive: true,
+  });
 }
 
 /** Sorted paths and bytes, including metadata; don't traverse git internals or symlinks. */

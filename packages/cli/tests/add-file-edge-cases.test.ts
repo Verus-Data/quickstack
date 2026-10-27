@@ -30,9 +30,9 @@ test.each([true, false])(
     } else {
       expect(result.skipped).toEqual([]);
       expect(result.mergeNeeded).toEqual([
-        { path: "link.txt", incoming: [".quickstack/incoming/link.txt"] },
+        { path: "link.txt", incoming: [".stacks/incoming/link.txt"] },
       ]);
-      expect(readFileSync(join(p.root, ".quickstack/incoming/link.txt"), "utf8")).toBe(
+      expect(readFileSync(join(p.root, ".stacks/incoming/link.txt"), "utf8")).toBe(
         "contributed data\n",
       );
     }

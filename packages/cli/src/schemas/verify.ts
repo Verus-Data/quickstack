@@ -131,7 +131,7 @@ export const RunStep = Schema.Struct({
 export type RunStep = typeof RunStep.Type;
 
 /**
- * One line of `.quickstack/state/runs.jsonl`, appended by every verify run that reaches the
+ * One line of `.stacks/state/runs.jsonl`, appended by every verify run that reaches the
  * tamper check. Green is `outcome: "green"`. A new optional field doesn't bump `schemaVersion`;
  * readers skip a line with a higher version or one that doesn't decode.
  */

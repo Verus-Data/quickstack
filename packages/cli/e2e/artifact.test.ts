@@ -187,7 +187,7 @@ test("the installed catalog scaffolds a project and create finds the shipped aut
     expect(created.stderr).toBe("");
     const report = Schema.decodeUnknownSync(NewResult)(JSON.parse(created.stdout));
     expect(report.project).toBe(project);
-    expect(readFileSync(join(project, ".quickstack/BRIEF.md"), "utf8")).toContain("# Build");
+    expect(readFileSync(join(project, ".stacks/BRIEF.md"), "utf8")).toContain("# Build");
     expect(existsSync(join(project, ".gitignore"))).toBe(true);
     const skeleton = run([binary, "create", "stack", "my-stack", "--json"], root);
     expect(skeleton.status).toBe(0);
@@ -205,7 +205,7 @@ test("the installed catalog scaffolds a project and create finds the shipped aut
     expect(readFileSync(join(copy.path, "adapters/claude/.claude/.gitignore"))).toEqual(
       readFileSync(join(source, "registry/fragments/agent-ops/adapters/claude/.claude/.gitignore")),
     );
-    expect(files(copy.path).some((file) => file.endsWith(".quickstack"))).toBe(false);
+    expect(files(copy.path).some((file) => file.endsWith(".stacks"))).toBe(false);
     const blog = run(
       [binary, "new", "astro-blog", join(root, "blog"), "--sandbox", "--no-launch", "--json"],
       root,

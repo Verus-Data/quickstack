@@ -97,7 +97,7 @@ Agents: claude
 Git: would create a new repository
 Would write 58 files:
   ...
-Brief: .quickstack/BRIEF.md (4666 words)
+Brief: .stacks/BRIEF.md (4666 words)
 Dry run: nothing was written.
 ```
 
@@ -121,12 +121,12 @@ If you'd rather start the agent yourself, add `--no-launch`. quickstack then pri
 
 ```text
 Next: open /path/to/my-cli in your coding agent and give it this prompt:
-  Read .quickstack/BRIEF.md and carry it out. It's your full task for this project; you're done when stacks verify passes.
+  Read .stacks/BRIEF.md and carry it out. It's your full task for this project; you're done when stacks verify passes.
 ```
 
 ## What landed in your project
 
-Most of what `new` wrote is ordinary project files: `README.md`, `AGENTS.md`, config for your agent under `.claude/`, a CI workflow. The interesting part is `.quickstack/`:
+Most of what `new` wrote is ordinary project files: `README.md`, `AGENTS.md`, config for your agent under `.claude/`, a CI workflow. The interesting part is `.stacks/`:
 
 | File | What it is | Committed? |
 | --- | --- | --- |
@@ -191,7 +191,7 @@ flowchart LR
   F["each file a<br/>fragment ships"] --> E{"already in<br/>the project?"}
   E -- "no" --> W["written"]
   E -- "yes, same bytes" --> S["skipped"]
-  E -- "yes, different" --> I["parked in<br/>.quickstack/incoming/"]
+  E -- "yes, different" --> I["parked in<br/>.stacks/incoming/"]
   I --> M(["agent merges it<br/>per the brief"])
 
   classDef ok fill:#065f46,stroke:#10b981,stroke-width:2px,color:#d1fae5
@@ -204,7 +204,7 @@ flowchart LR
   class M agent
 ```
 
-New files are written. When a file already exists, quickstack leaves it alone and parks its own version under `.quickstack/incoming/`, and the brief asks your agent to merge the two. Then `verify` checks the whole project, the same as for a new one.
+New files are written. When a file already exists, quickstack leaves it alone and parks its own version under `.stacks/incoming/`, and the brief asks your agent to merge the two. Then `verify` checks the whole project, the same as for a new one.
 
 `stacks list fragments` shows what you can add. Inside a project quickstack made, plain `stacks list` shows only the fragments that fit it.
 

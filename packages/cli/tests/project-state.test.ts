@@ -40,7 +40,7 @@ const asRoot = process.getuid?.() === 0;
 function project(manifest: Manifest) {
   const root = temp();
   const real = join(root, "real");
-  mkdirSync(join(real, ".quickstack"), { recursive: true });
+  mkdirSync(join(real, ".stacks"), { recursive: true });
   writeFileSync(join(real, MANIFEST_PATH), encodeManifest(manifest));
   symlinkSync(real, join(root, "link"));
   return { root, via: join(root, "link", MANIFEST_PATH) };

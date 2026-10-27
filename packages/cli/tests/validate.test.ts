@@ -842,7 +842,7 @@ test("a stacks/ the project registry skips as a symlink is one registry finding,
   const home = temp();
   const elsewhere = join(home, "elsewhere");
   stack(elsewhere, "linked");
-  const project = join(home, ".quickstack");
+  const project = join(home, ".stacks");
   mkdirSync(project);
   symlinkSync(join(elsewhere, "stacks"), join(project, "stacks"));
   writeEntry({

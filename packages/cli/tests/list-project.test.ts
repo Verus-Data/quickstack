@@ -92,10 +92,10 @@ describe("list's project view", () => {
     "a corrupt or newer manifest falls back with a path and decode warning: %s [3.0#19]",
     async (bytes) => {
       const project = addProject();
-      put(project.root, ".quickstack/manifest.json", bytes);
+      put(project.root, ".stacks/manifest.json", bytes);
       const run = await addCli(project, ["list"]);
       expect(run.status).toBe(0);
-      expect(run.stderr).toContain(".quickstack/manifest.json");
+      expect(run.stderr).toContain(".stacks/manifest.json");
       expect(run.stderr).toMatch(/warn|decode|invalid|version/i);
       expect(run.stdout).toContain("Next: stacks new fixture-stack");
       expect(run.stdout).not.toContain("Fragments you can add");

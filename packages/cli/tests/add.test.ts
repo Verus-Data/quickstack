@@ -42,7 +42,7 @@ import {
 } from "./helpers/verify";
 
 afterEach(releaseAdd);
-const incoming = ".quickstack/incoming";
+const incoming = ".stacks/incoming";
 const decodeVerify = (text: string) => Schema.decodeUnknownSync(VerifyResult)(JSON.parse(text));
 const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
 
@@ -120,7 +120,7 @@ describe("add to an existing repository", () => {
     expect(readRecord(recordPath(project.home, after.projectId)).verifyDigest).toBe(
       after.verifyDigest,
     );
-    const brief = read(project.root, ".quickstack/BRIEF.md");
+    const brief = read(project.root, ".stacks/BRIEF.md");
     expect(brief).toMatch(/Add .*ci-github.*app/);
     expect(brief).toContain("CI guidance");
     expect(brief).toContain("ADD WITH EXISTING REQUIREMENT");
@@ -128,7 +128,7 @@ describe("add to an existing repository", () => {
     expect(brief).not.toContain("EXISTING BODY MUST NOT REAPPEAR");
     expect(brief).not.toContain("NEW ONLY BODY");
     expect(brief).toContain("stacks verify");
-    expect(result).toMatchObject({ brief: ".quickstack/BRIEF.md", briefWords: countWords(brief) });
+    expect(result).toMatchObject({ brief: ".stacks/BRIEF.md", briefWords: countWords(brief) });
     expect(after.briefWords).toBe(countWords(brief));
     const verified = await addCli(project, ["verify", "--json"]);
     expect(verified.status).toBe(0);
@@ -154,11 +154,11 @@ describe("add to an existing repository", () => {
     expect(result.mergeNeeded).toEqual([
       { path: "AGENTS.md", incoming: [`${incoming}/AGENTS.md`] },
     ]);
-    const brief = read(project.root, ".quickstack/BRIEF.md");
+    const brief = read(project.root, ".stacks/BRIEF.md");
     expect(brief).toContain("Merge needed");
     expect(brief).toContain(`${incoming}/AGENTS.md`);
     expect(brief).toMatch(/keep.*project.*choices/i);
-    expect(brief).toMatch(/delete.*\.quickstack\/incoming\//i);
+    expect(brief).toMatch(/delete.*\.stacks\/incoming\//i);
   });
 
   test("merges parked JSON, numbers text copies, skips identical bytes and includes old incoming files [3.0#3]", async () => {
@@ -199,7 +199,7 @@ describe("add to an existing repository", () => {
     ]);
     expect(read(project.root, ".claude/settings.json")).toBe('{"mine":true}\n');
     expect(read(project.root, "README.md")).toBe("# My project\n");
-    expect(read(project.root, ".quickstack/BRIEF.md")).toContain(`${incoming}/older.txt`);
+    expect(read(project.root, ".stacks/BRIEF.md")).toContain(`${incoming}/older.txt`);
   });
 
   test("a forged manifest digest cannot replace the recorded baseline [3.0#4]", async () => {
@@ -274,7 +274,7 @@ describe("add to an existing repository", () => {
       expect(readRecord(recordPath(project.home, next.projectId)).verifyDigest).toBe(
         old.verifyDigest,
       );
-      expect(read(project.root, ".quickstack/BRIEF.md")).toContain("verify --accept-changes");
+      expect(read(project.root, ".stacks/BRIEF.md")).toContain("verify --accept-changes");
       const refusedVerify = await addCli(project, ["verify", "--json"], { env });
       expect(refusedVerify.status).toBe(5);
       expect(decodeVerify(refusedVerify.stdout)).toMatchObject({
@@ -361,7 +361,7 @@ describe("add to an existing repository", () => {
     expect(readRecord(recordPath(project.home, after.projectId)).verifyDigest).toBe(
       after.verifyDigest,
     );
-    expect(read(project.root, ".quickstack/.gitignore")).toBe(
+    expect(read(project.root, ".stacks/.gitignore")).toBe(
       "/BRIEF.md\n/NOTES.md\n/state/\n/incoming/\n",
     );
     expect(read(project.root, "name.txt")).toBe("app\n");
@@ -371,11 +371,11 @@ describe("add to an existing repository", () => {
     const project = addProject();
     const outside = join(project.home, "outside");
     put(outside, "private.txt", "private bytes\n");
-    symlinkSync(outside, join(project.root, ".quickstack"));
+    symlinkSync(outside, join(project.root, ".stacks"));
     const before = snapshot(project.root);
     const external = snapshot(outside);
     const error = refused(await addCli(project, ["add", "named", "--json"]), 6, "PermissionDenied");
-    expect(error.details).toMatchObject({ path: join(project.root, ".quickstack") });
+    expect(error.details).toMatchObject({ path: join(project.root, ".stacks") });
     expect(snapshot(project.root)).toEqual(before);
     expect(snapshot(outside)).toEqual(external);
   });
@@ -401,7 +401,7 @@ describe("add to an existing repository", () => {
     const result = await added(await addCli(project, ["add", "named", "--json"]));
     expect(JSON.stringify(result.missingRequired)).toContain("fixture-required");
     expect(JSON.stringify(result.missingRequired)).toContain("stacks add fixture-required");
-    expect(read(project.root, ".quickstack/BRIEF.md")).toContain("stacks add fixture-required");
+    expect(read(project.root, ".stacks/BRIEF.md")).toContain("stacks add fixture-required");
     expect(readManifestAt(project.root).fragments.map((entry) => entry.id)).toEqual(["named"]);
     expect(existsSync(join(project.root, "required.txt"))).toBe(false);
   });
@@ -646,8 +646,8 @@ describe("add project context", () => {
     async (flag) => {
       const project = addProject();
       await added(await addCli(project, ["add", "named", flag, "--json"]));
-      expect(read(project.root, ".quickstack/BRIEF.md")).toContain(T.decisions.yes);
-      expect(read(project.root, ".quickstack/BRIEF.md")).not.toContain(T.decisions.ask);
+      expect(read(project.root, ".stacks/BRIEF.md")).toContain(T.decisions.yes);
+      expect(read(project.root, ".stacks/BRIEF.md")).not.toContain(T.decisions.ask);
     },
   );
 });
@@ -661,7 +661,7 @@ describe("add realistic existing-project cases", () => {
       const destination =
         where === "outside" ? join(project.home, "outside") : join(project.root, "actual-incoming");
       put(destination, "private.txt", "untouched\n");
-      mkdirSync(join(project.root, ".quickstack"));
+      mkdirSync(join(project.root, ".stacks"));
       const link = join(project.root, incoming);
       symlinkSync(where === "loop" ? link : destination, link);
       const before = snapshot(project.root);
@@ -783,17 +783,15 @@ describe("add realistic existing-project cases", () => {
 
   test("edited metadata ignores and pending incoming files survive a later unrelated add [3.0#26]", async () => {
     const project = await scaffolded();
-    put(project.root, ".quickstack/.gitignore", "# edited by the project\n/NOTES.md\n");
+    put(project.root, ".stacks/.gitignore", "# edited by the project\n/NOTES.md\n");
     put(project.root, `${incoming}/unmerged.yml`, "earlier contribution\n");
     const result = await added(await addCli(project, ["add", "named", "--json"]));
-    expect(read(project.root, ".quickstack/.gitignore")).toBe(
-      "# edited by the project\n/NOTES.md\n",
-    );
+    expect(read(project.root, ".stacks/.gitignore")).toBe("# edited by the project\n/NOTES.md\n");
     expect(result.mergeNeeded).toEqual([
       { path: "unmerged.yml", incoming: [`${incoming}/unmerged.yml`] },
     ]);
     expect(read(project.root, `${incoming}/unmerged.yml`)).toBe("earlier contribution\n");
-    expect(read(project.root, ".quickstack/BRIEF.md")).toContain(`${incoming}/unmerged.yml`);
+    expect(read(project.root, ".stacks/BRIEF.md")).toContain(`${incoming}/unmerged.yml`);
   });
 
   test("existing fragments satisfy requires and conflicts while personal always defaults stay out [3.0#27]", async () => {
@@ -966,7 +964,7 @@ test("an absent dependency is added once before its dependent in a plain reposit
 test("without yes or sandbox the brief asks for its decisions [3.0#18]", async () => {
   const project = addProject();
   await added(await addCli(project, ["add", "named", "--json"]));
-  const brief = read(project.root, ".quickstack/BRIEF.md");
+  const brief = read(project.root, ".stacks/BRIEF.md");
   expect(brief).toContain(T.decisions.ask);
   expect(brief).not.toContain(T.decisions.yes);
 });
@@ -990,7 +988,7 @@ test("add examples use the manifest's first target agent when --agents is omitte
   expect(result.status).toBe(0);
   expect(result.stderr).toBe("");
   expect(result.stdout.trimEnd().split("\n").at(-1)).toBe(
-    `For example: codex "Read .quickstack/BRIEF.md and carry it out. It's your full task for this project; you're done when stacks verify passes."`,
+    `For example: codex "Read .stacks/BRIEF.md and carry it out. It's your full task for this project; you're done when stacks verify passes."`,
   );
   expect(readManifestAt(project.root).agents).toEqual(["codex"]);
 });

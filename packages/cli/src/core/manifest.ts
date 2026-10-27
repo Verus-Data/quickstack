@@ -164,7 +164,7 @@ export const readManifest = (
 
 /**
  * The nearest project at or above `start`: the first directory, walking up, holding
- * `.quickstack/manifest.json` as a file. `root` and `path` keep `start`'s spelling (resolved, not
+ * `.stacks/manifest.json` as a file. `root` and `path` keep `start`'s spelling (resolved, not
  * real-pathed). None is `NotFound` with `kind: "project"` and `looked: start`.
  */
 export const locateManifest = (

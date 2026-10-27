@@ -40,7 +40,7 @@ export const ProjectId = Schema.String.check(
 );
 
 /**
- * `.quickstack/manifest.json`, schema version 1. `handoff` (1.4), `fingerprint` (2.0a),
+ * `.stacks/manifest.json`, schema version 1. `handoff` (1.4), `fingerprint` (2.0a),
  * `mode: "add"` and `stack: null` (3.0) are declared now so filling them needs no version bump.
  * Any other key is excess and fails decode.
  */

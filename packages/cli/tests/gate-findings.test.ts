@@ -43,11 +43,9 @@ test("astro-blog says tests importing astro:content run in the node environment"
 });
 
 test.each(["astro-blog", "python-react"])(
-  "%s keeps Prettier off .quickstack/ and .claude/",
+  "%s keeps Prettier off .stacks/ and .claude/",
   async (stack) => {
-    expect(await brief(stack)).toMatch(
-      /`\.prettierignore`[^\n]*`\.quickstack\/`[^\n]*`\.claude\/`/,
-    );
+    expect(await brief(stack)).toMatch(/`\.prettierignore`[^\n]*`\.stacks\/`[^\n]*`\.claude\/`/);
   },
 );
 

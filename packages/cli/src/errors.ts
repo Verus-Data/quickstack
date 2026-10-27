@@ -76,7 +76,7 @@ export class BadInput extends Schema.TaggedError<BadInput>()("BadInput", {
 /**
  * `id` and `kind`: the stack or fragment id that wasn't found, so a caller can tell a wrong stack
  * from a wrong `--with`/`--without` id. `kind: "project"` (1.3a, with no `id`): `verify` found no
- * `.quickstack/manifest.json` walking up from `looked`.
+ * `.stacks/manifest.json` walking up from `looked`.
  */
 export const NotFoundDetails = Schema.Struct({
   suggestions: Schema.Array(Schema.String),
@@ -96,7 +96,7 @@ export class NotConfigured extends Schema.TaggedError<NotConfigured>()("NotConfi
   override readonly message = "Configuration is required.";
 }
 /**
- * `path`: the file that didn't decode, such as `.quickstack/manifest.json` (1.2b).
+ * `path`: the file that didn't decode, such as `.stacks/manifest.json` (1.2b).
  * `schemaVersion`: the version a newer quickstack wrote, when that is why it didn't decode.
  */
 export const InvalidConfigDetails = Schema.Struct({
@@ -218,7 +218,7 @@ export class EntryInvalid extends Schema.TaggedError<EntryInvalid>()("EntryInval
  * `fix` lists the `--without` flags that would leave every such fragment out (empty when no
  * `--without` can). `file_owner` is also two planned paths that differ only in letter case, or a
  * file at a path another planned file needs as a directory. `reserved_path` is an entry file under
- * `.git` or `.quickstack` (any segment, any case), which the CLI owns.
+ * `.git` or `.stacks` (any segment, any case), which the CLI owns.
  */
 export const ComposeConflictDetails = Schema.Struct({
   reason: Schema.Literals([
@@ -250,7 +250,7 @@ export class ComposeConflict extends Schema.TaggedError<ComposeConflict>()("Comp
 /**
  * `new` refuses a directory holding anything besides `.git` and OS litter. `path` is the target;
  * `entries` names up to ten of what is in it, sorted, litter excluded. `scaffold` is set when the
- * target already holds `.quickstack/manifest.json`: `green` once its state record has
+ * target already holds `.stacks/manifest.json`: `green` once its state record has
  * `firstGreenAt`, else `unfinished`.
  */
 export const TargetNotEmptyDetails = Schema.Struct({
@@ -881,7 +881,7 @@ function composeNext(
   if (details.reason === "reserved_path")
     return guide(
       [
-        "The CLI owns .git/ and .quickstack/ in a project; no entry may write under them, in any letter case.",
+        "The CLI owns .git/ and .stacks/ in a project; no entry may write under them, in any letter case.",
       ],
       "remove or rename that file in the entry.",
     );

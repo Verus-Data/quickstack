@@ -157,7 +157,7 @@ export const bundledRoot = Effect.gen(function* () {
   return { path: at, overridden, found };
 });
 
-/** `project`, `user`, `bundled`: `./.quickstack/` in the cwd, the user directory, `bundledRoot`. */
+/** `project`, `user`, `bundled`: `./.stacks/` in the cwd, the user directory, `bundledRoot`. */
 export const defaultRoots = Effect.gen(function* () {
   const host = yield* Host;
   const path = yield* Path.Path;

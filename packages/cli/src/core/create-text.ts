@@ -114,7 +114,7 @@ Describe how to prove it works.
 `;
 
 export const starterFiles = [
-  { source: "files/.gitignore", text: ".quickstack/state/\n" },
+  { source: "files/.gitignore", text: ".stacks/state/\n" },
   {
     source: "files/README.md",
     text: "<!-- quickstack:fill: describe the project and its commands -->\n",

@@ -327,7 +327,7 @@ test.for(["stack", "fingerprint"])(
     const f = benchFixture(space, compiled);
     passed(await f.invoke(["--no-record", "--keep"]));
     const root = kept(f);
-    const file = join(root, "run/.quickstack/manifest.json");
+    const file = join(root, "run/.stacks/manifest.json");
     const manifest = readManifestAt(join(root, "run"));
     const changed: Manifest =
       field === "stack"
@@ -507,10 +507,10 @@ test.for(["missing", "invalid", "file"])(
     const run = join(root, "run");
     mkdirSync(run, { recursive: true });
     writeFileSync(join(run, "keep.txt"), "previous work\n");
-    if (kind === "file") writeFileSync(join(run, ".quickstack"), "not a directory\n");
+    if (kind === "file") writeFileSync(join(run, ".stacks"), "not a directory\n");
     else {
-      mkdirSync(join(run, ".quickstack"));
-      if (kind === "invalid") writeFileSync(join(run, ".quickstack/manifest.json"), "{unfinished");
+      mkdirSync(join(run, ".stacks"));
+      if (kind === "invalid") writeFileSync(join(run, ".stacks/manifest.json"), "{unfinished");
     }
     const before = digests(root);
     const result = await f.invoke(["--existing", root]);
@@ -780,8 +780,8 @@ describe("build paths", () => {
     expect(prompt).toContain(join(root, "bench/BENCH.md"));
     const benchBrief = readFileSync(join(root, "bench/BENCH.md"), "utf8");
     expect(benchBrief).toContain("## Asked");
-    expect(benchBrief).toContain(".quickstack/NOTES.md");
-    expect(benchBrief).toContain(".quickstack/manifest.json");
+    expect(benchBrief).toContain(".stacks/NOTES.md");
+    expect(benchBrief).toContain(".stacks/manifest.json");
     expect(benchBrief).toContain(join(root, "bench/verify"));
     expect(
       projectFiles(join(root, "run")).some((path) => /BENCH\.md|bench\/verify/.test(path)),

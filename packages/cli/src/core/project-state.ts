@@ -13,7 +13,7 @@ import { printable } from "./text";
 export const ProjectState = Schema.Struct({
   schemaVersion: Schema.Literal(1),
   projectId: Schema.String,
-  /** Real path of `.quickstack/manifest.json`, so a lookup by path matches however it was reached. */
+  /** Real path of `.stacks/manifest.json`, so a lookup by path matches however it was reached. */
   manifestPath: Schema.String,
   verifyDigest: Schema.String,
   /** Step name to `digestStep` of that step. */

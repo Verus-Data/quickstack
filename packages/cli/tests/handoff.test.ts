@@ -157,7 +157,7 @@ test("every agent id has a launch row [1.4#1]", () => {
 
 test("the prompt names the invocation, so an npx project names the pinned version [1.4#10]", () => {
   expect(agentPrompt("npx -y quickstack@1.2.3")).toBe(
-    "Read .quickstack/BRIEF.md and carry it out. It's your full task for this project; you're done when npx -y quickstack@1.2.3 verify passes.",
+    "Read .stacks/BRIEF.md and carry it out. It's your full task for this project; you're done when npx -y quickstack@1.2.3 verify passes.",
   );
   const text = renderHandoff(
     { kind: "print", reason: "no-launch", untrusted: [] },

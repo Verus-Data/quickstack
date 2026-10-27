@@ -277,7 +277,7 @@ test("new JSON and manifest carry the composition fingerprint without a schema b
   );
   expect(result).toMatchObject({ fingerprint: expected });
   const manifest = Schema.decodeUnknownSync(Manifest, { onExcessProperty: "error" })(
-    JSON.parse(readFileSync(join(home, "app/.quickstack/manifest.json"), "utf8")),
+    JSON.parse(readFileSync(join(home, "app/.stacks/manifest.json"), "utf8")),
   );
   expect(manifest.schemaVersion).toBe(1);
   expect(manifest.fingerprint).toBe(expected);

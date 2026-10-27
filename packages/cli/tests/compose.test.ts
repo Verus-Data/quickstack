@@ -493,7 +493,7 @@ test("target agents: Claude Code by default, the setting next, the flag over bot
 
 test("a project-directory entry in the composition is listed as untrusted", async () => {
   const home = temp();
-  const project = join(home, ".quickstack");
+  const project = join(home, ".stacks");
   copyEntry(composeRegistry, project, "fragments", "hooks-a");
   const roots = [{ origin: "project", path: project } as const, ...bundledAt(composeRegistry)];
   const composition = await composed({ with: ["hooks-a"] }, { roots });

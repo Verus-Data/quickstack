@@ -52,7 +52,7 @@ test.each(["human", "agent"])(
     expect(next).toContain("the machine is missing something these steps need");
     expect(next).toContain("install or start it");
     expect(next).toContain("application section");
-    expect(next).toContain(".quickstack/BRIEF.md");
+    expect(next).toContain(".stacks/BRIEF.md");
     expect(runRecords(project.root)).toMatchObject([
       { outcome: "failed", stages: { base: "green", app: "failed" } },
     ]);

@@ -103,8 +103,8 @@ stacks verify --json
 stacks runs --json
 ```
 
-Choose an unused directory. Have an agent follow `.quickstack/BRIEF.md`, then fix the
-project until verify is green without weakening its steps. Read `.quickstack/NOTES.md`,
+Choose an unused directory. Have an agent follow `.stacks/BRIEF.md`, then fix the
+project until verify is green without weakening its steps. Read `.stacks/NOTES.md`,
 including Asked and Findings, and improve the entry from what the run exposed. Record
 the composition, agent/version, brief size, timings, verify count, interventions,
 outcome and final run record in a run note. This uses existing CLI commands; there is

@@ -156,7 +156,7 @@ test("the brief holds every section in order, every step, the env defaults, ever
     ].join("\n"),
   );
   expect(done).toContain(`\`PORT_WEB=<free port> ${invocation} verify\``);
-  expect(done).toContain("Don't change the defaults in `.quickstack/manifest.json`");
+  expect(done).toContain("Don't change the defaults in `.stacks/manifest.json`");
   for (const rule of [
     `- Run \`${invocation} verify\` from the project root.`,
     "- A command a step calls that doesn't exist yet is yours to create",
@@ -258,7 +258,7 @@ test("decisions: asked once without --yes, defaults taken with it [1.1#16]", asy
 });
 
 test("an untrusted entry gets a stop section directly after the title, before any entry text, even under --yes [1.1#17]", async () => {
-  const project = join(temp(), ".quickstack");
+  const project = join(temp(), ".stacks");
   copyEntry(composeRegistry, project, "fragments", "hooks-a");
   const roots = [{ origin: "project", path: project } as const, ...bundledAt(composeRegistry)];
   const composition = await composed({ with: ["hooks-a"] }, { roots });
@@ -269,7 +269,7 @@ test("an untrusted entry gets a stop section directly after the title, before an
   expect(untrusted).toContain(
     `- fragment \`hooks-a\` (project): \`${join(project, "fragments", "hooks-a")}\``,
   );
-  expect(untrusted).toContain("the project's `.quickstack/` directory");
+  expect(untrusted).toContain("the project's `.stacks/` directory");
   expect(untrusted).toContain("This holds under `--yes` and `--sandbox` too.");
   // Nothing but the title comes before it: the facts carry the entries' own names.
   expect(brief.slice(0, brief.indexOf("## Untrusted entries"))).toBe("# Build demo: Web stack\n\n");

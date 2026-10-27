@@ -39,11 +39,11 @@ if (config.scenario === "block") {
     writeFileSync("two.txt", "two\n");
   }
   if (!["infra", "malformed"].includes(scenario)) {
-    if (scenario === "no-notes") rmSync(".quickstack/NOTES.md", { force: true });
-    else writeFileSync(".quickstack/NOTES.md", config.notes);
+    if (scenario === "no-notes") rmSync(".stacks/NOTES.md", { force: true });
+    else writeFileSync(".stacks/NOTES.md", config.notes);
   }
   if (scenario === "tamper") {
-    const file = ".quickstack/manifest.json";
+    const file = ".stacks/manifest.json";
     const manifest = JSON.parse(readFileSync(file, "utf8"));
     manifest.verify[0].run = "true";
     writeFileSync(file, JSON.stringify(manifest));

@@ -34,7 +34,7 @@ Entries come from three roots, highest precedence first:
 
 | Origin | Root | Trusted |
 | --- | --- | --- |
-| `project` | `./.quickstack/` in the working directory | No: a cloned repository can ship these |
+| `project` | `./.stacks/` in the working directory | No: a cloned repository can ship these |
 | `user` | `$XDG_CONFIG_HOME/quickstack/` (`~/.config/quickstack/`), beside `config.json` | Yes |
 | `bundled` | The registry shipped with the CLI (`packages/cli/registry/` in this repo; `QUICKSTACK_REGISTRY_DIR` replaces it) | Yes, unless `QUICKSTACK_REGISTRY_DIR` set it |
 
@@ -73,7 +73,7 @@ stacks new <stack> [dir]    # dir defaults to the slug of --name, else <stack>; 
   --json                         # one NewResult object; never starts an agent
 ```
 
-`new` composes the stack, writes its files and `.quickstack/` (`BRIEF.md`, `NOTES.md`, `manifest.json`, an empty `state/`, and a `.gitignore` that ignores `BRIEF.md`, `NOTES.md`, `state/` and `incoming/`), writes a state record outside the project, runs `git init` when the target isn't already inside a repository and git is on PATH, then hands off to an agent. It never runs a command from a stack or fragment.
+`new` composes the stack, writes its files and `.stacks/` (`BRIEF.md`, `NOTES.md`, `manifest.json`, an empty `state/`, and a `.gitignore` that ignores `BRIEF.md`, `NOTES.md`, `state/` and `incoming/`), writes a state record outside the project, runs `git init` when the target isn't already inside a repository and git is on PATH, then hands off to an agent. It never runs a command from a stack or fragment.
 
 ### Presets
 
@@ -99,11 +99,11 @@ The handoff for a real run, first match wins (the manifest's `handoff` records w
 
 ### What `new` checks and writes
 
-- `.quickstack/manifest.json` records the stack, fragments, preset, agents and the verify steps with their digest; it is committed with the project. A manifest whose `schemaVersion` is newer than this CLI reads fails `InvalidConfig` (exit 3): upgrade quickstack.
+- `.stacks/manifest.json` records the stack, fragments, preset, agents and the verify steps with their digest; it is committed with the project. A manifest whose `schemaVersion` is newer than this CLI reads fails `InvalidConfig` (exit 3): upgrade quickstack.
 - The state record is a second copy of the verify digest at `$XDG_STATE_HOME/quickstack/projects/<projectId>.json` (`QUICKSTACK_STATE_DIR` replaces `$XDG_STATE_HOME/quickstack`), so editing the project's files can't hide a changed verify step. When that directory isn't writable, `new` still succeeds with `stateRecord: false`, and verify's tamper check uses the manifest only.
 - The target must not exist, or be empty. A directory holding only `.git` or OS litter (`.DS_Store`, `Thumbs.db`, `desktop.ini`, `._*`) counts as empty; anything else fails `TargetNotEmpty` (exit 2).
 - Inside another repository nothing is initialized, and a fragment with `needs_own_repo` is refused (`ComposeConflict`, with the `--without` flags that would avoid it). A target that is itself a repository's root is that project's own repository, so those fragments are allowed. When git fails for any reason other than "not a git repository" (a broken `.git`, unsafe ownership), nothing is initialized and the result carries a `git_unusable` warning.
-- No entry may write under `.git/` or `.quickstack/`, in any letter case (`ComposeConflict`, reason `reserved_path`), and two entry files whose paths differ only in case collide (`file_owner`).
+- No entry may write under `.git/` or `.stacks/`, in any letter case (`ComposeConflict`, reason `reserved_path`), and two entry files whose paths differ only in case collide (`file_owner`).
 - Every write is checked against the project's real path, so nothing lands outside it (`PermissionDenied`, reason `escape`). A failure or Ctrl+C removes everything `new` wrote, the state record included.
 - Missing tools never fail `new`: they are listed in the result and the brief, with the `--without` flag that would drop the fragment needing one.
 
@@ -115,13 +115,13 @@ stacks add ci-github --dir ../my-project --no-launch
 stacks add agent-ops --agents claude,codex --json
 ```
 
-`add` applies only the requested fragments and their requirements. Existing live files keep their bytes: conflicting contributions are parked whole under `.quickstack/incoming/<path>` for the agent to merge. Identical contributions are skipped; later parked JSON contributions deep-merge with the parked copy, and other contributions get numbered copies. The result and add brief list every pending incoming file, including earlier runs.
+`add` applies only the requested fragments and their requirements. Existing live files keep their bytes: conflicting contributions are parked whole under `.stacks/incoming/<path>` for the agent to merge. Identical contributions are skipped; later parked JSON contributions deep-merge with the parked copy, and other contributions get numbered copies. The result and add brief list every pending incoming file, including earlier runs.
 
 An existing manifest keeps its stack, preset, agents, accepted verify steps, and existing env and command values. Without one, `add` creates a manifest with `mode: "add"` and `stack: null`; it infers the project name from package.json, pyproject.toml, go.mod, Cargo.toml, then the directory name. `--sandbox` and `--agents` configure only a newly created manifest; contradictory values on an existing project refuse. `--yes`, `--launch`, `--no-launch` and `--json` follow `new`'s rules. Tools are looked up but never run, and `add` runs no verify steps.
 
 Before planning, `add` performs the same tamper check as `verify`. Changed steps refuse with `VerifyChanged` (5). A manifest-only project stays manifest-only. An untrusted addition under an agent or without terminal stdin writes the new steps while keeping the previous digest baseline (`digestRecorded: false`); a person must review them and run `verify --accept-changes`. Failed or interrupted writes restore parked copies, metadata and state records and remove new files.
 
-`add --json` returns `AddResult`: `added`, `alreadyApplied`, newly `written` fragment files, `skipped`, `mergeNeeded` with incoming paths, `missingRequired` with exact add commands, `commandsKept`, `warnings`, `missingTools`, inferred `name`, manifest and digest status, and the brief and handoff. Read `.quickstack/BRIEF.md`, merge the parked contributions while preserving project choices, then run `stacks verify` over the whole project.
+`add --json` returns `AddResult`: `added`, `alreadyApplied`, newly `written` fragment files, `skipped`, `mergeNeeded` with incoming paths, `missingRequired` with exact add commands, `commandsKept`, `warnings`, `missingTools`, inferred `name`, manifest and digest status, and the brief and handoff. Read `.stacks/BRIEF.md`, merge the parked contributions while preserving project choices, then run `stacks verify` over the whole project.
 
 ## verify
 
@@ -134,10 +134,10 @@ stacks verify                 # every step, from the project root or any directo
   --json                           # one VerifyResult object
 ```
 
-`verify` finds the nearest `.quickstack/manifest.json` walking up from the current directory and runs only the steps it lists, printing each command before running it. Nothing else runs.
+`verify` finds the nearest `.stacks/manifest.json` walking up from the current directory and runs only the steps it lists, printing each command before running it. Nothing else runs.
 
 - Phases run in order. `setup` stops at its first failure and skips the check and serve steps; every `check` step runs, so one run reports every failing check; each `serve` step is started, probed and stopped; `teardown` always runs, after a failure or a Ctrl+C too.
-- With `app`-tagged steps, all base phases finish, including teardown, before the app phases start. A failed or interrupted base skips every app step, including app teardown, with reason `base-failed`. An incomplete base also skips app steps, with a reason explaining that the app stage waits for a full verify. A stage interrupted by Ctrl+C still tears down; a base interruption never starts the app. Results and run records include `stages: { base, app }` only for these projects, and both text audiences print their outcomes before the summary. `app` is `null` when it did not run, including `--skip-tag app`. Each stage reports `green` when its selected steps pass, or `partial` when selection left out its steps; default skips still allow green. The whole run stays partial with `--only` or `--skip-tag`. After a green base and a failed app, `Next:` points at the application section of `.quickstack/BRIEF.md`.
+- With `app`-tagged steps, all base phases finish, including teardown, before the app phases start. A failed or interrupted base skips every app step, including app teardown, with reason `base-failed`. An incomplete base also skips app steps, with a reason explaining that the app stage waits for a full verify. A stage interrupted by Ctrl+C still tears down; a base interruption never starts the app. Results and run records include `stages: { base, app }` only for these projects, and both text audiences print their outcomes before the summary. `app` is `null` when it did not run, including `--skip-tag app`. Each stage reports `green` when its selected steps pass, or `partial` when selection left out its steps; default skips still allow green. The whole run stays partial with `--only` or `--skip-tag`. After a green base and a failed app, `Next:` points at the application section of `.stacks/BRIEF.md`.
 - Steps run through `/bin/sh -c` in the project root (or the step's `cwd`, which must resolve inside the project) with stdin closed, in their own process group. Their environment is the caller's, minus every agent session marker (`CLAUDECODE` and the rest), with the manifest's `env` filling keys the caller doesn't set: `PORT_WEB=5187 stacks verify` moves a port.
 - Each setup, check and teardown step has its `timeout` (default 10m). A step that leaves a process holding its output is stopped 2 s after its shell exits and gets a note; its own exit status still decides it. Exit 127 is reported as a missing command (`failureKind: "env"`).
 - A serve step's `expect.http` (with `${VAR}` expanded from the step environment) must be an `http` URL on `localhost`, `127.0.0.1` or `::1`. Verify fails the step without starting it when that port already answers, then polls the URL every 500 ms until any status below 500, for up to `within` (default 60s). Serve commands must stay in the foreground: one that exits before its probe passes fails, and so does a server still answering on the port after its process group was stopped.
@@ -151,7 +151,7 @@ Before running anything, `verify` checks the steps against the copies recorded b
 - Any difference is outcome `changed`: no step runs, not even teardown, and the exit is 5 (`VerifyChanged`) with the result on stdout. Its `changed` field (and the envelope's `details`) says which copy disagreed (`against`: `manifest` or `state-record`) and, from the state record's per-step digests, which steps were `edited`, `added` or `removed`, and whether `env` or `preset` changed (`settings`). A state record found only by the manifest's path, under a different `projectId`, is a change with `reason: "project-id"`.
 - With no state record on this machine (a fresh clone, or a state directory `new` couldn't write), only the manifest's copy is checked and the result says `tamperCheck: "manifest-only"`, which never counts for the MVP gate. An unreadable record counts as missing; one a newer quickstack wrote fails `InvalidConfig` (3).
 - `verify --accept-changes` is for a person who changed the steps on purpose. It is refused with `PermissionDenied` (6) when an agent is detected (`reason: "agent"`) or stdin isn't a terminal (`no-tty`), and then changes nothing. Otherwise its report names what changed, it writes the new digest to the state record (creating it on a fresh clone) and then to the manifest, keeps the project's timing fields, and runs the steps. A state record it can't write fails `PermissionDenied` (`state-unwritable`) with the manifest untouched.
-- Every run that gets past the manifest (`changed`, `failed` and interrupted ones included) appends one `RunRecord` line to `.quickstack/state/runs.jsonl`, which the project's `.gitignore` ignores: `schemaVersion`, start time, CLI version, detected agent, outcome, scope, `tamperCheck`, `acceptedChanges`, durations and each step's name, phase, layer, status, failure kind and exit code. No commands, output, paths or environment values, so it is safe to attach to a bug report.
+- Every run that gets past the manifest (`changed`, `failed` and interrupted ones included) appends one `RunRecord` line to `.stacks/state/runs.jsonl`, which the project's `.gitignore` ignores: `schemaVersion`, start time, CLI version, detected agent, outcome, scope, `tamperCheck`, `acceptedChanges`, durations and each step's name, phase, layer, status, failure kind and exit code. No commands, output, paths or environment values, so it is safe to attach to a bug report.
 - The state record's `firstGreenAt` is set by the first green run and `firstTestPassAt` by the first run, of any scope, in which a `test`-layer step passed; neither is overwritten. The result's `firstGreen` is true on the run that set it, and `stateRecord` is false when there was no record to update or it couldn't be written. A run record or state record that can't be written is one logged warning; the outcome and exit don't change.
 
 ## runs
@@ -161,7 +161,7 @@ stacks runs          # summary for the nearest project
 stacks runs --json   # ProjectRuns
 ```
 
-`runs` finds the nearest project and reports its stack, fingerprint, creation time, handoff kind, brief words, verify count, last outcome, timings, interventions (the nonempty items under `## Asked` in `NOTES.md`), state-record availability and skipped history lines. It reads the project's `.quickstack/state/runs.jsonl` and `NOTES.md`. Timings come only from the out-of-project state record; unavailable timings or notes stay unknown. Invalid or newer history lines are counted and skipped. Outside a project it exits 2 with `NotFound`. A manifest that doesn't decode, or a manifest or state record from a newer quickstack, exits 3 with `InvalidConfig`; an unreadable manifest exits 6. Moving a project keeps its timings through its project id.
+`runs` finds the nearest project and reports its stack, fingerprint, creation time, handoff kind, brief words, verify count, last outcome, timings, interventions (the nonempty items under `## Asked` in `NOTES.md`), state-record availability and skipped history lines. It reads the project's `.stacks/state/runs.jsonl` and `NOTES.md`. Timings come only from the out-of-project state record; unavailable timings or notes stay unknown. Invalid or newer history lines are counted and skipped. Outside a project it exits 2 with `NotFound`. A manifest that doesn't decode, or a manifest or state record from a newer quickstack, exits 3 with `InvalidConfig`; an unreadable manifest exits 6. Moving a project keeps its timings through its project id.
 
 ## validate
 

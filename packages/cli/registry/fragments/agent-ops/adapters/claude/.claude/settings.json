@@ -30,7 +30,7 @@
       "Read(./.env.test)",
       "Read(./.env.staging)",
       "Read(./.env.production)",
-      "Edit(./.quickstack/manifest.json)"
+      "Edit(./.stacks/manifest.json)"
     ]
   },
   "hooks": {

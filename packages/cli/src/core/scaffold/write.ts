@@ -133,7 +133,7 @@ export function openProject(
         Effect.gen(function* () {
           const temporary = yield* fs.makeTempDirectoryScoped({
             directory: path.dirname(file),
-            prefix: ".quickstack-",
+            prefix: ".stacks-",
           });
           if (!(yield* isInside(temporary))) return yield* escapes(file);
           const staged = path.join(temporary, "replacement");

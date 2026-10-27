@@ -171,11 +171,9 @@ describe("shipped agent skill", () => {
     expect(body).toMatch(/(?:untrusted|trusted:\s*false)[^.]*unless[^.]*user[^.]*nam/i);
     expect(body).toMatch(/confirm/i);
     expect(body).toMatch(/brief[^.\n]*(?:whole|full|entire)[^.\n]*task/i);
-    expect(body).toContain(".quickstack/BRIEF.md");
-    expect(body).toMatch(
-      /(?:don.t|never|do not) (?:edit|change)\s+[`*]*\.quickstack\/manifest\.json/i,
-    );
-    expect(body).toContain(".quickstack/NOTES.md");
+    expect(body).toContain(".stacks/BRIEF.md");
+    expect(body).toMatch(/(?:don.t|never|do not) (?:edit|change)\s+[`*]*\.stacks\/manifest\.json/i);
+    expect(body).toContain(".stacks/NOTES.md");
     expect(body).toMatch(/after.green/i);
     expect(body).toMatch(/summari[sz]e/i);
     expect(body).toMatch(/stack[^.\n]*why/i);

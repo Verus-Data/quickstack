@@ -98,7 +98,7 @@ src/styles/global.css        Tailwind entry, typography plugin, theme tokens
 - **astro.config.mjs**: `output: "static"`, `site`, `trailingSlash` and `build.format` per the decision, integrations mdx, react, sitemap (filtered), Tailwind in `vite.plugins`, Shiki with light and dark themes.
 - **tsconfig.json**: Astro's strict preset, `jsx: "react-jsx"`, `jsxImportSource: "react"`, `@/*` -> `src/*`, and `types` with `vitest/globals` and `@testing-library/jest-dom` so `astro check` accepts the tests.
 - **vitest.config.ts**: built with Astro's `getViteConfig()` (with `/// <reference types="vitest/config" />`); `happy-dom`, `globals: true`, a setup file importing jest-dom's vitest matchers, include `src/**/*.test.{ts,tsx}`, v8 coverage, and every vendor key (`PUBLIC_POSTHOG_KEY`) set to `""` in `test.env`.
-- **Prettier** with the Astro plugin: `make format` writes, `make lint` checks. `.prettierignore` covers build output, `.quickstack/` and `.claude/`.
+- **Prettier** with the Astro plugin: `make format` writes, `make lint` checks. `.prettierignore` covers build output, `.stacks/` and `.claude/`.
 
 ## Testing
 

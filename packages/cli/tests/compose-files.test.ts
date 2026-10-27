@@ -42,10 +42,10 @@ const text = (file: RenderedFile | undefined) => {
   return new TextDecoder().decode(file?.bytes);
 };
 const cliFiles = [
-  ".quickstack/.gitignore",
-  ".quickstack/BRIEF.md",
-  ".quickstack/NOTES.md",
-  ".quickstack/manifest.json",
+  ".stacks/.gitignore",
+  ".stacks/BRIEF.md",
+  ".stacks/NOTES.md",
+  ".stacks/manifest.json",
 ];
 
 it.effect.prop(
@@ -85,7 +85,7 @@ it.effect.prop(
       const paths = files.map((file) => file.path);
       expect(paths).toEqual([...paths].sort());
       expect(new Set(paths).size).toBe(paths.length);
-      expect(paths.some((path) => path.startsWith(".quickstack/"))).toBe(false);
+      expect(paths.some((path) => path.startsWith(".stacks/"))).toBe(false);
       expect(projectFiles(target)).toEqual([...paths, ...cliFiles].sort());
       expect(result.written).toEqual([...paths, ...cliFiles].sort());
       for (const file of files) {

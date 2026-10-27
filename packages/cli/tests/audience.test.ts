@@ -117,20 +117,20 @@ describe("new for an agent", () => {
       "Fragments: base-req, hooked, own-repo, ran-check, tooled",
       "Agents: claude",
       "Git: git not found; no repository",
-      expect.stringMatching(/^Brief: \.quickstack\/BRIEF\.md \(\d+ words\)$/),
+      expect.stringMatching(/^Brief: \.stacks\/BRIEF\.md \(\d+ words\)$/),
       "Missing tools (the brief tells the agent):",
       "  qs-stack-tool not found (needed by fixture-stack)",
       "  qs-fragment-tool not found (needed by tooled; skip with --without tooled)",
       "",
       "Next: open app in your coding agent and give it this prompt:",
-      "  Read .quickstack/BRIEF.md and carry it out. It's your full task for this project; you're done when stacks verify passes.",
+      "  Read .stacks/BRIEF.md and carry it out. It's your full task for this project; you're done when stacks verify passes.",
       "",
     ]);
     const human = await newCli(home, ["app2", "--sandbox"], { human: true });
     expect(human.stdout).toContain(`Project: ${join(home, "app2")}\n`);
     expect(human.stdout).toMatch(/\nWrote \d+ files:\n/);
     // A human also gets a command to paste; an agent has the prompt on the line above.
-    expect(human.stdout).toContain('\nFor example: cd app2 && claude "Read .quickstack/');
+    expect(human.stdout).toContain('\nFor example: cd app2 && claude "Read .stacks/');
     const json = await newCli(home, ["app3", "--json"]);
     expect(JSON.parse(json.stdout).project).toBe(join(home, "app3"));
   });
@@ -196,7 +196,7 @@ describe("new for an agent", () => {
     const agent = await newCli(parent, ["app"], { cwd: link });
     expect(agent.status).toBe(0);
     expect(agent.stdout).toContain("Created app from fixture-stack.\n");
-    expect(readFileSync(join(parent, "app", ".quickstack", "BRIEF.md"), "utf8")).toMatch(/^# /);
+    expect(readFileSync(join(parent, "app", ".stacks", "BRIEF.md"), "utf8")).toMatch(/^# /);
   });
 });
 

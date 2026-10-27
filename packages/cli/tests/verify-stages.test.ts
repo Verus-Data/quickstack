@@ -66,7 +66,7 @@ async function composed() {
 const FIX =
   "fix the code or config these steps exercise, not the steps, then run stacks verify again.";
 const APP_FIX =
-  'follow the application section ("Then: the application") of .quickstack/BRIEF.md, fix the code or config these steps exercise, then run stacks verify again.';
+  'follow the application section ("Then: the application") of .stacks/BRIEF.md, fix the code or config these steps exercise, then run stacks verify again.';
 
 /** The steps that ran, in run order: each one, and only those, has a `step-started` event. */
 const ran = (result: VerifyResult) =>
@@ -207,7 +207,7 @@ describe("verify with an app", () => {
       expect(run.stdout).toContain("verify: failed");
       const next = lastLine(run.stdout);
       expect(next).toMatch(/^Next: .*application/i);
-      expect(next).toContain(".quickstack/BRIEF.md");
+      expect(next).toContain(".stacks/BRIEF.md");
       if (audience === "human") {
         const lines = run.stdout.split("\n");
         const summary = lines.findIndex((line) => line.startsWith("verify:"));
@@ -501,7 +501,7 @@ describe("stage boundaries on real projects", () => {
     );
     expect(readFileSync(join(root, "base.txt"), "utf8")).toBe("base\n");
     expect(readFileSync(join(root, "app.txt"), "utf8")).toBe("app\n");
-    expect(existsSync(join(root, "nested", ".quickstack"))).toBe(false);
+    expect(existsSync(join(root, "nested", ".stacks"))).toBe(false);
     expect(result).toMatchObject({ stages: { base: "green", app: "green" }, tamperCheck: "full" });
     expect(runRecords(root)).toMatchObject([{ stages: { base: "green", app: "green" } }]);
     expect(readRecord(recordPath(home, written.projectId)).firstGreenAt).not.toBeNull();

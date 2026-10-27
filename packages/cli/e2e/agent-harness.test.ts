@@ -123,7 +123,7 @@ test("the compiled binary ships a runnable hook suite and a harness-owned test s
       expect(file.status).toBe("passed");
     }
     const manifest = Schema.decodeUnknownSync(Manifest)(
-      JSON.parse(readFileSync(join(project, ".quickstack/manifest.json"), "utf8")),
+      JSON.parse(readFileSync(join(project, ".stacks/manifest.json"), "utf8")),
     );
     const steps = manifest.verify.filter(
       (step) => step.owner === "claude-harness" && step.layer === "test",

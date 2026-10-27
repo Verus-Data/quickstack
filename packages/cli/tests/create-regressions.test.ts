@@ -74,7 +74,7 @@ function answering(args: string[], answer: string) {
 test.each(["yes", "n", ""])("a person answers %j after the full trust report", async (answer) => {
   const home = createWorkspace();
   const source = writeEntry({
-    root: join(home, ".quickstack"),
+    root: join(home, ".stacks"),
     kind: "fragment",
     dir: "x",
     frontmatter: minimal("fragment", "x"),
@@ -166,7 +166,7 @@ test("a missing source id suggests only usable entries of the same kind in that 
   });
   putCreate(registry, "stacks/go-clj/STACK.md", "invalid entry\n");
   writeEntry({
-    root: join(home, ".quickstack"),
+    root: join(home, ".stacks"),
     kind: "stack",
     dir: "go-clp",
     frontmatter: minimal("stack", "go-clp"),

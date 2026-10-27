@@ -40,8 +40,8 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
 fi
 
 # A project quickstack generated and the agent hasn't finished: point at the brief.
-if [ -f .quickstack/BRIEF.md ] && { [ ! -s AGENTS.md ] || grep -q 'quickstack:fill' AGENTS.md 2>/dev/null; }; then
-  say "This project is still being built: read .quickstack/BRIEF.md before starting. AGENTS.md is a skeleton until its quickstack:fill markers are replaced."
+if [ -f .stacks/BRIEF.md ] && { [ ! -s AGENTS.md ] || grep -q 'quickstack:fill' AGENTS.md 2>/dev/null; }; then
+  say "This project is still being built: read .stacks/BRIEF.md before starting. AGENTS.md is a skeleton until its quickstack:fill markers are replaced."
 fi
 
 if [ -f .env.example ] && [ ! -f .env ]; then
