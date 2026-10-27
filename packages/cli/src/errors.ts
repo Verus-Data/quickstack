@@ -50,6 +50,8 @@ export const NotFoundDetails = Schema.Struct({
   kind: Schema.optionalKey(Schema.Literals([...Kind.literals, "project"])),
   looked: Schema.optionalKey(Schema.String),
   root: Schema.optionalKey(Schema.String),
+  /** A missing bundled asset directory (skill install). */
+  path: Schema.optionalKey(Schema.String),
 });
 export class NotFound extends Schema.TaggedError<NotFound>()("NotFound", {
   details: Schema.optionalKey(NotFoundDetails),
@@ -217,6 +219,8 @@ export const TargetNotEmptyDetails = Schema.Struct({
   path: Schema.String,
   entries: Schema.Array(Schema.String),
   scaffold: Schema.optionalKey(Schema.Literals(["unfinished", "green"])),
+  /** skill install cannot replace a directory or other non-regular SKILL.md, even with --force. */
+  blocker: Schema.optionalKey(Schema.Literal("non-file")),
 });
 export class TargetNotEmpty extends Schema.TaggedError<TargetNotEmpty>()("TargetNotEmpty", {
   details: Schema.optionalKey(TargetNotEmptyDetails),
@@ -370,17 +374,28 @@ export function detailLines(error: AppError, invocation: string): string[] {
         ...(details.entries.length
           ? [`Contains: ${details.entries.map(printable).join(", ")}`]
           : []),
-        ...(details.scaffold === "unfinished"
+        ...(details.blocker === "non-file"
           ? [
-              "Scaffold: unfinished. An earlier `new` wrote this.",
-              "Next: continue with .quickstacks/BRIEF.md, or remove the directory to start again.",
+              `Next: move the item named SKILL.md out of the target directory, or run ${invocation} skill install --print to copy the skill elsewhere.`,
             ]
-          : details.scaffold === "green"
+          : // `skill install`'s differing target; its details are only path and entries.
+            details.entries.length === 1 &&
+              details.entries[0] === "SKILL.md" &&
+              /[/\\]\.claude[/\\]skills[/\\]quickstacks$/.test(details.path)
             ? [
-                "Scaffold: green. This is a finished project.",
-                "Next: pick another directory for a new project; `add` will extend this one once it ships.",
+                `Next: rerun ${invocation} skill install with --force to replace it, or --print to copy it elsewhere.`,
               ]
-            : ["Next: pick a directory that doesn't exist yet or is empty."]),
+            : details.scaffold === "unfinished"
+              ? [
+                  "Scaffold: unfinished. An earlier `new` wrote this.",
+                  "Next: continue with .quickstacks/BRIEF.md, or remove the directory to start again.",
+                ]
+              : details.scaffold === "green"
+                ? [
+                    "Scaffold: green. This is a finished project.",
+                    "Next: pick another directory for a new project; `add` will extend this one once it ships.",
+                  ]
+                : ["Next: pick a directory that doesn't exist yet or is empty."]),
       ];
     }
     case "BadInput":
@@ -390,6 +405,11 @@ export function detailLines(error: AppError, invocation: string): string[] {
       // `list` doesn't read; otherwise an id missing from the registries `list` shows.
       const details = error.details;
       if (!details) return [];
+      if (details.path)
+        return [
+          `Path: ${printable(details.path)}`,
+          "Next: restore the bundled skill directory or reinstall quickstacks, then run doctor.",
+        ];
       if (details.kind === "project")
         return [
           `Looked for: .quickstacks/manifest.json in ${printable(details.looked ?? ".")} and every directory above it`,

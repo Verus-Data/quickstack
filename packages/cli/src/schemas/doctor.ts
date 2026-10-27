@@ -14,6 +14,8 @@ export const DoctorReport = Schema.Struct({
   }),
   /** The bundled registry root, and whether it exists. */
   registry: Schema.Struct({ path: Schema.String, found: Schema.Boolean }),
+  /** The bundled skill directory, and whether SKILL.md exists. */
+  skill: Schema.Struct({ path: Schema.String, found: Schema.Boolean }),
   configErrors: Schema.Array(Schema.String),
 }).annotate({
   title: "Doctor report",

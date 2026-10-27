@@ -17,7 +17,29 @@ bun run build
 
 `bun run dev` runs the CLI from source in the directory you ran it from (a subdirectory of the repo works), with Bun's `.env` and `bunfig.toml` autoload off there. From outside the repo, Bun hides that directory, so pass it: `INIT_CWD="$PWD" bun run --cwd <repo> dev new <stack> app`.
 
-`doctor` reports version, platform, compiled status, executable/config/data/working paths, the user entry directory, the bundled registry path (and whether it exists), and safe configuration errors. A missing configuration file is fine. A malformed optional file is reported in `configErrors` while doctor exits successfully; help and version do not open that file.
+`doctor` reports version, platform, compiled status, executable/config/data/working paths, the user entry directory, the bundled registry and skill paths (and whether each exists), and safe configuration errors. A missing configuration file is fine. A malformed optional file is reported in `configErrors` while doctor exits successfully; help and version do not open that file.
+
+## Starting a project with an agent
+
+There are two ways in: run the CLI yourself, or install the skill once and ask your coding agent to start a project. The skill ships with the next release; npm publication is deferred. These are the packaged entry points:
+
+```sh
+npx quickstacks new astro-blog my-blog
+npx quickstacks skill install
+```
+
+For the current dev build, choose a destination outside this checkout. Use `bun run dev new astro-blog "$HOME/quickstacks-projects/my-blog"` or `bun run dev skill install` from this package, or `./dist/quickstacks` after building. The skill teaches the agent to choose a stack, read `.quickstacks/BRIEF.md`, and build until verify is green. Existing repos aren't supported yet.
+
+```sh
+quickstacks skill install             # $HOME/.claude/skills/quickstacks/SKILL.md
+quickstacks skill install --project   # git toplevel, or cwd outside a repo
+quickstacks skill install --force     # replace an edited copy
+quickstacks skill install --print     # copy the skill to another location yourself
+quickstacks skill install --json      # { path, action: "written" | "unchanged" }
+quickstacks skill install --print --json   # { path: null, action: "printed", text }
+```
+
+An identical installed file is unchanged. A differing file is preserved with `TargetNotEmpty` (exit 2) unless `--force` is set; a directory occupying `SKILL.md` is always preserved. Writes refuse symlinks escaping the skills root and final `SKILL.md` symlinks; a dotfiles symlink above the skills root is supported. Installation is allowed under an agent. A missing `HOME` or an unwritable target exits 6; `--print` skips all target lookup and writes nothing. A missing bundled skill exits 2 and appears as `skill.found: false` in `doctor --json`.
 
 ## Listing stacks and fragments
 

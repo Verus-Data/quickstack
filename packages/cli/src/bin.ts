@@ -48,6 +48,9 @@ const platform = Layer.mergeAll(
     registry: Bun.isStandaloneExecutable
       ? join(dirname(process.execPath), "..", "registry")
       : join(import.meta.dirname, "..", "registry"),
+    skill: Bun.isStandaloneExecutable
+      ? join(dirname(process.execPath), "..", "skill")
+      : join(import.meta.dirname, "..", "skill"),
     invocation: "quickstacks",
   }),
 );

@@ -14,6 +14,8 @@ export type HostInfo = {
    * inside the npm package; core code never computes it.
    */
   registry: string;
+  /** The bundled skill directory, resolved by bin.ts beside the registry. */
+  skill: string;
   /** How a person runs this CLI, for copy-paste `Next:` lines. A fixed `quickstacks` until 0.2. */
   invocation: string;
 };
@@ -28,6 +30,7 @@ export class Host extends Context.Service<Host, HostInfo>()("quickstacks/Host") 
       stdinIsTTY: false,
       stdoutIsTTY: false,
       registry: "/test/registry",
+      skill: "/test/skill",
       invocation: "quickstacks",
       ...overrides,
     });

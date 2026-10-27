@@ -1,0 +1,40 @@
+---
+name: quickstacks
+description: Start a new project from a stack and drive it to a verified working state. Use when the user wants a new project set up properly, including tests, lint, CI and agent configuration, or mentions quickstacks or a stack for a new repo.
+---
+
+# quickstacks
+
+## When to use it
+
+Use quickstacks for a new project from nothing, or when the user asks for a project set up properly. Existing repos aren't supported yet.
+
+A stack is a recipe: dependencies by role, starter files, agent guidance and a definition of done. The CLI writes the brief; you build the project with current versions.
+
+## How to run it
+
+Use `quickstacks` if it is on PATH, otherwise `npx -y quickstacks@latest`. Below, `<cli>` means that command. After `new`, use exactly the command the brief gives for verify: it is the same version that wrote the project.
+
+## Pick a stack
+
+Run `<cli> list --json`. Pick the stack whose description and tags match the request. Tell the user which stack and why in one sentence, and name a close second when there is one. Never pick an untrusted entry (`trusted: false`) unless the user named it; if they did, confirm with them before continuing. If nothing fits, say so instead of forcing a match.
+
+## Start it
+
+Run `<cli> new <stack> <dir> --json`; use `<cli> new <stack> <dir> --sandbox --json` when the user wants the fastest path to something running locally.
+
+Read `.quickstacks/BRIEF.md`. The brief is the whole task: follow it in order, and ask the user only what it tells you to ask. Use current docs and official generators rather than remembered flags or config formats.
+
+## Loop to green
+
+Run `<cli> verify` from the project root with your shell tool's longest timeout. Read the failing step's name, command and output tail; fix the code or config it exercises, never the step, and run it again. Done is exit 0 with outcome `green`.
+
+## Never weaken verify
+
+Don't edit `.quickstacks/manifest.json`. Never edit the steps or weaken the definition of done: don't make commands pass without doing their job, skip tests, lower lint settings until they report nothing, or serve a stub instead of the app.
+
+If verify fails with `VerifyChanged`, stop. Don't edit the steps back and forth, and don't run `<cli> verify --accept-changes` yourself: it refuses agents. Tell the user which steps or settings changed and that only they can accept the changes from their own terminal, or undo them. Then wait.
+
+## Finish
+
+Follow the brief's after-green list, including manual QA and checking the project documentation. Then summarize for the user: the stack and why, the decisions taken with their defaults, anything left undone, and where the brief's problems were noted (`.quickstacks/NOTES.md`).
