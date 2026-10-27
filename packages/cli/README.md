@@ -125,7 +125,7 @@ The development wrapper sets info logging, appends `logs/cli.jsonl` (the info re
 Output has three audiences, picked once per invocation. `--json` is the machine contract below. Without it, the output is for a human only when stdout is a terminal and no coding agent is detected (`CLAUDECODE`, `AI_AGENT` and the other markers in `src/config.ts`); everything else (an agent's shell, a pipe, CI) gets agent output, the default. The two text renderings carry the same result with the same exit code and files; agent output leaves out what an agent doesn't need:
 
 - no log lines on stderr (they go only to `QUICKSTACKS_LOG_FILE` when it is set), so stderr is the failure message and its detail lines;
-- paths inside the working directory printed relative to it, absolute otherwise (`--json` keeps them absolute);
+- paths in a command's result text printed relative to the working directory when inside it, absolute otherwise; paths in error details (`Path:`, `Looked for:`) stay absolute for now, and `--json` keeps every path absolute;
 - `new`: no written-file listing (the brief lists the files) and no absolute `Project:` line;
 - `validate`: only the size rows over their limit (a human sees the whole table; `--json` keeps every size);
 - `list`: each description on one line, not wrapped.

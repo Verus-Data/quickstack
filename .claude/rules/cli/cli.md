@@ -23,7 +23,7 @@ Agent output is the human rendering with the noise cut, never a different result
 - `Output.progress` lines (human mode only).
 - Anything another line or file already says: `new`'s written-file listing (the brief lists it) and the `Project:` absolute path; `validate`'s size rows that are within budget (rows over their limit stay; `--json` keeps every size). No mode repeats `validate`'s counts under `Validation failed.`: the report ends with them and the envelope's `details` carries them.
 - Layout for a terminal: `list` keeps each description on one line instead of wrapping it.
-- Long paths: a path inside the working directory prints relative to it (`core/shown-path.ts::shownPath`, which compares real paths too, so `/var` against `/private/var` or a symlinked cwd still nest); a path outside it prints absolute. `--json` keeps absolute paths.
+- Long paths in command result text: a path a command renders through `core/shown-path.ts::shownPath` prints relative to the working directory when it's inside it (real paths are compared too, so `/var` against `/private/var` or a symlinked cwd still nest), and absolute otherwise. Error detail paths (`Path:`, `Looked for:` from `errors.ts::detailLines`) stay absolute for now, because `detailLines` has no working directory. `--json` keeps absolute paths.
 
 It keeps what an agent needs to act: ids, the brief path, findings, `Next:` lines, and every value it couldn't get elsewhere without `--json`.
 
