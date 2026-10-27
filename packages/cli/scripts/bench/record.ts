@@ -46,6 +46,9 @@ export const record = (prepared: Prepared, agent: AgentRun, verified: Verified) 
       ...(note ? { note } : {}),
     });
     if (note) {
+      // The ledger keeps exact minutes; the note rounds them for reading.
+      const minutes = (value: number | null | undefined) =>
+        value === null || value === undefined ? "never" : value.toFixed(1);
       const fragments = row.with.length
         ? `with ${row.with.map((id) => `\`${id}\``).join(", ")}`
         : "no added fragments";
@@ -60,14 +63,14 @@ export const record = (prepared: Prepared, agent: AgentRun, verified: Verified) 
 | Agent | ${row.agent === "claude" ? "Claude Code" : row.agent} ${row.agentVersion}, headless; ${prepared.agentChoice} |
 | Target agents | \`${row.agent}\` |
 | Brief size | \`briefWords\` ${row.briefWords}, \`fixedWords\` ${prepared.fixedWords} |
-| Times | first passing \`test\`-layer step ${row.minutesToFirstTest ?? "never"} min; first green \`verify\` ${row.minutesToGreen ?? "never"} min |
+| Times | first passing \`test\`-layer step ${minutes(row.minutesToFirstTest)} min; first green \`verify\` ${minutes(row.minutesToGreen)} min |
 | Verify count | ${row.verifyRuns} agent runs; ${verified.wrapperCalls} wrapper calls${row.verifyRuns === verified.wrapperCalls ? "" : "; mismatch: agent may have called verify another way"} |
 | Interventions | ${row.interventions ?? "unknown (NOTES.md missing)"} |
 | Outcome | \`${outcome}\`, tamperCheck: "${row.run?.tamperCheck ?? "unknown"}"; ledger result ${result} |
 | Agent ended | ${row.agentEnded}${agent.subtype ? ` (${agent.subtype})` : ""}; ${agent.turns ?? "unknown"} turns |
-| Agent minutes | ${row.agentMinutes} |
+| Agent minutes | ${minutes(row.agentMinutes)} |
 | Hooks fired | ${row.hooksFired === null ? "unknown" : row.hooksFired?.join(", ") || "none"} |
-${verified.minutesToBase === null ? "" : `| Time to green base | ${verified.minutesToBase} min |\n`}
+${verified.minutesToBase === null ? "" : `| Time to green base | ${minutes(verified.minutesToBase)} min |\n`}
 This run has not been reviewed. Read the notes and relabel partial if a deliverable is missing.
 ${prepared.options.existing ? `\nContinued an earlier run${prepared.previousNote ? `: [previous note](${path.basename(prepared.previousNote)})` : " (no recorded note)"}. The continuation counts as one intervention.\n` : ""}
 ## Agent notes

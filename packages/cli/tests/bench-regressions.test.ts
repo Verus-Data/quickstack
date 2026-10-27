@@ -106,7 +106,9 @@ test("time to a green base uses the elapsed completion time once", async () => {
   expect(first.stages?.base).toBe("green");
   expect(first.durationMs).toBeGreaterThan(0);
   const markdown = readFileSync(join(f.root, note), "utf8");
-  expect(markdown).toContain(`| Time to green base | ${first.secondsSinceCreated / 60} min |`);
+  expect(markdown).toContain(
+    `| Time to green base | ${(first.secondsSinceCreated / 60).toFixed(1)} min |`,
+  );
 }, 60_000);
 
 test("requesting a default fragment preserves the default ledger key [2.0b#1]", async () => {
