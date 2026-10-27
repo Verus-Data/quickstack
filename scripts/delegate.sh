@@ -156,6 +156,29 @@ files_touched() {
         -o -type f -newer "$START_MARK" -print 2>/dev/null) | sed 's|^\./||' | sort
 }
 
+# The backticked paths in the contract's "- May change:" item, up to the next item or blank line.
+allowed_paths() {
+    awk '/^- May change:/ { f = 1 } f && (/^$/ || (/^- / && !/^- May change:/)) { f = 0 } f' \
+        "$CONTRACT" | grep -o "\`[^\`]*\`" | tr -d "\`"
+}
+
+# Dirty paths that no May change entry covers. An entry ending in / covers everything under it;
+# either kind also matches as a suffix, since contracts often name package-relative paths.
+out_of_scope() {
+    local allowed="$1" path entry ok
+    while IFS= read -r path; do
+        [ -n "$path" ] || continue
+        ok=0
+        while IFS= read -r entry; do
+            case "$entry" in
+                */) case "$path" in "$entry"* | */"$entry"*) ok=1 ;; esac ;;
+                *) case "$path" in "$entry" | */"$entry") ok=1 ;; esac ;;
+            esac
+        done <<<"$allowed"
+        [ "$ok" = 1 ] || echo "$path"
+    done
+}
+
 BEFORE="$(changed_paths)"
 : >"$START_MARK"
 sleep 1 # mtime granularity: anything written from here on is -newer the mark
@@ -236,6 +259,14 @@ echo "files written during the run:"
 if [ -n "$TOUCHED" ]; then head -50 <<<"$TOUCHED" | indent; else echo "  (none)"; fi
 if [ -n "$BEFORE" ]; then
     echo "  note: $(echo "$BEFORE" | wc -l | tr -d ' ') path(s) were already dirty before the run; review with git diff"
+fi
+echo "outside the contract's May change:"
+ALLOWED="$(allowed_paths)"
+if [ -z "$ALLOWED" ]; then
+    echo "  (no May change entry)"
+else
+    STRAY="$(cut -c4- <<<"$AFTER" | sed 's/.* -> //' | out_of_scope "$ALLOWED")"
+    if [ -n "$STRAY" ]; then indent <<<"$STRAY"; else echo "  (none)"; fi
 fi
 
 echo "last message:"

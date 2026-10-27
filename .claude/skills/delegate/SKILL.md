@@ -62,7 +62,9 @@ faster than you could write the contract, or when you can't yet say what done lo
    `rules/agent-ops.md`, so don't dispatch another. Read the hand-off report
    (`last-message.md` in the run's log directory) first, then the diff and new files, spending
    your attention on its "look closer at" items, its decisions and any finding it disputed.
-   Check every changed path is in scope. A report without a review section, or work that
+   Check every changed path is in scope: the digest's "outside the contract's May change"
+   list names each dirty path no backticked May change entry covers (a directory entry ends
+   in `/`), so a contract that wants that check names its paths in backticks. A report without a review section, or work that
    needs more than a refactor, goes back to the same session: a short follow-up contract run
    with `--resume <session>` (the digest prints the id), which keeps everything Codex already
    read and decided. Start fresh with a narrower contract only when the first run went the

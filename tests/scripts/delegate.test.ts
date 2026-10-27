@@ -115,6 +115,28 @@ describe("delegate.sh", () => {
     expect(result.stdout).toContain("  Changed src.txt");
   });
 
+  it("lists changed paths outside the contract's May change entries", () => {
+    writeFileSync(
+      contract,
+      "Do the thing.\n\n## Scope\n\n- May change: `lib/` (new modules),\n  `README.md`.\n- Must not change: `src.txt`.\n",
+    );
+    const result = run([contract, "--worktree", worktree, "--write"]);
+    expect(result.stdout).toContain("outside the contract's May change:\n  src.txt\n");
+  });
+
+  it("accepts paths under a May change directory or ending in a package-relative entry", () => {
+    writeFileSync(contract, "Do the thing.\n\n- May change: `docs/`, `cli/src.txt`, `src.txt`.\n");
+    const result = run([contract, "--worktree", worktree, "--write"]);
+    expect(result.stdout).toContain("outside the contract's May change:\n  (none)\n");
+  });
+
+  it("says so when the contract has no May change entry", () => {
+    const result = run([contract, "--worktree", worktree, "--write"]);
+    expect(result.stdout).toContain(
+      "outside the contract's May change:\n  (no May change entry)\n",
+    );
+  });
+
   it("is read-only without --write and takes the model from the environment", () => {
     run([contract, "--worktree", worktree], { DELEGATE_MODEL: "gpt-6-sol" });
     const args = readFileSync(join(root, "args.txt"), "utf8").split("\n");
