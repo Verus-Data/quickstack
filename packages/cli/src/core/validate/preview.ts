@@ -3,11 +3,12 @@ import { AppConfig } from "../../config";
 import { BadInput, NotFound } from "../../errors";
 import type { BriefPreview } from "../../schemas/validate";
 import { targetAgents } from "../compose/agents";
-import { compose } from "../compose/compose";
+import { type ComposeOptions, compose } from "../compose/compose";
 import { fingerprint } from "../fingerprint";
 import { type Entry, isRejected } from "../registry/entry";
 import { Registry } from "../registry/registry";
 import { canonicalBrief, composedLimit } from "./budget";
+import { composeEachChecks } from "./compose-each";
 import { composedFiles } from "./composed";
 import { loadChecks } from "./format";
 import { gitChecks } from "./git";
@@ -40,12 +41,13 @@ export const previewBrief = (target: Target, options: PreviewOptions) =>
         all.some((entry) => entry.kind === "fragment" && entry.id === options.stack)
       )
         return yield* new BadInput({ details: { id: options.stack, flag: "brief_stack" } });
-      const composition = yield* compose({
+      const composeOptions: ComposeOptions = {
         ...options,
         agents: targetAgents(undefined, settings).slice(0, 1),
         always: [],
         mode: "new",
-      }).pipe(
+      };
+      const composition = yield* compose(composeOptions).pipe(
         // `list` doesn't read a root given to validate, so the not-found hint names this root.
         Effect.mapError((error) =>
           error._tag === "NotFound" && error.details && !target.bundled
@@ -57,30 +59,34 @@ export const previewBrief = (target: Target, options: PreviewOptions) =>
       const selected = [composition.stack, ...composition.fragments];
       const wanted = (item: { kind: string; id: string }) =>
         selected.some((entry) => entry.kind === item.kind && entry.id === item.id);
+      // Keep original bodies, including every conditional branch, for the entry checks.
+      const entries = all.filter((entry): entry is Entry => !isRejected(entry) && wanted(entry));
       const sourceView: Omit<View, "composed"> = {
         root: target.root,
         bundled: target.bundled,
-        // Checks count the original body, including every conditional branch.
-        entries: all.filter((entry): entry is Entry => !isRejected(entry) && wanted(entry)),
+        entries,
         rejected: [],
         all,
-        sources: yield* readSources(all.filter((item): item is Entry => !isRejected(item))),
+        sources: yield* readSources(entries),
         wanted,
         inRoot: (entry) => path.dirname(path.dirname(entry.dir)) === target.root,
         file: (entry, inside) =>
           [path.relative(target.root, entry.dir).split(path.sep).join("/"), inside]
             .filter(Boolean)
             .join("/"),
-        composition,
+        composition: { ...composition, options: composeOptions },
       };
       const view: View = {
         ...sourceView,
         composed: yield* Effect.cached(composedFiles(sourceView)),
       };
-      // Loading already succeeded. Git checks depend on the checkout and start a process, so
-      // they belong to registry validation, not the canonical, process-free preview.
+      // Loading already succeeded. Git checks depend on the checkout and start a process;
+      // compose-each checks fragment compatibility across stacks. Both are registry properties,
+      // outside this canonical, process-free preview of one composition.
       const findings = (yield* Effect.forEach(
-        checks.filter((check) => check !== loadChecks && check !== gitChecks),
+        checks.filter(
+          (check) => check !== loadChecks && check !== gitChecks && check !== composeEachChecks,
+        ),
         (check) => check(view),
       ))
         .flatMap((result) => result.findings)
