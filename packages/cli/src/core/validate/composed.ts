@@ -1,8 +1,9 @@
 import { Effect, Result } from "effect";
+import type { ComposeConflict, EntryInvalid } from "../../errors";
 import { AgentId, type StackMeta } from "../../schemas/entry";
 import type { Finding } from "../../schemas/validate";
 import { targetAgents } from "../compose/agents";
-import { type Composition, compose } from "../compose/compose";
+import { type ComposeOptions, type Composition, compose } from "../compose/compose";
 import { composeFiles, NEUTRAL_VARS, type RenderedFile } from "../compose/files";
 import type { Entry } from "../registry/entry";
 import { compositionPlans, describe } from "./compositions";
@@ -11,135 +12,196 @@ import { type Check, entryFile, finding, type View } from "./view";
 
 export type Composed = { composition: Composition; files: ReadonlyArray<RenderedFile> };
 
+type SourceView = Omit<View, "composed">;
+type CompositionRun = {
+  stack: Entry;
+  preset: ComposeOptions["preset"];
+  plan: Pick<ComposeOptions, "with" | "without">;
+};
+type RenderState = {
+  snapshots: Composed[];
+  findings: Finding[];
+  failures: Set<string>;
+};
+type AdapterRun = {
+  stack: Entry;
+  entries: ReadonlyArray<Entry>;
+  options: ComposeOptions;
+};
+
 /** The preview selection or registry matrix, rendered independently for every shipped adapter. */
-export const composedFiles = (view: Omit<View, "composed">) =>
+export const composedFiles = (view: SourceView) =>
   Effect.gen(function* () {
-    const snapshots: Composed[] = [];
-    const findings: Finding[] = [];
-    const failures = new Set<string>();
-    // A preview renders its one selection; registry validation renders every budgeted one.
-    const runs = view.composition
-      ? [
-          {
-            stack: view.composition.stack,
-            preset: view.composition.preset,
-            plan: view.composition.options,
-          },
-        ]
-      : view.all
-          .filter(
-            (item): item is Entry & { meta: StackMeta } =>
-              "meta" in item && item.meta.kind === "stack",
-          )
-          .flatMap((stack) =>
-            (["default", "sandbox"] as const).flatMap((preset) =>
-              compositionPlans(view, stack).map((plan) => ({ stack, preset, plan })),
-            ),
-          );
-    for (const { stack, preset, plan } of runs) {
-      const options = {
-        stack: stack.id,
-        with: plan.with,
-        without: plan.without,
-        preset,
-        always: [],
-        mode: "new",
-      } as const;
-      const base = yield* Effect.result(
-        compose({ ...options, agents: targetAgents(undefined, {}) }),
-      );
-      if (Result.isFailure(base)) continue;
-      const entries = [base.success.stack, ...base.success.fragments];
-      if (!entries.some((entry) => view.entries.some((wanted) => wanted.dir === entry.dir)))
-        continue;
-      const agents = AgentId.literals.filter((agent) =>
-        entries.some((entry) =>
-          view.sources
-            .get(entry.dir)
-            ?.files.some((file) => file.source.startsWith(`adapters/${agent}/`)),
-        ),
-      );
-      for (const targets of agents.length
-        ? agents.map((agent) => [agent])
-        : [targetAgents(undefined, {})]) {
-        const result = yield* Effect.result(compose({ ...options, agents: targets }));
-        if (Result.isFailure(result)) {
-          const error = result.failure;
-          if (
-            error._tag !== "ComposeConflict" &&
-            !(error._tag === "EntryInvalid" && error.details?.reason === "merge_template")
-          )
-            continue;
-          const candidates = entries.flatMap((entry) =>
-            (view.sources.get(entry.dir)?.files ?? [])
-              .filter(
-                (source) =>
-                  (error._tag === "EntryInvalid"
-                    ? source.source === error.details?.path
-                    : source.path.replace(/\.tmpl$/, "") === error.details?.path) &&
-                  (source.source.startsWith("files/") ||
-                    targets.some((agent) => source.source.startsWith(`adapters/${agent}/`))),
-              )
-              .map((source) => ({ entry, source })),
-          );
-          const source = candidates.find(({ entry }) =>
-            view.entries.some((wanted) => wanted.dir === entry.dir),
-          );
-          const owner = source?.entry ?? stack;
-          if (!view.entries.some((wanted) => wanted.dir === owner.dir)) continue;
-          const description = describe(error);
-          findings.push(
-            finding(owner, {
-              ...description,
-              severity: "error",
-              file: source ? view.file(owner, source.source.source) : entryFile(view, owner),
-              message: `${stack.id} (${targets.join(", ")}): ${description.message}`,
-            }),
-          );
-          if (error._tag === "ComposeConflict")
-            failures.add(JSON.stringify([stack.id, error.details]));
-          continue;
-        }
-        const files = yield* Effect.result(composeFiles(result.success, NEUTRAL_VARS));
-        if (Result.isSuccess(files)) {
-          snapshots.push({ composition: result.success, files: files.success });
-        } else if (
-          files.failure._tag === "EntryInvalid" &&
-          files.failure.details?.reason === "template"
-        ) {
-          const details = files.failure.details;
-          const planned = result.success.files.find(
-            (file) => file.source?.file === details.path && file.source?.entry.id === details.id,
-          );
-          const entry = entries.find(
-            (entry) =>
-              entry.kind === planned?.source?.entry.kind &&
-              entry.id === planned.source.entry.id &&
-              entry.origin === details.origin,
-          );
-          if (entry && view.entries.some((wanted) => wanted.dir === entry.dir))
-            findings.push(
-              finding(entry, {
-                check: "compose",
-                severity: "error",
-                file: view.file(entry, details.path),
-                ...(details.line === undefined ? {} : { line: details.line }),
-                message: `${stack.id}: unknown template variable in ${details.path ?? "a shipped file"}`,
-              }),
-            );
-        }
-      }
-    }
-    return { snapshots, findings: uniqueFindings(findings), failures };
+    const state: RenderState = { snapshots: [], findings: [], failures: new Set() };
+    for (const run of compositionRuns(view)) yield* renderRun(view, run, state);
+    return { ...state, findings: uniqueFindings(state.findings) };
   });
+
+function compositionRuns(view: SourceView): CompositionRun[] {
+  // A preview renders its one selection; registry validation renders every budgeted one.
+  return view.composition
+    ? [
+        {
+          stack: view.composition.stack,
+          preset: view.composition.preset,
+          plan: view.composition.options,
+        },
+      ]
+    : view.all
+        .filter(
+          (item): item is Entry & { meta: StackMeta } =>
+            "meta" in item && item.meta.kind === "stack",
+        )
+        .flatMap((stack) =>
+          (["default", "sandbox"] as const).flatMap((preset) =>
+            compositionPlans(view, stack).map((plan) => ({ stack, preset, plan })),
+          ),
+        );
+}
+
+const renderRun = (view: SourceView, { stack, preset, plan }: CompositionRun, state: RenderState) =>
+  Effect.gen(function* () {
+    const options = {
+      stack: stack.id,
+      with: plan.with,
+      without: plan.without,
+      preset,
+      always: [],
+      mode: "new",
+    } as const;
+    const base = yield* Effect.result(compose({ ...options, agents: targetAgents(undefined, {}) }));
+    if (Result.isFailure(base)) return;
+    const entries = [base.success.stack, ...base.success.fragments];
+    if (!entries.some((entry) => view.entries.some((wanted) => wanted.dir === entry.dir))) return;
+    const agents = AgentId.literals.filter((agent) =>
+      entries.some((entry) =>
+        view.sources
+          .get(entry.dir)
+          ?.files.some((file) => file.source.startsWith(`adapters/${agent}/`)),
+      ),
+    );
+
+    for (const targets of agents.length
+      ? agents.map((agent) => [agent])
+      : [targetAgents(undefined, {})]) {
+      yield* renderAdapter(
+        view,
+        { stack, entries, options: { ...options, agents: targets } },
+        state,
+      );
+    }
+  });
+
+const renderAdapter = (view: SourceView, run: AdapterRun, state: RenderState) =>
+  Effect.gen(function* () {
+    const result = yield* Effect.result(compose(run.options));
+    if (Result.isFailure(result)) {
+      const error = result.failure;
+      if (
+        error._tag === "ComposeConflict" ||
+        (error._tag === "EntryInvalid" && error.details?.reason === "merge_template")
+      )
+        recordComposeFailure(view, run, error, state);
+      return;
+    }
+    const files = yield* Effect.result(composeFiles(result.success, NEUTRAL_VARS));
+    if (Result.isSuccess(files)) {
+      state.snapshots.push({ composition: result.success, files: files.success });
+    } else if (
+      files.failure._tag === "EntryInvalid" &&
+      files.failure.details?.reason === "template"
+    ) {
+      recordTemplateFailure(
+        view,
+        { run, composition: result.success, details: files.failure.details },
+        state,
+      );
+    }
+  });
+
+function recordComposeFailure(
+  view: SourceView,
+  run: AdapterRun,
+  error: ComposeConflict | EntryInvalid,
+  state: RenderState,
+) {
+  const {
+    stack,
+    entries,
+    options: { agents: targets },
+  } = run;
+  const candidates = entries.flatMap((entry) =>
+    (view.sources.get(entry.dir)?.files ?? [])
+      .filter(
+        (source) =>
+          (error._tag === "EntryInvalid"
+            ? source.source === error.details?.path
+            : source.path.replace(/\.tmpl$/, "") === error.details?.path) &&
+          (source.source.startsWith("files/") ||
+            targets.some((agent) => source.source.startsWith(`adapters/${agent}/`))),
+      )
+      .map((source) => ({ entry, source })),
+  );
+  const source = candidates.find(({ entry }) =>
+    view.entries.some((wanted) => wanted.dir === entry.dir),
+  );
+  const owner = source?.entry ?? stack;
+  if (!view.entries.some((wanted) => wanted.dir === owner.dir)) return;
+  const description = describe(error);
+  state.findings.push(
+    finding(owner, {
+      ...description,
+      severity: "error",
+      file: source ? view.file(owner, source.source.source) : entryFile(view, owner),
+      message: `${stack.id} (${targets.join(", ")}): ${description.message}`,
+    }),
+  );
+  if (error._tag === "ComposeConflict")
+    state.failures.add(JSON.stringify([stack.id, error.details]));
+}
+
+function recordTemplateFailure(
+  view: SourceView,
+  {
+    run,
+    composition,
+    details,
+  }: { run: AdapterRun; composition: Composition; details: NonNullable<EntryInvalid["details"]> },
+  state: RenderState,
+) {
+  const { stack, entries } = run;
+  const planned = composition.files.find(
+    (file) => file.source?.file === details.path && file.source?.entry.id === details.id,
+  );
+  const entry = entries.find(
+    (entry) =>
+      entry.kind === planned?.source?.entry.kind &&
+      entry.id === planned.source.entry.id &&
+      entry.origin === details.origin,
+  );
+  if (entry && view.entries.some((wanted) => wanted.dir === entry.dir))
+    state.findings.push(
+      finding(entry, {
+        check: "compose",
+        severity: "error",
+        file: view.file(entry, details.path),
+        ...(details.line === undefined ? {} : { line: details.line }),
+        message: `${stack.id}: unknown template variable in ${details.path ?? "a shipped file"}`,
+      }),
+    );
+}
+
+type SourceQuery = {
+  needle?: string;
+  matches?: (source: Source) => boolean;
+};
 
 /** Locate a rendered defect in its contributing source, including merged-file contributors. */
 export function sourceOf(
   view: View,
   snapshot: Composed,
   file: RenderedFile,
-  needle = "",
-  matches?: (source: Source) => boolean,
+  { needle = "", matches }: SourceQuery = {},
 ) {
   const planned = snapshot.composition.files.find((planned) => planned.path === file.path);
   const entries = [snapshot.composition.stack, ...snapshot.composition.fragments];

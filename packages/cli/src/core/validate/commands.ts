@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import type { Finding } from "../../schemas/validate";
+import type { Composition } from "../compose/compose";
 import { uniqueFindings } from "./composed";
 import { type Check, entryFile, finding } from "./view";
 
@@ -17,45 +18,58 @@ export function shellWords(command: string): string[] {
   for (let index = 0; index < command.length; index++) {
     const char = command[index] ?? "";
     if (quote) {
-      if (char === quote) quote = undefined;
-      else if (char === "\\" && quote === '"' && /["\\$`]/.test(command[index + 1] ?? ""))
-        word += command[++index] ?? "";
-      else word += char;
-    } else if (char === '"' || char === "'") {
-      quote = char;
-      active = true;
-    } else if (char === "\\") {
-      word += command[++index] ?? "";
-      active = true;
-    } else if (/\s/.test(char)) finish();
-    else if (char === "#" && !active) {
-      const newline = command.indexOf("\n", index);
-      if (newline < 0) break;
-      index = newline;
-    } else if (/[;&|()<>]/.test(char)) {
-      finish();
-      words.push(char);
-    } else {
-      word += char;
-      active = true;
-    }
+      index = quotedCharacter(index, char);
+    } else index = unquotedCharacter(index, char);
   }
   finish();
   return words;
+
+  function unquotedCharacter(index: number, char: string): number {
+    if (/["']/.test(char)) {
+      quote = char;
+      active = true;
+      return index;
+    }
+    if (char === "\\") {
+      word += command[++index] ?? "";
+      active = true;
+      return index;
+    }
+    if (/\s/.test(char)) {
+      finish();
+      return index;
+    }
+    if (char === "#" && !active) {
+      const newline = command.indexOf("\n", index);
+      return newline < 0 ? command.length : newline;
+    }
+    if (/[;&|()<>]/.test(char)) {
+      finish();
+      words.push(char);
+      return index;
+    }
+    word += char;
+    active = true;
+    return index;
+  }
+
+  function quotedCharacter(index: number, char: string): number {
+    if (char === quote) quote = undefined;
+    else if (char === "\\" && quote === '"' && /["\\$`]/.test(command[index + 1] ?? ""))
+      word += command[++index] ?? "";
+    else word += char;
+    return index;
+  }
 }
 
 /** A complete project-command token, with Claude's permission wildcard removed separately. */
 export function runnerTarget(command: string): string | undefined {
   const words = shellWords(command);
   const [runner, second] = words;
-  const target =
-    runner === "make"
-      ? second
-      : (runner === "bun" || runner === "npm") && second === "run"
-        ? words[2]
-        : runner === "pnpm" || runner === "yarn"
-          ? words[second === "run" ? 2 : 1]
-          : undefined;
+  let target: string | undefined;
+  if (runner === "make") target = second;
+  else if ((runner === "bun" || runner === "npm") && second === "run") target = words[2];
+  else if (runner === "pnpm" || runner === "yarn") target = words[second === "run" ? 2 : 1];
   if (!target || /^[-$;&|()<>]/.test(target)) return undefined;
   return target.replace(/:\*$/, "");
 }
@@ -70,7 +84,7 @@ export function runnerTargets(command: string): string[] {
 export const commandChecks: Check = (view) =>
   Effect.gen(function* () {
     const findings: Finding[] = [];
-    for (const { composition } of (yield* view.composed).snapshots) {
+    const checkSteps = (composition: Composition) => {
       const entries = [composition.stack, ...composition.fragments];
       for (const step of composition.verify) {
         const target = runnerTarget(step.run);
@@ -88,9 +102,11 @@ export const commandChecks: Check = (view) =>
           }),
         );
       }
+    };
+    const checkCoverage = (composition: Composition) => {
       const ran = new Set(composition.verify.flatMap((step) => runnerTargets(step.run)));
-      for (const fragment of composition.fragments) {
-        if (!view.entries.some((entry) => entry.dir === fragment.dir)) continue;
+      const checkFragment = (fragment: Composition["fragments"][number]) => {
+        if (!view.entries.some((entry) => entry.dir === fragment.dir)) return;
         for (const command of Object.keys(fragment.meta.commands)) {
           if (ran.has(command) || Object.hasOwn(composition.stack.meta.commands, command)) continue;
           findings.push(
@@ -102,7 +118,12 @@ export const commandChecks: Check = (view) =>
             }),
           );
         }
-      }
+      };
+      for (const fragment of composition.fragments) checkFragment(fragment);
+    };
+    for (const { composition } of (yield* view.composed).snapshots) {
+      checkSteps(composition);
+      checkCoverage(composition);
     }
     return { findings: uniqueFindings(findings) };
   });

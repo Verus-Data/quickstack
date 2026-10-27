@@ -32,6 +32,28 @@ function findingLine(finding: Finding, checkWidth: number): string {
 
 const over = (row: SizeRow) => row.limit !== undefined && row.words > row.limit;
 
+function renderSizes(sizes: ReadonlyArray<SizeRow>, allSizes: ReadonlyArray<SizeRow>): string[] {
+  if (!sizes.length) return [];
+  const out: string[] = [];
+  out.push("", "Sizes (words)");
+  // Labels disambiguate against every row, shown or not, so a label never depends on audience.
+  const ids = (kind: SizeRow["entryKind"]) =>
+    new Set(allSizes.filter((row) => row.entryKind === kind).map((row) => row.entry));
+  const fragments = ids("fragment");
+  const shared = new Set([...ids("stack")].filter((id) => fragments.has(id)));
+  const label = (row: SizeRow) => sizeLabel(row, shared);
+  const width = Math.max(...sizes.map((row) => label(row).length));
+  const numbers = Math.max(...sizes.map((row) => n(row.words).length));
+  for (const row of sizes) {
+    const limit = row.limit === undefined ? "" : ` / ${n(row.limit)}`;
+    const fixed = row.fixedWords === undefined ? "" : `   fixed ${n(row.fixedWords)}`;
+    out.push(
+      `  ${label(row).padEnd(width)}  ${n(row.words).padStart(numbers)}${limit}${fixed}${over(row) ? "   over" : ""}`,
+    );
+  }
+  return out;
+}
+
 /**
  * The text report: a header, findings grouped by entry, the size table, a total line, and a
  * `Next:` line. A human gets every size; an agent only the rows over their limit, and the root as
@@ -63,24 +85,7 @@ export function renderReport(
     group = heading;
     out.push(findingLine(finding, checkWidth));
   }
-  if (sizes.length) {
-    out.push("", "Sizes (words)");
-    // Labels disambiguate against every row, shown or not, so a label never depends on audience.
-    const ids = (kind: SizeRow["entryKind"]) =>
-      new Set(report.sizes.filter((row) => row.entryKind === kind).map((row) => row.entry));
-    const fragments = ids("fragment");
-    const shared = new Set([...ids("stack")].filter((id) => fragments.has(id)));
-    const label = (row: SizeRow) => sizeLabel(row, shared);
-    const width = Math.max(...sizes.map((row) => label(row).length));
-    const numbers = Math.max(...sizes.map((row) => n(row.words).length));
-    for (const row of sizes) {
-      const limit = row.limit === undefined ? "" : ` / ${n(row.limit)}`;
-      const fixed = row.fixedWords === undefined ? "" : `   fixed ${n(row.fixedWords)}`;
-      out.push(
-        `  ${label(row).padEnd(width)}  ${n(row.words).padStart(numbers)}${limit}${fixed}${over(row) ? "   over" : ""}`,
-      );
-    }
-  }
+  out.push(...renderSizes(sizes, report.sizes));
   const tally = (severity: Finding["severity"]) =>
     report.findings.filter((finding) => finding.severity === severity).length;
   const errors = tally("error");
