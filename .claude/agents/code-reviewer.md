@@ -55,10 +55,32 @@ Check every item. Each was a real defect that reached review in this repo.
    compared without `realpath` (macOS `/var` is `/private/var`), a test racing an abort or signal
    against work that can finish first, and a whole-registry or matrix test with no stated time
    budget.
-6. Duplicated sources: a change to a file that has a copy elsewhere (the harness hooks also ship in
-   `packages/cli/registry/fragments/claude-harness/`) without saying whether the copy follows.
+6. Duplicated sources: a change to a file that has a copy elsewhere without saying whether the
+   copy follows. `_lib.ts` and `_shell.ts` in `.claude/hooks/` are byte-identical with the
+   `claude-harness` fragment's copies (`tests/hooks/harness-sync.test.ts`). Every other repo hook
+   (the shell hooks, and `guard-commands.ts`, `guard-generated.ts` and `typecheck-on-write.ts`,
+   which share names with the `claude-harness` fragment's) is maintained separately from its
+   shipped namesake on purpose (docs/harness.md, "Repo hooks and shipped hooks").
 7. Plans and docs: a plan claim the code contradicts without a note in that plan's "What this plan
    may get wrong"; AGENTS.md's architecture map or command table out of date with the diff.
+8. Safety, on any change to a guard, a hook, its wiring, a trust rule, or a write that could
+   replace something. Each of these reached production review here after a clean first review.
+   - Fail closed. If the guard, hook script or config it depends on is missing, unreadable or
+     crashes, the action is refused, not allowed. Read the wiring (`settings.json`,
+     `hooks.json`, adapter configs) as well as the script.
+   - Evasions of a shipped command guard (`packages/cli/registry/`): for each new or changed
+     pattern, check it against these forms by reading the code (and, if you can run commands,
+     by running the guard on a sample payload), and list each form with "caught" or "missed":
+     the other quote style and ANSI-C `$'...'`, backslash-escaped letters, a `command`, `env`,
+     `exec`, `nice`, `sudo` or `busybox` prefix, `sh -c`/`bash -c` payloads, an absolute path to
+     the binary (`/bin/rm`), and split flags (`-r -f`). The repo's own `.claude/hooks/` guards are
+     deliberately looser (docs/harness.md, "Repo hooks and shipped hooks"); don't ask to harden
+     them.
+   - No silent replacement. A write, create or install that could overwrite a file, shadow an
+     existing id or replace a newer version must refuse or say so in its output.
+   - Trust boundaries. Anything that fetches or runs code the user didn't choose (a package
+     name, a URL, a fallback install) names who controls that source. An unreserved package
+     name or an unpinned `@latest` is a finding.
 
 ## Output
 
