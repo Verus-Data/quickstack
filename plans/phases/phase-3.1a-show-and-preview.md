@@ -1,6 +1,7 @@
 # Phase 3.1a: `show` and the brief preview
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: EXECUTED 2026-10-27 (`show` and `ShowReport`; `validate --brief` renders `new`'s
+canonical brief, with findings, fingerprint and sizes on a human's stderr; reviewed once and fixed)
 Acceptance tests: traced
 
 | Field | Value |
