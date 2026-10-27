@@ -37,7 +37,8 @@ export function listResult(
   group: Group | undefined,
   records: ReadonlyArray<LedgerRecord> = [],
 ): ListResult {
-  const kind = group === undefined ? undefined : group === "stacks" ? "stack" : "fragment";
+  let kind: "stack" | "fragment" | undefined;
+  if (group !== undefined) kind = group === "stacks" ? "stack" : "fragment";
   return {
     entries: items
       .filter((item): item is Entry => !isRejected(item))
@@ -70,6 +71,18 @@ const sections = [
   { title: "Apps", group: "apps" },
 ] as const;
 
+function categoryFields(row: ListRow): string[] {
+  if (row.category === "app") return [`on ${printable((row.appliesTo ?? []).join(", "))}`];
+  return row.category ? [row.category] : [];
+}
+
+function ledgerFields(row: ListRow, present: boolean | undefined): string[] {
+  if (!present || row.kind !== "stack") return [];
+  if (!row.lastRun) return ["unproven"];
+  const result = row.lastRun.result === "pass" ? "proven" : row.lastRun.result;
+  return [`${result} ${printable(row.lastRun.date)}`];
+}
+
 /**
  * The human view: one section per group with rows, a Rejected block, then `Next:` lines. `all`
  * is every row in the registry (not only this group), which picks the stack `Next:` names. Every
@@ -88,18 +101,8 @@ export function renderList(
     [
       printable(row.id).padEnd(idWidth),
       ...(showOrigin ? [row.origin.padEnd(originWidth)] : []),
-      ...(row.category === "app"
-        ? [`on ${printable((row.appliesTo ?? []).join(", "))}`]
-        : row.category
-          ? [row.category]
-          : []),
-      ...(options.ledgerPresent && row.kind === "stack"
-        ? [
-            row.lastRun
-              ? `${row.lastRun.result === "pass" ? "proven" : row.lastRun.result} ${printable(row.lastRun.date)}`
-              : "unproven",
-          ]
-        : []),
+      ...categoryFields(row),
+      ...ledgerFields(row, options.ledgerPresent),
       ...(row.trusted ? [] : ["untrusted"]),
       ...(row.shadows.length ? [`shadows ${row.shadows.join(", ")}`] : []),
     ]

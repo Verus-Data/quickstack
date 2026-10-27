@@ -11,6 +11,8 @@ export function targetAgents(
   settings: Pick<Settings, "agents">,
 ): ReadonlyArray<AgentId> {
   const fallback: ReadonlyArray<AgentId> = ["claude"];
-  const chosen = flag?.length ? flag : settings.agents?.length ? settings.agents : fallback;
+  let chosen = fallback;
+  if (flag?.length) chosen = flag;
+  else if (settings.agents?.length) chosen = settings.agents;
   return [...new Set(chosen)];
 }

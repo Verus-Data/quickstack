@@ -13,11 +13,9 @@ const gitLine = (result: Pick<NewResult, "warnings" | "git" | "dryRun">) => {
   const unusable = result.warnings.find((warning) => warning.code === "git_unusable");
   if (unusable)
     return `git couldn't tell whether this is inside a repository${unusable.exitCode === undefined ? "" : ` (exit ${unusable.exitCode})`}; none used. Run git status in the project to see git's error`;
-  return result.git === "fresh"
-    ? "new repository, nothing committed"
-    : result.git === "parent"
-      ? "part of an existing repository; nothing committed"
-      : "git not found; no repository";
+  if (result.git === "fresh") return "new repository, nothing committed";
+  if (result.git === "parent") return "part of an existing repository; nothing committed";
+  return "git not found; no repository";
 };
 
 const warningLine = (warning: NewResult["warnings"][number]) => {

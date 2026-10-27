@@ -44,6 +44,25 @@ export const checkAddRoot = (root: string) =>
     }
   });
 
+const checkOwnRepo = (root: string, needsOwnRepo: ReadonlyArray<string>) =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    if (needsOwnRepo.length) {
+      const toplevel = yield* gitToplevel(root);
+      if (toplevel) {
+        const top = yield* fs.realPath(toplevel).pipe(Effect.mapError(() => denied(root)));
+        if (top !== root)
+          return yield* new ComposeConflict({
+            details: {
+              reason: "needs_own_repo",
+              ids: [...needsOwnRepo],
+              path: top,
+            },
+          });
+      }
+    }
+  });
+
 /** Read-only classification. The live tree is never a merge target (D4). */
 export const planAdd = (input: {
   readonly root: string;
@@ -55,20 +74,7 @@ export const planAdd = (input: {
     const path = yield* Path.Path;
     yield* checkAddRoot(input.root);
     const root = yield* fs.realPath(input.root).pipe(Effect.mapError(() => denied(input.root)));
-    if (input.composition.needsOwnRepo.length) {
-      const toplevel = yield* gitToplevel(root);
-      if (toplevel) {
-        const top = yield* fs.realPath(toplevel).pipe(Effect.mapError(() => denied(root)));
-        if (top !== root)
-          return yield* new ComposeConflict({
-            details: {
-              reason: "needs_own_repo",
-              ids: [...input.composition.needsOwnRepo],
-              path: top,
-            },
-          });
-      }
-    }
+    yield* checkOwnRepo(root, input.composition.needsOwnRepo);
     const incoming: string[] = [];
     const walk = (rel: string): Effect.Effect<void, PermissionDenied> =>
       Effect.gen(function* () {
@@ -89,6 +95,11 @@ export const planAdd = (input: {
         }
       });
     yield* walk(INCOMING);
+    const checkLink = (at: string) =>
+      Effect.gen(function* () {
+        const real = yield* fs.realPath(at).pipe(Effect.mapError(() => denied(at)));
+        if (!within(root, real, path.sep)) return yield* denied(at);
+      });
     const read = (rel: string) =>
       Effect.gen(function* () {
         // Check every existing prefix before reading: a live ancestor must not escape the project.
@@ -104,10 +115,7 @@ export const planAdd = (input: {
             ),
           );
           if (info === "Missing") return undefined;
-          if (info === "SymbolicLink") {
-            const real = yield* fs.realPath(at).pipe(Effect.mapError(() => denied(at)));
-            if (!within(root, real, path.sep)) return yield* denied(at);
-          }
+          if (info === "SymbolicLink") yield* checkLink(at);
         }
         return yield* fs
           .readFile(path.join(root, rel))
@@ -131,22 +139,13 @@ export const planAdd = (input: {
     for (const { file, bytes, live } of candidates)
       if (live !== undefined && !same(live, bytes)) reserve(`${INCOMING}/${file.path}`);
     for (const file of incoming) reserve(file);
-    for (const { file, bytes, live } of candidates) {
-      if (live === undefined) {
-        write.push({ ...file, bytes });
-        continue;
-      }
-      if (same(live, bytes)) {
-        skipped.push(file.path);
-        continue;
-      }
-      const destination = `${INCOMING}/${file.path}`;
-      const parked = yield* read(destination);
-      if (parked === undefined) {
-        park.push({ file, bytes, incoming: destination, action: "new" });
-        incoming.push(destination);
-      } else if (same(parked, bytes)) skipped.push(file.path);
-      else {
+    const mergeParked = (
+      file: PlannedFile,
+      bytes: Uint8Array,
+      destination: string,
+      parked: Uint8Array,
+    ) =>
+      Effect.gen(function* () {
         const merged = yield* Effect.option(
           Effect.try(() => {
             const previous: unknown = JSON.parse(decoder.decode(parked));
@@ -173,8 +172,35 @@ export const planAdd = (input: {
           park.push({ file, bytes, incoming: copy, action: "copy" });
           incoming.push(copy);
         }
-      }
-    }
+      });
+    const parkConflict = (file: PlannedFile, bytes: Uint8Array) =>
+      Effect.gen(function* () {
+        const destination = `${INCOMING}/${file.path}`;
+        const parked = yield* read(destination);
+        if (parked === undefined) {
+          park.push({ file, bytes, incoming: destination, action: "new" });
+          incoming.push(destination);
+          return;
+        }
+        if (same(parked, bytes)) {
+          skipped.push(file.path);
+          return;
+        }
+        yield* mergeParked(file, bytes, destination, parked);
+      });
+    const classify = ({ file, bytes, live }: (typeof candidates)[number]) =>
+      Effect.gen(function* () {
+        if (live === undefined) {
+          write.push({ ...file, bytes });
+          return;
+        }
+        if (same(live, bytes)) {
+          skipped.push(file.path);
+          return;
+        }
+        yield* parkConflict(file, bytes);
+      });
+    for (const candidate of candidates) yield* classify(candidate);
     return {
       write,
       park,
@@ -193,6 +219,9 @@ export function mergeNeeded(incoming: ReadonlyArray<string>): AddResult["mergeNe
     groups.set(rel, [...(groups.get(rel) ?? []), file]);
   }
   return [...groups]
-    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+    .sort(([a], [b]) => {
+      if (a < b) return -1;
+      return a > b ? 1 : 0;
+    })
     .map(([path, incoming]) => ({ path, incoming }));
 }

@@ -58,12 +58,13 @@ export const ground = {
   heading: "## Ground rules",
   generators:
     "- Run generators non-interactively, into their own subdirectory or a temporary directory you move the result from. Never run one into the populated project root.",
-  git: (git: GitState) =>
-    git.kind === "fresh"
-      ? "- The project root is a new git repository with no commits. Skip generators' own git setup."
-      : git.kind === "parent"
-        ? `- The project root is inside the git repository at ${code(git.toplevel)}. Skip generators' own git setup, and don't commit without asking the user.`
-        : "- git isn't installed, so there is no repository. Skip generators' git setup and all commits.",
+  git: (git: GitState) => {
+    if (git.kind === "fresh")
+      return "- The project root is a new git repository with no commits. Skip generators' own git setup.";
+    if (git.kind === "parent")
+      return `- The project root is inside the git repository at ${code(git.toplevel)}. Skip generators' own git setup, and don't commit without asking the user.`;
+    return "- git isn't installed, so there is no repository. Skip generators' git setup and all commits.";
+  },
   written:
     "- The files quickstacks wrote are starting points: adapt them to what you build, don't delete them.",
   agentsMd:
@@ -185,12 +186,13 @@ export const done = {
   ],
   after: "### After green",
   docs: "1. Check that `AGENTS.md` and `README.md` describe the project you built: real commands, no `quickstacks:fill` markers left. Verify doesn't check this unless a step does.",
-  commit: (git: GitState, project: string, stack: string) =>
-    git.kind === "fresh"
-      ? `2. Commit everything with the message ${code(`chore: scaffold ${project} from the ${stack} stack`)}.`
-      : git.kind === "parent"
-        ? "2. Don't commit: this is someone else's repository. List the files to commit in your summary and ask the user."
-        : "2. Skip commits (git isn't installed) and say so in your summary.",
+  commit: (git: GitState, project: string, stack: string) => {
+    if (git.kind === "fresh")
+      return `2. Commit everything with the message ${code(`chore: scaffold ${project} from the ${stack} stack`)}.`;
+    if (git.kind === "parent")
+      return "2. Don't commit: this is someone else's repository. List the files to commit in your summary and ask the user.";
+    return "2. Skip commits (git isn't installed) and say so in your summary.";
+  },
   summary: `3. End with a short summary: what you built, the decisions you took (with their defaults), anything you couldn't do, and a pointer to \`${NOTES_PATH}\` for what this brief got wrong.`,
 };
 

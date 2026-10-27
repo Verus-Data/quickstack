@@ -1,7 +1,10 @@
 /** Optimal string alignment distance: Levenshtein plus adjacent transpositions as one edit. */
 function distance(a: string, b: string): number {
   const rows = Array.from({ length: a.length + 1 }, (_, i) =>
-    Array.from({ length: b.length + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0)),
+    Array.from({ length: b.length + 1 }, (_, j) => {
+      if (i === 0) return j;
+      return j === 0 ? i : 0;
+    }),
   );
   const at = (i: number, j: number) => rows[i]?.[j] ?? Number.POSITIVE_INFINITY;
   for (let i = 1; i <= a.length; i++)
@@ -21,7 +24,10 @@ function distance(a: string, b: string): number {
  * "did you mean" helper for the CLI.
  */
 export function closest(name: string, known: readonly string[]): string[] {
-  const order = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+  const order = (a: string, b: string) => {
+    if (a < b) return -1;
+    return a > b ? 1 : 0;
+  };
   const target = name.toLowerCase();
   return known
     .map((candidate) => {
