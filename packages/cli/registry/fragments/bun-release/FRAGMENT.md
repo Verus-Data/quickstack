@@ -11,6 +11,8 @@ tools: [bun]
 decisions:
   - "Release targets: darwin arm64 and x64, Linux x64 and arm64 with glibc (default). Defer musl and Windows."
   - "Releases repository: package scope/project slug on GitHub (default). Record confirmation under Pending user actions."
+verify:
+  - { name: release-build-all, layer: build, run: bun run build:all }
 commands:
   build:all: Compile each release target and write SHA256SUMS
 ---
@@ -19,7 +21,7 @@ commands:
 
 The stack's host build remains independent. Extend its build script with `--all`, producing `dist/<slug>-<os>-<arch>` and SHA256SUMS. Disable dotenv and bunfig autoload, minify, and remove linked sourcemaps from distributable output. Keep version and asset naming consistent across build, installer, and update.
 
-The shipped `install.sh` detects the supported OS/architecture, selects the release asset, verifies SHA256SUMS, and atomically renames into the configured install directory. Add the prefixed RELEASES_REPO, RELEASES_URL, and INSTALL_DIR variables to the stack-owned config, `.env.example`, and README. Never replace an existing binary on failed download or checksum mismatch.
+The shipped `install.sh` detects the supported OS/architecture, selects the release asset, verifies SHA256SUMS, and atomically renames into the configured install directory. Add the prefixed RELEASES_REPO, RELEASES_URL, and INSTALL_DIR variables to the stack-owned config, `.env.example`, and README. Never replace an existing binary on failed download or checksum mismatch. If the package scope is empty (unscoped project), the installer's default repository has no owner: ask the user for the GitHub owner, make it the RELEASES_REPO default, and record it under Pending user actions.
 
 Implement an `update` command with `--check`. Read release settings independently so broken application configuration cannot block repair. Refuse replacement when running from source. Download to a temporary file beside the running binary, verify checksum, chmod executable, and atomically rename. Permission failures have an actionable hint; checksum and network failures preserve the old binary. Use a Releases service and local `startStubReleases` test server with release metadata, assets, checksums, and scriptable failures.
 

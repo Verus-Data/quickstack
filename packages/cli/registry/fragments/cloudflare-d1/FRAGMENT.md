@@ -14,6 +14,7 @@ decisions:
   - "D1 binding name (default: DB)."
   - "Database name (default: project slug)."
 verify:
+  - { name: db-generate, phase: setup, layer: install, run: bun run db:generate }
   - { name: db-migrate, phase: setup, layer: install, run: bun run db:migrate }
 commands:
   db:generate: Generate SQL migrations from the Drizzle schema

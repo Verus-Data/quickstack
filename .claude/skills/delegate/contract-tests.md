@@ -74,6 +74,19 @@ assertions, so each test must:
 - match formats the code already has (ids, digests such as `sha256:<hex>`, paths): read the
   producing function rather than guessing a shape.
 
+Known traps, each of which has cost a run in this repo:
+
+- Comparing compiled binaries or other large files as buffers: Vitest's diff on a mismatch
+  stalls the run. Compare sha256 digests.
+- Compiling the binary per test: a compile takes about 20 s. Compile once per file in
+  `beforeAll`, or use the e2e suite, which compiles once.
+- Temp paths without `realpathSync`: on macOS `/var` is `/private/var`, so a path the CLI prints
+  won't equal the one the test built. Resolve the temp dir first.
+- Tests that need more than Vitest's default timeout: a test that runs the whole registry or a
+  matrix states its budget with a reason, and a cheaper fixture beats a longer timeout.
+- Racing an abort or signal against a command that can finish first; see "be deterministic"
+  above.
+
 Steps:
 
 1. Read the plan. Check each acceptance item against the current code; where the plan is wrong
@@ -88,7 +101,8 @@ Steps:
 4. Run them and confirm each fails for the expected reason (missing module or export, or wrong
    behaviour), not a test bug. Typecheck failures from imports of not-yet-existing modules are
    expected; anything else in `bun run typecheck` or `bun run lint` must be clean in your files.
-5. Run `bun run test:hooks` from the repo root: the acceptance trace must pass, which
+5. Run the root tests from the repo root (`rr test-hooks`, or `bun run test:hooks` in a clone
+   without rr; AGENTS.md "Test runs"): the acceptance trace must pass, which
    proves every number has a tagged test.
 
 ## Do not
@@ -101,25 +115,25 @@ Steps:
 ## Review before hand-off
 
 Once your tests are written and fail for the right reasons, get one independent code review and
-fix what it finds. The reviewer is the `ce:code-reviewer` agent, `${ce}agents/code-reviewer.md`:
-its body is the reviewer's instructions and its `skills:` frontmatter names the skills it loads
-(`${ce}skills/<name>/SKILL.md`).
+fix what it finds. The reviewer is this repo's `code-reviewer` agent,
+`.claude/agents/code-reviewer.md`, which extends the `ce:code-reviewer` agent
+(`${ce}agents/code-reviewer.md`); both bodies go into the prompt, the repo's last so it wins.
 
 Run it as a fresh Codex process, read-only, with its report going to a file outside the worktree:
 
 ```bash
 review="$(mktemp -d)"
+body() { awk 'NR==1&&/^---$/{f=1;next} f&&/^---$/{f=0;next} !f' "$1"; }  # without frontmatter
 {
-  awk 'NR==1&&/^---$/{f=1;next} f&&/^---$/{f=0;next} !f' "${ce}agents/code-reviewer.md"
+  body "${ce}agents/code-reviewer.md"
   echo
-  echo "Load these skills first: <paths from its skills: line>."
-  # The merge base, not the branch tip: work merged into the base since this branch started
-  # would otherwise read as reverted by this diff.
-  echo "Review the uncommitted work in $PWD: git diff $(git merge-base HEAD {BASE BRANCH}), plus"
-  echo "every untracked file. These are failing acceptance tests written ahead of the code;"
-  echo "review them as tests: do they assert the plan's behaviour, would a wrong implementation"
-  echo "pass them, are they flaky or coupled to internals. Repo standards: AGENTS.md and"
-  echo ".claude/rules/. Your sandbox is read-only, so don't run Vitest. The task's contract:"
+  body .claude/agents/code-reviewer.md
+  echo
+  echo "Skills: ${ce}skills/writing-tests/SKILL.md, ${ce}skills/architecting-systems/SKILL.md."
+  echo "The base branch is {BASE BRANCH}; review the uncommitted work in $PWD. These are"
+  echo "failing acceptance tests written ahead of the code; review them as tests: do they"
+  echo "assert the plan's behaviour, would a wrong implementation pass them, are they flaky or"
+  echo "coupled to internals. Your sandbox is read-only, so don't run Vitest. The task's contract:"
   cat "{THIS CONTRACT'S PATH}"
 } > "$review/prompt.md"
 codex exec --ephemeral --sandbox read-only -m gpt-6.1-sol -c 'model_reasoning_effort="high"' \

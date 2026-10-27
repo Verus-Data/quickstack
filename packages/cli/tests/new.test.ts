@@ -359,7 +359,12 @@ describe("new refuses before writing", () => {
   test("an unknown {{name}} in a template is EntryInvalid template, and the target never appears [1.2a#5]", async () => {
     const home = setup();
     const registry = join(home, "registry");
-    const stack = writeEntry(registry, "stack", "tmpl-stack", minimal("stack", "tmpl-stack"));
+    const stack = writeEntry({
+      root: registry,
+      kind: "stack",
+      dir: "tmpl-stack",
+      frontmatter: minimal("stack", "tmpl-stack"),
+    });
     mkdirSync(join(stack, "files"));
     writeFileSync(join(stack, "files", "a.txt"), "first\n");
     writeFileSync(join(stack, "files", "z.yml.tmpl"), "name: {{project_name}}\nx: ${{ github }}\n");
@@ -481,7 +486,12 @@ describe("new refuses before writing", () => {
     ]) {
       const home = setup();
       const registry = join(home, "registry");
-      const stack = writeEntry(registry, "stack", "sneaky", minimal("stack", "sneaky"));
+      const stack = writeEntry({
+        root: registry,
+        kind: "stack",
+        dir: "sneaky",
+        frontmatter: minimal("stack", "sneaky"),
+      });
       mkdirSync(join(stack, "files", reserved, ".."), { recursive: true });
       writeFileSync(join(stack, "files", reserved), "planted");
       const { status, stdout, stderr } = await newCli(["sneaky", "app", "--json"], {
@@ -501,7 +511,12 @@ describe("new refuses before writing", () => {
   test("a reserved path in human mode says the CLI owns .git/ and .quickstacks/", async () => {
     const home = setup();
     const registry = join(home, "registry");
-    const stack = writeEntry(registry, "stack", "sneaky", minimal("stack", "sneaky"));
+    const stack = writeEntry({
+      root: registry,
+      kind: "stack",
+      dir: "sneaky",
+      frontmatter: minimal("stack", "sneaky"),
+    });
     mkdirSync(join(stack, "files", ".GIT"), { recursive: true });
     writeFileSync(join(stack, "files", ".GIT", "config"), "planted");
     const { status, stdout, stderr } = await newCli(["sneaky", "app"], {
@@ -532,13 +547,18 @@ describe("new refuses before writing", () => {
     ] as const) {
       const home = setup();
       const registry = join(home, "registry");
-      const stack = writeEntry(
-        registry,
-        "stack",
-        "clash",
-        minimal("stack", "clash", "fragments:\n  default: [other]"),
-      );
-      const fragment = writeEntry(registry, "fragment", "other", minimal("fragment", "other"));
+      const stack = writeEntry({
+        root: registry,
+        kind: "stack",
+        dir: "clash",
+        frontmatter: minimal("stack", "clash", "fragments:\n  default: [other]"),
+      });
+      const fragment = writeEntry({
+        root: registry,
+        kind: "fragment",
+        dir: "other",
+        frontmatter: minimal("fragment", "other"),
+      });
       mkdirSync(join(stack, "files"), { recursive: true });
       writeFileSync(join(stack, "files", stackFile), "stack");
       mkdirSync(join(fragment, "files", fragmentFile, ".."), { recursive: true });
@@ -568,7 +588,12 @@ describe("new and the filesystem", () => {
     // A litter name is ignored by the emptiness check, so a link there is the target's only entry.
     symlinkSync(outside, join(app, ".DS_Store"));
     const registry = join(home, "registry");
-    const stack = writeEntry(registry, "stack", "linker", minimal("stack", "linker"));
+    const stack = writeEntry({
+      root: registry,
+      kind: "stack",
+      dir: "linker",
+      frontmatter: minimal("stack", "linker"),
+    });
     mkdirSync(join(stack, "files", ".DS_Store"), { recursive: true });
     writeFileSync(join(stack, "files", ".DS_Store", "evil.txt"), "x");
     const { status, stdout, stderr } = await newCli(["linker", "app", "--json"], {
@@ -653,6 +678,58 @@ describe("new and the filesystem", () => {
 });
 
 describe("template variables", () => {
+  test.each(['a"b', "a\\b"])(
+    "an unsafe directory-derived name is refused before rendering: %s",
+    async (name) => {
+      const home = setup();
+      const result = await newCli(["fixture-stack", name, "--json"], { home });
+      expect(result.status).toBe(2);
+      expect(result.stdout).toBe("");
+      expect(result.stderr.trim().split("\n")).toHaveLength(1);
+      expect(JSON.parse(result.stderr)).toEqual({
+        error: {
+          tag: "BadInput",
+          message: "Invalid input.",
+          retryable: false,
+          details: { id: name, flag: "name" },
+        },
+      });
+      expect(existsSync(join(home, name))).toBe(false);
+    },
+  );
+
+  test.each(['a"b', "a\\b"])(
+    "a name containing a quote or backslash is refused before rendering: %s",
+    async (name) => {
+      const home = setup();
+      const registry = join(home, "registry");
+      const entry = writeEntry({
+        root: registry,
+        kind: "stack",
+        dir: "json-name",
+        frontmatter: minimal("stack", "json-name"),
+      });
+      mkdirSync(join(entry, "files"));
+      writeFileSync(join(entry, "files/package.json.tmpl"), '{"name":"{{project_name}}"}');
+      const result = await newCli(["json-name", "app", "--name", name, "--json"], {
+        home,
+        registry,
+      });
+      expect(result.status).toBe(2);
+      expect(result.stdout).toBe("");
+      expect(result.stderr.trim().split("\n")).toHaveLength(1);
+      expect(JSON.parse(result.stderr)).toEqual({
+        error: {
+          tag: "BadInput",
+          message: "Invalid input.",
+          retryable: false,
+          details: { id: name, flag: "name" },
+        },
+      });
+      expect(existsSync(join(home, "app"))).toBe(false);
+    },
+  );
+
   const readme = async (args: string[], options: Parameters<typeof newCli>[1] = {}) => {
     const run = await newCli(["fixture-stack", "app", ...args], options);
     expect(run.status).toBe(0);
@@ -734,7 +811,12 @@ describe("template variables", () => {
   test("a .gitignore shipped as .gitignore.tmpl with no tokens is written as .gitignore, unchanged", async () => {
     const home = setup();
     const registry = join(home, "registry");
-    const stack = writeEntry(registry, "stack", "ignores", minimal("stack", "ignores"));
+    const stack = writeEntry({
+      root: registry,
+      kind: "stack",
+      dir: "ignores",
+      frontmatter: minimal("stack", "ignores"),
+    });
     mkdirSync(join(stack, "files"));
     // Braces that aren't a token, a negation and a trailing-space escape stay as written.
     const rules = "node_modules/\n.env.*\n!.env.example\n# {not a token}\nkeep\\ \n";

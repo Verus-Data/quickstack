@@ -39,6 +39,12 @@ or {
     $filename <: not r".*/src/(?:config|bin)\.ts",
     register_diagnostic(span=$e, message="Read environment in config.ts.")
   },
+  `import.meta.$property` as $location where {
+    $property <: r"^(?:url|dirname|filename)$",
+    $filename <: r".*/src/.*",
+    $filename <: not r".*/src/bin\.ts",
+    register_diagnostic(span=$location, message="Resolve paths from the module location only in bin.ts; pass them through Host.")
+  },
   `process.stdout` as $o where {
     $filename <: r".*/src/.*",
     $filename <: not r".*/src/bin\.ts",

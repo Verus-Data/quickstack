@@ -31,8 +31,21 @@ export type RejectedEntry = {
  */
 export type EntryFile = { source: string; path: string; mode: number };
 
+/** Output path of a shipped file; a literal `.tmpl` basename is copied unchanged. */
+export function outputPath(file: Pick<EntryFile, "path">): string {
+  const suffix = ".tmpl";
+  const base = file.path.slice(file.path.lastIndexOf("/") + 1);
+  return base.endsWith(suffix) && base.length > suffix.length
+    ? file.path.slice(0, -suffix.length)
+    : file.path;
+}
+
 export function isRejected(value: Entry | RejectedEntry): value is RejectedEntry {
   return "error" in value;
+}
+/** A loaded (not rejected) stack. */
+export function isStack(value: Entry | RejectedEntry): value is Entry & { meta: StackMeta } {
+  return "meta" in value && value.meta.kind === "stack";
 }
 export const markdownFile = (kind: Kind) => (kind === "stack" ? "STACK.md" : "FRAGMENT.md");
 
@@ -68,17 +81,44 @@ function issueLine(error: Schema.SchemaError): string {
   if (!first) return "frontmatter: invalid";
   const path = (first.path ?? [])
     .map((segment) => (typeof segment === "object" ? segment.key : segment))
-    .reduce<string>(
-      (acc, key) =>
-        typeof key === "number" ? `${acc}[${key}]` : acc ? `${acc}.${String(key)}` : String(key),
-      "",
-    );
+    .reduce<string>((acc, key) => {
+      if (typeof key === "number") return `${acc}[${key}]`;
+      return acc ? `${acc}.${String(key)}` : String(key);
+    }, "");
   const message = first.message.split("\n")[0] ?? "";
   if (message === "Expected no excess property") {
     const last = String(first.path?.at(-1) ?? "");
     return `${path}: unknown key${/[A-Z]/.test(last) ? " (frontmatter keys are snake_case)" : ""}`;
   }
   return `${path || "frontmatter"}: ${message}`;
+}
+
+function checkHeader(kind: Kind, value: unknown): Exclude<Decoded, { _tag: "Meta" }> | undefined {
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "schema_version" in value &&
+    typeof value.schema_version === "number" &&
+    value.schema_version > 1
+  )
+    return { _tag: "Newer", version: value.schema_version } as const;
+  // Checked first so a FRAGMENT.md's frontmatter in a STACK.md names the real mistake.
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "kind" in value &&
+    typeof value.kind === "string" &&
+    value.kind !== kind
+  )
+    return {
+      _tag: "Invalid",
+      error: `kind: ${JSON.stringify(value.kind)} does not match ${markdownFile(kind)}`,
+    } as const;
+  return undefined;
+}
+
+function yamlMessage(failure: unknown): string | undefined {
+  return String(failure instanceof Error ? failure.message : failure).split("\n")[0];
 }
 
 /** Splits, parses and decodes one entry's markdown file. Never fails: problems are values. */
@@ -99,29 +139,11 @@ export function decodeEntry(kind: Kind, text: string): Effect.Effect<Decoded> {
     if (Result.isFailure(yaml))
       return {
         _tag: "Invalid",
-        error: `frontmatter: not valid YAML (${String(yaml.failure instanceof Error ? yaml.failure.message : yaml.failure).split("\n")[0]})`,
+        error: `frontmatter: not valid YAML (${yamlMessage(yaml.failure)})`,
       } as const;
     const value = yaml.success;
-    if (
-      typeof value === "object" &&
-      value !== null &&
-      "schema_version" in value &&
-      typeof value.schema_version === "number" &&
-      value.schema_version > 1
-    )
-      return { _tag: "Newer", version: value.schema_version } as const;
-    // Checked first so a FRAGMENT.md's frontmatter in a STACK.md names the real mistake.
-    if (
-      typeof value === "object" &&
-      value !== null &&
-      "kind" in value &&
-      typeof value.kind === "string" &&
-      value.kind !== kind
-    )
-      return {
-        _tag: "Invalid",
-        error: `kind: ${JSON.stringify(value.kind)} does not match ${markdownFile(kind)}`,
-      } as const;
+    const header = checkHeader(kind, value);
+    if (header) return header;
     const decode: Effect.Effect<StackMeta | FragmentMeta, Schema.SchemaError> =
       kind === "stack"
         ? Schema.decodeUnknownEffect(StackMeta, { onExcessProperty: "error" })(value)

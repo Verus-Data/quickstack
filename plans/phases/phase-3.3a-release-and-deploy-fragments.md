@@ -1,11 +1,14 @@
 # Phase 3.3a: Release and deploy fragments
 
-Status: DRAFT 2026-10-26 (not agreed). Re-scoped 2026-10-26: D28 is superseded, so
+Status: EXECUTED 2026-10-27 (every traced acceptance test, and `bun-release`'s empty-scope
+guidance). Unproved: every release and deploy fragment's bench proof, which needs real
+`bun run bench --preset default` runs and is the maintainers'. Drafted 2026-10-26. Re-scoped 2026-10-26: D28 is superseded, so
 `package_scope`, `--scope` and `Settings.package_scope` are built in
 [1.2a](phase-1.2a-new-scaffold-and-templates.md) as part of v1, with no
 `schema_version: 2` and no `template-version` check; and 1.6a brings the bundled release
 and deploy fragments into v1, so this file gives each its bench proof and keeps the
 proof rule rather than authoring them. Body rewritten to match 2026-10-26
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -103,18 +106,23 @@ show, in its bench run:
 
 ## Acceptance tests
 
-- For each release and deploy fragment and each bundled stack it applies to:
-  `new <stack> --with <fragment> --no-launch --json` succeeds, writes no file outside the
-  project, runs no command (recording shim on `PATH`), and the manifest's steps carry
-  layers; `validate` reports zero warnings.
-- For each of them, the ledger holds a `pass` record whose `with` includes it (asserted by
-  `tests/registry.test.ts`).
-- A release fragment that ships an install script: its own verify, against a fixture
-  archive and a wrong checksums file, exits non-zero and moves nothing.
-- Two release fragments that conflict, composed together on a stack both apply to:
-  `ComposeConflict` reason `conflicts`.
-- A fragment that uses `{{package_scope}}`, composed with `--scope @acme`, renders `acme`;
-  with no scope, its prose's unscoped path applies (1.2a owns the variable's own tests).
+1. For each release and deploy fragment and each bundled stack it applies to:
+   `new <stack> --with <fragment> --no-launch --json` succeeds; dry runs cover the
+   matrix, and one real write per fragment changes only project files and the CLI's
+   state record, runs only the CLI's fixed git commands, and records step layers;
+   `validate` reports zero errors and zero warnings.
+2. A release fragment that ships an install script rejects a local asset with a wrong
+   checksums file, reports expected and actual digests, and moves nothing; a matching
+   checksum succeeds and installs the executable. No fragment verify step runs the
+   installer.
+3. Two release fragments that conflict, composed together on a stack both apply to:
+   `ComposeConflict` reason `conflicts` (fixture registry when none are bundled).
+4. A fragment using `{{package_scope}}`, composed with `--scope @acme`, renders `acme`;
+   with no scope, its prose explains the unscoped path.
+
+### Realistic edge cases
+
+5. A checksum mismatch preserves an existing executable in an install directory with spaces and shell metacharacters.
 
 ## Exit criteria
 
@@ -138,3 +146,25 @@ show, in its bench run:
   them and owns the proof rule. The proof rule's budget numbers now point at 1.5's caps
   rather than restating D5's, since the roadmap's Feature gaps row proposes changing
   them, and a `serve` step's check is `expect`, not a probe.
+
+- 2026-10-27: Ledger `pass` records including every release/deploy fragment are
+  maintainer exit criteria, requiring real `bun run bench --preset default` runs and
+  notes. Automated composition tests do not supply that proof.
+- 2026-10-27: The catalog has `bun-release` and `goreleaser` (release), and
+  `cloudflare-pages` and `docker-deploy` (deploy). `bun-release` uses `package_scope`
+  and ships the only installer; it consumes a binary asset plus `SHA256SUMS`, not an
+  archive. Its only verify step currently builds; the missing installation test and
+  empty-scope guidance remain acceptance requirements. No bundled fragment declares
+  `conflicts`, so that rule uses a fixture registry. None of these four has `requires`.
+  Empty `applies_to` means all stacks; otherwise ids or tags match.
+- 2026-10-27: `new` runs fixed git discovery/init commands and writes an out-of-project
+  state record by design. The safety assertion allows exactly those effects, not
+  entry commands, installers or tools. Dry runs cover every pair cheaply; real writes
+  cover each fragment once.
+
+- 2026-10-27: The plan's "its own verify, against a fixture archive" is read as the
+  shipped `install.sh` tested directly against a local release server, not as a fragment
+  verify step. A verify step that ran the installer would, in a real project, reach
+  api.github.com and write into `~/.local/bin`, and the fragment's own guidance keeps
+  network access outside automated verification; the project's installer tests are the
+  agent's, against its `startStubReleases` server.

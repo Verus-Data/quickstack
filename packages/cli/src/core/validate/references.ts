@@ -1,5 +1,6 @@
 import { Effect } from "effect";
 import type { Finding } from "../../schemas/validate";
+import { type Entry, isStack } from "../registry/entry";
 import { closest } from "../suggest";
 import { type Check, entryFile, finding } from "./view";
 
@@ -15,12 +16,8 @@ export const referenceChecks: Check = (view) =>
     const findings: Finding[] = [];
     const fragments = view.all.filter((item) => item.kind === "fragment");
     const stacks = view.all.filter((item) => item.kind === "stack");
-    const tags = new Set(
-      stacks.flatMap((item) =>
-        "meta" in item && item.meta.kind === "stack" ? item.meta.tags : [],
-      ),
-    );
-    for (const entry of view.entries) {
+    const tags = new Set(stacks.filter(isStack).flatMap((item) => item.meta.tags));
+    const checkNamed = (entry: Entry) => {
       const file = entryFile(view, entry);
       const { meta } = entry;
       const named: Array<[string, ReadonlyArray<string>]> =
@@ -34,34 +31,38 @@ export const referenceChecks: Check = (view) =>
               ["requires", meta.requires],
               ["conflicts", meta.conflicts],
             ];
-      for (const [field, ids] of named)
-        for (const id of ids) {
-          const target = fragments.find((item) => item.id === id);
-          if (!target) {
-            const near = closest(
-              id,
-              fragments.map((item) => item.id),
-            );
-            findings.push(
-              finding(entry, {
-                check: "unknown-reference",
-                severity: "error",
-                file,
-                message: `${field} names ${id}, which is no fragment${near.length ? `; did you mean ${near.join(", ")}?` : ""}`,
-              }),
-            );
-          } else if (!view.inRoot(target))
-            findings.push(
-              finding(entry, {
-                check: "resolved-outside-root",
-                severity: "note",
-                file,
-                message: `${field} names ${id}, found in the ${target.origin} registry`,
-              }),
-            );
-        }
-      if (meta.kind !== "fragment") continue;
-      for (const value of meta.appliesTo) {
+      const checkReference = (field: string, id: string) => {
+        const target = fragments.find((item) => item.id === id);
+        if (!target) {
+          const near = closest(
+            id,
+            fragments.map((item) => item.id),
+          );
+          findings.push(
+            finding(entry, {
+              check: "unknown-reference",
+              severity: "error",
+              file,
+              message: `${field} names ${id}, which is no fragment${near.length ? `; did you mean ${near.join(", ")}?` : ""}`,
+            }),
+          );
+        } else if (!view.inRoot(target))
+          findings.push(
+            finding(entry, {
+              check: "resolved-outside-root",
+              severity: "note",
+              file,
+              message: `${field} names ${id}, found in the ${target.origin} registry`,
+            }),
+          );
+      };
+      for (const [field, ids] of named) for (const id of ids) checkReference(field, id);
+    };
+    const checkAppliesTo = (entry: Entry) => {
+      const { meta } = entry;
+      const file = entryFile(view, entry);
+      if (meta.kind !== "fragment") return;
+      const checkValue = (value: string) => {
         const stack = stacks.find((item) => item.id === value);
         if (stack) {
           if (!view.inRoot(stack))
@@ -82,7 +83,12 @@ export const referenceChecks: Check = (view) =>
               message: `applies_to names ${value}, which is no stack id and no tag any stack declares`,
             }),
           );
-      }
+      };
+      for (const value of meta.appliesTo) checkValue(value);
+    };
+    for (const entry of view.entries) {
+      checkNamed(entry);
+      checkAppliesTo(entry);
     }
     return { findings };
   });

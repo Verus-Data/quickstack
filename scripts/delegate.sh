@@ -17,6 +17,14 @@
 # the network, `bun add`, git, process inspection and the whole gate. The worktree isolates the
 # work from other work; it doesn't contain Codex. Read-only mode uses Codex's read-only sandbox.
 #
+# Hooks: .codex/hooks.json runs the repo's command guard (.claude/hooks/guard-commands.ts) and
+# destructive-command guard (.claude/hooks/block-destructive.sh) before each shell command, as
+# Claude Code's settings do. The Edit/Write guards (secrets, repo content, boundaries) don't run
+# on apply_patch, so the orchestrator's diff review covers them. Codex trusts a project hook only by its
+# absolute path, and every worktree is a new path, so the run passes
+# --dangerously-bypass-hook-trust: the hooks file is tracked, and the orchestrator reviews any
+# change to it in the delegate's diff.
+#
 # Logs go outside the worktree so they survive its removal:
 #   ${DELEGATE_LOG_ROOT:-$TMPDIR/quickstacks-delegate}/<worktree>-<timestamp>/
 
@@ -83,6 +91,15 @@ GIT_COMMON_ABS="$(cd "$WT" && cd "$(git rev-parse --git-common-dir)" && pwd -P)"
 CODEX="${CODEX_BIN:-$(command -v codex)}"
 [ -n "$CODEX" ] && [ -x "$CODEX" ] || die "codex not found on PATH (or set CODEX_BIN)"
 
+# rr reaches the test hosts through the SSH agent (AGENTS.md "Test runs"). A terminal multiplexer
+# started without one hands its panes a dead socket; on macOS, use the launchd agent instead.
+ssh-add -l >/dev/null 2>&1
+if [ $? -eq 2 ] && command -v launchctl >/dev/null; then
+    sock="$(launchctl print "gui/$(id -u)/com.openssh.ssh-agent" 2>/dev/null |
+        awk '/SSH_AUTH_SOCK =>/ { print $3; exit }')"
+    [ -S "$sock" ] && export SSH_AUTH_SOCK="$sock"
+fi
+
 # A resumed session already has the preamble.
 PROMPT="$(cat "$CONTRACT")"
 [ -n "$RESUME" ] || PROMPT="$PREAMBLE
@@ -141,6 +158,29 @@ files_touched() {
         -o -type f -newer "$START_MARK" -print 2>/dev/null) | sed 's|^\./||' | sort
 }
 
+# The backticked paths in the contract's "- May change:" item, up to the next item or blank line.
+allowed_paths() {
+    awk '/^- May change:/ { f = 1 } f && (/^$/ || (/^- / && !/^- May change:/)) { f = 0 } f' \
+        "$CONTRACT" | grep -o "\`[^\`]*\`" | tr -d "\`"
+}
+
+# Dirty paths that no May change entry covers. An entry ending in / covers everything under it;
+# either kind also matches as a suffix, since contracts often name package-relative paths.
+out_of_scope() {
+    local allowed="$1" path entry ok
+    while IFS= read -r path; do
+        [ -n "$path" ] || continue
+        ok=0
+        while IFS= read -r entry; do
+            case "$entry" in
+                */) case "$path" in "$entry"* | */"$entry"*) ok=1 ;; esac ;;
+                *) case "$path" in "$entry" | */"$entry") ok=1 ;; esac ;;
+            esac
+        done <<<"$allowed"
+        [ "$ok" = 1 ] || echo "$path"
+    done
+}
+
 BEFORE="$(changed_paths)"
 : >"$START_MARK"
 sleep 1 # mtime granularity: anything written from here on is -newer the mark
@@ -160,6 +200,7 @@ fi
 cd "$WT" || die "cannot enter $WT"
 START=$(date +%s)
 run_capped "$TIMEOUT_SECS" "$CODEX" "${SUBCOMMAND[@]}" \
+    --dangerously-bypass-hook-trust \
     --model "$MODEL" \
     -c "sandbox_mode=\"$SANDBOX\"" \
     -c "model_reasoning_effort=\"$EFFORT\"" \
@@ -173,7 +214,8 @@ ELAPSED=$(($(date +%s) - START))
 
 STATUS="failure"
 # A failed turn names its cause even when codex also exits nonzero (a capacity error does both).
-FAILED_EVENT="$(grep -m1 -E '"type":"(turn\.failed|error)"' "$EVENTS" 2>/dev/null | cut -c1-300)"
+# Only a top-level event counts: an error item inside a completed turn (the hook-trust warning) is not a failure.
+FAILED_EVENT="$(grep -m1 -E '^\{"type":"(turn\.failed|error)"' "$EVENTS" 2>/dev/null | cut -c1-300)"
 if [ -e "$TIMED_OUT_MARK" ]; then
     REASON="timed out after ${TIMEOUT_SECS}s"
 elif [ -n "$FAILED_EVENT" ]; then
@@ -219,6 +261,14 @@ echo "files written during the run:"
 if [ -n "$TOUCHED" ]; then head -50 <<<"$TOUCHED" | indent; else echo "  (none)"; fi
 if [ -n "$BEFORE" ]; then
     echo "  note: $(echo "$BEFORE" | wc -l | tr -d ' ') path(s) were already dirty before the run; review with git diff"
+fi
+echo "outside the contract's May change:"
+ALLOWED="$(allowed_paths)"
+if [ -z "$ALLOWED" ]; then
+    echo "  (no May change entry)"
+else
+    STRAY="$(cut -c4- <<<"$AFTER" | sed 's/.* -> //' | out_of_scope "$ALLOWED")"
+    if [ -n "$STRAY" ]; then indent <<<"$STRAY"; else echo "  (none)"; fi
 fi
 
 echo "last message:"

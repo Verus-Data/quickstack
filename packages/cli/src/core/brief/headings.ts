@@ -3,14 +3,18 @@ const FENCE = /^ {0,3}(`{3,}|~{3,})/;
 
 /**
  * An entry body nested under a brief section whose heading is `level - 1` deep: a leading level-1
- * heading is dropped (the section heading names the entry), and every other ATX heading shifts so
- * the shallowest lands at `level`, keeping relative depth and clamping at `######`. Lines inside
- * fenced code blocks are never touched; setext headings are left alone.
+ * heading is dropped when more content follows (the section heading names the entry). Other ATX
+ * headings shift so the shallowest lands at `level`, keeping relative depth and clamping at
+ * `######`. Lines inside fenced code blocks are never touched; setext headings are left alone.
  */
 export function nest(body: string, level = 3): string {
   const lines = body.split("\n");
   const first = lines.findIndex((line) => line.trim() !== "");
-  if (first !== -1 && /^ {0,3}#(?:[ \t]|$)/.test(lines[first] ?? "")) {
+  if (
+    lines.filter((line) => line.trim() !== "").length > 1 &&
+    first !== -1 &&
+    /^ {0,3}#(?:[ \t]|$)/.test(lines[first] ?? "")
+  ) {
     lines.splice(first, 1);
     // The blank lines after the dropped heading go with it.
     while (lines[first]?.trim() === "") lines.splice(first, 1);
@@ -38,4 +42,30 @@ export function nest(body: string, level = 3): string {
       return `${"#".repeat(next)}${line.slice(indent + depth)}`;
     })
     .join("\n");
+}
+
+/** Markdown lines outside fenced examples, retaining their source line numbers. */
+export function proseLines(text: string): Array<{ text: string; line: number }> {
+  const result: Array<{ text: string; line: number }> = [];
+  let fence: string | undefined;
+  text.split("\n").forEach((raw, index) => {
+    const line = raw.replace(/\r$/, "");
+    const marker = FENCE.exec(line)?.[1];
+    if (fence !== undefined) {
+      if (
+        marker !== undefined &&
+        marker[0] === fence[0] &&
+        marker.length >= fence.length &&
+        line.trim().length === marker.length
+      )
+        fence = undefined;
+      return;
+    }
+    if (marker) {
+      fence = marker;
+      return;
+    }
+    result.push({ text: line, line: index + 1 });
+  });
+  return result;
 }

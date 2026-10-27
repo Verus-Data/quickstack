@@ -2,19 +2,29 @@ import { Effect, Path } from "effect";
 import type { Finding, SizeRow, ValidateReport } from "../../schemas/validate";
 import { type Entry, isRejected, type RejectedEntry } from "../registry/entry";
 import { defaultRoots, Registry, type RegistryRoots } from "../registry/registry";
+import { commandChecks } from "./commands";
+import { composeEachChecks } from "./compose-each";
+import { composedFiles, renderedFileChecks } from "./composed";
 import { bodyChecks, compositionChecks } from "./compositions";
 import { conditionalChecks } from "./conditionals";
+import { conditionalReachChecks } from "./conditionals-reach";
+import { datedChecks } from "./dated";
 import { fileChecks } from "./files";
 import { loadChecks, metadataChecks } from "./format";
 import { gitChecks } from "./git";
+import { headingChecks } from "./headings";
+import { importChecks } from "./imports";
+import { ledgerChecks } from "./ledger-notes";
 import { referenceChecks } from "./references";
+import { shippedReferenceChecks } from "./shipped-refs";
+import { snapshotRegistry } from "./snapshot";
+import { readSources } from "./sources";
 import type { Target } from "./target";
-import type { Check, View } from "./view";
+import { templateChecks } from "./templates";
+import { versionSensitiveChecks } from "./version-sensitive";
+import { type Check, rootPaths, type View } from "./view";
 
-/**
- * Every check group, in report order within an entry. A later sub-phase (2.2) adds its own
- * modules here without touching these.
- */
+/** Every check group; each module owns one class of findings over the same view. */
 export const checks: ReadonlyArray<Check> = [
   loadChecks,
   metadataChecks,
@@ -24,6 +34,17 @@ export const checks: ReadonlyArray<Check> = [
   gitChecks,
   bodyChecks,
   compositionChecks,
+  renderedFileChecks,
+  commandChecks,
+  composeEachChecks,
+  conditionalReachChecks,
+  datedChecks,
+  headingChecks,
+  importChecks,
+  ledgerChecks,
+  shippedReferenceChecks,
+  templateChecks,
+  versionSensitiveChecks,
 ];
 
 /**
@@ -45,8 +66,11 @@ export const validationRoots = (target: Target) =>
   });
 
 const severityRank = { error: 0, warning: 1, note: 2 } as const;
-const kindRank = (kind: Finding["kind"]) => (kind === undefined ? 0 : kind === "stack" ? 1 : 2);
-function compareFindings(a: Finding, b: Finding): number {
+const kindRank = (kind: Finding["kind"]) => {
+  if (kind === undefined) return 0;
+  return kind === "stack" ? 1 : 2;
+};
+export function compareFindings(a: Finding, b: Finding): number {
   return (
     kindRank(a.kind) - kindRank(b.kind) ||
     (a.entry ?? "").localeCompare(b.entry ?? "", "en") ||
@@ -67,43 +91,46 @@ export const validate = (target: Target) =>
   Effect.gen(function* () {
     const path = yield* Path.Path;
     const roots = yield* validationRoots(target);
-    return yield* Effect.gen(function* () {
-      const registry = yield* Registry;
-      const all = yield* registry.all;
-      const inRoot = (item: { dir: string }) =>
-        path.dirname(path.dirname(item.dir)) === target.root;
-      const wanted = (item: { kind: string; id: string }) =>
-        target.only === undefined || (target.only.kind === item.kind && target.only.id === item.id);
-      const validated = all.filter((item) => inRoot(item) && wanted(item));
-      const view: View = {
-        root: target.root,
-        bundled: target.bundled,
-        entries: validated.filter((item): item is Entry => !isRejected(item)),
-        rejected: validated.filter((item): item is RejectedEntry => isRejected(item)),
-        all,
-        wanted,
-        inRoot,
-        file: (item, inside) =>
-          [path.relative(target.root, item.dir).split(path.sep).join("/"), inside]
-            .filter(Boolean)
-            .join("/"),
-      };
-      const findings: Finding[] = [];
-      const sizes: SizeRow[] = [];
-      for (const check of checks) {
-        const result = yield* check(view);
-        findings.push(...result.findings);
-        sizes.push(...(result.sizes ?? []));
-      }
-      const count = (kind: "stack" | "fragment") =>
-        validated.filter((item) => item.kind === kind).length;
-      return {
-        root: target.root,
-        bundled: target.bundled,
-        entries: { stacks: count("stack"), fragments: count("fragment") },
-        findings: findings.sort(compareFindings),
-        // Stable sort: within a kind, rows stay in the order the checks produced them.
-        sizes: sizes.sort((a, b) => sizeRank[a.kind] - sizeRank[b.kind]),
-      } satisfies ValidateReport;
-    }).pipe(Effect.provide(Registry.layer(roots)));
+    return yield* Effect.flatMap(snapshotRegistry, (registry) =>
+      Effect.gen(function* () {
+        const all = yield* registry.all;
+        const { inRoot, file } = rootPaths(path, target.root);
+        const wanted = (item: { kind: string; id: string }) =>
+          target.only === undefined ||
+          (target.only.kind === item.kind && target.only.id === item.id);
+        const validated = all.filter((item) => inRoot(item) && wanted(item));
+        const sourceView: Omit<View, "composed"> = {
+          root: target.root,
+          bundled: target.bundled,
+          entries: validated.filter((item): item is Entry => !isRejected(item)),
+          rejected: validated.filter((item): item is RejectedEntry => isRejected(item)),
+          all,
+          sources: yield* readSources(all.filter((item): item is Entry => !isRejected(item))),
+          wanted,
+          inRoot,
+          file,
+        };
+        const view: View = {
+          ...sourceView,
+          composed: yield* Effect.cached(composedFiles(sourceView)),
+        };
+        const findings: Finding[] = [];
+        const sizes: SizeRow[] = [];
+        for (const check of checks) {
+          const result = yield* check(view);
+          findings.push(...result.findings);
+          sizes.push(...(result.sizes ?? []));
+        }
+        const count = (kind: "stack" | "fragment") =>
+          validated.filter((item) => item.kind === kind).length;
+        return {
+          root: target.root,
+          bundled: target.bundled,
+          entries: { stacks: count("stack"), fragments: count("fragment") },
+          findings: findings.sort(compareFindings),
+          // Stable sort: within a kind, rows stay in the order the checks produced them.
+          sizes: sizes.sort((a, b) => sizeRank[a.kind] - sizeRank[b.kind]),
+        } satisfies ValidateReport;
+      }).pipe(Effect.provideService(Registry, registry)),
+    ).pipe(Effect.provide(Registry.layer(roots)));
   });

@@ -1,12 +1,14 @@
 # Phase 3.1a: `show` and the brief preview
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: EXECUTED 2026-10-27 (`show` and `ShowReport`; `validate --brief` renders `new`'s
+canonical brief, with findings, fingerprint and sizes on a human's stderr; reviewed once and fixed)
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
 | Goal | `quickstacks show <id>` prints one stack or fragment's metadata, origin, trust, full guidance, shipped files and last recorded run; `quickstacks validate --brief <stack>` prints the exact brief an agent would get, with word counts against the D5 caps and the composition's fingerprint, without scaffolding anything |
 | Traces to | Job 3: "When I've settled on a stack I rebuild often, I want to write it down once, including the agent tooling, so every new project starts where the last one ended." The stack author: "the only proof a stack works is an end-to-end agent run, and nothing tells them when their prose has gone stale." |
-| Depends on | 1.5 (`validate`, its canonical render and the D5 checks), 2.0a (`fingerprint`, `composeFiles`), 2.0c (the ledger and its service layer) |
+| Depends on | 1.5 (`validate`, its canonical render and the D5 checks), 2.0a (`fingerprint`, `composeFiles`), 2.0c (the file-backed ledger) |
 | Blocks | 3.1b (`create --from` shows `show`'s report before copying an untrusted entry), 3.1c (`new --dry-run` reuses the in-memory composition path). 3.2a uses `show`'s report as its interim trust report (soft) |
 | Decisions needed | D5 (proposed): the caps the preview prints against; a different budget changes only the numbers. D19 (proposed): `show` reports `trusted` as 1.0 computes it |
 | Settles | What `show` prints and which entries get a last run; how the preview picks its agent and personal defaults |
@@ -146,7 +148,7 @@ No new error tags.
 
 ## Acceptance tests
 
-Through `tests/helpers/cli.ts` with the fixture registry. The test helper provides a fixture ledger by supplying 2.0c's ledger service layer over a fixture `runs.json`; `Host` carries no ledger.
+Through `tests/helpers/cli.ts` with the fixture registry. The tests write a fixture `runs.json` in the bundled registry root with `tests/helpers/ledger.ts`, as `tests/list-ledger.test.ts` does; `readLedger(registryDir)` reads it and `lastRun(records, stack)` selects the latest default-composition run. `Host` carries no ledger.
 
 1. `show <bundled-stack> --json` decodes against `ShowReport`, with `lastRun` from the fixture ledger and `sameContent: true`.
 2. Editing the fixture bundled stack's body between two `show` runs flips `sameContent` to false.
@@ -156,7 +158,21 @@ Through `tests/helpers/cli.ts` with the fixture registry. The test helper provid
 6. `validate --brief <stack> --sandbox --json` returns the same brief text `new <stack> --sandbox --no-launch` writes to `BRIEF.md` when run under 1.5's canonical context (directory named as that context's project, TestClock at its year, `agents` unset), and the same `fingerprint` `new --json` records.
 7. With `Settings.always: ["ci-github"]` and `agents: ["codex", "claude"]`, the preview contains no `ci-github` body and renders `codex` adapters only.
 8. A fixture stack over the composed cap: exit 2, stdout holds the brief, the last stderr line is the `ValidationFailed` envelope.
-9. Neither command starts a process (the `Processes` test layer records none).
+9. Neither command starts a process: executable shims on `PATH` leave a marker if git, tools, agents or entry commands run, and no marker appears.
+
+### Realistic edge cases
+
+10. An id shared by a stack and fragment requires `--kind`; an app reports fragment metadata and matching stack ids, and a fragment passed to `--brief` is `BadInput`.
+11. Unknown ids in both commands return `NotFound` with nearby ids in the single error envelope.
+12. Wrong-case YAML metadata in a user copy is `EntryInvalid`, without falling back to a hidden bundled copy.
+13. A symlink inside shipped files is rejected without exposing its target's contents.
+14. A malformed ledger or a directory at `runs.json` yields a null last run and one warning, preserving the report.
+15. Entry text and unusual file names survive JSON unchanged; preview resolves a relative symlinked registry with spaces from another working directory.
+16. Agent markers, inherited git variables, a parent repository and personal invocation do not change canonical preview output; `--without` excludes a default fragment.
+17. Preview findings cover exactly the selected entries, warnings alone succeed, and an explicitly added app gets the split brief and 9,000-word cap.
+18. Text `show` exposes every guidance branch, command and verify run; text preview puts only the brief on stdout and human size counts on stderr, respecting the agent audience's omitted in-budget counts.
+19. Both commands preserve existing files, broken git state and partial run history on success and failure.
+20. Conflicting `--with` fragments return `ComposeConflict`, with no result or writes.
 
 ## Exit criteria
 
@@ -165,8 +181,13 @@ Through `tests/helpers/cli.ts` with the fixture registry. The test helper provid
 
 ## What this plan may get wrong
 
+- 2026-10-27: preview checks are scoped to the selected composition, preset and fragment flags, rendered per shipped adapter; registry-wide `compose-each` is excluded and only selected entries' sources are read.
 - `show` composes to count words and compare fingerprints, so it is slower than `list`. If it is slow on large stacks, `briefWords` and `sameContent` can move behind a flag.
 - The preview's equivalence with `new` depends on 1.5's canonical context fixing every environment fact the brief mentions (missing tools, git state). If it misses one, test 6 will show it and the context, not the preview, should be fixed.
 - Authors with several agents may want to preview each. An override flag for the preview's adapter agent is a small addition if asked.
 - 2026-10-26: this plan assumed a separate `app` kind (3.5a adding it to `--kind`) and dotfiles stored under an escape that `show` would undo. The amended D18 makes an app a fragment with `category: app`, so `--kind` stays `stack|fragment` and only a stack and a fragment can share an id; dotfiles are literal, so `show` prints them as stored. `ShowReport` gained `category` and `requiresTools`, which the fragment schema has.
 - 2026-10-26 (found executing 1.5): a basic `validate --brief` landed in 1.5 (`src/core/validate/preview.ts::previewBrief`, `BriefPreview`). It prints the brief and its counts on stdout, exits 0 even over the limit, uses 1.1's default agents rather than `Settings.agents[0]`, and treats a `--brief` fragment id as an unknown stack (`NotFound`). This phase now adds the fingerprint, the findings, exit 2 over the limit, the sizes on stderr and the fragment `BadInput`, extending `BriefPreview` rather than adding `PreviewResult` beside it.
+- 2026-10-27: `EntryInvalid.details` already has a closed reason/file contract; schema issue text remains in registry rejection data. This phase preserves those details rather than adding the first schema issue promised in the failure table.
+- 2026-10-27: preview findings reuse the validator's selected-entry checks and selected composition, excluding load checks (composition already loaded successfully) and git checks (checkout-dependent and process-starting). Registry validation keeps its full check matrix.
+- 2026-10-27: brief parity exposed two renderer details: the CLI's own metadata file listing must count as fixed text, and a body consisting only of a title must retain that guidance. The renderer also retains trailing spaces in guidance so preview prose is not truncated.
+- 2026-10-27: two more legacy assertions expect preview summaries on stdout: `tests/validate.test.ts` (the comma-list preview) and `e2e/binary.test.ts` (the compiled preview). Both conflict with brief-only stdout and need a test-contract update in addition to the original count assertion. They remain unchanged pending scope authorization.

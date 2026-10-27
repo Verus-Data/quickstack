@@ -82,11 +82,7 @@ export const prepareHandoff = (
 ) =>
   Effect.gen(function* () {
     const preferred = Option.getOrUndefined(flags.launch);
-    if (preferred && flags.dryRun)
-      return yield* new Usage({ details: { flags: ["--dry-run", "--launch"] } });
-    if (preferred && flags.noLaunch)
-      return yield* new Usage({ details: { flags: ["--launch", "--no-launch"] } });
-    if (preferred && json) return yield* new Usage({ details: { flags: ["--launch", "--json"] } });
+    yield* validatePreferences(flags, json);
     const host = yield* Host;
     const config = yield* AppConfig;
     const processes = yield* Processes;
@@ -135,6 +131,7 @@ export type SummaryContext = {
 /** Render the result, then print the next task or give the terminal to the selected agent. */
 export const completeHandoff = (input: {
   project: string;
+  agent: AgentId | undefined;
   untrusted: NewResult["untrusted"];
   decision: HandoffDecision;
   preview?: boolean;
@@ -167,7 +164,7 @@ export const completeHandoff = (input: {
         }),
         input.preview
           ? summary
-          : `${summary}\n\n${renderHandoff(decision, { shown, invocation: host.invocation, audience: output.audience })}`,
+          : `${summary}\n\n${renderHandoff(decision, { shown, invocation: host.invocation, audience: output.audience, agent: input.agent })}`,
       );
       return;
     }
@@ -199,3 +196,17 @@ export const completeHandoff = (input: {
       );
     yield* invocation.exitWith(status);
   });
+
+function validatePreferences(
+  flags: { launch: Option.Option<AgentId>; noLaunch: boolean; dryRun?: boolean },
+  json: boolean,
+) {
+  return Effect.gen(function* () {
+    const preferred = Option.getOrUndefined(flags.launch);
+    if (preferred && flags.dryRun)
+      return yield* new Usage({ details: { flags: ["--dry-run", "--launch"] } });
+    if (preferred && flags.noLaunch)
+      return yield* new Usage({ details: { flags: ["--launch", "--no-launch"] } });
+    if (preferred && json) return yield* new Usage({ details: { flags: ["--launch", "--json"] } });
+  });
+}

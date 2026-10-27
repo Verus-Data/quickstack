@@ -84,7 +84,10 @@ export const applyAdd = (input: {
           destination: incoming,
           rewrite: action === "merge",
         })),
-      ].sort((a, b) => (a.file.path < b.file.path ? -1 : a.file.path > b.file.path ? 1 : 0));
+      ].sort((a, b) => {
+        if (a.file.path < b.file.path) return -1;
+        return a.file.path > b.file.path ? 1 : 0;
+      });
       for (const operation of operations) {
         if (operation.rewrite) yield* writer.rewrite(operation.destination, operation.bytes);
         else
@@ -120,6 +123,15 @@ export const applyAdd = (input: {
     }),
   ).pipe(
     Effect.catchTag("TargetNotEmpty", (error) =>
-      Effect.fail(denied(error.details?.path ?? input.root)),
+      Effect.gen(function* () {
+        const path = yield* Path.Path;
+        const root = error.details?.path ?? input.root;
+        return yield* new PermissionDenied({
+          details: {
+            reason: "blocked",
+            path: path.resolve(root, error.details?.entries[0] ?? "."),
+          },
+        });
+      }),
     ),
   );

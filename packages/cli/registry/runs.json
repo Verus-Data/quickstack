@@ -407,6 +407,285 @@
       "agentMinutes": 5,
       "interventions": 0,
       "note": "plans/runs/2026-10-27-python-react.md"
+    },
+    {
+      "schemaVersion": 1,
+      "date": "2026-10-27",
+      "stack": "typescript-cli",
+      "with": [],
+      "preset": "sandbox",
+      "agent": "claude",
+      "agentVersion": "2.1.311",
+      "mode": "headless",
+      "repoCommit": "d47b1045a3a5dc5260717cbd1795323a59c390ba",
+      "cli": "0.1.0",
+      "fingerprint": "sha256:54e0b4b6284db94298550dc38cc16e683ba7d2b50ca85a85c3d8c8ba79a6d791",
+      "briefWords": 4595,
+      "result": "pass",
+      "agentEnded": "exit",
+      "run": {
+        "schemaVersion": 1,
+        "at": "2026-10-27T09:11:03.797Z",
+        "cli": "0.1.0",
+        "agent": "none",
+        "outcome": "green",
+        "scope": "full",
+        "tamperCheck": "full",
+        "acceptedChanges": false,
+        "durationMs": 4914,
+        "secondsSinceCreated": 592,
+        "steps": [
+          {
+            "name": "install",
+            "phase": "setup",
+            "layer": "install",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 114
+          },
+          {
+            "name": "git-hooks-install",
+            "phase": "setup",
+            "layer": "install",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 60
+          },
+          {
+            "name": "lint",
+            "phase": "check",
+            "layer": "lint",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 154
+          },
+          {
+            "name": "typecheck",
+            "phase": "check",
+            "layer": "typecheck",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 547
+          },
+          {
+            "name": "test",
+            "phase": "check",
+            "layer": "test",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 2742
+          },
+          {
+            "name": "binary",
+            "phase": "check",
+            "layer": "test",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 1198
+          },
+          {
+            "name": "readme-filled",
+            "phase": "check",
+            "layer": "check",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 12
+          },
+          {
+            "name": "agents-md-filled",
+            "phase": "check",
+            "layer": "check",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 11
+          },
+          {
+            "name": "claude-readme-filled",
+            "phase": "check",
+            "layer": "check",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 14
+          },
+          {
+            "name": "harness-doc-filled",
+            "phase": "check",
+            "layer": "check",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 13
+          },
+          {
+            "name": "git-hooks-validate",
+            "phase": "check",
+            "layer": "check",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 36
+          },
+          {
+            "name": "git-hooks-configured",
+            "phase": "check",
+            "layer": "check",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 11
+          }
+        ]
+      },
+      "verifyRuns": 2,
+      "minutesToGreen": 9.350483333333333,
+      "minutesToFirstTest": 9.350483333333333,
+      "agentMinutes": 9.622283333333334,
+      "interventions": 0,
+      "note": "plans/runs/2026-10-27-typescript-cli.md",
+      "hooksFired": [
+        "block-destructive.sh",
+        "format-changed.sh",
+        "guard-cli-commands.ts",
+        "guard-commands.ts",
+        "project-status.ts",
+        "session-start.sh"
+      ]
+    },
+    {
+      "schemaVersion": 1,
+      "date": "2026-10-27",
+      "stack": "go-cli",
+      "with": [],
+      "preset": "sandbox",
+      "agent": "claude",
+      "agentVersion": "2.1.311",
+      "mode": "headless",
+      "repoCommit": "8048bf691bab16bde7dfa0d20b69474abf738212",
+      "cli": "0.1.0",
+      "fingerprint": "sha256:4e12cfc53d9c9611429c92d2c3c03b61c077e3e5d11cbe1e6903d95bb80b462e",
+      "briefWords": 3233,
+      "result": "pass",
+      "agentEnded": "exit",
+      "run": {
+        "schemaVersion": 1,
+        "at": "2026-10-27T09:17:36.351Z",
+        "cli": "0.1.0",
+        "agent": "none",
+        "outcome": "green",
+        "scope": "full",
+        "tamperCheck": "full",
+        "acceptedChanges": false,
+        "durationMs": 2775,
+        "secondsSinceCreated": 264,
+        "steps": [
+          {
+            "name": "install",
+            "phase": "setup",
+            "layer": "install",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 137
+          },
+          {
+            "name": "git-hooks-install",
+            "phase": "setup",
+            "layer": "install",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 39
+          },
+          {
+            "name": "build",
+            "phase": "check",
+            "layer": "build",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 407
+          },
+          {
+            "name": "vet",
+            "phase": "check",
+            "layer": "typecheck",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 353
+          },
+          {
+            "name": "lint",
+            "phase": "check",
+            "layer": "lint",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 971
+          },
+          {
+            "name": "test",
+            "phase": "check",
+            "layer": "test",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 323
+          },
+          {
+            "name": "smoke",
+            "phase": "check",
+            "layer": "test",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 494
+          },
+          {
+            "name": "readme-filled",
+            "phase": "check",
+            "layer": "check",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 7
+          },
+          {
+            "name": "agents-md-filled",
+            "phase": "check",
+            "layer": "check",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 7
+          },
+          {
+            "name": "claude-readme-filled",
+            "phase": "check",
+            "layer": "check",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 6
+          },
+          {
+            "name": "git-hooks-validate",
+            "phase": "check",
+            "layer": "check",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 24
+          },
+          {
+            "name": "git-hooks-configured",
+            "phase": "check",
+            "layer": "check",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 6
+          }
+        ]
+      },
+      "verifyRuns": 1,
+      "minutesToGreen": 3.8721833333333335,
+      "minutesToFirstTest": 3.8721833333333335,
+      "agentMinutes": 4.362033333333334,
+      "interventions": 0,
+      "note": "plans/runs/2026-10-27-go-cli-2.md",
+      "hooksFired": [
+        "block-destructive.sh",
+        "detect-secrets.sh",
+        "format-changed.sh",
+        "lint-on-write.sh",
+        "session-start.sh"
+      ]
     }
   ]
 }

@@ -7,6 +7,15 @@
     {
       "includes": ["registry/stacks/mobile-expo/**"],
       "javascript": { "formatter": { "quoteStyle": "single" } }
+    },
+    {
+      "includes": ["registry/**"],
+      "linter": {
+        "rules": {
+          "complexity": { "noExcessiveCognitiveComplexity": "off", "useMaxParams": "off" },
+          "style": { "noNestedTernary": "off" }
+        }
+      }
     }
   ]
 }

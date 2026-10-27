@@ -31,6 +31,23 @@ const scaffoldOf = (manifestPath: string) =>
     Effect.orElseSucceed(() => "unfinished" as const),
   );
 
+const inspectMissingTarget = (dir: string) =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    let nearest = path.dirname(dir);
+    while (
+      (yield* Effect.option(fs.lstat(nearest)))._tag === "None" &&
+      path.dirname(nearest) !== nearest
+    )
+      nearest = path.dirname(nearest);
+    // Stop at links too: a dangling link cannot become a parent directory for the writer.
+    const ancestor = yield* Effect.option(fs.stat(nearest));
+    if (ancestor._tag === "None" || ancestor.value.type !== "Directory")
+      return yield* new TargetNotEmpty({ details: { path: dir, entries: [] } });
+    return { path: dir, exists: false, git: false, nearest } satisfies Target;
+  });
+
 /**
  * Checks `dir` before anything is written: missing, empty, `.git`-only and litter-only are usable;
  * anything else is `TargetNotEmpty` with up to ten names (sorted, litter excluded). A path that
@@ -47,17 +64,7 @@ export const inspectTarget = (dir: string) =>
       });
     const present = yield* Effect.option(fs.lstat(dir));
     if (present._tag === "None") {
-      let nearest = path.dirname(dir);
-      while (
-        (yield* Effect.option(fs.lstat(nearest)))._tag === "None" &&
-        path.dirname(nearest) !== nearest
-      )
-        nearest = path.dirname(nearest);
-      // Stop at links too: a dangling link cannot become a parent directory for the writer.
-      const ancestor = yield* Effect.option(fs.stat(nearest));
-      if (ancestor._tag === "None" || ancestor.value.type !== "Directory")
-        return yield* notEmpty([]);
-      return { path: dir, exists: false, git: false, nearest } satisfies Target;
+      return yield* inspectMissingTarget(dir);
     }
     const info = yield* Effect.option(fs.stat(dir));
     if (info._tag === "None" || info.value.type !== "Directory") return yield* notEmpty([]);

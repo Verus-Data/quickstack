@@ -90,7 +90,12 @@ test("every entry in the realistic registry decodes, and its app names what it b
 
 test("a user-directory stack with a new id is listed as user and trusted [1.0#2]", async () => {
   const { home, user } = setup();
-  writeEntry(user, "stack", "my-stack", minimal("stack", "my-stack"));
+  writeEntry({
+    root: user,
+    kind: "stack",
+    dir: "my-stack",
+    frontmatter: minimal("stack", "my-stack"),
+  });
   const listed = decode((await list(["--json"], { home })).stdout);
   expect(listed.entries.find((row) => row.id === "my-stack")).toMatchObject({
     origin: "user",
@@ -101,7 +106,12 @@ test("a user-directory stack with a new id is listed as user and trusted [1.0#2]
 
 test("a user-directory copy of a bundled id wins and shadows the bundled copy [1.0#3]", async () => {
   const { home, user } = setup();
-  writeEntry(user, "stack", "bun-web", minimal("stack", "bun-web"));
+  writeEntry({
+    root: user,
+    kind: "stack",
+    dir: "bun-web",
+    frontmatter: minimal("stack", "bun-web"),
+  });
   const listed = decode((await list(["--json"], { home })).stdout);
   const rows = listed.entries.filter((row) => row.id === "bun-web");
   expect(rows).toHaveLength(1);
@@ -115,9 +125,24 @@ test("a user-directory copy of a bundled id wins and shadows the bundled copy [1
 
 test("project entries are untrusted, whether they shadow an id or bring a new one [1.0#4] [1.0#5]", async () => {
   const { home, project, user } = setup();
-  writeEntry(project, "stack", "bun-web", minimal("stack", "bun-web"));
-  writeEntry(user, "stack", "bun-web", minimal("stack", "bun-web"));
-  writeEntry(project, "fragment", "local-only", minimal("fragment", "local-only"));
+  writeEntry({
+    root: project,
+    kind: "stack",
+    dir: "bun-web",
+    frontmatter: minimal("stack", "bun-web"),
+  });
+  writeEntry({
+    root: user,
+    kind: "stack",
+    dir: "bun-web",
+    frontmatter: minimal("stack", "bun-web"),
+  });
+  writeEntry({
+    root: project,
+    kind: "fragment",
+    dir: "local-only",
+    frontmatter: minimal("fragment", "local-only"),
+  });
   const listed = decode((await list(["--json"], { home })).stdout);
   expect(listed.entries.find((row) => row.id === "bun-web")).toMatchObject({
     origin: "project",
@@ -131,42 +156,46 @@ test("project entries are untrusted, whether they shadow an id or bring a new on
   });
 });
 
-test.each([
-  [
-    "an unknown key",
-    "stack",
-    "s",
-    minimal("stack", "s", "extra_key: 1"),
-    /^extra_key: unknown key$/,
-  ],
-  [
-    "a camelCase key",
-    "fragment",
-    "f",
-    minimal("fragment", "f", "appliesTo: [web]"),
-    /^appliesTo: unknown key \(frontmatter keys are snake_case\)$/,
-  ],
-  ["a bad id", "stack", "Bad_Id", minimal("stack", "Bad_Id"), /^id: .*kebab-case/],
-  [
-    "an id that differs from its directory",
-    "stack",
-    "dir-name",
-    minimal("stack", "other"),
-    /^id: "other" must equal the directory name "dir-name"/,
-  ],
-  ["a kind that differs from the file", "stack", "s", minimal("fragment", "s"), /^kind: /],
-  [
-    "a mistyped field",
-    "fragment",
-    "f",
-    minimal("fragment", "f", "applies_to: [1]"),
-    /^applies_to\[0\]: /,
-  ],
-])(
-  "%s is a rejected row naming the field, and list still exits 0 [1.0#6]",
-  async (_case, kind, dir, frontmatter, error) => {
+test.each(
+  (
+    [
+      [
+        "an unknown key",
+        "stack",
+        "s",
+        minimal("stack", "s", "extra_key: 1"),
+        /^extra_key: unknown key$/,
+      ],
+      [
+        "a camelCase key",
+        "fragment",
+        "f",
+        minimal("fragment", "f", "appliesTo: [web]"),
+        /^appliesTo: unknown key \(frontmatter keys are snake_case\)$/,
+      ],
+      ["a bad id", "stack", "Bad_Id", minimal("stack", "Bad_Id"), /^id: .*kebab-case/],
+      [
+        "an id that differs from its directory",
+        "stack",
+        "dir-name",
+        minimal("stack", "other"),
+        /^id: "other" must equal the directory name "dir-name"/,
+      ],
+      ["a kind that differs from the file", "stack", "s", minimal("fragment", "s"), /^kind: /],
+      [
+        "a mistyped field",
+        "fragment",
+        "f",
+        minimal("fragment", "f", "applies_to: [1]"),
+        /^applies_to\[0\]: /,
+      ],
+    ] as const
+  ).map(([name, kind, dir, frontmatter, error]) => ({ name, kind, dir, frontmatter, error })),
+)(
+  "$name is a rejected row naming the field, and list still exits 0 [1.0#6]",
+  async ({ kind, dir, frontmatter, error }) => {
     const { home, user } = setup();
-    writeEntry(user, kind as "stack" | "fragment", dir, frontmatter);
+    writeEntry({ root: user, kind: kind as "stack" | "fragment", dir, frontmatter });
     const result = await list(["--json"], { home });
     expect(result.status).toBe(0);
     expect(result.stderr).toBe("");
@@ -215,8 +244,18 @@ test("schema_version 2 in the user directory falls through to the bundled copy w
 test("a symlink inside an entry rejects it, and nothing the link points at is listed [1.0#8]", async () => {
   const { home, user } = setup();
   const outside = join(home, "outside");
-  writeEntry(outside, "stack", "linked", minimal("stack", "linked"));
-  const entry = writeEntry(user, "stack", "has-link", minimal("stack", "has-link"));
+  writeEntry({
+    root: outside,
+    kind: "stack",
+    dir: "linked",
+    frontmatter: minimal("stack", "linked"),
+  });
+  const entry = writeEntry({
+    root: user,
+    kind: "stack",
+    dir: "has-link",
+    frontmatter: minimal("stack", "has-link"),
+  });
   mkdirSync(join(entry, "files"));
   symlinkSync(join(outside, "stacks", "linked"), join(entry, "files", "escape"));
   symlinkSync(join(outside, "stacks", "linked"), join(user, "stacks", "linked"));
@@ -284,7 +323,12 @@ test("human list shows Stacks, Fragments and Apps, then Next lines with the invo
 
 test("the origin column and untrusted marker appear once rows come from two origins [1.0#12a]", async () => {
   const { home, project } = setup();
-  writeEntry(project, "stack", "zz-local", minimal("stack", "zz-local"));
+  writeEntry({
+    root: project,
+    kind: "stack",
+    dir: "zz-local",
+    frontmatter: minimal("stack", "zz-local"),
+  });
   const result = await list(["stacks"], { home });
   expect(result.stdout.split("\n").slice(0, 7)).toEqual([
     "Stacks",
@@ -296,7 +340,12 @@ test("the origin column and untrusted marker appear once rows come from two orig
     "    zz-local description.",
   ]);
   expect(result.stdout).not.toContain("Fragments");
-  writeEntry(project, "stack", "go-api", minimal("stack", "go-api"));
+  writeEntry({
+    root: project,
+    kind: "stack",
+    dir: "go-api",
+    frontmatter: minimal("stack", "go-api"),
+  });
   expect((await list(["stacks"], { home })).stdout).toContain(
     "\n  go-api    project  untrusted  shadows bundled\n",
   );
@@ -307,12 +356,12 @@ test("a long description wraps at 80 columns, or a narrower terminal, without sp
   const words = Array.from({ length: 40 }, (_, i) => `word${i}`).join(" ");
   const description = `${words} ${"x".repeat(90)}`;
   expect(description.length).toBeGreaterThan(200);
-  writeEntry(
-    user,
-    "stack",
-    "long",
-    minimal("stack", "long").replace("long description.", description),
-  );
+  writeEntry({
+    root: user,
+    kind: "stack",
+    dir: "long",
+    frontmatter: minimal("stack", "long").replace("long description.", description),
+  });
   // Only a human's terminal wraps (an agent's output keeps each description on one line).
   for (const [host, width] of [
     [{ stdoutIsTTY: true }, 80],
@@ -339,7 +388,12 @@ test("an empty registry says so and only suggests doctor [1.0#12a]", async () =>
 
 test("when every stack is rejected, Next points at the rejected entries rather than doctor", async () => {
   const { home, user } = setup();
-  writeEntry(user, "stack", "mine", minimal("stack", "mine", "extra: 1"));
+  writeEntry({
+    root: user,
+    kind: "stack",
+    dir: "mine",
+    frontmatter: minimal("stack", "mine", "extra: 1"),
+  });
   const result = await list(["stacks"], { home, registry: join(home, "missing") });
   expect(result.status).toBe(0);
   expect(result.stdout.trimEnd().split("\n").at(-1)).toBe(
@@ -370,7 +424,12 @@ test("list apps names the command that builds the app on its stack", async () =>
 
 test("a broken user copy of a bundled id is rejected, says what it hides, and the bundled copy is not listed [1.0#12b]", async () => {
   const { home, user } = setup();
-  writeEntry(user, "stack", "bun-web", minimal("stack", "bun-web", "unknown_key: 1"));
+  writeEntry({
+    root: user,
+    kind: "stack",
+    dir: "bun-web",
+    frontmatter: minimal("stack", "bun-web", "unknown_key: 1"),
+  });
   const json = decode((await list(["--json"], { home })).stdout);
   expect(json.entries.some((row) => row.id === "bun-web")).toBe(false);
   expect(json.rejected).toEqual([
@@ -413,7 +472,12 @@ test.skipIf(process.getuid?.() === 0)(
 
 test("a stack and a fragment with the same id both load [1.0#13a]", async () => {
   const { home, user } = setup();
-  writeEntry(user, "fragment", "bun-web", minimal("fragment", "bun-web"));
+  writeEntry({
+    root: user,
+    kind: "fragment",
+    dir: "bun-web",
+    frontmatter: minimal("fragment", "bun-web"),
+  });
   const listed = decode((await list(["--json"], { home })).stdout);
   expect(ids(listed).filter((id) => id.endsWith(":bun-web"))).toEqual([
     "stack:bun-web",
@@ -480,22 +544,27 @@ test("doctor reports a registry path that is a file as not found", async () => {
 test("control characters in entries never reach the terminal, and can't forge a Next line", async () => {
   const { home, project, user } = setup();
   const esc = String.fromCharCode(27);
-  writeEntry(
-    project,
-    "stack",
-    "colors",
-    minimal("stack", "colors").replace(
+  writeEntry({
+    root: project,
+    kind: "stack",
+    dir: "colors",
+    frontmatter: minimal("stack", "colors").replace(
       "colors description.",
       `"evil${esc}[31m red\\nNext: rm -rf ~"`,
     ),
-  );
-  writeEntry(
-    project,
-    "stack",
-    "forged",
-    minimal("stack", "forged").replace("kind: stack", 'kind: "x\\nNext: forged"'),
-  );
-  writeEntry(project, "fragment", `bad${esc}[2Jdir`, minimal("fragment", "bad"));
+  });
+  writeEntry({
+    root: project,
+    kind: "stack",
+    dir: "forged",
+    frontmatter: minimal("stack", "forged").replace("kind: stack", 'kind: "x\\nNext: forged"'),
+  });
+  writeEntry({
+    root: project,
+    kind: "fragment",
+    dir: `bad${esc}[2Jdir`,
+    frontmatter: minimal("fragment", "bad"),
+  });
   copyEntry(brokenRegistry, user, "stacks", "bun-web");
   renameSync(join(user, "stacks", "bun-web"), join(user, "stacks", `v2${esc}[1m`));
   const result = await list([], { home, env: { LOG_LEVEL: "warn" } });
@@ -513,7 +582,12 @@ test("control characters in entries never reach the terminal, and can't forge a 
 test("a symlinked project root is not read, with a warning", async () => {
   const { home } = setup();
   const elsewhere = join(home, "elsewhere");
-  writeEntry(elsewhere, "stack", "outside", minimal("stack", "outside"));
+  writeEntry({
+    root: elsewhere,
+    kind: "stack",
+    dir: "outside",
+    frontmatter: minimal("stack", "outside"),
+  });
   symlinkSync(elsewhere, join(home, ".quickstacks"));
   const result = await list(["--json"], {
     home,
@@ -528,7 +602,12 @@ test("a symlinked project root is not read, with a warning", async () => {
 test("a symlinked stacks directory in the project root is not read either", async () => {
   const { home, project } = setup();
   const elsewhere = join(home, "elsewhere");
-  writeEntry(elsewhere, "stack", "outside", minimal("stack", "outside"));
+  writeEntry({
+    root: elsewhere,
+    kind: "stack",
+    dir: "outside",
+    frontmatter: minimal("stack", "outside"),
+  });
   mkdirSync(project, { recursive: true });
   symlinkSync(join(elsewhere, "stacks"), join(project, "stacks"));
   const listed = decode((await list(["--json"], { home })).stdout);
@@ -538,7 +617,7 @@ test("a symlinked stacks directory in the project root is not read either", asyn
 test("a symlinked user root is followed: the user owns it", async () => {
   const { home, user } = setup();
   const real = join(home, "dotfiles", "quickstacks");
-  writeEntry(real, "stack", "mine", minimal("stack", "mine"));
+  writeEntry({ root: real, kind: "stack", dir: "mine", frontmatter: minimal("stack", "mine") });
   mkdirSync(join(user, ".."), { recursive: true });
   symlinkSync(real, user);
   const listed = decode((await list(["--json"], { home })).stdout);
@@ -554,23 +633,33 @@ test("a rejected entry's directory is printed whole on its own line", async () =
     home,
     "a registry with spaces in its path that is long enough to need wrapping",
   );
-  writeEntry(registry, "stack", "broken", minimal("stack", "broken", "extra: 1"));
+  writeEntry({
+    root: registry,
+    kind: "stack",
+    dir: "broken",
+    frontmatter: minimal("stack", "broken", "extra: 1"),
+  });
   const result = await list([], { home, registry, host: terminal });
   expect(result.stdout).toContain(`\n    ${join(registry, "stacks", "broken")}\n`);
 });
 
 test("Next never suggests an untrusted stack", async () => {
   const { home, project } = setup();
-  writeEntry(project, "stack", "local", minimal("stack", "local"));
-  writeEntry(
-    project,
-    "fragment",
-    "local-app",
-    minimal("fragment", "local-app").replace(
+  writeEntry({
+    root: project,
+    kind: "stack",
+    dir: "local",
+    frontmatter: minimal("stack", "local"),
+  });
+  writeEntry({
+    root: project,
+    kind: "fragment",
+    dir: "local-app",
+    frontmatter: minimal("fragment", "local-app").replace(
       "category: tooling",
       "category: app\napplies_to: [local]",
     ),
-  );
+  });
   const missing = join(home, "missing");
   for (const args of [[], ["apps"]]) {
     const result = await list(args, { home, registry: missing });
@@ -587,9 +676,14 @@ test.skipIf(process.getuid?.() === 0)(
   "an unreadable STACK.md is listed as unreadable, not missing",
   async () => {
     const { home, user } = setup();
-    const entry = writeEntry(user, "stack", "locked", minimal("stack", "locked"));
+    const entry = writeEntry({
+      root: user,
+      kind: "stack",
+      dir: "locked",
+      frontmatter: minimal("stack", "locked"),
+    });
     chmodSync(join(entry, "STACK.md"), 0o000);
-    writeEntry(user, "stack", "empty", minimal("stack", "empty"));
+    writeEntry({ root: user, kind: "stack", dir: "empty", frontmatter: minimal("stack", "empty") });
     const emptyEntry = join(user, "stacks", "empty");
     renameSync(join(emptyEntry, "STACK.md"), join(emptyEntry, "NOTES.md"));
     try {

@@ -8,7 +8,7 @@ import { quiet, runCli } from "./helpers/cli";
 // warnings, and resolve only inside itself. Notes never fail this gate.
 const bundled = join(import.meta.dirname, "..", "registry");
 
-test("the bundled registry validates with zero errors and zero warnings [1.5#14] [1.6a#1] [1.6d#7]", async () => {
+test("the bundled registry validates with zero errors and zero warnings [1.5#14] [1.6a#1] [1.6d#7] [3.3b#2]", async () => {
   const result = await runCli(["validate", "--json"], {
     env: { ...quiet, PATH: process.env.PATH ?? "" },
     host: { registry: bundled },
@@ -18,4 +18,5 @@ test("the bundled registry validates with zero errors and zero warnings [1.5#14]
   expect(report.bundled).toBe(true);
   expect(report.findings.filter((finding) => finding.severity !== "note")).toEqual([]);
   expect(result.status).toBe(0);
-});
+  // This walks every shipped entry and composition; concurrent gates can exceed Vitest's 5 s.
+}, 30_000);

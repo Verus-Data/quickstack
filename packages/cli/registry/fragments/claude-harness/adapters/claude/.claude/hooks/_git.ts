@@ -1,0 +1,146 @@
+import { spawnSync } from "node:child_process";
+import { resolve } from "node:path";
+import type { Command } from "./_shell";
+
+const message = (reason: string, suggestion: string) => `${reason}\n\n${suggestion}`;
+const shortFlag = (args: string[], flag: string) =>
+  args.some((arg) => /^-[^-]/.test(arg) && arg.includes(flag));
+
+function gitArgs(args: string[]) {
+  let index = 0;
+  while (args[index]?.startsWith("-")) {
+    index += ["-C", "-c", "--git-dir", "--work-tree", "--namespace", "--config-env"].includes(
+      args[index] ?? "",
+    )
+      ? 2
+      : 1;
+  }
+  return { global: args.slice(0, index), operation: args[index], rest: args.slice(index + 1) };
+}
+
+/** Stop at an option's value: its letters are not further short options. */
+function commitCluster(arg: string): "deny" | "next" | "done" {
+  for (let index = 1; index < arg.length; index++) {
+    const option = arg.charAt(index);
+    if (option === "n") return "deny";
+    if ("mcCFt".includes(option)) return index === arg.length - 1 ? "next" : "done";
+    if ("uS".includes(option)) return "done";
+  }
+  return "done";
+}
+
+function commitSkipsHooks(args: string[]): boolean {
+  const valued = new Set([
+    "--message",
+    "--reuse-message",
+    "--reedit-message",
+    "--file",
+    "--template",
+  ]);
+  for (let index = 0; index < args.length; index++) {
+    const arg = args[index] ?? "";
+    if (arg === "--") break;
+    if (arg === "--no-verify") return true;
+    if (valued.has(arg)) {
+      index++;
+      continue;
+    }
+    if (!/^-[^-]/.test(arg)) continue;
+    const cluster = commitCluster(arg);
+    if (cluster === "deny") return true;
+    if (cluster === "next") index++;
+  }
+  return false;
+}
+
+function discardReason(operation: string | undefined, rest: string[]): string | undefined {
+  if (operation === "checkout" && rest.some((arg) => arg === "." || arg === ":/"))
+    return message(
+      "git checkout . discards every unstaged change.",
+      "Revert specific files: git checkout -- <file>",
+    );
+  const staged = rest.includes("--staged") || shortFlag(rest, "S");
+  const worktree = rest.includes("--worktree") || shortFlag(rest, "W");
+  if (
+    operation === "restore" &&
+    rest.some((arg) => arg === "." || arg === ":/") &&
+    (!staged || worktree)
+  )
+    return message(
+      "git restore . discards every unstaged change.",
+      "Revert specific files: git restore <file>",
+    );
+  if (
+    operation === "clean" &&
+    (rest.includes("--force") || shortFlag(rest, "f")) &&
+    !rest.includes("--dry-run") &&
+    !shortFlag(rest, "n")
+  )
+    return message(
+      "git clean -f deletes untracked files permanently.",
+      "Preview with git clean -n. Ask the user first.",
+    );
+  if (operation === "stash" && ["drop", "clear"].includes(rest[0] ?? ""))
+    return message(
+      "git stash drop/clear destroys stashed work.",
+      "Other sessions may have work in the stash. Ask the user first.",
+    );
+  if (operation === "branch" && shortFlag(rest, "D"))
+    return message(
+      "git branch -D deletes a branch even when its commits are merged nowhere.",
+      "Use git branch -d, which refuses unmerged work. Ask the user first.",
+    );
+  return undefined;
+}
+
+function historyReason(operation: string | undefined, rest: string[]): string | undefined {
+  if (
+    (operation === "push" &&
+      rest.some(
+        (arg) =>
+          /^--force(?:$|=|-with-lease|-if-includes)/.test(arg) ||
+          /^-[^-]*f/.test(arg) ||
+          arg.startsWith("+"),
+      )) ||
+    ["filter-branch", "filter-repo"].includes(operation ?? "") ||
+    (operation === "rebase" &&
+      !rest.some((arg) => ["--abort", "--continue", "--skip", "--quit"].includes(arg))) ||
+    (operation === "reflog" && ["expire", "delete"].includes(rest[0] ?? ""))
+  )
+    return "Rewriting Git history can destroy shared work. Ask the user first.";
+  return undefined;
+}
+
+function resetReason(cmd: Command, cwd: string, global: string[]): string | undefined {
+  if (cmd.remote || cmd.dir === null || cmd.env.some((value) => value.startsWith("GIT_")))
+    return "Cannot inspect this repository before a hard reset. Ask the user first.";
+  const status = spawnSync(
+    "git",
+    [...global, "-c", "core.fsmonitor=false", "status", "--porcelain"],
+    {
+      cwd: resolve(cwd, cmd.dir ?? "."),
+      encoding: "utf8",
+      timeout: 2000,
+    },
+  );
+  if (status.status !== 0 || status.stdout.trim())
+    return "A hard reset could discard uncommitted work. Commit or stash it, or ask the user first.";
+  return undefined;
+}
+
+export function gitReason(cmd: Command, cwd: string): string | undefined {
+  const { global, operation, rest } = gitArgs(cmd.argv.slice(1));
+  if (
+    (operation === "commit" && commitSkipsHooks(rest)) ||
+    (operation === "push" && rest.includes("--no-verify"))
+  )
+    return message(
+      "--no-verify skips the project's git hooks.",
+      "Fix what the hook reports instead. Ask the user first.",
+    );
+  const reason = discardReason(operation, rest) ?? historyReason(operation, rest);
+  if (reason) return reason;
+  if (operation === "reset" && rest.some((arg) => arg === "--hard" || arg.startsWith("--hard=")))
+    return resetReason(cmd, cwd, global);
+  return undefined;
+}

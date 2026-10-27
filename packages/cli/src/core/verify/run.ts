@@ -50,29 +50,31 @@ export const runVerify = (
     const context = { root: project.root, realRoot, env };
     const started = yield* Clock.currentTimeMillis;
     const results = new Map<string, StepResult>();
-    const skipped = (step: PlannedStep, reason: string): StepResult => ({
-      name: step.name,
-      phase: step.phase,
-      ...(step.layer ? { layer: step.layer } : {}),
-      command: step.run,
-      status: "skipped",
-      durationMs: 0,
-      reason,
-    });
     const base = plan.steps.filter((step) => !step.tags.includes("app"));
     const app = plan.steps.filter((step) => step.tags.includes("app"));
     let stages: NonNullable<RunResult["stages"]> = { base: "green", app: null };
     let activeStage: "base" | "app" = "base";
 
+    const stageOutcome = (steps: ReadonlyArray<PlannedStep>, interrupted: boolean): Outcome => {
+      if (interrupted) return "interrupted";
+      if (steps.some((step) => results.get(step.name)?.status === "failed")) return "failed";
+      if (
+        steps.some((step) => plan.skipped.has(step.name) && !(step.skipByDefault && !options.all))
+      )
+        return "partial";
+      return "green";
+    };
+
     const runStage = (stage: "base" | "app", steps: ReadonlyArray<PlannedStep>) => {
       activeStage = stage;
       let setupFailed = false;
       let current: { step: PlannedStep; started: number } | undefined;
+      const skipReason = (step: PlannedStep) =>
+        plan.skipped.get(step.name) ??
+        (setupFailed && step.phase !== "teardown" ? SETUP_FAILED : undefined);
       const runOne = (step: PlannedStep) =>
         Effect.gen(function* () {
-          const skip =
-            plan.skipped.get(step.name) ??
-            (setupFailed && step.phase !== "teardown" ? SETUP_FAILED : undefined);
+          const skip = skipReason(step);
           if (skip !== undefined) {
             results.set(step.name, skipped(step, skip));
             return;
@@ -83,6 +85,20 @@ export const runVerify = (
           results.set(step.name, result);
           if (step.phase === "setup" && result.status === "failed") setupFailed = true;
         });
+      const interruptStage = Effect.gen(function* () {
+        if (current) {
+          const { step, started: at } = current;
+          results.set(step.name, {
+            ...skipped(step, INTERRUPTED),
+            status: "failed",
+            failureKind: "interrupted",
+            durationMs: (yield* Clock.currentTimeMillis) - at,
+          });
+        }
+        for (const step of steps)
+          if (step.phase !== "teardown" && !results.has(step.name))
+            results.set(step.name, skipped(step, INTERRUPTED));
+      });
       return Effect.forEach(
         steps.filter((step) => step.phase !== "teardown"),
         runOne,
@@ -93,48 +109,31 @@ export const runVerify = (
         Effect.onExit((exit) =>
           Effect.gen(function* () {
             const interrupted = Exit.isFailure(exit) && Cause.hasInterrupts(exit.cause);
-            if (interrupted && current) {
-              const { step, started: at } = current;
-              results.set(step.name, {
-                ...skipped(step, INTERRUPTED),
-                status: "failed",
-                failureKind: "interrupted",
-                durationMs: (yield* Clock.currentTimeMillis) - at,
-              });
-            }
-            if (interrupted)
-              for (const step of steps)
-                if (step.phase !== "teardown" && !results.has(step.name))
-                  results.set(step.name, skipped(step, INTERRUPTED));
+            if (interrupted) yield* interruptStage;
             yield* Effect.forEach(
               steps.filter((step) => step.phase === "teardown"),
               runOne,
               { discard: true },
             );
-            const outcome: Outcome = interrupted
-              ? "interrupted"
-              : steps.some((step) => results.get(step.name)?.status === "failed")
-                ? "failed"
-                : steps.some(
-                      (step) =>
-                        plan.skipped.has(step.name) && !(step.skipByDefault && !options.all),
-                    )
-                  ? "partial"
-                  : "green";
+            const outcome = stageOutcome(steps, interrupted);
             stages = { ...stages, [stage]: outcome };
           }),
         ),
       );
     };
 
+    const skipApp = (reason: (step: PlannedStep) => string) => {
+      for (const step of app) results.set(step.name, skipped(step, reason(step)));
+    };
+    const interruptRun = () => {
+      // An interrupt during masked teardown reaches the outer run after the stage finalizer.
+      stages = { ...stages, [activeStage]: "interrupted" };
+      if (activeStage === "base") skipApp(() => BASE_FAILED);
+    };
+
     const result = (interrupted: boolean) =>
       Effect.gen(function* () {
-        // An interrupt during masked teardown reaches the outer run after the stage finalizer.
-        if (interrupted) {
-          stages = { ...stages, [activeStage]: "interrupted" };
-          if (activeStage === "base")
-            for (const step of app) results.set(step.name, skipped(step, BASE_FAILED));
-        }
+        if (interrupted) interruptRun();
         const steps = plan.steps.map(
           (step) => results.get(step.name) ?? skipped(step, INTERRUPTED),
         );
@@ -142,13 +141,7 @@ export const runVerify = (
         const count = (status: StepResult["status"]) =>
           steps.filter((step) => step.status === status).length;
         const created = Date.parse(project.createdAt);
-        const outcome: Exclude<Outcome, "changed"> = interrupted
-          ? "interrupted"
-          : count("failed")
-            ? "failed"
-            : plan.scope === "partial"
-              ? "partial"
-              : "green";
+        const outcome = runOutcome(interrupted, count("failed"), plan.scope);
         return {
           outcome,
           scope: plan.scope,
@@ -162,17 +155,20 @@ export const runVerify = (
         };
       });
 
-    return yield* Effect.gen(function* () {
-      yield* runStage("base", base);
+    const runApp = Effect.gen(function* () {
       if (stages.base !== "green") {
         const reason = stages.base === "partial" ? BASE_PARTIAL : BASE_FAILED;
-        for (const step of app) results.set(step.name, skipped(step, reason));
+        skipApp(() => reason);
       } else if (app.some((step) => !plan.skipped.has(step.name))) {
         yield* runStage("app", app);
       } else {
-        for (const step of app)
-          results.set(step.name, skipped(step, plan.skipped.get(step.name) ?? INTERRUPTED));
+        skipApp((step) => plan.skipped.get(step.name) ?? INTERRUPTED);
       }
+    });
+
+    return yield* Effect.gen(function* () {
+      yield* runStage("base", base);
+      yield* runApp;
       return yield* result(false);
     }).pipe(
       Effect.onExit((exit) =>
@@ -182,3 +178,24 @@ export const runVerify = (
       ),
     );
   });
+
+const skipped = (step: PlannedStep, reason: string): StepResult => ({
+  name: step.name,
+  phase: step.phase,
+  ...(step.layer ? { layer: step.layer } : {}),
+  command: step.run,
+  status: "skipped",
+  durationMs: 0,
+  reason,
+});
+
+function runOutcome(
+  interrupted: boolean,
+  failed: number,
+  scope: RunResult["scope"],
+): Exclude<Outcome, "changed"> {
+  if (interrupted) return "interrupted";
+  if (failed) return "failed";
+  if (scope === "partial") return "partial";
+  return "green";
+}

@@ -49,15 +49,10 @@ export const verifyCommand = Command.make(
     Effect.gen(function* () {
       const host = yield* Host;
       const output = yield* Output;
-      const config = yield* AppConfig;
       const started = yield* Clock.currentTimeMillis;
       const located = yield* locateManifest(host.cwd);
       let manifest = yield* readManifest(located.path);
-      if (flags.acceptChanges) {
-        if ((yield* config.agent) !== "none")
-          return yield* new PermissionDenied({ details: { reason: "agent" } });
-        if (!host.stdinIsTTY) return yield* new PermissionDenied({ details: { reason: "no-tty" } });
-      }
+      if (flags.acceptChanges) yield* requireConfirmation;
       const options = { only: names(flags.only), skipTags: names(flags.skipTag), all: flags.all };
       const plan = yield* planVerify(manifest.verify, options);
       let tamper = yield* checkTamper(manifest, located.path);
@@ -129,3 +124,11 @@ export const verifyCommand = Command.make(
     `Run this project's verify steps from ${MANIFEST_PATH} (found from here or any directory above): setup, check, serve (each server probed, then stopped), then teardown, which always runs. Prints each command before running it. First checks the steps against the copy recorded when the project was made; changed steps run nothing and exit 5 (VerifyChanged) until a person runs --accept-changes. Every run appends a record to ${RUNS_PATH}. Exits 0 when green or partial, 5 with the report on stdout when a step fails or the steps changed.`,
   ),
 );
+
+const requireConfirmation = Effect.gen(function* () {
+  const config = yield* AppConfig;
+  const host = yield* Host;
+  if ((yield* config.agent) !== "none")
+    return yield* new PermissionDenied({ details: { reason: "agent" } });
+  if (!host.stdinIsTTY) return yield* new PermissionDenied({ details: { reason: "no-tty" } });
+});

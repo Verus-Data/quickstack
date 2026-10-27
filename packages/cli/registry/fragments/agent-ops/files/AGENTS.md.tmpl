@@ -27,6 +27,13 @@ Run these from the repo root. They are the only supported way to build, test, an
 - Prefer the project's existing patterns and dependencies over new ones. Add a dependency only when nothing in the project already covers the need.
 - Keep changes scoped to the task. Mention unrelated problems you notice instead of fixing them in the same change.
 
+## Guardrails
+
+- Destructive commands, credential-shaped writes and real `.env` writes are guarded by native hooks when this project targets Claude Code, Codex, OpenCode or Cursor. A block means ask the user; never rephrase a command or use another tool to bypass it.
+- Store credentials in environment variables or a secrets manager. Write variable names and placeholders in `.env.example`; ask the user to set real values.
+- Load the selected agent's applicable project skills or rules before changing their area. When the brief asks for a generated Effect skill, use the selected agent's native skill directory (or Cursor rule), verified against installed types.
+- Treat lint diagnostics as work to resolve. Run the project check command before finishing; instructions and hooks do not replace tests.
+
 ## Testing
 
 <!-- quickstacks:fill Test layers (unit, integration, end-to-end), which runner each uses, what is real and what is faked, the test harness files to build on, and anything tests need running first (a database, a .env). -->

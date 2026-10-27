@@ -9,7 +9,7 @@ import { composeFiles } from "../compose/files";
 import { missingToolsOnPath } from "../compose/tools";
 import { buildManifest } from "../manifest";
 import { gitInstalled } from "../scaffold/git";
-import { templateValues } from "../scaffold/values";
+import { templateOverrides, templateValues } from "../scaffold/values";
 import { printable } from "../text";
 import { inferName } from "./name";
 import { planAdd } from "./plan";
@@ -45,6 +45,7 @@ export const prepareAdd = (options: AddOptions, project: AddProject) =>
         : yield* inferName(options.root);
     warnings.push(...inferred.warnings);
     const name = inferred.name;
+    yield* templateOverrides({ name: name.value });
     const values = yield* templateValues({
       name: name.value,
       settings,
@@ -59,11 +60,13 @@ export const prepareAdd = (options: AddOptions, project: AddProject) =>
     });
     const plan = yield* planAdd({ root: options.root, composition, rendered: files });
     const built = yield* buildManifest(composition, { briefWords: 0, mode: "add" });
-    for (const step of built.verify)
-      if (previous?.verify.some((old) => old.name === step.name))
-        return yield* new ComposeConflict({
-          details: { reason: "step_name", ids: [step.owner], step: step.name },
-        });
+    const conflicting = built.verify.find((step) =>
+      previous?.verify.some((old) => old.name === step.name),
+    );
+    if (conflicting)
+      return yield* new ComposeConflict({
+        details: { reason: "step_name", ids: [conflicting.owner], step: conflicting.name },
+      });
     const added = composition.fragments.map((entry) => entry.id);
     const present = new Set([...existing, ...added]);
     const missingRequired =

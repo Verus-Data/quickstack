@@ -12,8 +12,15 @@ describe("hook wiring", () => {
       expect(existsSync(`${REPO}${path}`), command).toBe(true);
     }
   });
+  it("delegates through the sole shell guard instead of wiring the TypeScript guard twice", () => {
+    expect(
+      wiredCommands().filter((command) =>
+        /\/(block-destructive\.sh|guard-commands\.ts)/.test(command),
+      ),
+    ).toEqual([expect.stringContaining("/block-destructive.sh")]);
+  });
   it.each([
-    ["PreToolUse", "guard-commands", "Bash"],
+    ["PreToolUse", "block-destructive", "Bash"],
     ["PreToolUse", "guard-generated", "Write"],
     ["PreToolUse", "guard-generated", "Edit"],
     ["PostToolUse", "typecheck-on-write", "Write"],

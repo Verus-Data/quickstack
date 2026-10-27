@@ -134,6 +134,8 @@ const bashVersion = spawnSync(bash, ["-c", 'echo "$BASH_VERSION"'], {
 function pathWithoutJq() {
   const bin = join(temp(), "no-jq-bin");
   mkdirSync(bin);
+  // Tracked by name: existsSync follows links, so a dangling one on PATH would be linked twice.
+  const linked = new Set<string>();
   for (const dir of (process.env.PATH ?? "").split(delimiter)) {
     let names: string[] = [];
     try {
@@ -142,7 +144,8 @@ function pathWithoutJq() {
       continue;
     }
     for (const name of names) {
-      if (name === "jq" || existsSync(join(bin, name))) continue;
+      if (name === "jq" || linked.has(name)) continue;
+      linked.add(name);
       symlinkSync(join(dir, name), join(bin, name));
     }
   }
@@ -373,41 +376,47 @@ const BASH4 = [
   ["coproc", /\bcoproc\b/, "code"],
 ] as const;
 
+type ShellText = { out: string; quote: string | undefined };
+
+function quotedCharacter(source: string, i: number, text: ShellText, keepDouble: boolean) {
+  const c = source[i];
+  if (text.quote === "'") {
+    if (c === "'") text.quote = undefined;
+    return i;
+  }
+  if (keepDouble) text.out += c;
+  if (c === "\\") {
+    i++;
+    if (keepDouble) text.out += source[i] ?? "";
+  } else if (c === '"') text.quote = undefined;
+  return i;
+}
+
+function unquotedCharacter(source: string, i: number, text: ShellText) {
+  const c = source[i] as string;
+  if (c === "\\") return i + 1;
+  if (c === "'" || c === '"') {
+    text.quote = c;
+    text.out += " ";
+    return i;
+  }
+  if (c === "#" && (i === 0 || /\s/.test(source[i - 1] as string))) {
+    while (i < source.length && source[i] !== "\n") i++;
+    text.out += "\n";
+    return i;
+  }
+  text.out += c;
+  return i;
+}
+
 /** The script without comments and single-quoted strings, and without double-quoted ones unless `keepDouble`. */
 function unquoted(source: string, keepDouble: boolean): string {
-  let out = "";
-  let quote: string | undefined;
+  const text: ShellText = { out: "", quote: undefined };
   for (let i = 0; i < source.length; i++) {
-    const c = source[i] as string;
-    if (quote === "'") {
-      if (c === "'") quote = undefined;
-      continue;
-    }
-    if (quote === '"') {
-      if (keepDouble) out += c;
-      if (c === "\\") {
-        i++;
-        if (keepDouble) out += source[i] ?? "";
-      } else if (c === '"') quote = undefined;
-      continue;
-    }
-    if (c === "\\") {
-      i++;
-      continue;
-    }
-    if (c === "'" || c === '"') {
-      quote = c;
-      out += " ";
-      continue;
-    }
-    if (c === "#" && (i === 0 || /\s/.test(source[i - 1] as string))) {
-      while (i < source.length && source[i] !== "\n") i++;
-      out += "\n";
-      continue;
-    }
-    out += c;
+    if (text.quote !== undefined) i = quotedCharacter(source, i, text, keepDouble);
+    else i = unquotedCharacter(source, i, text);
   }
-  return out;
+  return text.out;
 }
 function bash4Constructs(source: string): string[] {
   const views = { code: unquoted(source, false), expanded: unquoted(source, true) };
@@ -645,7 +654,11 @@ describe("composed settings wire each hook once [1.6d#4] [1.6d#5]", () => {
     30_000,
   );
 
-  test("git records every shipped shell script as executable [1.6d#5]", () => {
+  // The modes live in the git index, so this needs a checkout: local runs and CI have one, a tree
+  // rr synced to a test host (without .git) doesn't.
+  const inCheckout =
+    spawnGit(["rev-parse", "--is-inside-work-tree"], { cwd: registryRoot }).status === 0;
+  test.skipIf(!inCheckout)("git records every shipped shell script as executable [1.6d#5]", () => {
     const listed = spawnGit(["ls-files", "-s", "--", "*.sh"], {
       cwd: registryRoot,
       encoding: "utf8",
@@ -710,7 +723,8 @@ describe("advisory hooks never get in the way [1.6d#6]", () => {
 
   test("lint-on-write.sh caps the diagnostics it returns at 60 lines [1.6d#6]", async () => {
     const project = await scaffold("astro-blog");
-    fakeBiome(project, 200);
+    // One line over the cap exercises truncation without encoding 200 lines in bash 3.2.
+    fakeBiome(project, 61);
     writeFileSync(join(project, "src.ts"), "export const a = 1;\n");
     const run = runHook(project, "lint-on-write.sh", postWritePayload(project, "src.ts"));
     expect({ status: run.status, stderr: run.stderr }).toEqual({ status: 0, stderr: "" });

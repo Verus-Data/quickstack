@@ -7,10 +7,17 @@ import { FailureKind, VerifyChange } from "./schemas/verify";
 /**
  * An unknown subcommand: what was typed and up to three close known names (`core/suggest.ts`).
  * Or two flags that can't be used together, as typed (`new --launch` with `--no-launch`, 1.4).
+ * Or a parser-rejected value, with its expected input and optional close known values.
  */
 export const UsageDetails = Schema.Union([
   Schema.Struct({ command: Schema.String, suggestions: Schema.Array(Schema.String) }),
   Schema.Struct({ flags: Schema.Tuple([Schema.String, Schema.String]) }),
+  Schema.Struct({
+    flag: Schema.String,
+    value: Schema.String,
+    expected: Schema.String,
+    suggestions: Schema.optionalKey(Schema.Array(Schema.String)),
+  }),
 ]);
 export class Usage extends Schema.TaggedError<Usage>()("Usage", {
   details: Schema.optionalKey(UsageDetails),
@@ -23,9 +30,11 @@ export class Usage extends Schema.TaggedError<Usage>()("Usage", {
  * and `--without`; `dir`, a project directory whose name has a control character; `brief`, a
  * flag (`--with`, `--without`, `--sandbox`, in `id`) that `validate` takes only with `--brief`;
  * `only`, a `verify --only` name that is no check or serve step, with those steps' names in
- * `known` (1.3a); `name` or `author`, a naming flag with an unsupported control character.
+ * `known` (1.3a); `name` or `author`, a naming flag with an unsupported control character;
+ * `name` also rejects double quotes and backslashes.
  * `fragment` is an add request for a stack or an applied fragment (listed in `alreadyApplied`);
  * `agents` and `sandbox` are add flags that disagree with the manifest.
+ * `create_shadows` names an existing id, with its winning and shadowed origins in `origins`.
  */
 export const BadInputDetails = Schema.Struct({
   id: Schema.String,
@@ -34,15 +43,23 @@ export const BadInputDetails = Schema.Struct({
     "with_without",
     "dir",
     "brief",
+    "brief_stack",
+    "kind",
     "only",
     "name",
     "author",
     "fragment",
     "agents",
     "sandbox",
+    "create_id",
+    "create_target",
+    "create_shadows",
+    "from",
+    "confirmation",
   ]),
   known: Schema.optionalKey(Schema.Array(Schema.String)),
   alreadyApplied: Schema.optionalKey(Schema.Array(Schema.String)),
+  origins: Schema.optionalKey(Schema.Array(Origin)),
 });
 export class BadInput extends Schema.TaggedError<BadInput>()("BadInput", {
   details: Schema.optionalKey(BadInputDetails),
@@ -120,6 +137,7 @@ export class VerifyChanged extends Schema.TaggedError<VerifyChanged>()("VerifyCh
 /**
  * `reason` is a closed set later sub-phases extend; `path` is the file or directory involved.
  * `escape`: a write would land outside the project (its real path isn't under the project's).
+ * `blocked`: a live file or directory blocks a planned add path; `path` is the blocker.
  * `unwritable`: the project directory or a file in it couldn't be created or written.
  * `agent` and `no-tty`: a confirmation only a person at a terminal may give (Trust model, point 4)
  * was asked for under a detected agent, or without a terminal on stdin.
@@ -132,6 +150,7 @@ export const PermissionDeniedDetails = Schema.Struct({
     "read",
     "escape",
     "unwritable",
+    "blocked",
     "agent",
     "no-tty",
     "state-unwritable",
@@ -333,178 +352,25 @@ export function knownError(value: unknown): AppError | undefined {
  */
 export function detailLines(error: AppError, invocation: string): string[] {
   switch (error._tag) {
-    case "Usage": {
-      const details = error.details;
-      if (details && "flags" in details)
-        return [
-          `${details.flags[0]} and ${details.flags[1]} can't be used together.`,
-          "Next: drop one of them.",
-        ];
-      return details?.suggestions.length
-        ? [`Did you mean: ${details.suggestions.join(", ")}?`]
-        : [];
-    }
-    case "PermissionDenied": {
-      const details = error.details;
-      if (!details) return [];
-      const why =
-        details.reason === "escape"
-          ? [
-              "The path resolves outside the project directory, through a symlink or `..`.",
-              "Next: remove that symlink from the project directory, or pick another directory.",
-            ]
-          : details.reason === "unwritable"
-            ? [
-                "The project directory or a file in it can't be written. Nothing was left behind.",
-                "Next: pick a directory you can write to, or fix this one's permissions.",
-              ]
-            : details.reason === "agent"
-              ? [
-                  "This needs a person's confirmation, and an agent was detected. Nothing was changed.",
-                  "Next: ask the user to run this command from their own terminal.",
-                ]
-              : details.reason === "no-tty"
-                ? [
-                    "This needs a person's confirmation, and stdin is not a terminal. Nothing was changed.",
-                    "Next: run this command from a terminal.",
-                  ]
-                : details.reason === "state-unwritable"
-                  ? [
-                      "The state record outside the project can't be written, so nothing was confirmed or changed.",
-                      "Next: make that directory writable (or set QUICKSTACKS_STATE_DIR to one that is), then run this command again.",
-                    ]
-                  : details.reason === "launch"
-                    ? [
-                        "The agent CLI was found on PATH but can't be run by you. The project was written.",
-                        "Next: fix the binary's permissions, or start your agent in the project yourself.",
-                      ]
-                    : [];
-      return [...(details.path ? [`Path: ${printable(details.path)}`] : []), ...why];
-    }
-    case "TargetNotEmpty": {
-      const details = error.details;
-      if (!details) return [];
-      return [
-        `Path: ${printable(details.path)}`,
-        ...(details.entries.length
-          ? [`Contains: ${details.entries.map(printable).join(", ")}`]
-          : []),
-        ...(details.blocker === "non-file"
-          ? [
-              `Next: move the item named SKILL.md out of the target directory, or run ${invocation} skill install --print to copy the skill elsewhere.`,
-            ]
-          : // `skill install`'s differing target; its details are only path and entries.
-            details.entries.length === 1 &&
-              details.entries[0] === "SKILL.md" &&
-              /[/\\]\.claude[/\\]skills[/\\]quickstacks$/.test(details.path)
-            ? [
-                `Next: rerun ${invocation} skill install with --force to replace it, or --print to copy it elsewhere.`,
-              ]
-            : details.scaffold === "unfinished"
-              ? [
-                  "Scaffold: unfinished. An earlier `new` wrote this.",
-                  `Next: continue with ${BRIEF_PATH}, or remove the directory to start again.`,
-                ]
-              : details.scaffold === "green"
-                ? [
-                    "Scaffold: green. This is a finished project.",
-                    "Next: pick another directory for a new project; `add` will extend this one once it ships.",
-                  ]
-                : ["Next: pick a directory that doesn't exist yet or is empty."]),
-      ];
-    }
+    case "Usage":
+      return usageLines(error);
+    case "PermissionDenied":
+      return permissionLines(error);
+    case "TargetNotEmpty":
+      return targetLines(error, invocation);
     case "BadInput":
       return error.details ? badInputLines(error.details) : [];
-    case "NotFound": {
-      // `looked` means a path was missing (validate); `root`, an id missing from a registry root
-      // `list` doesn't read; otherwise an id missing from the registries `list` shows.
-      const details = error.details;
-      if (!details) return [];
-      if (details.path)
-        return [
-          `Path: ${printable(details.path)}`,
-          "Next: restore the bundled skill directory or reinstall quickstacks, then run doctor.",
-        ];
-      if (details.kind === "project")
-        return [
-          `Looked for: ${MANIFEST_PATH} in ${printable(details.looked ?? ".")} and every directory above it`,
-          `Next: run ${invocation} verify inside a project ${invocation} new created, or create one with ${invocation} new <stack> <dir>.`,
-        ];
-      return [
-        ...(details.looked ? [`Looked for: ${printable(details.looked)}`] : []),
-        ...(details.id !== undefined
-          ? [
-              `${details.kind === "fragment" ? "Fragment" : details.kind === "stack" ? "Stack" : "Id"}: ${printable(details.id)}`,
-            ]
-          : []),
-        ...(details.suggestions.length
-          ? [`Did you mean: ${details.suggestions.map(printable).join(", ")}?`]
-          : []),
-        details.looked
-          ? "Next: pass a registry root (a directory holding stacks/ or fragments/) or an entry directory inside one."
-          : details.root
-            ? `Next: ${invocation} validate ${shellArg(printable(details.root))} lists the ids under that root.`
-            : `Next: ${invocation} list shows every stack and fragment.`,
-      ];
-    }
+    case "NotFound":
+      return notFoundLines(error, invocation);
     // The report on stdout ends with these counts already; `--json` keeps them in details.
     case "ValidationFailed":
       return [];
-    case "EntryInvalid": {
-      const details = error.details;
-      if (!details) return [];
-      const line = details.line === undefined ? "" : `:${details.line}`;
-      return [
-        `Entry: ${printable(details.id)} (${details.origin}, ${details.reason})`,
-        ...(details.path ? [`Path: ${printable(details.path)}${line}`] : []),
-        ...(details.problem ? [`Problem: ${details.problem}`] : []),
-        ...(details.reason === "template"
-          ? [
-              `Next: use only ${TEMPLATE_VARIABLES.join(", ")} in that file's {{ }} tokens, or drop its .tmpl suffix to copy it as is.`,
-            ]
-          : []),
-      ];
-    }
-    case "ComposeConflict": {
-      const details = error.details;
-      if (!details) return [];
-      return [
-        `Reason: ${details.reason}`,
-        ...(details.stack ? [`Stack: ${printable(details.stack)}`] : []),
-        ...(details.ids.length ? [`Fragments: ${details.ids.map(printable).join(", ")}`] : []),
-        ...(details.path
-          ? [
-              `${details.reason === "needs_own_repo" ? "Repository" : "Path"}: ${printable(details.path)}`,
-            ]
-          : []),
-        ...(details.step ? [`Step: ${printable(details.step)}`] : []),
-        ...(details.key ? [`Key: ${printable(details.key)}`] : []),
-        ...(details.reason === "needs_own_repo"
-          ? [
-              details.fix?.length
-                ? `Next: run again with ${details.fix.map(printable).join(" ")}, or pick a directory outside that repository.`
-                : "Next: pick a directory outside that repository.",
-            ]
-          : details.reason === "reserved_path"
-            ? [
-                "The CLI owns .git/ and .quickstacks/ in a project; no entry may write under them, in any letter case.",
-                "Next: remove or rename that file in the entry.",
-              ]
-            : []),
-      ];
-    }
-    case "InvalidConfig": {
-      const details = error.details;
-      if (!details) return [];
-      return [
-        `Path: ${printable(details.path)}`,
-        ...(details.schemaVersion === undefined
-          ? []
-          : [
-              `Schema version: ${details.schemaVersion}, from a newer quickstacks. Upgrade quickstacks to read it.`,
-            ]),
-      ];
-    }
+    case "EntryInvalid":
+      return entryLines(error);
+    case "ComposeConflict":
+      return composeLines(error);
+    case "InvalidConfig":
+      return configLines(error);
     case "VerifyFailed":
       return error.details?.failed.length
         ? [
@@ -526,6 +392,117 @@ export function detailLines(error: AppError, invocation: string): string[] {
       return [];
   }
 }
+function usageLines(error: Usage): string[] {
+  const details = error.details;
+  if (details && "flags" in details)
+    return [
+      `${details.flags[0]} and ${details.flags[1]} can't be used together.`,
+      "Next: drop one of them.",
+    ];
+  if (details && "flag" in details)
+    return [
+      `Flag: ${printable(details.flag)}`,
+      `Value: ${printable(details.value)}`,
+      `Expected: ${printable(details.expected)}`,
+      ...(details.suggestions?.length
+        ? [`Did you mean: ${details.suggestions.map(printable).join(", ")}?`]
+        : []),
+      "Next: pass an expected value, or run --help for usage.",
+    ];
+  return details?.suggestions.length ? [`Did you mean: ${details.suggestions.join(", ")}?`] : [];
+}
+
+function permissionLines(error: PermissionDenied): string[] {
+  const details = error.details;
+  if (!details) return [];
+  const why = permissionReason(details.reason);
+  return [...(details.path ? [`Path: ${printable(details.path)}`] : []), ...why];
+}
+
+function targetLines(error: TargetNotEmpty, invocation: string): string[] {
+  const details = error.details;
+  if (!details) return [];
+  return [
+    `Path: ${printable(details.path)}`,
+    ...(details.entries.length ? [`Contains: ${details.entries.map(printable).join(", ")}`] : []),
+    ...targetNext(details, invocation),
+  ];
+}
+
+function notFoundLines(error: NotFound, invocation: string): string[] {
+  // `looked` means a path was missing (validate); `root`, an id missing from a registry root
+  // `list` doesn't read; otherwise an id missing from the registries `list` shows.
+  const details = error.details;
+  if (!details) return [];
+  if (details.path)
+    return [
+      `Path: ${printable(details.path)}`,
+      "Next: restore the bundled skill directory or reinstall quickstacks, then run doctor.",
+    ];
+  if (details.kind === "project")
+    return [
+      `Looked for: ${MANIFEST_PATH} in ${printable(details.looked ?? ".")} and every directory above it`,
+      `Next: run ${invocation} verify inside a project ${invocation} new created, or create one with ${invocation} new <stack> <dir>.`,
+    ];
+  return [
+    ...(details.looked ? [`Looked for: ${printable(details.looked)}`] : []),
+    ...(details.id !== undefined
+      ? [`${entryKindLabel(details.kind)}: ${printable(details.id)}`]
+      : []),
+    ...(details.suggestions.length
+      ? [`Did you mean: ${details.suggestions.map(printable).join(", ")}?`]
+      : []),
+    notFoundNext(details, invocation),
+  ];
+}
+
+function entryLines(error: EntryInvalid): string[] {
+  const details = error.details;
+  if (!details) return [];
+  const line = details.line === undefined ? "" : `:${details.line}`;
+  return [
+    `Entry: ${printable(details.id)} (${details.origin}, ${details.reason})`,
+    ...(details.path ? [`Path: ${printable(details.path)}${line}`] : []),
+    ...(details.problem ? [`Problem: ${details.problem}`] : []),
+    ...(details.reason === "template"
+      ? [
+          `Next: use only ${TEMPLATE_VARIABLES.join(", ")} in that file's {{ }} tokens, or drop its .tmpl suffix to copy it as is.`,
+        ]
+      : []),
+  ];
+}
+
+function composeLines(error: ComposeConflict): string[] {
+  const details = error.details;
+  if (!details) return [];
+  return [
+    `Reason: ${details.reason}`,
+    ...(details.stack ? [`Stack: ${printable(details.stack)}`] : []),
+    ...(details.ids.length ? [`Fragments: ${details.ids.map(printable).join(", ")}`] : []),
+    ...(details.path
+      ? [
+          `${details.reason === "needs_own_repo" ? "Repository" : "Path"}: ${printable(details.path)}`,
+        ]
+      : []),
+    ...(details.step ? [`Step: ${printable(details.step)}`] : []),
+    ...(details.key ? [`Key: ${printable(details.key)}`] : []),
+    ...composeNext(details),
+  ];
+}
+
+function configLines(error: InvalidConfig): string[] {
+  const details = error.details;
+  if (!details) return [];
+  return [
+    `Path: ${printable(details.path)}`,
+    ...(details.schemaVersion === undefined
+      ? []
+      : [
+          `Schema version: ${details.schemaVersion}, from a newer quickstacks. Upgrade quickstacks to read it.`,
+        ]),
+  ];
+}
+
 /** The human lines naming what changed; `--accept-changes` prints the same lines. */
 export function changeLines(change: typeof VerifyChange.Type): string[] {
   const names = (label: string, list: ReadonlyArray<string>) =>
@@ -537,11 +514,7 @@ export function changeLines(change: typeof VerifyChange.Type): string[] {
     ...(change.settings ? ["Settings: the manifest's env or preset changed"] : []),
   ];
   return [
-    change.reason === "project-id"
-      ? "Against: the state record for this project directory, which is kept under another projectId"
-      : change.against === "manifest"
-        ? "Against: the manifest's own verifyDigest"
-        : "Against: the state record kept outside the project",
+    changeBaseline(change),
     ...(items.length
       ? items
       : ["Which steps changed is not itemized: there are no per-step digests to compare with."]),
@@ -553,6 +526,26 @@ const shellArg = (text: string) =>
 function badInputLines(details: typeof BadInputDetails.Type): string[] {
   const id = printable(details.id);
   switch (details.flag) {
+    case "create_id":
+      return [
+        `Id: ${id}`,
+        "Next: use a lowercase kebab-case id, with only letters and digits between hyphens.",
+      ];
+    case "create_shadows":
+      return [
+        `Id: ${id}`,
+        `Origins: ${details.origins?.join(", ") ?? ""}`,
+        `Next: use --from ${details.origins?.[0] ?? "<origin>"} to start from a copy, or pick another id.`,
+      ];
+    case "create_target":
+      return [`Path: ${id}`, "Next: edit the existing entry, or choose an unused id."];
+    case "from":
+      return [`Origin: ${id}`, "Next: copy from bundled or project; user is the destination."];
+    case "confirmation":
+      return [
+        "The copy was declined. Nothing was changed.",
+        "Next: review the entry before copying it.",
+      ];
     case "fragment":
       return details.alreadyApplied?.length
         ? [
@@ -578,6 +571,10 @@ function badInputLines(details: typeof BadInputDetails.Type): string[] {
         `Next: name ${id} in only one of --with and --without.`,
       ];
     case "name":
+      return [
+        `Flag: --name ${id}`,
+        "Next: pass --name without control characters, double quotes or backslashes.",
+      ];
     case "author":
       return [
         `Flag: --${details.flag} ${id}`,
@@ -588,6 +585,14 @@ function badInputLines(details: typeof BadInputDetails.Type): string[] {
         `Directory name: ${id}`,
         "Next: pick a project directory whose name has no control characters.",
       ];
+    case "kind":
+      return [
+        `Id: ${id}`,
+        "Kinds: stack, fragment",
+        "Next: select --kind stack or --kind fragment.",
+      ];
+    case "brief_stack":
+      return [`Id: ${id}`, "Next: --brief takes a stack; choose one with quickstacks list stacks."];
     case "brief":
       return [
         `Flag: ${id}`,
@@ -642,4 +647,108 @@ export function encodeDetails(error: AppError): Effect.Effect<unknown, Schema.Sc
     case "BrokenPipe":
       return Effect.succeed(undefined);
   }
+}
+
+function permissionReason(reason: (typeof PermissionDeniedDetails.Type)["reason"]): string[] {
+  switch (reason) {
+    case "escape":
+      return [
+        "The path resolves outside the project directory, through a symlink or `..`.",
+        "Next: remove that symlink from the project directory, or pick another directory.",
+      ];
+    case "blocked":
+      return [
+        "A file or directory in the project is in the way of a planned path. Nothing was changed.",
+        "Next: move or rename the blocking item, then run add again.",
+      ];
+    case "unwritable":
+      return [
+        "The project directory or a file in it can't be written. Nothing was left behind.",
+        "Next: pick a directory you can write to, or fix this one's permissions.",
+      ];
+    case "agent":
+      return [
+        "This needs a person's confirmation, and an agent was detected. Nothing was changed.",
+        "Next: ask the user to run this command from their own terminal.",
+      ];
+    case "no-tty":
+      return [
+        "This needs a person's confirmation, and stdin is not a terminal. Nothing was changed.",
+        "Next: run this command from a terminal.",
+      ];
+    case "state-unwritable":
+      return [
+        "The state record outside the project can't be written, so nothing was confirmed or changed.",
+        "Next: make that directory writable (or set QUICKSTACKS_STATE_DIR to one that is), then run this command again.",
+      ];
+    case "launch":
+      return [
+        "The agent CLI was found on PATH but can't be run by you. The project was written.",
+        "Next: fix the binary's permissions, or start your agent in the project yourself.",
+      ];
+    default:
+      return [];
+  }
+}
+
+function targetNext(details: typeof TargetNotEmptyDetails.Type, invocation: string): string[] {
+  if (details.blocker === "non-file")
+    return [
+      `Next: move the item named SKILL.md out of the target directory, or run ${invocation} skill install --print to copy the skill elsewhere.`,
+    ];
+  // `skill install`'s differing target; its details are only path and entries.
+  if (
+    details.entries.length === 1 &&
+    details.entries[0] === "SKILL.md" &&
+    /[/\\]\.claude[/\\]skills[/\\]quickstacks$/.test(details.path)
+  )
+    return [
+      `Next: rerun ${invocation} skill install with --force to replace it, or --print to copy it elsewhere.`,
+    ];
+  if (details.scaffold === "unfinished")
+    return [
+      "Scaffold: unfinished. An earlier `new` wrote this.",
+      `Next: continue with ${BRIEF_PATH}, or remove the directory to start again.`,
+    ];
+  if (details.scaffold === "green")
+    return [
+      "Scaffold: green. This is a finished project.",
+      "Next: pick another directory for a new project; `add` will extend this one once it ships.",
+    ];
+  return ["Next: pick a directory that doesn't exist yet or is empty."];
+}
+
+function entryKindLabel(kind: (typeof NotFoundDetails.Type)["kind"]): string {
+  if (kind === "fragment") return "Fragment";
+  if (kind === "stack") return "Stack";
+  return "Id";
+}
+function notFoundNext(details: typeof NotFoundDetails.Type, invocation: string): string {
+  if (details.looked)
+    return "Next: pass a registry root (a directory holding stacks/ or fragments/) or an entry directory inside one.";
+  if (details.root)
+    return `Next: ${invocation} validate ${shellArg(printable(details.root))} lists the ids under that root.`;
+  return `Next: ${invocation} list shows every stack and fragment.`;
+}
+
+function composeNext(details: typeof ComposeConflictDetails.Type): string[] {
+  if (details.reason === "needs_own_repo")
+    return [
+      details.fix?.length
+        ? `Next: run again with ${details.fix.map(printable).join(" ")}, or pick a directory outside that repository.`
+        : "Next: pick a directory outside that repository.",
+    ];
+  if (details.reason === "reserved_path")
+    return [
+      "The CLI owns .git/ and .quickstacks/ in a project; no entry may write under them, in any letter case.",
+      "Next: remove or rename that file in the entry.",
+    ];
+  return [];
+}
+
+function changeBaseline(change: typeof VerifyChange.Type): string {
+  if (change.reason === "project-id")
+    return "Against: the state record for this project directory, which is kept under another projectId";
+  if (change.against === "manifest") return "Against: the manifest's own verifyDigest";
+  return "Against: the state record kept outside the project";
 }

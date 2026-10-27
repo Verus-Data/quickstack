@@ -12,8 +12,17 @@ const result: Omit<AddResult, "handoff"> = {
   mergeNeeded: [{ path: "README.md", incoming: [".quickstacks/incoming/README.md"] }],
   missingRequired: [{ id: "required", command: "quickstacks add required" }],
   commandsKept: [],
-  warnings: [{ code: "missing_tool", id: "tool" }],
-  missingTools: [],
+  warnings: [
+    { code: "missing_tool", id: "tool" },
+    { code: "stack_unknown", id: "gone-stack" },
+  ],
+  missingTools: [
+    {
+      tool: "tool",
+      owners: [{ kind: "fragment", id: "ci" }],
+      drop: [{ id: "ci", flag: "with" }],
+    },
+  ],
   name: { value: "app", source: "directory" },
   createdManifest: true,
   tamperCheck: null,
@@ -36,7 +45,8 @@ test("the add summary keeps the shown path, merge task and actionable confirmati
       "Added ci to app",
       "Written: ci.yml",
       "Skipped: same.txt",
-      "Warning: missing_tool: tool",
+      "Missing tool: tool not found (needed by ci)",
+      "Warning: the manifest's stack gone-stack is in no registry; composed without it",
       "",
       "Merge needed",
       "  README.md: .quickstacks/incoming/README.md",
@@ -47,6 +57,11 @@ test("the add summary keeps the shown path, merge task and actionable confirmati
     ].join("\n"),
   );
   expect(renderAdd(result, { ...context, audience: "human" })).toBe(text);
+});
+
+test("adding to the current directory doesn't name it as a dot", () => {
+  const text = renderAdd(result, { shown: ".", audience: "agent", invocation: "quickstacks" });
+  expect(text.split("\n")[0]).toBe("Added ci");
 });
 
 test("entry and filesystem values cannot inject control characters into the add summary", () => {

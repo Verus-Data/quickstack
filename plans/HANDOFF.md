@@ -1,7 +1,7 @@
 # Handoff for the next quickstacks session
 
-Status: DRAFT 2026-10-26 (phase 0 merged; phase 1 round 1 executed and batch-reviewed, fixes
-being applied; plan awaiting the maintainers' review)
+Status: DRAFT 2026-10-27 (phases 0 and 1 merged; the doable plans of phases 2 and 3 executed
+and production-reviewed, 3.2a/3.2b deferred; plan awaiting the maintainers' review)
 
 Start here, then read repo `AGENTS.md`, the README's
 [product summary](README.md#product-to-preserve), and
@@ -20,7 +20,7 @@ A maintainer still has to confirm each run, and the other four bundled stacks ha
 - Assumption 1, first result: an agent followed composed briefs of 3,200 to 4,800 words to a green `verify` in 3 to 5 minutes with nothing asked, once the briefs' own contradictions were fixed.
 - D5: the 6,000-word budget held with room to spare for these stacks; no run tested a brief near the limit.
 
-## Phases 2 and 3 (2026-10-27, in progress)
+## Phases 2 and 3 (2026-10-27, executed)
 
 Phases 2 and 3 are being executed through Codex delegates (`/execute:codex`), one test-author
 then one implementer per sub-phase, merged to `main` as each lands. Work runs off the dev build
@@ -32,13 +32,45 @@ reworded for `dist/quickstacks` or deferred in its plan.
   `verify`), [3.4c](phases/phase-3.4c-agent-skill.md) (the agent skill and `skill install`),
   [3.1c](phases/phase-3.1c-new-dry-run-and-naming.md) (`new --dry-run`),
   [2.0c](phases/phase-2.0c-run-ledger.md) (the run ledger, `runs`, seeded from the 1.6b notes),
-  [3.0](phases/phase-3.0-add-fragments-to-repo.md) (`add`).
-- In progress: 3.1a, 2.2, 2.0b; then 3.1b, 3.4a, 3.4b and 3.3a-c.
-- Deferred to phase 4 or later: [3.2a](phases/phase-3.2a-user-sources.md) and
-  [3.2b](phases/phase-3.2b-source-trust-and-updates.md), gated on outside demand and open
+  [3.0](phases/phase-3.0-add-fragments-to-repo.md) (`add`),
+  [3.1a](phases/phase-3.1a-show-and-preview.md) (`show` and the brief preview),
+  [2.2](phases/phase-2.2-deterministic-rot-checks.md) (rot checks; reread the condensed
+  `effect` and `effect-schema` guidance it trimmed to fit `mobile-expo --with effect`),
+  [2.0b](phases/phase-2.0b-bench.md) (`bun run bench`, fake-agent tested),
+  [3.1b](phases/phase-3.1b-create-and-authoring-guide.md) (`create` and the authoring guide),
+  [3.3a](phases/phase-3.3a-release-and-deploy-fragments.md),
+  [3.3b](phases/phase-3.3b-bundled-stack-expansion.md) and
+  [3.3c](phases/phase-3.3c-service-vendor-and-effect-fragments.md) (the composition and
+  safety tests for every bundled entry; bench proofs are the maintainers'),
+  [3.4a](phases/phase-3.4a-agent-harness-fragment.md) (the TypeScript destructive guard in
+  `claude-harness`, sharing one shell lexer with the repo's own hooks),
+  [3.4b](phases/phase-3.4b-native-agent-adapters.md) (Codex, OpenCode and Cursor adapters
+  calling the same shell guards, a reference check per config format, and the skill's Claude
+  Code plugin; publishing it is a manual step in `packages/cli/README.md`).
+- Deferred to phase 4 or later: [3.2a](phases/phase-3.2a-git-sources-and-untrusted-origin.md) and
+  [3.2b](phases/phase-3.2b-source-updates-and-trust-report.md), gated on outside demand and open
   question 18.
 - Left to maintainers: the real bench runs beyond a few seed runs, and the proofs that need
   them (3.3a-c, parts of 3.4a, 3.4b, 3.5b and 2.0b).
+- After the last unit: one codebase-quality refactor (one `fitsStack` rule, an `isStack` guard),
+  then two production reviews (CLI; harness and shipped entries), whose fixes are merged: `create`
+  refuses to silently shadow an existing id, `add` names what blocks a planned path, project
+  names with `"` or `\` are refused, the shipped destructive guard keeps every shell pattern
+  when the TypeScript guard runs and fails closed, the shared lexer decodes `$'...'`, and the
+  Codex adapter's hooks refuse when their guard is missing. The repo's own Codex delegates now
+  run the destructive guard too.
+- Open from the reviews, for maintainers:
+  - The agent skill (and its plugin copy) falls back to `npx -y quickstacks@latest`, and the
+    npm name is unreserved, so anyone could publish under it. Reserve the name or drop the
+    fallback before the plugin is published.
+  - `.rr.yaml` names one maintainer's hosts (rr is opt-in per clone, `git config
+    quickstacks.rr true`); another maintainer who opts in needs hosts with the same names.
+  - The repo's own shell hooks (`.claude/hooks/*.sh`) have drifted from the shipped ones;
+    `tests/hooks/harness-sync.test.ts` checks only `_lib.ts` and `_shell.ts`.
+  - Cursor's `Write` payload for an edit to an existing file isn't recorded; the fixture
+    follows the docs. Record a live payload to confirm the secrets guard sees edits.
+  - `list` still shows the three 1.6b stacks as proven while `validate` notes their
+    compositions changed since that run; rerun them with `bun run bench`.
 
 ## Current state (2026-10-26)
 

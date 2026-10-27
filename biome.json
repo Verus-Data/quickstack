@@ -22,10 +22,18 @@
       "style": {
         "useImportType": "error",
         "useExportType": "error",
-        "useConst": "error"
+        "useConst": "error",
+        "noNestedTernary": "error"
       },
       "correctness": {
         "noUnusedImports": "error"
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": {
+          "level": "error",
+          "options": { "maxAllowedComplexity": 15 }
+        },
+        "useMaxParams": "error"
       }
     }
   },

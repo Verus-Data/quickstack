@@ -36,8 +36,87 @@ export type Skipped =
 type Candidate = { _tag: "Entry"; entry: Found } | { _tag: "Rejected"; rejection: Rejection };
 /** Every regular file under a directory, or the first symlink met (nothing past it is read). */
 type Walked =
-  | { _tag: "Files"; files: ReadonlyArray<{ rel: string; mode: number }> }
+  | {
+      _tag: "Files";
+      files: ReadonlyArray<{ rel: string; mode: number }>;
+      directories: ReadonlyArray<string>;
+    }
   | { _tag: "Link"; rel: string };
+
+type RootCandidate = { root: RegistryRoot; candidate: Candidate };
+
+function registryWinners(found: ReadonlyMap<string, ReadonlyArray<RootCandidate>>) {
+  const results: Array<Entry | Rejection> = [];
+  for (const [winner, ...hidden] of found.values()) {
+    if (!winner) continue;
+    const shadows = [...new Set(hidden.map(({ root }) => root.origin))];
+    const { candidate } = winner;
+    if (candidate._tag === "Entry") {
+      const entry = { ...candidate.entry, shadows };
+      results.push({ ...entry, trusted: trustOf(entry, winner.root) });
+    } else {
+      const { rejected } = candidate.rejection;
+      const hides = shadows.length
+        ? `; hides ${shadows.join(" and ")} cop${shadows.length > 1 ? "ies" : "y"}`
+        : "";
+      results.push({
+        ...candidate.rejection,
+        rejected: { ...rejected, error: `${rejected.error}${hides}` },
+      });
+    }
+  }
+  const key = (value: Entry | Rejection) => ("rejected" in value ? value.rejected : value);
+  return results.sort((a, b) => {
+    const x = key(a);
+    const y = key(b);
+    if (x.kind !== y.kind) return x.kind === "stack" ? -1 : 1;
+    return x.id < y.id ? -1 : 1;
+  });
+}
+
+const walkChild = (
+  fs: FileSystem.FileSystem,
+  path: Path.Path,
+  dir: string,
+  at: string,
+): Effect.Effect<Walked, PlatformError.PlatformError> =>
+  Effect.gen(function* () {
+    const info = yield* fs.lstat(path.join(dir, at));
+    if (info.type === "SymbolicLink") return { _tag: "Link", rel: at } as const;
+    if (info.type === "Directory") {
+      const inner = yield* walkEntry(fs, path, dir, at);
+      if (inner._tag === "Link") return inner;
+      return { ...inner, directories: [at, ...inner.directories] };
+    }
+    return {
+      _tag: "Files",
+      directories: [],
+      files: info.type === "File" ? [{ rel: at, mode: info.mode & 0o777 }] : [],
+    } as const;
+  });
+/**
+ * Regular files under `dir`, depth first by sorted name, stopping at the first symlink.
+ * Each name is lstat'ed before anything descends into it, so a link is never followed.
+ */
+const walkEntry = (
+  fs: FileSystem.FileSystem,
+  path: Path.Path,
+  dir: string,
+  rel = "",
+): Effect.Effect<Walked, PlatformError.PlatformError> =>
+  Effect.gen(function* () {
+    const files: Array<{ rel: string; mode: number }> = [];
+    const directories: string[] = [];
+    const found = yield* fs.readDirectory(rel ? path.join(dir, rel) : dir);
+    for (const name of [...found].sort()) {
+      const at = rel ? `${rel}/${name}` : name;
+      const child = yield* walkChild(fs, path, dir, at);
+      if (child._tag === "Link") return child;
+      directories.push(...child.directories);
+      files.push(...child.files);
+    }
+    return { _tag: "Files", files, directories } as const;
+  });
 
 const kinds = [
   { kind: "stack", dir: "stacks" },
@@ -105,6 +184,14 @@ export class Registry extends Context.Service<
     readonly files: (
       entry: Entry,
     ) => Effect.Effect<ReadonlyArray<EntryFile>, EntryInvalid | PermissionDenied>;
+    /** Complete entry tree, including empty directories and author notes, for working copies. */
+    readonly tree: (entry: Entry) => Effect.Effect<
+      {
+        directories: ReadonlyArray<string>;
+        files: ReadonlyArray<{ source: string; mode: number }>;
+      },
+      EntryInvalid | PermissionDenied
+    >;
     /**
      * The text of one file in an entry, by its entry-relative `source`. Every path segment is
      * lstat'ed first, so a symlink anywhere under the entry is `EntryInvalid` (`symlink`) and
@@ -158,26 +245,7 @@ export class Registry extends Context.Service<
                 : Effect.void,
             ),
           );
-        /**
-         * Regular files under `dir`, depth first by sorted name, stopping at the first symlink.
-         * Each name is lstat'ed before anything descends into it, so a link is never followed.
-         */
-        const walk = (dir: string, rel = ""): Effect.Effect<Walked, PlatformError.PlatformError> =>
-          Effect.gen(function* () {
-            const files: Array<{ rel: string; mode: number }> = [];
-            const found = yield* fs.readDirectory(rel ? path.join(dir, rel) : dir);
-            for (const name of [...found].sort()) {
-              const at = rel ? `${rel}/${name}` : name;
-              const info = yield* fs.lstat(path.join(dir, at));
-              if (info.type === "SymbolicLink") return { _tag: "Link", rel: at } as const;
-              if (info.type === "Directory") {
-                const inner = yield* walk(dir, at);
-                if (inner._tag === "Link") return inner;
-                files.push(...inner.files);
-              } else if (info.type === "File") files.push({ rel: at, mode: info.mode & 0o777 });
-            }
-            return { _tag: "Files", files } as const;
-          });
+        const walk = (dir: string, rel = "") => walkEntry(fs, path, dir, rel);
 
         const candidate = (origin: Origin, kind: Kind, dir: string, id: string) =>
           Effect.gen(function* () {
@@ -189,94 +257,99 @@ export class Registry extends Context.Service<
                 ...(at === undefined ? {} : { path: at }),
               },
             });
+            const file = markdownFile(kind);
+            const decodeCandidate = (text: string) =>
+              Effect.gen(function* () {
+                const decoded = yield* decodeEntry(kind, text);
+                switch (decoded._tag) {
+                  case "Newer":
+                    yield* Effect.logWarning(
+                      `Skipped ${origin} ${kind} ${printable(id)}: schema_version ${decoded.version} is newer than this CLI reads`,
+                    );
+                    skipped.push({
+                      reason: "newer",
+                      origin,
+                      kind,
+                      id,
+                      dir,
+                      version: decoded.version,
+                    });
+                    return undefined;
+                  case "Invalid":
+                    return reject("decode", decoded.error, file);
+                  case "Meta":
+                    if (decoded.meta.id !== id)
+                      return reject(
+                        "id_mismatch",
+                        `id: ${JSON.stringify(decoded.meta.id)} must equal the directory name ${JSON.stringify(id)}`,
+                        file,
+                      );
+                    return {
+                      _tag: "Entry",
+                      entry: { id, kind, origin, dir, meta: decoded.meta, body: decoded.body },
+                    } satisfies Candidate;
+                }
+              });
+            const checkTree = Effect.gen(function* () {
+              const walked = yield* Effect.result(walk(dir));
+              if (walked._tag === "Failure")
+                return reject("unreadable", "the entry directory is unreadable", ".");
+              if (walked.success._tag === "Link")
+                return reject("symlink", `symlink: ${walked.success.rel}`, walked.success.rel);
+              return undefined;
+            });
+            const markdownRejection = (error: PlatformError.PlatformError) =>
+              notFound(error)
+                ? reject("missing", `${file} is missing`, file)
+                : reject("unreadable", `${file} is unreadable`, file);
+            const readCandidate = Effect.gen(function* () {
+              const problem = yield* checkTree;
+              if (problem) return problem;
+              const text = yield* Effect.result(fs.readFileString(path.join(dir, file)));
+              if (text._tag === "Failure") return markdownRejection(text.failure);
+              return yield* decodeCandidate(text.success);
+            });
             const self = yield* Effect.result(fs.lstat(dir));
             if (self._tag === "Failure")
               return reject("unreadable", "the entry directory is unreadable", ".");
             if (self.success.type === "SymbolicLink")
               return reject("symlink", "the entry directory is a symlink", ".");
             if (self.success.type !== "Directory") return undefined;
-            const walked = yield* Effect.result(walk(dir));
-            if (walked._tag === "Failure")
-              return reject("unreadable", "the entry directory is unreadable", ".");
-            if (walked.success._tag === "Link")
-              return reject("symlink", `symlink: ${walked.success.rel}`, walked.success.rel);
-            const file = markdownFile(kind);
-            const text = yield* Effect.result(fs.readFileString(path.join(dir, file)));
-            if (text._tag === "Failure")
-              return notFound(text.failure)
-                ? reject("missing", `${file} is missing`, file)
-                : reject("unreadable", `${file} is unreadable`, file);
-            const decoded = yield* decodeEntry(kind, text.success);
-            switch (decoded._tag) {
-              case "Newer":
-                yield* Effect.logWarning(
-                  `Skipped ${origin} ${kind} ${printable(id)}: schema_version ${decoded.version} is newer than this CLI reads`,
-                );
-                skipped.push({ reason: "newer", origin, kind, id, dir, version: decoded.version });
-                return undefined;
-              case "Invalid":
-                return reject("decode", decoded.error, file);
-              case "Meta":
-                if (decoded.meta.id !== id)
-                  return reject(
-                    "id_mismatch",
-                    `id: ${JSON.stringify(decoded.meta.id)} must equal the directory name ${JSON.stringify(id)}`,
-                    file,
-                  );
-                return {
-                  _tag: "Entry",
-                  entry: { id, kind, origin, dir, meta: decoded.meta, body: decoded.body },
-                } satisfies Candidate;
+            return yield* readCandidate;
+          });
+
+        const loadKind = (
+          root: RegistryRoot,
+          kind: Kind,
+          dir: string,
+          found: Map<string, RootCandidate[]>,
+        ) =>
+          Effect.gen(function* () {
+            const strict = root.origin === "project";
+            const parent = path.join(root.path, dir);
+            if (strict && (yield* linked(parent))) {
+              skipped.push({ reason: "symlink", origin: root.origin, dir: parent });
+              return;
+            }
+            for (const id of yield* names(parent)) {
+              const loaded = yield* candidate(root.origin, kind, path.join(parent, id), id);
+              if (!loaded) continue;
+              const key = `${kind}/${id}`;
+              found.set(key, [...(found.get(key) ?? []), { root, candidate: loaded }]);
             }
           });
 
         const load = Effect.gen(function* () {
-          const found = new Map<string, Array<{ root: RegistryRoot; candidate: Candidate }>>();
+          const found = new Map<string, RootCandidate[]>();
           for (const root of roots) {
             const strict = root.origin === "project";
             if (strict && (yield* linked(root.path))) {
               skipped.push({ reason: "symlink", origin: root.origin, dir: root.path });
               continue;
             }
-            for (const { kind, dir } of kinds) {
-              const parent = path.join(root.path, dir);
-              if (strict && (yield* linked(parent))) {
-                skipped.push({ reason: "symlink", origin: root.origin, dir: parent });
-                continue;
-              }
-              for (const id of yield* names(parent)) {
-                const loaded = yield* candidate(root.origin, kind, path.join(parent, id), id);
-                if (!loaded) continue;
-                const key = `${kind}/${id}`;
-                found.set(key, [...(found.get(key) ?? []), { root, candidate: loaded }]);
-              }
-            }
+            for (const { kind, dir } of kinds) yield* loadKind(root, kind, dir, found);
           }
-          const results: Array<Entry | Rejection> = [];
-          for (const [winner, ...hidden] of found.values()) {
-            if (!winner) continue;
-            const shadows = [...new Set(hidden.map(({ root }) => root.origin))];
-            const { candidate } = winner;
-            if (candidate._tag === "Entry") {
-              const entry = { ...candidate.entry, shadows };
-              results.push({ ...entry, trusted: trustOf(entry, winner.root) });
-            } else {
-              const { rejected } = candidate.rejection;
-              const hides = shadows.length
-                ? `; hides ${shadows.join(" and ")} cop${shadows.length > 1 ? "ies" : "y"}`
-                : "";
-              results.push({
-                ...candidate.rejection,
-                rejected: { ...rejected, error: `${rejected.error}${hides}` },
-              });
-            }
-          }
-          const key = (value: Entry | Rejection) => ("rejected" in value ? value.rejected : value);
-          return results.sort((a, b) => {
-            const x = key(a);
-            const y = key(b);
-            return x.kind !== y.kind ? (x.kind === "stack" ? -1 : 1) : x.id < y.id ? -1 : 1;
-          });
+          return registryWinners(found);
         });
         /** Filled while `load` runs; read only after it has. */
         const skipped: Skipped[] = [];
@@ -289,11 +362,7 @@ export class Registry extends Context.Service<
         const checked = <A>(
           entry: Entry,
           source: string,
-          read: (
-            file: string,
-            denied: (at: string) => PermissionDenied,
-            missing: EntryInvalid,
-          ) => Effect.Effect<A, EntryInvalid | PermissionDenied>,
+          read: (file: string) => Effect.Effect<A, PlatformError.PlatformError>,
         ) =>
           Effect.gen(function* () {
             const invalid = (reason: "symlink" | "missing", at: string) =>
@@ -317,8 +386,51 @@ export class Registry extends Context.Service<
                 );
               if (info.type === "SymbolicLink") return yield* invalid("symlink", rel);
             }
-            return yield* read(path.join(entry.dir, source), denied, invalid("missing", source));
+            const file = path.join(entry.dir, source);
+            return yield* read(file).pipe(
+              Effect.mapError((error) =>
+                notFound(error) ? invalid("missing", source) : denied(file),
+              ),
+            );
           });
+
+        const tree = (entry: Entry) =>
+          Effect.gen(function* () {
+            const walked = yield* walk(entry.dir).pipe(
+              Effect.mapError(
+                () => new PermissionDenied({ details: { reason: "read", path: entry.dir } }),
+              ),
+            );
+            if (walked._tag === "Link")
+              return yield* new EntryInvalid({
+                details: {
+                  id: entry.id,
+                  origin: entry.origin,
+                  reason: "symlink",
+                  path: walked.rel,
+                },
+              });
+            return {
+              directories: walked.directories,
+              files: walked.files.map(({ rel, mode }) => ({ source: rel, mode })),
+            };
+          });
+
+        const rejectionError = (item: Rejection, id: string) => {
+          const { rejected, reason } = item;
+          if (reason === "unreadable")
+            return new PermissionDenied({
+              details: { reason: "read", path: path.join(rejected.dir, item.path ?? ".") },
+            });
+          return new EntryInvalid({
+            details: {
+              id,
+              origin: rejected.origin,
+              reason,
+              ...(item.path === undefined ? {} : { path: item.path }),
+            },
+          });
+        };
 
         return {
           all: loaded.pipe(
@@ -333,57 +445,23 @@ export class Registry extends Context.Service<
               });
               if (!item) return yield* new NotFound({ details: { suggestions: [], id, kind } });
               if (!("rejected" in item)) return item;
-              const { rejected, reason } = item;
-              if (reason === "unreadable")
-                return yield* new PermissionDenied({
-                  details: { reason: "read", path: path.join(rejected.dir, item.path ?? ".") },
-                });
-              return yield* new EntryInvalid({
-                details: {
-                  id,
-                  origin: rejected.origin,
-                  reason,
-                  ...(item.path === undefined ? {} : { path: item.path }),
-                },
-              });
+              return yield* rejectionError(item, id);
             }),
           files: (entry) =>
             Effect.gen(function* () {
-              const walked = yield* walk(entry.dir).pipe(
-                Effect.mapError(
-                  () => new PermissionDenied({ details: { reason: "read", path: entry.dir } }),
-                ),
-              );
-              if (walked._tag === "Link")
-                return yield* new EntryInvalid({
-                  details: {
-                    id: entry.id,
-                    origin: entry.origin,
-                    reason: "symlink",
-                    path: walked.rel,
-                  },
-                });
+              const walked = yield* tree(entry);
               // `files/<path>` and `adapters/<agent>/<path>`; anything else in the entry ships nothing.
               const shipped = /^(?:files|adapters\/[^/]+)\/(.+)$/;
               return walked.files
-                .flatMap(({ rel, mode }) => {
-                  const match = shipped.exec(rel);
-                  return match?.[1] ? [{ source: rel, path: match[1], mode }] : [];
+                .flatMap(({ source, mode }) => {
+                  const match = shipped.exec(source);
+                  return match?.[1] ? [{ source, path: match[1], mode }] : [];
                 })
                 .sort((a, b) => (a.source < b.source ? -1 : 1));
             }),
-          read: (entry, source) =>
-            checked(entry, source, (file, denied, missing) =>
-              fs
-                .readFileString(file)
-                .pipe(Effect.mapError((error) => (notFound(error) ? missing : denied(file)))),
-            ),
-          bytes: (entry, source) =>
-            checked(entry, source, (file, denied, missing) =>
-              fs
-                .readFile(file)
-                .pipe(Effect.mapError((error) => (notFound(error) ? missing : denied(file)))),
-            ),
+          tree,
+          read: (entry, source) => checked(entry, source, (file) => fs.readFileString(file)),
+          bytes: (entry, source) => checked(entry, source, (file) => fs.readFile(file)),
         };
       }),
     );

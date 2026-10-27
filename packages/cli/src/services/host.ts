@@ -16,6 +16,8 @@ export type HostInfo = {
   registry: string;
   /** The bundled skill directory, resolved by bin.ts beside the registry. */
   skill: string;
+  /** The authoring guide, resolved by bin.ts beside the registry and skill. */
+  authoring: string;
   /** How a person runs this CLI, for copy-paste `Next:` lines. A fixed `quickstacks` until 0.2. */
   invocation: string;
 };
@@ -31,6 +33,7 @@ export class Host extends Context.Service<Host, HostInfo>()("quickstacks/Host") 
       stdoutIsTTY: false,
       registry: "/test/registry",
       skill: "/test/skill",
+      authoring: "/test/docs/authoring.md",
       invocation: "quickstacks",
       ...overrides,
     });

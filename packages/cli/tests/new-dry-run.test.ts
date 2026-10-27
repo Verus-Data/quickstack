@@ -343,10 +343,10 @@ describe("naming options", () => {
     if (name === "2048") expect(readme).toContain("- env: _2048_PORT\n");
   });
 
-  test("author sanitization also applies to the flag, while project punctuation is literal [3.1c#14]", async () => {
+  test("author sanitization also applies to the flag, while supported project punctuation is literal [3.1c#14]", async () => {
     const home = temp();
     settings(home, "Settings Author");
-    const name = 'My "App" \\ Tools';
+    const name = "My 'App' / Tools";
     const result = success(
       await invoke(home, [
         "app",
@@ -435,9 +435,10 @@ describe("dry-run with existing files and environment", () => {
       writeFileSync(join(app, ".DS_Store"), "OS litter");
       const before = snapshot(home);
       const planned = success(await invoke(home, ["app", "--dry-run", "--json"], { env: withGit }));
-      expect(planned.git).toBe(
-        kind === "committed" ? "parent" : kind === "fresh" ? "fresh" : "none",
-      );
+      let expectedGit = "none";
+      if (kind === "committed") expectedGit = "parent";
+      else if (kind === "fresh") expectedGit = "fresh";
+      expect(planned.git).toBe(expectedGit);
       expect(planned.written).toEqual(expectedFiles);
       expect(planned.warnings).toEqual(
         kind === "broken" ? [{ code: "git_unusable", id: "git", exitCode: 128 }] : [],

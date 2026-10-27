@@ -22,6 +22,12 @@ function stepLines(step: StepResult, width: number): string[] {
   return [line.trimEnd(), ...tail];
 }
 
+function visibleSteps(result: VerifyResult, audience: Audience) {
+  if (audience === "human") return result.steps;
+  if (result.outcome === "changed") return [];
+  return result.steps.filter((step) => step.status !== "passed");
+}
+
 /**
  * The text result: stage lines when present, a summary, accepted changes, one row per step
  * (a failed step's output tail under it), and for a run that isn't green the fixed `Next:`
@@ -34,12 +40,7 @@ export function renderVerify(
   context: { invocation: string; audience: Audience },
 ): string {
   const { invocation } = context;
-  const steps =
-    context.audience === "human"
-      ? result.steps
-      : result.outcome === "changed"
-        ? []
-        : result.steps.filter((step) => step.status !== "passed");
+  const steps = visibleSteps(result, context.audience);
   // Aligned over every step, so a row reads the same whichever rows are shown.
   const width = Math.max(0, ...result.steps.map((step) => printable(step.name).length));
   const { passed, failed, skipped } = result.totals;

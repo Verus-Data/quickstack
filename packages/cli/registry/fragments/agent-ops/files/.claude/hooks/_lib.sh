@@ -88,14 +88,14 @@ hook_context() {
     "$1" "$(json_quote "$2")"
 }
 
-# The project root: $CLAUDE_PROJECT_DIR when Claude Code set it (it always does
-# for hooks), else the git top level of the current directory, else $PWD.
+# The invoking adapter supplies CLAUDE_PROJECT_DIR when available. Otherwise
+# resolve from this shared library, so tool cwd never selects another project.
 project_root() {
   if [ -n "${CLAUDE_PROJECT_DIR:-}" ] && [ -d "${CLAUDE_PROJECT_DIR}" ]; then
     printf '%s\n' "$CLAUDE_PROJECT_DIR"
     return 0
   fi
-  git rev-parse --show-toplevel 2>/dev/null || printf '%s\n' "$PWD"
+  (cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)
 }
 
 # find_up <start-dir> <name>...: print the nearest directory, walking up from
@@ -171,4 +171,40 @@ session_file_list() {
 # payload unreadable, keeping tabs and newlines.
 strip_control() {
   sed -e $'s/\x1b\\[[0-9;]*[A-Za-z]//g' | tr -d '\000-\010\013\014\016-\037'
+}
+
+# check_patch <payload-json> <secret-guard>: translate patch marker paths and
+# added text without evaluating shell escapes. Every file uses the same guard.
+check_patch() {
+  local patch file="" text="" line secret_guard=$2
+  patch=$(hook_get "$1" tool_input.command)
+
+  check_patch_file() {
+    [ -n "$file" ] || return 0
+    local payload decision
+    payload=$(printf '{"tool_input":{"file_path":%s,"content":%s}}' \
+      "$(json_quote "$file")" "$(json_quote "$text")")
+    decision=$(printf '%s' "$payload" | bash "$secret_guard")
+    if [ -n "$decision" ]; then
+      printf '%s\n' "$decision"
+      exit 0
+    fi
+  }
+
+  while IFS= read -r line; do
+    case "$line" in
+      '*** Add File: '* | '*** Update File: '* | '*** Move to: '*)
+        check_patch_file
+        file=${line#*: }
+        text=""
+        ;;
+      '*** Delete File: '* | '*** End Patch')
+        check_patch_file
+        file=""
+        text=""
+        ;;
+      '+'*) text="$text${line:1}"$'\n' ;;
+    esac
+  done <<<"$patch"
+  check_patch_file
 }

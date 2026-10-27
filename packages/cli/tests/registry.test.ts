@@ -77,7 +77,13 @@ test("an entry without files/ or adapters/ ships no files", async () => {
 
 test("get returns the winning entry with its marks and body", async () => {
   const user = temp();
-  writeEntry(user, "stack", "bun-web", minimal("stack", "bun-web"), "Body text.\n");
+  writeEntry({
+    root: user,
+    kind: "stack",
+    dir: "bun-web",
+    frontmatter: minimal("stack", "bun-web"),
+    body: "Body text.\n",
+  });
   const exit = await run(
     [
       { origin: "user", path: user },
@@ -103,7 +109,7 @@ test.each([
   "get on an entry that is rejected for %s fails EntryInvalid",
   async (reason, frontmatter, id, path) => {
     const user = temp();
-    writeEntry(user, "stack", id, frontmatter);
+    writeEntry({ root: user, kind: "stack", dir: id, frontmatter });
     const exit = await run(
       [{ origin: "user", path: user }],
       Effect.flatMap(Registry, (registry) => registry.get("stack", id)),
@@ -116,7 +122,12 @@ test.each([
 
 test("get on an entry holding a symlink fails EntryInvalid with the link's path", async () => {
   const project = temp();
-  const entry = writeEntry(project, "fragment", "linky", minimal("fragment", "linky"));
+  const entry = writeEntry({
+    root: project,
+    kind: "fragment",
+    dir: "linky",
+    frontmatter: minimal("fragment", "linky"),
+  });
   mkdirSync(join(entry, "files"));
   symlinkSync("/etc/hosts", join(entry, "files", "hosts"));
   const exit = await run(
@@ -129,6 +140,18 @@ test("get on an entry holding a symlink fails EntryInvalid with the link's path"
         details: { id: "linky", origin: "project", reason: "symlink", path: "files/hosts" },
       }),
     ),
+  );
+});
+
+test.each(["..", "../stacks/go-api"])("registry lookup refuses a path as an id: %s", async (id) => {
+  const result = await run(
+    bundled,
+    Effect.gen(function* () {
+      return yield* (yield* Registry).get("stack", id);
+    }),
+  );
+  expect(result).toEqual(
+    Exit.fail(new NotFound({ details: { suggestions: [], id, kind: "stack" } })),
   );
 });
 
@@ -190,7 +213,12 @@ test.each([
   "a symlinked directory to %s is rejected as a symlink without being walked",
   async (_case, target) => {
     const root = temp();
-    const entry = writeEntry(root, "fragment", "escape", minimal("fragment", "escape"));
+    const entry = writeEntry({
+      root,
+      kind: "fragment",
+      dir: "escape",
+      frontmatter: minimal("fragment", "escape"),
+    });
     mkdirSync(join(entry, "files"));
     const to = target();
     symlinkSync(to, join(entry, "files", "escape"));
@@ -216,7 +244,12 @@ test.each([
 
 test("files stops at a symlink under adapters/ without following it", async () => {
   const root = temp();
-  const entry = writeEntry(root, "fragment", "linked", minimal("fragment", "linked"));
+  const entry = writeEntry({
+    root,
+    kind: "fragment",
+    dir: "linked",
+    frontmatter: minimal("fragment", "linked"),
+  });
   mkdirSync(join(entry, "adapters", "claude"), { recursive: true });
   symlinkSync("/", join(entry, "adapters", "claude", "all"));
   const exit = await run(
@@ -235,7 +268,12 @@ test("files stops at a symlink under adapters/ without following it", async () =
 /** `read(entry, source)` on a fresh `readable` user entry, after `change` has altered it on disk. */
 function readAfter(source: string, change: (entry: string) => void = () => {}) {
   const user = temp();
-  const entry = writeEntry(user, "fragment", "readable", minimal("fragment", "readable"));
+  const entry = writeEntry({
+    root: user,
+    kind: "fragment",
+    dir: "readable",
+    frontmatter: minimal("fragment", "readable"),
+  });
   mkdirSync(join(entry, "files", "sub"), { recursive: true });
   writeFileSync(join(entry, "files", "sub", "a.txt"), "inside\n");
   const exit = run(
@@ -385,6 +423,8 @@ async function newFromCatalog(stack: string, preset: (typeof PRESETS)[number], a
 }
 
 describe("every bundled stack scaffolds through new", () => {
+  // Each matrix row renders and writes a shipped composition, fingerprints its files and runs
+  // git through the shim; concurrent gates can push that work past the default 5 s budget.
   // 1.4 adds the agent handoff; once it lands these runs pass --no-launch.
   test.each(catalogStacks.flatMap((stack) => PRESETS.map((preset) => [stack.id, preset] as const)))(
     "new %s (%s) writes a project under the budget whose manifest covers D7 [1.6a#2]",
@@ -422,6 +462,7 @@ describe("every bundled stack scaffolds through new", () => {
           token: false,
         });
     },
+    30_000,
   );
 
   test.each(
@@ -448,6 +489,7 @@ describe("every bundled stack scaffolds through new", () => {
       for (const path of entry ? templateOutputs(entry) : [])
         expect(readFileSync(join(project, path), "utf8")).not.toContain("{{");
     },
+    30_000,
   );
 
   test("the catalog has apps to test", () => {

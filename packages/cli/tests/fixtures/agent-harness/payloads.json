@@ -1,0 +1,32 @@
+{
+  "pattern": {
+    "session_id": "harness-acceptance",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": { "command": "rm -rf /" }
+  },
+  "lexer": {
+    "session_id": "harness-acceptance",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": { "command": "printf ok && r\"m\" -rf /" }
+  },
+  "example": {
+    "session_id": "harness-acceptance",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": { "command": "echo \"rm -rf /\"" }
+  },
+  "dirtyReset": {
+    "session_id": "harness-acceptance",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": { "command": "git \"reset\" --hard" }
+  },
+  "resetExample": {
+    "session_id": "harness-acceptance",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": { "command": "echo 'git \"reset\" --hard'" }
+  }
+}

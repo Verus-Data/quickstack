@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^Bash$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "h=\"$(git rev-parse --show-toplevel 2>/dev/null)/.claude/hooks/guard-commands.ts\"; [ -f \"$h\" ] || { echo \"BLOCKED: .claude/hooks/guard-commands.ts not found under this checkout's git root, so the command is refused rather than run unguarded.\" >&2; exit 2; }; exec bun \"$h\""
+          },
+          {
+            "type": "command",
+            "command": "h=\"$(git rev-parse --show-toplevel 2>/dev/null)/.claude/hooks/block-destructive.sh\"; [ -f \"$h\" ] || { echo \"BLOCKED: .claude/hooks/block-destructive.sh not found under this checkout's git root, so the command is refused rather than run unguarded.\" >&2; exit 2; }; exec bash \"$h\""
+          }
+        ]
+      }
+    ]
+  }
+}

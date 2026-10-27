@@ -49,13 +49,18 @@ export const gitChecks: Check = (view) =>
     // such as GIT_CEILING_DIRECTORIES still holds.
     const env = config.childEnv(GIT_REPOSITORY_VARIABLES, { LC_ALL: "C" });
     const owners = new Map<string, Entry>();
-    for (const entry of view.entries) {
-      const files = yield* Effect.result(registry.files(entry));
-      // An unreadable entry is reported by the file checks.
-      if (Result.isFailure(files)) continue;
-      for (const source of [markdownFile(entry.kind), ...files.success.map((file) => file.source)])
-        owners.set(view.file(entry, source), entry);
-    }
+    const collectOwners = (entry: Entry) =>
+      Effect.gen(function* () {
+        const files = yield* Effect.result(registry.files(entry));
+        // An unreadable entry is reported by the file checks.
+        if (Result.isFailure(files)) return;
+        for (const source of [
+          markdownFile(entry.kind),
+          ...files.success.map((file) => file.source),
+        ])
+          owners.set(view.file(entry, source), entry);
+      });
+    for (const entry of view.entries) yield* collectOwners(entry);
     const paths = [...owners.keys()].sort();
     const runGit = (args: ReadonlyArray<string>) =>
       Effect.result(
@@ -74,13 +79,8 @@ export const gitChecks: Check = (view) =>
     const rootReal = yield* real(view.root);
     /** The rule that ignores each path: its source file, relative to the root, and pattern. */
     const rules = new Map<string, { source: string; pattern: string }>();
-    for (let start = 0; start < paths.length; start += BATCH) {
-      const batch = paths.slice(start, start + BATCH);
-      const run = yield* runGit(["check-ignore", "--no-index", "-v", "--", ...batch]);
-      // Exit 0: some paths are ignored; 1: none; anything else: not a checkout, or git failed.
-      if (Result.isFailure(run) || (run.success.exitCode !== 0 && run.success.exitCode !== 1))
-        return { findings: [] };
-      for (const line of run.success.stdout.split("\n")) {
+    const collectRules = (stdout: string) => {
+      for (const line of stdout.split("\n")) {
         const match = VERBOSE.exec(line);
         if (!match) continue;
         const [, source = "", , pattern = "", name = ""] = match;
@@ -89,29 +89,44 @@ export const gitChecks: Check = (view) =>
         const at = path.resolve(toplevel, source);
         rules.set(name, { source: path.relative(rootReal, at), pattern });
       }
-    }
+    };
+    const readRules = () =>
+      Effect.gen(function* () {
+        for (let start = 0; start < paths.length; start += BATCH) {
+          const batch = paths.slice(start, start + BATCH);
+          const run = yield* runGit(["check-ignore", "--no-index", "-v", "--", ...batch]);
+          // Exit 0: some paths are ignored; 1: none; anything else: not a checkout, or git failed.
+          if (Result.isFailure(run) || (run.success.exitCode !== 0 && run.success.exitCode !== 1))
+            return false;
+          collectRules(run.success.stdout);
+        }
+        return true;
+      });
+    if (!(yield* readRules())) return { findings: [] };
     const findings: Finding[] = [];
-    for (const file of paths) {
-      const owner = owners.get(file);
-      const rule = rules.get(file);
-      if (!owner || !rule) continue;
-      const entryDir = path.relative(rootReal, yield* real(owner.dir));
-      // Only a rule file inside the entry's own directory is the entry's doing.
-      if (!rule.source.startsWith(`${entryDir}${path.sep}`)) continue;
-      const source = rule.source.split(path.sep).join("/");
-      // A .gitignore the entry ships (under files/ or adapters/) can be shipped as a template
-      // instead: git doesn't read `.gitignore.tmpl`, and `new` renders it to `.gitignore`.
-      const within = path.relative(entryDir, rule.source).split(path.sep);
-      const shipped =
-        (within[0] === "files" || within[0] === "adapters") && within.at(-1) === ".gitignore";
-      findings.push(
-        finding(owner, {
-          check: "git-ignored",
-          severity: "warning",
-          file,
-          message: `git ignores ${path.basename(file)} here (rule ${rule.pattern} in ${source}), so it never reaches a commit${shipped ? `; ship ${source} as .gitignore.tmpl, which git doesn't read as ignore rules and new still writes as .gitignore` : ""}`,
-        }),
-      );
-    }
+    const checkFile = (file: string) =>
+      Effect.gen(function* () {
+        const owner = owners.get(file);
+        const rule = rules.get(file);
+        if (!owner || !rule) return;
+        const entryDir = path.relative(rootReal, yield* real(owner.dir));
+        // Only a rule file inside the entry's own directory is the entry's doing.
+        if (!rule.source.startsWith(`${entryDir}${path.sep}`)) return;
+        const source = rule.source.split(path.sep).join("/");
+        // A .gitignore the entry ships (under files/ or adapters/) can be shipped as a template
+        // instead: git doesn't read `.gitignore.tmpl`, and `new` renders it to `.gitignore`.
+        const within = path.relative(entryDir, rule.source).split(path.sep);
+        const shipped =
+          (within[0] === "files" || within[0] === "adapters") && within.at(-1) === ".gitignore";
+        findings.push(
+          finding(owner, {
+            check: "git-ignored",
+            severity: "warning",
+            file,
+            message: `git ignores ${path.basename(file)} here (rule ${rule.pattern} in ${source}), so it never reaches a commit${shipped ? `; ship ${source} as .gitignore.tmpl, which git doesn't read as ignore rules and new still writes as .gitignore` : ""}`,
+          }),
+        );
+      });
+    for (const file of paths) yield* checkFile(file);
     return { findings };
   });

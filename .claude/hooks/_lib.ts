@@ -1,6 +1,5 @@
-// Shared helpers for TypeScript hooks. Each is run by bun, as wired in .claude/settings.json:
-// `bun "${CLAUDE_PROJECT_DIR}/.claude/hooks/<name>.ts"`, with the JSON payload on stdin. node: APIs
-// only, so tsc checks these with the project's @types/node. The agent-ops hooks (*.sh) don't use it.
+// Shared helpers for TypeScript hooks, run by Bun with the JSON payload on stdin.
+// node: APIs only, so tsc checks these with the project's @types/node.
 import { type ChildProcess, spawn, spawnSync } from "node:child_process";
 import {
   accessSync,
@@ -18,6 +17,7 @@ import { stripVTControlCharacters } from "node:util";
 
 export type ToolInput = {
   command?: unknown;
+  working_directory?: unknown;
   file_path?: unknown;
   content?: unknown;
   new_string?: unknown;

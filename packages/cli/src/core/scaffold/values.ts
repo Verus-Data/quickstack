@@ -18,7 +18,7 @@ export const templateOverrides = (input: {
       Option.isNone(Schema.decodeUnknownOption(NpmScope)(input.scope))
     )
       return yield* new BadInput({ details: { id: input.scope, flag: "scope" } });
-    if (input.name !== undefined && hasControl(input.name))
+    if (input.name !== undefined && (hasControl(input.name) || /["\\]/.test(input.name)))
       return yield* new BadInput({ details: { id: input.name, flag: "name" } });
     const author = input.author === undefined ? undefined : authorValue(input.author);
     if (input.author !== undefined && author === undefined)
@@ -36,14 +36,11 @@ export const templateValues = (input: {
   overrides?: Overrides;
 }) =>
   Effect.gen(function* () {
-    const author =
-      input.overrides?.author !== undefined
-        ? input.overrides.author
-        : input.settings.author !== undefined
-          ? authorValue(input.settings.author)
-          : input.git.installed
-            ? (authorValue(yield* gitUserName(input.git.cwd)) ?? "")
-            : "";
+    let author: string | undefined;
+    if (input.overrides?.author !== undefined) author = input.overrides.author;
+    else if (input.settings.author !== undefined) author = authorValue(input.settings.author);
+    else if (input.git.installed) author = authorValue(yield* gitUserName(input.git.cwd)) ?? "";
+    else author = "";
     if (author === undefined) return yield* new InvalidConfig();
     const projectSlug = slug(input.name);
     return {

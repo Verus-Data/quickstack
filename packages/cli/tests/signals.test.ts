@@ -106,6 +106,10 @@ function readPid(dir: string, file: string): number | undefined {
 const has = (dir: string, file: string) => existsSync(join(dir, file));
 const waitFor = (dir: string, file: string) =>
   vi.waitFor(() => expect(has(dir, file)).toBe(true), { timeout: 5000 });
+// The group is SIGKILLed before the CLI exits, but its orphans are reaped by init afterwards,
+// which lags past a second on a loaded host; the exit timing is asserted separately.
+const groupGone = (leader: number) =>
+  vi.waitFor(() => expect(groupAlive(leader)).toBe(false), { timeout: 5000 });
 
 describe("signals reaching a real CLI process", () => {
   test("SIGINT to the process group belongs to the interactive child; the parent keeps running", async () => {
@@ -125,13 +129,15 @@ describe("signals reaching a real CLI process", () => {
 
   test("a wrapper's late copy of the child's Ctrl+C, arriving after the child exits, is ignored", async () => {
     const dir = tempDir();
-    const cli = launch([fixture, "interactive", dir.path], pkg, dir.path);
+    const cli = launch([fixture, "late-copy", dir.path], pkg, dir.path);
     try {
       await waitFor(dir.path, "child-ready");
-      process.kill(-cli.pid, "SIGINT");
-      await waitFor(dir.path, "parent-done");
       process.kill(cli.pid, "SIGINT");
-      writeFileSync(join(dir.path, "release"), "");
+      await cli.closed;
+      const elapsed = Number(readFileSync(join(dir.path, "late-copy-ms"), "utf8"));
+      expect(elapsed, "late SIGINT missed the child's one-second Ctrl+C window").toBeLessThan(
+        SECOND_SIGNAL_MS,
+      );
       expect((await cli.closed).status).toBe(7);
     } finally {
       cleanup(cli.child, dir);
@@ -198,7 +204,7 @@ describe("signals reaching a real CLI process", () => {
       const leader = readPid(dir.path, "leader") as number;
       process.kill(cli.pid, "SIGQUIT");
       expect(await signaled).toBe("SIGQUIT");
-      await vi.waitFor(() => expect(groupAlive(leader)).toBe(false), { timeout: 1000 });
+      await groupGone(leader);
     } finally {
       cleanup(cli.child, dir);
     }
@@ -237,7 +243,7 @@ describe("signals reaching a real CLI process", () => {
       expect(closed.status).toBe(130);
       expect(closed.at - second).toBeLessThan(1000);
       expect(has(dir.path, "finalized")).toBe(false);
-      await vi.waitFor(() => expect(groupAlive(leader)).toBe(false), { timeout: 1000 });
+      await groupGone(leader);
     } finally {
       cleanup(cli.child, dir);
     }

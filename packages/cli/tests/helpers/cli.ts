@@ -10,6 +10,9 @@ import { AppLayer, runInvocation } from "../../src/runtime";
 import { Host, type HostInfo } from "../../src/services/host";
 import { Output, type Writer } from "../../src/services/output";
 import { Foreground, Processes } from "../../src/services/processes";
+
+/** The package's authoring guide, which bin.ts resolves beside the registry. */
+const guide = join(import.meta.dirname, "..", "..", "docs", "authoring.md");
 export function tempDir() {
   const path = mkdtempSync(join(tmpdir(), "cli-base-"));
   return { path, cleanup: () => rmSync(path, { recursive: true, force: true }) };
@@ -58,7 +61,7 @@ export async function runCli(
   );
   const platform = Layer.mergeAll(
     NodeServices.layer,
-    Host.memory({ platform: "test-node", cwd: home, ...options.host }),
+    Host.memory({ platform: "test-node", cwd: home, authoring: guide, ...options.host }),
     Foreground.layer(Foreground.make()),
     NetLayer,
   );

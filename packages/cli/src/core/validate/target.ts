@@ -48,30 +48,49 @@ export const resolveTarget = (given: string | undefined) =>
     const bundledReal = yield* real(bundled.path);
     const isBundled = (at: string) => real(at).pipe(Effect.map((found) => found === bundledReal));
 
+    const registryDirectory = (at: string) =>
+      Effect.gen(function* () {
+        for (const { dir } of kinds)
+          if (yield* isDirectory(path.join(at, dir)))
+            return { root: at, bundled: yield* isBundled(at) } satisfies Target;
+        return undefined;
+      });
+    // A directory directly under `stacks/` or `fragments/` is that kind's entry, even with its
+    // markdown file missing or the other kind's in its place: the checks report what's wrong.
+    const entryDirectory = (at: string) =>
+      Effect.gen(function* () {
+        const parent = path.dirname(at);
+        for (const { kind, dir } of kinds) {
+          if (path.basename(parent) !== dir) continue;
+          const root = path.dirname(parent);
+          return {
+            root,
+            bundled: yield* isBundled(root),
+            only: { kind, id: path.basename(at) },
+          } satisfies Target;
+        }
+        return undefined;
+      });
+
+    const hasEntryFile = (at: string) =>
+      Effect.gen(function* () {
+        for (const { kind } of kinds)
+          if (yield* exists(path.join(at, markdownFile(kind)))) return true;
+        return false;
+      });
+
     if (given === undefined) {
       if (!bundled.found) return yield* missing(bundled.path);
       return { root: bundled.path, bundled: true } satisfies Target;
     }
     const at = path.resolve(host.cwd, given);
     if (!(yield* isDirectory(at))) return yield* missing(at);
-    for (const { dir } of kinds)
-      if (yield* isDirectory(path.join(at, dir)))
-        return { root: at, bundled: yield* isBundled(at) } satisfies Target;
-    // A directory directly under `stacks/` or `fragments/` is that kind's entry, even with its
-    // markdown file missing or the other kind's in its place: the checks report what's wrong.
-    const parent = path.dirname(at);
-    for (const { kind, dir } of kinds) {
-      if (path.basename(parent) !== dir) continue;
-      const root = path.dirname(parent);
-      return {
-        root,
-        bundled: yield* isBundled(root),
-        only: { kind, id: path.basename(at) },
-      } satisfies Target;
-    }
+    const root = yield* registryDirectory(at);
+    if (root) return root;
+    const entry = yield* entryDirectory(at);
+    if (entry) return entry;
     // An entry outside a `stacks/` or `fragments/` directory belongs to no registry.
-    for (const { kind } of kinds)
-      if (yield* exists(path.join(at, markdownFile(kind)))) return yield* missing(at);
+    if (yield* hasEntryFile(at)) return yield* missing(at);
     if (yield* isBundled(at)) return { root: at, bundled: true } satisfies Target;
     return yield* missing(at);
   });

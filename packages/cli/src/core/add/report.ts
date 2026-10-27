@@ -1,5 +1,6 @@
 import type { AddResult } from "../../schemas/add";
 import type { Audience } from "../../services/output";
+import { missingLine, warningLine } from "../scaffold/report";
 import { printable } from "../text";
 
 /** The add summary; callers shorten project and untrusted paths with shownPath for agents. */
@@ -8,12 +9,15 @@ export function renderAdd(
   context: { shown: string; audience: Audience; invocation: string },
 ): string {
   return [
-    `Added ${result.added.map(printable).join(", ")} to ${printable(context.shown)}`,
+    `Added ${result.added.map(printable).join(", ")}${context.shown === "." ? "" : ` to ${printable(context.shown)}`}`,
     ...(result.written.length ? [`Written: ${result.written.map(printable).join(", ")}`] : []),
     ...(result.skipped.length ? [`Skipped: ${result.skipped.map(printable).join(", ")}`] : []),
-    ...result.warnings.map(
-      (warning) => `Warning: ${printable(warning.code)}: ${printable(warning.id)}`,
-    ),
+    // `drop` names new's flags, which don't exist for add.
+    ...result.missingTools.map((item) => `Missing tool: ${missingLine({ ...item, drop: [] })}`),
+    // missingTools above says the same as each missing_tool warning, with its owners.
+    ...result.warnings
+      .filter((warning) => warning.code !== "missing_tool")
+      .map((warning) => `Warning: ${warningLine(warning)}`),
     ...(result.mergeNeeded.length
       ? [
           "",

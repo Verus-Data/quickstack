@@ -18,6 +18,8 @@ export const Settings = Schema.Struct({
   agents: Schema.optional(Schema.Array(AgentId)),
   /** The `author` template variable (1.2a). */
   author: Schema.optional(Schema.String),
+  /** Default for `new`, overridden by its preset flags. */
+  preset: Schema.optional(Schema.Literals(["default", "sandbox"])),
   /** The `package_scope` template variable (1.2a), when `new --scope` isn't given. */
   packageScope: Schema.optional(NpmScope),
 })

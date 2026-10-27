@@ -1,0 +1,13 @@
+{
+  "type": "result",
+  "subtype": "success",
+  "is_error": false,
+  "duration_ms": 1850,
+  "duration_api_ms": 1300,
+  "num_turns": 4,
+  "result": "Implemented both files and verify is green.",
+  "session_id": "45d963b4-85dc-4828-9892-b13519712809",
+  "total_cost_usd": 0.032,
+  "usage": { "input_tokens": 120, "output_tokens": 240, "cache_read_input_tokens": 600 },
+  "permission_denials": []
+}

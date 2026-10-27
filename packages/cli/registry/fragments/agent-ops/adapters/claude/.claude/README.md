@@ -22,10 +22,12 @@ Project instructions live in `AGENTS.md` at the repo root, which every coding ag
 | `_lib.sh` | (sourced) | Shared helpers: the payload reader, the deny and context responses, project root, `find_up`, a portable `with_timeout`, the per-session file list. |
 | <!-- quickstacks:fill One row per other file in hooks/ (harness, stack, and app hooks such as TypeScript guards): name, event and matcher from settings.json, what it does. Delete this row if there are none. --> | | |
 
+When `claude-harness` and Bun are installed, `block-destructive.sh` passes its saved payload to `guard-commands.ts`. The TypeScript guard covers the command families in the table using lexed words, so quoted examples and heredoc text stay allowed, and checks Git status before denying a hard reset. It also checks recursive deletion outside the project, history rewrites and package-manager rules; see `docs/harness.md`. Keep only the shell guard wired. A TypeScript guard that fails to run denies the call; without the TypeScript guard or Bun, the raw shell patterns remain the fallback.
+
 How they behave:
 
 - **A block means ask the user.** A guard's deny tells the agent why; the agent asks you instead of rephrasing the command, splitting it up, or writing the file another way. Never work around a deny.
-- **Accidents, not adversaries.** The guards match regexes against the command or file text, not a shell parse. Quoting, `eval`, aliases and scripts that run a command indirectly get past them.
+- **Accidents, not adversaries.** The shell fallback guards match regexes against the command or file text, not a shell parse. Quoting, `eval`, aliases and scripts that run a command indirectly get past them.
 - **Quiet when there's nothing to do.** A hook whose tool isn't installed exits 0 with no output. The hooks read their input with jq when it's on PATH and with a small awk reader otherwise, so they decide the same way on a machine without jq.
 - **Guards deny; everything else advises.** Only guards block anything: `block-destructive.sh`, `detect-secrets.sh`, and any guard listed above. Lint results arrive as context and never block a write.
 - **Nothing is downloaded.** Linters and formatters run only from the project's own install (`.venv`, `node_modules/.bin`) or from PATH. The hooks never call `npx`, `bunx`, or `uv run`, which could fetch packages or sync environments mid-session.
@@ -44,7 +46,7 @@ echo '{"tool_name":"Bash","tool_input":{"command":"git reset --hard"}}' | bash .
 
 ### Changing them
 
-- Add a destructive pattern to `_destructive-patterns.sh`, not to `block-destructive.sh`.
+- For the shell fallback, add a destructive pattern to `_destructive-patterns.sh`, not to `block-destructive.sh`.
 - Project-specific checks (generated files that must not be hand-edited, a missing symlink at session start) go in the relevant hook or a new one wired in `settings.json`. A hook that fires on every tool call should cost milliseconds.
 - If the project has hook tests, add a case for each new pattern: one command that must be denied and one near miss that must pass.
 

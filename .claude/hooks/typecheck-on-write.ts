@@ -32,19 +32,20 @@ function errorBlocks(lines: string[], keep: (line: string) => boolean): string[]
   });
 }
 
-async function main(): Promise<void> {
-  const given = text(readPayload()?.tool_input?.file_path);
-  if (!(given.endsWith(".ts") || given.endsWith(".tsx")) || !isFile(given)) return;
-
+/**
+ * The written file's TypeScript project inside the repo and its path as tsc prints it, or
+ * undefined when the file is outside the repo, generated, or can't be resolved.
+ */
+function locate(given: string): { root: string; project: string; rel: string } | undefined {
   let root: string;
   let fileDir: string;
   try {
     root = realpathSync(projectRoot());
     fileDir = realpathSync(dirname(given));
   } catch {
-    return;
+    return undefined;
   }
-  if (!`${fileDir}/`.startsWith(`${root}/`)) return;
+  if (!`${fileDir}/`.startsWith(`${root}/`)) return undefined;
   // In a workspace the file belongs to the nearest tsconfig.json at or under the root
   // (packages/cli/tsconfig.json for packages/cli/src/main.ts); that project is the one checked.
   let project = fileDir;
@@ -54,7 +55,17 @@ async function main(): Promise<void> {
     fileDir === project
       ? basename(given)
       : `${fileDir.slice(project.length + 1)}/${basename(given)}`;
-  if (["node_modules/", "dist/", "coverage/", "build/"].some((dir) => rel.startsWith(dir))) return;
+  if (["node_modules/", "dist/", "coverage/", "build/"].some((dir) => rel.startsWith(dir)))
+    return undefined;
+  return { root, project, rel };
+}
+
+async function main(): Promise<void> {
+  const given = text(readPayload()?.tool_input?.file_path);
+  if (!(given.endsWith(".ts") || given.endsWith(".tsx")) || !isFile(given)) return;
+  const located = locate(given);
+  if (!located) return;
+  const { root, project, rel } = located;
 
   const tsc = join(root, "node_modules/.bin/tsc");
   if (!isExecutable(tsc)) return;

@@ -52,7 +52,7 @@ export const readLedger = (
   });
 
 /** Greatest date wins; later file position breaks a tie. */
-function latest(
+export function latestMatchingRecord(
   records: ReadonlyArray<LedgerRecord>,
   matches: (record: LedgerRecord) => boolean,
 ): LedgerRecord | null {
@@ -68,7 +68,7 @@ export function latestRecord(
   key: LedgerKey,
 ): LedgerRecord | null {
   const fragments = [...key.with].sort();
-  return latest(
+  return latestMatchingRecord(
     records,
     (record) =>
       record.stack === key.stack &&
@@ -79,9 +79,13 @@ export function latestRecord(
   );
 }
 
+/** A stack's latest default-composition record, shared by listing and detailed review. */
+export const lastDefaultRecord = (records: ReadonlyArray<LedgerRecord>, stack: string) =>
+  latestMatchingRecord(records, (record) => record.stack === stack && record.with.length === 0);
+
 /** A stack's latest run of its default composition, over every preset and agent. */
 export function lastRun(records: ReadonlyArray<LedgerRecord>, stack: string): LastRun | null {
-  const found = latest(records, (record) => record.stack === stack && record.with.length === 0);
+  const found = lastDefaultRecord(records, stack);
   return found === null
     ? null
     : {

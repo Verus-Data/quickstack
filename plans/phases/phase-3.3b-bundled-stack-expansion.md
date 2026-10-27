@@ -1,9 +1,13 @@
 # Phase 3.3b: Bundled stack expansion
 
-Status: DRAFT 2026-10-26 (not agreed). Re-scoped 2026-10-26: 1.6a brings every bundled
+Status: EXECUTED 2026-10-27 (every traced acceptance test, the committed gate-stack brief
+digests). Unproved: the bench proofs for `cloudflare-react-router`, `mobile-expo`,
+`react-router`, `tauri-react` and `typescript-cli`, which need real bench runs and are the
+maintainers'. Drafted 2026-10-26. Re-scoped 2026-10-26: 1.6a brings every bundled
 stack into v1, including those beyond the gate set, so this file gives each of those a
 bench proof and keeps the backlog. A stack too large for the budget now splits its slice
 into an app fragment (1.1), not a D26 app entry. Body rewritten to match 2026-10-26
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -95,20 +99,20 @@ they are listed so no one rediscovers them.
 
 ## Acceptance tests
 
-- For each stack outside the gate set and both presets: `new --no-launch --json` succeeds
-  into a temp dir with a recording shim on `PATH` (no command run), `briefWords` is under
-  1.5's cap, and the manifest has every D7 layer (with a `serve` step carrying `expect`
-  where the stack has a server).
-- `validate` over the bundled registry: zero errors, zero warnings, and no
-  `ledger-unproven` note for any stack.
-- The packed tarball's `registry/` file list equals the tree's (1.6a's packing test).
-- A fix made for one stack doesn't change another proved stack's brief: a shared
-  fragment may only gain `quickstacks:when` blocks that don't apply to the stacks already
-  proved, so each of their composed briefs on 1.5's canonical render is byte-identical
-  before and after (compared against a committed digest list). Their fingerprints do
-  change, because the fingerprint hashes fragment bodies; 2.2 then reports
-  `ledger-changed` (a note) for those stacks until a bench rerun records a new `pass`,
-  and the run notes say so.
+1. For each stack outside the gate set and both presets: `new --no-launch --json`
+   succeeds, `briefWords` is under 1.5's cap, and the manifest has every D7 layer
+   (with a `serve` step carrying `expect` where the stack has a server). Only the
+   CLI's fixed git commands run.
+2. `validate` over the bundled registry reports zero errors and zero warnings.
+3. Each gate stack's canonical brief in both presets is byte-identical to a committed
+   digest list generated through `validate --brief <stack> [--sandbox] --json`.
+4. Adding a shared fragment's `quickstacks:when` branch for another stack leaves an
+   unaffected gate stack's canonical brief bytes and its composition fingerprint
+   unchanged in both presets, so its ledger proof still holds.
+
+### Realistic edge cases
+
+5. Scaffolding from a symlinked working directory with spaces under an agent ignores inherited git repository variables and initializes only the target repository.
 
 ## Exit criteria
 
@@ -134,3 +138,27 @@ they are listed so no one rediscovers them.
   them, and a slice past the budget becomes a `category: app` fragment composed by 1.1.
   The catalog's stacks are the maintainers' choice, so this file names none; how many
   there are sets how long this sub-phase takes.
+
+- 2026-10-27: Ledger `pass` records and the absence of `ledger-unproven` notes
+  require maintainer bench runs; they are exit criteria outside the traced numbers.
+  Brief digests freeze today's canonical output, not evidence of a successful bench.
+  Regenerate a gate stack's digests only after an intentional brief change is proved.
+- 2026-10-27: No packed tarball exists until 0.2. Existing coverage is
+  `e2e/binary.test.ts` (the compiled binary reads a trusted registry from its installed
+  prefix), `tests/bench.test.ts` (the fresh prefix contains the dev binary and registry),
+  and `tests/registry.test.ts` (git ignores no registry files), rather than a tarball
+  file-list equality test. Distribution remains a maintainer exit criterion.
+- 2026-10-27: 1.6b and binary tests identify the gate set as `astro-blog`, `go-cli`,
+  `python-react`; expansion covers `cloudflare-react-router`, `mobile-expo`,
+  `react-router`, `tauri-react`, `typescript-cli`. D7 is absent from the settled README
+  decisions log: its proposal in `requirements.md` and implemented validator require
+  install, lint, typecheck and test, plus a probed serve for web/api stacks. `check`,
+  build and docs are not additional required D7 layers. The tests follow that existing
+  behavior. Updating real ledger records and run notes remains maintainer follow-up.
+
+- 2026-10-27: This plan said the fingerprint changes when a shared fragment gains a
+  branch for another stack. It doesn't: `compose.ts` resolves body conditionals before
+  `fingerprint.ts` hashes the bodies, so an inapplicable branch changes neither the
+  brief nor the fingerprint, and no `ledger-changed` note follows. That is the better
+  contract (proof attaches to what the agent was given), so item 4 asserts it and the
+  run notes need no rerun for such a fix.

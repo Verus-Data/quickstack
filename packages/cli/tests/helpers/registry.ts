@@ -22,14 +22,22 @@ export const composeRegistry = join(fixtures, "registry-compose");
  */
 export const newRegistry = join(fixtures, "registry-new");
 
+type WriteEntryOptions = {
+  root: string;
+  kind: "stack" | "fragment";
+  dir: string;
+  frontmatter: string;
+  body?: string;
+};
+
 /** Writes `<root>/<stacks|fragments>/<dir>/<STACK|FRAGMENT>.md` and returns the entry directory. */
-export function writeEntry(
-  root: string,
-  kind: "stack" | "fragment",
-  dir: string,
-  frontmatter: string,
+export function writeEntry({
+  root,
+  kind,
+  dir,
+  frontmatter,
   body = "# Guidance\n",
-): string {
+}: WriteEntryOptions): string {
   const entry = join(root, kind === "stack" ? "stacks" : "fragments", dir);
   mkdirSync(entry, { recursive: true });
   writeFileSync(

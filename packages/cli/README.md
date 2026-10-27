@@ -55,6 +55,24 @@ skipped. Incomplete notes are reported, other notes continue, and any failure ex
 initial `--` before passing arguments to a script, so single-dash note names are also
 accepted directly. Use `./` for a note name that collides with a long option.
 
+## Maintainer bench
+
+From this package, `bun run bench <stack> --agent claude --keep` builds the dev binary,
+installs it with the working registry into a throwaway prefix, scaffolds the stack,
+runs the agent headlessly and verifies independently. `--cli <binary>` skips the build;
+`--preset default` uses defaults instead of sandbox, `--with a,b` adds fragments,
+`--max-minutes 60` sets the time limit, and `--no-record` skips the ledger and run note.
+`--existing <kept-root>` continues matching content and adds one intervention.
+The package must be clean before a run. Read every generated note under `plans/runs/`
+and its `registry/runs.json` record before committing; a green verify can still need
+relabeling as `partial` after review. The bench never commits anything.
+
+Auth is `CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token`, or `CODEX_ACCESS_TOKEN`
+as documented by `codex login --with-access-token`. Only the selected token reaches
+the agent; no credentials or settings are copied. The fresh `HOME` and project are
+not a security boundary: local runs give the agent full permissions. Child processes
+get `DO_NOT_TRACK=1`. Fake-agent tests need no account or real token.
+
 ## Starting a project with an agent
 
 There are two ways in: run the CLI yourself, or install the skill once and ask your coding agent to start a project. The skill ships with the next release; npm publication is deferred. These are the packaged entry points:
@@ -77,12 +95,69 @@ quickstacks skill install --print --json   # { path: null, action: "printed", te
 
 An identical installed file is unchanged. A differing file is preserved with `TargetNotEmpty` (exit 2) unless `--force` is set; a directory occupying `SKILL.md` is always preserved. Writes refuse symlinks escaping the skills root and final `SKILL.md` symlinks; a dotfiles symlink above the skills root is supported. Installation is allowed under an agent. A missing `HOME` or an unwritable target exits 6; `--print` skips all target lookup and writes nothing. A missing bundled skill exits 2 and appears as `skill.found: false` in `doctor --json`.
 
+## Publishing the Claude Code plugin
+
+`plugin/` is a Claude Code plugin carrying the agent skill, published by hand after a CLI
+release to a marketplace repository the maintainers own (not created yet; see
+[marketplaces](https://code.claude.com/docs/en/plugin-marketplaces) and the
+[manifest reference](https://code.claude.com/docs/en/plugins-reference)).
+`skill/SKILL.md` is the source; `plugin/skills/quickstacks/SKILL.md` is a committed copy,
+because a plugin's paths can't leave its directory. `tests/native-agent-plugin.test.ts`
+fails when the copy or the manifest's `version` drifts from the skill and `package.json`.
+
+1. On the release revision, from `packages/cli/`, refresh the copy and check the plugin
+   loads (`/quickstacks:quickstacks` should appear in the session):
+
+   ```sh
+   cp skill/SKILL.md plugin/skills/quickstacks/SKILL.md
+   bun run test:unit tests/native-agent-plugin.test.ts
+   claude plugin validate ./plugin
+   claude --plugin-dir ./plugin
+   ```
+
+2. In the marketplace checkout, replace `plugins/quickstacks/` with `plugin/` (including
+   `.claude-plugin/`). On first publication, create `.claude-plugin/marketplace.json` with
+   the marketplace `name`, an `owner` and a `plugins` array holding:
+
+   ```json
+   {
+     "name": "quickstacks",
+     "source": "./plugins/quickstacks",
+     "description": "Choose a quickstacks stack and follow its brief until verify is green."
+   }
+   ```
+
+   The version stays in the plugin manifest only.
+3. Run `claude plugin validate <marketplace-checkout>`,
+   `claude plugin marketplace add <marketplace-checkout>` and
+   `claude plugin install quickstacks@<marketplace-name>`, and confirm the skill appears in
+   a new session.
+4. Push the marketplace, and record the CLI version, marketplace revision and date in
+   `plans/HANDOFF.md`.
+
 ## Listing stacks and fragments
+
+Create personal entries with `quickstacks create stack my-api` or
+`quickstacks create fragment my-ci --category ci`. They are written into the user registry;
+existing targets are preserved. `quickstacks create stack go-cli --from bundled` copies an
+entry under the same id for editing, including all files and adapters. `--from project`
+requires a person at a terminal to review the full trust report; `--yes` skips only the
+question. Agents and non-terminal stdin cannot confer trust. `--from user` is refused.
+`--json` returns `{ kind, id, path, guide }` with absolute paths. Follow the shipped
+[authoring guide](docs/authoring.md) to preview, validate and prove the entry.
+
+Set `"preset": "sandbox"` in `config.json` to default new projects to sandbox.
+`new --preset default|sandbox` overrides the setting; `--sandbox` is a sandbox alias.
+Flags win, then the setting, then `default`. `--sandbox --preset default` is Usage
+(exit 2). Sandbox implies `--yes` regardless of how it was selected. `add` keeps the
+manifest's preset; `validate --brief` ignores the setting.
 
 ```sh
 quickstacks list                 # Addable fragments in a project; otherwise all groups
 quickstacks list stacks          # one group: stacks, fragments (apps excluded) or apps
 quickstacks list --json          # Full registry, plus project context when a manifest decodes
+quickstacks show <id> --json     # Full metadata, guidance, files and bundled run evidence
+quickstacks show <id> --kind fragment   # Resolve an id shared with a stack
 ```
 
 Entries come from three roots, highest precedence first:
@@ -117,6 +192,32 @@ The core loop: `new <stack>` writes the starter files and `.quickstacks/BRIEF.md
 | `typescript-cli` | Bun-compiled TypeScript CLI on Effect with typed errors, safe output and logs | `openrouter-chat-cli` |
 
 `quickstacks list` shows each stack's fragments; `validate` reports every stack's composed brief size in both presets.
+
+## Agent adapters
+
+`--agents` selects native config; it does not change which agent drives the handoff.
+All targets receive `AGENTS.md`. Guard scripts are shared under `.claude/hooks/`;
+only selected agents receive their config. A blocked action means ask the user.
+
+| Agent | Enforced guards and instructions | Proof |
+| --- | --- | --- |
+| Claude Code (`claude`) | Enforced destructive-command and secret-write hooks; lint-on-write, format-on-stop; CLAUDE.md imports AGENTS.md and path rules carry instructions | Existing Claude bench adapter; see the composition's ledger record |
+| Codex (`codex`) | Enforced Bash and native apply_patch guards after hook trust; workspace-write sandbox, on-request approvals; AGENTS.md and project skills carry instructions; lint/format are instructions | Bench adapter exists; a real pass with hooksFired is still required for native adapter proof |
+| OpenCode (`opencode`) | Enforced permissions and plugin callback guards; lint-on-write, format-on-idle; AGENTS.md and project skills carry instructions | Unproved: 2.0b has no OpenCode bench adapter; composition and offline callbacks only |
+| Cursor (`cursor`) | Enforced preToolUse shell/write guards; always-applied MDC instructions; lint/format are instructions | Unproved: 2.0b has no Cursor bench adapter; composition and offline hooks only |
+
+Codex project hooks require review and trust through `/hooks`. Linked-worktree hook
+discovery needs a live-agent check; offline payload tests prove protocol decisions.
+OpenCode targets its documented local-plugin format; no Claude marketplace settings
+or TypeScript harness extensions are migrated to the other agents.
+
+Formats: [Codex config](https://developers.openai.com/codex/config-advanced/),
+[Codex hooks](https://developers.openai.com/codex/hooks/),
+[Codex skills](https://developers.openai.com/codex/skills/),
+[OpenCode permissions](https://opencode.ai/docs/permissions/),
+[plugins](https://opencode.ai/docs/plugins/), [formatters](https://opencode.ai/docs/formatters/),
+[skills](https://opencode.ai/docs/skills/),
+[Cursor hooks](https://cursor.com/docs/hooks) and [rules](https://cursor.com/docs/rules).
 
 ## Starting a project
 
@@ -220,6 +321,16 @@ quickstacks validate --brief web --with docs --sandbox   # the brief a compositi
 
 `validate` reads files only; it runs nothing from an entry. It checks frontmatter and identity, references (`fragments`, `requires`, `conflicts`, `applies_to`), conditional prose markers, `merge` files, verify step layers, whether git ignores any of an entry's files, and composes each stack in both presets: alone (with its required and default fragments), then with each optional fragment and each app that fits it added on its own. References resolve through every root, the one being validated first; one that resolves only in another root is a note naming that root. The bundled registry must be self-contained.
 
+Rot checks also try explicitly applicable fragments beside each stack's defaults when 1.5 has not already budgeted the combination (`compose-each`). Declared conflicts replace default fragments in either direction, following the `--without` drop hint; required fragments stay. Listed combinations retain the existing composition finding without a duplicate. Unlisted combinations are also checked against the composed brief budget. Dead `stack=` branches warn, or note when reachable only through `--with`. Verify commands must be declared in that composition's commands table. Fragment commands need verify coverage; a fragment describing an existing stack command does not add a new deliverable.
+
+Author bodies with ATX headings (`## Heading`). Exact versions and dated release phrases warn outside fenced examples, in bodies, decisions and shipped Markdown. Version-sensitive config files also warn: describe how the agent should generate them instead. A bare Actions expression such as `${{ github }}` in a `.tmpl` warns; dotted expressions remain literal, and known template variables are intentional substitutions.
+
+Reference checks read the neutral-rendered, merged files for every shipped adapter. Claude settings permissions and VS Code launch arguments must name composed commands or commands named in inline code. Hook paths must exist in the composed files. Literal localhost ports in settings or VS Code JSON warn when an env variable has a `PORT` segment. Invalid reference JSON is one error per file; its reference checks are skipped.
+
+Shipped JavaScript/TypeScript relative imports and shell `source`/`.` targets must resolve to composed files owned by the same entry or a dependency. A fragment may import through the transitive closure of `requires`; a stack may import through `fragments.required`. Default and optional fragments are removable and do not grant import access. Resolution maps `.js` to `.ts`/`.tsx`, tries `.ts`, `.tsx`, `.js` and `.mjs` for extensionless imports, and tries `index.ts` for directories. In shell paths, `$CLAUDE_PROJECT_DIR` means the project root; another leading variable means the script's directory.
+
+When a registry has `runs.json`, ledger notes report stacks without a sandbox pass (`ledger-unproven`), changes since the latest pass for each preset/agent key (`ledger-changed`), and latest failed or partial runs (`ledger-failed`). Only default compositions (`with: []`) count. Infrastructure outcomes do not report failure; newer records are skipped. A malformed ledger or invalid v1 record is `ledger-schema`, an error that skips the ledger notes. A missing ledger is normal.
+
 Every stack's base composition must verify each layer: `install`, `lint`, `typecheck` and `test`, plus a `serve` step with a probe when the stack is tagged `web` or `api`.
 
 Word budgets, counted with every conditional branch in a body and, for a composed brief, the CLI's own text included (reported separately as fixed text). Every composed brief is rendered on one fixed context (no missing tools, a fresh repository, the `npx` invocation) so the counts are the same on every machine:
@@ -234,7 +345,9 @@ Word budgets, counted with every conditional branch in a body and, for a compose
 
 Findings are errors, warnings or notes. Exit 0 when there are no errors; exit 2 (`ValidationFailed`) with the full report still on stdout and `Validation failed.` (with `--json`, the error envelope, whose `details` carry the counts) as the last stderr line. A path that is neither a registry root nor an entry under `stacks/` or `fragments/` is `NotFound` (2); an unreadable root is exit 6. Warnings don't change the exit, but the bundled registry is held to zero.
 
-`--brief <stack>` prints the composed brief, then its word count, fixed-text count and limit. `--with` and `--without` take ids (repeatable or comma-separated); they and `--sandbox` work only with `--brief`.
+`show <id>` reviews a stack or fragment without starting a process: metadata, every guidance branch, commands, verify steps and shipped output paths, including adapters for every agent. `--json` returns `ShowReport`. Only bundled entries receive ledger evidence; `sameContent` compares the current composition fingerprint with the recorded run. Non-bundled entries get `lastRun: null`.
+
+`--brief <stack>` prints only the canonical composed brief to stdout. Word count, fixed-text count and limit go to stderr in human mode; agent stderr stays empty on success. `--json` returns `BriefPreview`, including its fingerprint and findings for the selected entries. Error findings exit 2 with `ValidationFailed` and keep the brief on stdout. Preview uses only the first configured agent (default `claude`), ignores `always`, and starts no processes. `--with` and `--without` take ids (repeatable or comma-separated); they and `--sandbox` work only with `--brief`.
 
 ## Configuration
 

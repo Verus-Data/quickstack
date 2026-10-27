@@ -61,12 +61,12 @@ const envelope = (stderr: string) =>
   };
 /** A project-origin fragment in `home`'s `.quickstacks/`, which is never trusted. */
 function localFragment(home: string) {
-  writeEntry(
-    join(home, ".quickstacks"),
-    "fragment",
-    "local-extra",
-    minimal("fragment", "local-extra"),
-  );
+  writeEntry({
+    root: join(home, ".quickstacks"),
+    kind: "fragment",
+    dir: "local-extra",
+    frontmatter: minimal("fragment", "local-extra"),
+  });
   return ["--with", "local-extra"];
 }
 
@@ -394,3 +394,19 @@ test("the command log record names the handoff and the agent, nothing else of it
   expect(record).toMatchObject({ handoff: "inside-agent", agent: "claude", status: 0 });
   expect(JSON.stringify(record)).not.toContain("BRIEF");
 });
+
+test.each(["codex", "opencode,codex"])(
+  "--no-launch examples use the first target in --agents %s",
+  async (agents) => {
+    const { status, stdout, stderr, app } = await newCli(["--agents", agents, "--no-launch"], {
+      host: terminal,
+    });
+    expect(status).toBe(0);
+    expect(stderr).toBe("");
+    const command = agents.startsWith("opencode") ? "opencode --prompt" : "codex";
+    expect(stdout.trimEnd().split("\n").at(-1)).toBe(
+      `For example: cd app && ${command} "${PROMPT}"`,
+    );
+    expect(manifestOf(app).agents).toEqual(agents.split(","));
+  },
+);

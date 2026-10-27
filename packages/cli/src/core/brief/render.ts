@@ -1,3 +1,4 @@
+import { METADATA_DIR } from "../../project-layout";
 import { APP_TAG, DEFAULT_STEP_TIMEOUT, withStepDefaults } from "../../schemas/entry";
 import type { Manifest } from "../../schemas/manifest";
 import type { ComposedStep, Composition, MissingTool } from "../compose/compose";
@@ -71,36 +72,46 @@ export function renderBrief(composition: Composition<Entry | null>, context: Bri
 
   // 1. Title. 2. Untrusted entries, before anything they wrote (their names are in the facts).
   fixed(T.title(oneLine(context.project), oneLine(stack.meta.name)), "");
-  if (composition.untrusted.length) {
-    fixed(T.untrusted.heading, "", T.untrusted.stop);
-    data(
-      ...composition.untrusted.map((entry) =>
-        T.untrusted.entry(entry.kind, entry.id, entry.origin, entry.dir),
-      ),
-    );
-    const fromProject = composition.untrusted.some((entry) => entry.origin === "project");
-    const fromOverride = composition.untrusted.some((entry) => entry.origin !== "project");
-    fixed("", T.untrusted.where(fromProject, fromOverride), "", T.untrusted.ask, "");
-  }
-  // 3. Facts.
-  fixed(
-    T.facts.stack(oneLine(stack.meta.name), stack.id),
-    T.facts.fragments(base.map((fragment) => fragment.id)),
-    ...(app ? [T.facts.app(oneLine(app.meta.name), app.id)] : []),
-    T.facts.preset(sandbox),
-    T.facts.agents(composition.agents),
-    T.facts.root,
-  );
-  if (context.written.length) {
-    fixed(T.facts.written);
-    data(
-      ...collapsePaths(context.written).map((line) => {
+  const untrusted = () => {
+    if (composition.untrusted.length) {
+      fixed(T.untrusted.heading, "", T.untrusted.stop);
+      data(
+        ...composition.untrusted.map((entry) =>
+          T.untrusted.entry(entry.kind, entry.id, entry.origin, entry.dir),
+        ),
+      );
+      const fromProject = composition.untrusted.some((entry) => entry.origin === "project");
+      const fromOverride = composition.untrusted.some((entry) => entry.origin !== "project");
+      fixed("", T.untrusted.where(fromProject, fromOverride), "", T.untrusted.ask, "");
+    }
+  };
+  untrusted();
+  const writtenPaths = () => {
+    if (context.written.length) {
+      fixed(T.facts.written);
+      for (const line of collapsePaths(context.written)) {
         const dir = / \(\d+ files\)$/.exec(line);
-        return `  - ${dir ? `${T.code(line.slice(0, dir.index))}${dir[0]}` : T.code(line)}`;
-      }),
+        const text = `  - ${dir ? `${T.code(line.slice(0, dir.index))}${dir[0]}` : T.code(line)}`;
+        // The metadata listing is CLI-owned text; entry file paths are supplied by entries.
+        if (line.startsWith(`${METADATA_DIR}/`)) fixed(text);
+        else data(text);
+      }
+    }
+  };
+  const facts = () => {
+    // 3. Facts.
+    fixed(
+      T.facts.stack(oneLine(stack.meta.name), stack.id),
+      T.facts.fragments(base.map((fragment) => fragment.id)),
+      ...(app ? [T.facts.app(oneLine(app.meta.name), app.id)] : []),
+      T.facts.preset(sandbox),
+      T.facts.agents(composition.agents),
+      T.facts.root,
     );
-  }
-  if (cli !== "quickstacks") fixed(T.facts.invocation(cli));
+    writtenPaths();
+    if (cli !== "quickstacks") fixed(T.facts.invocation(cli));
+  };
+  facts();
 
   // 3-5. Job, versions, ground rules.
   gap();
@@ -120,90 +131,88 @@ export function renderBrief(composition: Composition<Entry | null>, context: Bri
     data(...composition.decisions.map((decision) => `- ${oneLine(decision.text)}`));
   }
 
-  // 7. Dependencies and tools.
-  if (composition.deps.length || composition.tools.length) {
-    gap();
-    fixed(T.dependencies.heading);
-    if (composition.deps.length) {
-      fixed("", T.dependencies.packages, "");
-      data(...composition.deps.map((dep) => `- ${dep.role}: ${dep.names.join(", ")}`));
+  const dependencies = () => {
+    // 7. Dependencies and tools.
+    if (composition.deps.length || composition.tools.length) {
+      gap();
+      fixed(T.dependencies.heading);
+      if (composition.deps.length) {
+        fixed("", T.dependencies.packages, "");
+        data(...composition.deps.map((dep) => `- ${dep.role}: ${dep.names.join(", ")}`));
+      }
+      if (composition.tools.length) {
+        fixed("", T.dependencies.tools, "");
+        data(
+          ...composition.tools.map(({ tool }) => {
+            const missing = context.missing.find((item) => item.tool === tool);
+            return missing
+              ? T.dependencies.missing(tool, T.installHint(tool), missing.drop)
+              : T.dependencies.found(tool);
+          }),
+        );
+      }
     }
-    if (composition.tools.length) {
-      fixed("", T.dependencies.tools, "");
-      data(
-        ...composition.tools.map(({ tool }) => {
-          const missing = context.missing.find((item) => item.tool === tool);
-          return missing
-            ? T.dependencies.missing(tool, T.installHint(tool), missing.drop)
-            : T.dependencies.found(tool);
-        }),
-      );
-    }
-  }
+  };
+  dependencies();
 
   // 8-9. Stack and fragment guidance; the app's is in the application section.
   const guidance = (heading: string, entry: Entry) => {
     gap();
     fixed(heading);
-    const body = nest(entry.body).trim();
+    const body = nest(entry.body).replace(/^\n+|\n+$/g, "");
     if (body) data("", ...body.split("\n"));
   };
   guidance(T.sections.stack(oneLine(stack.meta.name), stack.id), stack);
   for (const fragment of base)
     guidance(T.sections.fragment(oneLine(fragment.meta.name), fragment.id), fragment);
 
-  // 10. Definition of done, split around the app when there is one.
-  const serves = composition.verify.some((step) => step.phase === "serve");
-  const steps = composition.verify.filter((step) => !step.tags.includes(APP_TAG));
-  const commands = app ? merged([stack, ...base], "commands") : composition.commands;
-  const env = app ? merged([stack, ...base], "env") : composition.env;
-  gap();
-  fixed(app ? T.done.base : T.done.heading, "");
-  if (app) fixed(T.done.baseFirst(cli), "");
-  if (steps.length) {
-    fixed(app ? T.done.baseSteps(cli) : T.done.steps(cli), "");
-    stepTable(steps);
-  } else fixed(T.done.noSteps(cli));
-  if (Object.keys(commands).length) {
+  const baseEnvironment = (env: Record<string, string>) => {
+    if (Object.keys(env).length) {
+      gap();
+      fixed(T.done.environment, "");
+      data(...envTable(env));
+      fixed("", ...environmentNote(cli, Object.keys(env)));
+    }
+  };
+  const baseSteps = (steps: ReadonlyArray<ComposedStep>) => {
+    if (steps.length) {
+      fixed(app ? T.done.baseSteps(cli) : T.done.steps(cli), "");
+      stepTable(steps);
+    } else fixed(T.done.noSteps(cli));
+  };
+  const definitionOfDone = () => {
+    // 10. Definition of done, split around the app when there is one.
+    const serves = composition.verify.some((step) => step.phase === "serve");
+    const steps = composition.verify.filter((step) => !step.tags.includes(APP_TAG));
+    const commands = app ? merged([stack, ...base], "commands") : composition.commands;
+    const env = app ? merged([stack, ...base], "env") : composition.env;
     gap();
-    fixed(T.done.commands, "");
-    data(...commandTable(commands));
-  }
-  if (Object.keys(env).length) {
+    fixed(app ? T.done.base : T.done.heading, "");
+    if (app) fixed(T.done.baseFirst(cli), "");
+    baseSteps(steps);
+    if (Object.keys(commands).length) {
+      gap();
+      fixed(T.done.commands, "");
+      data(...commandTable(commands));
+    }
+    baseEnvironment(env);
     gap();
-    fixed(T.done.environment, "");
-    data(...envTable(env));
-    fixed("", ...environmentNote(cli, Object.keys(env)));
-  }
-  gap();
-  fixed(
-    T.done.rules,
-    "",
-    app ? T.done.rule.runBase(cli) : T.done.rule.run(cli),
-    T.done.rule.create,
-    T.done.rule.weaken,
-    ...(serves ? [T.done.rule.servers, T.done.rule.foreground] : []),
-    T.done.rule.timeout,
-    T.done.rule.failing,
-    T.done.rule.changed(cli),
-  );
+    fixed(
+      T.done.rules,
+      "",
+      app ? T.done.rule.runBase(cli) : T.done.rule.run(cli),
+      T.done.rule.create,
+      T.done.rule.weaken,
+      ...(serves ? [T.done.rule.servers, T.done.rule.foreground] : []),
+      T.done.rule.timeout,
+      T.done.rule.failing,
+      T.done.rule.changed(cli),
+    );
+    return env;
+  };
+  const env = definitionOfDone();
 
-  if (app) {
-    gap();
-    fixed(T.application.heading, "", T.application.intro);
-    const body = nest(app.body).trim();
-    if (body) data("", ...body.split("\n"));
-    const appSteps = composition.verify.filter((step) => step.tags.includes(APP_TAG));
-    if (appSteps.length) {
-      gap();
-      fixed(T.application.steps, "", T.application.stepsIntro, "");
-      stepTable(appSteps);
-    }
-    if (Object.keys(app.meta.commands).length) {
-      gap();
-      fixed(T.application.commands, "");
-      data(...commandTable(app.meta.commands));
-    }
+  const applicationEnvironment = (app: Entry, env: Record<string, string>) => {
     const appEnv = Object.fromEntries(
       Object.entries(app.meta.env).filter(([key]) => !Object.hasOwn(env, key)),
     );
@@ -216,8 +225,29 @@ export function renderBrief(composition: Composition<Entry | null>, context: Bri
       const said = Object.keys(env).length > 0;
       if (note.length > (said ? 1 : 0)) fixed("", ...(said ? note.slice(0, -1) : note));
     }
-    fixed("", T.application.done(cli));
-  }
+  };
+  const application = () => {
+    if (app) {
+      gap();
+      fixed(T.application.heading, "", T.application.intro);
+      const body = nest(app.body).replace(/^\n+|\n+$/g, "");
+      if (body) data("", ...body.split("\n"));
+      const appSteps = composition.verify.filter((step) => step.tags.includes(APP_TAG));
+      if (appSteps.length) {
+        gap();
+        fixed(T.application.steps, "", T.application.stepsIntro, "");
+        stepTable(appSteps);
+      }
+      if (Object.keys(app.meta.commands).length) {
+        gap();
+        fixed(T.application.commands, "");
+        data(...commandTable(app.meta.commands));
+      }
+      applicationEnvironment(app, env);
+      fixed("", T.application.done(cli));
+    }
+  };
+  application();
 
   gap();
   fixed(...T.done.qa);
@@ -387,18 +417,21 @@ function renderAddBrief(
     ...T.ground.notes,
   );
   if (context.missing.length) fixed(T.ground.missing);
-  if (add.mergeNeeded.length) {
-    fixed("", T.add.merge, "", T.add.mergeTask, "");
-    data(
-      ...add.mergeNeeded.flatMap((item) =>
-        item.incoming.map((incoming) => `- ${T.code(item.path)}: ${T.code(incoming)}`),
-      ),
-    );
-  }
-  if (add.missingRequired.length) {
-    fixed("", T.add.required, "");
-    data(...add.missingRequired.map((item) => `- ${T.code(item.id)}: ${T.code(item.command)}`));
-  }
+  const pendingWork = () => {
+    if (add.mergeNeeded.length) {
+      fixed("", T.add.merge, "", T.add.mergeTask, "");
+      data(
+        ...add.mergeNeeded.flatMap((item) =>
+          item.incoming.map((incoming) => `- ${T.code(item.path)}: ${T.code(incoming)}`),
+        ),
+      );
+    }
+    if (add.missingRequired.length) {
+      fixed("", T.add.required, "");
+      data(...add.missingRequired.map((item) => `- ${T.code(item.id)}: ${T.code(item.command)}`));
+    }
+  };
+  pendingWork();
   if (composition.decisions.length) {
     fixed("", T.decisions.heading, "", context.yes ? T.decisions.yes : T.decisions.ask, "");
     data(...composition.decisions.map((item) => `- ${oneLine(item.text)}`));
@@ -421,29 +454,32 @@ function renderAddBrief(
     data("", nest(entry.body.replace(/^(\s*)#(?=[ \t])/, "$1##")).trim());
   }
   fixed("", T.done.heading, "", T.add.done(cli));
-  const steps: ComposedStep[] = add.manifest.verify.map((step) => ({
-    ...withStepDefaults(step),
-    skipByDefault: step.skipByDefault,
-    owner: { kind: "fragment", id: step.owner },
-  }));
-  if (steps.length) {
-    // Match planVerify: finish the base stage before starting any app phase.
-    const ordered = [false, true].flatMap((app) =>
-      runOrder(steps.filter((step) => step.tags.includes(APP_TAG) === app)),
-    );
-    data("", ...table(ordered));
-    fixed("", T.done.commandsBelow, "");
-    data(...commandFence(ordered));
-  }
-  if (Object.keys(add.manifest.commands).length) {
-    fixed("", T.done.commands, "");
-    data(...commandTable(add.manifest.commands));
-  }
-  if (Object.keys(add.manifest.env).length) {
-    fixed("", T.done.environment, "");
-    data(...envTable(add.manifest.env));
-    fixed("", ...environmentNote(cli, Object.keys(add.manifest.env)));
-  }
+  const definitionOfDone = () => {
+    const steps: ComposedStep[] = add.manifest.verify.map((step) => ({
+      ...withStepDefaults(step),
+      skipByDefault: step.skipByDefault,
+      owner: { kind: "fragment", id: step.owner },
+    }));
+    if (steps.length) {
+      // Match planVerify: finish the base stage before starting any app phase.
+      const ordered = [false, true].flatMap((app) =>
+        runOrder(steps.filter((step) => step.tags.includes(APP_TAG) === app)),
+      );
+      data("", ...table(ordered));
+      fixed("", T.done.commandsBelow, "");
+      data(...commandFence(ordered));
+    }
+    if (Object.keys(add.manifest.commands).length) {
+      fixed("", T.done.commands, "");
+      data(...commandTable(add.manifest.commands));
+    }
+    if (Object.keys(add.manifest.env).length) {
+      fixed("", T.done.environment, "");
+      data(...envTable(add.manifest.env));
+      fixed("", ...environmentNote(cli, Object.keys(add.manifest.env)));
+    }
+  };
+  definitionOfDone();
   fixed(
     "",
     T.done.rule.run(cli),

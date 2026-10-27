@@ -25,42 +25,72 @@ function srcPath(filePath: string): string | undefined {
   return rel.startsWith("packages/cli/src/") ? rel.slice("packages/cli/src/".length) : undefined;
 }
 
-function reasonsFor(file: string, lines: string[]): string[] {
-  const has = (pattern: RegExp) => lines.some((line) => pattern.test(line));
-  const platformSide = file === "bin.ts" || file.startsWith("platform/");
-  const reasons: string[] = [];
-  if (
-    !platformSide &&
-    has(/(?:from|import)\s*\(?\s*["'](?:bun(?:[:/][^"']*)?|@effect\/platform-bun[^"']*)["']/)
-  )
-    reasons.push("imports Bun outside an explicit platform boundary; use Effect platform services");
-  if (!platformSide && has(/(^|[^\w$.])Bun\.\w/))
-    reasons.push("uses the Bun global outside an explicit platform boundary");
-  if (
-    !platformSide &&
-    has(
+const outsidePlatform = (file: string) => file !== "bin.ts" && !file.startsWith("platform/");
+const outside =
+  (...allowed: string[]) =>
+  (file: string) =>
+    !allowed.includes(file);
+const everywhere = () => true;
+
+/** Each boundary: where it applies, what code breaks it, and the reason the guard gives. */
+const RULES: ReadonlyArray<{
+  applies: (file: string) => boolean;
+  pattern: RegExp;
+  reason: string;
+}> = [
+  {
+    applies: outsidePlatform,
+    pattern: /(?:from|import)\s*\(?\s*["'](?:bun(?:[:/][^"']*)?|@effect\/platform-bun[^"']*)["']/,
+    reason: "imports Bun outside an explicit platform boundary; use Effect platform services",
+  },
+  {
+    applies: outsidePlatform,
+    pattern: /(^|[^\w$.])Bun\.\w/,
+    reason: "uses the Bun global outside an explicit platform boundary",
+  },
+  {
+    applies: outsidePlatform,
+    pattern:
       /(?:from|import)\s*\(?\s*["'](?:node:child_process|child_process|node:process|@effect\/platform-node[^"']*)["']/,
-    )
-  )
-    reasons.push("imports Node process APIs outside bin.ts and src/platform/; use Processes");
-  if (
-    !platformSide &&
-    has(
+    reason: "imports Node process APIs outside bin.ts and src/platform/; use Processes",
+  },
+  {
+    applies: outsidePlatform,
+    pattern:
       /(^|[^\w$.])process\.(?:kill|on|once|off|addListener|removeListener|prependListener|prependOnceListener|exit)\s*\(/,
-    )
-  )
-    reasons.push("calls a Node process API outside bin.ts and src/platform/; use Processes");
-  if (!["config.ts", "bin.ts"].includes(file) && has(/(^|[^\w$.])process\.env\b/))
-    reasons.push("reads process.env outside config.ts");
-  if (has(/(^|[^\w$.])console\.\w+\s*\(/))
-    reasons.push("calls console.*; results belong to Output and diagnostics to the logger");
-  if (file !== "bin.ts" && has(/(^|[^\w$.])process\.stdout\b/))
-    reasons.push("uses process.stdout outside bin.ts");
-  if (!["bin.ts", "config.ts", "logging.ts"].includes(file) && has(/(^|[^\w$.])process\.stderr\b/))
-    reasons.push("uses process.stderr outside the output/logging boundary");
-  if (has(/(?:from|import)\s*\(?\s*["'](?:zod(?:\/[^"']*)?|@effect\/schema(?:\/[^"']*)?)["']/))
-    reasons.push("imports a competing schema library; use Schema from effect");
-  return reasons;
+    reason: "calls a Node process API outside bin.ts and src/platform/; use Processes",
+  },
+  {
+    applies: outside("config.ts", "bin.ts"),
+    pattern: /(^|[^\w$.])process\.env\b/,
+    reason: "reads process.env outside config.ts",
+  },
+  {
+    applies: everywhere,
+    pattern: /(^|[^\w$.])console\.\w+\s*\(/,
+    reason: "calls console.*; results belong to Output and diagnostics to the logger",
+  },
+  {
+    applies: outside("bin.ts"),
+    pattern: /(^|[^\w$.])process\.stdout\b/,
+    reason: "uses process.stdout outside bin.ts",
+  },
+  {
+    applies: outside("bin.ts", "config.ts", "logging.ts"),
+    pattern: /(^|[^\w$.])process\.stderr\b/,
+    reason: "uses process.stderr outside the output/logging boundary",
+  },
+  {
+    applies: everywhere,
+    pattern: /(?:from|import)\s*\(?\s*["'](?:zod(?:\/[^"']*)?|@effect\/schema(?:\/[^"']*)?)["']/,
+    reason: "imports a competing schema library; use Schema from effect",
+  },
+];
+
+function reasonsFor(file: string, lines: string[]): string[] {
+  return RULES.filter(
+    (rule) => rule.applies(file) && lines.some((line) => rule.pattern.test(line)),
+  ).map((rule) => rule.reason);
 }
 const payload = readPayload();
 const filePath = text(payload?.tool_input?.file_path);

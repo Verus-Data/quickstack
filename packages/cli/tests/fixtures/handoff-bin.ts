@@ -33,6 +33,7 @@ const platform = Layer.mergeAll(
     stdoutIsTTY: true,
     registry,
     skill: "",
+    authoring: "",
     invocation: "quickstacks",
   }),
 );

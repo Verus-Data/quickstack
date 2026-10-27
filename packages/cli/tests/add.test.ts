@@ -4,6 +4,7 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  realpathSync,
   rmSync,
   statSync,
   symlinkSync,
@@ -713,6 +714,37 @@ describe("add realistic existing-project cases", () => {
     refused(await addCli(project, ["add", "rollback", "--json"]), 6, "PermissionDenied");
     expect(snapshot(project.root)).toEqual(before);
     expect(readFileSync(file)).toEqual(state);
+    expect(
+      refused(await addCli(project, ["add", "rollback", "--json"]), 6, "PermissionDenied").details,
+    ).toEqual({ reason: "blocked", path: join(realpathSync(project.root), "z-blocked") });
+    const text = await addCli(project, ["add", "rollback"]);
+    expect(text.status).toBe(6);
+    expect(text.stdout).toBe("");
+    expect(text.stderr).toContain(
+      "A file or directory in the project is in the way of a planned path. Nothing was changed.",
+    );
+    expect(text.stderr).toContain("Next: move or rename the blocking item, then run add again.");
+  });
+
+  test("a directory occupying a planned file is refused unchanged", async () => {
+    const project = await scaffolded();
+    mkdirSync(join(project.root, "name.txt"));
+    const before = snapshot(project.root);
+    expect(
+      refused(await addCli(project, ["add", "named", "--json"]), 6, "PermissionDenied").details,
+    ).toEqual({ reason: "blocked", path: join(realpathSync(project.root), "name.txt") });
+    expect(snapshot(project.root)).toEqual(before);
+  });
+
+  test.each(['a"b', "a\\b"])("add refuses an unsafe manifest name: %s", async (name) => {
+    const project = await scaffolded();
+    const manifest = readManifestAt(project.root);
+    put(project.root, MANIFEST_PATH, encodeManifest({ ...manifest, name }));
+    const before = snapshot(project.root);
+    expect(
+      refused(await addCli(project, ["add", "named", "--json"]), 2, "BadInput").details,
+    ).toEqual({ id: name, flag: "name" });
+    expect(snapshot(project.root)).toEqual(before);
   });
 
   test("git-hook repository variables cannot make an own-repo fragment probe the wrong repository [3.0#25]", async () => {
@@ -774,13 +806,13 @@ describe("add realistic existing-project cases", () => {
 
   test("a new fragment's malformed conditionals fail before any writes [3.0#28]", async () => {
     const project = addProject();
-    const dir = writeEntry(
-      project.registry,
-      "fragment",
-      "bad-conditional",
-      minimal("fragment", "bad-conditional"),
-      "<!-- quickstacks:when mode=add -->\nunclosed\n",
-    );
+    const dir = writeEntry({
+      root: project.registry,
+      kind: "fragment",
+      dir: "bad-conditional",
+      frontmatter: minimal("fragment", "bad-conditional"),
+      body: "<!-- quickstacks:when mode=add -->\nunclosed\n",
+    });
     put(dir, "files/should-not-exist.txt", "must not land\n");
     const before = snapshot(project.root);
     expect(
@@ -923,4 +955,28 @@ test("without yes or sandbox the brief asks for its decisions [3.0#18]", async (
   const brief = read(project.root, ".quickstacks/BRIEF.md");
   expect(brief).toContain(T.decisions.ask);
   expect(brief).not.toContain(T.decisions.yes);
+});
+
+test("add examples use the manifest's first target agent when --agents is omitted", async () => {
+  const project = addProject();
+  const created = await addCli(project, [
+    "new",
+    "fixture-stack",
+    project.root,
+    "--agents",
+    "codex",
+    "--json",
+  ]);
+  expect(created.status).toBe(0);
+  expect(created.stderr).toBe("");
+  expect(JSON.parse(created.stdout).agents).toEqual(["codex"]);
+  const result = await addCli(project, ["add", "ci-github", "--no-launch"], {
+    host: { stdinIsTTY: true, stdoutIsTTY: true },
+  });
+  expect(result.status).toBe(0);
+  expect(result.stderr).toBe("");
+  expect(result.stdout.trimEnd().split("\n").at(-1)).toBe(
+    `For example: codex "Read .quickstacks/BRIEF.md and carry it out. It's your full task for this project; you're done when quickstacks verify passes."`,
+  );
+  expect(readManifestAt(project.root).agents).toEqual(["codex"]);
 });
