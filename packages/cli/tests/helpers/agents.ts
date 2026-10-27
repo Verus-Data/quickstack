@@ -26,14 +26,13 @@ export function fakeAgent(
   mkdirSync(dir, { recursive: true });
   const bin = join(dir, name);
   const out = join(dir, `${name}.run.json`);
-  const next =
-    behavior === "wait-for-sigterm"
-      ? `fs.writeFileSync(${JSON.stringify(`${bin}.ready`)}, "yes");
+  let next: string;
+  if (behavior === "wait-for-sigterm")
+    next = `fs.writeFileSync(${JSON.stringify(`${bin}.ready`)}, "yes");
 process.on("SIGTERM", () => { fs.writeFileSync(${JSON.stringify(`${bin}.SIGTERM`)}, "yes"); process.exit(143); });
-setInterval(() => {}, 1000);`
-      : behavior === "die-by-sigterm"
-        ? `process.kill(process.pid, "SIGTERM");`
-        : `process.exit(${behavior.exit});`;
+setInterval(() => {}, 1000);`;
+  else if (behavior === "die-by-sigterm") next = `process.kill(process.pid, "SIGTERM");`;
+  else next = `process.exit(${behavior.exit});`;
   writeFileSync(
     bin,
     `#!${process.execPath}

@@ -43,7 +43,13 @@ async function validate(home: string, target: string) {
   return jsonResult(await createCli(home, ["validate", target, "--json"]), ValidateReport);
 }
 function source(home: string, kind: "stack" | "fragment" = "stack", id = "x") {
-  return writeEntry(join(home, ".quickstacks"), kind, id, minimal(kind, id), "PROJECT GUIDANCE\n");
+  return writeEntry({
+    root: join(home, ".quickstacks"),
+    kind,
+    dir: id,
+    frontmatter: minimal(kind, id),
+    body: "PROJECT GUIDANCE\n",
+  });
 }
 function metadata(path: string) {
   const parts = splitFrontmatter(read(path));
@@ -359,16 +365,16 @@ describe("create an entry", () => {
       putCreate(bin, tool, '#!/bin/sh\nprintf ran >> "$HOME/process-ran"\nexit 0\n');
     for (const tool of readdirSync(bin)) chmodSync(join(bin, tool), 0o755);
     const registry = createWorkspace();
-    writeEntry(
-      registry,
-      "stack",
-      "probe",
-      minimal(
+    writeEntry({
+      root: registry,
+      kind: "stack",
+      dir: "probe",
+      frontmatter: minimal(
         "stack",
         "probe",
         'tools: [make]\nverify: [{ name: serve, phase: serve, run: make serve, expect: { http: "https://example.invalid/create-must-not-probe" } }]',
       ),
-    );
+    });
     const fetch = vi
       .spyOn(globalThis, "fetch")
       .mockRejectedValue(new Error("create must not fetch"));
@@ -449,14 +455,19 @@ describe("create an entry", () => {
     async (type) => {
       const home = createWorkspace();
       const registry = createWorkspace();
-      const entry = writeEntry(registry, "fragment", "x", minimal("fragment", "x"));
+      const entry = writeEntry({
+        root: registry,
+        kind: "fragment",
+        dir: "x",
+        frontmatter: minimal("fragment", "x"),
+      });
       putCreate(entry, "files/a-ordinary.txt", "copy this first\n");
       const outside = createWorkspace();
       putCreate(outside, "private.txt", "keep private\n");
-      symlinkSync(
-        type === "loop" ? "z-link" : type === "directory" ? outside : join(outside, "private.txt"),
-        join(entry, "files/z-link"),
-      );
+      let destination = join(outside, "private.txt");
+      if (type === "loop") destination = "z-link";
+      else if (type === "directory") destination = outside;
+      symlinkSync(destination, join(entry, "files/z-link"));
       createFailure(
         await createCli(home, ["create", "fragment", "x", "--from", "bundled", "--json"], {
           host: { registry },
@@ -498,7 +509,13 @@ describe("create an entry", () => {
     const home = createWorkspace();
     source(home);
     const registry = createWorkspace();
-    const entry = writeEntry(registry, "stack", "x", minimal("stack", "x"), "BUNDLED GUIDANCE\n");
+    const entry = writeEntry({
+      root: registry,
+      kind: "stack",
+      dir: "x",
+      frontmatter: minimal("stack", "x"),
+      body: "BUNDLED GUIDANCE\n",
+    });
     await created(
       await createCli(home, ["create", "stack", "x", "--from", "bundled", "--json"], {
         host: { registry },
@@ -506,7 +523,12 @@ describe("create an entry", () => {
     );
     expect(entrySnapshot(entryPath(home, "stack", "x"))).toEqual(entrySnapshot(entry));
     const other = createWorkspace();
-    writeEntry(registry, "stack", "only-bundled", minimal("stack", "only-bundled"));
+    writeEntry({
+      root: registry,
+      kind: "stack",
+      dir: "only-bundled",
+      frontmatter: minimal("stack", "only-bundled"),
+    });
     createFailure(
       await createCli(
         other,
@@ -566,10 +588,20 @@ describe("create an entry", () => {
     async () => {
       const home = createWorkspace();
       const registry = createWorkspace();
-      const entry = writeEntry(registry, "fragment", "x", minimal("fragment", "x"));
+      const entry = writeEntry({
+        root: registry,
+        kind: "fragment",
+        dir: "x",
+        frontmatter: minimal("fragment", "x"),
+      });
       putCreate(entry, "files/a.txt", "readable\n");
       putCreate(entry, "files/z.txt", "unreadable\n");
-      writeEntry(userRoot(home), "fragment", "keep", minimal("fragment", "keep"));
+      writeEntry({
+        root: userRoot(home),
+        kind: "fragment",
+        dir: "keep",
+        frontmatter: minimal("fragment", "keep"),
+      });
       const before = entrySnapshot(userRoot(home));
       chmodSync(join(entry, "files/z.txt"), 0o000);
       try {

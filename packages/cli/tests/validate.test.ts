@@ -32,18 +32,30 @@ const STEPS = [
   '  - { name: test, layer: test, run: "true" }',
 ].join("\n");
 const SETUP = "## Setup\n\nCreate the project.\n";
+type StackContent = { body?: string; tags?: string };
 /** A stack with no findings: one task-runner tag, the D7 layers and a Setup section. */
-function stack(root: string, id: string, extra = "", body = SETUP, tags = "[cli, scripts]") {
-  return writeEntry(
+function stack(
+  root: string,
+  id: string,
+  extra = "",
+  { body = SETUP, tags = "[cli, scripts]" }: StackContent = {},
+) {
+  return writeEntry({
     root,
-    "stack",
-    id,
-    minimal("stack", id, `tags: ${tags}\n${STEPS}\n${extra}`),
+    kind: "stack",
+    dir: id,
+    frontmatter: minimal("stack", id, `tags: ${tags}\n${STEPS}\n${extra}`),
     body,
-  );
+  });
 }
 function fragment(root: string, id: string, extra = "", body = "# Guidance\n") {
-  return writeEntry(root, "fragment", id, minimal("fragment", id, extra), body);
+  return writeEntry({
+    root,
+    kind: "fragment",
+    dir: id,
+    frontmatter: minimal("fragment", id, extra),
+    body,
+  });
 }
 /** An app: a `category: app` fragment applying to `on`. */
 function app(root: string, id: string, on: string, body = "# Guidance\n") {
@@ -51,7 +63,7 @@ function app(root: string, id: string, on: string, body = "# Guidance\n") {
     "category: tooling",
     "category: app",
   );
-  return writeEntry(root, "fragment", id, frontmatter, body);
+  return writeEntry({ root, kind: "fragment", dir: id, frontmatter, body });
 }
 
 type Options = { registry?: string; home?: string; env?: Record<string, string>; host?: object };
@@ -140,19 +152,29 @@ test("errors keep the report on stdout, end stderr with the ValidationFailed env
 test("entries that don't load are findings, and the rest of the registry still reports [1.5#1] [1.5#9]", async () => {
   const root = temp();
   stack(root, "fine");
-  writeEntry(root, "stack", "unknown-key", minimal("stack", "unknown-key", "colour: red"));
-  writeEntry(root, "stack", "renamed", minimal("stack", "other-id"));
-  writeEntry(root, "fragment", "wrong-kind", minimal("stack", "wrong-kind"));
-  writeEntry(
+  writeEntry({
     root,
-    "fragment",
-    "newer",
-    minimal("fragment", "newer").replace(/^schema_version: 1/, "schema_version: 2"),
-  );
+    kind: "stack",
+    dir: "unknown-key",
+    frontmatter: minimal("stack", "unknown-key", "colour: red"),
+  });
+  writeEntry({ root, kind: "stack", dir: "renamed", frontmatter: minimal("stack", "other-id") });
+  writeEntry({
+    root,
+    kind: "fragment",
+    dir: "wrong-kind",
+    frontmatter: minimal("stack", "wrong-kind"),
+  });
+  writeEntry({
+    root,
+    kind: "fragment",
+    dir: "newer",
+    frontmatter: minimal("fragment", "newer").replace(/^schema_version: 1/, "schema_version: 2"),
+  });
   const linked = fragment(root, "linked");
   symlinkSync("/", join(linked, "files"));
   mkdirSync(join(root, "stacks", "no-file"));
-  writeEntry(root, "stack", "bad-yaml", "id: [unclosed");
+  writeEntry({ root, kind: "stack", dir: "bad-yaml", frontmatter: "id: [unclosed" });
   const { status, report: got } = await report([root]);
   expect(status).toBe(2);
   expect(got.findings.map((finding) => [finding.check, finding.entry, finding.file])).toEqual([
@@ -247,8 +269,12 @@ test("a root whose stacks/ can't be read is PermissionDenied, exit 6 [1.5#12]", 
 
 test("budget-body: limits are inclusive, per kind: stack 2,000, fragment 1,000, app 3,000 [1.5#1] [1.5#2]", async () => {
   const root = temp();
-  stack(root, "at-limit", "", `${SETUP}\n${words(BUDGET.stackBody - countWords(SETUP))}\n`);
-  stack(root, "over-limit", "", `${SETUP}\n${words(BUDGET.stackBody + 1 - countWords(SETUP))}\n`);
+  stack(root, "at-limit", "", {
+    body: `${SETUP}\n${words(BUDGET.stackBody - countWords(SETUP))}\n`,
+  });
+  stack(root, "over-limit", "", {
+    body: `${SETUP}\n${words(BUDGET.stackBody + 1 - countWords(SETUP))}\n`,
+  });
   fragment(root, "frag-at", "", words(BUDGET.fragmentBody));
   fragment(root, "frag-over", "", words(BUDGET.fragmentBody + 1));
   app(root, "app-at", "cli", words(BUDGET.appBody));
@@ -267,7 +293,7 @@ test("budget-body: limits are inclusive, per kind: stack 2,000, fragment 1,000, 
 test("budget-body counts every conditional branch, but no marker line", async () => {
   const root = temp();
   const body = `${SETUP}<!-- quickstacks:when preset=sandbox -->\none two\n<!-- quickstacks:end -->\n<!-- quickstacks:when preset=default -->\nthree\n<!-- quickstacks:end -->\n`;
-  stack(root, "branches", "", body);
+  stack(root, "branches", "", { body });
   const { report: got } = await report([root]);
   expect(got.sizes.find((row) => row.kind === "body")?.words).toBe(countWords(SETUP) + 3);
 });
@@ -281,12 +307,9 @@ async function composedSizes(root: string, pad: number, sandboxOnly = 0) {
   const sandboxBlock = sandboxOnly
     ? `<!-- quickstacks:when preset=sandbox -->\n${words(sandboxOnly, "s")}\n<!-- quickstacks:end -->\n`
     : "";
-  stack(
-    root,
-    "big",
-    "fragments:\n  default: [f1, f2, f3, f4]",
-    `${SETUP}\n${words(pad, "b")}\n${sandboxBlock}`,
-  );
+  stack(root, "big", "fragments:\n  default: [f1, f2, f3, f4]", {
+    body: `${SETUP}\n${words(pad, "b")}\n${sandboxBlock}`,
+  });
   const { report: got } = await report([root]);
   const row = (preset: string) =>
     got.sizes.find((size) => size.kind === "composed" && size.preset === preset)?.words ?? 0;
@@ -362,9 +385,9 @@ test("sizes are rendered with the canonical context: tools, git, invocation and 
 
 test("fixedWords is the CLI's own text: growing a body changes words only, and an empty stack is all fixed text [1.5#4]", async () => {
   const small = temp();
-  stack(small, "grow", "", `${SETUP}\n${words(10)}\n`);
+  stack(small, "grow", "", { body: `${SETUP}\n${words(10)}\n` });
   const grown = temp();
-  stack(grown, "grow", "", `${SETUP}\n${words(60)}\n`);
+  stack(grown, "grow", "", { body: `${SETUP}\n${words(60)}\n` });
   const row = async (root: string, preset: string) =>
     (await report([root])).report.sizes.find(
       (size) => size.kind === "composed" && size.preset === preset,
@@ -376,7 +399,13 @@ test("fixedWords is the CLI's own text: growing a body changes words only, and a
     expect(after?.fixedWords).toBe(before?.fixedWords);
   }
   const empty = temp();
-  writeEntry(empty, "stack", "bare", minimal("stack", "bare", "tags: [cli, scripts]"), "");
+  writeEntry({
+    root: empty,
+    kind: "stack",
+    dir: "bare",
+    frontmatter: minimal("stack", "bare", "tags: [cli, scripts]"),
+    body: "",
+  });
   const bare = (await report([empty])).report.sizes.filter((size) => size.kind === "composed");
   expect(bare.length).toBe(2);
   for (const size of bare) expect(size.words).toBe(size.fixedWords);
@@ -489,7 +518,7 @@ test("an optional fragment that doesn't apply to its stack is an error on the st
   const root = temp();
   stack(root, "terminal", "fragments:\n  optional: [web-only]");
   fragment(root, "web-only", "applies_to: [web]");
-  stack(root, "site", "", SETUP, "[web, scripts]");
+  stack(root, "site", "", { body: SETUP, tags: "[web, scripts]" });
   const { status, report: got } = await report([root]);
   expect(status).toBe(2);
   expect(
@@ -520,7 +549,12 @@ test("an unknown or rejected id a stack names is reported once, by its own check
   stack(root, "ghostly", "fragments:\n  default: [ghost]");
   stack(root, "phantom", "fragments:\n  optional: [phantm]");
   stack(root, "uses-bad", "fragments:\n  default: [bad]");
-  writeEntry(root, "fragment", "bad", minimal("fragment", "bad", "colour: red"));
+  writeEntry({
+    root,
+    kind: "fragment",
+    dir: "bad",
+    frontmatter: minimal("fragment", "bad", "colour: red"),
+  });
   const { status, report: got } = await report([root]);
   expect(status).toBe(2);
   expect(checks(got.findings)).toEqual([
@@ -558,16 +592,16 @@ test("step-names: a step name used twice in one entry, or by two entries of a co
   const root = temp();
   stack(root, "dup", "fragments:\n  default: [clash]");
   fragment(root, "clash", 'verify:\n  - { name: lint, layer: lint, run: "true" }');
-  writeEntry(
+  writeEntry({
     root,
-    "fragment",
-    "twice",
-    minimal(
+    kind: "fragment",
+    dir: "twice",
+    frontmatter: minimal(
       "fragment",
       "twice",
       'verify:\n  - { name: same, layer: test, run: "true" }\n  - { name: same, layer: test, run: "true" }',
     ),
-  );
+  });
   const { report: got } = await report([root]);
   expect(
     only(got.findings, "step-names").map((finding) => [finding.entry, finding.message]),
@@ -579,26 +613,25 @@ test("step-names: a step name used twice in one entry, or by two entries of a co
 
 test("verify-layers: D7 layers in the default composition, and a probed serve step for web or api stacks [1.5#1] [1.5#7]", async () => {
   const root = temp();
-  stack(root, "web-no-serve", "", SETUP, "[web, scripts]");
+  stack(root, "web-no-serve", "", { body: SETUP, tags: "[web, scripts]" });
   stack(
     root,
     "web-served",
     '  - { name: dev, phase: serve, layer: serve, run: "true", expect: { http: "http://localhost:3000" } }',
-    SETUP,
-    "[web, scripts]",
+    { body: SETUP, tags: "[web, scripts]" },
   );
   stack(root, "cli-only");
-  writeEntry(
+  writeEntry({
     root,
-    "stack",
-    "no-lint",
-    minimal(
+    kind: "stack",
+    dir: "no-lint",
+    frontmatter: minimal(
       "stack",
       "no-lint",
       'tags: [cli, make]\nverify:\n  - { name: t, layer: test, run: "true" }',
     ),
-    SETUP,
-  );
+    body: SETUP,
+  });
   const { report: got } = await report([root]);
   expect(
     only(got.findings, "verify-layers").map((finding) => [finding.entry, finding.message]),
@@ -615,11 +648,11 @@ test("verify-layers: D7 layers in the default composition, and a probed serve st
 
 test("verify-layers names a step that matches the missing layer but has no layer, and how to fix it", async () => {
   const root = temp();
-  writeEntry(
+  writeEntry({
     root,
-    "stack",
-    "ported",
-    minimal(
+    kind: "stack",
+    dir: "ported",
+    frontmatter: minimal(
       "stack",
       "ported",
       [
@@ -631,8 +664,8 @@ test("verify-layers names a step that matches the missing layer but has no layer
         '  - { name: tests, run: "true" }',
       ].join("\n"),
     ),
-    SETUP,
-  );
+    body: SETUP,
+  });
   const { report: got } = await report([root]);
   expect(only(got.findings, "verify-layers").map((finding) => finding.message)).toEqual([
     "no verify step with layer lint (default, sandbox); step lint has no layer: add layer: lint to it",
@@ -652,9 +685,9 @@ test("a check-layer step is a described step: no step-layer warning, and no D7 l
 
 test("stack-setup-section, task-runner-tag, step-layer and dep-version [1.5#1] [1.5#8]", async () => {
   const root = temp();
-  stack(root, "no-setup", "", "# Guide\n\n### Setup\n");
-  stack(root, "both-runners", "", SETUP, "[cli, make, scripts]");
-  stack(root, "no-runner", "", SETUP, "[cli]");
+  stack(root, "no-setup", "", { body: "# Guide\n\n### Setup\n" });
+  stack(root, "both-runners", "", { body: SETUP, tags: "[cli, make, scripts]" });
+  stack(root, "no-runner", "", { body: SETUP, tags: "[cli]" });
   fragment(root, "loose-step", 'verify:\n  - { name: check-it, run: "true" }');
   fragment(root, "pinned", 'deps:\n  app: [effect, "@effect/platform-bun", "react@18", "^1.2.0"]');
   const { report: got } = await report([root]);
@@ -707,12 +740,9 @@ test("merge-path-missing and merge-json, checked per entry even when no composit
 
 test("conditional prose: syntax with its file line and 1.1's problem code, unknown ids, unknown tags [1.5#1]", async () => {
   const root = temp();
-  stack(
-    root,
-    "prose",
-    "",
-    `${SETUP}<!-- quickstacks:when tag=web -->\nweb\n<!-- quickstacks:end -->\n`,
-  );
+  stack(root, "prose", "", {
+    body: `${SETUP}<!-- quickstacks:when tag=web -->\nweb\n<!-- quickstacks:end -->\n`,
+  });
   fragment(
     root,
     "ids",
@@ -765,12 +795,9 @@ test("a with= or stack= id that resolves only in another origin is a resolved-ou
   fragment(bundled, "shared");
   stack(bundled, "far-stack");
   const user = join(home, "authoring");
-  stack(
-    user,
-    "mine",
-    "",
-    `${SETUP}<!-- quickstacks:when with=shared stack=far-stack -->\nx\n<!-- quickstacks:end -->\n`,
-  );
+  stack(user, "mine", "", {
+    body: `${SETUP}<!-- quickstacks:when with=shared stack=far-stack -->\nx\n<!-- quickstacks:end -->\n`,
+  });
   const { status, report: got } = await report([user], { home, registry: bundled });
   expect(status).toBe(0);
   expect(got.findings.map((finding) => [finding.severity, finding.check, finding.message])).toEqual(
@@ -815,12 +842,12 @@ test("a stacks/ the project registry skips as a symlink is one registry finding,
   const project = join(home, ".quickstacks");
   mkdirSync(project);
   symlinkSync(join(elsewhere, "stacks"), join(project, "stacks"));
-  writeEntry(
-    project,
-    "fragment",
-    "newer",
-    minimal("fragment", "newer").replace(/^schema_version: 1/, "schema_version: 2"),
-  );
+  writeEntry({
+    root: project,
+    kind: "fragment",
+    dir: "newer",
+    frontmatter: minimal("fragment", "newer").replace(/^schema_version: 1/, "schema_version: 2"),
+  });
   const { status, report: got } = await report([project], { home });
   expect(status).toBe(2);
   expect(got.findings.map((f) => [f.check, f.kind, f.entry, f.file, f.message])).toEqual([
@@ -909,12 +936,9 @@ test("--brief takes --with as a comma list and --without, like new", async () =>
 
 test("control characters from an entry are escaped in human output [1.5#10]", async () => {
   const root = temp();
-  stack(
-    root,
-    "sneaky",
-    "",
-    `${SETUP}<!-- quickstacks:when tag=\u001b[31m -->\nx\n<!-- quickstacks:end -->\n`,
-  );
+  stack(root, "sneaky", "", {
+    body: `${SETUP}<!-- quickstacks:when tag=\u001b[31m -->\nx\n<!-- quickstacks:end -->\n`,
+  });
   const result = await run([root], { host: terminal });
   expect(result.stdout).toContain("tag=\\u001b[31m is a tag no stack declares");
   expect(result.stdout).not.toContain("\u001b");
@@ -1205,7 +1229,7 @@ test("for an agent, no size table when every size is within budget; JSON keeps e
 
 test("for an agent, only the sizes over their limit, and the counts once", async () => {
   const root = temp();
-  stack(root, "long", "", `${SETUP}\n${words(2100)}\n`);
+  stack(root, "long", "", { body: `${SETUP}\n${words(2100)}\n` });
   stack(root, "short");
   const agent = await run([root]);
   expect(agent.status).toBe(2);

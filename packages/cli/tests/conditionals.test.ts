@@ -126,7 +126,13 @@ test.each([
   async (_case, text, line) => {
     const user = temp();
     // Frontmatter fills lines 1-8 of FRAGMENT.md, so the body starts at line 9.
-    writeEntry(user, "fragment", "bad-when", minimal("fragment", "bad-when"), text);
+    writeEntry({
+      root: user,
+      kind: "fragment",
+      dir: "bad-when",
+      frontmatter: minimal("fragment", "bad-when"),
+      body: text,
+    });
     const roots = [{ origin: "user", path: user } as const, ...bundledAt(composeRegistry)];
     expect(await composeExit({ with: ["bad-when"] }, { roots })).toEqual(
       Exit.fail(

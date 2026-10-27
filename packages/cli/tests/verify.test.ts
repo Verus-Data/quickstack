@@ -259,10 +259,11 @@ describe("running a step", () => {
       env: { FROM_MANIFEST: "manifest-default", PORT_WEB: "5173" },
     });
     const markers = Object.fromEntries(
-      AGENT_MARKER_NAMES.map((name) => [
-        name,
-        name === "CURSOR_EXTENSION_HOST_ROLE" ? "agent-exec" : name === "AI_AGENT" ? "claude" : "1",
-      ]),
+      AGENT_MARKER_NAMES.map((name) => {
+        if (name === "CURSOR_EXTENSION_HOST_ROLE") return [name, "agent-exec"];
+        if (name === "AI_AGENT") return [name, "claude"];
+        return [name, "1"];
+      }),
     );
     expect(markers.CLAUDECODE).toBe("1");
     const result = await verify(["--json"], {

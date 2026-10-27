@@ -114,6 +114,11 @@ export const recordRun = (
     };
     yield* appendRunRecord(context.root, record);
 
+    return yield* settleTimings(context, result, now);
+  });
+
+const settleTimings = (context: RecordContext, result: Finished, now: number) =>
+  Effect.gen(function* () {
     const checked = context.tamper.record;
     if (!checked) return { firstGreen: false, stateRecord: false };
     if (result.outcome === "changed") return { firstGreen: false, stateRecord: true };

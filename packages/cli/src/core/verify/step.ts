@@ -20,11 +20,9 @@ const EARLY_EXIT_REASON =
 export function parseDuration(text: string): Duration.Duration {
   const match = /^(\d+)(ms|s|m)$/.exec(text);
   const value = Number(match?.[1] ?? 0);
-  return match?.[2] === "ms"
-    ? Duration.millis(value)
-    : match?.[2] === "s"
-      ? Duration.seconds(value)
-      : Duration.minutes(value);
+  if (match?.[2] === "ms") return Duration.millis(value);
+  if (match?.[2] === "s") return Duration.seconds(value);
+  return Duration.minutes(value);
 }
 
 /** The command a `run` names: its first word after any leading `NAME=value` assignments. */
@@ -97,8 +95,14 @@ export const runStep = (step: PlannedStep, context: StepContext) =>
       return yield* fail("env", `working directory ${cwdText} resolves outside the project`);
     const spec = { command: step.run, cwd: real.value, env: context.env };
     return yield* step.phase === "serve" && step.expect
-      ? serve(step, spec, step.expect, fail, result)
-      : command(step, { ...spec, timeout: parseDuration(step.timeout) }, cwdText, fail, result);
+      ? serve({ step, spec, expect: step.expect, fail, result })
+      : command({
+          step,
+          spec: { ...spec, timeout: parseDuration(step.timeout) },
+          cwdText,
+          fail,
+          result,
+        });
   });
 
 type Report = (
@@ -109,13 +113,14 @@ type Report = (
 type Pass = (fields: Partial<StepResult> & Pick<StepResult, "status">) => Effect.Effect<StepResult>;
 type Spec = { command: string; cwd: string; env: Record<string, string> };
 
-const command = (
-  step: PlannedStep,
-  spec: Spec & { timeout: Duration.Duration },
-  cwdText: string,
-  fail: Report,
-  result: Pass,
-) =>
+type CommandOptions = {
+  step: PlannedStep;
+  spec: Spec & { timeout: Duration.Duration };
+  cwdText: string;
+  fail: Report;
+  result: Pass;
+};
+const command = ({ step, spec, cwdText, fail, result }: CommandOptions) =>
   Effect.gen(function* () {
     const processes = yield* Processes;
     const output = yield* Output;
@@ -145,13 +150,14 @@ const command = (
 
 type ServeEnd = { _tag: "ready" } | { _tag: "exited"; finished: Finished } | { _tag: "timeout" };
 
-const serve = (
-  step: PlannedStep,
-  spec: Spec,
-  expect: { http: string; within: string },
-  fail: Report,
-  result: Pass,
-) =>
+type ServeOptions = {
+  step: PlannedStep;
+  spec: Spec;
+  expect: { http: string; within: string };
+  fail: Report;
+  result: Pass;
+};
+const serve = ({ step, spec, expect, fail, result }: ServeOptions) =>
   Effect.gen(function* () {
     const processes = yield* Processes;
     const target = probeTarget(expect.http, spec.env);
@@ -175,7 +181,19 @@ const serve = (
     );
     if (launched._tag === "Failure")
       return yield* fail("env", spawnReason(launched.failure, step.cwd ?? "."));
-    const { end, tail } = launched.success;
+    return yield* serveResult({ ...launched.success, target, expect, fail, result });
+  });
+
+type ServeResultOptions = {
+  end: ServeEnd;
+  tail: string;
+  target: { host: string; port: number };
+  expect: ServeOptions["expect"];
+  fail: Report;
+  result: Pass;
+};
+const serveResult = ({ end, tail, target, expect, fail, result }: ServeResultOptions) =>
+  Effect.gen(function* () {
     const output = tail ? { outputTail: tail } : {};
     switch (end._tag) {
       case "exited":

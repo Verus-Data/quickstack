@@ -171,12 +171,12 @@ test("a second writer without merge is a file_owner conflict; a template on a me
 
 test("a merged file that isn't JSON is EntryInvalid merge_json naming the file", async () => {
   const user = temp();
-  const dir = writeEntry(
-    user,
-    "fragment",
-    "bad-json",
-    minimal("fragment", "bad-json", "merge: [.claude/settings.json]"),
-  );
+  const dir = writeEntry({
+    root: user,
+    kind: "fragment",
+    dir: "bad-json",
+    frontmatter: minimal("fragment", "bad-json", "merge: [.claude/settings.json]"),
+  });
   mkdirSync(join(dir, "adapters", "claude", ".claude"), { recursive: true });
   writeFileSync(join(dir, "adapters", "claude", ".claude", "settings.json"), "{ not json");
   const roots = [{ origin: "user", path: user } as const, ...bundledAt(composeRegistry)];
@@ -233,12 +233,12 @@ test("apps: one is composed last with every step tagged app; two, a required one
 test("requiring an app fails even when the app was already selected before its requirer", async () => {
   // zz-needs-app sorts after todo-app, so the default app is composed before the edge is seen.
   const user = temp();
-  writeEntry(
-    user,
-    "fragment",
-    "zz-needs-app",
-    minimal("fragment", "zz-needs-app", "requires: [todo-app]"),
-  );
+  writeEntry({
+    root: user,
+    kind: "fragment",
+    dir: "zz-needs-app",
+    frontmatter: minimal("fragment", "zz-needs-app", "requires: [todo-app]"),
+  });
   const roots = [{ origin: "user", path: user } as const, ...bundledAt(composeRegistry)];
   expect(await composeExit({ with: ["zz-needs-app"] }, { roots })).toEqual(
     conflict({ reason: "app_required", ids: ["zz-needs-app", "todo-app"] }),
@@ -291,24 +291,39 @@ test("a missing tool names the --without that drops its fragment, but none for o
 function toolRegistry(extraDefaults: string[] = [], required: string[] = []) {
   const user = temp();
   const defaults = ["needs", ...extraDefaults].join(", ");
-  writeEntry(
-    user,
-    "stack",
-    "tool-stack",
-    minimal(
+  writeEntry({
+    root: user,
+    kind: "stack",
+    dir: "tool-stack",
+    frontmatter: minimal(
       "stack",
       "tool-stack",
       `fragments:\n  required: [${required.join(", ")}]\n  default: [${defaults}]\n  optional: [tool-app]`,
     ),
-  );
-  writeEntry(user, "fragment", "needs", minimal("fragment", "needs", "requires: [dep]"));
-  writeEntry(user, "fragment", "dep", minimal("fragment", "dep", "requires_tools: [deptool]"));
-  writeEntry(user, "fragment", "pinned", minimal("fragment", "pinned", "requires: [dep]"));
-  writeEntry(
-    user,
-    "fragment",
-    "tool-app",
-    [
+  });
+  writeEntry({
+    root: user,
+    kind: "fragment",
+    dir: "needs",
+    frontmatter: minimal("fragment", "needs", "requires: [dep]"),
+  });
+  writeEntry({
+    root: user,
+    kind: "fragment",
+    dir: "dep",
+    frontmatter: minimal("fragment", "dep", "requires_tools: [deptool]"),
+  });
+  writeEntry({
+    root: user,
+    kind: "fragment",
+    dir: "pinned",
+    frontmatter: minimal("fragment", "pinned", "requires: [dep]"),
+  });
+  writeEntry({
+    root: user,
+    kind: "fragment",
+    dir: "tool-app",
+    frontmatter: [
       "schema_version: 1",
       "id: tool-app",
       "kind: fragment",
@@ -318,7 +333,7 @@ function toolRegistry(extraDefaults: string[] = [], required: string[] = []) {
       "applies_to: [tool-stack]",
       "requires_tools: [apptool]",
     ].join("\n"),
-  );
+  });
   return [{ origin: "user", path: user } as const];
 }
 const missingHints = async (
@@ -377,7 +392,12 @@ test("a stack and a fragment sharing an id stay distinct: steps, files, decision
 
 test("a file named only .tmpl is a plain copy, never a template with an empty path", async () => {
   const user = temp();
-  const dir = writeEntry(user, "fragment", "dot-tmpl", minimal("fragment", "dot-tmpl"));
+  const dir = writeEntry({
+    root: user,
+    kind: "fragment",
+    dir: "dot-tmpl",
+    frontmatter: minimal("fragment", "dot-tmpl"),
+  });
   mkdirSync(join(dir, "files", "sub"), { recursive: true });
   writeFileSync(join(dir, "files", ".tmpl"), "root\n");
   writeFileSync(join(dir, "files", "sub", ".tmpl"), "sub\n");

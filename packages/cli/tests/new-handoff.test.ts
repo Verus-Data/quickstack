@@ -61,12 +61,12 @@ const envelope = (stderr: string) =>
   };
 /** A project-origin fragment in `home`'s `.quickstacks/`, which is never trusted. */
 function localFragment(home: string) {
-  writeEntry(
-    join(home, ".quickstacks"),
-    "fragment",
-    "local-extra",
-    minimal("fragment", "local-extra"),
-  );
+  writeEntry({
+    root: join(home, ".quickstacks"),
+    kind: "fragment",
+    dir: "local-extra",
+    frontmatter: minimal("fragment", "local-extra"),
+  });
   return ["--with", "local-extra"];
 }
 

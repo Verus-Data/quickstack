@@ -153,17 +153,17 @@ export function benchFixture(space: ReturnType<typeof workspace>, compiled?: () 
     );
   }
   const registry = join(packageRoot, "registry");
-  const stack = writeEntry(
-    registry,
-    "stack",
-    "sample",
-    minimal(
+  const stack = writeEntry({
+    root: registry,
+    kind: "stack",
+    dir: "sample",
+    frontmatter: minimal(
       "stack",
       "sample",
       `fragments:\n  optional: [extra]\nenv:\n  PORT_BENCH: "4321"\nverify:\n  - name: files\n    layer: test\n    run: node -e 'const fs = require("node:fs"); for (const f of ["one.txt", "two.txt"]) if (!fs.existsSync(f)) process.exit(1)'`,
     ),
-    "# Build\n\nWrite one.txt and two.txt, then run verify.\n",
-  );
+    body: "# Build\n\nWrite one.txt and two.txt, then run verify.\n",
+  });
   const settings = join(stack, "files/.claude/settings.json");
   mkdirSync(dirname(settings), { recursive: true });
   writeFileSync(
@@ -202,7 +202,13 @@ export function benchFixture(space: ReturnType<typeof workspace>, compiled?: () 
     mkdirSync(dirname(file), { recursive: true });
     writeFileSync(file, "#!/bin/sh\nexit 0\n", { mode: 0o755 });
   }
-  writeEntry(registry, "fragment", "extra", minimal("fragment", "extra"), "# Extra\n");
+  writeEntry({
+    root: registry,
+    kind: "fragment",
+    dir: "extra",
+    frontmatter: minimal("fragment", "extra"),
+    body: "# Extra\n",
+  });
   mkdirSync(join(root, "plans/runs"), { recursive: true });
   git("init", "--quiet");
   git("add", ".");

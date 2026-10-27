@@ -22,22 +22,22 @@ afterEach(releaseCreate);
 function setup(settings?: unknown) {
   const home = createWorkspace();
   const registry = createWorkspace();
-  writeEntry(
-    registry,
-    "stack",
-    "plain",
-    minimal(
+  writeEntry({
+    root: registry,
+    kind: "stack",
+    dir: "plain",
+    frontmatter: minimal(
       "stack",
       "plain",
       'decisions: ["Layout (default: one package)."]\nfragments: { default: [shipping] }\nverify: [{ name: publish, layer: build, tags: [prod], run: make publish }]',
     ),
-  );
-  writeEntry(
-    registry,
-    "fragment",
-    "shipping",
-    minimal("fragment", "shipping").replace("category: tooling", "category: deploy"),
-  );
+  });
+  writeEntry({
+    root: registry,
+    kind: "fragment",
+    dir: "shipping",
+    frontmatter: minimal("fragment", "shipping").replace("category: tooling", "category: deploy"),
+  });
   if (settings !== undefined)
     putCreate(home, "config/quickstacks/config.json", JSON.stringify(settings));
   return { home, registry };
@@ -161,17 +161,17 @@ test.each(["Sandbox", "other", null, 1])(
 test("the preview ignores a configured sandbox preset [3.1b#21]", async () => {
   const { home, registry } = setup({ preset: "sandbox" });
   // A valid registry for preview: cover the D7 layers and declare their project commands.
-  writeEntry(
-    registry,
-    "stack",
-    "plain",
-    minimal(
+  writeEntry({
+    root: registry,
+    kind: "stack",
+    dir: "plain",
+    frontmatter: minimal(
       "stack",
       "plain",
       "tags: [make]\ncommands: { install: install, lint: lint, typecheck: typecheck, test: test }\nverify:\n  - { name: install, layer: install, run: make install }\n  - { name: lint, layer: lint, run: make lint }\n  - { name: typecheck, layer: typecheck, run: make typecheck }\n  - { name: test, layer: test, run: make test }",
     ),
-    "## Setup\n\nDescribe setup.\n",
-  );
+    body: "## Setup\n\nDescribe setup.\n",
+  });
   const preview = jsonResult(
     await createCli(home, ["validate", registry, "--brief", "plain", "--json"], {
       host: { registry },

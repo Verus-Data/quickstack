@@ -209,11 +209,11 @@ describe("new writes the manifest and the state record", () => {
 
   test("--sandbox marks prod steps skipByDefault in the manifest; without it none is [1.2b#7]", async () => {
     const registry = temp();
-    writeEntry(
-      registry,
-      "stack",
-      "prod-stack",
-      minimal(
+    writeEntry({
+      root: registry,
+      kind: "stack",
+      dir: "prod-stack",
+      frontmatter: minimal(
         "stack",
         "prod-stack",
         [
@@ -223,7 +223,7 @@ describe("new writes the manifest and the state record", () => {
           "  - { name: smoke, run: 'true', tags: [slow] }",
         ].join("\n"),
       ),
-    );
+    });
     const skipped = async (args: string[]) => {
       const run = await newCli(["prod-stack", "app", "--json", ...args], { registry });
       expect(run.stderr).toBe("");

@@ -30,11 +30,9 @@ const install = Command.make(
       const result = yield* installSkill(options);
       const host = yield* Host;
       const output = yield* Output;
-      const shown = result.path
-        ? output.audience === "agent"
-          ? yield* shownPath(host.cwd, result.path)
-          : result.path
-        : "";
+      let shown = result.path ?? "";
+      if (result.path && output.audience === "agent")
+        shown = yield* shownPath(host.cwd, result.path);
       yield* output.result(
         Schema.encodeSync(SkillResult)(result),
         result.action === "printed"

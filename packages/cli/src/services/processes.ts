@@ -154,7 +154,9 @@ function errnoOf(error: PlatformError.PlatformError): string {
   const cause = error.reason.cause as { code?: unknown } | undefined;
   if (typeof cause?.code === "string") return cause.code;
   const tag = error.reason._tag;
-  return tag === "PermissionDenied" ? "EACCES" : tag === "BadResource" ? "ENOTDIR" : "ENOENT";
+  if (tag === "PermissionDenied") return "EACCES";
+  if (tag === "BadResource") return "ENOTDIR";
+  return "ENOENT";
 }
 
 export class Processes extends Context.Service<
@@ -274,6 +276,15 @@ export class Processes extends Context.Service<
           );
           return child;
         });
+      const drain = (child: Child) =>
+        Effect.gen(function* () {
+          const pipesHeld = Option.isNone(yield* Effect.timeoutOption(child.closed, DRAIN));
+          if (pipesHeld) {
+            if (holder.groups.has(child.pid)) killGroup(child.pid, "SIGKILL");
+            yield* Effect.timeoutOption(child.closed, SETTLE);
+          }
+          return pipesHeld;
+        });
       /** Waits for exit (killing the group at the timeout), then drains output for up to 2 s. */
       const complete = (child: Child, timeout: Duration.Duration | undefined) =>
         Effect.gen(function* () {
@@ -286,11 +297,7 @@ export class Processes extends Context.Service<
             yield* terminate(child.pid);
           }
           const exit = Option.isSome(first) ? first.value : yield* child.exited;
-          const pipesHeld = Option.isNone(yield* Effect.timeoutOption(child.closed, DRAIN));
-          if (pipesHeld) {
-            if (holder.groups.has(child.pid)) killGroup(child.pid, "SIGKILL");
-            yield* Effect.timeoutOption(child.closed, SETTLE);
-          }
+          const pipesHeld = yield* drain(child);
           return { exit, timedOut, pipesHeld };
         });
       /** Delivers decoded chunks to `onOutput` in order, from a fiber owned by the scope. */

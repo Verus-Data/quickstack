@@ -2,7 +2,7 @@ import { Duration, Effect, FileSystem, Path, Schema } from "effect";
 import { countAsked } from "../../src/core/runs";
 import { ProjectRuns } from "../../src/schemas/runs";
 import { RunRecord } from "../../src/schemas/verify";
-import { Processes } from "../../src/services/processes";
+import { type Captured, Processes } from "../../src/services/processes";
 import type { Prepared } from "./prepare";
 import type { AgentRun } from "./run";
 
@@ -35,27 +35,12 @@ export const verify = (prepared: Prepared) =>
       env: prepared.env,
       timeout: Duration.seconds(60),
     });
-    const summary =
-      summarized.exitCode === 0 && !summarized.truncated
-        ? yield* Schema.decodeUnknownEffect(Schema.fromJsonString(ProjectRuns))(summarized.stdout)
-        : null;
+    const summary = yield* readSummary(summarized);
     const history = (yield* readOptional(historyFile)) ?? "";
     const lines = history.trim().split(/\r?\n/).filter(Boolean);
-    const last = lines.at(-1);
-    const run =
-      history !== before && last
-        ? yield* Schema.decodeUnknownEffect(Schema.fromJsonString(RunRecord))(last)
-        : null;
+    const run = yield* latestRun(history, before, lines);
     const notes = yield* readOptional(path.join(prepared.project, ".quickstacks/NOTES.md"));
     const log = yield* readOptional(path.join(prepared.bench, "verify.log"));
-    let minutesToBase: number | null = null;
-    for (const line of lines) {
-      const decoded = Schema.decodeUnknownResult(Schema.fromJsonString(RunRecord))(line);
-      if (decoded._tag === "Success" && decoded.success.stages?.base === "green") {
-        minutesToBase = decoded.success.secondsSinceCreated / 60;
-        break;
-      }
-    }
     return {
       run,
       notes,
@@ -63,7 +48,7 @@ export const verify = (prepared: Prepared) =>
       wrapperCalls: log?.split(/\r?\n/).filter(Boolean).length ?? 0,
       minutesToGreen: summary?.minutesToGreen ?? null,
       minutesToFirstTest: summary?.minutesToFirstTest ?? null,
-      minutesToBase,
+      minutesToBase: firstGreenBase(lines),
       interventions:
         notes === null ? null : countAsked(notes) + (prepared.options.existing ? 1 : 0),
     };
@@ -79,3 +64,27 @@ export function classify(agent: AgentRun, verified: Verified) {
     ? "pass"
     : "fail";
 }
+
+function firstGreenBase(lines: string[]): number | null {
+  let minutesToBase: number | null = null;
+  for (const line of lines) {
+    const decoded = Schema.decodeUnknownResult(Schema.fromJsonString(RunRecord))(line);
+    if (decoded._tag === "Success" && decoded.success.stages?.base === "green") {
+      minutesToBase = decoded.success.secondsSinceCreated / 60;
+      break;
+    }
+  }
+  return minutesToBase;
+}
+
+const readSummary = (summarized: Captured) =>
+  summarized.exitCode === 0 && !summarized.truncated
+    ? Schema.decodeUnknownEffect(Schema.fromJsonString(ProjectRuns))(summarized.stdout)
+    : Effect.succeed(null);
+
+const latestRun = (history: string, before: string, lines: string[]) => {
+  const last = lines.at(-1);
+  return history !== before && last
+    ? Schema.decodeUnknownEffect(Schema.fromJsonString(RunRecord))(last)
+    : Effect.succeed(null);
+};

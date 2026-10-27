@@ -35,15 +35,15 @@ test("numbered incoming copies above nine stay grouped with their live destinati
 test("an applied application counts toward the one-application limit", async () => {
   const project = addProject();
   for (const id of ["app-first", "app-second"])
-    writeEntry(
-      project.registry,
-      "fragment",
-      id,
-      minimal("fragment", id, "applies_to: [fixture-stack]").replace(
+    writeEntry({
+      root: project.registry,
+      kind: "fragment",
+      dir: id,
+      frontmatter: minimal("fragment", id, "applies_to: [fixture-stack]").replace(
         "category: tooling",
         "category: app",
       ),
-    );
+    });
   await added(await addCli(project, ["add", "app-first", "--json"]));
   const before = snapshot(project.root);
   const error = refused(
@@ -57,18 +57,18 @@ test("an applied application counts toward the one-application limit", async () 
 
 test("stack-specific dependencies also warn when a plain repository has no recorded stack", async () => {
   const project = addProject();
-  writeEntry(
-    project.registry,
-    "fragment",
-    "scoped",
-    minimal("fragment", "scoped", "applies_to: [fixture-stack]"),
-  );
-  writeEntry(
-    project.registry,
-    "fragment",
-    "dependent",
-    minimal("fragment", "dependent", "requires: [scoped]"),
-  );
+  writeEntry({
+    root: project.registry,
+    kind: "fragment",
+    dir: "scoped",
+    frontmatter: minimal("fragment", "scoped", "applies_to: [fixture-stack]"),
+  });
+  writeEntry({
+    root: project.registry,
+    kind: "fragment",
+    dir: "dependent",
+    frontmatter: minimal("fragment", "dependent", "requires: [scoped]"),
+  });
   const result = await added(await addCli(project, ["add", "dependent", "--json"]));
   expect(result.added).toEqual(["scoped", "dependent"]);
   expect(result.warnings).toEqual([{ code: "with_not_applicable", id: "scoped" }]);
@@ -76,12 +76,12 @@ test("stack-specific dependencies also warn when a plain repository has no recor
 
 test("the project list retains rejected entry diagnostics", async () => {
   const project = await scaffolded();
-  writeEntry(
-    project.registry,
-    "fragment",
-    "broken",
-    minimal("fragment", "broken").replace("category: tooling", "category: unknown"),
-  );
+  writeEntry({
+    root: project.registry,
+    kind: "fragment",
+    dir: "broken",
+    frontmatter: minimal("fragment", "broken").replace("category: tooling", "category: unknown"),
+  });
   const run = await addCli(project, ["list"]);
   expect(run.status).toBe(0);
   expect(run.stderr).toBe("");
@@ -106,12 +106,12 @@ test("list follow-ups keep an explicitly selected project directory with shell q
 
 test("numbered parking copies cannot claim another planned fragment destination", async () => {
   const project = addProject();
-  const entry = writeEntry(
-    project.registry,
-    "fragment",
-    "collision",
-    minimal("fragment", "collision"),
-  );
+  const entry = writeEntry({
+    root: project.registry,
+    kind: "fragment",
+    dir: "collision",
+    frontmatter: minimal("fragment", "collision"),
+  });
   put(entry, "files/README.md", "first new contribution\n");
   put(entry, "files/README.md.2", "second new contribution\n");
   put(project.root, "README.md", "live first\n");
@@ -177,12 +177,12 @@ test.each([false, true])(
   "rewriting a parked hard link preserves live bytes and permissions (rollback %s)",
   async (rollback) => {
     const project = addProject();
-    const entry = writeEntry(
-      project.registry,
-      "fragment",
-      "hard-link",
-      minimal("fragment", "hard-link"),
-    );
+    const entry = writeEntry({
+      root: project.registry,
+      kind: "fragment",
+      dir: "hard-link",
+      frontmatter: minimal("fragment", "hard-link"),
+    });
     put(entry, "files/.claude/settings.json", '{"new":true}\n');
     put(project.root, ".claude/settings.json", '{ "mine": true }\n');
     chmodSync(join(project.root, ".claude/settings.json"), 0o640);
@@ -215,12 +215,12 @@ test.each([false, true])(
 
 test("a live file written without parking does not consume a numbered incoming slot", async () => {
   const project = addProject();
-  const entry = writeEntry(
-    project.registry,
-    "fragment",
-    "first-free",
-    minimal("fragment", "first-free"),
-  );
+  const entry = writeEntry({
+    root: project.registry,
+    kind: "fragment",
+    dir: "first-free",
+    frontmatter: minimal("fragment", "first-free"),
+  });
   put(entry, "files/README.md", "new incoming\n");
   put(entry, "files/README.md.2", "new live\n");
   put(project.root, "README.md", "existing live\n");

@@ -30,21 +30,31 @@ export const BINARY = Uint8Array.from([0, 255, 128, 13, 10, 0, 65]);
 /** A real registry, with a stack and fragment sharing an id and three ordered JSON writers. */
 export function fileFixture(home: string) {
   const root = join(home, "registry with spaces");
-  const stack = writeEntry(root, "stack", "sample", STACK_META, BODY);
-  const first = writeEntry(
+  const stack = writeEntry({
     root,
-    "fragment",
-    "sample",
-    minimal("fragment", "sample", "merge: [.shared/settings.json]"),
-    "# First fragment\n",
-  );
-  const last = writeEntry(
+    kind: "stack",
+    dir: "sample",
+    frontmatter: STACK_META,
+    body: BODY,
+  });
+  const first = writeEntry({
     root,
-    "fragment",
-    "z-extra",
-    minimal("fragment", "z-extra", "requires: [sample]\nmerge: [.shared/settings.json]"),
-    "# Last fragment\n",
-  );
+    kind: "fragment",
+    dir: "sample",
+    frontmatter: minimal("fragment", "sample", "merge: [.shared/settings.json]"),
+    body: "# First fragment\n",
+  });
+  const last = writeEntry({
+    root,
+    kind: "fragment",
+    dir: "z-extra",
+    frontmatter: minimal(
+      "fragment",
+      "z-extra",
+      "requires: [sample]\nmerge: [.shared/settings.json]",
+    ),
+    body: "# Last fragment\n",
+  });
   const put = (entry: string, file: string, bytes: string | Uint8Array, mode = 0o644) => {
     const at = join(entry, file);
     mkdirSync(join(at, ".."), { recursive: true });

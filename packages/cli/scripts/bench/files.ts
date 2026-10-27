@@ -9,24 +9,25 @@ export const snapshot = (root: string) =>
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
     const path = yield* Path.Path;
+    const entry = (at: string): Effect.Effect<string[], PlatformError.PlatformError> =>
+      Effect.gen(function* () {
+        const file = path.join(root, at);
+        const info = yield* fs.lstat(file);
+        if (info.type === "Directory") return [`${at}/`, ...(yield* walk(at))];
+        if (info.type === "SymbolicLink") return [`${at}:link:${yield* fs.readLink(file)}`];
+        if (info.type === "File")
+          return [
+            `${at}:${createHash("sha256")
+              .update(yield* fs.readFile(file))
+              .digest("hex")}`,
+          ];
+        return [`${at}:${info.type}`];
+      });
     const walk = (rel: string): Effect.Effect<string[], PlatformError.PlatformError> =>
       Effect.gen(function* () {
         const entries: string[] = [];
-        for (const name of [...(yield* fs.readDirectory(path.join(root, rel)))].sort()) {
-          const at = path.join(rel, name);
-          const file = path.join(root, at);
-          const info = yield* fs.lstat(file);
-          if (info.type === "Directory") entries.push(`${at}/`, ...(yield* walk(at)));
-          else if (info.type === "SymbolicLink")
-            entries.push(`${at}:link:${yield* fs.readLink(file)}`);
-          else if (info.type === "File")
-            entries.push(
-              `${at}:${createHash("sha256")
-                .update(yield* fs.readFile(file))
-                .digest("hex")}`,
-            );
-          else entries.push(`${at}:${info.type}`);
-        }
+        for (const name of [...(yield* fs.readDirectory(path.join(root, rel)))].sort())
+          entries.push(...(yield* entry(path.join(rel, name))));
         return entries;
       });
     return JSON.stringify(yield* walk(""));
