@@ -23,7 +23,7 @@ export type ConditionContext = {
 };
 
 type Key = "stack" | "tag" | "tag!=" | "mode" | "preset" | "with";
-type Condition = Partial<Record<Key, ReadonlyArray<string>>>;
+export type Condition = Partial<Record<Key, ReadonlyArray<string>>>;
 /** A malformed marker: its 1-based line in the body and what is wrong with it. */
 export type ConditionalError = { line: number; problem: ConditionalProblem };
 
@@ -83,6 +83,38 @@ function matches(condition: Condition, context: ConditionContext): boolean {
   });
 }
 
+/** A well-formed block: its `when` and `end` lines (1-based in the body) and its condition. */
+export type ConditionalBlock = { start: number; end: number; condition: Condition };
+
+/** Every block in `body`, in order, or the first malformed marker. */
+export function scanConditionals(
+  body: string,
+): { blocks: ReadonlyArray<ConditionalBlock> } | ConditionalError {
+  const blocks: ConditionalBlock[] = [];
+  let open: { line: number; condition: Condition } | undefined;
+  for (const [i, text] of body.split("\n").entries()) {
+    const line = i + 1;
+    const match = MARKER.exec(text);
+    if (!match) {
+      if (/<!--\s*quickstacks:(?:when|end)\b/.test(text)) return { line, problem: "not_alone" };
+      continue;
+    }
+    const [, directive = "", rest = ""] = match;
+    if (directive === "when") {
+      if (open) return { line, problem: "nested" };
+      const condition = parseCondition(rest);
+      if (typeof condition === "string") return { line, problem: condition };
+      open = { line, condition };
+    } else if (directive === "end") {
+      if (!open) return { line, problem: "stray_end" };
+      blocks.push({ start: open.line, end: line, condition: open.condition });
+      open = undefined;
+    } else if (!isFill(directive)) return { line, problem: "unknown_marker" };
+  }
+  if (open) return { line: open.line, problem: "unclosed" };
+  return { blocks };
+}
+
 /**
  * `body` with every block resolved for `context`, or the first malformed marker. A blank line
  * left doubled by a removal is dropped, so a removed block leaves no gap.
@@ -91,34 +123,16 @@ export function resolveConditionals(
   body: string,
   context: ConditionContext,
 ): { text: string } | ConditionalError {
-  const lines = body.split("\n");
+  const scanned = scanConditionals(body);
+  if (!("blocks" in scanned)) return scanned;
   const drop = new Set<number>();
-  let open: { line: number; keep: boolean } | undefined;
-  for (const [i, text] of lines.entries()) {
-    const line = i + 1;
-    const match = MARKER.exec(text);
-    if (!match) {
-      if (/<!--\s*quickstacks:(?:when|end)\b/.test(text)) return { line, problem: "not_alone" };
-      if (open && !open.keep) drop.add(i);
-      continue;
-    }
-    const [, directive = "", rest = ""] = match;
-    if (directive === "when") {
-      if (open) return { line, problem: "nested" };
-      const condition = parseCondition(rest);
-      if (typeof condition === "string") return { line, problem: condition };
-      open = { line, keep: matches(condition, context) };
-      drop.add(i);
-    } else if (directive === "end") {
-      if (!open) return { line, problem: "stray_end" };
-      drop.add(i);
-      open = undefined;
-    } else if (!isFill(directive)) {
-      return { line, problem: "unknown_marker" };
-    } else if (open && !open.keep) drop.add(i);
+  for (const block of scanned.blocks) {
+    // Marker lines always go; a block whose condition doesn't match goes whole.
+    const keep = matches(block.condition, context);
+    for (let line = block.start; line <= block.end; line++)
+      if (!keep || line === block.start || line === block.end) drop.add(line - 1);
   }
-  if (open) return { line: open.line, problem: "unclosed" };
-  return { text: keepLines(lines, drop) };
+  return { text: keepLines(body.split("\n"), drop) };
 }
 
 function keepLines(lines: ReadonlyArray<string>, drop: ReadonlySet<number>): string {

@@ -10,9 +10,11 @@ import {
   errorClasses,
   errorTable,
   exitCode,
+  NotFound,
   PermissionDenied,
   PermissionDeniedDetails,
   retryable,
+  ValidationFailed,
   VerifyChanged,
   VerifyFailed,
 } from "../src/errors";
@@ -33,6 +35,7 @@ test("the published error table, written out row by row", () => {
     PermissionDenied: { exit: 6, retryable: false, keepsResult: false },
     EntryInvalid: { exit: 2, retryable: false, keepsResult: false },
     ComposeConflict: { exit: 2, retryable: false, keepsResult: false },
+    ValidationFailed: { exit: 2, retryable: false, keepsResult: true },
     Interrupted: { exit: 130, retryable: false, keepsResult: false },
     Defect: { exit: 1, retryable: false, keepsResult: false },
     BrokenPipe: { exit: 0, retryable: false, keepsResult: false },
@@ -171,6 +174,16 @@ test.each([
     }),
     "Entry is invalid.\n  Entry: bad-when (user, conditional)\n  Path: FRAGMENT.md:11\n  Problem: unclosed\n",
   ],
+  [
+    "NotFound with the path it looked for",
+    new NotFound({ details: { suggestions: [], looked: "/work/regsitry" } }),
+    "Not found.\n  Looked for: /work/regsitry\n",
+  ],
+  [
+    "ValidationFailed with its counts",
+    new ValidationFailed({ details: { errors: 3, warnings: 1 } }),
+    "Validation failed.\n  Errors: 3, warnings: 1\n",
+  ],
 ] as const)(
   "%s: details in the envelope, detail lines in human mode",
   async (_case, error, human) => {
@@ -189,6 +202,7 @@ test.each([
 test.each([
   ["ComposeConflict", () => new ComposeConflict({ details: { reason: "cycle", ids: ["a"] } })],
   ["BadInput", () => new BadInput({ details: { id: "ci" } })],
+  ["ValidationFailed", () => new ValidationFailed({ details: { errors: 1, warnings: 0 } })],
 ] as const)(
   "%s details mutated to carry an extra key are a defect, not a leak",
   async (_tag, make) => {

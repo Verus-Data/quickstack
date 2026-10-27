@@ -90,6 +90,24 @@ describe("real standalone binary", () => {
       "openrouter-chat-cli",
     ]);
   });
+  test("validate and validate --brief run from the binary over QUICKSTACKS_REGISTRY_DIR", async () => {
+    const registry = join(import.meta.dir, "../tests/fixtures/registry-real");
+    const env = { QUICKSTACKS_REGISTRY_DIR: registry };
+    const result = await invoke(["validate", "--json"], undefined, env);
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe("");
+    const report = JSON.parse(result.stdout);
+    expect(report).toMatchObject({ root: registry, bundled: true });
+    expect(report.findings.filter((f: { severity: string }) => f.severity === "error")).toEqual([]);
+    const brief = await invoke(
+      ["validate", "--brief", "typescript-cli", "--sandbox"],
+      undefined,
+      env,
+    );
+    expect(brief.status).toBe(0);
+    expect(brief.stdout).toContain(`npx -y quickstacks@${version}`);
+    expect(brief.stdout).toMatch(/\nBrief: [\d,]+ words \(fixed text [\d,]+\), limit 6,000\n/);
+  });
   test("list with no registry suggests doctor", async () => {
     const result = await invoke(["list"]);
     expect(result).toEqual({

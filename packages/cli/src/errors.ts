@@ -18,8 +18,14 @@ export class BadInput extends Schema.TaggedError<BadInput>()("BadInput", {
 }) {
   override readonly message = "Invalid input.";
 }
-/** Up to three known ids close to the one given, from `core/suggest.ts::closest`. */
-export const NotFoundDetails = Schema.Struct({ suggestions: Schema.Array(Schema.String) });
+/**
+ * Up to three known ids close to the one given, from `core/suggest.ts::closest`; `looked` is the
+ * path a lookup expected to find (validate's path argument, 1.5).
+ */
+export const NotFoundDetails = Schema.Struct({
+  suggestions: Schema.Array(Schema.String),
+  looked: Schema.optionalKey(Schema.String),
+});
 export class NotFound extends Schema.TaggedError<NotFound>()("NotFound", {
   details: Schema.optionalKey(NotFoundDetails),
 }) {
@@ -126,6 +132,16 @@ export class ComposeConflict extends Schema.TaggedError<ComposeConflict>()("Comp
 }) {
   override readonly message = "These entries can't be composed.";
 }
+/** `validate` found at least one error finding; the report stays on stdout. Counts, not text. */
+export const ValidationFailedDetails = Schema.Struct({
+  errors: Schema.Number,
+  warnings: Schema.Number,
+});
+export class ValidationFailed extends Schema.TaggedError<ValidationFailed>()("ValidationFailed", {
+  details: Schema.optionalKey(ValidationFailedDetails),
+}) {
+  override readonly message = "Validation failed.";
+}
 export class Interrupted extends Schema.TaggedError<Interrupted>()("Interrupted", {}) {
   override readonly message = "Command interrupted.";
 }
@@ -161,6 +177,7 @@ export const errorClasses = [
   PermissionDenied,
   EntryInvalid,
   ComposeConflict,
+  ValidationFailed,
   Interrupted,
   Defect,
   BrokenPipe,
@@ -180,6 +197,7 @@ export const errorTable = {
   PermissionDenied: { exit: 6, retryable: false, keepsResult: false },
   EntryInvalid: { exit: 2, retryable: false, keepsResult: false },
   ComposeConflict: { exit: 2, retryable: false, keepsResult: false },
+  ValidationFailed: { exit: 2, retryable: false, keepsResult: true },
   Interrupted: { exit: 130, retryable: false, keepsResult: false },
   Defect: { exit: 1, retryable: false, keepsResult: false },
   BrokenPipe: { exit: 0, retryable: false, keepsResult: false },
@@ -208,8 +226,15 @@ export function detailLines(error: AppError): string[] {
     case "BadInput":
       return error.details ? [`Id: ${printable(error.details.id)}`] : [];
     case "NotFound":
-      return error.details?.suggestions.length
-        ? [`Did you mean: ${error.details.suggestions.map(printable).join(", ")}?`]
+      return [
+        ...(error.details?.looked ? [`Looked for: ${printable(error.details.looked)}`] : []),
+        ...(error.details?.suggestions.length
+          ? [`Did you mean: ${error.details.suggestions.map(printable).join(", ")}?`]
+          : []),
+      ];
+    case "ValidationFailed":
+      return error.details
+        ? [`Errors: ${error.details.errors}, warnings: ${error.details.warnings}`]
         : [];
     case "EntryInvalid": {
       const details = error.details;
@@ -266,6 +291,8 @@ export function encodeDetails(error: AppError): Effect.Effect<unknown, Schema.Sc
       return encodeClosed(NotFoundDetails, error.details);
     case "ComposeConflict":
       return encodeClosed(ComposeConflictDetails, error.details);
+    case "ValidationFailed":
+      return encodeClosed(ValidationFailedDetails, error.details);
     case "NotConfigured":
     case "InvalidConfig":
     case "UpstreamUnavailable":
