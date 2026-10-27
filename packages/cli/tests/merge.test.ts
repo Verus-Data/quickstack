@@ -117,6 +117,8 @@ it.prop(
   "merging scalar arrays keeps every distinct value once in first-seen order",
   [scalars, scalars],
   ([earlier, later]) => {
-    expect(deepMerge(earlier, later)).toEqual([...new Set([...earlier, ...later])]);
+    // Not a Set: it stores -0 as +0, and the merge keeps the value it saw first.
+    const all = [...earlier, ...later];
+    expect(deepMerge(earlier, later)).toEqual(all.filter((item, at) => all.indexOf(item) === at));
   },
 );
