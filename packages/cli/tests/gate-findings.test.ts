@@ -176,6 +176,19 @@ test("CI triggers on the branch the new repo is actually on, not an assumed main
   );
 });
 
+test("astro-blog names the pure post functions in posts.ts and the getters in collection.ts", async () => {
+  const text = await brief("astro-blog");
+  expect(text).toMatch(/`lib\/posts\.ts`[^\n]*`publishedPosts\(entries\)`/);
+  expect(text).toMatch(/`lib\/collection\.ts`[^\n]*`getPublishedPosts\(\)`/);
+});
+
+test("astro-blog allows make new-article, so the agent needn't edit .claude/settings.json", async () => {
+  const settings = JSON.parse(
+    readFileSync(join(await scaffold("astro-blog"), ".claude", "settings.json"), "utf8"),
+  ) as { permissions: { allow: string[] } };
+  expect(settings.permissions.allow).toContain("Bash(make new-article *)");
+});
+
 test("python-react's Makefile type-checks the backend scripts too", async () => {
   const makefile = readFileSync(join(await scaffold("python-react"), "Makefile"), "utf8");
   expect(makefile).toContain("uv run mypy app tests scripts");
