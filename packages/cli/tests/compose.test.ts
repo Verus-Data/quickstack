@@ -37,7 +37,7 @@ const sameRef = (a: EntryRef, b: EntryRef) => a.kind === b.kind && a.id === b.id
 const conflict = (details: ComposeConflict["details"]) =>
   Exit.fail(new ComposeConflict({ details }));
 
-test("the default composition holds required, default and always fragments, requirements first, ties by id, the app last", async () => {
+test("the default composition holds required, default and always fragments, requirements first, ties by id, the app last [1.1#1]", async () => {
   const composition = await composed({}, { config: { always: ["changelog"] } });
   expect(ids(composition)).toEqual([
     "ci",
@@ -54,7 +54,7 @@ test("the default composition holds required, default and always fragments, requ
   expect(composition.untrusted).toEqual([]);
 });
 
-test("--without a required fragment, or one it requires, is a required conflict", async () => {
+test("--without a required fragment, or one it requires, is a required conflict [1.1#2]", async () => {
   expect(await composeExit({ without: ["lint"] })).toEqual(
     conflict({ reason: "required", stack: "web-stack", ids: ["lint"] }),
   );
@@ -63,14 +63,14 @@ test("--without a required fragment, or one it requires, is a required conflict"
   );
 });
 
-test("--with a fragment that requires another pulls both in, the requirement first", async () => {
+test("--with a fragment that requires another pulls both in, the requirement first [1.1#3]", async () => {
   const composition = await composed({ with: ["changelog"] });
   const order = ids(composition);
   expect(order).toContain("release-notes");
   expect(order.indexOf("release-notes")).toBeLessThan(order.indexOf("changelog"));
 });
 
-test("conflicts are found whichever side declares them, with both ids", async () => {
+test("conflicts are found whichever side declares them, with both ids [1.1#4]", async () => {
   // rival declares the conflict with lint; ci declares it with old-ci.
   expect(await composeExit({ with: ["rival"] })).toEqual(
     conflict({ reason: "conflicts", ids: ["lint", "rival"] }),
@@ -80,19 +80,19 @@ test("conflicts are found whichever side declares them, with both ids", async ()
   );
 });
 
-test("a requires cycle fails with the cycle's ids in order", async () => {
+test("a requires cycle fails with the cycle's ids in order [1.1#5]", async () => {
   expect(await composeExit({ with: ["cycle-b"] })).toEqual(
     conflict({ reason: "cycle", ids: ["cycle-a", "cycle-b"] }),
   );
 });
 
-test("the same id in --with and --without is BadInput naming it", async () => {
+test("the same id in --with and --without is BadInput naming it [1.1#6]", async () => {
   expect(await composeExit({ with: ["hooks-a", "ci"], without: ["ci"] })).toEqual(
     Exit.fail(new BadInput({ details: { id: "ci", flag: "with_without" } })),
   );
 });
 
-test("fit: an always fragment that doesn't apply is skipped with a warning, --with keeps it, a default that doesn't fit fails", async () => {
+test("fit: an always fragment that doesn't apply is skipped with a warning, --with keeps it, a default that doesn't fit fails [1.1#7]", async () => {
   const always = await composed({}, { config: { always: ["go-only", "no-such-fragment"] } });
   expect(ids(always)).not.toContain("go-only");
   expect(always.warnings).toEqual([
@@ -107,7 +107,7 @@ test("fit: an always fragment that doesn't apply is skipped with a warning, --wi
   );
 });
 
-test("two entries with different defaults for one env key conflict; the same value composes", async () => {
+test("two entries with different defaults for one env key conflict; the same value composes [1.1#8]", async () => {
   expect(await composeExit({ with: ["port-clash"] })).toEqual(
     conflict({ reason: "env", stack: "web-stack", ids: ["port-clash"], key: "PORT_WEB" }),
   );
@@ -115,7 +115,7 @@ test("two entries with different defaults for one env key conflict; the same val
   expect(same.env).toEqual({ PORT_WEB: "5173", PORT_TODO: "5180" });
 });
 
-test("--sandbox drops default deploy and app fragments, keeps them when named, keeps a required release fragment, and skips prod steps", async () => {
+test("--sandbox drops default deploy and app fragments, keeps them when named, keeps a required release fragment, and skips prod steps [1.1#9]", async () => {
   const sandbox = await composed({ preset: "sandbox" }, { config: { always: ["changelog"] } });
   expect(ids(sandbox)).toEqual(["ci", "format", "lint", "release-notes", "changelog"]);
   expect(sandbox.app).toBeNull();
@@ -129,7 +129,7 @@ test("--sandbox drops default deploy and app fragments, keeps them when named, k
   expect(plain.verify.every((step) => !step.skipByDefault)).toBe(true);
 });
 
-test("two writers that both list a JSON file in merge produce one merged file, arrays deduplicated", async () => {
+test("two writers that both list a JSON file in merge produce one merged file, arrays deduplicated [1.1#10]", async () => {
   const composition = await composed({ with: ["hooks-a"] });
   const settings = composition.files.filter((file) => file.path === ".claude/settings.json");
   expect(settings).toHaveLength(1);
@@ -146,7 +146,7 @@ test("two writers that both list a JSON file in merge produce one merged file, a
   });
 });
 
-test("a second writer without merge is a file_owner conflict; a template on a merge path is merge_template", async () => {
+test("a second writer without merge is a file_owner conflict; a template on a merge path is merge_template [1.1#11]", async () => {
   expect(await composeExit({ with: ["hooks-plain"] })).toEqual(
     conflict({
       reason: "file_owner",
@@ -194,7 +194,7 @@ test("a merged file that isn't JSON is EntryInvalid merge_json naming the file",
   );
 });
 
-test("literal dotfiles keep their name and .tmpl files are planned as templates without the suffix", async () => {
+test("literal dotfiles keep their name and .tmpl files are planned as templates without the suffix [1.1#12]", async () => {
   const composition = await composed({});
   expect(composition.files.find((file) => file.path === ".gitignore")).toMatchObject({
     kind: "copy",
@@ -208,7 +208,7 @@ test("literal dotfiles keep their name and .tmpl files are planned as templates 
   expect(composition.files.map((file) => file.path)).not.toContain("README.md.tmpl");
 });
 
-test("apps: one is composed last with every step tagged app; two, a required one, or a required-by-fragment one fail", async () => {
+test("apps: one is composed last with every step tagged app; two, a required one, or a required-by-fragment one fail [1.1#12a]", async () => {
   const composition = await composed({});
   expect(composition.app?.id).toBe("todo-app");
   expect(ids(composition).at(-1)).toBe("todo-app");
@@ -251,7 +251,7 @@ test("verify step names are unique across the composition", async () => {
   );
 });
 
-test("decisions keep the stack's as written, then each fragment's prefixed with its id", async () => {
+test("decisions keep the stack's as written, then each fragment's prefixed with its id [1.1#12b]", async () => {
   const composition = await composed({});
   expect(composition.decisions).toEqual([
     { owner: S("web-stack"), text: "Package manager (default: bun)." },
@@ -279,7 +279,7 @@ test("commands merge in composition order and deps merge by role without duplica
   ]);
 });
 
-test("a missing tool names the --without that drops its fragment, but none for one the stack needs", async () => {
+test("a missing tool names the --without that drops its fragment, but none for one the stack needs [1.1#21]", async () => {
   const composition = await composed({});
   expect(missingTools(composition, (tool) => tool === "docker")).toEqual([
     { tool: "bun", owners: [S("web-stack")], drop: [] },
@@ -392,7 +392,7 @@ test("a file named only .tmpl is a plain copy, never a template with an empty pa
   ]);
 });
 
-test("suggestions: unknown stack and fragment ids fail NotFound with close known ids only", async () => {
+test("suggestions: unknown stack and fragment ids fail NotFound with close known ids only [1.1#19]", async () => {
   expect(await composeExit({ stack: "web-stak" })).toEqual(
     Exit.fail(new NotFound({ details: { suggestions: ["web-stack"] } })),
   );
@@ -409,12 +409,12 @@ test("suggestions: unknown stack and fragment ids fail NotFound with close known
   );
 });
 
-test("--without a known fragment that isn't selected composes with a warning", async () => {
+test("--without a known fragment that isn't selected composes with a warning [1.1#19]", async () => {
   const composition = await composed({ without: ["hooks-a"] });
   expect(composition.warnings).toEqual([{ code: "without_not_selected", id: "hooks-a" }]);
 });
 
-test("the NotFound envelope carries only its suggestions", async () => {
+test("the NotFound envelope carries only its suggestions [1.1#19]", async () => {
   const program = compose({
     stack: "fixtrue-stack",
     with: [],
@@ -451,7 +451,7 @@ test("the NotFound envelope carries only its suggestions", async () => {
   );
 });
 
-test("target agents: Claude Code by default, the setting next, the flag over both; only their adapters are planned", async () => {
+test("target agents: Claude Code by default, the setting next, the flag over both; only their adapters are planned [1.1#20]", async () => {
   const paths = (composition: Composition) => composition.files.map((file) => file.path);
   const fallback = await composed({});
   expect(fallback.agents).toEqual(["claude"]);
@@ -486,7 +486,7 @@ test("a project-directory entry in the composition is listed as untrusted", asyn
 
 const optional = ["changelog", "hooks-a", "port-same", "go-only", "notes-app", "cycle-a", "rival"];
 it.effect.prop(
-  "compose is deterministic, and the order of --with ids changes neither the set nor the order",
+  "compose is deterministic, and the order of --with ids changes neither the set nor the order [1.1#14]",
   [Schema.Array(Schema.Literals(optional)), Schema.Array(Schema.Number)],
   ([picked, keys]) =>
     Effect.promise(async () => {

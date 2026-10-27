@@ -31,7 +31,7 @@ async function detected(env: Environment): Promise<string> {
 }
 
 test.each(AgentMarkers.map((marker) => [marker.name, marker] as const))(
-  "the %s marker is detected",
+  "the %s marker is detected [1.2b#8]",
   async (_name, marker) => {
     const value = marker.equals ?? (marker.agent === "by-value" ? "codex-cli" : "1");
     const expected = marker.agent === "by-value" ? "codex" : marker.agent;
@@ -39,7 +39,7 @@ test.each(AgentMarkers.map((marker) => [marker.name, marker] as const))(
   },
 );
 
-test("AI_AGENT names a known agent by prefix; any other value is other; no marker is none", async () => {
+test("AI_AGENT names a known agent by prefix; any other value is other; no marker is none [1.2b#8]", async () => {
   expect(await detected({ AI_AGENT: "claude-code" })).toBe("claude");
   expect(await detected({ AI_AGENT: "Cursor Agent" })).toBe("cursor");
   expect(await detected({ AI_AGENT: "foo" })).toBe("other");
@@ -69,7 +69,7 @@ const other = Schema.Record(
   Schema.String,
 );
 it.prop(
-  "any environment holding a marker with a non-empty value detects an agent",
+  "any environment holding a marker with a non-empty value detects an agent [1.2b#8]",
   [markerName, Schema.String.check(Schema.isMinLength(1)), other],
   ([name, value, rest]) => {
     const env = { ...rest, [name]: name === "CURSOR_EXTENSION_HOST_ROLE" ? "agent-exec" : value };
@@ -77,7 +77,7 @@ it.prop(
   },
 );
 
-test("a detected agent doesn't change the target agents or the manifest's agents", async () => {
+test("a detected agent doesn't change the target agents or the manifest's agents [1.2b#9]", async () => {
   const dir = tempDir();
   try {
     const env = {

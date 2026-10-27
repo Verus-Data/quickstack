@@ -48,7 +48,7 @@ async function list(
 const decode = (stdout: string) => Schema.decodeUnknownSync(ListResult)(JSON.parse(stdout));
 const ids = (result: ListResult) => result.entries.map((row) => `${row.kind}:${row.id}`);
 
-test("list --json over the bundled root lists stacks, then fragments, each sorted by id", async () => {
+test("list --json over the bundled root lists stacks, then fragments, each sorted by id [1.0#1]", async () => {
   const result = await list(["--json"]);
   expect(result.status).toBe(0);
   expect(result.stderr).toBe("");
@@ -71,7 +71,7 @@ test("list --json over the bundled root lists stacks, then fragments, each sorte
   expect(listed.entries[0]).not.toHaveProperty("category");
 });
 
-test("every entry in the realistic registry decodes, and its app names what it builds on", async () => {
+test("every entry in the realistic registry decodes, and its app names what it builds on [1.0#1a]", async () => {
   const result = await list(["--json"], { registry: realRegistry });
   expect(result.status).toBe(0);
   const listed = decode(result.stdout);
@@ -88,7 +88,7 @@ test("every entry in the realistic registry decodes, and its app names what it b
   expect(app?.appliesTo).toEqual(["typescript-cli"]);
 });
 
-test("a user-directory stack with a new id is listed as user and trusted", async () => {
+test("a user-directory stack with a new id is listed as user and trusted [1.0#2]", async () => {
   const { home, user } = setup();
   writeEntry(user, "stack", "my-stack", minimal("stack", "my-stack"));
   const listed = decode((await list(["--json"], { home })).stdout);
@@ -99,7 +99,7 @@ test("a user-directory stack with a new id is listed as user and trusted", async
   });
 });
 
-test("a user-directory copy of a bundled id wins and shadows the bundled copy", async () => {
+test("a user-directory copy of a bundled id wins and shadows the bundled copy [1.0#3]", async () => {
   const { home, user } = setup();
   writeEntry(user, "stack", "bun-web", minimal("stack", "bun-web"));
   const listed = decode((await list(["--json"], { home })).stdout);
@@ -113,7 +113,7 @@ test("a user-directory copy of a bundled id wins and shadows the bundled copy", 
   });
 });
 
-test("project entries are untrusted, whether they shadow an id or bring a new one", async () => {
+test("project entries are untrusted, whether they shadow an id or bring a new one [1.0#4] [1.0#5]", async () => {
   const { home, project, user } = setup();
   writeEntry(project, "stack", "bun-web", minimal("stack", "bun-web"));
   writeEntry(user, "stack", "bun-web", minimal("stack", "bun-web"));
@@ -163,7 +163,7 @@ test.each([
     /^applies_to\[0\]: /,
   ],
 ])(
-  "%s is a rejected row naming the field, and list still exits 0",
+  "%s is a rejected row naming the field, and list still exits 0 [1.0#6]",
   async (_case, kind, dir, frontmatter, error) => {
     const { home, user } = setup();
     writeEntry(user, kind as "stack" | "fragment", dir, frontmatter);
@@ -179,7 +179,7 @@ test.each([
   },
 );
 
-test("a file without its --- lines is rejected, naming the frontmatter", async () => {
+test("a file without its --- lines is rejected, naming the frontmatter [1.0#6]", async () => {
   const { home, user } = setup();
   const entry = join(user, "stacks", "no-fence");
   mkdirSync(entry, { recursive: true });
@@ -188,7 +188,7 @@ test("a file without its --- lines is rejected, naming the frontmatter", async (
   expect(listed.rejected[0]?.error).toMatch(/^frontmatter: /);
 });
 
-test("schema_version 2 in the user directory falls through to the bundled copy with one warning", async () => {
+test("schema_version 2 in the user directory falls through to the bundled copy with one warning [1.0#7]", async () => {
   const { home, user } = setup();
   copyEntry(brokenRegistry, user, "stacks", "bun-web");
   const file = join(home, "cli.jsonl");
@@ -212,7 +212,7 @@ test("schema_version 2 in the user directory falls through to the bundled copy w
   expect(JSON.stringify(warnings[0])).toContain("schema_version 2");
 });
 
-test("a symlink inside an entry rejects it, and nothing the link points at is listed", async () => {
+test("a symlink inside an entry rejects it, and nothing the link points at is listed [1.0#8]", async () => {
   const { home, user } = setup();
   const outside = join(home, "outside");
   writeEntry(outside, "stack", "linked", minimal("stack", "linked"));
@@ -228,7 +228,7 @@ test("a symlink inside an entry rejects it, and nothing the link points at is li
   expect(listed.entries.some((row) => row.id === "linked" || row.id === "has-link")).toBe(false);
 });
 
-test("an unknown group is Usage with exit 2 and one envelope", async () => {
+test("an unknown group is Usage with exit 2 and one envelope [1.0#12]", async () => {
   const result = await list(["widgets", "--json"]);
   expect(result.status).toBe(2);
   expect(result.stdout).toBe("");
@@ -249,7 +249,7 @@ test("a mistyped group suggests the group in human mode", async () => {
   expect(result.stderr).toBe("Invalid command. Run --help for usage.\n  Did you mean: stacks?\n");
 });
 
-test("human list shows Stacks, Fragments and Apps, then Next lines with the invocation", async () => {
+test("human list shows Stacks, Fragments and Apps, then Next lines with the invocation [1.0#12a]", async () => {
   const result = await list([], { host: { invocation: "npx -y quickstacks@9.9.9" } });
   expect(result.status).toBe(0);
   expect(result.stderr).toBe("");
@@ -280,7 +280,7 @@ test("human list shows Stacks, Fragments and Apps, then Next lines with the invo
   );
 });
 
-test("the origin column and untrusted marker appear once rows come from two origins", async () => {
+test("the origin column and untrusted marker appear once rows come from two origins [1.0#12a]", async () => {
   const { home, project } = setup();
   writeEntry(project, "stack", "zz-local", minimal("stack", "zz-local"));
   const result = await list(["stacks"], { home });
@@ -300,7 +300,7 @@ test("the origin column and untrusted marker appear once rows come from two orig
   );
 });
 
-test("a long description wraps at 80 columns, or a narrower terminal, without splitting words", async () => {
+test("a long description wraps at 80 columns, or a narrower terminal, without splitting words [1.0#12a]", async () => {
   const { home, user } = setup();
   const words = Array.from({ length: 40 }, (_, i) => `word${i}`).join(" ");
   const description = `${words} ${"x".repeat(90)}`;
@@ -328,7 +328,7 @@ test("a long description wraps at 80 columns, or a narrower terminal, without sp
   }
 });
 
-test("an empty registry says so and only suggests doctor", async () => {
+test("an empty registry says so and only suggests doctor [1.0#12a]", async () => {
   const result = await list([], { registry: join(setup().home, "missing") });
   expect(result.status).toBe(0);
   expect(result.stdout).toBe("No stacks or fragments found.\n\nNext: quickstacks doctor\n");
@@ -344,7 +344,7 @@ test("when every stack is rejected, Next points at the rejected entries rather t
   );
 });
 
-test("list --json has no Next lines; apps and fragments filter the app", async () => {
+test("list --json has no Next lines; apps and fragments filter the app [1.0#12a]", async () => {
   expect((await list(["--json"])).stdout).not.toContain("Next:");
   expect(ids(decode((await list(["apps", "--json"])).stdout))).toEqual(["fragment:todo-app"]);
   expect(ids(decode((await list(["fragments", "--json"])).stdout))).toEqual([
@@ -365,7 +365,7 @@ test("list apps names the command that builds the app on its stack", async () =>
   );
 });
 
-test("a broken user copy of a bundled id is rejected, says what it hides, and the bundled copy is not listed", async () => {
+test("a broken user copy of a bundled id is rejected, says what it hides, and the bundled copy is not listed [1.0#12b]", async () => {
   const { home, user } = setup();
   writeEntry(user, "stack", "bun-web", minimal("stack", "bun-web", "unknown_key: 1"));
   const json = decode((await list(["--json"], { home })).stdout);
@@ -385,7 +385,7 @@ test("a broken user copy of a bundled id is rejected, says what it hides, and th
 });
 
 test.skipIf(process.getuid?.() === 0)(
-  "an unreadable user root exits 6 with reason read",
+  "an unreadable user root exits 6 with reason read [1.0#13]",
   async () => {
     const { home, user } = setup();
     mkdirSync(join(user, "stacks"), { recursive: true });
@@ -408,7 +408,7 @@ test.skipIf(process.getuid?.() === 0)(
   },
 );
 
-test("a stack and a fragment with the same id both load", async () => {
+test("a stack and a fragment with the same id both load [1.0#13a]", async () => {
   const { home, user } = setup();
   writeEntry(user, "fragment", "bun-web", minimal("fragment", "bun-web"));
   const listed = decode((await list(["--json"], { home })).stdout);

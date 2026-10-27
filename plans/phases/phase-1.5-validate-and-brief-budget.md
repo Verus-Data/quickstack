@@ -2,6 +2,8 @@
 
 Status: EXECUTED 2026-10-26 on feat/phase-1 (merged from feat/phase-1.5; batch-reviewed once, fixes being applied)
 
+Acceptance tests: traced
+
 | Field | Value |
 |---|---|
 | Goal | `quickstacks validate [path]` checks a stack, a fragment, or a whole registry directory before anyone spends an agent run on it: schema, composition, conditional prose, the brief budget (D5) measured on a canonical render, and the verify layers (D7). `validate --brief <stack>` prints the brief a composition renders to, with its word counts. The bundled registry passes with zero errors and zero warnings, including while it is still empty |
@@ -348,38 +350,38 @@ no `git` on `PATH`, the check reports nothing.
 
 ## Acceptance tests
 
-- Fixtures per check, each producing exactly the expected finding (id, severity, entry,
-  file, line). A clean fixture produces none.
-- Budget: a fixture stack whose body is 2,001 words fails `budget-body`; a composition at
-  exactly 6,000 passes and at 6,001 fails, in each preset separately (a `preset=sandbox`
-  block can push only the sandbox brief over); an app composition is held to 9,000.
-- Canonical context: the same fixture validated with a missing tool on PATH, inside a
-  parent git repo, through a different `Host.invocation`, and with `Settings.always` and
-  `Settings.agents` set gives byte-identical `sizes`.
-- `fixedWords`: a fixture whose stack body grows by 50 words changes `words` by 50 and
-  `fixedWords` by 0.
-- Word count property test: inserting or removing conditional marker lines never changes
-  a body's count; adding a word anywhere changes it by one.
-- Resolution: a fixture user-directory stack listing a bundled fragment validates with a
-  `resolved-outside-root` note and a composed size that includes the fragment; no
-  finding names the bundled fragment. The same reference from inside the bundled root is
-  `unknown-reference`.
-- `verify-layers`: a `web`-tagged stack with no `serve` step fails; adding one with a
-  probe passes; a `cli`-tagged stack without `serve` passes.
-- `stack-setup-section`, `task-runner-tag` (both and neither), `merge-path-missing`,
-  `merge-json` on an optional fragment's broken JSON that no default composition includes,
-  `git-ignored` on an entry whose own `.gitignore` hides one of its files.
-- A registry with one broken entry still reports findings for the others.
-- Control characters in entry text are escaped in the human report.
-- `--json` output decodes with `ValidateReport`; on errors, stdout holds the
-  `ValidateReport`, the last stderr line is the `ValidationFailed` envelope with counts,
-  and the exit is 2.
-- The empty bundled registry (only `README.md`) exits 0 with zero entries; a different
-  empty directory is `NotFound`; an unreadable root is exit 6.
-- `--brief` prints the brief and its counts (human and JSON); an unknown stack is
-  `NotFound` with suggestions; `--sandbox` without `--brief` is `BadInput`.
-- `tests/bundled-registry.test.ts` passes against today's `packages/cli/registry`, empty
-  or not.
+1. Fixtures per check, each producing exactly the expected finding (id, severity, entry,
+   file, line). A clean fixture produces none.
+2. Budget: a fixture stack whose body is 2,001 words fails `budget-body`; a composition at
+   exactly 6,000 passes and at 6,001 fails, in each preset separately (a `preset=sandbox`
+   block can push only the sandbox brief over); an app composition is held to 9,000.
+3. Canonical context: the same fixture validated with a missing tool on PATH, inside a
+   parent git repo, through a different `Host.invocation`, and with `Settings.always` and
+   `Settings.agents` set gives byte-identical `sizes`.
+4. `fixedWords`: a fixture whose stack body grows by 50 words changes `words` by 50 and
+   `fixedWords` by 0.
+5. Word count property test: inserting or removing conditional marker lines never changes
+   a body's count; adding a word anywhere changes it by one.
+6. Resolution: a fixture user-directory stack listing a bundled fragment validates with a
+   `resolved-outside-root` note and a composed size that includes the fragment; no
+   finding names the bundled fragment. The same reference from inside the bundled root is
+   `unknown-reference`.
+7. `verify-layers`: a `web`-tagged stack with no `serve` step fails; adding one with a
+   probe passes; a `cli`-tagged stack without `serve` passes.
+8. `stack-setup-section`, `task-runner-tag` (both and neither), `merge-path-missing`,
+   `merge-json` on an optional fragment's broken JSON that no default composition includes,
+   `git-ignored` on an entry whose own `.gitignore` hides one of its files.
+9. A registry with one broken entry still reports findings for the others.
+10. Control characters in entry text are escaped in the human report.
+11. `--json` output decodes with `ValidateReport`; on errors, stdout holds the
+    `ValidateReport`, the last stderr line is the `ValidationFailed` envelope with counts,
+    and the exit is 2.
+12. The empty bundled registry (only `README.md`) exits 0 with zero entries; a different
+    empty directory is `NotFound`; an unreadable root is exit 6.
+13. `--brief` prints the brief and its counts (human and JSON); an unknown stack is
+    `NotFound` with suggestions; `--sandbox` without `--brief` is `BadInput`.
+14. `tests/bundled-registry.test.ts` passes against today's `packages/cli/registry`, empty
+    or not.
 
 ## Exit criteria
 

@@ -26,11 +26,11 @@ test.each([
   ["{{project_name}}{{year}}", "My App2026"],
   ["{{}}", "{{}}"],
   ["{{ 1abc }}", "{{ 1abc }}"],
-])("the token rule renders %j as %j", (input, output) => {
+])("the token rule renders %j as %j [1.2a#13]", (input, output) => {
   expect(render(input)).toEqual({ text: output });
 });
 
-test("an identifier that isn't a known variable is reported with its line", () => {
+test("an identifier that isn't a known variable is reported with its line [1.2a#13]", () => {
   expect(render("ok {{year}}\n\n  ${{ github }}\n")).toEqual({ unknown: "github", line: 3 });
   expect(render("{{ Project_Name }}")).toEqual({ unknown: "Project_Name", line: 1 });
 });
@@ -57,13 +57,13 @@ test.each([
   ["日本語", "project", "PROJECT"],
   ["@@@", "project", "PROJECT"],
   ["2048", "2048", "_2048"],
-])("slug(%j) is %j and its env prefix %j", (name, slugged, prefix) => {
+])("slug(%j) is %j and its env prefix %j [1.2a#11]", (name, slugged, prefix) => {
   expect(slug(name)).toBe(slugged);
   expect(envPrefix(slug(name))).toBe(prefix);
 });
 
 it.prop(
-  "slug output is always lowercase ASCII words joined by single dashes",
+  "slug output is always lowercase ASCII words joined by single dashes [1.2a#11]",
   [Schema.String],
   ([name]) => {
     expect(slug(name)).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);

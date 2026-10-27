@@ -93,7 +93,7 @@ const expectedWritten = [
 ];
 
 describe("new writes a project", () => {
-  test("new fixture-stack app --sandbox --json writes every kind of file, the brief and its counts", async () => {
+  test("new fixture-stack app --sandbox --json writes every kind of file, the brief and its counts [1.2a#1] [1.2a#12a]", async () => {
     const { status, stdout, stderr, home } = await newCli([
       "fixture-stack",
       "app",
@@ -199,7 +199,7 @@ describe("new writes a project", () => {
     expect(result.fixedWords).toBeLessThan(result.briefWords);
   });
 
-  test("no entry command runs: a verify step that would touch ran leaves no ran file", async () => {
+  test("no entry command runs: a verify step that would touch ran leaves no ran file [1.2a#10]", async () => {
     const { status, home } = await newCli(["fixture-stack", "app", "--json"], { env: withGit });
     expect(status).toBe(0);
     const app = join(home, "app");
@@ -239,7 +239,7 @@ describe("new writes a project", () => {
     expect(stdout).not.toContain("Project:");
   });
 
-  test("missing tools are in the result and the brief; a stack's tool has no skip flag", async () => {
+  test("missing tools are in the result and the brief; a stack's tool has no skip flag [1.2a#8] [1.2a#16]", async () => {
     const { status, stdout, home } = await newCli(["fixture-stack", "app", "--json"]);
     expect(status).toBe(0);
     expect(decode(stdout).missingTools).toEqual([
@@ -255,7 +255,7 @@ describe("new writes a project", () => {
     expect(brief).toContain(T.ground.missing);
   });
 
-  test("--sandbox implies --yes in the brief; neither asks", async () => {
+  test("--sandbox implies --yes in the brief; neither asks [1.2a#9]", async () => {
     const brief = async (args: string[]) => {
       const { status, home } = await newCli(["fixture-stack", "app", ...args]);
       expect(status).toBe(0);
@@ -286,7 +286,7 @@ describe("new writes a project", () => {
     expect(readFileSync(join(work, "README.md"), "utf8")).toMatch(/^# my-proj\n/);
   });
 
-  test("a target holding only OS litter is used, the litter kept and never listed", async () => {
+  test("a target holding only OS litter is used, the litter kept and never listed [1.2a#14]", async () => {
     const home = setup();
     const app = join(home, "app");
     mkdirSync(app);
@@ -301,7 +301,7 @@ describe("new writes a project", () => {
 });
 
 describe("new refuses before writing", () => {
-  test("a target with a file in it is TargetNotEmpty, and nothing is written", async () => {
+  test("a target with a file in it is TargetNotEmpty, and nothing is written [1.2a#2]", async () => {
     const home = setup();
     const app = join(home, "app");
     mkdirSync(app);
@@ -335,7 +335,7 @@ describe("new refuses before writing", () => {
     expect(envelope(again.stderr).error.tag).toBe("TargetNotEmpty");
   });
 
-  test("an unknown {{name}} in a template is EntryInvalid template, and the target never appears", async () => {
+  test("an unknown {{name}} in a template is EntryInvalid template, and the target never appears [1.2a#5]", async () => {
     const home = setup();
     const registry = join(home, "registry");
     const stack = writeEntry(registry, "stack", "tmpl-stack", minimal("stack", "tmpl-stack"));
@@ -361,7 +361,7 @@ describe("new refuses before writing", () => {
     expect(existsSync(join(home, "app"))).toBe(false);
   });
 
-  test("--scope must be an npm scope: BadInput, nothing written", async () => {
+  test("--scope must be an npm scope: BadInput, nothing written [1.2a#12a]", async () => {
     const { status, stdout, stderr, home } = await newCli([
       "fixture-stack",
       "app",
@@ -391,7 +391,7 @@ describe("new refuses before writing", () => {
     expect(existsSync(join(home, "app"))).toBe(false);
   });
 
-  test("--agents nope is Usage; the same id in --with and --without is BadInput; neither writes", async () => {
+  test("--agents nope is Usage; the same id in --with and --without is BadInput; neither writes [1.2a#18]", async () => {
     const home = setup();
     const agents = await newCli(["fixture-stack", "app", "--agents", "claude,nope", "--json"], {
       home,
@@ -410,7 +410,7 @@ describe("new refuses before writing", () => {
     expect(existsSync(join(home, "app"))).toBe(false);
   });
 
-  test("an unknown stack is NotFound with suggestions", async () => {
+  test("an unknown stack is NotFound with suggestions [1.1#19]", async () => {
     const { status, stdout, stderr } = await newCli(["fixture-stak", "--json"]);
     expect(status).toBe(2);
     expect(stdout).toBe("");
@@ -512,7 +512,7 @@ describe("new refuses before writing", () => {
 });
 
 describe("new and the filesystem", () => {
-  test("a write through a symlink out of the target is PermissionDenied escape; outside stays empty", async () => {
+  test("a write through a symlink out of the target is PermissionDenied escape; outside stays empty [1.2a#4]", async () => {
     const home = setup();
     const outside = join(home, "outside");
     mkdirSync(outside);
@@ -538,7 +538,7 @@ describe("new and the filesystem", () => {
     expect(readdirSync(app)).toEqual([".DS_Store"]);
   });
 
-  test("a target reached through a symlinked parent writes normally", async () => {
+  test("a target reached through a symlinked parent writes normally [1.2a#4]", async () => {
     const home = setup();
     mkdirSync(join(home, "real"));
     symlinkSync(join(home, "real"), join(home, "link"));
@@ -549,7 +549,7 @@ describe("new and the filesystem", () => {
   });
 
   test.skipIf(process.getuid?.() === 0)(
-    "a write failing after the first leaves the target exactly as it was",
+    "a write failing after the first leaves the target exactly as it was [1.2a#6]",
     async () => {
       const home = setup();
       const registry = join(home, "registry");
@@ -618,7 +618,7 @@ describe("template variables", () => {
     return home;
   };
 
-  test("package_scope: the flag (with or without @), else the setting, else empty", async () => {
+  test("package_scope: the flag (with or without @), else the setting, else empty [1.2a#12a]", async () => {
     expect(await readme(["--scope", "@acme"])).toContain("- scope: acme\n");
     expect(await readme(["--scope", "acme"])).toContain("- scope: acme\n");
     expect(await readme([], { home: configured({ package_scope: "acme" }) })).toContain(
@@ -631,7 +631,7 @@ describe("template variables", () => {
   });
 
   test.skipIf(!hasGit)(
-    "author: the setting beats git config user.name; with neither, empty",
+    "author: the setting beats git config user.name; with neither, empty [1.2a#12]",
     async () => {
       const gitHome = () => {
         const home = setup();
@@ -684,7 +684,7 @@ describe("template variables", () => {
     expect(readdirSync(home).filter((entry) => entry.startsWith("bad"))).toEqual([]);
   });
 
-  test("project_name is the directory's base name; slug and env prefix follow it", async () => {
+  test("project_name is the directory's base name; slug and env prefix follow it [1.2a#12]", async () => {
     const run = await newCli(["fixture-stack", "nested/My App", "--json"]);
     expect(run.status).toBe(0);
     const text = readFileSync(join(run.home, "nested/My App/README.md"), "utf8");
@@ -706,7 +706,7 @@ describe.skipIf(!hasGit)("new and git", () => {
     expect(spawnGit(["rev-parse", "--verify", "HEAD"], { cwd: app }).status).not.toBe(0);
   });
 
-  test("inside a parent repository nothing is initialized, and a default needs_own_repo fragment is refused with its fix", async () => {
+  test("inside a parent repository nothing is initialized, and a default needs_own_repo fragment is refused with its fix [1.2a#3] [1.2a#15]", async () => {
     const home = setup();
     const repo = join(home, "repo");
     mkdirSync(repo);
@@ -741,7 +741,7 @@ describe.skipIf(!hasGit)("new and git", () => {
     );
   });
 
-  test("a required needs_own_repo fragment in a parent repository has no fix", async () => {
+  test("a required needs_own_repo fragment in a parent repository has no fix [1.2a#15]", async () => {
     const home = setup();
     expect(spawnGit(["init", "--quiet"], { cwd: home }).status).toBe(0);
     const { status, stderr } = await newCli(["own-stack", "app", "--json"], {
@@ -814,7 +814,7 @@ describe.skipIf(!hasGit)("new and git", () => {
 });
 
 describe("git init failing or interrupted", () => {
-  test("git init exiting 1 keeps every file, with git none and a git_init_failed warning", async () => {
+  test("git init exiting 1 keeps every file, with git none and a git_init_failed warning [1.2a#17]", async () => {
     const home = setup();
     const bin = gitShim(home, `${NOT_A_REPO}\n  init) exit 1 ;;`);
     const { status, stdout, stderr } = await newCli(["fixture-stack", "app", "--json"], {
@@ -854,7 +854,7 @@ describe("git init failing or interrupted", () => {
     for (const rel of result.written) expect(existsSync(join(app, rel))).toBe(true);
   });
 
-  test("an interrupt while git init runs exits 130 and leaves no files, the new .git included", async () => {
+  test("an interrupt while git init runs exits 130 and leaves no files, the new .git included [1.2a#7]", async () => {
     const home = setup();
     const marker = join(home, "init-started");
     const bin = gitShim(home, `${NOT_A_REPO}\n${hangingInit(marker)}`);
@@ -943,7 +943,7 @@ describe("a real CLI process", () => {
     child = undefined;
   });
 
-  test("SIGINT while git init runs exits 130 and leaves no files, .git and state record included", async () => {
+  test("SIGINT while git init runs exits 130 and leaves no files, .git and state record included [1.2a#7]", async () => {
     const home = setup();
     const marker = join(home, "init-started");
     const shim = gitShim(home, `${NOT_A_REPO}\n${hangingInit(marker)}`);

@@ -42,7 +42,7 @@ function run<A, E>(roots: RegistryRoots, program: Effect.Effect<A, E, Registry>)
 }
 const bundled = [{ origin: "bundled", path: smallRegistry }] as const;
 
-test("files lists literal dotfiles and strips the files/ and adapters/<agent>/ prefixes", async () => {
+test("files lists literal dotfiles and strips the files/ and adapters/<agent>/ prefixes [1.0#11]", async () => {
   const exit = await run(
     bundled,
     Effect.gen(function* () {

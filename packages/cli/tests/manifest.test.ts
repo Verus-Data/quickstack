@@ -143,11 +143,11 @@ test.each<[string, DigestInput]>([
       verify: [...input(base).verify].reverse(),
     },
   ],
-])("changing %s changes the digest", (_field, changed) => {
+])("changing %s changes the digest [1.2b#3]", (_field, changed) => {
   expect(digestSteps(changed)).not.toBe(digest);
 });
 
-test("key order, owner, later manifest fields and explicit defaults leave the digest alone", async () => {
+test("key order, owner, later manifest fields and explicit defaults leave the digest alone [1.2b#3]", async () => {
   const reordered = Object.fromEntries(Object.entries(base).reverse()) as ManifestStep;
   expect(digestSteps(input(reordered))).toBe(digest);
   expect(digestSteps(input({ ...base, owner: "someone-else" }))).toBe(digest);
@@ -192,7 +192,7 @@ async function written(value: unknown, raw = false) {
 const encoded = async () =>
   JSON.parse(encodeManifest(await manifestOf())) as Record<string, unknown>;
 
-test("forward reads: fields later sub-phases fill, mode add, stack null and a newer origin decode", async () => {
+test("forward reads: fields later sub-phases fill, mode add, stack null and a newer origin decode [1.2b#4]", async () => {
   const manifest = await encoded();
   const { exit } = await written({
     ...manifest,
@@ -205,7 +205,7 @@ test("forward reads: fields later sub-phases fill, mode add, stack null and a ne
   expect(Exit.isSuccess(exit)).toBe(true);
 });
 
-test("an unknown top-level key, bad JSON or a bad project id is InvalidConfig with the path", async () => {
+test("an unknown top-level key, bad JSON or a bad project id is InvalidConfig with the path [1.2b#4]", async () => {
   const manifest = await encoded();
   for (const value of [
     { ...manifest, extra: true },
@@ -219,7 +219,7 @@ test("an unknown top-level key, bad JSON or a bad project id is InvalidConfig wi
   expect(exit).toEqual(Exit.fail(new InvalidConfig({ details: { path } })));
 });
 
-test("a manifest from a newer quickstacks is InvalidConfig with its schemaVersion, even with new keys", async () => {
+test("a manifest from a newer quickstacks is InvalidConfig with its schemaVersion, even with new keys [1.2b#4]", async () => {
   const manifest = await encoded();
   const { path, exit } = await written({ ...manifest, schemaVersion: 2, newField: 1 });
   expect(exit).toEqual(Exit.fail(new InvalidConfig({ details: { path, schemaVersion: 2 } })));

@@ -204,7 +204,7 @@ const recordAfter = (manifest: Manifest, edit: Partial<Manifest>) => {
   return projectStateFor({ ...edited, verifyDigest: digestSteps(edited) }, "/p/manifest.json");
 };
 
-test("editing one step changes only that step's digest; an env change only the settings digest", async () => {
+test("editing one step changes only that step's digest; an env change only the settings digest [1.2b#10]", async () => {
   const manifest = await manifestOf();
   const before = projectStateFor(manifest, "/p/manifest.json");
   const [first, ...rest] = manifest.verify;

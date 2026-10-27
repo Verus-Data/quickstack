@@ -47,7 +47,7 @@ const rows = (text: string) => text.split("\n").filter((line) => line.startsWith
 // biome-ignore lint/suspicious/noTemplateCurlyInString: a verify-env placeholder, shown as written
 const probe = "http://localhost:${PORT_WEB}/";
 
-test("with an app, the definition of done is split: the base with --skip-tag app, then the application", async () => {
+test("with an app, the definition of done is split: the base with --skip-tag app, then the application [1.1#14a]", async () => {
   const brief = renderBrief(await composed({}), context()).text;
   expect(headings(brief)).toEqual([
     "## Your job",
@@ -107,7 +107,7 @@ test("with an app, the definition of done is split: the base with --skip-tag app
   expect(plain).not.toContain("--skip-tag");
 });
 
-test("the brief holds every section in order, every step, the env defaults, every rule and the commands, with the invocation in every command", async () => {
+test("the brief holds every section in order, every step, the env defaults, every rule and the commands, with the invocation in every command [1.1#15] [1.1#23]", async () => {
   const composition = await composed({ preset: "sandbox" });
   const invocation = "npx -y quickstacks@1.2.3";
   const brief = renderBrief(composition, context({ invocation, yes: true })).text;
@@ -193,7 +193,7 @@ test("the rules about servers appear only when a step serves", async () => {
   expect(brief).not.toContain("stays in the foreground");
 });
 
-test("decisions: asked once without --yes, defaults taken with it", async () => {
+test("decisions: asked once without --yes, defaults taken with it [1.1#16]", async () => {
   const composition = await composed({});
   const ask = section(renderBrief(composition, context()).text, "## Decisions");
   expect(ask).toContain("Ask the user about these once, in one message");
@@ -203,7 +203,7 @@ test("decisions: asked once without --yes, defaults taken with it", async () => 
   expect(yes).not.toContain("Ask the user");
 });
 
-test("an untrusted entry gets a stop section directly after the title, before any entry text, even under --yes", async () => {
+test("an untrusted entry gets a stop section directly after the title, before any entry text, even under --yes [1.1#17]", async () => {
   const project = join(temp(), ".quickstacks");
   copyEntry(composeRegistry, project, "fragments", "hooks-a");
   const roots = [{ origin: "project", path: project } as const, ...bundledAt(composeRegistry)];
@@ -225,7 +225,7 @@ test("an untrusted entry gets a stop section directly after the title, before an
   );
 });
 
-test("countWords counts fenced text and skips conditional markers", () => {
+test("countWords counts fenced text and skips conditional markers [1.1#18]", () => {
   const text = [
     "# Title here",
     "<!-- quickstacks:when tag=go -->",
@@ -242,7 +242,7 @@ test("countWords counts fenced text and skips conditional markers", () => {
   expect(countWords("")).toBe(0);
 });
 
-test("briefWords counts the whole brief; fixedWords is all of it when entries bring no text", async () => {
+test("briefWords counts the whole brief; fixedWords is all of it when entries bring no text [1.1#18] [1.1#21]", async () => {
   const full = renderBrief(await composed({}), context({ written: [".gitignore"] }));
   expect(full.briefWords).toBe(countWords(full.text));
   expect(full.fixedWords).toBeLessThan(full.briefWords);
@@ -259,7 +259,7 @@ test("briefWords counts the whole brief; fixedWords is all of it when entries br
   expect(brief.text).not.toContain("## Dependencies and tools");
 });
 
-test("deps merge by role into one line; a missing tool gets its install hint and the --without that drops it", async () => {
+test("deps merge by role into one line; a missing tool gets its install hint and the --without that drops it [1.1#21]", async () => {
   const composition = await composed({});
   const missing = missingTools(composition, (tool) => tool === "bun-never");
   const brief = renderBrief(composition, context({ missing })).text;
@@ -297,7 +297,7 @@ test("deps merge by role into one line; a missing tool gets its install hint and
   expect(found).not.toContain("weren't on PATH");
 });
 
-test("entry headings nest under their section, fenced lines untouched, depth clamped", () => {
+test("entry headings nest under their section, fenced lines untouched, depth clamped [1.1#22]", () => {
   expect(nest("# Go CLI\n\nIntro.\n\n## Layout\n\n### Tests\n\n```sh\n# comment\n```")).toBe(
     "Intro.\n\n### Layout\n\n#### Tests\n\n```sh\n# comment\n```",
   );
@@ -306,7 +306,7 @@ test("entry headings nest under their section, fenced lines untouched, depth cla
   expect(nest("No headings.")).toBe("No headings.");
 });
 
-test("a stack body renders under its section without its title, its headings nested", async () => {
+test("a stack body renders under its section without its title, its headings nested [1.1#22]", async () => {
   const brief = renderBrief(await composed({}), context()).text;
   const stack = section(brief, "## Stack: Web stack (`web-stack`)");
   expect(stack).not.toContain("# Web stack\n");
@@ -315,7 +315,7 @@ test("a stack body renders under its section without its title, its headings nes
   expect(stack).toContain("```sh\n# install first\n");
 });
 
-test("after green: docs, then a commit message by git state, then the summary", async () => {
+test("after green: docs, then a commit message by git state, then the summary [1.1#23]", async () => {
   const composition = await composed({});
   const brief = (git: BriefContext["git"]) => renderBrief(composition, context({ git })).text;
   const fresh = brief({ kind: "fresh" });
@@ -330,7 +330,7 @@ test("after green: docs, then a commit message by git state, then the summary", 
   expect(brief({ kind: "none" })).toContain("2. Skip commits (git isn't installed)");
 });
 
-test("the command-name line appears only for another invocation; written paths collapse", async () => {
+test("the command-name line appears only for another invocation; written paths collapse [1.1#24]", async () => {
   const composition = await composed({});
   const npx = renderBrief(composition, context({ invocation: "npx -y quickstacks@1.2.3" })).text;
   expect(npx).toContain(

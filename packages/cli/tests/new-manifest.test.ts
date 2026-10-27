@@ -68,7 +68,7 @@ const envelope = (stderr: string) =>
   };
 
 describe("new writes the manifest and the state record", () => {
-  test("new --sandbox --json writes a manifest that decodes, with the result's brief count, and a state record", async () => {
+  test("new --sandbox --json writes a manifest that decodes, with the result's brief count, and a state record [1.2b#1]", async () => {
     const { status, stdout, stderr, home } = await newCli([
       "fixture-stack",
       "app",
@@ -92,7 +92,7 @@ describe("new writes the manifest and the state record", () => {
     expect(manifest.fragments.map((ref) => ref.id)).toEqual(result.fragments);
   });
 
-  test("the manifest's digest is digestSteps of it, and the state record holds it with the id and the manifest's real path", async () => {
+  test("the manifest's digest is digestSteps of it, and the state record holds it with the id and the manifest's real path [1.2b#2]", async () => {
     const { status, home } = await newCli(["fixture-stack", "app", "--json"]);
     expect(status).toBe(0);
     const manifest = readManifestFile(join(home, "app"));
@@ -118,7 +118,7 @@ describe("new writes the manifest and the state record", () => {
     );
   });
 
-  test("with XDG_STATE_HOME unwritable, new still succeeds with stateRecord false and a manifest", async () => {
+  test("with XDG_STATE_HOME unwritable, new still succeeds with stateRecord false and a manifest [1.2b#5]", async () => {
     const home = temp();
     const notDir = join(home, "a-file");
     writeFileSync(notDir, "");
@@ -176,7 +176,7 @@ describe("new writes the manifest and the state record", () => {
     );
   });
 
-  test("an interrupt while git init runs removes the state record along with the project", async () => {
+  test("an interrupt while git init runs removes the state record along with the project [1.2b#6]", async () => {
     const home = temp();
     const marker = join(home, "init-started");
     const bin = gitShim(
@@ -200,7 +200,7 @@ describe("new writes the manifest and the state record", () => {
     expect(readdirSync(recordsDir(home))).toEqual([]);
   }, 15000);
 
-  test("--sandbox marks prod steps skipByDefault in the manifest; without it none is", async () => {
+  test("--sandbox marks prod steps skipByDefault in the manifest; without it none is [1.2b#7]", async () => {
     const registry = temp();
     writeEntry(
       registry,
@@ -229,7 +229,7 @@ describe("new writes the manifest and the state record", () => {
     expect(await skipped([])).toEqual([]);
   });
 
-  test("a detected agent doesn't change the agents new writes for", async () => {
+  test("a detected agent doesn't change the agents new writes for [1.2b#9]", async () => {
     const { status, stdout, home } = await newCli(["fixture-stack", "app", "--json"], {
       env: { CODEX_THREAD_ID: "thread-1" },
     });
@@ -242,7 +242,7 @@ describe("new writes the manifest and the state record", () => {
 });
 
 describe("a target that already holds a scaffold", () => {
-  test("is TargetNotEmpty with scaffold unfinished, then green once the record has firstGreenAt", async () => {
+  test("is TargetNotEmpty with scaffold unfinished, then green once the record has firstGreenAt [1.2b#11]", async () => {
     const home = temp();
     expect((await newCli(["fixture-stack", "app"], { home })).status).toBe(0);
     const app = join(home, "app");

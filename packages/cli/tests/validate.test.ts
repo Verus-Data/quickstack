@@ -77,7 +77,7 @@ const checks = (findings: ReadonlyArray<Finding>) =>
 const only = (findings: ReadonlyArray<Finding>, check: string) =>
   findings.filter((finding) => finding.check === check);
 
-test("a clean registry validates with no findings, exit 0, and a size row per composition", async () => {
+test("a clean registry validates with no findings, exit 0, and a size row per composition [1.5#1] [1.5#11]", async () => {
   const root = temp();
   stack(root, "clean", "fragments:\n  default: [helper]\n  optional: [extra]");
   fragment(root, "helper");
@@ -109,7 +109,7 @@ test("human mode groups findings by entry, prints sizes and a total, and suggest
   expect(result.stdout).toContain(`Next: quickstacks validate ${root} --brief clean --sandbox`);
 });
 
-test("errors keep the report on stdout, end stderr with the ValidationFailed envelope, and exit 2", async () => {
+test("errors keep the report on stdout, end stderr with the ValidationFailed envelope, and exit 2 [1.5#1] [1.5#11]", async () => {
   const root = temp();
   stack(root, "broken", "decisions: [Pick a database]");
   stack(root, "fine");
@@ -136,7 +136,7 @@ test("errors keep the report on stdout, end stderr with the ValidationFailed env
   expect(human.stderr).toBe("Validation failed.\n  Errors: 1, warnings: 0\n");
 });
 
-test("entries that don't load are findings, and the rest of the registry still reports", async () => {
+test("entries that don't load are findings, and the rest of the registry still reports [1.5#1] [1.5#9]", async () => {
   const root = temp();
   stack(root, "fine");
   writeEntry(root, "stack", "unknown-key", minimal("stack", "unknown-key", "colour: red"));
@@ -182,7 +182,7 @@ test("one entry directory validates only that entry, with references resolved th
   expect(got.sizes.map((row) => row.entry)).toEqual(["solo", "solo", "solo"]);
 });
 
-test("a path that is no registry root, no entry and no bundled registry is NotFound naming it", async () => {
+test("a path that is no registry root, no entry and no bundled registry is NotFound naming it [1.5#12]", async () => {
   const home = temp();
   const empty = join(home, "empty");
   mkdirSync(empty);
@@ -206,7 +206,7 @@ test("a path that is no registry root, no entry and no bundled registry is NotFo
   expect((await run([loose], { home })).status).toBe(2);
 });
 
-test("the bundled registry with only its README validates clean; with no directory at all it is NotFound", async () => {
+test("the bundled registry with only its README validates clean; with no directory at all it is NotFound [1.5#12]", async () => {
   const home = temp();
   const bundled = join(home, "bundled");
   mkdirSync(bundled);
@@ -227,7 +227,7 @@ test("the bundled registry with only its README validates clean; with no directo
   expect(JSON.parse(missing.stderr).error.details.looked).toBe(join(home, "nothing"));
 });
 
-test("a root whose stacks/ can't be read is PermissionDenied, exit 6", async () => {
+test("a root whose stacks/ can't be read is PermissionDenied, exit 6 [1.5#12]", async () => {
   const root = temp();
   stack(root, "fine");
   chmodSync(join(root, "stacks"), 0o000);
@@ -244,7 +244,7 @@ test("a root whose stacks/ can't be read is PermissionDenied, exit 6", async () 
   }
 });
 
-test("budget-body: limits are inclusive, per kind: stack 2,000, fragment 1,000, app 3,000", async () => {
+test("budget-body: limits are inclusive, per kind: stack 2,000, fragment 1,000, app 3,000 [1.5#1] [1.5#2]", async () => {
   const root = temp();
   stack(root, "at-limit", "", `${SETUP}\n${words(BUDGET.stackBody - countWords(SETUP))}\n`);
   stack(root, "over-limit", "", `${SETUP}\n${words(BUDGET.stackBody + 1 - countWords(SETUP))}\n`);
@@ -296,7 +296,7 @@ async function composedSizes(root: string, pad: number, sandboxOnly = 0) {
   };
 }
 
-test("budget-composed: a brief of exactly 6,000 words passes and 6,001 fails, in each preset separately", async () => {
+test("budget-composed: a brief of exactly 6,000 words passes and 6,001 fails, in each preset separately [1.5#2]", async () => {
   const probe = await composedSizes(temp(), 0);
   // Body words add one for one to the brief, so the pad that lands each preset on the limit is known.
   const toDefault = BUDGET.composed - probe.default;
@@ -316,7 +316,7 @@ test("budget-composed: a brief of exactly 6,000 words passes and 6,001 fails, in
   expect(sandboxOver.over).toEqual(["big (sandbox): 6,001 words, limit 6,000"]);
 }, 30_000);
 
-test("a composition with an app is budgeted at 9,000, and default apps leave when another app is added", async () => {
+test("a composition with an app is budgeted at 9,000, and default apps leave when another app is added [1.5#2]", async () => {
   const root = temp();
   stack(root, "host", "fragments:\n  default: [first-app]");
   app(root, "first-app", "host", words(2500));
@@ -333,7 +333,7 @@ test("a composition with an app is budgeted at 9,000, and default apps leave whe
   ]);
 });
 
-test("sizes are rendered with the canonical context: tools, git, invocation and user settings change nothing", async () => {
+test("sizes are rendered with the canonical context: tools, git, invocation and user settings change nothing [1.5#3]", async () => {
   const root = temp();
   stack(root, "steady", "tools: [surely-not-installed-tool]\nfragments:\n  default: [helper]");
   fragment(root, "helper", "tools: [git]", words(40));
@@ -359,7 +359,7 @@ test("sizes are rendered with the canonical context: tools, git, invocation and 
   for (const variant of variants) expect(variant.report.sizes).toEqual(baseline);
 });
 
-test("fixedWords is the CLI's own text: growing a body changes words only, and an empty stack is all fixed text", async () => {
+test("fixedWords is the CLI's own text: growing a body changes words only, and an empty stack is all fixed text [1.5#4]", async () => {
   const small = temp();
   stack(small, "grow", "", `${SETUP}\n${words(10)}\n`);
   const grown = temp();
@@ -382,7 +382,7 @@ test("fixedWords is the CLI's own text: growing a body changes words only, and a
 });
 
 it.prop(
-  "countWords ignores conditional marker lines and counts each added word once",
+  "countWords ignores conditional marker lines and counts each added word once [1.5#5]",
   [Schema.Array(Schema.String), Schema.Int.check(Schema.isBetween({ minimum: 0, maximum: 5 }))],
   ([lines, at]) => {
     const body = lines.join("\n");
@@ -397,7 +397,7 @@ it.prop(
   },
 );
 
-test("a reference found only in another origin is a note naming it, and the fragment's text is budgeted", async () => {
+test("a reference found only in another origin is a note naming it, and the fragment's text is budgeted [1.5#1] [1.5#6]", async () => {
   const home = temp();
   const bundled = join(home, "bundled");
   fragment(bundled, "shared", "", words(300, "shared"));
@@ -431,7 +431,7 @@ test("a reference found only in another origin is a note naming it, and the frag
   ]);
 });
 
-test("unknown-reference covers fragments.*, requires, conflicts and applies_to, with suggestions", async () => {
+test("unknown-reference covers fragments.*, requires, conflicts and applies_to, with suggestions [1.5#1]", async () => {
   const root = temp();
   stack(root, "refs", "fragments:\n  optional: [helpr]");
   fragment(
@@ -484,7 +484,7 @@ test("a compose failure that remains is one finding per composition, naming the 
   ]);
 });
 
-test("an optional fragment that doesn't apply to its stack is an error on the stack", async () => {
+test("an optional fragment that doesn't apply to its stack is an error on the stack [1.5#1]", async () => {
   const root = temp();
   stack(root, "terminal", "fragments:\n  optional: [web-only]");
   fragment(root, "web-only", "applies_to: [web]");
@@ -553,7 +553,7 @@ test("apps are enumerated from the validated root, not from every origin", async
   ]);
 });
 
-test("step-names: a step name used twice in one entry, or by two entries of a composition", async () => {
+test("step-names: a step name used twice in one entry, or by two entries of a composition [1.5#1]", async () => {
   const root = temp();
   stack(root, "dup", "fragments:\n  default: [clash]");
   fragment(root, "clash", 'verify:\n  - { name: lint, layer: lint, run: "true" }');
@@ -576,7 +576,7 @@ test("step-names: a step name used twice in one entry, or by two entries of a co
   ]);
 });
 
-test("verify-layers: D7 layers in the default composition, and a probed serve step for web or api stacks", async () => {
+test("verify-layers: D7 layers in the default composition, and a probed serve step for web or api stacks [1.5#1] [1.5#7]", async () => {
   const root = temp();
   stack(root, "web-no-serve", "", SETUP, "[web, scripts]");
   stack(
@@ -612,7 +612,7 @@ test("verify-layers: D7 layers in the default composition, and a probed serve st
   ]);
 });
 
-test("stack-setup-section, task-runner-tag, step-layer and dep-version", async () => {
+test("stack-setup-section, task-runner-tag, step-layer and dep-version [1.5#1] [1.5#8]", async () => {
   const root = temp();
   stack(root, "no-setup", "", "# Guide\n\n### Setup\n");
   stack(root, "both-runners", "", SETUP, "[cli, make, scripts]");
@@ -644,7 +644,7 @@ test("stack-setup-section, task-runner-tag, step-layer and dep-version", async (
   ]);
 });
 
-test("merge-path-missing and merge-json, checked per entry even when no composition includes it", async () => {
+test("merge-path-missing and merge-json, checked per entry even when no composition includes it [1.5#1] [1.5#8]", async () => {
   const root = temp();
   stack(root, "base", "fragments:\n  optional: [hooks]");
   const hooks = fragment(root, "hooks", "merge: [.claude/settings.json, missing.json]");
@@ -667,7 +667,7 @@ test("merge-path-missing and merge-json, checked per entry even when no composit
   expect(only(got.findings, "compose")).toEqual([]);
 });
 
-test("conditional prose: syntax with its file line and 1.1's problem code, unknown ids, unknown tags", async () => {
+test("conditional prose: syntax with its file line and 1.1's problem code, unknown ids, unknown tags [1.5#1]", async () => {
   const root = temp();
   stack(
     root,
@@ -857,7 +857,7 @@ test("--brief takes --with as a comma list and --without, like new", async () =>
   ]);
 });
 
-test("control characters from an entry are escaped in human output", async () => {
+test("control characters from an entry are escaped in human output [1.5#10]", async () => {
   const root = temp();
   stack(
     root,
@@ -874,7 +874,7 @@ test("control characters from an entry are escaped in human output", async () =>
 
 const git = spawnGit(["--version"]);
 test.skipIf(git.status !== 0)(
-  "inside a git checkout, a file the entry's own .gitignore hides is a git-ignored warning",
+  "inside a git checkout, a file the entry's own .gitignore hides is a git-ignored warning [1.5#1] [1.5#8]",
   async () => {
     const repo = temp();
     spawnGit(["init", "-q", repo]);
@@ -964,7 +964,7 @@ test("the realistic fixture registry validates without errors, its app brief ins
   }
 });
 
-test("--brief prints the composed brief and its counts, and --json decodes as a BriefPreview", async () => {
+test("--brief prints the composed brief and its counts, and --json decodes as a BriefPreview [1.5#13]", async () => {
   const human = await run(["--brief", "typescript-cli", "--sandbox"], { registry: realRegistry });
   expect(human.status).toBe(0);
   expect(human.stdout).toMatch(/^# /);
@@ -992,7 +992,7 @@ test("--brief prints the composed brief and its counts, and --json decodes as a 
   ).toMatchObject({ words: preview.briefWords, fixedWords: preview.fixedWords });
 });
 
-test("--brief failures are compose's own: an unknown stack suggests the close one", async () => {
+test("--brief failures are compose's own: an unknown stack suggests the close one [1.5#13]", async () => {
   const result = await run(["--brief", "typscript-cli", "--json"], { registry: realRegistry });
   expect(result.status).toBe(2);
   expect(result.stdout).toBe("");
@@ -1002,7 +1002,7 @@ test("--brief failures are compose's own: an unknown stack suggests the close on
   });
 });
 
-test("--with, --without or --sandbox without --brief is BadInput naming the flag", async () => {
+test("--with, --without or --sandbox without --brief is BadInput naming the flag [1.5#13]", async () => {
   const result = await run(["--sandbox", "--json"], { registry: realRegistry });
   expect(result.status).toBe(2);
   expect(result.stdout).toBe("");

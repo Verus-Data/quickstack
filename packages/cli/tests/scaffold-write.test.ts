@@ -36,7 +36,7 @@ function run<E>(dir: string, use: (writer: ProjectWriter) => Effect.Effect<void,
 const failure = (exit: Exit.Exit<unknown, unknown>) =>
   Exit.isFailure(exit) ? exit.cause.reasons.find(Cause.isFailReason)?.error : undefined;
 
-test("a planned path with .. or an absolute path is an escape, and nothing lands outside", async () => {
+test("a planned path with .. or an absolute path is an escape, and nothing lands outside [1.2a#4]", async () => {
   const parent = temp();
   const target = join(parent, "app");
   for (const rel of ["../outside.txt", "a/../../outside.txt", "/tmp/outside.txt", "a//b"]) {
@@ -120,7 +120,7 @@ test("a final-segment symlink is never written through", async () => {
   expect(existsSync(outside)).toBe(false);
 });
 
-test("a target reached through a symlinked parent writes normally", async () => {
+test("a target reached through a symlinked parent writes normally [1.2a#4]", async () => {
   const parent = temp();
   mkdirSync(join(parent, "real"));
   symlinkSync(join(parent, "real"), join(parent, "link"));
@@ -147,7 +147,7 @@ test("only the executable bit is taken: an executable file gains x where it has 
 });
 
 test.skipIf(process.getuid?.() === 0)(
-  "a failed write rolls back every earlier write and the directories it made, keeping what was there",
+  "a failed write rolls back every earlier write and the directories it made, keeping what was there [1.2a#6]",
   async () => {
     const target = temp();
     mkdirSync(join(target, "locked"));
@@ -172,7 +172,7 @@ test.skipIf(process.getuid?.() === 0)(
   },
 );
 
-test("an interrupt after the first write rolls it back", async () => {
+test("an interrupt after the first write rolls it back [1.2a#7]", async () => {
   const parent = temp();
   const target = join(parent, "app");
   const controller = new AbortController();

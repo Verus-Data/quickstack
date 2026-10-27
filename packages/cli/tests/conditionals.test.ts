@@ -101,7 +101,7 @@ test("markers inside a code fence are processed like any other line", () => {
   expect(resolved("```\n<!-- quickstacks:end -->\n```")).toEqual({ line: 2, problem: "stray_end" });
 });
 
-test("compose resolves the stack's blocks against the stack, its tags, the selection and the preset", async () => {
+test("compose resolves the stack's blocks against the stack, its tags, the selection and the preset [1.1#13]", async () => {
   const body = async (options: Parameters<typeof composeExit>[0]) => {
     const exit = await composeExit(options);
     if (Exit.isFailure(exit)) throw new Error(String(exit.cause));
@@ -122,7 +122,7 @@ test.each([
   ["unclosed", "# Bad\n\n<!-- quickstacks:when tag=web -->\ntext\n", 11],
   ["nested", "# Bad\n<!-- quickstacks:when tag=web -->\n<!-- quickstacks:when tag=bun -->\n", 11],
 ] as const)(
-  "an entry with an %s block fails EntryInvalid with the line in its file",
+  "an entry with an %s block fails EntryInvalid with the line in its file [1.1#13]",
   async (_case, text, line) => {
     const user = temp();
     // Frontmatter fills lines 1-8 of FRAGMENT.md, so the body starts at line 9.

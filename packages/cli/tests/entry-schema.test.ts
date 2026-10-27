@@ -42,7 +42,7 @@ test.each([
   ["a step name that isn't kebab-case", { name: "Lint Step", run: "x" }, /name/],
   ["an empty run", { name: "lint", run: "" }, /run/],
   ["a blank run", { name: "lint", run: "  \t" }, /run/],
-])("%s fails to decode", (_case, step, message) => {
+])("%s fails to decode [1.0#9]", (_case, step, message) => {
   expect(() => decodeStep(step)).toThrow(message);
 });
 
@@ -84,7 +84,7 @@ test("an unknown YAML tag is a decode problem, and nothing is printed", async ()
   expect(writes).toEqual([]);
 });
 
-test("an app fragment with an empty applies_to fails to decode, naming applies_to", () => {
+test("an app fragment with an empty applies_to fails to decode, naming applies_to [1.0#9]", () => {
   expect(() => decodeFragment({ ...fragment, category: "app" })).toThrow(/applies_to/);
   expect(() => decodeFragment({ ...fragment, category: "app", applies_to: [] })).toThrow(
     /applies_to/,
@@ -94,7 +94,7 @@ test("an app fragment with an empty applies_to fails to decode, naming applies_t
   ]);
 });
 
-test("steps decode with expect, ms durations, long timeouts, and without layer or timeout", () => {
+test("steps decode with expect, ms durations, long timeouts, and without layer or timeout [1.0#10]", () => {
   expect(
     decodeStep({
       name: "web",
@@ -118,7 +118,7 @@ test("steps decode with expect, ms durations, long timeouts, and without layer o
   expect(decodeStep({ name: "t", run: "x", expect: { http: "http://x/" } }).expect).toBeDefined();
 });
 
-test("snake_case keys decode to camelCase fields, and defaults fill the rest", () => {
+test("snake_case keys decode to camelCase fields, and defaults fill the rest [1.0#10]", () => {
   const meta = decodeFragment({
     ...fragment,
     applies_to: ["web"],
@@ -157,7 +157,7 @@ test("snake_case keys decode to camelCase fields, and defaults fill the rest", (
   expect(stack.fragments).toEqual({ required: ["a"], default: [], optional: [] });
 });
 
-test("withStepDefaults fills phase, tags, timeout and an expect's within", () => {
+test("withStepDefaults fills phase, tags, timeout and an expect's within [1.0#10]", () => {
   expect(withStepDefaults({ name: "lint", run: "x" })).toEqual({
     name: "lint",
     run: "x",
@@ -220,9 +220,9 @@ const roundTrip = <S extends typeof StackMeta | typeof FragmentMeta>(
   expect(Schema.encodeSync(schema)(decoded as never)).toEqual(encoded);
   expect(Object.keys(encoded as object)).toContain("schema_version");
 };
-it.prop("stack frontmatter round trips through YAML", [StackMeta], ([meta]) =>
+it.prop("stack frontmatter round trips through YAML [1.0#14]", [StackMeta], ([meta]) =>
   roundTrip(StackMeta, meta),
 );
-it.prop("fragment frontmatter round trips through YAML", [FragmentMeta], ([meta]) =>
+it.prop("fragment frontmatter round trips through YAML [1.0#14]", [FragmentMeta], ([meta]) =>
   roundTrip(FragmentMeta, meta),
 );

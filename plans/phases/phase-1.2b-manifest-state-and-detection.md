@@ -2,6 +2,8 @@
 
 Status: EXECUTED 2026-10-26 on feat/phase-1 (awaiting batch review)
 
+Acceptance tests: traced
+
 | Field | Value |
 |---|---|
 | Goal | `new` writes `.quickstacks/manifest.json` with its step digest and the out-of-project state record that holds the second digest copy, and the CLI detects the agent that called it, so verify, tamper detection and handoff have what they read |

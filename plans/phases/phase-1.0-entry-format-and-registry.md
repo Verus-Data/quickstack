@@ -4,6 +4,7 @@ Status: EXECUTED 2026-10-26 on feat/phase-1 (reviewed once; fixes applied). Form
 2026-10-26 to the amended D18 (snake_case keys, literal dotfiles, apps as fragments,
 `expect` steps), which the maintainers have not yet agreed; see "What this plan may get
 wrong"
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|

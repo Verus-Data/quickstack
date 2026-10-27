@@ -2,6 +2,8 @@
 
 Status: EXECUTED 2026-10-26 on feat/phase-1 (awaiting review)
 
+Acceptance tests: traced
+
 | Field | Value |
 |---|---|
 | Goal | `quickstacks new <stack> [dir]` writes the composed files (single ownership, JSON merge, `*.tmpl` templates, literal dotfiles) and the brief into a new project through one safe writer that rolls back on failure, initializes git, reports missing tools, and returns a result an agent can act on, without running any command from any entry |
@@ -307,7 +309,9 @@ that need it skip with a message when it is absent).
    target does not exist afterwards.
 6. A failure injected after the first write (a later file's directory made read-only)
    leaves the target exactly as it was.
-7. Interrupt via `runCli`'s `signal` during writing exits 130 and leaves no files.
+7. Interrupt via `runCli`'s `signal` while `new` runs, after its files are written (a
+   `git` shim's `init` sleeping), exits 130 and leaves no files; the writer alone,
+   interrupted after its first write, rolls that write back.
 8. Missing tools (a temp `PATH` without the fixture's tool) are listed in the result and
    the brief; `new` still exits 0.
 9. `--sandbox` implies `--yes` in the brief.
@@ -327,12 +331,12 @@ that need it skip with a message when it is absent).
 15. In a temp parent repo with an optional `needsOwnRepo` fragment selected,
     `ComposeConflict` has `details.fix: ["--without <id>"]`; with a required one, `fix`
     is empty.
-16. A missing tool owned by a default fragment has `without: [<id>]`; one owned by the
-    stack has `without: []`.
+16. A missing tool owned by a default fragment has `drop: [{ id: <id>, flag: "without" }]`;
+    one owned by the stack has `drop: []`.
 17. With a `git` shim on `PATH` whose `init` exits 1, `new` exits 0 with `git: "none"`
     and a `git_init_failed` warning, and every file is written.
-18. `--agents nope` and `--with x --without x` each exit 2 with a `Usage` envelope and
-    write nothing.
+18. `--agents nope` exits 2 with a `Usage` envelope and `--with x --without x` exits 2
+    with `BadInput`; neither writes anything.
 
 ## Exit criteria
 
@@ -444,3 +448,7 @@ that need it skip with a message when it is absent).
   - **Not covered by a test:** the post-write recheck that removes a file whose parent
     moved outside the project. Reproducing it needs a swap timed between two system
     calls, and the writer has no test hook for that.
+- 2026-10-26, when tagging the acceptance tests: items 7, 16 and 18 were reworded to what
+  shipped, as the "found while executing" notes above record (interruption tested while
+  `git init` runs, plus the writer's own rollback test; `missingTools` items carry
+  `drop`, not `without`; the same id in `--with` and `--without` is `BadInput`).

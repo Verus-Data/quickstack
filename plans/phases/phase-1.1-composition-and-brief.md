@@ -4,6 +4,8 @@ Status: EXECUTED 2026-10-26 on feat/phase-1 (reviewed once, fixes applied). Sele
 split brief, decision prefixes, `--with` fit warnings and `NotFound` details revised
 2026-10-26 for the amended D18
 
+Acceptance tests: traced
+
 | Field | Value |
 |---|---|
 | Goal | Turn a stack id plus `--with`/`--without`, the user's `always` list and a preset into a composition (entries, files, verify steps, commands, decisions, env, and at most one app), and render the brief an agent can follow to a green `verify` without asking anything the brief could have answered, with its verify table, split into base and application when an app is present, and `countWords` |
