@@ -9,6 +9,13 @@ Start here, then read repo `AGENTS.md`, the README's
 next steps, who owns each. When it grows past a couple of screens, move the dated detail
 to `archive/` and leave a link.
 
+## Agent picker (2026-10-27)
+
+[4.4c](phases/phase-4.4c-agent-picker.md) landed: at a terminal with several harnesses and
+none configured, `new` and `add` ask which one gets the project after the summary; `--launch`
+also takes `copilot` and `codex-app` (macOS). Not checked live: whether the Codex app's
+`codex://new?path=&prompt=` link fills the prompt, and which env marker Copilot CLI sets.
+
 ## 0.1.0 released (2026-10-27)
 
 The CLI is on npm as `@steamfield/stacks` 0.1.0 and installs the `stacks` command (D34:

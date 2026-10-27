@@ -1,6 +1,6 @@
 # Phase 4.4c: Pick the agent harness at handoff
 
-Status: EXECUTING
+Status: EXECUTED 2026-10-27 (Codex-reviewed once; the live Codex app link and Copilot's agent marker are unchecked)
 Acceptance tests: traced
 
 | Field | Value |
@@ -128,3 +128,6 @@ The picker is gated only by `decideHandoff`'s inputs, the same gate launching al
 - The Codex app's `prompt` parameter hasn't been tried live (assumed to fill the composer). If the link doesn't open the folder, drop the row.
 - The app may be installed under another bundle name (the ChatGPT desktop app also registers `codex://`); `findApp` may need both.
 - After `readLine`, Effect's `NodeTerminal` keeps its readline interface for a 10 ms idle TTL and adds keypress listeners on stdin, so the CLI may still hold fd 0 when the agent starts. Test 9 is where that shows; if it fails, release the interface before `interactive`.
+- 2026-10-27: test 9 passed against the packed build without releasing anything, so the idle TTL is enough in practice.
+- 2026-10-27: the app-failure fallback prompt goes to stdout through `output.result`, not `output.note` as Design said. It's the command's result once the app didn't open, and the tests expect stderr to stay empty.
+- 2026-10-27: the picker made `tests/handoff-signals.test.ts` reach the picker whenever the real PATH held a second agent; it now passes `--launch claude`. `tests/handoff.test.ts` follows the new launch shape and the `choose` decision.
