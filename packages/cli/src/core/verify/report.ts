@@ -23,8 +23,8 @@ function stepLines(step: StepResult, width: number): string[] {
 }
 
 /**
- * The text result: a summary line, the changes an `--accept-changes` run accepted, one row per
- * step (a failed step's output tail under it), and for a run that isn't green the fixed `Next:`
+ * The text result: stage lines when present, a summary, accepted changes, one row per step
+ * (a failed step's output tail under it), and for a run that isn't green the fixed `Next:`
  * line last. A human gets every row. An agent gets only the failed and skipped rows (the summary
  * counts the passed ones), and no rows on a `changed` run, where every step is skipped for the
  * same reason and the error's detail lines itemize the change.
@@ -47,8 +47,11 @@ export function renderVerify(
   const kinds = result.steps.flatMap((step): FailureKind[] =>
     step.failureKind ? [step.failureKind] : [],
   );
-  const next = nextLine(result.outcome, invocation, kinds);
+  const next = nextLine(result.outcome, invocation, kinds, result.stages);
   return [
+    ...(result.stages
+      ? [`base: ${result.stages.base}`, `app: ${result.stages.app ?? "not run"}`]
+      : []),
     header,
     ...(result.tamperCheck === "manifest-only"
       ? [

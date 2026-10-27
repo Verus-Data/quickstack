@@ -7,6 +7,7 @@ separate app brief file, no `new <app>`, no `ManifestStep.stage` and no manifest
 2. What remains here: verify reports the `app`-tagged steps as their own stage and runs
 them only after every base step passes, the per-stage run-record field, and a bench proof
 for each bundled app with a stub provider. Body rewritten to match 2026-10-26
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -124,20 +125,32 @@ untrusted fragment (1.1).
 
 ## Acceptance tests
 
-- A fixture project composed with an app fixture: base steps failing gives every app step
+1. A fixture project composed with an app fixture: base steps failing gives every app step
   `skipped` with reason `base-failed`, `stages.app: null`, outcome `failed`.
-- Base green and an app step failing: outcome `failed`, `stages.base: "green"`, and the
+2. Base green and an app step failing: outcome `failed`, `stages.base: "green"`, and the
   human `Next:` line names the application section of `BRIEF.md`.
-- Both green: outcome `green`, `firstGreenAt` set, and the run record's `stages` holds
+3. Both green: outcome `green`, `firstGreenAt` set, and the run record's `stages` holds
   both.
-- `verify --skip-tag app` with the base green: outcome `partial`, `stages.app: null`.
-- A project without app steps: the result and run record have no `stages`, and every
+4. `verify --skip-tag app` with the base green: outcome `partial`, `stages.app: null`.
+5. A project without app steps: the result and run record have no `stages`, and every
   existing 1.3a and 1.3b test passes unchanged.
-- Removing the `app` tag from an app step in the manifest fails `VerifyChanged` naming it.
-- Each bundled app's tests, run in its own verify, pass with no provider key in the
-  environment and no outbound network (the test layer blocks non-local hosts).
-- The ledger holds a `pass` record for each bundled app, `with` including it, from a 2.0b
-  bench run.
+6. Removing the `app` tag from an app step in the manifest fails `VerifyChanged` naming it.
+
+### Realistic edge cases
+
+7. Interleaved manifest steps run each stage's setup, checks, serve and teardown in order, with base teardown finished before app setup.
+8. A failed base setup or teardown skips every app step with `base-failed`, while base teardown still runs and user files survive.
+9. A failed app setup skips later app setup and checks, runs app teardown once, and preserves the base's green outcome.
+10. A base-only run followed by an app failure and a successful rerun appends distinct stage records; only the full green sets `firstGreenAt`.
+11. From a nested cwd through a symlink to a project with spaces and non-ASCII text in its path, both stages run in the project and record their outcomes there.
+12. Under an agent marker, both stages receive the same captured environment with agent markers stripped, and the run record still names the detected agent.
+13. Interrupting either stage stops its child, runs that stage's teardown once, preserves user files, and records the stage outcomes without starting the app after a base interruption.
+
+**Proof (bench runs, not traced)**
+
+Each bundled app's tests, run in its own verify, pass with no provider key in the
+environment and no outbound network (the test layer blocks non-local hosts). The ledger
+holds a `pass` record for each bundled app, `with` including it, from a 2.0b bench run.
 
 ## Exit criteria
 
@@ -165,3 +178,11 @@ untrusted fragment (1.1).
   1.5's, the ledger's `with` already names the app, and time to a green base is read from
   run records instead of a new state field. "Stack stage" became "base stage", matching
   1.1's brief.
+- 2026-10-27: stage outcomes need selection and tamper semantics too. A tamper-stopped
+  run with app steps reports `{ base: "changed", app: null }`. Selection skips make the
+  affected stage `partial`, while default skips still allow `green`, matching verify's
+  existing preset behavior. The app starts only after a green base; selection that leaves
+  the base partial skips app steps with the fixed reason "the base did not fully run; the
+  app stage waits for a full verify". `base-failed` is reserved for a failed or interrupted
+  base. A run interrupted in a stage (including during teardown) records that stage as
+  `interrupted`, tears down only started stages, and leaves an unstarted app `null`.

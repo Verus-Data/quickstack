@@ -15,7 +15,7 @@ export type SelectOptions = {
 };
 
 export type VerifyPlan = {
-  /** In run order: by phase, then as the manifest lists them. */
+  /** In run order: base then app, each by phase and then manifest order. */
   steps: ReadonlyArray<PlannedStep>;
   /** Steps left out by selection, with the fixed reason each is skipped. */
   skipped: ReadonlyMap<string, string>;
@@ -35,7 +35,11 @@ export function planVerify(
     ...withStepDefaults(step),
     skipByDefault,
   }));
-  const steps = PHASES.flatMap((phase) => resolved.filter((step) => step.phase === phase));
+  const steps = [false, true].flatMap((app) =>
+    PHASES.flatMap((phase) =>
+      resolved.filter((step) => step.tags.includes("app") === app && step.phase === phase),
+    ),
+  );
   const selectable = steps.filter((step) => step.phase === "check" || step.phase === "serve");
   const known = selectable.map((step) => step.name).sort();
   const unknown = options.only.find((name) => !known.includes(name));

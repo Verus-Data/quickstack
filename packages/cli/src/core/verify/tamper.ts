@@ -191,8 +191,11 @@ export const changedResult = (
   Effect.gen(function* () {
     const ended = yield* Clock.currentTimeMillis;
     const created = Date.parse(createdAtOf(manifest, tamper));
-    return {
+    const result: VerifyResult = {
       outcome: "changed",
+      ...(plan.steps.some((step) => step.tags.includes("app"))
+        ? { stages: { base: "changed", app: null } }
+        : {}),
       scope: plan.scope,
       steps: plan.steps.map((step) => ({
         name: step.name,
@@ -213,4 +216,5 @@ export const changedResult = (
       firstGreen: false,
       stateRecord: tamper.record !== undefined,
     };
+    return result;
   });
