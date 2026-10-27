@@ -1,12 +1,13 @@
 # Phase 3.1a: `show` and the brief preview
 
 Status: DRAFT 2026-10-26 (not agreed)
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
 | Goal | `quickstacks show <id>` prints one stack or fragment's metadata, origin, trust, full guidance, shipped files and last recorded run; `quickstacks validate --brief <stack>` prints the exact brief an agent would get, with word counts against the D5 caps and the composition's fingerprint, without scaffolding anything |
 | Traces to | Job 3: "When I've settled on a stack I rebuild often, I want to write it down once, including the agent tooling, so every new project starts where the last one ended." The stack author: "the only proof a stack works is an end-to-end agent run, and nothing tells them when their prose has gone stale." |
-| Depends on | 1.5 (`validate`, its canonical render and the D5 checks), 2.0a (`fingerprint`, `composeFiles`), 2.0c (the ledger and its service layer) |
+| Depends on | 1.5 (`validate`, its canonical render and the D5 checks), 2.0a (`fingerprint`, `composeFiles`), 2.0c (the file-backed ledger) |
 | Blocks | 3.1b (`create --from` shows `show`'s report before copying an untrusted entry), 3.1c (`new --dry-run` reuses the in-memory composition path). 3.2a uses `show`'s report as its interim trust report (soft) |
 | Decisions needed | D5 (proposed): the caps the preview prints against; a different budget changes only the numbers. D19 (proposed): `show` reports `trusted` as 1.0 computes it |
 | Settles | What `show` prints and which entries get a last run; how the preview picks its agent and personal defaults |
@@ -146,7 +147,7 @@ No new error tags.
 
 ## Acceptance tests
 
-Through `tests/helpers/cli.ts` with the fixture registry. The test helper provides a fixture ledger by supplying 2.0c's ledger service layer over a fixture `runs.json`; `Host` carries no ledger.
+Through `tests/helpers/cli.ts` with the fixture registry. The tests write a fixture `runs.json` in the bundled registry root with `tests/helpers/ledger.ts`, as `tests/list-ledger.test.ts` does; `readLedger(registryDir)` reads it and `lastRun(records, stack)` selects the latest default-composition run. `Host` carries no ledger.
 
 1. `show <bundled-stack> --json` decodes against `ShowReport`, with `lastRun` from the fixture ledger and `sameContent: true`.
 2. Editing the fixture bundled stack's body between two `show` runs flips `sameContent` to false.
@@ -156,7 +157,21 @@ Through `tests/helpers/cli.ts` with the fixture registry. The test helper provid
 6. `validate --brief <stack> --sandbox --json` returns the same brief text `new <stack> --sandbox --no-launch` writes to `BRIEF.md` when run under 1.5's canonical context (directory named as that context's project, TestClock at its year, `agents` unset), and the same `fingerprint` `new --json` records.
 7. With `Settings.always: ["ci-github"]` and `agents: ["codex", "claude"]`, the preview contains no `ci-github` body and renders `codex` adapters only.
 8. A fixture stack over the composed cap: exit 2, stdout holds the brief, the last stderr line is the `ValidationFailed` envelope.
-9. Neither command starts a process (the `Processes` test layer records none).
+9. Neither command starts a process: executable shims on `PATH` leave a marker if git, tools, agents or entry commands run, and no marker appears.
+
+### Realistic edge cases
+
+10. An id shared by a stack and fragment requires `--kind`; an app reports fragment metadata and matching stack ids, and a fragment passed to `--brief` is `BadInput`.
+11. Unknown ids in both commands return `NotFound` with nearby ids in the single error envelope.
+12. Wrong-case YAML metadata in a user copy is `EntryInvalid`, without falling back to a hidden bundled copy.
+13. A symlink inside shipped files is rejected without exposing its target's contents.
+14. A malformed ledger or a directory at `runs.json` yields a null last run and one warning, preserving the report.
+15. Entry text and unusual file names survive JSON unchanged; preview resolves a relative symlinked registry with spaces from another working directory.
+16. Agent markers, inherited git variables, a parent repository and personal invocation do not change canonical preview output; `--without` excludes a default fragment.
+17. Preview findings cover exactly the selected entries, warnings alone succeed, and an explicitly added app gets the split brief and 9,000-word cap.
+18. Text `show` exposes every guidance branch, command and verify run; text preview puts only the brief on stdout and human size counts on stderr, respecting the agent audience's omitted in-budget counts.
+19. Both commands preserve existing files, broken git state and partial run history on success and failure.
+20. Conflicting `--with` fragments return `ComposeConflict`, with no result or writes.
 
 ## Exit criteria
 
