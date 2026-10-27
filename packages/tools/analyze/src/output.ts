@@ -11,11 +11,3 @@ export const defaultWriters: Writers = {
     process.stderr.write(text);
   },
 };
-
-export async function writeStdout(writers: Writers, text: string): Promise<void> {
-  await writers.stdout(text);
-}
-
-export async function writeStderr(writers: Writers, text: string): Promise<void> {
-  await writers.stderr(text);
-}

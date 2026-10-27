@@ -16,7 +16,7 @@ import { computeInventory } from "./core/inventory";
 import { assemble, DRIVER_VERSION } from "./core/run";
 import { DEFAULT_TOOLS_JSON_PATH, runTools } from "./core/tools";
 import { inputError, type Outcome, ok } from "./errors";
-import { defaultWriters, type Writers, writeStderr, writeStdout } from "./output";
+import { defaultWriters, type Writers } from "./output";
 import type { SarifLog } from "./schemas/sarif";
 import { sarifSchemaUri, validateSarif } from "./schemas/sarif";
 
@@ -27,11 +27,11 @@ export type MainOptions = {
 
 async function emit(parsed: Parsed, writers: Writers, toolsJsonPath: string): Promise<Outcome> {
   if (parsed.help) {
-    await writeStdout(writers, `${helpText()}\n`);
+    await writers.stdout(`${helpText()}\n`);
     return ok(false);
   }
   if (parsed.version) {
-    await writeStdout(writers, `${DRIVER_VERSION}\n`);
+    await writers.stdout(`${DRIVER_VERSION}\n`);
     return ok(false);
   }
 
@@ -57,10 +57,14 @@ async function emit(parsed: Parsed, writers: Writers, toolsJsonPath: string): Pr
   const metrics = computeInventory(target, parsed.exclude);
   const { attribution, warning } = readAttribution(target, parsed.label);
   if (warning !== undefined) {
-    await writeStderr(writers, `warning: ${warning}\n`);
+    await writers.stderr(`warning: ${warning}\n`);
   }
 
-  const { ledger, runs: toolRuns } = await runTools(target, parsed.tool, toolsJsonPath);
+  const {
+    ledger,
+    runs: toolRuns,
+    adapterOrder,
+  } = await runTools(target, parsed.tool, toolsJsonPath);
 
   const sarifInputs: { id: string; log: SarifLog }[] = [];
   for (let i = 0; i < parsed.sarif.length; i += 1) {
@@ -68,26 +72,26 @@ async function emit(parsed: Parsed, writers: Writers, toolsJsonPath: string): Pr
     if (file === undefined) continue;
     const abs = isAbsolute(file) ? file : resolve(process.cwd(), file);
     if (!existsSync(abs)) {
-      await writeStderr(writers, `warning: --sarif file not found: ${file}\n`);
+      await writers.stderr(`warning: --sarif file not found: ${file}\n`);
       continue;
     }
     let raw: string;
     try {
       raw = readFileSync(abs, "utf8");
     } catch {
-      await writeStderr(writers, `warning: --sarif file unreadable: ${file}\n`);
+      await writers.stderr(`warning: --sarif file unreadable: ${file}\n`);
       continue;
     }
     let parsedLog: unknown;
     try {
       parsedLog = JSON.parse(raw);
     } catch {
-      await writeStderr(writers, `warning: --sarif file is not JSON: ${file}\n`);
+      await writers.stderr(`warning: --sarif file is not JSON: ${file}\n`);
       continue;
     }
     const validation = validateSarif(parsedLog);
     if (!validation.ok) {
-      await writeStderr(writers, `warning: --sarif ${file}: ${validation.reason}\n`);
+      await writers.stderr(`warning: --sarif ${file}: ${validation.reason}\n`);
       continue;
     }
     sarifInputs.push({ id: `sarif:${file}`, log: validation.log });
@@ -102,6 +106,7 @@ async function emit(parsed: Parsed, writers: Writers, toolsJsonPath: string): Pr
     metrics,
     attribution,
     tools: ledger,
+    adapterOrder,
     toolRuns,
     sarifInputs,
     createdAt,
@@ -134,7 +139,7 @@ async function emit(parsed: Parsed, writers: Writers, toolsJsonPath: string): Pr
     return ok(true);
   }
 
-  await writeStdout(writers, serialized);
+  await writers.stdout(serialized);
   return ok(true);
 }
 
@@ -145,7 +150,7 @@ export async function main(parsed: Parsed, options?: MainOptions): Promise<Outco
     return await emit(parsed, writers, toolsJsonPath);
   } catch (error) {
     const message = error instanceof Error ? error.message : "unexpected defect";
-    await writeStderr(writers, `error: ${message}\n`);
+    await writers.stderr(`error: ${message}\n`);
     return { ok: false, kind: "defect", message };
   }
 }

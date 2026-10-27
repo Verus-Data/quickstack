@@ -70,9 +70,9 @@ this plan relies on, and nothing more:
 | SARIF element | Used for |
 |---|---|
 | `runs[]` | One run per contributing tool, plus the envelope run at index 0 |
-| `run.tool.driver` | Which tool, which version, its rule metadata |
+| `run.tool.driver` | Which tool, which version |
 | `run.results[]` | The findings: `ruleId`, `level`, `message.text`, `locations`, `partialFingerprints` |
-| `run.invocations[]` | Whether the tool ran, its exit code and duration |
+| `run.invocations[]` | Whether the tool ran, its start and end times |
 | `run.artifacts[]` | Left empty in v1. The per-file inventory lives in `properties.quickstacks.metrics` instead, so a record over a large tree does not carry every path twice. An ingest that wants per-file rows asks for `--artifacts` later |
 | `run.properties` | The `quickstacks` extension block (SARIF allows an arbitrary property bag here) |
 | `partialFingerprints` | A stable id per finding, so a scoring layer can track one finding across runs |
@@ -82,9 +82,11 @@ scanner are both findings; what they are worth is the scoring layer's problem.
 
 ### Record shape
 
-One log per run. `runs[0]` is the envelope: the inventory metrics, the tool ledger and
-the attribution. `runs[1..n]` are each tool's own log, passed through with artifact URIs
-rewritten to be relative to the target root.
+One log per run. `runs[0]` is the envelope: the inventory metrics, the tools
+that did *not* run, and the attribution. `runs[1..n]` are each tool's own log,
+passed through with artifact URIs rewritten to be relative to the target root.
+A tool that ran successfully is not listed in the envelope — its own SARIF run
+is its record.
 
 ```json
 {
@@ -92,7 +94,7 @@ rewritten to be relative to the target root.
   "$schema": "https://docs.oasis-open.org/sarif/sarif/v2.1.0/cs01/schemas/sarif-schema-2.1.0.json",
   "runs": [
     {
-      "tool": { "driver": { "name": "quickstacks-analyze", "version": "0.1.0", "rules": [] } },
+      "tool": { "driver": { "name": "quickstacks-analyze", "version": "0.1.0" } },
       "invocations": [{ "executionSuccessful": true, "startTimeUtc": "...", "endTimeUtc": "..." }],
       "results": [],
       "originalUriBaseIds": { "%SRCROOT%": { "uri": "file:///abs/path/" } },
@@ -102,15 +104,16 @@ rewritten to be relative to the target root.
           "runId": "01JB...",
           "createdAt": "2026-10-26T18:04:11Z",
           "target": { "digest": "sha256:...", "files": 214, "bytes": 918273,
-                      "excluded": ["node_modules", "dist", ".git"] },
+                       "excluded": ["node_modules", "dist", ".git"] },
           "attribution": { "kind": "sandbox", "stack": "astro-blog", "with": [],
                            "preset": "default", "agent": "claude",
                            "fingerprint": "sha256:..." },
           "metrics": { "lines": 8123, "codeLines": 6904, "testRatio": 0.19,
                        "byLanguage": { "typescript": 61, "python": 22, "go": 17 },
                        "markers": { "TODO": 4, "FIXME": 1 }, "manifests": ["package.json"] },
-          "tools": [{ "id": "semgrep", "status": "ran", "version": "1.x",
-                      "durationMs": 812, "results": 3 }]
+          "toolsNotRun": [ { "id": "semgrep", "status": "absent" },
+                           { "id": "eslint", "status": "skipped", "reason": "not-selected" },
+                           { "id": "trivy", "status": "failed", "reason": "exit-code:2" } ]
         }
       }
     },
@@ -149,6 +152,16 @@ tests gain a fixture built by the real `new` instead of a hand-written manifest.
 
 ```ts
 export type ToolStatus = "ran" | "absent" | "failed" | "timeout" | "skipped";
+
+// Only non-ran statuses appear in properties.quickstacks.toolsNotRun.
+// A tool that ran is recorded by its own SARIF run, not in this block.
+export type ToolNotRunStatus = "absent" | "skipped" | "failed" | "timeout";
+
+export type ToolNotRunEntry = {
+  readonly id: string;
+  readonly status: ToolNotRunStatus;
+  readonly reason?: string;
+};
 
 export type ToolAdapter = {
   readonly id: string;                       // "semgrep", "ruff"
@@ -219,13 +232,13 @@ build.
 
 | Case | Handling |
 |---|---|
-| No analyzer installed | `tools[].status: "absent"`; tier 0 record still lands; exit 0 |
-| A tool excluded with `--tool` | `tools[].status: "skipped"`, reason `not-selected`; the record shows the omission |
-| A tool exits non-zero with valid SARIF 2.1.0 | `status: "ran"`, findings kept, `exitCode` recorded — a non-zero exit is how linters signal "something was found", not a failure |
-| A tool exits non-zero with no stdout | `status: "failed"`, reason `exit-code:N`; no results |
-| A tool emits invalid SARIF | `status: "failed"`, reason `invalid-sarif`; other runs kept |
+| No analyzer installed | `toolsNotRun[].status: "absent"`; tier 0 record still lands; exit 0 |
+| A tool excluded with `--tool` | `toolsNotRun[].status: "skipped"`, reason `not-selected`; the record shows the omission |
+| A tool exits non-zero with valid SARIF 2.1.0 | `ran` — a non-zero exit is how linters signal "something was found", not a failure. The tool is not in `toolsNotRun`; its findings live in its own SARIF run |
+| A tool exits non-zero with no stdout | `toolsNotRun[].status: "failed"`, reason `exit-code:N`; no results |
+| A tool emits invalid SARIF | `toolsNotRun[].status: "failed"`, reason `invalid-sarif`; other runs kept |
 | A tool emits SARIF 2.0.0 or another version | Rejected with `invalid-sarif` naming the version; never silently upgraded |
-| Binary present but not executable | `status: "failed"`, reason `not-executable` |
+| Binary present but not executable | `toolsNotRun[].status: "failed"`, reason `not-executable` |
 | Target directory is empty | Valid record, zero files, exit 0 |
 | Output path unwritable | Exit 2, no partial file left behind (write to temp, rename) |
 | Manifest present but malformed | Warning on stderr, `kind: "none"`, exit 0 |
@@ -275,13 +288,17 @@ touches. If they conflict at merge time, the resolution is to keep both sides.
   ignored root (`node_modules/`, `dist/`, `.git/`). A symlink is skipped, never followed —
   content outside the target tree must not enter the record — and the count is reported as
   `skippedSymlinks`, the same hazard 1.0 avoids by rejecting symlinks in an entry.
-- Tool ledger: a fake binary that emits fixture SARIF records `ran` with its result count;
-  a fake that prints valid SARIF and exits 1 records `ran` with `exitCode: 1` and findings
-  kept; a fake that exits 2 with no stdout records `failed`; a fake that exits 0 with invalid
-  JSON records `failed`; a missing binary records `absent`; a fake that sleeps past the
-  timeout records `timeout` and the run still exits 0. Same fake-binary technique as 2.0c's
-  bench tests. A tool the user excluded with `--tool` is recorded `skipped` with reason
-  `not-selected`, so a record distinguishes a deliberate omission from a missing binary.
+- Tools not run: a fake binary that emits fixture SARIF records `ran` and does
+  not appear in `toolsNotRun` — its findings live in its own SARIF run; a fake
+  that prints valid SARIF and exits 1 also records `ran` (a non-zero exit is
+  how linters signal findings); a fake that exits 2 with no stdout records
+  `failed` in `toolsNotRun`; a fake that exits 0 with invalid JSON records
+  `failed`; a missing binary records `absent`; a fake that sleeps past the
+  timeout records `timeout` and the run still exits 0. Same fake-binary
+  technique as 2.0c's bench tests, using one Node script with a `--mode` flag.
+  A tool the user excluded with `--tool` is recorded `skipped` with reason
+  `not-selected`, so a record distinguishes a deliberate omission from a missing
+  binary.
 - A malformed SARIF payload is rejected with `invalid-sarif`, naming the offending
   version, while other runs survive.
 - `--sarif <file>` adopts an external log and attributes it to the same envelope.

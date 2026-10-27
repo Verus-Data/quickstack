@@ -203,10 +203,8 @@ function stripVolatile(log: SarifLog): string {
       qs.runId = "X";
       qs.createdAt = "X";
     }
-    if (Array.isArray(qs?.tools)) {
-      for (const entry of qs.tools as Array<{ durationMs?: number }>) {
-        entry.durationMs = 0;
-      }
+    if (Array.isArray(qs?.toolsNotRun)) {
+      // toolsNotRun has no volatile fields; nothing to strip.
     }
   }
   return JSON.stringify(clone);
