@@ -12,7 +12,9 @@ npm install -g @steamfield/stacks   # or install it, then run it as `stacks`
 stacks new typescript-cli my-cli
 ```
 
-The CLI is TypeScript on Effect, bundled for Node. It executes nothing it reads: only `verify` runs commands, and only the steps in a project's own manifest. [How stacks works](docs/architecture.md) explains the design, and the [docs index](docs/README.md) lists everything else: concepts, agents, authoring, and the command, output, configuration and validation references.
+Run `stacks update` to upgrade a global npm install, or `stacks update --check` to report versions without installing. Other installs get the command to run; agents may check but cannot install. Each invocation makes one request to the npm registry, with no background checks.
+
+The CLI is TypeScript on Effect, bundled for Node. It executes nothing it reads: `verify` runs only the steps in a project's own manifest; `update` runs only npm's global prefix lookup and a version-pinned install. [How stacks works](docs/architecture.md) explains the design, and the [docs index](docs/README.md) lists everything else: concepts, agents, authoring, and the command, output, configuration and validation references.
 
 ## Bundled stacks
 

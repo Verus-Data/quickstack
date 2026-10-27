@@ -1,5 +1,7 @@
-import { VERSION } from "./version";
+import { PACKAGE, VERSION } from "./version";
 
 /** npm's cache path identifies an npx invocation, including a symlinked package bin. */
+export const isNpxPath = (path: string): boolean => path.split("/").includes("_npx");
+
 export const invocationFor = (script: string): string =>
-  script.split("/").includes("_npx") ? `npx -y @steamfield/stacks@${VERSION}` : "stacks";
+  isNpxPath(script) ? `npx -y ${PACKAGE}@${VERSION}` : "stacks";

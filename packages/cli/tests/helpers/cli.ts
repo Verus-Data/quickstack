@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { NodeServices } from "@effect/platform-node";
 import { Effect, type Exit, Layer, type Scope, Terminal } from "effect";
+import type { HttpClient } from "effect/http";
 import { AppConfig, type Environment } from "../../src/config";
 import { hasFlag, main } from "../../src/main";
 import { NetLayer } from "../../src/platform/net";
@@ -40,6 +41,7 @@ export async function runCli(
   args: readonly string[],
   options: {
     env?: Environment;
+    http?: Layer.Layer<HttpClient.HttpClient>;
     home?: string;
     program?: Parameters<typeof main>[1];
     signal?: AbortSignal;
@@ -89,9 +91,15 @@ export async function runCli(
   ).pipe(Layer.provideMerge(NodeServices.layer));
   const platform = Layer.mergeAll(
     terminal,
-    Host.memory({ platform: "test-node", cwd: home, authoring: guide, ...options.host }),
+    Host.memory({
+      platform: "test-node",
+      cwd: home,
+      packageRoot: join(import.meta.dirname, "..", ".."),
+      authoring: guide,
+      ...options.host,
+    }),
     Foreground.layer(Foreground.make()),
-    NetLayer,
+    Layer.merge(NetLayer, options.http ?? Layer.empty),
   );
   try {
     const status = await runInvocation(

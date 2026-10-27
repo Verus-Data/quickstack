@@ -31,6 +31,7 @@ const platform = Layer.mergeAll(
     stdinIsTTY: true,
     stdoutIsTTY: true,
     registry,
+    packageRoot: "/test/package",
     skill: "",
     authoring: "",
     invocation: "stacks",

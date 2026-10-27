@@ -189,6 +189,22 @@ stacks create stack team-api --from project --yes
 
 `create` writes a personal skeleton or a working copy into the user registry; existing targets are preserved. `--from bundled` copies an entry under the same id for editing, including all files and adapters; the user copy then shadows the bundled one. `--from project` requires a person at a terminal to review the full trust report; `--yes` skips only the question. Agents and non-terminal stdin can't confer trust. `--from user` is refused. `--json` returns `{ kind, id, path, guide }` with absolute paths. Follow the shipped [authoring guide](../authoring.md) to preview, validate and prove the entry.
 
+## update
+
+```sh
+stacks update          # upgrade a global npm install
+stacks update --check  # report versions without installing
+stacks update --json   # UpdateResult
+```
+
+Each invocation makes one request to the npm registry for the latest `@steamfield/stacks` version, with a 10 second timeout. Nothing checks in the background. An equal version reports `up-to-date`; a running version newer than the published one reports `ahead`. Neither runs npm.
+
+When a newer version exists, `update` detects npx from the running package's path, or checks npm's global prefix against the package's real path. A global npm install upgrades with `npm install -g @steamfield/stacks@<latest>`, pinned to the version just reported, with a 5 minute timeout. Both npm calls run from your home directory with your captured environment, so a project's `.npmrc` cannot change them. Human output reports progress before installing; npm's output is kept private.
+
+`--check` returns `available` with the install method and command to run. An npx install gets `npx -y @steamfield/stacks@<latest>`; other installs get the npm install command, without installing. Agents may check; an agent attempting an available global upgrade without `--check` gets `PermissionDenied` (`reason: "agent"`, exit 6). A person piping the output may install without a terminal.
+
+`--json` returns `{ status, current, latest }`, with `install` and `command` for `available`, or `install: "npm-global"` for `updated`. Exit 0 means up to date, ahead, available or updated; 4 (`UpstreamUnavailable`) means retry the registry request later; 6 (`UpdateFailed`) means run the supplied command yourself to see npm's output; 130 means interrupted, after stopping npm's process group. The running process keeps its original code after updating.
+
 ## skill install
 
 ```sh

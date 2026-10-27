@@ -65,7 +65,7 @@ Each exit code means one next action, and a published code never changes meaning
 | 3 | `NotConfigured`, `InvalidConfig` | Fix the configuration or manifest, or upgrade @steamfield/stacks for a newer schema |
 | 4 | `UpstreamUnavailable` | Retry later |
 | 5 | `VerifyFailed`, `VerifyChanged` | Read the verify report on stdout |
-| 6 | `PermissionDenied` | Ask a person |
+| 6 | `PermissionDenied`, `UpdateFailed` | Ask a person |
 | 130 | `Interrupted` | The run was stopped; cleanup ran |
 
 After `new` launches an agent, the exit is that agent's own status (128 plus the signal number if a signal killed it), outside this table. A closed stdout pipe exits quietly with 0, except after a failure that keeps its report, which keeps its exit (2 for validate, 5 for verify), so a failed verify piped into `head` never reads as a pass. Defects never become success.
@@ -76,4 +76,4 @@ Ctrl+C (SIGINT), SIGTERM or SIGHUP stops the command after its cleanup, with exi
 
 While stacks has handed the terminal to another program (an agent launched by `new`), Ctrl+C and SIGQUIT belong to that program, and SIGTERM and SIGHUP are passed on to it; once that program exits, stacks stops too, with exit 130.
 
-Processes started by `verify` run in their own process group. On interruption, timeout or the end of a step, the group gets SIGTERM, then SIGKILL after 5 seconds.
+Processes started by `verify` and `update` run in their own process group. On interruption, timeout or the end of a step, the group gets SIGTERM, then SIGKILL after 5 seconds.

@@ -9,6 +9,7 @@ import { NewResult } from "../schemas/new";
 import { ProjectRuns } from "../schemas/runs";
 import { ShowReport } from "../schemas/show";
 import { SkillResult } from "../schemas/skill";
+import { UpdateResult } from "../schemas/update";
 import { BriefPreview, ValidateReport } from "../schemas/validate";
 import { VerifyEvent, VerifyResult } from "../schemas/verify";
 
@@ -27,6 +28,7 @@ export const RESULT_SCHEMAS = {
   runs: { schema: ProjectRuns, describes: "runs --json" },
   show: { schema: ShowReport, describes: "show --json" },
   skill: { schema: SkillResult, describes: "skill install --json" },
+  update: { schema: UpdateResult, describes: "update --json" },
   validate: { schema: ValidateReport, describes: "validate --json" },
   "validate-brief": { schema: BriefPreview, describes: "validate --brief <stack> --json" },
   verify: { schema: VerifyResult, describes: "verify --json" },

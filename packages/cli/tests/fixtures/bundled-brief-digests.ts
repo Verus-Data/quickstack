@@ -1,15 +1,16 @@
 /**
- * Gate briefs frozen on 2026-10-27, updated for the `stacks` rename only.
+ * Gate briefs frozen on 2026-10-27, updated for the `stacks` rename and each release's
+ * version (the brief names `npx -y @steamfield/stacks@<version>`) only.
  * After proving an intentional brief change, regenerate each
  * key from `bun run dev validate --brief <stack> [--sandbox] --json` at the repo root:
  * parse stdout as JSON and sha256 its `brief` string as UTF-8, with no added newline.
  * Both presets use validate's canonical context, not new's machine-dependent brief.
  */
 export const briefDigests: Readonly<Record<string, string>> = {
-  "astro-blog:default": "sha256:2c5383c8f4fa005262d69c39652bdd4683b6986f6f7858cb46579acc054e48a8",
-  "astro-blog:sandbox": "sha256:54151a3f8e4e2746a56f296f0d43ebae0241b86efa8571d090a8d7649c9e26bf",
-  "go-cli:default": "sha256:655b0d3daad7bc89065c0bd9c4833a0953eb4d35a766a063f83f0cf945624dc0",
-  "go-cli:sandbox": "sha256:753bdde1dcdd4f4d96ee268d6c935c200c93414376e8dc294ddd9926e6e6f46e",
-  "python-react:default": "sha256:cecef580dcfc5cd4b6b092ba68895d49bd97942df1785426ca45a824abe02e58",
-  "python-react:sandbox": "sha256:216793c7df95fae4af6ca324170180bd2618d31a563d814bc7ddc62dc843a746",
+  "astro-blog:default": "sha256:0bfce9d1c4bd7de88fb444019082c9a1b1921c3aeebae6b8417ffc0ab500cad2",
+  "astro-blog:sandbox": "sha256:6ada5036252b2298ccd3444468a117cea23effa47dc533ec3ab9e0cb07b34907",
+  "go-cli:default": "sha256:662012713c98483d3a1a12a9a0977c48c87d8f182196cc8cd43f47c9a2ff89fc",
+  "go-cli:sandbox": "sha256:d4a7fc78546b57fceb8247f3211e1c7b12b2a3afdb2336d42a34d59482f90e8b",
+  "python-react:default": "sha256:4d5124c379ad43c162d28c6bf237f4d2ac96de5852656b72b7cce1bdc816b58a",
+  "python-react:sandbox": "sha256:1eb4a02c376cc6baac8c366109aa178e67e82231399b3300d541cbc2582111cd",
 };
