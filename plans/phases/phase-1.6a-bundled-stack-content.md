@@ -1,6 +1,13 @@
 # Phase 1.6a: Bundled stack content
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: DRAFT 2026-10-26 (not agreed). Re-scoped 2026-10-26 by the roadmap to "Bundled
+catalog: port and validate": bring the whole bundled catalog (8 stacks and 19 fragments,
+listed in the roadmap's Feature gaps section) into entry format v1 as amended and pass
+`validate`, recording each composed size, instead of writing three stacks to D13's word
+targets. The body below predates that and needs rewriting before execution; in
+particular the `_dot_` escape (dotfiles are now literal, and packing is 0.2's), the
+`check: { filled }` steps (built-in checks are out of v1) and `api-client` (not in the
+catalog) no longer apply
 
 | Field | Value |
 |---|---|

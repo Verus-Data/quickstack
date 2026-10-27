@@ -1,6 +1,12 @@
 # Phase 3.3a: Release and deploy fragments
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: DRAFT 2026-10-26 (not agreed). Re-scoped 2026-10-26: D28 is superseded, so
+`package_scope`, `--scope` and `Settings.package_scope` are built in
+[1.2a](phase-1.2a-new-scaffold-and-templates.md) as part of v1, with no
+`schema_version: 2` and no `template-version` check; and 1.6a ports the release and
+deploy fragments (`bun-release`, `goreleaser`, `docker-deploy`, `cloudflare-pages`), so
+this file gives each its bench proof and keeps the proof rule rather than authoring them.
+The `package_scope` section and tests below are historical until the body is rewritten
 
 | Field | Value |
 |---|---|

@@ -1,6 +1,7 @@
 # Phase 1.2b: `new`: manifest, state record and agent detection
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: DRAFT 2026-10-26 (not agreed). `ManifestStep` revised 2026-10-26 to mirror the
+amended D18 verify step (`expect` replaces `probe` and `check`; the `app` tag)
 
 | Field | Value |
 |---|---|
@@ -50,7 +51,9 @@ const EntryRef = Schema.Struct({
 })
 
 const ManifestStep = Schema.Struct({
-  ...VerifyStep.fields,                // 1.0, with withStepDefaults applied
+  ...VerifyStep.fields,                // 1.0, with withStepDefaults applied: name, run, cwd?,
+                                       // phase, tags (with the CLI's "app" tag on an app's
+                                       // steps), expect?: { http, within }, layer?, timeout
   owner: Schema.String,
   skipByDefault: Schema.Boolean,       // true for prod steps under --sandbox
 })
@@ -113,7 +116,11 @@ at every level, arrays in order). Step order is part of the input, because verif
 steps in order.
 
 Acceptance test 3 lists the step fields one by one, so a field added to `VerifyStep`
-without a matching digest test fails review rather than slipping through.
+without a matching digest test fails review rather than slipping through. `expect` is
+digested as the whole nested object, so a changed probe URL or `within` changes the
+digest, and the `app` tag is digested with the other tags, so an agent can't move an app
+step into the base stage unnoticed. An app project needs no manifest version 2: the
+stage of a step is its `app` tag (3.5b).
 
 ### Project state record
 
@@ -234,9 +241,11 @@ Through `runCli` with temp HOME, XDG dirs and a temp `cwd`.
    holds the same digest, the project id, `schemaVersion: 1` and `manifestPath` equal to
    the real path of the manifest (on macOS, under `/private/var`).
 3. Digest coverage, one case per field: changing any of `name`, `phase`, `layer`, `run`,
-   `check`, `cwd`, `tags`, `probe`, `timeout`, `skipByDefault`, an `env` value or
-   `preset` changes the digest; reordering keys, changing `owner`, or adding `handoff` or
-   `fingerprint` doesn't; writing a default explicitly (`timeout: "10m"`) doesn't.
+   `cwd`, `tags` (including removing the `app` tag from an app's step), `expect.http`,
+   `expect.within`, `timeout`, `skipByDefault`, an `env` value or `preset` changes the
+   digest; reordering keys, changing `owner`, or adding `handoff` or `fingerprint`
+   doesn't; writing a default explicitly (`timeout: "10m"`, `tags: []`,
+   `within: "60s"`) doesn't.
 4. Forward reads: a manifest with `handoff`, `fingerprint`, `mode: "add"`,
    `stack: null` and an `origin: "source"` decodes; one with an unknown top-level key
    fails; one with `schemaVersion: 2` fails `InvalidConfig` with
@@ -275,6 +284,10 @@ Through `runCli` with temp HOME, XDG dirs and a temp `cwd`.
   weaker than it looks and D14's row should say so.
 - Agent markers change without notice; the confirmation dates in `AgentMarkers` are the
   only defense. An agent whose shell tool sets no marker is `"none"` (open question 9).
+- 2026-10-26: the step fields this plan first digested included `check` and `probe`.
+  The amended D18 replaced them with `expect` and dropped built-in checks; the digest
+  covers whatever `VerifyStep` has, so only test 3's field list changed. The same change
+  retired the planned manifest version 2 for app projects.
 - Writing `briefWords` into the manifest duplicates the result's value; if nothing reads
   it from the manifest by 2.0c, drop it under a version bump rather than keep a field
   without a reader.

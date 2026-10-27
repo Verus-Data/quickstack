@@ -1,6 +1,13 @@
 # Phase 3.5b: The two-phase brief
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: DRAFT 2026-10-26 (not agreed). Shrunk 2026-10-26 by the amended D18 (D26
+superseded): 1.1 now writes one brief with "Definition of done: base" and "Then: the
+application" sections, and app steps carry the reserved `app` tag, so there is no
+`BRIEF-APP.md`, no `new <app>`, no `ManifestStep.stage` and no manifest version 2. What
+remains here: verify reports the `app`-tagged steps as their own stage and runs them only
+after every base step passes, the per-stage run-record fields, and a bench proof for each
+bundled app (`openrouter-chat`, `openrouter-chat-cli`) with a stub provider. The body
+below predates that and needs rewriting before execution
 
 | Field | Value |
 |---|---|

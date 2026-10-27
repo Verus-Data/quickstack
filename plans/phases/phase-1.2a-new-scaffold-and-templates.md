@@ -1,10 +1,11 @@
 # Phase 1.2a: `new`: scaffold and templates
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: DRAFT 2026-10-26 (not agreed). Revised 2026-10-26 for the amended D18: literal
+dotfiles, `package_scope` and `--scope`
 
 | Field | Value |
 |---|---|
-| Goal | `quickstacks new <stack> [dir]` writes the composed files (single ownership, JSON merge, templates, unescaped dotfiles) and the brief into a new project through one safe writer that rolls back on failure, initializes git, reports missing tools, and returns a result an agent can act on, without running any command from any entry |
+| Goal | `quickstacks new <stack> [dir]` writes the composed files (single ownership, JSON merge, `*.tmpl` templates, literal dotfiles) and the brief into a new project through one safe writer that rolls back on failure, initializes git, reports missing tools, and returns a result an agent can act on, without running any command from any entry |
 | Traces to | "The CLI writes a few files and a brief, then hands off" (README product summary); job 1, "the same well-tested setup I'd build by hand, without spending the afternoon"; job 2, "a running dev environment with tests in a few minutes"; What this is not, "never runs a command from a stack" |
 | Depends on | [1.1](phase-1.1-composition-and-brief.md) (composition, the brief, `renderBrief`'s `briefWords` and `fixedWords`, `Host.invocation`), [0.3b](phase-0.3b-processes-and-signals.md) (`Processes.run` for git, `Processes.which` for missing tools), [0.3a](phase-0.3a-errors-and-output.md) (error table, `Host.stdinIsTTY` and `Host.stdoutIsTTY`) |
 | Blocks | [1.2b](phase-1.2b-manifest-state-and-detection.md) (adds the manifest and state record to this write order), [1.4](phase-1.4-handoff-and-entry-points.md) (hands off after `new`), [3.0](phase-3.0-add-fragments-to-repo.md) (reuses the writer and `slug`), [3.1c](phase-3.1c-new-dry-run-and-naming.md) (adds `--dry-run`, `--name`, `--author` and the Unicode slug rules) |
@@ -16,11 +17,11 @@ Status: DRAFT 2026-10-26 (not agreed)
 In:
 
 - `new <stack> [dir]` with `--with`, `--without`, `--sandbox`, `--yes`, `--agents`,
-  `--json`. `--launch` and `--no-launch` are 1.4's flags; until 1.4 lands, `new` never
+  `--scope`, `--json`. `--launch` and `--no-launch` are 1.4's flags; until 1.4 lands, `new` never
   launches.
 - Target directory checks; a writer that compares real paths so nothing escapes the
-  project; `.tmpl` rendering; writing JSON merges; writing dotfiles under their unescaped
-  names.
+  project; `.tmpl` rendering; writing JSON merges; writing dotfiles, which entries store
+  under their real names (1.0).
 - `.quickstacks/` layout (roadmap, Other shared facts: Project metadata): `BRIEF.md`,
   `NOTES.md`, `.gitignore` and `state/`. The manifest and the state record are 1.2b's,
   written at their place in this file's write order.
@@ -51,6 +52,7 @@ quickstacks new <stack> [dir]
   --sandbox           every default, no deploy or release fragments, prod steps skipped
   --yes               take every decision's default without asking (implied by --sandbox)
   --agents claude,codex   adapter targets (default: Settings.agents, else claude; 1.1 targetAgents)
+  --scope acme        npm scope for the package_scope template variable (default: Settings.package_scope, else empty)
   --json
 ```
 
@@ -82,21 +84,28 @@ under it. Both sides are real paths: on macOS a temp target under `/var/...` res
 there (or, the other way round, accept an escape). Checking the parent after creating it
 means a symlink planted between checks can't redirect a write.
 
-Files are written to the `PlannedFile.path` from 1.1, which is already the unescaped
-output path (1.0, Dotfiles): `files/_dot_gitignore` lands as `.gitignore`, and no
-`_dot_` name ever reaches the project. Files take the source's executable bit only
+Files are written to the `PlannedFile.path` from 1.1, the output path (1.0, Dotfiles):
+`files/.gitignore` lands as `.gitignore`, under the same name it has in the entry. Files
+take the source's executable bit only
 (hooks must stay executable), never ownership or other bits. `merge` files are written
 from `PlannedFile.content`.
 
-`.tmpl` files are rendered with exactly these variables:
+Only files whose name ends `.tmpl` are rendered, and the suffix is dropped from the
+output name (`files/package.json.tmpl` lands as `package.json`). They are rendered with
+exactly these variables (D18 as amended; an unknown name is an error, below):
 
 | Variable | Value |
 |---|---|
 | `project_name` | The target directory's base name as given |
 | `project_slug` | `scaffold/slug.ts::slug(project_name)`, rule below |
 | `env_prefix` | Slug upper-cased with `-` turned to `_`, prefixed `_` if it starts with a digit |
+| `package_scope` | `new --scope <scope>`, else `Settings.package_scope` (1.1), else empty. Accepted with or without a leading `@` and stored without it; it must be a valid npm scope (lowercase, URL-safe, no `/`), or `new` fails `BadInput` for the flag and `InvalidConfig` for the setting before writing anything. Templates use it where a scope belongs, and entry prose says what to do when it is empty (publish unscoped); there are no template conditionals (D1) |
 | `author` | `Settings.author` (1.1), else `git config user.name` (when git is on PATH; the CLI's own constant command, cwd the target's nearest existing parent, 10 s timeout), else empty |
 | `year` | The current UTC year from `Clock` |
+
+`package_scope` is in v1's set from the start, so no entry needs a newer
+`schema_version` to use it. It is not a manifest field: it reaches the project only
+through the rendered files.
 
 `slug` is one function (roadmap, Types and schemas: Shared helpers), so two callers (this,
 and 3.0's name inference) can't disagree. The MVP rule is ASCII only:
@@ -197,7 +206,7 @@ const NewResult = Schema.Struct({
   stack: Schema.String,
   fragments: Schema.Array(Schema.String),
   preset, agents,
-  written: Schema.Array(Schema.String),   // relative output paths, unescaped
+  written: Schema.Array(Schema.String),   // relative output paths
   brief: Schema.Literal(".quickstacks/BRIEF.md"),
   briefWords: Schema.Number,              // renderBrief (1.1), countWords of the whole brief
   fixedWords: Schema.Number,              // renderBrief (1.1), countWords of the text.ts segments
@@ -226,6 +235,8 @@ Human output lists the stack, fragments, the written files collapsed by 1.1's
 |---|---|---|---|
 | Unknown stack or fragment | `NotFound` | 2 | From 1.1, with known ids |
 | Unknown `--agents` id; same id in `--with` and `--without` | `Usage` | 2 | The parser's usage error naming the flag |
+| `--scope` isn't a valid npm scope | `BadInput` | 2 | Nothing written |
+| `Settings.package_scope` isn't a valid npm scope (and no `--scope`) | `InvalidConfig` | 3 | Nothing written |
 | Composition conflict, needs own repo | `ComposeConflict` | 2 | `details.reason`; for `needs_own_repo`, `ids` and `fix` |
 | Unknown template variable | `EntryInvalid` | 2 | `details: { id, origin, reason: "template", path }`; nothing written |
 | Target has files | `TargetNotEmpty` | 2 | `details: { path, entries: <first 10 names, litter excluded> }` (1.2b adds `scaffold`) |
@@ -264,8 +275,8 @@ Through `runCli` with temp HOME, XDG dirs and a temp `cwd`; git is the real bina
 that need it skip with a message when it is absent).
 
 1. `new fixture-stack app --sandbox --json` exits 0, prints one JSON result, and on disk
-   has the stack's files, rendered templates with no `{{`, executable hooks, `.gitignore`
-   from `files/_dot_gitignore` (and no file named `_dot_gitignore`), `BRIEF.md` whose
+   has the stack's files, rendered templates with no `{{` and no `.tmpl` suffix,
+   executable hooks, `.gitignore` from the fixture's literal `files/.gitignore`, `BRIEF.md` whose
    `countWords` equals `briefWords`, `fixedWords` equal to `renderBrief`'s value for the
    same composition, and `NOTES.md` with both headings.
 2. A target with a file in it fails `TargetNotEmpty` and writes nothing.
@@ -289,6 +300,10 @@ that need it skip with a message when it is absent).
     output always matches `^[a-z0-9]+(-[a-z0-9]+)*$`.
 12. `Settings.author` beats a temp repo's `git config user.name`; with neither, `author`
     renders empty. `project_name` is the directory's base name.
+12a. `package_scope`: `--scope @acme` renders `acme`; `Settings.package_scope: "acme"`
+    with no flag renders the same; the flag beats the setting; with neither it renders
+    empty; `--scope Acme/x` fails `BadInput` and writes nothing. A file without the
+    `.tmpl` suffix containing `{{package_scope}}` is copied unchanged.
 13. Tokenizer: every row of the template syntax table, in one fixture file.
 14. A target holding only `.DS_Store` and `Thumbs.db` is used, and both are still there
     afterwards and absent from `written`.
@@ -324,3 +339,7 @@ that need it skip with a message when it is absent).
   `add` runs see the new value.
 - The `new` result's `handoff` field is a placeholder until 1.4; if 1.4 lands in
   parallel, merge the shapes by hand.
+- 2026-10-26: this plan first wrote dotfiles from `_dot_` names and left
+  `package_scope` to a later format version built in 3.3a (the old D28). The amended D18
+  stores dotfiles literally and puts `package_scope` and `--scope` in v1, built here. If
+  npm's packing drops a bundled `.gitignore`, that is 0.2's to fix, not this writer's.

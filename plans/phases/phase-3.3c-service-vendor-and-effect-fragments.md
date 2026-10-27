@@ -1,6 +1,9 @@
 # Phase 3.3c: Service, vendor and Effect fragments
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: DRAFT 2026-10-26 (not agreed). Re-scoped 2026-10-26: 1.6a ports the service,
+vendor, Effect and tooling fragments into the catalog, so this file gives each a bench
+proof under 3.3a's rule instead of authoring them; the fragment table below needs
+reconciling with the catalog list in the roadmap's Feature gaps section
 
 | Field | Value |
 |---|---|

@@ -1,6 +1,8 @@
 # Phase 1.3a: `verify` runner and probes
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: DRAFT 2026-10-26 (not agreed). Revised 2026-10-26 for the amended D18: a serve
+step's probe is `expect: { http, within }`, and built-in file checks are out of v1 (an
+open additive item below)
 
 | Field | Value |
 |---|---|
@@ -28,9 +30,9 @@ In:
 
 - `verify [--only a,b] [--skip-tag t] [--all] [--json]`, run from the project root or any
   directory below it (walks up to the nearest `.quickstacks/manifest.json`).
-- Phases `setup`, `check`, `serve`, `teardown`; `VerifyStep.timeout`; the built-in
-  `filled` and `exists` checks; HTTP probes with the local-host rule, port-in-use
-  detection, early-exit and left-running detection.
+- Phases `setup`, `check`, `serve`, `teardown`; `VerifyStep.timeout`; `expect.http`
+  probes with the local-host rule, port-in-use detection, early-exit and left-running
+  detection.
 - The step environment through `childEnv`, with agent markers removed.
 - Live progress on stderr in human mode; one result on stdout in both modes.
 - `StepResult`, `VerifyResult`, `VerifyFailed` details.
@@ -59,8 +61,8 @@ command in the step's result.
 | Phase | Runs | On failure |
 |---|---|---|
 | `setup` | In order. Installs, migrations, one-shot commands that exit; never a long-lived process (see below) | Skip remaining setup, check and serve steps (status `skipped`); go to teardown |
-| `check` | In order. Lint, typecheck, test, build, file checks | Keep going: report every failing check, so the agent fixes several things per loop |
-| `serve` | Each step: start the command in its own process group, wait for its probe, stop the group, confirm the port closed | Keep going to the next serve step |
+| `check` | In order. Lint, typecheck, test, build | Keep going: report every failing check, so the agent fixes several things per loop |
+| `serve` | Each step: start the command in its own process group, wait for its `expect` probe, stop the group, confirm the port closed | Keep going to the next serve step |
 | `teardown` | Always, even after a failure or an interrupt | A failing teardown step fails the run; it never hides an earlier failure |
 
 Continuing through `check` failures is deliberate: an agent loop that sees one failure at a
@@ -114,7 +116,7 @@ Timeouts: each setup, check and teardown `run` step passes `VerifyStep.timeout` 
 10m, owned by 1.0; [roadmap, Contracts: Entry format v1](../roadmap.md#types-and-schemas))
 as `ShellSpec.timeout`. When `Finished.timedOut` is true the step fails with
 `failureKind: "timeout"` and reason `timed out after <timeout>`. A serve step's limit is
-its probe's `within`; it ends when the probe passes, so `timeout` adds nothing there and is
+its `expect.within`; it ends when the probe passes, so `timeout` adds nothing there and is
 ignored (decided here). `validate` (1.5) may warn on a serve step that sets one.
 
 Exit 127 from the shell means the command wasn't found. Verify reports it as
@@ -122,21 +124,15 @@ Exit 127 from the shell means the command wasn't found. Verify reports it as
 from the step's `run`, not from its output. A `SpawnFailed` (missing cwd, missing
 `/bin/sh`, `EAGAIN`) is also `env`. Every other non-zero exit is `"step"`.
 
-A `check` step runs in-process with `FileSystem`, on a path whose real path must resolve
-inside the project:
-
-| Kind | Passes when |
-|---|---|
-| `filled` | The path is a non-empty file and does not contain `quickstacks:fill` |
-| `exists` | The path exists |
-
-The check is in the single-key form 1.0 defines (`check: { filled: README.md }`).
+Every step is a `run` step: v1 has no built-in file checks (1.0), so an entry that wants
+one runs a short command. See "What this plan may get wrong" for the open item.
 
 ### Probes
 
+A serve step's probe is its `expect` (1.0): `http`, a URL, and `within`, default 60s.
 Before a serve step starts anything:
 
-1. `probe.url` has `${VAR}` expanded from the step environment. An unresolved `${VAR}`, a
+1. `expect.http` has `${VAR}` expanded from the step environment. An unresolved `${VAR}`, a
    scheme other than `http`, or a host other than `localhost`, `127.0.0.1` or `::1` fails
    the step with a reason and starts nothing. Verify checks the project; it doesn't make
    requests elsewhere (open question 10).
@@ -200,8 +196,7 @@ export const StepResult = Schema.Struct({
   name: Schema.String,
   phase: Phase,                                // from VerifyStep (1.0)
   layer: Schema.optional(Layer),
-  command: Schema.optional(Schema.String),     // run steps
-  check: Schema.optional(Check),               // check steps
+  command: Schema.String,                      // the step's run
   status: Schema.Literals(["passed", "failed", "skipped"]),
   failureKind: Schema.optional(FailureKind),   // only when failed
   exitCode: Schema.optional(Schema.Number),
@@ -240,7 +235,7 @@ On failure the result stays on stdout and the error envelope is the last stderr 
 | `partial`, every selected step passed | 0 | none; the brief says done means `green` |
 | `failed` (including every failure being `env`) | 5 | `VerifyFailed`, `details: { failed: [{ name, failureKind, exitCode? }] }` |
 | `interrupted` | 130 | `Interrupted` |
-| No manifest found walking up | 2 | `NotFound`, `details: { looked: [<dirs>] }`; the fixed message names `quickstacks new` |
+| No manifest found walking up | 2 | `NotFound`, `details: { looked: [<dirs>] }` (`looked` is an optional key this sub-phase adds to the closed `NotFound` details struct 1.1 defines as `{ suggestions }`); the fixed message names `quickstacks new` |
 | Manifest fails to decode | 3 | `InvalidConfig`, `details: { path, field }`; a higher `schemaVersion` gets the fixed "upgrade quickstacks" message ([roadmap, Schema versions](../roadmap.md#schema-versions)) |
 
 `VerifyFailed`'s `details` is a closed `Schema.Struct` holding only step names, kinds and
@@ -292,7 +287,7 @@ the scope ends.
 | `src/commands/verify.ts` | Thin handler, flags |
 | `src/core/verify/plan.ts` | Selection, scope |
 | `src/core/verify/run.ts` | `runVerify`: phases, finalizers, `onFinished` seam |
-| `src/core/verify/step.ts`, `probe.ts`, `checks.ts` | Run steps (with the `pipesHeld` note), probes and port checks through `HttpClient` and `Socket`, built-in checks |
+| `src/core/verify/step.ts`, `probe.ts` | Run steps (with the `pipesHeld` note), `expect` probes and port checks through `HttpClient` and `Socket` |
 | `src/platform/net.ts`, `src/bin.ts` | Node layers for `HttpClient` and `Socket` from `@effect/platform-node`, added to the platform layer |
 | `biome-plugins/boundaries.grit` | Confirm `@effect/platform-node` stays allowed only in `bin.ts` and `src/platform/` (0.3b's rule), with a probe file |
 | `src/core/verify/next.ts` | `nextLine`, the human `Next:` line per outcome (1.3b uses its `changed` row) |
@@ -338,8 +333,8 @@ stripped by `tests/helpers/cli.ts`, and the marker test sets them on purpose.
     (0.3b's drain and group kill, checked end to end); it passes with the fixed
     `pipesHeld` note. The same with `sleep 600 & exit 1` fails `"step"` with that reason.
     A setup step running `sh -c 'sleep 600 >/dev/null 2>&1 &'` (pipes closed) has no note.
-13. `filled` passes on a real README, fails on one containing `quickstacks:fill`, fails on
-    an empty file; a check path escaping the project (including through a symlink) fails.
+13. A step whose `cwd` escapes the project (including through a symlink) fails `env`
+    without running.
 14. `--only lint` passes with outcome `partial`, exit 0; `--only nope` exits 2 listing the
     known names; `--skip-tag slow` gives scope `partial`.
 15. `--sandbox` project: the `prod` step is skipped; `--all` runs it.
@@ -383,3 +378,12 @@ stripped by `tests/helpers/cli.ts`, and the marker test sets them on purpose.
   gate runs record step durations; raise the default in 1.0 if a stack needs it.
 - The tail of `TAIL_LINES` may cut the useful part of a long test failure. Measure in
   1.6b.
+- Open, 2026-10-26: built-in checks. This plan first ran `check: { filled | exists }`
+  steps in-process; the amended D18 dropped them from v1, so a file check is a shell
+  command again (the thing the trust model's point 1 wanted to avoid), and the
+  `agents-md` and `readme` steps 1.6a planned need a `run`. If ported content shows
+  authors writing the same file-check shell often, add built-in checks back as an
+  additive optional step key (for example `check`, exclusive with `run`), which under the
+  roadmap's Schema versions rule is a D18 amendment and a `schema_version` bump.
+- 2026-10-26: `probe: { url, within }` became `expect: { http, within }`. Behavior is
+  unchanged; only the key names moved.

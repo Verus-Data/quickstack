@@ -1,6 +1,10 @@
 # Phase 3.3b: Bundled stack expansion
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: DRAFT 2026-10-26 (not agreed). Re-scoped 2026-10-26: 1.6a ports the catalog
+stacks beyond the gate set (`cloudflare-react-router`, `tauri-react`, `mobile-expo`,
+`react-router`, `typescript-cli`), so this file gives each a bench proof and keeps the
+backlog; the stack table below needs reconciling with that list. A stack too large for
+the budget now splits its slice into an app fragment (1.1), not a D26 app entry
 
 | Field | Value |
 |---|---|

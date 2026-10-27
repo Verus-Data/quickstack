@@ -1,16 +1,18 @@
 # Phase 0.2: Distribution
 
-Status: DEFERRED 2026-10-26 by the maintainers to late phase 1, before
-[1.6b](phase-1.6b-mvp-gate-runs.md): distribution is not needed for the prototype. Still a
-DRAFT (not agreed); needs A1, D12, D22 and D23 decided first. The file keeps its number
-because many phase files cite "0.2".
+Status: DEFERRED 2026-10-26 by the maintainers: distribution is not needed for the
+prototype. Packaging, the npm name reservation and publishing
+([1.6c](phase-1.6c-first-release.md)) are together the final step before public release,
+after the roadmap's feature gaps, not before [1.6b](phase-1.6b-mvp-gate-runs.md) (whose
+gate runs can use the compiled binary). Still a DRAFT (not agreed); needs A1, D12, D22
+and D23 decided first. The file keeps its number because many phase files cite "0.2".
 
 | Field | Value |
 |---|---|
 | Goal | `npx quickstacks <command>` runs the real CLI under Node on macOS or Linux, from one tarball packed with `bun pm pack` that the local e2e suite installs and tests byte for byte |
 | Traces to | Open question "Is the npm name available? ... `npx quickstacks new ...`, the README's first line, only works if `quickstacks` is free on npm"; D9's entry point "ask your agent to run quickstacks", which only works if the agent can `npx` it |
 | Depends on | [0.0](phase-0.0-decisions-and-npm-name.md) (A1, D12, D22, D23, the name reserved), [0.1](phase-0.1-repo-baseline.md) |
-| Blocks | [1.0](phase-1.0-entry-format-and-registry.md) soft (the registry path; a stub path works until then), [1.1](phase-1.1-composition-and-brief.md) soft (the `_npx` rule for `Host.invocation`; 1.1 stubs the constant `quickstacks` until then), [1.6b](phase-1.6b-mvp-gate-runs.md) (gate runs install the packed tarball), [1.6c](phase-1.6c-first-release.md) (publishes the tarball this file's pack script makes), [5.0](phase-5.0-ci-release-and-checks.md) (its release workflow and `e2e-node22` job reuse the pack script and e2e) |
+| Blocks | [1.0](phase-1.0-entry-format-and-registry.md) soft (the registry path; a stub path works until then), [1.1](phase-1.1-composition-and-brief.md) soft (the `_npx` rule for `Host.invocation`; 1.1 stubs the constant `quickstacks` until then), [1.6b](phase-1.6b-mvp-gate-runs.md) soft (gate runs use the packed tarball if this has landed, else the compiled binary), [1.6c](phase-1.6c-first-release.md) (publishes the tarball this file's pack script makes), [5.0](phase-5.0-ci-release-and-checks.md) (its release workflow and `e2e-node22` job reuse the pack script and e2e) |
 | Decisions needed | A1 (recommendation (a), a Node ESM bundle on npm; if (b) or (c), this file is rewritten before work starts). D12 (Node `>=22`; a different floor changes the floor constant, `engines` and the `@types/node` pin, nothing else). D22 (macOS and Linux on Node only; if Bun must be supported, the refusal goes and this file needs a way to stop Bun loading `.env` before `config.ts` captures the environment, which Bun doesn't offer for a script run by `bun`). D23 (if CI stays in scope, the release workflow and the Node 22 job come back here from 5.0). Open question 19 (is refusing Bun acceptable). The maintainers record A1, D12 and D22 in the README decisions log before this file's work starts; that is their step, not part of this file's exit criteria |
 | Settles | What the package ships and how it is packed; how the CLI finds its bundled registry; the Node floor and Bun refusal checks; `Host.invocation`; what replaces the compiled binary in e2e |
 
@@ -271,3 +273,11 @@ Not `.github/workflows/`.
 - `bun pm pack` and `npm pack` can disagree on which files a `files` list includes
   (dotfiles, README casing). The tarball assertion is against `bun pm pack`'s output,
   which is the one that ships.
+- Packaging risk, recorded 2026-10-26: the amended D18 stores dotfiles in entries
+  literally, and npm pack drops `.gitignore` files from a package (it may rename or omit
+  others too). A bundled entry's `files/.gitignore` would vanish from the tarball and
+  `new` would silently not write it. This sub-phase must add either a pack-time escape
+  (rename on pack, undone when the installed CLI reads its own bundled registry, never
+  visible to authors) or a check that fails the pack when the tarball's `registry/` file
+  list differs from the tree. 1.6a's tarball file-list test is that check; the escape is
+  needed only if the check fails.
