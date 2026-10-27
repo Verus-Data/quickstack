@@ -22,6 +22,8 @@ import {
   recordPath,
   runRecords,
   type StepInput,
+  splitEvents,
+  startedSteps,
   stateEnv,
   verify,
   workspace,
@@ -59,7 +61,8 @@ describe("run records", () => {
     expect(created.status).toBe(0);
     const root = join(home, "app");
     const run = await verify(["--json"], { cwd: root, home, env: stateEnv(home) });
-    expect(run.stderr).toBe("");
+    expect(splitEvents(run.stderr).rest).toBe("");
+    expect(startedSteps(run.stderr)).toEqual(["stack-ran", "ran"]);
     expect(run.status).toBe(0);
     const result = decodeResult(run.stdout);
     expect(result).toMatchObject({ outcome: "green", tamperCheck: "full", stateRecord: true });
@@ -166,7 +169,8 @@ describe("run records", () => {
           cwd: root,
           env: { ...env, LOG_LEVEL: "warn", QUICKSTACKS_LOG_FILE: log },
         });
-        expect(run.stderr).toBe("");
+        expect(splitEvents(run.stderr).rest).toBe("");
+        expect(startedSteps(run.stderr)).toEqual(["lint"]);
         expect(run.status).toBe(0);
         expect(decodeResult(run.stdout).outcome).toBe("green");
         const warnings = ndjson(readFileSync(log, "utf8")).filter(

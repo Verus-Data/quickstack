@@ -3,8 +3,9 @@ import { AppConfig } from "../config";
 import {
   type AppError,
   BrokenPipe,
-  detailLines,
   encodeDetails,
+  failureGuide,
+  keepsResult,
   PermissionDenied,
   retryable,
 } from "../errors";
@@ -45,8 +46,16 @@ export class Output extends Context.Service<
     /** A live line on stderr in human mode; nothing for an agent or in JSON mode. Never fails. */
     progress: (text: string) => Effect.Effect<void>;
     /**
+     * A live event on stderr for machine readers while a long command runs: `value` as one JSON
+     * line in JSON mode, `agentText` (when given) as one line in agent mode, nothing for a human,
+     * who gets `progress` lines instead. Never fails; stops after the first failed write. The
+     * error envelope, written after it, stays the last stderr line.
+     */
+    event: (value: unknown, agentText?: string) => Effect.Effect<void>;
+    /**
      * Encodes details and writes the envelope; details with excess properties are a defect.
-     * `invocation` (`Host.invocation`) is quoted in the text modes' `Next:` lines.
+     * `invocation` (`Host.invocation`) is quoted in the failure's guide (`errors.ts::failureGuide`):
+     * the envelope's `next`, and the text modes' detail and `Next:` lines.
      */
     error: (
       error: AppError,
@@ -92,10 +101,47 @@ export class Output extends Context.Service<
     };
   };
 }
+type ErrorView = {
+  error: AppError;
+  details: unknown;
+  guide: ReturnType<typeof failureGuide>;
+  json: boolean;
+};
+/**
+ * The envelope (`errors.ts::ErrorEnvelope`) in JSON mode; otherwise the message, the guide's
+ * lines and its `Next:` line. A keeps-result failure's report already ends with that `Next:` line.
+ */
+function renderError({ error, details, guide, json }: ErrorView): string {
+  if (json)
+    return `${JSON.stringify({
+      error: {
+        tag: error._tag,
+        message: error.message,
+        retryable: retryable(error),
+        ...(guide.next === undefined ? {} : { next: guide.next }),
+        ...(details === undefined ? {} : { details }),
+      },
+    })}\n`;
+  const next = guide.next === undefined || keepsResult(error) ? [] : [`Next: ${guide.next}`];
+  return `${[error.message, ...[...guide.lines, ...next].map((line) => `  ${line}`)].join("\n")}\n`;
+}
 function make(audience: Audience, stdout: Writer, stderr: Writer): Output["Service"] {
   const json = audience === "json";
   const results: string[] = [];
-  let progressOpen = audience === "human";
+  // Live stderr lines (progress for a human, events otherwise) stop after the first failed write.
+  let liveOpen = true;
+  const live = (text: string) =>
+    Effect.suspend(() =>
+      liveOpen
+        ? write(stderr, `${text}\n`).pipe(
+            Effect.catch(() =>
+              Effect.sync(() => {
+                liveOpen = false;
+              }),
+            ),
+          )
+        : Effect.void,
+    );
   const flush = Effect.suspend(() => {
     if (!results.length) return Effect.void;
     const text = `${results.join("\n")}\n`;
@@ -109,34 +155,18 @@ function make(audience: Audience, stdout: Writer, stderr: Writer): Output["Servi
         results.push(json ? JSON.stringify(value) : text);
       }),
     note: (text) => write(stderr, `${text}\n`),
-    progress: (text) =>
-      Effect.suspend(() =>
-        progressOpen
-          ? write(stderr, `${text}\n`).pipe(
-              Effect.catch(() =>
-                Effect.sync(() => {
-                  progressOpen = false;
-                }),
-              ),
-            )
-          : Effect.void,
-      ),
+    progress: (text) => (audience === "human" ? live(text) : Effect.void),
+    event: (value, agentText) => {
+      if (json) return live(JSON.stringify(value));
+      return audience === "agent" && agentText !== undefined ? live(agentText) : Effect.void;
+    },
     error: (error, invocation) =>
       encodeDetails(error).pipe(
         Effect.orDie,
         Effect.flatMap((details) =>
           write(
             stderr,
-            json
-              ? `${JSON.stringify({
-                  error: {
-                    tag: error._tag,
-                    message: error.message,
-                    retryable: retryable(error),
-                    ...(details === undefined ? {} : { details }),
-                  },
-                })}\n`
-              : `${[error.message, ...detailLines(error, invocation).map((line) => `  ${line}`)].join("\n")}\n`,
+            renderError({ error, details, guide: failureGuide(error, invocation), json }),
           ),
         ),
       ),

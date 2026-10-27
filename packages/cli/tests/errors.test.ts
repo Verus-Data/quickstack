@@ -7,9 +7,12 @@ import {
   BrokenPipe,
   ComposeConflict,
   EntryInvalid,
+  ErrorEnvelope,
+  ErrorTag,
   errorClasses,
   errorTable,
   exitCode,
+  keepsResult,
   NotFound,
   PermissionDenied,
   PermissionDeniedDetails,
@@ -22,6 +25,8 @@ import { Output } from "../src/services/output";
 import { ndjson, quiet, runCli, tempDir, terminal, writeError } from "./helpers/cli";
 
 const reported = errorClasses.map((Class) => new Class()).filter((e) => !(e instanceof BrokenPipe));
+const COMPOSE_NEXT =
+  "change --with or --without so these entries fit, or pick another stack; quickstacks show <id> lists what each entry requires and conflicts with.";
 test("the published error table, written out row by row", () => {
   expect(errorTable).toEqual({
     Usage: { exit: 2, retryable: false, keepsResult: false },
@@ -42,13 +47,14 @@ test("the published error table, written out row by row", () => {
     BrokenPipe: { exit: 0, retryable: false, keepsResult: false },
   });
 });
-test("the class list and the table's keys are the same set", () => {
+test("the class list, the envelope's tag literals and the table's keys are the same set", () => {
   expect(new Set(errorClasses.map((Class) => new Class()._tag))).toEqual(
     new Set(Object.keys(errorTable)),
   );
+  expect(new Set(ErrorTag.literals)).toEqual(new Set(Object.keys(errorTable)));
 });
 test.each(reported.map((error) => [error._tag, error] as const))(
-  "a program failing %s exits with its row's code, retryable from its row, and no result",
+  "a program failing %s exits with its row's code, retryable from its row, no result and a next action",
   async (_tag, error) => {
     const row = errorTable[error._tag];
     expect(exitCode(error)).toBe(row.exit);
@@ -56,11 +62,35 @@ test.each(reported.map((error) => [error._tag, error] as const))(
     const result = await runCli(["--json"], { program: Effect.fail(error) });
     expect(result.status).toBe(row.exit);
     expect(result.stdout).toBe("");
-    expect(JSON.parse(result.stderr)).toEqual({
-      error: { tag: error._tag, message: error.message, retryable: row.retryable },
+    const envelope = Schema.decodeUnknownSync(ErrorEnvelope)(JSON.parse(result.stderr), {
+      onExcessProperty: "error",
+    });
+    expect(envelope).toEqual({
+      error: {
+        tag: error._tag,
+        message: error.message,
+        retryable: row.retryable,
+        next: expect.stringMatching(/\S/),
+      },
     });
   },
 );
+test.each(
+  reported.filter((error) => !keepsResult(error)).map((error) => [error._tag, error] as const),
+)("a %s failure in text mode ends with the envelope's next action", async (_tag, error) => {
+  const json = await runCli(["--json"], { program: Effect.fail(error), env: quiet });
+  const next: unknown = JSON.parse(json.stderr).error.next;
+  const text = await runCli([], { program: Effect.fail(error), env: quiet });
+  expect(text.stderr.trimEnd().split("\n").at(-1)).toBe(`  Next: ${String(next)}`);
+});
+test("an unknown command names the CLI as invoked in its next action", async () => {
+  const result = await runCli(["lst"], { env: quiet, host: { invocation: "npx quickstacks" } });
+  expect(result.status).toBe(2);
+  expect(result.stdout).toBe("");
+  expect(result.stderr).toBe(
+    "Invalid command.\n  Command: lst\n  Did you mean: list?\n  Next: run npx quickstacks --help to list the commands, or npx quickstacks <command> --help for one.\n",
+  );
+});
 test("VerifyFailed and VerifyChanged exit 5 and keep their result", () => {
   for (const error of [new VerifyFailed(), new VerifyChanged()])
     expect(errorTable[error._tag]).toEqual({ exit: 5, retryable: false, keepsResult: true });
@@ -129,7 +159,7 @@ test("a Next line names the CLI the way it was invoked", async () => {
   expect(human.status).toBe(2);
   expect(human.stdout).toBe("");
   expect(human.stderr).toBe(
-    "Not found.\n  Next: npx quickstacks list shows every stack and fragment.\n",
+    "Not found.\n  Next: run npx quickstacks list --json to see every stack and fragment id.\n",
   );
 });
 test("a details object mutated to carry an extra property is a defect, not a leak", async () => {
@@ -159,17 +189,20 @@ test("EntryInvalid details name the entry in the envelope and in human mode", as
   });
   const json = await runCli(["--json"], { program: Effect.fail(error) });
   expect(json.status).toBe(2);
+  const next =
+    "fix that entry or leave it out; quickstacks validate lists every problem in a registry.";
   expect(JSON.parse(json.stderr)).toEqual({
     error: {
       tag: "EntryInvalid",
       message: "Entry is invalid.",
       retryable: false,
+      next,
       details: { id: "bun-web", origin: "user", reason: "symlink", path: "files/link" },
     },
   });
   const human = await runCli([], { program: Effect.fail(error), env: quiet, host: terminal });
   expect(human.stderr).toBe(
-    "Entry is invalid.\n  Entry: bun-web (user, symlink)\n  Path: files/link\n",
+    `Entry is invalid.\n  Entry: bun-web (user, symlink)\n  Path: files/link\n  Next: ${next}\n`,
   );
 });
 test.each([
@@ -185,12 +218,12 @@ test.each([
         key: "PORT_WEB",
       },
     }),
-    "These entries can't be composed.\n  Reason: env\n  Stack: web-stack\n  Fragments: port-clash\n  Path: a.json\n  Step: web\n  Key: PORT_WEB\n",
+    `These entries can't be composed.\n  Reason: env\n  Stack: web-stack\n  Fragments: port-clash\n  Path: a.json\n  Step: web\n  Key: PORT_WEB\n  Next: ${COMPOSE_NEXT}\n`,
   ],
   [
     "ComposeConflict between fragments",
     new ComposeConflict({ details: { reason: "cycle", ids: ["cycle-a", "cycle-b"] } }),
-    "These entries can't be composed.\n  Reason: cycle\n  Fragments: cycle-a, cycle-b\n",
+    `These entries can't be composed.\n  Reason: cycle\n  Fragments: cycle-a, cycle-b\n  Next: ${COMPOSE_NEXT}\n`,
   ],
   [
     "BadInput for an id in --with and --without",
@@ -220,7 +253,7 @@ test.each([
   [
     "NotFound naming the fragment id it didn't find",
     new NotFound({ details: { suggestions: ["lint"], id: "lnt\u001b", kind: "fragment" } }),
-    "Not found.\n  Fragment: lnt\\u001b\n  Did you mean: lint?\n  Next: quickstacks list shows every stack and fragment.\n",
+    "Not found.\n  Fragment: lnt\\u001b\n  Did you mean: lint?\n  Next: use one of the ids above.\n",
   ],
   [
     "EntryInvalid for an unknown template variable",
@@ -241,7 +274,7 @@ test.each([
         problem: "unclosed",
       },
     }),
-    "Entry is invalid.\n  Entry: bad-when (user, conditional)\n  Path: FRAGMENT.md:11\n  Problem: unclosed\n",
+    "Entry is invalid.\n  Entry: bad-when (user, conditional)\n  Path: FRAGMENT.md:11\n  Problem: unclosed\n  Next: fix that entry or leave it out; quickstacks validate lists every problem in a registry.\n",
   ],
   [
     "NotFound with the path it looked for",
@@ -260,8 +293,16 @@ test.each([
     const json = await runCli(["--json"], { program: Effect.fail(error), env: quiet });
     expect(json.status).toBe(2);
     expect(json.stdout).toBe("");
+    // The text modes print the envelope's `next` as their last line, except after a kept report.
+    const next = /\n {2}Next: (.*)\n$/.exec(human)?.[1];
     expect(JSON.parse(json.stderr)).toEqual({
-      error: { tag: error._tag, message: error.message, retryable: false, details: error.details },
+      error: {
+        tag: error._tag,
+        message: error.message,
+        retryable: false,
+        next: next ?? expect.stringMatching(/\S/),
+        details: error.details,
+      },
     });
     for (const host of [terminal, {}]) {
       const text = await runCli([], { program: Effect.fail(error), env: quiet, host });
@@ -330,7 +371,12 @@ test.each([
   const last = result.stderr.trimEnd().split("\n").at(-1);
   if (args.length)
     expect(JSON.parse(last ?? "")).toEqual({
-      error: { tag: "VerifyFailed", message: "Verify failed.", retryable: false },
+      error: {
+        tag: "VerifyFailed",
+        message: "Verify failed.",
+        retryable: false,
+        next: "fix the code or config these steps exercise, not the steps, then run quickstacks verify again.",
+      },
     });
   else expect(last).toBe("Verify failed.");
 });

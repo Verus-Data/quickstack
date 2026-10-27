@@ -36,6 +36,7 @@ import {
 } from "./helpers/create";
 import { spawnGit } from "./helpers/git";
 import { minimal, writeEntry } from "./helpers/registry";
+import { splitEvents } from "./helpers/verify";
 
 afterEach(releaseCreate);
 const read = (path: string) => readFileSync(path, "utf8");
@@ -160,6 +161,7 @@ describe("create an entry", () => {
         tag: "ValidationFailed",
         message: "Validation failed.",
         retryable: false,
+        next: "fix the error findings in the report on stdout, then run quickstacks validate again.",
         details: { errors: 1, warnings: 0 },
       },
     });
@@ -275,10 +277,12 @@ describe("create an entry", () => {
       expect(report.steps.find((step) => step.name === "readme")?.status).toBe(
         status === 0 ? "passed" : "failed",
       );
-      if (status === 0) expect(run.stderr).toBe("");
+      // Besides verify's live events, stderr is empty on green and one envelope on failure.
+      const { rest } = splitEvents(run.stderr);
+      if (status === 0) expect(rest).toBe("");
       else {
-        expect(run.stderr.trim().split("\n")).toHaveLength(1);
-        expect(JSON.parse(run.stderr)).toMatchObject({
+        expect(rest.trim().split("\n")).toHaveLength(1);
+        expect(JSON.parse(rest)).toMatchObject({
           error: { tag: "VerifyFailed", retryable: false },
         });
       }

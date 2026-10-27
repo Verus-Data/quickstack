@@ -10,6 +10,8 @@ import {
   freePort,
   holdPort,
   readPid,
+  splitEvents,
+  startedSteps,
   stepNamed,
   verify,
   workspace,
@@ -70,7 +72,8 @@ describe("serve probes", () => {
   }, async () => {
     const { root, port } = await serveProject("server.cjs");
     const result = await verify(["--json"], { cwd: root });
-    expect(result.stderr).toBe("");
+    expect(splitEvents(result.stderr).rest).toBe("");
+    expect(startedSteps(result.stderr)).toEqual(["web", "clean"]);
     expect(result.status).toBe(0);
     const decoded = decodeResult(result.stdout);
     expect(decoded.outcome).toBe("green");
@@ -158,6 +161,7 @@ describe("serve probes", () => {
         tag: "VerifyFailed",
         message: "Verify failed.",
         retryable: false,
+        next: "the machine is missing something these steps need (see each reason); install or start it, then run quickstacks verify again.",
         details: { failed: [{ name: "web", failureKind: "env" }] },
       },
     });

@@ -13,6 +13,8 @@ import {
   lastLine,
   runRecords,
   type StepInput,
+  splitEvents,
+  startedSteps,
   stateEnv,
   workspace,
   writeRecordedProject,
@@ -44,7 +46,7 @@ test.each(["human", "agent"])(
     if (audience === "human") {
       expect(run.stderr).toContain("> base-test: true\n> app-test: ./missing-app-command\n");
       expect(run.stderr.endsWith(failure)).toBe(true);
-    } else expect(run.stderr).toBe(failure);
+    } else expect(run.stderr).toBe(`> base-test\n> app-test\n${failure}`);
     expect(run.stdout).toContain("base: green\napp: failed\nverify: failed");
     const next = lastLine(run.stdout);
     expect(next).toContain("the machine is missing something these steps need");
@@ -132,9 +134,19 @@ test.each(["base", "app"] as const)(
     }
     expect(run.status).toBe(130);
     expect(run.stdout).toBe("");
-    expect(JSON.parse(run.stderr)).toEqual({
-      error: { tag: "Interrupted", message: "Command interrupted.", retryable: false },
+    expect(JSON.parse(splitEvents(run.stderr).rest)).toEqual({
+      error: {
+        tag: "Interrupted",
+        message: "Command interrupted.",
+        retryable: false,
+        next: "run the same command again when you're ready.",
+      },
     });
+    expect(startedSteps(run.stderr)).toEqual(
+      stage === "base"
+        ? ["base-test", "base-clean"]
+        : ["base-test", "base-clean", "app-test", "app-clean"],
+    );
     const stages =
       stage === "base" ? { base: "interrupted", app: null } : { base: "green", app: "interrupted" };
     expect(finished).toHaveLength(1);

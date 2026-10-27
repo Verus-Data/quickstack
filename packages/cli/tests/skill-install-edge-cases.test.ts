@@ -55,6 +55,7 @@ test.skipIf(process.getuid?.() === 0).each(["json", "agent", "human"])(
             tag: "PermissionDenied",
             message: "Permission denied.",
             retryable: false,
+            next: "check the path's read permissions, then run this command again.",
             details: { reason: "read", path: file },
           },
         });

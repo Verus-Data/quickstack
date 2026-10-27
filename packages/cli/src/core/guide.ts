@@ -23,6 +23,8 @@ export const guideText = (cli: string) =>
     "- If verify reports VerifyChanged, stop and ask the user: only they can accept the change.",
     "- Ask the user only what the brief says to ask.",
     "",
+    `On failure, do what the error's Next line (the envelope's next field with --json) says. ${cli} schema <name> prints the JSON Schema of any --json result.`,
+    "",
     "The user's own stacks and fragments go in $XDG_CONFIG_HOME/quickstacks/stacks/<id>/ and fragments/<id>/ (default ~/.config/quickstacks/).",
   ].join("\n");
 

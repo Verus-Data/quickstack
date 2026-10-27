@@ -11,7 +11,7 @@ import { VerifyResult } from "../src/schemas/verify";
 import { quiet, runCli } from "./helpers/cli";
 import { ledgerRecord, ledgerRegistry, writeLedger } from "./helpers/ledger";
 import { newRegistry } from "./helpers/registry";
-import { runRecords, stateEnv, verify, workspace } from "./helpers/verify";
+import { runRecords, splitEvents, stateEnv, verify, workspace } from "./helpers/verify";
 
 const space = workspace();
 afterEach(() => space.release());
@@ -126,7 +126,27 @@ test("LedgerRecord keeps real verify records unchanged, including detected agent
       env: { ...stateEnv(home), ...agentEnv },
     });
     expect(result.status).toBe(0);
-    expect(result.stderr).toBe("");
+    // `verify --json` streams one started and one finished event per step; nothing else.
+    const { events, rest } = splitEvents(result.stderr);
+    expect(rest).toBe("");
+    expect(events).toEqual([
+      { event: "step-started", name: "stack-ran", phase: "setup" },
+      {
+        event: "step-finished",
+        name: "stack-ran",
+        phase: "setup",
+        status: "passed",
+        durationMs: expect.any(Number),
+      },
+      { event: "step-started", name: "ran", phase: "check" },
+      {
+        event: "step-finished",
+        name: "ran",
+        phase: "check",
+        status: "passed",
+        durationMs: expect.any(Number),
+      },
+    ]);
     expect(Schema.decodeUnknownSync(VerifyResult)(JSON.parse(result.stdout)).outcome).toBe("green");
   }
   const records = runRecords(root);

@@ -2,9 +2,10 @@ import { Effect, Schema } from "effect";
 import { TEMPLATE_VARIABLES } from "./core/scaffold/template";
 import { shellArg } from "./core/shell";
 import { printable } from "./core/text";
+import { verifyNext } from "./core/verify/next";
 import { BRIEF_PATH, MANIFEST_PATH } from "./project-layout";
 import { Kind, Origin } from "./schemas/entry";
-import { FailureKind, VerifyChange } from "./schemas/verify";
+import { FailureKind, VerifyChange, VerifyResult } from "./schemas/verify";
 /**
  * An unknown subcommand: what was typed and up to three close known names (`core/suggest.ts`).
  * Or two flags that can't be used together, as typed (`new --launch` with `--no-launch`, 1.4).
@@ -23,7 +24,7 @@ export const UsageDetails = Schema.Union([
 export class Usage extends Schema.TaggedError<Usage>()("Usage", {
   details: Schema.optionalKey(UsageDetails),
 }) {
-  override readonly message = "Invalid command. Run --help for usage.";
+  override readonly message = "Invalid command.";
 }
 /**
  * `id`: the argument the input was wrong about. `flag` says which input it is: `scope`, a
@@ -122,6 +123,8 @@ export const VerifyFailedDetails = Schema.Struct({
       exitCode: Schema.optionalKey(Schema.Number),
     }),
   ),
+  /** The result's stage outcomes, so `next` points at the application section as the report does. */
+  stages: VerifyResult.fields.stages,
 });
 export class VerifyFailed extends Schema.TaggedError<VerifyFailed>()("VerifyFailed", {
   details: Schema.optionalKey(VerifyFailedDetails),
@@ -314,6 +317,25 @@ export const errorClasses = [
   BrokenPipe,
 ] as const;
 export type AppError = InstanceType<(typeof errorClasses)[number]>;
+/** Every tag, for the envelope's schema. A unit test keeps it equal to `errorTable`'s keys. */
+export const ErrorTag = Schema.Literals([
+  "Usage",
+  "BadInput",
+  "NotFound",
+  "NotConfigured",
+  "InvalidConfig",
+  "UpstreamUnavailable",
+  "VerifyFailed",
+  "VerifyChanged",
+  "PermissionDenied",
+  "EntryInvalid",
+  "ComposeConflict",
+  "TargetNotEmpty",
+  "ValidationFailed",
+  "Interrupted",
+  "Defect",
+  "BrokenPipe",
+]);
 type ErrorSpec = { exit: number; retryable: boolean; keepsResult: boolean };
 /** Exit code, retryability and whether a failure keeps the command's result on stdout. */
 export const errorTable = {
@@ -333,7 +355,7 @@ export const errorTable = {
   Interrupted: { exit: 130, retryable: false, keepsResult: false },
   Defect: { exit: 1, retryable: false, keepsResult: false },
   BrokenPipe: { exit: 0, retryable: false, keepsResult: false },
-} as const satisfies Record<AppError["_tag"], ErrorSpec>;
+} as const satisfies Record<AppError["_tag"], ErrorSpec> & Record<typeof ErrorTag.Type, ErrorSpec>;
 export function exitCode(error: AppError): number {
   return errorTable[error._tag].exit;
 }
@@ -347,161 +369,230 @@ export function knownError(value: unknown): AppError | undefined {
   return errorClasses.some((Class) => value instanceof Class) ? (value as AppError) : undefined;
 }
 /**
- * The human lines shown under a failure's message, one per detail field worth showing, ending
- * with a `Next:` line where the details say what to do. `invocation` is `Host.invocation`, for
- * commands quoted in those lines.
+ * What a failure tells its reader beyond the fixed message: `lines`, one per detail field worth
+ * showing, and `next`, the one action to take, without a `Next:` prefix. Text modes print the lines
+ * and then `Next: <next>`; the JSON envelope carries `next`. A keeps-result failure's report ends
+ * with its own `Next:` line, so text modes don't print `next` for it (`Output.error`).
  */
-export function detailLines(error: AppError, invocation: string): string[] {
+export type FailureGuide = { lines: string[]; next?: string };
+const guide = (lines: string[], next?: string): FailureGuide =>
+  next === undefined ? { lines } : { lines, next };
+
+/** The guide for `error`. `invocation` is `Host.invocation`, for commands quoted in it. */
+export function failureGuide(error: AppError, invocation: string): FailureGuide {
   switch (error._tag) {
     case "Usage":
-      return usageLines(error);
+      return usageGuide(error, invocation);
     case "PermissionDenied":
-      return permissionLines(error);
+      return permissionGuide(error);
     case "TargetNotEmpty":
-      return targetLines(error, invocation);
+      return targetGuide(error, invocation);
     case "BadInput":
-      return error.details ? badInputLines(error.details) : [];
+      return error.details
+        ? badInputGuide(error.details, invocation)
+        : guide([], `run ${invocation} --help for the command's flags.`);
     case "NotFound":
-      return notFoundLines(error, invocation);
+      return notFoundGuide(error, invocation);
     // The report on stdout ends with these counts already; `--json` keeps them in details.
     case "ValidationFailed":
-      return [];
+      return guide(
+        [],
+        `fix the error findings in the report on stdout, then run ${invocation} validate again.`,
+      );
     case "EntryInvalid":
-      return entryLines(error);
+      return entryGuide(error, invocation);
     case "ComposeConflict":
-      return composeLines(error);
+      return composeGuide(error, invocation);
     case "InvalidConfig":
-      return configLines(error);
+      return configGuide(error, invocation);
     case "VerifyFailed":
-      return error.details?.failed.length
-        ? [
-            `Failed: ${error.details.failed
-              .map(
-                (step) =>
-                  `${printable(step.name)} (${step.failureKind}${step.exitCode === undefined ? "" : `, exit ${step.exitCode}`})`,
-              )
-              .join(", ")}`,
-          ]
-        : [];
+      return verifyFailedGuide(error, invocation);
     case "VerifyChanged":
-      return error.details ? changeLines(error.details) : [];
+      return guide(
+        error.details ? changeLines(error.details) : [],
+        verifyNext("changed", invocation),
+      );
     case "NotConfigured":
+      return guide([], `run ${invocation} doctor to see the configuration it reads.`);
     case "UpstreamUnavailable":
+      return guide([], "wait a moment, then run the same command again.");
     case "Interrupted":
+      return guide([], "run the same command again when you're ready.");
     case "Defect":
+      return guide(
+        [],
+        "set QUICKSTACKS_LOG_FILE to a file path and run the command again; the file records where it failed. Report it if it repeats.",
+      );
     case "BrokenPipe":
-      return [];
+      return guide([]);
   }
 }
-function usageLines(error: Usage): string[] {
+function usageGuide(error: Usage, invocation: string): FailureGuide {
   const details = error.details;
   if (details && "flags" in details)
-    return [
-      `${details.flags[0]} and ${details.flags[1]} can't be used together.`,
-      "Next: drop one of them.",
-    ];
+    return guide(
+      [`${details.flags[0]} and ${details.flags[1]} can't be used together.`],
+      "drop one of them.",
+    );
   if (details && "flag" in details)
-    return [
-      `Flag: ${printable(details.flag)}`,
-      `Value: ${printable(details.value)}`,
-      `Expected: ${printable(details.expected)}`,
-      ...(details.suggestions?.length
+    return guide(
+      [
+        `Flag: ${printable(details.flag)}`,
+        `Value: ${printable(details.value)}`,
+        `Expected: ${printable(details.expected)}`,
+        ...(details.suggestions?.length
+          ? [`Did you mean: ${details.suggestions.map(printable).join(", ")}?`]
+          : []),
+      ],
+      `pass a value from Expected; ${invocation} <command> --help lists every flag.`,
+    );
+  return guide(
+    [
+      ...(details?.command === undefined ? [] : [`Command: ${printable(details.command)}`]),
+      ...(details?.suggestions.length
         ? [`Did you mean: ${details.suggestions.map(printable).join(", ")}?`]
         : []),
-      "Next: pass an expected value, or run --help for usage.",
-    ];
-  return details?.suggestions.length ? [`Did you mean: ${details.suggestions.join(", ")}?`] : [];
+    ],
+    `run ${invocation} --help to list the commands, or ${invocation} <command> --help for one.`,
+  );
 }
 
-function permissionLines(error: PermissionDenied): string[] {
+function permissionGuide(error: PermissionDenied): FailureGuide {
   const details = error.details;
-  if (!details) return [];
+  if (!details)
+    return guide(
+      [],
+      "check the permissions on the files this command reads and writes, then run it again.",
+    );
   const why = permissionReason(details.reason);
-  return [...(details.path ? [`Path: ${printable(details.path)}`] : []), ...why];
+  return guide(
+    [...(details.path ? [`Path: ${printable(details.path)}`] : []), ...why.lines],
+    why.next,
+  );
 }
 
-function targetLines(error: TargetNotEmpty, invocation: string): string[] {
+function targetGuide(error: TargetNotEmpty, invocation: string): FailureGuide {
   const details = error.details;
-  if (!details) return [];
-  return [
-    `Path: ${printable(details.path)}`,
-    ...(details.entries.length ? [`Contains: ${details.entries.map(printable).join(", ")}`] : []),
-    ...targetNext(details, invocation),
-  ];
+  if (!details) return guide([], "pick a directory that doesn't exist yet or is empty.");
+  const next = targetNext(details, invocation);
+  return guide(
+    [
+      `Path: ${printable(details.path)}`,
+      ...(details.entries.length ? [`Contains: ${details.entries.map(printable).join(", ")}`] : []),
+      ...next.lines,
+    ],
+    next.next,
+  );
 }
 
-function notFoundLines(error: NotFound, invocation: string): string[] {
+function notFoundGuide(error: NotFound, invocation: string): FailureGuide {
   // `looked` means a path was missing (validate); `root`, an id missing from a registry root
   // `list` doesn't read; otherwise an id missing from the registries `list` shows.
   const details = error.details;
-  if (!details) return [];
+  if (!details) return guide([], `run ${invocation} list to see what exists.`);
   if (details.path)
-    return [
-      `Path: ${printable(details.path)}`,
-      "Next: restore the bundled skill directory or reinstall quickstacks, then run doctor.",
-    ];
+    return guide(
+      [`Path: ${printable(details.path)}`],
+      `restore the bundled skill directory or reinstall quickstacks, then run ${invocation} doctor.`,
+    );
   if (details.kind === "project")
-    return [
-      `Looked for: ${MANIFEST_PATH} in ${printable(details.looked ?? ".")} and every directory above it`,
-      `Next: run ${invocation} verify inside a project ${invocation} new created, or create one with ${invocation} new <stack> <dir>.`,
-    ];
-  return [
-    ...(details.looked ? [`Looked for: ${printable(details.looked)}`] : []),
-    ...(details.id !== undefined
-      ? [`${entryKindLabel(details.kind)}: ${printable(details.id)}`]
-      : []),
-    ...(details.suggestions.length
-      ? [`Did you mean: ${details.suggestions.map(printable).join(", ")}?`]
-      : []),
+    return guide(
+      [
+        `Looked for: ${MANIFEST_PATH} in ${printable(details.looked ?? ".")} and every directory above it`,
+      ],
+      `run this command again from inside a project ${invocation} new created, or create one with ${invocation} new <stack> <dir>.`,
+    );
+  return guide(
+    [
+      ...(details.looked ? [`Looked for: ${printable(details.looked)}`] : []),
+      ...(details.id !== undefined
+        ? [`${entryKindLabel(details.kind)}: ${printable(details.id)}`]
+        : []),
+      ...(details.suggestions.length
+        ? [`Did you mean: ${details.suggestions.map(printable).join(", ")}?`]
+        : []),
+    ],
     notFoundNext(details, invocation),
-  ];
+  );
 }
 
-function entryLines(error: EntryInvalid): string[] {
+function entryGuide(error: EntryInvalid, invocation: string): FailureGuide {
   const details = error.details;
-  if (!details) return [];
+  if (!details) return guide([], `run ${invocation} validate to list every problem.`);
   const line = details.line === undefined ? "" : `:${details.line}`;
-  return [
-    `Entry: ${printable(details.id)} (${details.origin}, ${details.reason})`,
-    ...(details.path ? [`Path: ${printable(details.path)}${line}`] : []),
-    ...(details.problem ? [`Problem: ${details.problem}`] : []),
-    ...(details.reason === "template"
-      ? [
-          `Next: use only ${TEMPLATE_VARIABLES.join(", ")} in that file's {{ }} tokens, or drop its .tmpl suffix to copy it as is.`,
-        ]
-      : []),
-  ];
+  return guide(
+    [
+      `Entry: ${printable(details.id)} (${details.origin}, ${details.reason})`,
+      ...(details.path ? [`Path: ${printable(details.path)}${line}`] : []),
+      ...(details.problem ? [`Problem: ${details.problem}`] : []),
+    ],
+    details.reason === "template"
+      ? `use only ${TEMPLATE_VARIABLES.join(", ")} in that file's {{ }} tokens, or drop its .tmpl suffix to copy it as is.`
+      : `fix that entry or leave it out; ${invocation} validate lists every problem in a registry.`,
+  );
 }
 
-function composeLines(error: ComposeConflict): string[] {
+function composeGuide(error: ComposeConflict, invocation: string): FailureGuide {
   const details = error.details;
-  if (!details) return [];
-  return [
-    `Reason: ${details.reason}`,
-    ...(details.stack ? [`Stack: ${printable(details.stack)}`] : []),
-    ...(details.ids.length ? [`Fragments: ${details.ids.map(printable).join(", ")}`] : []),
-    ...(details.path
-      ? [
-          `${details.reason === "needs_own_repo" ? "Repository" : "Path"}: ${printable(details.path)}`,
-        ]
-      : []),
-    ...(details.step ? [`Step: ${printable(details.step)}`] : []),
-    ...(details.key ? [`Key: ${printable(details.key)}`] : []),
-    ...composeNext(details),
-  ];
+  if (!details) return guide([], `run ${invocation} show <id> to see what each entry requires.`);
+  const next = composeNext(details, invocation);
+  return guide(
+    [
+      `Reason: ${details.reason}`,
+      ...(details.stack ? [`Stack: ${printable(details.stack)}`] : []),
+      ...(details.ids.length ? [`Fragments: ${details.ids.map(printable).join(", ")}`] : []),
+      ...(details.path
+        ? [
+            `${details.reason === "needs_own_repo" ? "Repository" : "Path"}: ${printable(details.path)}`,
+          ]
+        : []),
+      ...(details.step ? [`Step: ${printable(details.step)}`] : []),
+      ...(details.key ? [`Key: ${printable(details.key)}`] : []),
+      ...next.lines,
+    ],
+    next.next,
+  );
 }
 
-function configLines(error: InvalidConfig): string[] {
+function configGuide(error: InvalidConfig, invocation: string): FailureGuide {
   const details = error.details;
-  if (!details) return [];
-  return [
-    `Path: ${printable(details.path)}`,
-    ...(details.schemaVersion === undefined
-      ? []
-      : [
-          `Schema version: ${details.schemaVersion}, from a newer quickstacks. Upgrade quickstacks to read it.`,
-        ]),
-  ];
+  if (!details) return guide([], `run ${invocation} doctor to see which file is invalid.`);
+  if (details.schemaVersion !== undefined)
+    return guide(
+      [
+        `Path: ${printable(details.path)}`,
+        `Schema version: ${details.schemaVersion}, from a newer quickstacks.`,
+      ],
+      "upgrade quickstacks, then run this command again.",
+    );
+  return guide(
+    [`Path: ${printable(details.path)}`],
+    details.path.endsWith(MANIFEST_PATH)
+      ? "restore that file from version control (it isn't edited by hand), then run this command again."
+      : `fix that file so it matches the documented keys (${invocation} doctor shows the error), then run this command again.`,
+  );
+}
+
+function verifyFailedGuide(error: VerifyFailed, invocation: string): FailureGuide {
+  const failed = error.details?.failed ?? [];
+  return guide(
+    failed.length
+      ? [
+          `Failed: ${failed
+            .map(
+              (step) =>
+                `${printable(step.name)} (${step.failureKind}${step.exitCode === undefined ? "" : `, exit ${step.exitCode}`})`,
+            )
+            .join(", ")}`,
+        ]
+      : [],
+    verifyNext(
+      "failed",
+      invocation,
+      failed.map((step) => step.failureKind),
+      error.details?.stages,
+    ),
+  );
 }
 
 /** The human lines naming what changed; `--accept-changes` prints the same lines. */
@@ -521,91 +612,125 @@ export function changeLines(change: typeof VerifyChange.Type): string[] {
       : ["Which steps changed is not itemized: there are no per-step digests to compare with."]),
   ];
 }
-function badInputLines(details: typeof BadInputDetails.Type): string[] {
+function badInputGuide(details: typeof BadInputDetails.Type, invocation: string): FailureGuide {
   const id = printable(details.id);
   switch (details.flag) {
     case "create_id":
-      return [
-        `Id: ${id}`,
-        "Next: use a lowercase kebab-case id, with only letters and digits between hyphens.",
-      ];
+      return guide(
+        [`Id: ${id}`],
+        "use a lowercase kebab-case id, with only letters and digits between hyphens.",
+      );
     case "create_shadows":
-      return [
-        `Id: ${id}`,
-        `Origins: ${details.origins?.join(", ") ?? ""}`,
-        `Next: use --from ${details.origins?.[0] ?? "<origin>"} to start from a copy, or pick another id.`,
-      ];
+      return guide(
+        [`Id: ${id}`, `Origins: ${details.origins?.join(", ") ?? ""}`],
+        `use --from ${details.origins?.[0] ?? "<origin>"} to start from a copy, or pick another id.`,
+      );
     case "create_target":
-      return [`Path: ${id}`, "Next: edit the existing entry, or choose an unused id."];
+      return guide([`Path: ${id}`], "edit the existing entry, or choose an unused id.");
     case "from":
-      return [`Origin: ${id}`, "Next: copy from bundled or project; user is the destination."];
+      return guide([`Origin: ${id}`], "copy from bundled or project; user is the destination.");
     case "confirmation":
-      return [
-        "The copy was declined. Nothing was changed.",
-        "Next: review the entry before copying it.",
-      ];
+      return guide(
+        ["The copy was declined. Nothing was changed."],
+        "review the entry before copying it.",
+      );
     case "fragment":
       return details.alreadyApplied?.length
-        ? [
-            `Already applied: ${details.alreadyApplied.map(printable).join(", ")}`,
-            "Next: choose unapplied fragments with quickstacks list.",
-          ]
-        : [`Id: ${id}`, "Next: add takes fragments; use quickstacks new for a stack."];
+        ? guide(
+            [`Already applied: ${details.alreadyApplied.map(printable).join(", ")}`],
+            `choose unapplied fragments with ${invocation} list.`,
+          )
+        : guide([`Id: ${id}`], `add takes fragments; use ${invocation} new for a stack.`);
     case "agents":
     case "sandbox":
-      return [
-        `Flag: --${details.flag}`,
-        "Next: use the preset and agents recorded in the manifest.",
-      ];
+      return guide(
+        [`Flag: --${details.flag}`],
+        "use the preset and agents recorded in the manifest.",
+      );
     case "scope":
-      return [
-        `Flag: --scope ${id}`,
-        "Next: pass an npm scope such as acme or @acme: lowercase, URL-safe, no /.",
-      ];
+      return guide(
+        [`Flag: --scope ${id}`],
+        "pass an npm scope such as acme or @acme: lowercase, URL-safe, no /.",
+      );
     case "with_without":
-      return [
-        `Id: ${id}`,
-        "Flags: --with and --without",
-        `Next: name ${id} in only one of --with and --without.`,
-      ];
+      return guide(
+        [`Id: ${id}`, "Flags: --with and --without"],
+        `name ${id} in only one of --with and --without.`,
+      );
     case "name":
-      return [
-        `Flag: --name ${id}`,
-        "Next: pass --name without control characters, double quotes or backslashes.",
-      ];
+      return guide(
+        [`Flag: --name ${id}`],
+        "pass --name with a project name that has no control characters, double quotes or backslashes.",
+      );
     case "author":
-      return [
-        `Flag: --${details.flag} ${id}`,
-        `Next: pass --${details.flag} without control characters.`,
-      ];
+      return guide(
+        [`Flag: --${details.flag} ${id}`],
+        `pass --${details.flag} without control characters.`,
+      );
     case "dir":
-      return [
-        `Directory name: ${id}`,
-        "Next: pick a project directory whose name has no control characters.",
-      ];
+      return guide(
+        [`Directory name: ${id}`],
+        "pick a project directory whose name has no control characters.",
+      );
     case "kind":
-      return [
-        `Id: ${id}`,
-        "Kinds: stack, fragment",
-        "Next: select --kind stack or --kind fragment.",
-      ];
+      return guide(
+        [`Id: ${id}`, "Kinds: stack, fragment"],
+        "select --kind stack or --kind fragment.",
+      );
     case "brief_stack":
-      return [`Id: ${id}`, "Next: --brief takes a stack; choose one with quickstacks list stacks."];
+      return guide(
+        [`Id: ${id}`],
+        `--brief takes a stack; choose one with ${invocation} list stacks.`,
+      );
     case "brief":
-      return [
-        `Flag: ${id}`,
-        "Next: --with, --without and --sandbox need --brief <stack>; add it, or drop the flag.",
-      ];
+      return guide(
+        [`Flag: ${id}`],
+        "--with, --without and --sandbox need --brief <stack>; add it, or drop the flag.",
+      );
     case "only":
-      return [
-        `Flag: --only ${id}`,
-        ...(details.known?.length
-          ? [`Check and serve steps: ${details.known.map(printable).join(", ")}`]
-          : ["This project has no check or serve steps."]),
-        "Next: pass --only names from that list; setup and teardown steps always run.",
-      ];
+      return guide(
+        [
+          `Flag: --only ${id}`,
+          ...(details.known?.length
+            ? [`Check and serve steps: ${details.known.map(printable).join(", ")}`]
+            : ["This project has no check or serve steps."]),
+        ],
+        "pass --only names from that list; setup and teardown steps always run.",
+      );
   }
 }
+/**
+ * The one stderr line a `--json` failure ends with (`Output.error`). `next` is the failure's one
+ * next action (`failureGuide`), the same text the text modes print after `Next:`; `details` is the
+ * tag's closed details struct.
+ */
+export const ErrorEnvelope = Schema.Struct({
+  error: Schema.Struct({
+    tag: ErrorTag,
+    message: Schema.String,
+    retryable: Schema.Boolean,
+    next: Schema.optionalKey(Schema.String),
+    details: Schema.optionalKey(
+      Schema.Union([
+        UsageDetails,
+        BadInputDetails,
+        NotFoundDetails,
+        InvalidConfigDetails,
+        VerifyFailedDetails,
+        VerifyChangedDetails,
+        PermissionDeniedDetails,
+        EntryInvalidDetails,
+        ComposeConflictDetails,
+        TargetNotEmptyDetails,
+        ValidationFailedDetails,
+      ]),
+    ),
+  }),
+}).annotate({
+  title: "Error envelope",
+  description: "The last stderr line of a failed --json command",
+});
+export type ErrorEnvelope = typeof ErrorEnvelope.Type;
 const encodeClosed = <S extends Schema.Top>(schema: S, value: S["Type"] | undefined) =>
   value === undefined
     ? Effect.succeed(undefined)
@@ -647,75 +772,82 @@ export function encodeDetails(error: AppError): Effect.Effect<unknown, Schema.Sc
   }
 }
 
-function permissionReason(reason: (typeof PermissionDeniedDetails.Type)["reason"]): string[] {
+function permissionReason(reason: (typeof PermissionDeniedDetails.Type)["reason"]): FailureGuide {
   switch (reason) {
     case "read":
-      return ["Next: check the path's read permissions, then run this command again."];
+      return guide([], "check the path's read permissions, then run this command again.");
     case "escape":
-      return [
-        "The path resolves outside the project directory, through a symlink or `..`.",
-        "Next: remove that symlink from the project directory, or pick another directory.",
-      ];
+      return guide(
+        ["The path resolves outside the project directory, through a symlink or `..`."],
+        "remove that symlink from the project directory, or pick another directory.",
+      );
     case "blocked":
-      return [
-        "A file or directory in the project is in the way of a planned path. Nothing was changed.",
-        "Next: move or rename the blocking item, then run add again.",
-      ];
+      return guide(
+        [
+          "A file or directory in the project is in the way of a planned path. Nothing was changed.",
+        ],
+        "move or rename the blocking item, then run add again.",
+      );
     case "unwritable":
-      return [
-        "The project directory or a file in it can't be written. Nothing was left behind.",
-        "Next: pick a directory you can write to, or fix this one's permissions.",
-      ];
+      return guide(
+        ["The project directory or a file in it can't be written. Nothing was left behind."],
+        "pick a directory you can write to, or fix this one's permissions.",
+      );
     case "agent":
-      return [
-        "This needs a person's confirmation, and an agent was detected. Nothing was changed.",
-        "Next: ask the user to run this command from their own terminal.",
-      ];
+      return guide(
+        ["This needs a person's confirmation, and an agent was detected. Nothing was changed."],
+        "ask the user to run this command from their own terminal.",
+      );
     case "no-tty":
-      return [
-        "This needs a person's confirmation, and stdin is not a terminal. Nothing was changed.",
-        "Next: run this command from a terminal.",
-      ];
+      return guide(
+        ["This needs a person's confirmation, and stdin is not a terminal. Nothing was changed."],
+        "run this command from a terminal.",
+      );
     case "state-unwritable":
-      return [
-        "The state record outside the project can't be written, so nothing was confirmed or changed.",
-        "Next: make that directory writable (or set QUICKSTACKS_STATE_DIR to one that is), then run this command again.",
-      ];
+      return guide(
+        [
+          "The state record outside the project can't be written, so nothing was confirmed or changed.",
+        ],
+        "make that directory writable (or set QUICKSTACKS_STATE_DIR to one that is), then run this command again.",
+      );
     case "launch":
-      return [
-        "The agent CLI was found on PATH but can't be run by you. The project was written.",
-        "Next: fix the binary's permissions, or start your agent in the project yourself.",
-      ];
-    default:
-      return [];
+      return guide(
+        ["The agent CLI was found on PATH but can't be run by you. The project was written."],
+        "fix the binary's permissions, or start your agent in the project yourself.",
+      );
+    // A write to stdout or stderr failed, so nothing can be shown anyway.
+    case "write":
+      return guide([]);
   }
 }
 
-function targetNext(details: typeof TargetNotEmptyDetails.Type, invocation: string): string[] {
+function targetNext(details: typeof TargetNotEmptyDetails.Type, invocation: string): FailureGuide {
   if (details.blocker === "non-file")
-    return [
-      `Next: move the item named SKILL.md out of the target directory, or run ${invocation} skill install --print to copy the skill elsewhere.`,
-    ];
+    return guide(
+      [],
+      `move the item named SKILL.md out of the target directory, or run ${invocation} skill install --print to copy the skill elsewhere.`,
+    );
   // `skill install`'s differing target; its details are only path and entries.
   if (
     details.entries.length === 1 &&
     details.entries[0] === "SKILL.md" &&
     /[/\\]\.claude[/\\]skills[/\\]quickstacks$/.test(details.path)
   )
-    return [
-      `Next: rerun ${invocation} skill install with --force to replace it, or --print to copy it elsewhere.`,
-    ];
+    return guide(
+      [],
+      `rerun ${invocation} skill install with --force to replace it, or --print to copy it elsewhere.`,
+    );
   if (details.scaffold === "unfinished")
-    return [
-      "Scaffold: unfinished. An earlier `new` wrote this.",
-      `Next: continue with ${BRIEF_PATH}, or remove the directory to start again.`,
-    ];
+    return guide(
+      ["Scaffold: unfinished. An earlier `new` wrote this."],
+      `continue with ${BRIEF_PATH}, or remove the directory to start again.`,
+    );
   if (details.scaffold === "green")
-    return [
-      "Scaffold: green. This is a finished project.",
-      "Next: pick another directory for a new project; `add` will extend this one once it ships.",
-    ];
-  return ["Next: pick a directory that doesn't exist yet or is empty."];
+    return guide(
+      ["Scaffold: green. This is a finished project."],
+      `pick another directory for a new project, or extend this one with ${invocation} add.`,
+    );
+  return guide([], "pick a directory that doesn't exist yet or is empty.");
 }
 
 function entryKindLabel(kind: (typeof NotFoundDetails.Type)["kind"]): string {
@@ -725,25 +857,35 @@ function entryKindLabel(kind: (typeof NotFoundDetails.Type)["kind"]): string {
 }
 function notFoundNext(details: typeof NotFoundDetails.Type, invocation: string): string {
   if (details.looked)
-    return "Next: pass a registry root (a directory holding stacks/ or fragments/) or an entry directory inside one.";
+    return "pass a registry root (a directory holding stacks/ or fragments/) or an entry directory inside one.";
   if (details.root)
-    return `Next: ${invocation} validate ${shellArg(printable(details.root))} lists the ids under that root.`;
-  return `Next: ${invocation} list shows every stack and fragment.`;
+    return `${invocation} validate ${shellArg(printable(details.root))} lists the ids under that root.`;
+  if (details.suggestions.length) return "use one of the ids above.";
+  return `run ${invocation} list --json to see every stack and fragment id.`;
 }
 
-function composeNext(details: typeof ComposeConflictDetails.Type): string[] {
+function composeNext(
+  details: typeof ComposeConflictDetails.Type,
+  invocation: string,
+): FailureGuide {
   if (details.reason === "needs_own_repo")
-    return [
+    return guide(
+      [],
       details.fix?.length
-        ? `Next: run again with ${details.fix.map(printable).join(" ")}, or pick a directory outside that repository.`
-        : "Next: pick a directory outside that repository.",
-    ];
+        ? `run again with ${details.fix.map(printable).join(" ")}, or pick a directory outside that repository.`
+        : "pick a directory outside that repository.",
+    );
   if (details.reason === "reserved_path")
-    return [
-      "The CLI owns .git/ and .quickstacks/ in a project; no entry may write under them, in any letter case.",
-      "Next: remove or rename that file in the entry.",
-    ];
-  return [];
+    return guide(
+      [
+        "The CLI owns .git/ and .quickstacks/ in a project; no entry may write under them, in any letter case.",
+      ],
+      "remove or rename that file in the entry.",
+    );
+  return guide(
+    [],
+    `change --with or --without so these entries fit, or pick another stack; ${invocation} show <id> lists what each entry requires and conflicts with.`,
+  );
 }
 
 function changeBaseline(change: typeof VerifyChange.Type): string {

@@ -336,6 +336,7 @@ describe("new refuses before writing", () => {
         tag: "TargetNotEmpty",
         message: "The target directory is not empty.",
         retryable: false,
+        next: "pick a directory that doesn't exist yet or is empty.",
         details: { path: app, entries: ["keep.txt"] },
       },
     });
@@ -448,7 +449,7 @@ describe("new refuses before writing", () => {
     expect(far.status).toBe(2);
     expect(far.stdout).toBe("");
     expect(far.stderr).toBe(
-      "Not found.\n  Stack: nope\n  Next: quickstacks list shows every stack and fragment.\n",
+      "Not found.\n  Stack: nope\n  Next: run quickstacks list --json to see every stack and fragment id.\n",
     );
   });
 
@@ -462,6 +463,7 @@ describe("new refuses before writing", () => {
         tag: "NotFound",
         message: "Not found.",
         retryable: false,
+        next: "run quickstacks list --json to see every stack and fragment id.",
         details: { suggestions: [], id: "bogus", kind: "fragment" },
       });
       expect(existsSync(join(json.home, "app"))).toBe(false);
@@ -469,7 +471,7 @@ describe("new refuses before writing", () => {
       expect(human.status).toBe(2);
       expect(human.stdout).toBe("");
       expect(human.stderr).toBe(
-        "Not found.\n  Fragment: bogus\n  Next: quickstacks list shows every stack and fragment.\n",
+        "Not found.\n  Fragment: bogus\n  Next: run quickstacks list --json to see every stack and fragment id.\n",
       );
     }
   });
@@ -693,6 +695,7 @@ describe("template variables", () => {
           tag: "BadInput",
           message: "Invalid input.",
           retryable: false,
+          next: "pass --name with a project name that has no control characters, double quotes or backslashes.",
           details: { id: name, flag: "name" },
         },
       });
@@ -725,6 +728,7 @@ describe("template variables", () => {
           tag: "BadInput",
           message: "Invalid input.",
           retryable: false,
+          next: "pass --name with a project name that has no control characters, double quotes or backslashes.",
           details: { id: name, flag: "name" },
         },
       });

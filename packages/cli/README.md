@@ -380,7 +380,7 @@ The development wrapper sets info logging, appends `logs/cli.jsonl` (the info re
 
 Output has three audiences, picked once per invocation. `--json` is the machine contract below. Without it, the output is for a human only when stdout is a terminal and no coding agent is detected (`CLAUDECODE`, `AI_AGENT` and the other markers in `src/config.ts`); everything else (an agent's shell, a pipe, CI) gets agent output, the default. The two text renderings carry the same result with the same exit code and files; agent output leaves out what an agent doesn't need:
 
-- no log lines on stderr (they go only to `QUICKSTACKS_LOG_FILE` when it is set), so stderr is the failure message and its detail lines;
+- no log lines on stderr (they go only to `QUICKSTACKS_LOG_FILE` when it is set), so stderr is the failure message, its detail lines and `Next:`, plus `verify`'s `> <step>` line as each step starts;
 - paths in a command's result text printed relative to the working directory when inside it, absolute otherwise; paths in error details (`Path:`, `Looked for:`) stay absolute for now, and `--json` keeps every path absolute;
 - `new`: no written-file listing (the brief lists the files), no absolute `Project:` line, and no `For example:` command after a printed prompt (it repeats the prompt);
 - `verify`: no rows for passed steps (the summary counts them) and none on a `changed` run, where every step is skipped for the same reason and the error lists the change; failed and skipped rows, output tails and the `Next:` line stay, and the per-command progress lines are human-only;
@@ -388,11 +388,23 @@ Output has three audiences, picked once per invocation. `--json` is the machine 
 - `validate`: only the size rows over their limit (a human sees the whole table; `--json` keeps every size);
 - `list`: each description on one line, not wrapped.
 
-Stdout contains results only. `--json` emits one result object; JSON version is `{ "version": "0.1.0" }` and JSON help is `{ "help": "..." }`. Failures leave stdout empty and stderr contains a safe diagnostic, or exactly one JSON `{ "error": { "tag", "message", "retryable", "details"? } }` object as the last stderr line. `details`, when present, is a closed per-tag object (for example `{ "command", "suggestions" }` for an unknown subcommand). Two exceptions keep stdout: a failure that carries a report (`VerifyFailed`, `VerifyChanged`, `ValidationFailed`) writes that report to stdout before the error, and a command that hands the terminal to another program writes its output so far before doing so, which stays on stdout if it later fails. In JSON and agent output ancillary logs go only to the optional log file, so stderr stays parseable and short; set `QUICKSTACKS_LOG_FILE`, or rerun at a terminal, to see why a `Defect` happened. A `--json` after `--` belongs to the command, not to quickstacks. Human output emits logs to stderr and optionally to the same JSONL file. No streaming command exists in this base.
+Stdout contains results only. `--json` emits one result object; JSON version is `{ "version": "0.1.0" }` and JSON help is `{ "help": "..." }`. Failures leave stdout empty and stderr contains a safe diagnostic, or exactly one JSON `{ "error": { "tag", "message", "retryable", "next"?, "details"? } }` object as the last stderr line. `next` is what to do about it, the same text a text-mode failure prints as its `Next:` line. `details`, when present, is a closed per-tag object (for example `{ "command", "suggestions" }` for an unknown subcommand). `verify --json` also writes one JSON event per line to stderr while it runs (`step-started`, then `step-finished` with the step's `status` and `durationMs`), before the envelope if it fails; skip lines that aren't the envelope, or read only the last line. Two exceptions keep stdout: a failure that carries a report (`VerifyFailed`, `VerifyChanged`, `ValidationFailed`) writes that report to stdout before the error, and a command that hands the terminal to another program writes its output so far before doing so, which stays on stdout if it later fails. In JSON and agent output ancillary logs go only to the optional log file, so stderr stays parseable and short; set `QUICKSTACKS_LOG_FILE`, or rerun at a terminal, to see why a `Defect` happened. A `--json` after `--` belongs to the command, not to quickstacks. Human output emits logs to stderr and optionally to the same JSONL file.
+
+`quickstacks schema` lists every JSON shape the CLI prints, and `quickstacks schema <name>` prints one as a JSON Schema (draft 2020-12, objects closed): each command's `--json` result, `error` for the envelope and `verify-event` for verify's events.
 
 Exit codes: usage/bad-input/not-found 2, and validation failed 2 (the validate report stays on stdout); config 3; upstream 4; verify failed or changed 5 (the verify report stays on stdout); permission 6; interruption 130; defect 1. After `new` launches an agent, the exit is that agent's own status (128 plus the signal number if a signal killed it), outside this table. Scripts that expect 1 for every failure get these specific codes instead. A closed stdout pipe exits quietly with 0, except after a failure that keeps its report, which keeps its exit (2 for validate, 5 for verify). Defects never become success.
 
 Signals: Ctrl+C (SIGINT), SIGTERM or SIGHUP stops the command after its cleanup, with exit 130, and the processes it started are killed. A second Ctrl+C within a second of the first is treated as the same keypress (a wrapper such as `bun run dev` or `npx` forwards a copy); one a second or more later exits at once, killing those processes without further cleanup. While quickstacks has handed the terminal to another program, Ctrl+C and SIGQUIT belong to that program, and SIGTERM and SIGHUP are passed on to it; once that program exits, quickstacks stops too, with exit 130.
+
+## Shell completions
+
+`--completions <shell>` prints a static completion script for `bash`, `zsh`, `fish` or `powershell`, covering every command and flag. Regenerate it after upgrading quickstacks.
+
+```sh
+quickstacks --completions bash >> ~/.bashrc
+quickstacks --completions zsh > "${fpath[1]}/_quickstacks"
+quickstacks --completions fish > ~/.config/fish/completions/quickstacks.fish
+```
 
 ## Development checks
 

@@ -237,7 +237,7 @@ describe("new --dry-run", () => {
     const run = await invoke(home, ["app", "--dry-run", "--launch", "claude"], { terminal: true });
     expect(run.status).toBe(2);
     expect(run.stdout).toBe("");
-    expect(run.stderr).toContain("Invalid command. Run --help for usage.");
+    expect(run.stderr).toContain("Invalid command.\n");
     expect(run.stderr).toContain("--dry-run");
     expect(run.stderr).toContain("--launch");
     expect(claude.ran()).toBe(false);

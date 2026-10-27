@@ -31,6 +31,8 @@ Read `.quickstacks/BRIEF.md`. The brief is the whole task: follow it in order, a
 
 Run `<cli> verify` from the project root with your shell tool's longest timeout. Read the failing step's name, command and output tail; fix the code or config it exercises, never the step, and run it again. Done is exit 0 with outcome `green`.
 
+When any command fails, do what its `Next:` line (the envelope's `next` with `--json`) says. `<cli> schema <name>` prints the JSON Schema of a `--json` result.
+
 ## Never weaken verify
 
 Don't edit `.quickstacks/manifest.json`. Never edit the steps or weaken the definition of done: don't make commands pass without doing their job, skip tests, lower lint settings until they report nothing, or serve a stub instead of the app.

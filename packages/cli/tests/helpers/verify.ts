@@ -6,7 +6,7 @@ import type { Environment } from "../../src/config";
 import { digestSteps, encodeManifest, MANIFEST_PATH } from "../../src/core/manifest";
 import { ProjectState, projectStateFor } from "../../src/core/project-state";
 import { Manifest, type ManifestStep } from "../../src/schemas/manifest";
-import { RunRecord, VerifyResult } from "../../src/schemas/verify";
+import { RunRecord, VerifyEvent, VerifyResult } from "../../src/schemas/verify";
 import type { HostInfo } from "../../src/services/host";
 import type { Writer } from "../../src/services/output";
 import { quiet, runCli, tempDir } from "./cli";
@@ -183,6 +183,32 @@ export const decodeResult = (stdout: string): VerifyResult =>
 export function envelope(stderr: string): unknown {
   return JSON.parse(stderr.trim().split("\n").at(-1) ?? "");
 }
+
+/**
+ * `verify --json`'s stderr split into its live events, each decoded with `VerifyEvent` (closed),
+ * and `rest`: every other line, which is the error envelope or nothing.
+ */
+export function splitEvents(stderr: string): { events: VerifyEvent[]; rest: string } {
+  const lines = stderr.split("\n").filter((line) => line !== "");
+  const isEvent = (line: string) => line.startsWith('{"event":');
+  return {
+    events: lines
+      .filter(isEvent)
+      .map((line) =>
+        Schema.decodeUnknownSync(VerifyEvent)(JSON.parse(line), { onExcessProperty: "error" }),
+      ),
+    rest: lines
+      .filter((line) => !isEvent(line))
+      .map((line) => `${line}\n`)
+      .join(""),
+  };
+}
+
+/** The step names a run's events started, in order. */
+export const startedSteps = (stderr: string) =>
+  splitEvents(stderr).events.flatMap((event) =>
+    event.event === "step-started" ? [event.name] : [],
+  );
 
 /** A result's step by name; throws when it is missing so a test reads the failure plainly. */
 export function stepNamed(result: VerifyResult, name: string) {
