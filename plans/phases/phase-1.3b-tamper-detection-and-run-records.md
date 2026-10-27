@@ -289,3 +289,23 @@ Found while executing it (2026-10-26):
 - **`RunStep.exitCode`** is present on passed steps too (exit 0), as in `StepResult`.
 - **PermissionDenied wording** for `agent` and `no-tty` is generic ("This needs a person's
   confirmation"), since `quickstacks trust` and source confirmation (3.2a) share the reasons.
+
+Found in review (2026-10-26):
+
+- **Timing fields from a stale snapshot.** `recordRun` wrote the state record the tamper check
+  had read before any step ran, so a concurrent `--accept-changes` had its digests put back
+  (the next run a false `VerifyChanged`) and two concurrent runs could each set
+  `firstGreenAt`. It now reads the record again right before saving: one whose `verifyDigest`
+  differs from the one this run was checked against (or that is gone) is left alone, with
+  `firstGreen` and `stateRecord` false, and each timing field is set only if still null in the
+  fresh copy. A small window between that read and the rename remains; it would need a lock.
+- **Run records through a link.** The writer checked only `.quickstacks/state/`'s real path, so
+  a `runs.jsonl` that was itself a symlink (or a hard link) got the line appended to its
+  target, and `state/` was created before the check, so a `.quickstacks/` linked out of the
+  project got a `state/` directory outside it. `.quickstacks/` is now checked before anything
+  is created, and an existing `runs.jsonl` must be a regular file with one link; either
+  refusal is the same one warning. lstat-then-append is not atomic; this covers links left
+  in place, not one swapped in during the run.
+- **Half-done accept on interrupt.** The state record save, the manifest write and the
+  rollback in `acceptChanges` now run uninterruptibly, so a Ctrl+C between the two writes
+  takes effect after both (or the rollback) finish, never with the copies disagreeing.

@@ -5,7 +5,11 @@ import type { StepResult, VerifyResult } from "../../schemas/verify";
 import { type PlannedStep, planVerify, type SelectOptions } from "./plan";
 import { runStep } from "./step";
 
-export type VerifyProject = { root: string; manifest: Manifest };
+/**
+ * `createdAt` is what `secondsSinceCreated` counts from: the state record's when there is one
+ * (`tamper.ts::createdAtOf`), since the manifest's is outside the digest and editable.
+ */
+export type VerifyProject = { root: string; manifest: Manifest; createdAt: string };
 export type VerifyOptions = SelectOptions;
 /**
  * What the runner knows about a run: the result without the tamper check's fields, which the
@@ -101,7 +105,7 @@ export const runVerify = (
         const ended = yield* Clock.currentTimeMillis;
         const count = (status: StepResult["status"]) =>
           steps.filter((step) => step.status === status).length;
-        const created = Date.parse(project.manifest.createdAt);
+        const created = Date.parse(project.createdAt);
         finished = {
           outcome: interrupted
             ? "interrupted"

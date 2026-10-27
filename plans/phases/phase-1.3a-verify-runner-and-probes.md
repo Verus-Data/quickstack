@@ -213,7 +213,7 @@ export const VerifyResult = Schema.Struct({
   steps: Schema.Array(StepResult),
   totals: Schema.Struct({ passed: Schema.Number, failed: Schema.Number, skipped: Schema.Number }),
   durationMs: Schema.Number,
-  secondsSinceCreated: Schema.Number,          // from the manifest's createdAt and Clock
+  secondsSinceCreated: Schema.Number,          // from createdAt (the state record's when there is one) and Clock
 });
 ```
 
@@ -422,3 +422,12 @@ stripped by `tests/helpers/cli.ts`, and the marker test sets them on purpose.
 - 2026-10-26: the left-running port check runs only after a probe passed. A serve command
   that backgrounds itself and exits 0 fails with the early-exit reason; the server it left
   is not named, and the next run reports `port <n> already in use`.
+- 2026-10-26, found in review. The runner keys results by step name, but `Manifest` didn't
+  require unique names (only `compose.ts::steps` did), so a hand-edited manifest with two
+  `lint` steps reported one result and a failed step could read green. `Manifest.verify` now
+  refuses a repeated name, so such a manifest is `InvalidConfig` (exit 3) before anything runs.
+- 2026-10-26, found in review. `secondsSinceCreated` counted from the manifest's `createdAt`,
+  which is outside the digest, so an agent could edit it to improve its time to green. It now
+  counts from the state record's `createdAt` when there is one (`tamper.ts::createdAtOf`; the
+  record for the id, else one found by path), and from the manifest's only when the check was
+  manifest-only. `run.ts::VerifyProject` carries that `createdAt` from the caller.

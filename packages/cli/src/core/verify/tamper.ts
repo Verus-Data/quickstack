@@ -112,7 +112,8 @@ export const checkTamper = (
  * record was found; then the manifest's `verifyDigest`. A record that can't be written fails
  * `PermissionDenied` (`state-unwritable`) before the manifest is touched; a manifest that can't be
  * written puts the old record back, so the two copies never disagree because of a half-done
- * accept. A record found only by path, under another id, is removed last.
+ * accept. A record found only by path, under another id, is removed last. The writes and the
+ * rollback can't be interrupted part way; an interrupt takes effect once they are done.
  */
 export const acceptChanges = (
   manifest: Manifest,
@@ -136,21 +137,26 @@ export const acceptChanges = (
       firstGreenAt: kept?.firstGreenAt ?? null,
       firstTestPassAt: kept?.firstTestPassAt ?? null,
     };
-    yield* saveProjectState(state, target).pipe(
-      Effect.mapError(
-        () => new PermissionDenied({ details: { reason: "state-unwritable", path: target } }),
-      ),
+    // One uninterruptible region: an interrupt between the two writes would leave them disagreeing.
+    yield* Effect.uninterruptible(
+      Effect.gen(function* () {
+        yield* saveProjectState(state, target).pipe(
+          Effect.mapError(
+            () => new PermissionDenied({ details: { reason: "state-unwritable", path: target } }),
+          ),
+        );
+        if (accepted.verifyDigest !== manifest.verifyDigest)
+          yield* writeManifest(manifestFile, accepted).pipe(
+            Effect.tapError(() =>
+              tamper.record
+                ? Effect.ignore(saveProjectState(tamper.record.state, tamper.record.path))
+                : Effect.ignore(fs.remove(target)),
+            ),
+          );
+        if (tamper.stale && tamper.stale.path !== target)
+          yield* Effect.ignore(fs.remove(tamper.stale.path));
+      }),
     );
-    if (accepted.verifyDigest !== manifest.verifyDigest)
-      yield* writeManifest(manifestFile, accepted).pipe(
-        Effect.tapError(() =>
-          tamper.record
-            ? Effect.ignore(saveProjectState(tamper.record.state, tamper.record.path))
-            : Effect.ignore(fs.remove(target)),
-        ),
-      );
-    if (tamper.stale && tamper.stale.path !== target)
-      yield* Effect.ignore(fs.remove(tamper.stale.path));
     return {
       manifest: accepted,
       tamper: {
@@ -161,6 +167,14 @@ export const acceptChanges = (
       },
     };
   });
+
+/**
+ * When the project was made, for `secondsSinceCreated`: the state record's `createdAt` (the one
+ * for this id, else one found by path), since the manifest's is outside the digest and an agent
+ * could move it; the manifest's only when there is no record.
+ */
+export const createdAtOf = (manifest: Manifest, tamper: Tamper): string =>
+  (tamper.record ?? tamper.stale)?.state.createdAt ?? manifest.createdAt;
 
 const CHANGED = "not run: the verify steps changed since they were recorded";
 
@@ -176,7 +190,7 @@ export const changedResult = (
 ): Effect.Effect<VerifyResult> =>
   Effect.gen(function* () {
     const ended = yield* Clock.currentTimeMillis;
-    const created = Date.parse(manifest.createdAt);
+    const created = Date.parse(createdAtOf(manifest, tamper));
     return {
       outcome: "changed",
       scope: plan.scope,

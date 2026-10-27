@@ -8,12 +8,14 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import { Schema } from "effect";
+import { Deferred, Effect, Fiber, FileSystem, Schema } from "effect";
 import { afterEach, describe, expect, test } from "vitest";
 import { AgentMarkers } from "../src/config";
-import { digestStep, digestSteps, MANIFEST_PATH } from "../src/core/manifest";
+import { digestStep, digestSteps, MANIFEST_PATH, readManifest } from "../src/core/manifest";
 import { ProjectState, projectStateFor } from "../src/core/project-state";
+import { acceptChanges, checkTamper } from "../src/core/verify/tamper";
 import type { Manifest } from "../src/schemas/manifest";
+import { runWith, succeed } from "./helpers/state";
 import {
   decodeResult,
   envelope,
@@ -485,4 +487,61 @@ describe("--accept-changes", () => {
       }
     },
   );
+
+  test("an interrupt while the manifest is being written still leaves both copies agreeing", async () => {
+    const project = recorded(BASE);
+    const file = recordPath(project.home, project.manifest.projectId);
+    const steps = BASE.map((step) =>
+      step.name === "lint" ? { ...step, run: "touch linted-again" } : step,
+    );
+    // The old digest stays in the manifest, so accepting has to rewrite it after the record.
+    const path = writeProject(project.root, steps, { verifyDigest: project.manifest.verifyDigest });
+    const program = Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const reached = yield* Deferred.make<void>();
+      // The real filesystem, with the manifest write held long enough to interrupt during it.
+      const held: FileSystem.FileSystem = {
+        ...fs,
+        writeFileString: (target, data, options) =>
+          target === path
+            ? Deferred.succeed(reached, undefined).pipe(
+                Effect.andThen(Effect.sleep("100 millis")),
+                Effect.andThen(fs.writeFileString(target, data, options)),
+              )
+            : fs.writeFileString(target, data, options),
+      };
+      const manifest = yield* readManifest(path);
+      const tamper = yield* checkTamper(manifest, path);
+      const fiber = yield* acceptChanges(manifest, path, tamper).pipe(
+        Effect.provideService(FileSystem.FileSystem, held),
+        Effect.forkChild,
+      );
+      yield* Deferred.await(reached);
+      yield* Fiber.interrupt(fiber);
+    });
+    await succeed(runWith(program, project.env));
+    const accepted = digestSteps(manifest(steps));
+    expect(readRecord(file).verifyDigest).toBe(accepted);
+    expect(readManifestAt(project.root).verifyDigest).toBe(accepted);
+  });
+});
+
+describe("a hand-edited manifest", () => {
+  test("two steps with one name are InvalidConfig, and nothing runs", async () => {
+    const { root, env } = recorded([{ name: "lint", run: "true" }]);
+    // Written as plain JSON: encoding through `Manifest` refuses the duplicate.
+    const edited = manifest([
+      { name: "lint", run: "touch first" },
+      { name: "lint", run: "touch second" },
+    ]);
+    writeFileSync(join(root, MANIFEST_PATH), JSON.stringify(edited));
+    const result = await verify(["--json"], { cwd: root, env });
+    expect(result.status).toBe(3);
+    expect(result.stdout).toBe("");
+    expect(envelope(result.stderr)).toMatchObject({
+      error: { tag: "InvalidConfig", details: { path: join(root, MANIFEST_PATH) } },
+    });
+    expect(has(root, "first") || has(root, "second")).toBe(false);
+    expect(runRecords(root)).toEqual([]);
+  });
 });

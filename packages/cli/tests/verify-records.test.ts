@@ -1,7 +1,18 @@
-import { chmodSync, existsSync, mkdirSync, readFileSync, symlinkSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  linkSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { join } from "node:path";
+import { Schema } from "effect";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { MANIFEST_PATH } from "../src/core/manifest";
+import { ProjectState } from "../src/core/project-state";
 import { ndjson, quiet, runCli } from "./helpers/cli";
 import { newRegistry } from "./helpers/registry";
 import {
@@ -169,7 +180,7 @@ describe("run records", () => {
     },
   );
 
-  test("a runs.jsonl that is a symlink out of the project is not written through", async () => {
+  test("a .quickstacks/state that is a symlink out of the project is not written through", async () => {
     const { root, env } = recorded([{ name: "lint", run: "true" }]);
     const outside = join(space.dir(), "elsewhere");
     mkdirSync(outside);
@@ -177,6 +188,76 @@ describe("run records", () => {
     const run = await verify(["--json"], { cwd: root, env });
     expect(run.status).toBe(0);
     expect(existsSync(join(outside, "runs.jsonl"))).toBe(false);
+  });
+
+  test("a runs.jsonl that is a symlink or hard link to a file out of the project is not written through", async () => {
+    const { root, env } = recorded([{ name: "lint", run: "true" }]);
+    mkdirSync(join(root, ".quickstacks", "state"));
+    const target = join(space.dir(), "rc");
+    writeFileSync(target, "keep\n");
+    symlinkSync(target, runsFile(root));
+    const run = await verify(["--json"], { cwd: root, env });
+    expect(run.status).toBe(0);
+    expect(decodeResult(run.stdout).outcome).toBe("green");
+    expect(readFileSync(target, "utf8")).toBe("keep\n");
+
+    rmSync(runsFile(root));
+    linkSync(target, runsFile(root));
+    expect((await verify(["--json"], { cwd: root, env })).status).toBe(0);
+    expect(readFileSync(target, "utf8")).toBe("keep\n");
+  });
+
+  test("a .quickstacks that is a symlink out of the project gets no state directory there", async () => {
+    const home = space.dir();
+    const root = space.dir();
+    const outside = join(space.dir(), "elsewhere");
+    mkdirSync(outside);
+    symlinkSync(outside, join(root, ".quickstacks"));
+    writeRecordedProject(root, home, [{ name: "lint", run: "true" }]);
+    const run = await verify(["--json"], { cwd: root, env: stateEnv(home) });
+    expect(run.status).toBe(0);
+    expect(existsSync(join(outside, "state"))).toBe(false);
+  });
+});
+
+describe("a state record changed during the run", () => {
+  /** A recorded project whose one step copies `replacement` over its state record mid-run. */
+  function swapping(change: (state: ProjectState) => ProjectState) {
+    const home = space.dir();
+    const root = space.dir();
+    const file = recordPath(home, "0f8fad5b-d9cb-469f-a165-70867728950e");
+    const replacement = join(space.dir(), "replacement.json");
+    const steps = [{ name: "unit", run: `cp '${replacement}' '${file}'`, layer: "test" as const }];
+    writeRecordedProject(root, home, steps);
+    const replaced = change(readRecord(file));
+    writeFileSync(replacement, JSON.stringify(Schema.encodeSync(ProjectState)(replaced)));
+    return { root, env: stateEnv(home), file, replaced };
+  }
+
+  test("a concurrent --accept-changes keeps its digests; this run sets no timing field", async () => {
+    const { root, env, file, replaced } = swapping((state) => ({
+      ...state,
+      verifyDigest: `sha256:${"1".repeat(64)}`,
+      stepDigests: { unit: `sha256:${"2".repeat(64)}` },
+    }));
+    const run = await verify(["--json"], { cwd: root, env });
+    expect(run.status).toBe(0);
+    expect(decodeResult(run.stdout)).toMatchObject({
+      outcome: "green",
+      firstGreen: false,
+      stateRecord: false,
+    });
+    expect(readRecord(file)).toEqual(replaced);
+  });
+
+  test("a concurrent run's firstGreenAt is kept, and this run's firstTestPassAt still lands", async () => {
+    const at = "2026-10-26T09:30:00.000Z";
+    const { root, env, file } = swapping((state) => ({ ...state, firstGreenAt: at }));
+    const run = await verify(["--json"], { cwd: root, env });
+    expect(decodeResult(run.stdout)).toMatchObject({ firstGreen: false, stateRecord: true });
+    const record = readRecord(file);
+    expect(record.firstGreenAt).toBe(at);
+    expect(record.firstTestPassAt).not.toBeNull();
   });
 });
 
@@ -253,6 +334,29 @@ describe("timing fields", () => {
       }
     },
   );
+
+  test("secondsSinceCreated counts from the state record's createdAt, not the editable manifest's", async () => {
+    const home = space.dir();
+    const root = space.dir();
+    const steps = [{ name: "lint", run: "true" }];
+    writeRecordedProject(root, home, steps, { createdAt: "2020-01-01T00:00:00.000Z" });
+    const future = new Date(Date.now() + 86_400_000).toISOString();
+    writeProject(root, steps, { createdAt: future });
+    const env = stateEnv(home);
+    const sinceRecord = (Date.now() - Date.parse("2020-01-01T00:00:00.000Z")) / 1000;
+
+    const run = decodeResult((await verify(["--json"], { cwd: root, env })).stdout);
+    expect(run.outcome).toBe("green");
+    expect(run.secondsSinceCreated).toBeGreaterThanOrEqual(sinceRecord - 60);
+    expect(runRecords(root).at(-1)?.secondsSinceCreated).toBe(run.secondsSinceCreated);
+
+    writeProject(root, [{ name: "lint", run: "true; true" }], { createdAt: future });
+    const changed = await verify(["--json"], { cwd: root, env });
+    expect(changed.status).toBe(5);
+    const result = decodeResult(changed.stdout);
+    expect(result.outcome).toBe("changed");
+    expect(result.secondsSinceCreated).toBeGreaterThanOrEqual(sinceRecord - 60);
+  });
 
   test("the manifest is never rewritten by a plain run", async () => {
     const { root, env } = recorded([{ name: "lint", run: "true" }]);

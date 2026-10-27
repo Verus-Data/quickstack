@@ -1,9 +1,9 @@
-import { Clock, Effect, FileSystem, Path, type PlatformError, Schema } from "effect";
+import { Clock, Effect, FileSystem, Option, Path, type PlatformError, Schema } from "effect";
 import { AppConfig } from "../../config";
 import type { Manifest } from "../../schemas/manifest";
 import { RunRecord, type RunStep, type VerifyResult } from "../../schemas/verify";
 import { VERSION } from "../../version";
-import { saveProjectState, warnUnwritten } from "../project-state";
+import { findProjectState, saveProjectState, warnUnwritten } from "../project-state";
 import { printable } from "../text";
 import type { RunResult } from "./run";
 import type { Tamper } from "./tamper";
@@ -36,9 +36,11 @@ const runStep = (step: Finished["steps"][number]): RunStep => ({
 const reasonOf = (error: PlatformError.PlatformError) => error.reason._tag;
 
 /**
- * Appends one encoded `RunRecord` line to `.quickstacks/state/runs.jsonl` with a single write. The
- * state directory must resolve inside the project, so a link there can't send the write elsewhere.
- * Any failure is one logged warning; the run's outcome and exit don't change.
+ * Appends one encoded `RunRecord` line to `.quickstacks/state/runs.jsonl` with a single write.
+ * `.quickstacks/` must resolve inside the project before `state/` is created in it, `state/` must
+ * resolve inside too, and `runs.jsonl`, when it exists, must be a regular file with one link, so
+ * neither a link to a directory nor one to a file can send the write elsewhere. Any failure or
+ * refusal is one logged warning; the run's outcome and exit don't change.
  */
 const appendRunRecord = (root: string, record: RunRecord) =>
   Effect.gen(function* () {
@@ -47,15 +49,30 @@ const appendRunRecord = (root: string, record: RunRecord) =>
     const file = path.join(root, RUNS_PATH);
     const dir = path.dirname(file);
     const line = `${JSON.stringify(Schema.encodeSync(RunRecord)(record))}\n`;
+    const refuse = (why: string) =>
+      Effect.logWarning(`Run record not written (${why}): ${printable(file)}`);
     yield* Effect.gen(function* () {
-      yield* fs.makeDirectory(dir, { recursive: true });
       const realRoot = yield* fs.realPath(root);
+      const inside = path.join(realRoot, ".quickstacks");
+      if ((yield* fs.realPath(path.dirname(dir))) !== inside)
+        return yield* refuse("outside the project");
+      yield* fs.makeDirectory(dir, { recursive: true });
       const realDir = yield* fs.realPath(dir);
-      if (realDir !== path.join(realRoot, ".quickstacks", "state"))
-        return yield* Effect.logWarning(
-          `Run record not written (outside the project): ${printable(file)}`,
-        );
-      yield* fs.writeFileString(path.join(realDir, "runs.jsonl"), line, { flag: "a" });
+      if (realDir !== path.join(inside, "state")) return yield* refuse("outside the project");
+      const target = path.join(realDir, "runs.jsonl");
+      const info = yield* fs.lstat(target).pipe(
+        Effect.map(Option.some),
+        Effect.catchIf(
+          (error) => error.reason._tag === "NotFound",
+          () => Effect.succeed(Option.none()),
+        ),
+      );
+      if (
+        Option.isSome(info) &&
+        (info.value.type !== "File" || Option.getOrElse(info.value.nlink, () => 1n) > 1n)
+      )
+        return yield* refuse("not a regular file");
+      yield* fs.writeFileString(target, line, { flag: "a" });
     }).pipe(
       Effect.catchTag("PlatformError", (error) =>
         Effect.logWarning(`Run record not written (${reasonOf(error)}): ${printable(file)}`),
@@ -67,8 +84,11 @@ const appendRunRecord = (root: string, record: RunRecord) =>
  * After a run (verify's `onFinished`, so interrupted runs are recorded too, and after a changed
  * run): appends the run record, then sets the state record's `firstGreenAt` (first green run) and
  * `firstTestPassAt` (first run, of any scope, in which a `test`-layer step passed; never a
- * `changed` run), each written once and never overwritten. Only a record found by id is updated.
- * A write that fails logs one warning and leaves `stateRecord` false; nothing here fails.
+ * `changed` run), each written once and never overwritten. Only a record found by id is updated,
+ * and it is read again first: one whose `verifyDigest` changed during the run (a concurrent
+ * `--accept-changes`) is left alone with `stateRecord` false, and a timing field another run set
+ * meanwhile is kept. A write that fails logs one warning and leaves `stateRecord` false; nothing
+ * here fails.
  */
 export const recordRun = (
   context: RecordContext,
@@ -92,9 +112,17 @@ export const recordRun = (
     };
     yield* appendRunRecord(context.root, record);
 
-    const found = context.tamper.record;
-    if (!found) return { firstGreen: false, stateRecord: false };
+    const checked = context.tamper.record;
+    if (!checked) return { firstGreen: false, stateRecord: false };
     if (result.outcome === "changed") return { firstGreen: false, stateRecord: true };
+    // Read again: a concurrent run or `--accept-changes` may have written the record since the
+    // tamper check. A record that no longer holds the digest this run was checked against isn't
+    // this run's to update.
+    const found = yield* findProjectState(context.manifest.projectId).pipe(
+      Effect.orElseSucceed(() => undefined),
+    );
+    if (found?.state.verifyDigest !== checked.state.verifyDigest)
+      return { firstGreen: false, stateRecord: false };
     const at = new Date(now).toISOString();
     const green = result.outcome === "green" && found.state.firstGreenAt === null;
     const testPassed =

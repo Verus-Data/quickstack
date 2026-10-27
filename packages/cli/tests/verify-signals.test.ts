@@ -60,7 +60,7 @@ test("an interrupted run hands onFinished outcome interrupted with the step inte
     const project = yield* locateManifest(root);
     const manifest = yield* readManifest(project.path);
     yield* runVerify(
-      { root: project.root, manifest },
+      { root: project.root, manifest, createdAt: manifest.createdAt },
       { only: [], skipTags: [], all: false },
       (result) =>
         Effect.sync(() => {
