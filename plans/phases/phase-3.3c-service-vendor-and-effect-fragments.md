@@ -3,6 +3,7 @@
 Status: DRAFT 2026-10-26 (not agreed). Re-scoped 2026-10-26: 1.6a brings the bundled
 service, vendor, Effect and tooling fragments into v1, so this file gives each a bench
 proof under 3.3a's rule instead of authoring them. Body rewritten to match 2026-10-26
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -81,13 +82,18 @@ bench run:
 
 ## Acceptance tests
 
-- For each of these fragments and each bundled stack it applies to:
-  `new <stack> --with <fragment> --no-launch --json` succeeds, writes no file outside the
-  project, runs no command (recording shim on `PATH`), and the manifest's steps carry
-  layers; `validate` reports zero warnings.
-- For each of them, the ledger holds a `pass` record whose `with` includes it (asserted
-  by `tests/registry.test.ts`).
-- A fragment with `requires`, composed with `--with` alone, brings its requirement in.
+1. For each service, vendor and tooling fragment and each bundled stack it applies to:
+   `new <stack> --with <fragment> --no-launch --json` succeeds; dry runs cover the
+   matrix, and one real write per fragment changes only project files and the CLI's
+   state record, runs only fixed CLI git commands, and records step layers;
+   `validate` reports zero errors and zero warnings.
+2. A fragment with `requires`, composed with `--with` alone, brings its requirement in
+   without relying on the stack's defaults.
+
+### Realistic edge cases
+
+3. A service fixture shipping a template renders the expected bytes under a project path containing spaces and non-ASCII characters without escaping the target.
+4. A service fragment whose file collides with an existing stack file fails with `ComposeConflict` before writing either file.
 
 ## Exit criteria
 
@@ -108,3 +114,18 @@ bench run:
   the catalog's service, vendor and tooling fragments into v1, so this file proves them
   instead and names none; the catalog's contents are the maintainers' choice. `package_scope`
   is in v1 (D18 as amended), so "no format change" no longer needs saying.
+
+- 2026-10-27: Ledger `pass` records including every service/vendor/tooling fragment
+  remain maintainer exit criteria requiring real sandbox bench runs and notes; they
+  are excluded from the traced acceptance numbers.
+- 2026-10-27: Services are `cloudflare-d1`, `postgres`; vendors are `clerk`,
+  `openrouter-ai`, `posthog`; tooling is `effect`, `effect-schema`, `git-hooks`, `rr`.
+  `effect` requires `effect-schema`; the dependency test uses a bundled stack without
+  either in its defaults. Empty `applies_to` (`git-hooks`, `rr`) matches every stack,
+  otherwise ids and tags match. No entry in these categories uses `package_scope`,
+  ships an install script or declares `conflicts`; the file-collision edge uses a
+  fixture registry. D7 and the CLI's state/git allowances are recorded in 3.3b/3.3a.
+
+- 2026-10-27 (review): All current service/vendor/tooling fragments are prose-only;
+  their bundled writes exercise stack-owned files. A service fixture with a shipped
+  template supplies the actual fragment-file rendering edge case.
