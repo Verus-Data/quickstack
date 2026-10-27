@@ -9,7 +9,8 @@ import { skeleton, starterFiles, trustQuestion } from "./create-text";
 import { isRejected, markdownFile } from "./registry/entry";
 import { defaultRoots, Registry } from "./registry/registry";
 import { openProject } from "./scaffold/write";
-import { renderShow, showReport } from "./show";
+import { showReport } from "./show";
+import { renderShow } from "./show-report";
 import { closest } from "./suggest";
 
 const EntryId = Schema.String.check(Schema.isPattern(/^[a-z0-9]+(?:-[a-z0-9]+)*$/));

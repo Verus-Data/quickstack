@@ -16,6 +16,9 @@ export type Entry = {
   meta: StackMeta | FragmentMeta;
   body: string;
 };
+/** The kind and id identify an entry even when a stack and fragment share an id. */
+export const entryRef = (entry: Entry) => ({ kind: entry.kind, id: entry.id });
+
 export type RejectedEntry = {
   /** The directory name. */
   id: string;
@@ -46,6 +49,10 @@ export function isRejected(value: Entry | RejectedEntry): value is RejectedEntry
 /** A loaded (not rejected) stack. */
 export function isStack(value: Entry | RejectedEntry): value is Entry & { meta: StackMeta } {
   return "meta" in value && value.meta.kind === "stack";
+}
+/** A loaded fragment. */
+export function isFragment(value: Entry): value is Entry & { meta: FragmentMeta } {
+  return value.meta.kind === "fragment";
 }
 export const markdownFile = (kind: Kind) => (kind === "stack" ? "STACK.md" : "FRAGMENT.md");
 

@@ -1,7 +1,8 @@
 import { Effect, Result } from "effect";
 import { AgentId, type FragmentMeta, type StackMeta } from "../../schemas/entry";
 import type { Finding } from "../../schemas/validate";
-import { type ComposeOptions, compose, fitsStack } from "../compose/compose";
+import { type ComposeOptions, compose } from "../compose/compose";
+import { fitsStack } from "../compose/selection";
 import { type Entry, isStack } from "../registry/entry";
 import { canonicalBrief, composedLimit } from "./budget";
 import { uniqueFindings } from "./composed";
