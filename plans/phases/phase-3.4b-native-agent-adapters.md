@@ -101,6 +101,11 @@ Maintainer-owned proof, 2026-10-27 (formerly the fourth unnumbered acceptance it
 
 ## What this plan may get wrong
 
+- Reference findings extend 2.2 with `ref-toml` (invalid TOML syntax) and `ref-config`
+  (invalid native reference structure, including wrong-case keys). Both are errors and
+  skip reference checks for that file, as `ref-json` does for invalid JSON. Native
+  commands resolve against the merged commands map; Claude retains 2.2’s inline-code allowance.
+
 - Agent config formats move faster than stack prose, which is the rot D1 warns about. Adapters ship only config whose shape is stable and documented; 2.2's dated-phrase check and the bench are the tripwires.
 - Some agents have no hook mechanism. For them the guardrails are instructions, which an agent can ignore; the README's agent table says which agents get enforced guards and which get instructions.
 - The input shim per agent is a seam where behavior can drift. The shared sample-payload test is the guard.

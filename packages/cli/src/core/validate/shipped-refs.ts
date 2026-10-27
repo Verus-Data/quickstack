@@ -3,6 +3,9 @@ import type { Finding } from "../../schemas/validate";
 import { proseLines } from "../brief/headings";
 import { runnerTarget, shellWords } from "./commands";
 import { type Composed, sourceOf, uniqueFindings } from "./composed";
+import { isNativeConfig, parseNativeConfig } from "./native-config";
+import { nativeReferences } from "./native-refs";
+import type { ReferenceIssue } from "./reference-issue";
 import type { Source } from "./sources";
 import { type Check, finding, type View } from "./view";
 
@@ -27,13 +30,6 @@ function launchTarget(value: unknown): string | undefined {
   return target && !/^[-/.$]/.test(target) && !/[/.$]/.test(target) ? target : undefined;
 }
 
-type ReferenceIssue = {
-  check: string;
-  severity: Finding["severity"];
-  needle: string;
-  message: string;
-  matches?: (json: unknown) => boolean;
-};
 type Emit = (issue: ReferenceIssue) => void;
 type ReferenceFile = { snapshot: Composed; file: Composed["files"][number] };
 type ParsedSource = (source: Source) => unknown;
@@ -44,7 +40,10 @@ export const shippedReferenceChecks: Check = (view) =>
     const sourceJson = new Map<Source, unknown>();
     const parsedSource = (source: Source): unknown => {
       if (!sourceJson.has(source)) {
-        const parsed = Result.try(() => JSON.parse(source.text) as unknown);
+        const path = source.path.replace(/\.tmpl$/, "");
+        const parsed = Result.try(() =>
+          isNativeConfig(path) ? parseNativeConfig(path, source.text) : JSON.parse(source.text),
+        );
         sourceJson.set(source, Result.isSuccess(parsed) ? parsed.success : undefined);
       }
       return sourceJson.get(source);
@@ -104,6 +103,14 @@ function fileReferences(
   { paths, declared }: { paths: ReadonlySet<string>; declared: (target: string) => boolean },
   emit: Emit,
 ) {
+  if (isNativeConfig(file.path)) {
+    for (const issue of nativeReferences(file.path, new TextDecoder().decode(file.bytes), {
+      paths,
+      declared: (target) => Object.hasOwn(snapshot.composition.commands, target),
+    }))
+      emit(issue);
+    return;
+  }
   if (file.path !== ".claude/settings.json" && !/^\.vscode\/[^/]+\.json$/.test(file.path)) return;
   const text = new TextDecoder().decode(file.bytes);
   const decoded = Result.try(() => JSON.parse(text) as unknown);

@@ -97,7 +97,9 @@ isn't needed.
 | `ref-command-coverage` | warning | A `commands` key that the body describes as a deliverable (it appears in the brief's commands table) and that no verify step runs, for fragments only. Stacks declare commands like `dev` and `clean` that verify shouldn't run, so they are exempt |
 | `import-closure` | error | A relative import in a shipped `.ts`, `.tsx`, `.js` or `.mjs` file (`import ... from "./x"`, `import "./x"`, `export ... from "./x"`, `require("./x")`), or a `source`/`.` line in a shipped `.sh` file, must resolve to a composed file owned by the same entry or by an entry in its allowed set |
 | `dated-phrase` | warning | Phrases that tie prose to a moment in a tool's release history, in bodies, `decisions` and shipped Markdown, outside code fences |
-| `ref-json` | error | A shipped `.json` file the reference checks read doesn't parse; those checks skip it |
+| `ref-json` | error | A shipped JSON or OpenCode JSONC file the reference checks read doesn't parse; those checks skip it |
+| `ref-toml` | error | A shipped Codex `.codex/config.toml` doesn't parse; reference checks skip it (3.4b) |
+| `ref-config` | error | A native adapter config has malformed reference structure or wrong-case keys; reference checks skip it (3.4b) |
 | `ledger-unproven` | note | See "Ledger findings" |
 | `ledger-changed` | note | See "Ledger findings" |
 | `ledger-failed` | note | See "Ledger findings" |
@@ -180,7 +182,9 @@ and notes print in 1.5's notes section. No `ValidateReport` field is added.
 
 | Case | Handling |
 |---|---|
-| A shipped JSON file doesn't parse | `ref-json` error finding for that file; the reference checks skip it |
+| A shipped JSON or OpenCode JSONC file doesn't parse | `ref-json` error finding for that file; the reference checks skip it |
+| A shipped Codex TOML file doesn't parse | `ref-toml` error finding for that file; the reference checks skip it (3.4b) |
+| A native adapter config has malformed reference structure or wrong-case keys | `ref-config` error finding for that file; the reference checks skip it (3.4b) |
 | A template variable `NEUTRAL_VARS` doesn't define | Already `EntryInvalid` from `composeFiles`; reported by 1.5's `compose` check |
 | Ledger missing | Ledger checks skipped |
 | Ledger invalid | `ledger-schema` error; the other ledger notes are skipped |
