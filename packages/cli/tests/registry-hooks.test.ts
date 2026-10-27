@@ -1,7 +1,7 @@
 // Behavior tests for the Claude Code hooks the bundled agent-ops fragment ships. Every hook runs as
 // Claude Code runs it, `bash <script>` with the recorded payload on stdin, inside a project `new`
 // actually wrote, under macOS's bash 3.2 where it is the system bash.
-import { spawnSync } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import {
   chmodSync,
   existsSync,
@@ -12,6 +12,7 @@ import {
   symlinkSync,
   writeFileSync,
 } from "node:fs";
+import { availableParallelism } from "node:os";
 import { delimiter, join, relative } from "node:path";
 import { NodeServices } from "@effect/platform-node";
 import { Effect, Schema } from "effect";
@@ -151,19 +152,53 @@ const withJq = process.env.PATH ?? "";
 let withoutJq = "";
 
 type Run = { status: number | null; stdout: string; stderr: string };
+const hookEnv = (project: string, path: string) => ({
+  PATH: path,
+  HOME: project,
+  CLAUDE_PROJECT_DIR: project,
+  TMPDIR: join(project, "..", "tmp"),
+});
 function runHook(project: string, hook: string, payload: unknown, path = withJq): Run {
   const result = spawnSync(bash, [join(project, ".claude", "hooks", hook)], {
     cwd: project,
     input: JSON.stringify(payload),
     encoding: "utf8",
-    env: {
-      PATH: path,
-      HOME: project,
-      CLAUDE_PROJECT_DIR: project,
-      TMPDIR: join(project, "..", "tmp"),
-    },
+    env: hookEnv(project, path),
   });
   return { status: result.status, stdout: result.stdout, stderr: result.stderr };
+}
+/** `runHook` without blocking, so independent hook calls can run side by side. */
+function runHookAsync(project: string, hook: string, payload: unknown, path: string) {
+  return new Promise<Run>((resolve, reject) => {
+    const child = spawn(bash, [join(project, ".claude", "hooks", hook)], {
+      cwd: project,
+      env: hookEnv(project, path),
+    });
+    let stdout = "";
+    let stderr = "";
+    child.stdout.setEncoding("utf8").on("data", (chunk: string) => {
+      stdout += chunk;
+    });
+    child.stderr.setEncoding("utf8").on("data", (chunk: string) => {
+      stderr += chunk;
+    });
+    child.on("error", reject);
+    child.on("close", (status) => resolve({ status, stdout, stderr }));
+    child.stdin.end(JSON.stringify(payload));
+  });
+}
+/** `work` over `items`, at most one per core at a time, results in input order. */
+async function pooled<T, R>(items: readonly T[], work: (item: T) => Promise<R>) {
+  const results: R[] = new Array(items.length);
+  let next = 0;
+  const worker = async () => {
+    while (next < items.length) {
+      const at = next++;
+      results[at] = await work(items[at] as T);
+    }
+  };
+  await Promise.all(Array.from({ length: availableParallelism() }, worker));
+  return results;
 }
 
 function bashPayload(project: string, command: string) {
@@ -241,34 +276,42 @@ beforeAll(async () => {
 }, 30_000);
 
 describe("the guards block every listed pattern and allow its near miss [1.6d#1]", () => {
-  test.each(destructive)("block-destructive.sh: $pattern [1.6d#1]", ({ blocked, allowed: ok }) => {
-    for (const command of blocked) {
-      const reason = denyReason(
-        runHook(astro, "block-destructive.sh", bashPayload(astro, command)),
-      );
-      expect({ command, blocked: reason.startsWith("BLOCKED: ") }).toEqual({
-        command,
-        blocked: true,
-      });
-      expect(reason).toContain("Never work around this block.");
-    }
-    for (const command of ok)
-      expect({
-        command,
-        ...allowed(runHook(astro, "block-destructive.sh", bashPayload(astro, command))),
-      }).toEqual({ command, ...ALLOW });
-  });
+  // Concurrent: each case is its own bash process reading only its payload.
+  test.concurrent.each(destructive)(
+    "block-destructive.sh: $pattern [1.6d#1]",
+    async ({ blocked, allowed: ok }) => {
+      for (const command of blocked) {
+        const reason = denyReason(
+          await runHookAsync(astro, "block-destructive.sh", bashPayload(astro, command), withJq),
+        );
+        expect({ command, blocked: reason.startsWith("BLOCKED: ") }).toEqual({
+          command,
+          blocked: true,
+        });
+        expect(reason).toContain("Never work around this block.");
+      }
+      for (const command of ok)
+        expect({
+          command,
+          ...allowed(
+            await runHookAsync(astro, "block-destructive.sh", bashPayload(astro, command), withJq),
+          ),
+        }).toEqual({ command, ...ALLOW });
+    },
+  );
 
-  test.each(secrets)(
+  test.concurrent.each(secrets)(
     "detect-secrets.sh: $finding, named without the matched text [1.6d#1]",
-    ({ finding, blocked, allowed: ok }) => {
+    async ({ finding, blocked, allowed: ok }) => {
       for (const parts of blocked) {
         const secret = parts.join("");
         for (const payload of [
           writePayload(astro, "src/config.ts", secretLine(secret)),
           editPayload(astro, "src/config.ts", secretLine(secret)),
         ]) {
-          const reason = denyReason(runHook(astro, "detect-secrets.sh", payload));
+          const reason = denyReason(
+            await runHookAsync(astro, "detect-secrets.sh", payload, withJq),
+          );
           expect(reason).toContain(`- ${finding}`);
           expect(reason).not.toContain(secret);
           expect(reason).not.toContain(parts[1]);
@@ -278,10 +321,11 @@ describe("the guards block every listed pattern and allow its near miss [1.6d#1]
         expect({
           parts,
           ...allowed(
-            runHook(
+            await runHookAsync(
               astro,
               "detect-secrets.sh",
               writePayload(astro, "src/config.ts", secretLine(parts.join(""))),
+              withJq,
             ),
           ),
         }).toEqual({ parts, ...ALLOW });
@@ -447,14 +491,18 @@ describe("the hooks decide the same with and without jq [1.6d#3]", () => {
     expect(probe(withoutJq)).not.toBe(0);
   });
 
-  test("every guard case gives the same response with and without jq [1.6d#3]", () => {
-    for (const { hook, payload } of guardCases(astro)) {
+  test("every guard case gives the same response with and without jq [1.6d#3]", async () => {
+    const cases = guardCases(astro);
+    const runs = await pooled(
+      cases.flatMap(({ hook, payload }) =>
+        [withoutJq, withJq].map((path) => ({ hook, payload, path })),
+      ),
+      ({ hook, payload, path }) => runHookAsync(astro, hook, payload, path),
+    );
+    cases.forEach(({ payload }, at) => {
       const input = (payload.tool_input as Record<string, unknown>) ?? {};
-      expect({ input, ...runHook(astro, hook, payload, withoutJq) }).toEqual({
-        input,
-        ...runHook(astro, hook, payload, withJq),
-      });
-    }
+      expect({ input, ...runs[2 * at] }).toEqual({ input, ...runs[2 * at + 1] });
+    });
   }, 60_000);
 
   test("lint-on-write.sh, format-changed.sh and session-start.sh give the same output and record the same files [1.6d#3]", async () => {
