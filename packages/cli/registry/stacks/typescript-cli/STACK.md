@@ -79,7 +79,7 @@ The shipped dev script runs bin.ts, defaults LOG_LEVEL to info, appends logs/cli
 
 ## Tool configuration and tests
 
-Biome starts from current generated config with recommended checks, import/export type discipline, organized imports, two spaces, double quotes, width 100, VCS ignores, and the base boundaries Grit plugin. Strict TypeScript includes unchecked index access, verbatim modules, no emit, and explicit Bun/Node-compatible types. Include src, tests, e2e, scripts, and adapter hooks. Check Grit against the installed Biome syntax and preserve each rule when adapting it.
+Biome starts from current generated config with recommended checks, import/export type discipline, organized imports, two spaces, double quotes, width 100, VCS ignores, and the base boundaries Grit plugin. Current Biome also formats Markdown, so scope `files.includes` to code and JSON and leave docs alone. Strict TypeScript includes unchecked index access, verbatim modules, no emit, and explicit Bun/Node-compatible types. Include src, tests, e2e, scripts, and adapter hooks. Check Grit against the installed Biome syntax and preserve each rule when adapting it.
 
 Vitest runs on Node and excludes e2e. Its setup clears credentials and uses temporary HOME/XDG/config/data directories; it does not read user .env. `runCli` invokes the real command tree with injected Output/Host/platform layers and captures status/stdout/stderr; no module mocks. Test help/version, unknown flags, missing arguments, human/JSON doctor, invalid config, error mappings, log shape, sink failure, runtime isolation, and stdout remaining empty on failure. Include shipped hook tests when the Claude adapter exists.
 
