@@ -1,0 +1,4 @@
+{
+  "input": { "tool": "bash", "sessionID": "fixture-session", "callID": "fixture-call" },
+  "output": { "args": { "command": "git status", "description": "Show status" } }
+}
