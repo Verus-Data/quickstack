@@ -32,11 +32,11 @@ The blue steps are yours, and this guide walks through each one. The purple loop
 
 ## Get the CLI
 
-quickstacks isn't on npm yet, so you build it from this repository:
+quickstacks isn't on npm yet, so you build it from [its repository](https://github.com/tryopendata/quickstack):
 
 ```sh
-git clone <this repository> quickstacks
-cd quickstacks
+git clone https://github.com/tryopendata/quickstack.git
+cd quickstack
 bun install
 bun run build
 ```
