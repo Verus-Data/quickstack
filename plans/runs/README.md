@@ -1,7 +1,7 @@
 # Run notes
 
-Status: DRAFT 2026-10-26. Holds one note per recorded run; empty until the MVP gate
-(1.6b). The gate runs are also the first evidence for the D5 brief budget, which is a
+Status: DRAFT 2026-10-26. Holds one note per recorded run; the first three are 1.6b's
+2026-10-27 gate runs. The gate runs are also the first evidence for the D5 brief budget, which is a
 hypothesis until they record brief size next to time to green.
 
 Each gate or bench run gets a file named `<date>-<stack>.md` (add `-<n>` for a second run

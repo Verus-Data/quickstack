@@ -4,7 +4,10 @@ Status: DRAFT 2026-10-26 (not agreed). Revised 2026-10-26: runs use a compiled b
 a packed tarball, since packaging (0.2) moved to the final step before public release;
 the "release tarball" this file ends with is produced by 1.6c in that case. With 1.6a now
 bringing the whole catalog into v1 and validating it, D20 implies one run per bundled stack unless the maintainers
-narrow it to D13's three
+narrow it to D13's three. EXECUTED 2026-10-27 for D13's three (astro-blog, go-cli,
+python-react, the scope a maintainer chose for this session): each has a green run on
+`e6f5da2` with an empty `## Asked`, awaiting the maintainer confirmation each note leaves
+open. The other four bundled stacks have no gate run yet, and the tarball lines wait for 0.2.
 
 | Field | Value |
 |---|---|
@@ -150,6 +153,23 @@ comparison in the final run note.
 Kept in this file while the sub-phase runs: one line per run (date, stack, outcome, why it
 was rerun). Past about six reruns in total, the 2.0b decision above applies.
 
+All runs 2026-10-27, headless, compiled binary (see "What this plan may get wrong").
+
+| Run | Commit | astro-blog | go-cli | python-react | Why the next round |
+|---|---|---|---|---|---|
+| 1 | `1e0c47d` | failed: `.claude/README.md` edit denied | failed: stopped on turn 1 to ask for a GitHub owner | failed: `lefthook.yml` and `.claude/README.md` edits denied | Brief fixes (owner fallback, create-astro command, Prettier ignores, sensitive-file guidance), and the method changed to a fresh HOME with a token |
+| 2 | `89beb20` | green, no asks | green after a stand-in approval and resume (asked) | green, asked (optional edits) | Allow rules shipped for astro-blog and go-cli make targets; envelope casing, `dump_openapi`, `cli.Execute`, eslint ignored-file warnings |
+| 3 | `b910b8c` | partial: canonical URLs end in `.html` | green, no asks | green, no asks; Makefile contradicted the brief on `dump_openapi` | astro-blog canonical URLs and post/collection split; python-react Makefile |
+| 4 | `6cc8592` | green, no asks | not rerun (unchanged entries) | green, no asks | CI triggered on `main` while `new` leaves git's default `master`; python-react mypy skipped `scripts/` |
+| 5 | `8fb81e4` | green, no asks; brief named the getters in the pure `posts.ts`; the agent tried to allow `make new-article` through a shell edit (denied) | green, no asks | green, no asks | astro-blog naming and the `make new-article` allow rule; go-cli and python-react reran only because their binary predated the 2.0a and 3.5b merges (same sha256 as round 3) |
+| 6 | `e6f5da2` | green, no asks; counts ([note](../runs/2026-10-27-astro-blog.md)). One contradictory posthog sentence fixed after it | green, no asks; counts ([note](../runs/2026-10-27-go-cli.md)) | green, no asks; counts ([note](../runs/2026-10-27-python-react.md)) | None: each counting run waits for a maintainer's confirmation |
+
+Rounds 2 to 6 are fourteen reruns, well past the threshold of six. The 2.0b decision assumed
+hand runs at a maintainer's terminal. These were headless and cost minutes and under a dollar
+each (the recipe in "What this plan may get wrong"), so they already are the cheap bench the
+threshold protects, and the gate continued instead of pulling 2.0b forward. The maintainers
+may still want 2.0b built from this recipe.
+
 ### Failure modes
 
 | Case | What happens |
@@ -203,3 +223,10 @@ was rerun). Past about six reruns in total, the 2.0b decision above applies.
 - The six-rerun threshold is a guess at where hand runs cost more than the bench.
 - If packing isn't reproducible and the tarball is lost, the whole gate reruns. Keeping
   the file is cheap; losing it is not.
+- 2026-10-27, the runs as executed differ from this plan in five places:
+  - The CLI was the compiled binary, installed with the bundled registry beside it in a fresh prefix, because 0.2 is deferred. So there is no tarball digest, and the reproducibility check waits for 0.2. The binary's sha256 is in each run note.
+  - The agent ran headless (`claude -p` with the handoff prompt from `new --no-launch --json`), not launched by the handoff, because a gate run without a maintainer at the terminal has no TTY. The handoff launch itself is covered by 1.4's tests, not by these runs.
+  - Claude Code protects `.claude/` and `lefthook.yml`. Neither `acceptEdits`, nor allow rules, nor a PreToolUse hook that allows the write gets an Edit through in `-p` mode. Where an agent asked for such an edit, the maintainer's stand-in applied exactly the denied edit and resumed the session (`claude -p --resume`). That run then counts as asked. The fix was to make those edits unnecessary: the stacks ship their own allow rules, and the brief says which edits need the user.
+  - `--allowedTools Bash` approves every shell command, which an interactive user would be prompted for. An agent can write a protected file from a script without a denial (astro-blog run 2 did); the brief now says to ask for those edits instead.
+  - The independent `verify --json` appends one line to `runs.jsonl`, so each note's verify count includes it.
+- Whether a permission approval at the interactive handoff counts as an intervention under D20 is open. Run 2's asks were all approvals of this kind. Every run that counts here has an empty `## Asked`, so the question doesn't change this gate's result.

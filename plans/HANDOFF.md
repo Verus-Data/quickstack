@@ -9,6 +9,17 @@ Start here, then read repo `AGENTS.md`, the README's
 next steps, who owns each. When it grows past a couple of screens, move the dated detail
 to `archive/` and leave a link.
 
+## 1.6b gate runs (2026-10-27)
+
+[1.6b](phases/phase-1.6b-mvp-gate-runs.md) ran headless from the compiled binary for D13's
+three stacks, six rounds with brief fixes between them (rerun log in the plan). Each stack
+has a green counting run on `e6f5da2`: [astro-blog](runs/2026-10-27-astro-blog.md),
+[go-cli](runs/2026-10-27-go-cli.md), [python-react](runs/2026-10-27-python-react.md).
+A maintainer still has to confirm each run, and the other four bundled stacks have none.
+
+- Assumption 1, first result: an agent followed composed briefs of 3,200 to 4,800 words to a green `verify` in 3 to 5 minutes with nothing asked, once the briefs' own contradictions were fixed.
+- D5: the 6,000-word budget held with room to spare for these stacks; no run tested a brief near the limit.
+
 ## Phases 2 and 3 (2026-10-27, in progress)
 
 Phases 2 and 3 are being executed through Codex delegates (`/execute:codex`), one test-author
