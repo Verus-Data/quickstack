@@ -42,7 +42,7 @@ const install = Command.make(
     }),
 ).pipe(
   Command.withDescription(
-    "Install the bundled Claude Code skill (default: $HOME/.claude/skills/quickstacks/SKILL.md). Other agents can take the text from --print. Exits 0 when written or unchanged, 2 when a different SKILL.md is already there (TargetNotEmpty; --force replaces it) or the bundled skill is missing, 6 when HOME is unset or the target can't be written.",
+    "Install the bundled Claude Code skill (default: $HOME/.claude/skills/quickstacks/SKILL.md). Other agents can take the text from --print. Exits 0 when written, unchanged or printed, 2 when a different SKILL.md is already there (TargetNotEmpty; --force replaces it) or the bundled skill is missing, 6 when HOME is unset or the target can't be written, 130 when interrupted.",
   ),
   Command.withShortDescription("Install the agent skill for Claude Code."),
   Command.withExamples(({ commandPath }) => [

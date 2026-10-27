@@ -30,7 +30,7 @@ export const showCommand = Command.make(
     }),
 ).pipe(
   Command.withDescription(
-    "Review a stack or fragment (apps are fragments): metadata, full guidance, shipped files and its last recorded run. Reads only; starts no processes. Exits 0, or 2 on an unknown id or an id that needs --kind.",
+    "Review a stack or fragment (apps are fragments): metadata, full guidance, shipped files and its last recorded run. Reads only; starts no processes. Exits 0, 2 on an unknown or rejected id, an id that needs --kind or a stack whose default fragments conflict (ComposeConflict), 3 on a broken config.json, 6 when the entry can't be read, 130 when interrupted.",
   ),
   Command.withShortDescription("Review one stack or fragment before you use it."),
   Command.withExamples(({ commandPath }) => [
@@ -41,7 +41,7 @@ export const showCommand = Command.make(
     },
     {
       command: `${commandPath.join(" ")} effect --kind fragment`,
-      description: "Pick the fragment when a stack shares its id",
+      description: "Look the id up among fragments only",
     },
   ]),
 );

@@ -102,7 +102,7 @@ export const listCommand = Command.make(
     }),
 ).pipe(
   Command.withDescription(
-    "List the stacks, fragments and apps you can build from, with where each comes from and whether it is trusted. Inside a project, the default view shows the fragments you can still add. Exits 0, or 2 on an unknown group.",
+    "List the stacks, fragments and apps you can build from, with where each comes from and whether it is trusted. Inside a project, the default view shows the fragments you can still add. Exits 0, 2 on an unknown group, 6 when a registry root can't be read, 130 when interrupted.",
   ),
   Command.withShortDescription("List the stacks, fragments and apps you can build from."),
   Command.withExamples(({ commandPath }) => [

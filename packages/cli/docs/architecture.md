@@ -45,7 +45,7 @@ Render turns a composition into bytes. One function, `composeFiles`, renders eve
 
 Write (`src/core/scaffold/write.ts`) is the only code that writes into a project. It refuses any path that resolves outside the project's real path, creates files exclusively so it never overwrites, and rolls back everything it wrote if a later step fails or you press Ctrl+C.
 
-Hand off decides what happens next, by the first rule that matches. Inside an agent session, quickstacks prints a "NEXT STEP FOR THE AGENT" line. With `--json`, `--no-launch`, a non-terminal or any untrusted entry, it prints the prompt. Otherwise it starts the first agent CLI on your PATH in the project, with the prompt as its first message.
+Hand off decides what happens next, by the first rule that matches. Inside an agent session, quickstacks prints a "NEXT STEP FOR THE AGENT" line. With `--json`, `--dry-run`, `--no-launch`, a non-terminal or any untrusted entry, it prints the prompt. Otherwise it starts an agent CLI in the project, with the prompt as its first message: the one `--launch` names, or else the first one on your PATH from your `agents` setting, then `claude`, `codex`, `opencode` and `cursor-agent`. The [command reference](reference/commands.md) has the full rule order.
 
 ## The rules the design keeps
 
@@ -71,7 +71,7 @@ The CLI's main reader is a coding agent, and its fallback reader is a person at 
 
 Agent text is the human text minus what an agent doesn't need (passed verify rows, file listings the brief already has, logs). The audiences never behave differently: exit codes, files written and side effects are the same in all three. [Output and errors](reference/output.md) has the details.
 
-Exit codes are fixed per error and chosen by what the caller should do next (2 fix the input, 5 read the verify report, 6 ask a person), so an agent can branch on the number without parsing text. Signals stop a command only after its cleanup runs, and child processes are killed as a group. Both are tabulated in [Output and errors](reference/output.md).
+Exit codes are fixed per error and chosen by what the caller should do next (2 fix the input, 5 read the verify report, 6 ask a person), so an agent can branch on the number without parsing text. A signal stops a command after its cleanup runs (a second one a second or more later skips the cleanup), and child processes are killed as a group. Both are tabulated in [Output and errors](reference/output.md).
 
 ## Source layout
 
@@ -94,11 +94,11 @@ flowchart TB
   cmd --> core["core/<br/>the programs"]
   core --> svc["services/<br/>Output, Host, Processes"]
   svc --> plat["platform/<br/>Node process code"]
-  bin -. "provides Host,<br/>writers, platform" .-> svc
+  bin -.->|"provides Host,<br/>writers, platform"| svc
 
-  classDef edge fill:#78350f,stroke:#fbbf24,stroke-width:2px,color:#fef3c7
+  classDef boundary fill:#78350f,stroke:#fbbf24,stroke-width:2px,color:#fef3c7
   classDef inner fill:#1e3a8a,stroke:#60a5fa,stroke-width:2px,color:#dbeafe
-  class bin,plat edge
+  class bin,plat boundary
   class main,cmd,core,svc inner
 ```
 

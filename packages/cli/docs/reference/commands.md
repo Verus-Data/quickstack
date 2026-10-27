@@ -48,7 +48,7 @@ The same id in a higher root wins; `list --json` marks the winner's `shadows` wi
 ```sh
 quickstacks show typescript-cli          # metadata, guidance, commands, steps, shipped files
 quickstacks show postgres --json         # ShowReport
-quickstacks show effect --kind fragment  # resolve an id a stack and a fragment share
+quickstacks show effect --kind fragment  # look among fragments only, for an id a stack also uses
 ```
 
 `show <id>` reviews a stack or fragment without starting a process: metadata, every guidance branch, commands, verify steps and shipped output paths, including adapters for every agent. `--json` returns `ShowReport`. Only bundled entries receive ledger evidence; `sameContent` compares the current composition fingerprint with the recorded run. Non-bundled entries get `lastRun: null`.
@@ -160,7 +160,7 @@ quickstacks runs          # summary for the nearest project
 quickstacks runs --json   # ProjectRuns
 ```
 
-`runs` finds the nearest project and reports its stack, fingerprint, creation time, handoff kind, brief words, verify count, last outcome, timings, interventions (the nonempty items under `## Asked` in `NOTES.md`), state-record availability and skipped history lines. It reads the project's `.quickstacks/state/runs.jsonl` and `NOTES.md`. Timings come only from the out-of-project state record; unavailable timings or notes stay unknown. Invalid or newer history lines are counted and skipped. Outside a project it exits 2 with `NotFound`. A newer state schema exits 3 with `InvalidConfig`. Moving a project keeps its timings through its project id.
+`runs` finds the nearest project and reports its stack, fingerprint, creation time, handoff kind, brief words, verify count, last outcome, timings, interventions (the nonempty items under `## Asked` in `NOTES.md`), state-record availability and skipped history lines. It reads the project's `.quickstacks/state/runs.jsonl` and `NOTES.md`. Timings come only from the out-of-project state record; unavailable timings or notes stay unknown. Invalid or newer history lines are counted and skipped. Outside a project it exits 2 with `NotFound`. A manifest that doesn't decode, or a manifest or state record from a newer quickstacks, exits 3 with `InvalidConfig`; an unreadable manifest exits 6. Moving a project keeps its timings through its project id.
 
 ## validate
 

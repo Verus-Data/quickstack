@@ -123,7 +123,7 @@ export const validateCommand = Command.make(
     }),
 ).pipe(
   Command.withDescription(
-    "Check stacks and fragments before an agent builds from them: frontmatter, references, conditional prose, compositions, verify layers (install, lint, typecheck, test) and word budgets. Reads files only. Exits 0 when there are no errors (warnings and notes don't fail), 2 on errors (ValidationFailed, with the report still on stdout) or a path that is neither a registry nor an entry, 6 when the root can't be read.",
+    "Check stacks and fragments before an agent builds from them: frontmatter, references, conditional prose, compositions, verify layers (install, lint, typecheck, test) and word budgets. Reads files only. Exits 0 when there are no errors (warnings and notes don't fail), 2 on errors (ValidationFailed, with the report still on stdout), a path that is neither a registry nor an entry, --with, --without or --sandbox without --brief, or a --brief composition that is unknown or conflicts, 3 on a broken config.json with --brief, 6 when the root can't be read, 130 when interrupted.",
   ),
   Command.withShortDescription("Check stacks and fragments, or preview a composed brief."),
   Command.withExamples(({ commandPath }) => [

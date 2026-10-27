@@ -13,7 +13,7 @@ export const doctorCommand = Command.make("doctor", {}, () =>
   }),
 ).pipe(
   Command.withDescription(
-    "Inspect local runtime, paths and optional configuration: version, platform, config and data paths, the bundled registry and skill. A broken config file is reported, not fatal. Exits 0.",
+    "Inspect local runtime, paths and optional configuration: version, platform, config and data paths, the bundled registry and skill. A broken config file is reported, not fatal. Exits 0, 2 on a usage error, 130 when interrupted.",
   ),
   Command.withShortDescription("Inspect the local runtime, paths and configuration."),
   Command.withExamples(({ commandPath }) => [

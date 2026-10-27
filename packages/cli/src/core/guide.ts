@@ -10,7 +10,7 @@ export const guideText = (cli: string) =>
     "",
     "The loop:",
     `1. ${cli} list --json: pick a stack (${cli} show <id> --json reviews one) and tell the user why.`,
-    `2. ${cli} new <stack> <dir> --sandbox --json: writes the project.`,
+    `2. ${cli} new <stack> <dir> --sandbox --json: writes the project. Drop --sandbox when the user wants to make the brief's decisions or deploy.`,
     `3. Read <dir>/${BRIEF_PATH} and carry it out.`,
     `4. ${cli} verify in <dir>: fix what fails and run it again until it passes.`,
     "",

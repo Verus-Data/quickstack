@@ -1,3 +1,5 @@
+import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { Schema } from "effect";
 import { afterEach, expect, test } from "vitest";
 import { BriefPreview } from "../src/schemas/validate";
@@ -29,6 +31,21 @@ test("a preview with errors keeps its brief and exit 2 when human stderr is clos
   expect(failed.stderr).toBe("");
   // Decode the kept result with its public schema before comparing the text audience.
   expect(failed.stdout).toBe(Schema.decodeUnknownSync(BriefPreview)(brief).brief);
+});
+
+test.each([
+  ["show", "sample"],
+  ["validate", "--brief", "sample"],
+])("%s exits 3 with InvalidConfig on a broken config.json, as its help says", async (...args) => {
+  const home = space.dir();
+  const registry = space.dir();
+  stack(registry);
+  mkdirSync(join(home, "config", "quickstacks"), { recursive: true });
+  writeFileSync(join(home, "config", "quickstacks", "config.json"), "{");
+  const run = await runCli([...args, "--json"], { home, env: quiet, host: { registry } });
+  expect(run.status).toBe(3);
+  expect(run.stdout).toBe("");
+  expect(JSON.parse(run.stderr)).toMatchObject({ error: { tag: "InvalidConfig" } });
 });
 
 test("text previews escape terminal controls in retained guidance while JSON preserves them", async () => {

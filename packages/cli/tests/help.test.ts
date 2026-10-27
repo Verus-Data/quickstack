@@ -71,16 +71,38 @@ test("every leaf command's help has examples whose flags that command declares",
   }
 });
 
-test("every exit code a command's description states is 0 or one errorTable maps to", () => {
-  const exits = new Set<number>([0, ...Object.values(errorTable).map((row) => row.exit)]);
+/**
+ * The exits each command's handler can reach, beyond the agent's own status after a launch. A
+ * change here means rereading that command's error paths, not just its description.
+ */
+const exits: Record<string, ReadonlyArray<number>> = {
+  add: [0, 2, 3, 5, 6, 130],
+  "create fragment": [0, 2, 6, 130],
+  "create stack": [0, 2, 6, 130],
+  doctor: [0, 2, 130],
+  guide: [0, 2, 130],
+  list: [0, 2, 6, 130],
+  new: [0, 2, 3, 6, 130],
+  runs: [0, 2, 3, 6, 130],
+  show: [0, 2, 3, 6, 130],
+  "skill install": [0, 2, 6, 130],
+  validate: [0, 2, 3, 6, 130],
+  verify: [0, 2, 3, 5, 6, 130],
+};
+
+test("every command's description states exactly the exits it can reach, naming real tags", () => {
+  expect(leaves.map((node) => node.path.join(" ")).sort()).toEqual(Object.keys(exits).sort());
   const tags = new Set(Object.keys(errorTable));
   for (const { path, command } of leaves) {
     const name = path.join(" ");
     const sentence = /Exits (.*)$/.exec(command.description ?? "")?.[1];
     expect(sentence, `${name} states its exit codes`).toBeDefined();
-    for (const code of sentence?.match(/\b\d+\b/g) ?? [])
-      expect(exits.has(Number(code)), `${name}: ${code}`).toBe(true);
-    for (const tag of command.description?.match(/\b[A-Z][a-z]+(?:[A-Z][a-z]+)+\b/g) ?? [])
-      expect(tags.has(tag), `${name}: ${tag}`).toBe(true);
+    const stated = new Set((sentence?.match(/\b\d+\b/g) ?? []).map(Number));
+    expect(
+      [...stated].sort((a, b) => a - b),
+      name,
+    ).toEqual(exits[name]);
+    for (const [, tag] of command.description?.matchAll(/\(([A-Z][A-Za-z]+)[;)]/g) ?? [])
+      expect(tags.has(tag ?? ""), `${name}: ${tag}`).toBe(true);
   }
 });

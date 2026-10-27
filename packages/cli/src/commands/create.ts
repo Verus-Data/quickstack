@@ -61,7 +61,7 @@ const entryCommand = (kind: Kind) =>
       }),
   ).pipe(
     Command.withDescription(
-      `Create a ${kind} in the user registry without running any tools: a skeleton, or with --from a copy of an existing entry. Prints the entry path and the authoring guide. Exits 0, 2 on a bad id, an occupied target or an unknown source, 6 when an untrusted copy can't be confirmed by a person at a terminal, 130 when interrupted.`,
+      `Create a ${kind} in the user registry without running any tools: a skeleton, or with --from a copy of an existing entry. Prints the entry path and the authoring guide. Exits 0, 2 on a bad id, an id another registry already has, an occupied target, an unknown source or a declined confirmation, 6 when the user registry can't be written or an untrusted copy can't be confirmed by a person at a terminal, 130 when interrupted.`,
     ),
     Command.withShortDescription(`Create a ${kind} in the user registry.`),
     Command.withExamples(({ commandPath }) =>

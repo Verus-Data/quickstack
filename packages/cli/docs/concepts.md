@@ -89,9 +89,9 @@ flowchart LR
   class comp result
 ```
 
-So `quickstacks new typescript-cli my-cli` gets `claude-harness`, `git-hooks`, `ci-github` and `effect`. `--without ci-github` drops CI. `--with bun-release` adds release tooling. A required fragment can't be removed, because the stack depends on it.
+`--without ci-github` drops CI. `--with bun-release` adds release tooling. A required fragment can't be removed, because the stack depends on it.
 
-Fragments also describe how they fit with others. `requires` pulls in another fragment automatically. `conflicts` names fragments it can't coexist with. `applies_to` says which stacks or tags it works with, so `postgres` (which says `applies_to: [python-react]`) doesn't get offered for an Astro blog.
+Fragments also describe how they fit with others. `requires` pulls in another fragment automatically: `claude-harness` requires `agent-ops` and `effect` requires `effect-schema`, so `quickstacks new typescript-cli my-cli` gets six fragments, `agent-ops`, `ci-github`, `claude-harness`, `effect-schema`, `effect` and `git-hooks`, though the stack names only four. `conflicts` names fragments it can't coexist with. `applies_to` says which stacks or tags it works with, so `postgres` (which says `applies_to: [python-react]`) doesn't get offered for an Astro blog.
 
 Picking the fragments and putting the result together is called composition. Composition is the same every time for the same inputs, and `quickstacks validate` composes every stack with every fragment that fits it to catch combinations that don't work.
 

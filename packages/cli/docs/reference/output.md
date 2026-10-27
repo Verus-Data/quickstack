@@ -49,7 +49,7 @@ In JSON and agent output, ancillary logs go only to the optional log file, so st
 
 ## Exit codes
 
-Each exit code means one next action, and a published code never changes meaning.
+Each exit code means one next action, and a published code never changes meaning. A script that expects 1 for every failure gets these specific codes instead.
 
 | Exit | Tags | Next action |
 | --- | --- | --- |
