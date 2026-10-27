@@ -330,11 +330,18 @@ test("an npx invocation is the one the prompt names [1.4#10]", async () => {
 });
 
 test("the command log record names the handoff and the agent, nothing else of it [1.4#7]", async () => {
+  // Agent output writes no log lines to stderr; the record goes to the log file.
+  const home = temp();
+  const file = join(home, "cli.jsonl");
   const { stderr } = await newCli([], {
-    env: { CLAUDECODE: "1", LOG_LEVEL: "info", QUICKSTACKS_LOG_FORMAT: "json" },
+    home,
+    env: { CLAUDECODE: "1", LOG_LEVEL: "info", QUICKSTACKS_LOG_FILE: file },
   });
+  expect(stderr).toBe("");
   const record = JSON.parse(
-    stderr.split("\n").find((line) => line.includes('"msg":"command"')) ?? "",
+    readFileSync(file, "utf8")
+      .split("\n")
+      .find((line) => line.includes('"msg":"command"')) ?? "",
   ) as Record<string, unknown>;
   expect(record).toMatchObject({ handoff: "inside-agent", agent: "claude", status: 0 });
   expect(JSON.stringify(record)).not.toContain("BRIEF");

@@ -11,7 +11,7 @@ import {
 } from "../src/core/compose/compose";
 import { Registry } from "../src/core/registry/registry";
 import { BadInput, ComposeConflict, EntryInvalid, NotFound } from "../src/errors";
-import { quiet, runCli, tempDir } from "./helpers/cli";
+import { quiet, runCli, tempDir, terminal } from "./helpers/cli";
 import { bundledAt, composeExit } from "./helpers/compose";
 import { composeRegistry, copyEntry, minimal, writeEntry } from "./helpers/registry";
 
@@ -446,7 +446,7 @@ test("the NotFound envelope carries its suggestions and the id and kind it didn'
     always: [],
     mode: "new",
   }).pipe(Effect.asVoid, Effect.provide(Registry.layer(bundledAt(composeRegistry))));
-  const human = await runCli([], { program: close, env: quiet });
+  const human = await runCli([], { program: close, env: quiet, host: terminal });
   expect(human.status).toBe(2);
   expect(human.stderr).toBe(
     "Not found.\n  Stack: web-stakc\n  Did you mean: web-stack?\n  Next: quickstacks list shows every stack and fragment.\n",

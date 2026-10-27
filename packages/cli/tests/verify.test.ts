@@ -608,7 +608,7 @@ describe("output", () => {
       { name: "install", phase: "setup", run: "echo installing" },
       { name: "lint", run: "true" },
     ]);
-    const result = await verify([], { cwd: root });
+    const result = await verify([], { cwd: root, host: { stdoutIsTTY: true } });
     expect(result.status).toBe(0);
     const install = result.stderr.indexOf("> install: echo installing\n");
     const lint = result.stderr.indexOf("> lint: true\n");

@@ -1,4 +1,4 @@
-import { Effect, Option, Path, Schema } from "effect";
+import { Effect, Option, Schema } from "effect";
 import { Argument, CliError, Command, Flag } from "effect/cli";
 import { AppConfig } from "../config";
 import {
@@ -11,6 +11,7 @@ import {
 import { defaultRoots, Registry } from "../core/registry/registry";
 import { scaffold } from "../core/scaffold/new";
 import { renderNew } from "../core/scaffold/report";
+import { shownPath } from "../core/shown-path";
 import { printable } from "../core/text";
 import { PermissionDenied, Usage } from "../errors";
 import { AgentId } from "../schemas/entry";
@@ -114,7 +115,6 @@ export const newCommand = Command.make(
   (flags) =>
     Effect.gen(function* () {
       const host = yield* Host;
-      const path = yield* Path.Path;
       const config = yield* AppConfig;
       const processes = yield* Processes;
       const invocation = yield* Invocation;
@@ -164,15 +164,16 @@ export const newCommand = Command.make(
         handoff: decision.kind,
         ...(decision.kind === "print" ? {} : { agent: decision.agent }),
       });
-      const relative = path.relative(host.cwd, result.project);
-      const shown =
-        relative === ""
-          ? "."
-          : relative.startsWith("..") || path.isAbsolute(relative)
-            ? result.project
-            : relative;
       const output = yield* Output;
-      const summary = renderNew(result, { shown });
+      const shown = yield* shownPath(host.cwd, result.project);
+      // An agent gets every path short when it can be; a human also sees where the project is.
+      const untrusted =
+        output.audience === "agent"
+          ? yield* Effect.forEach(result.untrusted, (entry) =>
+              Effect.map(shownPath(host.cwd, entry.dir), (dir) => ({ ...entry, dir })),
+            )
+          : result.untrusted;
+      const summary = renderNew({ ...result, untrusted }, { shown, audience: output.audience });
       if (decision.kind !== "launch") {
         yield* output.result(
           Schema.encodeSync(NewResult)({

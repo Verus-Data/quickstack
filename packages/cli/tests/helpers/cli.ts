@@ -14,6 +14,8 @@ export function tempDir() {
   const path = mkdtempSync(join(tmpdir(), "cli-base-"));
   return { path, cleanup: () => rmSync(path, { recursive: true, force: true }) };
 }
+/** A terminal on stdout: with no agent marker in `env`, the invocation's audience is human. */
+export const terminal = { stdoutIsTTY: true } as const;
 /** No log records, so a human-mode failure's stderr is only its message and detail lines. */
 export const quiet = { LOG_LEVEL: "none" };
 export function ndjson(text: string): unknown[] {
@@ -49,13 +51,13 @@ export async function runCli(
       await gate?.(text);
       into.push(text);
     };
+  const output = Output.layer(
+    hasFlag(args, "--json"),
+    capture(stdout, options.stdout),
+    capture(stderr, options.stderr),
+  );
   const platform = Layer.mergeAll(
     NodeServices.layer,
-    Output.layer(
-      hasFlag(args, "--json"),
-      capture(stdout, options.stdout),
-      capture(stderr, options.stderr),
-    ),
     Host.memory({ platform: "test-node", cwd: home, ...options.host }),
     Foreground.layer(Foreground.make()),
     NetLayer,
@@ -63,7 +65,7 @@ export async function runCli(
   try {
     const status = await runInvocation(
       main(args, options.program).pipe(
-        Effect.provide(Layer.provideMerge(AppLayer(env), platform)),
+        Effect.provide(Layer.provideMerge(AppLayer(output, env), platform)),
         Effect.scoped,
       ),
       options.signal,

@@ -14,7 +14,7 @@ import {
 } from "../src/core/manifest";
 import { InvalidConfig, NotFound, PermissionDenied } from "../src/errors";
 import type { ManifestStep } from "../src/schemas/manifest";
-import { quiet, runCli, tempDir } from "./helpers/cli";
+import { quiet, runCli, tempDir, terminal } from "./helpers/cli";
 import { composition, manifestOf, runWith, succeed } from "./helpers/state";
 
 const dirs: ReturnType<typeof tempDir>[] = [];
@@ -261,7 +261,7 @@ test("InvalidConfig details reach the envelope, and human mode escapes the path 
       details: { path: "/p/\u001b[31m/manifest.json", schemaVersion: 2 },
     },
   });
-  const human = await runCli([], { program: Effect.fail(error), env: quiet });
+  const human = await runCli([], { program: Effect.fail(error), env: quiet, host: terminal });
   expect(human.stderr).toBe(
     "Configuration is invalid.\n  Path: /p/\\u001b[31m/manifest.json\n  Schema version: 2, from a newer quickstacks. Upgrade quickstacks to read it.\n",
   );

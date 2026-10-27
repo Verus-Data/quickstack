@@ -40,6 +40,12 @@ the compiled binary; `verify` (1.3a) is next. The bundled registry holds its fir
 and tags it doesn't have yet were trimmed and come back when 1.6a brings those in. The repo is a bun-workspace monorepo (D11): the CLI is `packages/cli`, with
 `packages/api` and `packages/mcp` as placeholders.
 
+Output is agent-first (D29, on `feat/agent-default-output`): without `--json`, only a
+terminal with no agent detected gets human output; everything else gets agent output, which
+keeps log lines off stderr, prints paths relative to the working directory, and drops what the
+brief or another line already says. `.claude/rules/cli/cli.md` "Three audiences" is the
+contract; every new command renders for both.
+
 Three foundation questions are product design and are open architecture questions A2-A4
 in [the roadmap](roadmap.md#open-architecture-questions), answered by
 [0.3a](phases/phase-0.3a-errors-and-output.md) and

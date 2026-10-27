@@ -214,7 +214,8 @@ export function main(
             error,
           }),
         );
-      yield* logging.flush(settings, hasFlag(args, "--json"));
+      // Log lines reach stderr only for a human; an agent or JSON reader gets them in the file only.
+      yield* logging.flush(settings, output.audience !== "human");
       return status;
     }),
   );

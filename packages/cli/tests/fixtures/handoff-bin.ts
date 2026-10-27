@@ -24,7 +24,6 @@ const platform = Layer.mergeAll(
   BunServices.layer,
   Foreground.layer(holder),
   NetLayer,
-  Output.layer(hasFlag(args, "--json"), writer(process.stdout), writer(process.stderr)),
   Host.layer({
     platform: process.platform,
     executable: process.execPath,
@@ -40,7 +39,17 @@ const controller = new AbortController();
 const dispose = installSignalPolicy(holder, () => controller.abort());
 try {
   process.exitCode = await runInvocation(
-    main(args).pipe(Effect.provide(Layer.provideMerge(AppLayer(), platform)), Effect.scoped),
+    main(args).pipe(
+      Effect.provide(
+        Layer.provideMerge(
+          AppLayer(
+            Output.layer(hasFlag(args, "--json"), writer(process.stdout), writer(process.stderr)),
+          ),
+          platform,
+        ),
+      ),
+      Effect.scoped,
+    ),
     controller.signal,
   );
 } finally {

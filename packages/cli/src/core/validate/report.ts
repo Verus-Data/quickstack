@@ -1,4 +1,5 @@
 import type { BriefPreview, Finding, SizeRow, ValidateReport } from "../../schemas/validate";
+import type { Audience } from "../../services/output";
 import { printable } from "../text";
 
 const n = (value: number) => value.toLocaleString("en-US");
@@ -29,19 +30,30 @@ function findingLine(finding: Finding, checkWidth: number): string {
   return `  ${finding.severity.padEnd(7)}  ${finding.check.padEnd(checkWidth)}  ${where}${printable(finding.message)}`;
 }
 
+const over = (row: SizeRow) => row.limit !== undefined && row.words > row.limit;
+
 /**
- * The human report: a header, findings grouped by entry, the size table, a total line, and a
- * `Next:` line. Every value from an entry goes through `printable`.
+ * The text report: a header, findings grouped by entry, the size table, a total line, and a
+ * `Next:` line. A human gets every size; an agent only the rows over their limit, and the root as
+ * `root` (the command passes it relative to the working directory when it can be). Every value
+ * from an entry goes through `printable`.
  */
 export function renderReport(
   report: ValidateReport,
-  options: { invocation: string; path: string | undefined; firstStack: string | undefined },
+  options: {
+    invocation: string;
+    path: string | undefined;
+    firstStack: string | undefined;
+    audience: Audience;
+    root: string;
+  },
 ): string {
   const { stacks, fragments } = report.entries;
   const counted = `${plural(stacks, "stack")}, ${plural(fragments, "fragment")}`;
   const out = [
-    `Validated ${printable(report.root)}${report.bundled ? " (bundled registry)" : ""}: ${counted}`,
+    `Validated ${printable(options.root)}${report.bundled ? " (bundled registry)" : ""}: ${counted}`,
   ];
+  const sizes = options.audience === "human" ? report.sizes : report.sizes.filter(over);
   const checkWidth = Math.max(0, ...report.findings.map((finding) => finding.check.length));
   let group: string | undefined;
   for (const finding of report.findings) {
@@ -51,21 +63,21 @@ export function renderReport(
     group = heading;
     out.push(findingLine(finding, checkWidth));
   }
-  if (report.sizes.length) {
+  if (sizes.length) {
     out.push("", "Sizes (words)");
+    // Labels disambiguate against every row, shown or not, so a label never depends on audience.
     const ids = (kind: SizeRow["entryKind"]) =>
       new Set(report.sizes.filter((row) => row.entryKind === kind).map((row) => row.entry));
     const fragments = ids("fragment");
     const shared = new Set([...ids("stack")].filter((id) => fragments.has(id)));
     const label = (row: SizeRow) => sizeLabel(row, shared);
-    const width = Math.max(...report.sizes.map((row) => label(row).length));
-    const numbers = Math.max(...report.sizes.map((row) => n(row.words).length));
-    for (const row of report.sizes) {
+    const width = Math.max(...sizes.map((row) => label(row).length));
+    const numbers = Math.max(...sizes.map((row) => n(row.words).length));
+    for (const row of sizes) {
       const limit = row.limit === undefined ? "" : ` / ${n(row.limit)}`;
       const fixed = row.fixedWords === undefined ? "" : `   fixed ${n(row.fixedWords)}`;
-      const over = row.limit !== undefined && row.words > row.limit ? "   over" : "";
       out.push(
-        `  ${label(row).padEnd(width)}  ${n(row.words).padStart(numbers)}${limit}${fixed}${over}`,
+        `  ${label(row).padEnd(width)}  ${n(row.words).padStart(numbers)}${limit}${fixed}${over(row) ? "   over" : ""}`,
       );
     }
   }

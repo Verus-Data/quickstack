@@ -1,4 +1,5 @@
 import type { NewResult } from "../../schemas/new";
+import type { Audience } from "../../services/output";
 import { collapsePaths } from "../brief/paths";
 import { printable } from "../text";
 
@@ -46,21 +47,30 @@ const missingLine = (item: NewResult["missingTools"][number]) => {
 };
 
 /**
- * `new`'s human summary: the stack, fragments, written files collapsed, git, the brief, missing
- * tools with their skip flags, warnings and untrusted entries; `core/handoff.ts` renders the next
- * step after it. Every value that came from an entry or the filesystem is escaped for the
- * terminal.
+ * `new`'s text summary: the stack, fragments, git, the brief, missing tools with their skip flags,
+ * warnings and untrusted entries; `core/handoff.ts` renders the next step after it. A human also
+ * gets the project's absolute path and the written files collapsed; an agent reads the files from
+ * the brief and the disk. Every value that came from an entry or the filesystem is escaped for
+ * the terminal.
  */
-export function renderNew(result: Omit<NewResult, "handoff">, context: { shown: string }): string {
+export function renderNew(
+  result: Omit<NewResult, "handoff">,
+  context: { shown: string; audience: Audience },
+): string {
+  const human = context.audience === "human";
   const lines = [
     `Created ${printable(context.shown)} from ${printable(result.stack)}${result.preset === "sandbox" ? " (sandbox)" : ""}.`,
     // `shown` is the absolute path when the project isn't under the current directory.
-    ...(context.shown === result.project ? [] : [`Project: ${printable(result.project)}`]),
+    ...(human && context.shown !== result.project ? [`Project: ${printable(result.project)}`] : []),
     `Fragments: ${result.fragments.length ? result.fragments.map(printable).join(", ") : "none"}`,
     `Agents: ${result.agents.join(", ")}`,
     `Git: ${gitLine(result)}`,
-    `Wrote ${result.written.length} files:`,
-    ...collapsePaths(result.written).map((line) => `  ${printable(line)}`),
+    ...(human
+      ? [
+          `Wrote ${result.written.length} files:`,
+          ...collapsePaths(result.written).map((line) => `  ${printable(line)}`),
+        ]
+      : []),
     `Brief: ${result.brief} (${result.briefWords} words)`,
     ...(result.stateRecord
       ? []

@@ -15,14 +15,13 @@ test("production AppLayer reads normalized environment lazily", async () => {
   const output = Output.memory();
   const platform = Layer.mergeAll(
     NodeServices.layer,
-    output.layer,
     Host.memory(),
     Foreground.layer(Foreground.make()),
   );
   const paths = await Effect.runPromise(
     Effect.gen(function* () {
       return yield* (yield* AppConfig).paths;
-    }).pipe(Effect.provide(Layer.provideMerge(AppLayer(), platform))),
+    }).pipe(Effect.provide(Layer.provideMerge(AppLayer(output.layer), platform))),
   );
   expect(paths.config).toContain(process.env.HOME);
 });
@@ -59,14 +58,13 @@ test("actual EPIPE from Output writer is quiet", async () => {
   );
   const platform = Layer.mergeAll(
     NodeServices.layer,
-    output,
     Host.memory(),
     Foreground.layer(Foreground.make()),
     NetLayer,
   );
   expect(
     await Effect.runPromise(
-      main(["--version"]).pipe(Effect.provide(Layer.provideMerge(AppLayer({}), platform))),
+      main(["--version"]).pipe(Effect.provide(Layer.provideMerge(AppLayer(output, {}), platform))),
     ),
   ).toBe(0);
 });
