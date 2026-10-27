@@ -1,0 +1,77 @@
+# Road Runner: `rr <task>` syncs this tree to a remote Mac and runs the task there, under a
+# per-host lock, so parallel agents and delegates queue their test runs instead of starving each
+# other's. Hosts come from each maintainer's ~/.rr/config.yaml; see https://github.com/rileyhilliard/rr
+# and AGENTS.md "Test runs".
+
+version: 1
+
+# m4-mini first (16 GB, 10 cores); m1-mini (8 GB) takes a run when m4-mini is locked. Other
+# projects share these locks, which is the point: one heavy suite per host at a time.
+hosts:
+  - m4-mini
+  - m1-mini
+
+# Never fall back to a local run: one that exits 0 reads like a passing remote run. To run here on
+# purpose, use `bun run ...` directly.
+local_fallback: false
+
+# Checked in the host's environment before the sync, so a host without them fails fast.
+require: [bun, node, git]
+
+# The hosts' default node is newer than .node-version's major; Homebrew's keg-only node@24
+# (`brew install node@24`) puts the pinned major first, as CI does.
+defaults:
+  setup:
+    - export PATH="/opt/homebrew/opt/node@24/bin:$PATH"
+
+sync:
+  # Each git worktree syncs to its own remote directory, so delegates in parallel worktrees can't
+  # sync over each other. A worktree's first run installs its node_modules.
+
+  # Replaces rr's defaults, so they're repeated here; .gitignore applies on top (dist/, coverage/,
+  # logs/, .dev/).
+  exclude:
+    # Bare patterns: in a worktree .git is a file and node_modules can be a symlink.
+    - .git
+    - node_modules
+    # .claude/ itself syncs: tests/hooks/ runs the hooks against it.
+    - .claude/settings.local.json
+    - .claude/hooks/private-patterns.local
+    - .claude/worktrees/
+    - .DS_Store
+    - "*.log"
+    - .env
+
+  preserve:
+    - node_modules/
+
+  flags:
+    - --delete
+
+lock:
+  enabled: true
+  # A full gate takes a few minutes, and several agents can be queued behind one.
+  timeout: 30m
+  wait_timeout: 30m
+  stale: 10m
+
+tasks:
+  check:
+    description: The full gate, as CI runs it (lint, typecheck, root and CLI tests, e2e)
+    run: bun install --frozen-lockfile && bun run check
+
+  test:
+    description: Root tests then every package's tests
+    run: bun install --frozen-lockfile && bun run test
+
+  test-cli:
+    description: CLI Vitest tests (pass files or -- -t "<name>" to narrow)
+    run: bun install --frozen-lockfile && cd packages/cli && bun run test:unit {args}
+
+  test-hooks:
+    description: Root tests only (hooks, delegate runner, acceptance trace)
+    run: bun install --frozen-lockfile && bun run test:hooks {args}
+
+  e2e:
+    description: Compile the CLI and run the binary e2e tests
+    run: bun install --frozen-lockfile && bun run e2e

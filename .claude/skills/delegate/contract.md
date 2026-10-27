@@ -57,8 +57,16 @@ Run, from the worktree root, and iterate until they pass:
 {e.g. bun run --cwd packages/cli test:unit tests/<file>.test.ts}
 bun run lint
 bun run typecheck
-bun run check   # the full gate, before finishing a feature
+rr check        # the full gate on a test host, queued (AGENTS.md "Test runs")
 ```
+
+Then QA it as its first user, before the review. Build (`bun run build`) and run each command
+you changed on `packages/cli/dist/quickstacks`, in all three audiences (`--json`, a plain run,
+and human mode as `.claude/rules/cli/cli.md` "Verifying UX" shows), on success and on the
+realistic failures. Judge it as the agent that will depend on it: could you take the next step
+from the output alone, is any line noise, is anything slow, surprising or missing? Fix the
+friction you find (a bug gets a regression test first) and rerun the checks. For work with no
+command to run (a refactor, the harness), say so and QA what does run.
 
 ## Do not
 
@@ -114,7 +122,8 @@ the orchestrator works from it, so be specific and name files and symbols.
 2. Files: each file created or changed, with one line on why.
 3. Decisions: choices the contract left open and why you made them; any deviation from the
    plan or contract and the reason; where the skills changed your approach.
-4. Checks: each command you ran and its result (test counts, not just "passed").
+4. Checks: each command you ran and its result (test counts, not just "passed"), and the QA:
+   the commands you ran, what you judged and what you changed.
 5. Review: the review file's path, each finding in a line, and how you resolved it (fixed,
    or why not).
 6. Look closer at: the places most likely to be wrong, such as assumptions you couldn't verify,

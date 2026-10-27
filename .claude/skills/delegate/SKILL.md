@@ -77,7 +77,7 @@ faster than you could write the contract, or when you can't yet say what done lo
    check errors follow `AGENTS.md` "Error handling". Keep the diff surgical: anything Codex
    touched outside the task gets reverted.
 
-6. Gate and commit. Run `bun run check` in the worktree, commit there with a Conventional
+6. Gate and commit. Run `rr check` in the worktree (AGENTS.md "Test runs"), commit there with a Conventional
    Commits message, and land it the way the task calls for.
 
 7. Clean up. Cleanup is yours; Codex never removes anything. Once the work is merged:

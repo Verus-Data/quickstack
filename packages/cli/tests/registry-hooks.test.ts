@@ -645,7 +645,11 @@ describe("composed settings wire each hook once [1.6d#4] [1.6d#5]", () => {
     30_000,
   );
 
-  test("git records every shipped shell script as executable [1.6d#5]", () => {
+  // The modes live in the git index, so this needs a checkout: local runs and CI have one, a tree
+  // rr synced to a test host (without .git) doesn't.
+  const inCheckout =
+    spawnGit(["rev-parse", "--is-inside-work-tree"], { cwd: registryRoot }).status === 0;
+  test.skipIf(!inCheckout)("git records every shipped shell script as executable [1.6d#5]", () => {
     const listed = spawnGit(["ls-files", "-s", "--", "*.sh"], {
       cwd: registryRoot,
       encoding: "utf8",

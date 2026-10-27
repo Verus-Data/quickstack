@@ -66,6 +66,20 @@ In `packages/cli/` (run there):
 | `./dist/quickstacks doctor --json` | Compiled local diagnostics |
 | `bun run check` | This package's gate only |
 
+## Test runs
+
+Several agents and delegates often work at once, and parallel gates on one laptop starve each other into timeouts. Run the full gate and whole test suites through [rr](https://github.com/rileyhilliard/rr): `.rr.yaml` syncs the tree to a test host and runs the task there under a per-host lock, so concurrent runs queue. Each worktree syncs to its own remote directory.
+
+| Command (repo root) | Runs |
+| --- | --- |
+| `rr check` | The full gate (`bun run check`) |
+| `rr test` | Root tests, then every package's tests |
+| `rr test-cli tests/<file>.test.ts` | CLI Vitest tests, optionally narrowed (`rr test-cli -- -t "<name>"`) |
+| `rr test-hooks` | Root tests only |
+| `rr e2e` | Compile and run the binary e2e tests |
+
+Output is rr's JSON phase events on stderr, then the command's own output, then a `result` event whose `details.summary` has the test counts and `details.log_file` the full log; the exit code is the command's. Read the counts as `.claude/rules/cli/verification.md` asks. rr needs its hosts in `~/.rr/config.yaml` and a reachable SSH agent. If `rr` isn't installed, or it fails before running the command (exit 1 with an error envelope such as `SSH_AUTH_FAILED` or `HOST_NOT_FOUND`), say so and run the same `bun run` command locally; never report a local run as an rr run. A single scoped test file, lint and typecheck are cheap enough to run locally.
+
 ## Architecture map (packages/cli)
 
 Paths below are relative to `packages/cli/`.
