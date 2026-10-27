@@ -95,6 +95,46 @@ quickstacks skill install --print --json   # { path: null, action: "printed", te
 
 An identical installed file is unchanged. A differing file is preserved with `TargetNotEmpty` (exit 2) unless `--force` is set; a directory occupying `SKILL.md` is always preserved. Writes refuse symlinks escaping the skills root and final `SKILL.md` symlinks; a dotfiles symlink above the skills root is supported. Installation is allowed under an agent. A missing `HOME` or an unwritable target exits 6; `--print` skips all target lookup and writes nothing. A missing bundled skill exits 2 and appears as `skill.found: false` in `doctor --json`.
 
+## Publishing the Claude Code plugin
+
+`plugin/` is a Claude Code plugin carrying the agent skill, published by hand after a CLI
+release to a marketplace repository the maintainers own (not created yet; see
+[marketplaces](https://code.claude.com/docs/en/plugin-marketplaces) and the
+[manifest reference](https://code.claude.com/docs/en/plugins-reference)).
+`skill/SKILL.md` is the source; `plugin/skills/quickstacks/SKILL.md` is a committed copy,
+because a plugin's paths can't leave its directory. `tests/native-agent-plugin.test.ts`
+fails when the copy or the manifest's `version` drifts from the skill and `package.json`.
+
+1. On the release revision, from `packages/cli/`, refresh the copy and check the plugin
+   loads (`/quickstacks:quickstacks` should appear in the session):
+
+   ```sh
+   cp skill/SKILL.md plugin/skills/quickstacks/SKILL.md
+   bun run test:unit tests/native-agent-plugin.test.ts
+   claude plugin validate ./plugin
+   claude --plugin-dir ./plugin
+   ```
+
+2. In the marketplace checkout, replace `plugins/quickstacks/` with `plugin/` (including
+   `.claude-plugin/`). On first publication, create `.claude-plugin/marketplace.json` with
+   the marketplace `name`, an `owner` and a `plugins` array holding:
+
+   ```json
+   {
+     "name": "quickstacks",
+     "source": "./plugins/quickstacks",
+     "description": "Choose a quickstacks stack and follow its brief until verify is green."
+   }
+   ```
+
+   The version stays in the plugin manifest only.
+3. Run `claude plugin validate <marketplace-checkout>`,
+   `claude plugin marketplace add <marketplace-checkout>` and
+   `claude plugin install quickstacks@<marketplace-name>`, and confirm the skill appears in
+   a new session.
+4. Push the marketplace, and record the CLI version, marketplace revision and date in
+   `plans/HANDOFF.md`.
+
 ## Listing stacks and fragments
 
 Create personal entries with `quickstacks create stack my-api` or
