@@ -16,7 +16,7 @@ decisions:
 
 # Effect testing and development
 
-The stack owns runtime, services, errors, and logging. This fragment adds removable testing and development guidance, not architecture.
+The stack owns runtime, services, errors, and logging. This fragment adds testing and development guidance.
 
 ## Testing
 
@@ -26,7 +26,7 @@ Use `@effect/vitest` with fresh real service layers; fake only third-party bound
 
 ## Installed API guidance
 
-After core compilation, write `.claude/skills/effect/SKILL.md`, checking claims against installed declarations. Include loading triggers and a lookup order: installed declarations, then compiled source for behavior, then that major's docs and changelog; other majors and memory last. Resolve imports through package exports, not older directory layouts. Cover:
+After core compilation, write `effect/SKILL.md` in the skill tree AGENTS.md specifies, checking claims against installed declarations. Include triggers and a lookup order: installed declarations, then compiled source for behavior, then its docs and changelog; other majors and memory last. Resolve imports through package exports, not older directory layouts. Cover:
 
 - Namespaced services, static layers, named functions, typed failures/defects, scope, cancellation, callbacks, and captured runtime context.
 - Current migration traps: Context, catch helpers, Result/Either, schema annotations/checks, forks, scoped layers, Config constructors/providers, log levels, and TestClock imports.

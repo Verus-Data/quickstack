@@ -1,4 +1,4 @@
-// PreToolUse (Bash): deny commands that are wrong for this stack, with the fix.
+// PreToolUse (Bash, Claude Code and Codex): deny wrong commands with the fix.
 //
 //   --bun (-b) on vitest or bun run       the server and tests run on Node here; --bun swaps in
 //                                         bun's runtime and hides differences until deploy

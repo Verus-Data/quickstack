@@ -4,11 +4,14 @@
     "types": ["bun", "node"],
     "rootDirs": [
       "registry/stacks/astro-api/adapters/claude",
+      "registry/stacks/astro-api/files",
       "registry/fragments/claude-harness/adapters/claude",
+      "registry/fragments/claude-harness/files",
       "registry/fragments/openrouter-chat-cli/adapters/claude",
       "registry/stacks/react-router/adapters/claude",
       "registry/stacks/tauri-react/adapters/claude",
       "registry/stacks/typescript-api/adapters/claude",
+      "registry/stacks/typescript-api/files",
       "registry/stacks/typescript-cli/adapters/claude"
     ]
   },

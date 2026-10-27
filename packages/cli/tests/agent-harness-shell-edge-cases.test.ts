@@ -43,6 +43,7 @@ test.each(
   const root = space.dir();
   const hooks = join(root, ".claude/hooks");
   cpSync(join(fragments, "agent-ops/files/.claude/hooks"), hooks, { recursive: true });
+  cpSync(join(fragments, "claude-harness/files/.claude/hooks"), hooks, { recursive: true });
   cpSync(join(fragments, "claude-harness/adapters/claude/.claude/hooks"), hooks, {
     recursive: true,
   });

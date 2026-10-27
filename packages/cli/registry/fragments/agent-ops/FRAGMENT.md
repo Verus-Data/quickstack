@@ -8,7 +8,7 @@ description: AGENTS.md for every coding agent, plus a Claude Code adapter with C
 tags: [agents, claude, codex, cursor, opencode]
 applies_to: []
 tools: [git]
-merge: [.claude/settings.json]
+merge: [.claude/settings.json, .codex/hooks.json]
 verify:
   - name: agents-md-filled
     layer: check

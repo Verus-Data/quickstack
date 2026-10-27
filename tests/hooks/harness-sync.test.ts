@@ -3,10 +3,7 @@ import { join } from "node:path";
 import { expect, test } from "vitest";
 import { REPO } from "../helpers/hooks";
 
-const fragment = join(
-  REPO,
-  "packages/cli/registry/fragments/claude-harness/adapters/claude/.claude/hooks",
-);
+const fragment = join(REPO, "packages/cli/registry/fragments/claude-harness/files/.claude/hooks");
 
 // See docs/harness.md, "Repo hooks and shipped hooks", for the intentionally separate hooks.
 test.each(["_lib.ts", "_shell.ts"])("%s stays byte-identical in the shipped harness", (file) => {

@@ -51,7 +51,12 @@ function project(harness = false) {
   const dir = tempDir();
   dirs.push(dir);
   cpSync(shellSource, join(dir.path, ".claude/hooks"), { recursive: true });
-  if (harness) cpSync(harnessSource, join(dir.path, ".claude/hooks"), { recursive: true });
+  if (harness) {
+    cpSync(join(fragments, "claude-harness/files/.claude/hooks"), join(dir.path, ".claude/hooks"), {
+      recursive: true,
+    });
+    cpSync(harnessSource, join(dir.path, ".claude/hooks"), { recursive: true });
+  }
   return dir.path;
 }
 function hook(root: string, script: "shell" | "typescript", payload: unknown, cwd = root) {

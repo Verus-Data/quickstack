@@ -11,7 +11,7 @@ deps:
 tools: [bun, node, git]
 decisions:
   - "Node version: current LTS (default), recorded in .node-version and engines.node; Node runs the server and Vitest, Bun installs and runs scripts."
-merge: [.claude/settings.json]
+merge: [.claude/settings.json, .codex/hooks.json]
 fragments:
   required: [claude-harness]
   default: [git-hooks, ci-github, effect, rest-api]
@@ -97,7 +97,7 @@ Biome starts from its current generated config: recommended rules as `"rules": {
 
 TypeScript is two projects, both strict with unchecked index access, verbatim module syntax, erasable syntax only and no emit, and `typecheck` runs both. `tsconfig.json` covers `src/` and `tests/` (minus `tests/hooks/`) with `nodenext` resolution, relative imports with `.ts` extensions (`allowImportingTsExtensions`) and no path aliases, because Node runs the source as written. `tsconfig.tools.json` covers `scripts/`, `.claude/hooks/`, `tests/hooks/` and `tests/helpers/hooks.ts` with `bundler` resolution and Bun's types, because the shipped scripts and hooks import without extensions.
 
-Vitest runs on Node in the `node` environment and needs no `.env`, network or credentials; setup clears credentials before app modules load. Tests follow `.claude/rules/src/testing.md`: most tests go through the HTTP surface with real in-memory layers, either Effect's in-process test client or a real server on an ephemeral port. Cover `/healthz`, startup failing on invalid config, the 404 envelope, every `apiErrorTable` row's status and `retryable`, a decode failure (`?limit=abc` style) as the 400 envelope, a wrong method as the 404 envelope, a defect as a generic 500 logged once with its stack frames and no message, request ids, exactly one request log line per call (a route miss included), and the same `/healthz` response through the web handler with platform-free server services, not Node's. Hook tests run with the Claude adapter.
+Vitest runs on Node in the `node` environment and needs no `.env`, network or credentials; setup clears credentials before app modules load. Tests follow `.claude/rules/src/testing.md`: most tests go through the HTTP surface with real in-memory layers, either Effect's in-process test client or a real server on an ephemeral port. Cover `/healthz`, startup failing on invalid config, the 404 envelope, every `apiErrorTable` row's status and `retryable`, a decode failure (`?limit=abc` style) as the 400 envelope, a wrong method as the 404 envelope, a defect as a generic 500 logged once with its stack frames and no message, request ids, exactly one request log line per call (a route miss included), and the same `/healthz` response through the web handler with platform-free server services, not Node's. Run hook tests for every target agent.
 
 <!-- stacks:when with=ci-github -->
 CI sets up Bun from packageManager and Node from .node-version, installs frozen dependencies, then runs lint, typecheck, coverage and the build. Upload logs and coverage on failure. No external credentials are needed.

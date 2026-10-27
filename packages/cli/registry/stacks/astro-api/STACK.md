@@ -16,7 +16,7 @@ decisions:
   - "Node version: current LTS (default), recorded in .node-version and engines.node; Node runs the API and Vitest, Bun installs and runs scripts."
   - "Serve the built site from the API process (default: yes, through STATIC_DIR, one origin for pages and API); or host apps/web/dist separately behind the same origin."
   - "Production site URL for canonical links (default: https://example.com)."
-merge: [.claude/settings.json]
+merge: [.claude/settings.json, .codex/hooks.json]
 fragments:
   required: [claude-harness]
   default: [git-hooks, ci-github, effect, rest-api]

@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "^Bash$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if root=\"$(git rev-parse --show-toplevel 2>/dev/null)\" && [ -f \"$root/.claude/hooks/guard-api-commands.ts\" ]; then if ! bun \"$root/.claude/hooks/guard-api-commands.ts\"; then echo \"BLOCKED: .claude/hooks/guard-api-commands.ts failed to run, so the command is refused rather than run unguarded.\" >&2; exit 2; fi; else echo \"BLOCKED: .claude/hooks/guard-api-commands.ts not found under this checkout's git root, so the command is refused rather than run unguarded.\" >&2; exit 2; fi",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
