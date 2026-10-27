@@ -62,6 +62,34 @@ quickstacks new <stack> [dir]    # dir defaults to <stack>; `.` is the current d
 - Every write is checked against the project's real path, so nothing lands outside it (`PermissionDenied`, reason `escape`). A failure or Ctrl+C removes everything `new` wrote.
 - Missing tools never fail `new`: they are listed in the result and the brief, with the `--without` flag that would drop the fragment needing one.
 
+## Validating a registry
+
+```sh
+quickstacks validate                       # the bundled registry
+quickstacks validate ~/my-registry         # a registry root (holds stacks/ or fragments/)
+quickstacks validate ~/my-registry/stacks/web   # one entry
+quickstacks validate --json                # the ValidateReport
+quickstacks validate --brief web --with docs --sandbox   # the brief a composition renders to
+```
+
+`validate` reads files only; it runs nothing from an entry. It checks frontmatter and identity, references (`fragments`, `requires`, `conflicts`, `applies_to`), conditional prose markers, `merge` files, verify step layers, whether git ignores any of an entry's files, and composes each stack in both presets: alone (with its required and default fragments), then with each optional fragment and each app that fits it added on its own. References resolve through every root, the one being validated first; one that resolves only in another root is a note naming that root. The bundled registry must be self-contained.
+
+Every stack's base composition must verify each layer: `install`, `lint`, `typecheck` and `test`, plus a `serve` step with a probe when the stack is tagged `web` or `api`.
+
+Word budgets, counted with every conditional branch in a body and, for a composed brief, the CLI's own text included (reported separately as fixed text). Every composed brief is rendered on one fixed context (no missing tools, a fresh repository, the `npx` invocation) so the counts are the same on every machine:
+
+| Subject | Limit (words) |
+| --- | --- |
+| Stack body | 2,000 |
+| Fragment body | 1,000 |
+| App body (`category: app`) | 3,000 |
+| Composed brief | 6,000 |
+| Composed brief with an app | 9,000 |
+
+Findings are errors, warnings or notes. Exit 0 when there are no errors; exit 2 (`ValidationFailed`) with the full report still on stdout and the error envelope, with the counts, as the last stderr line. A path that is neither a registry root nor an entry under `stacks/` or `fragments/` is `NotFound` (2); an unreadable root is exit 6. Warnings don't change the exit, but the bundled registry is held to zero.
+
+`--brief <stack>` prints the composed brief, then its word count, fixed-text count and limit. `--with` and `--without` take ids (repeatable or comma-separated); they and `--sandbox` work only with `--brief`.
+
 ## Configuration
 
 Optional configuration is `$XDG_CONFIG_HOME/quickstacks/config.json`, defaulting to `$HOME/.config/quickstacks/config.json`. Its closed schema accepts these optional keys, and rejects any other. Environment values override file values; blank values count as absent. Configuration is read lazily and cached for one invocation.
@@ -92,7 +120,7 @@ The development wrapper sets info logging, appends `logs/cli.jsonl`, copies noni
 
 Stdout contains results only. `--json` emits one result object; JSON version is `{ "version": "0.1.0" }` and JSON help is `{ "help": "..." }`. Failures leave stdout empty and stderr contains a safe diagnostic, or exactly one JSON `{ "error": { "tag", "message", "retryable", "details"? } }` object as the last stderr line. `details`, when present, is a closed per-tag object (for example `{ "command", "suggestions" }` for an unknown subcommand). Two exceptions keep stdout: a verify failure (`VerifyFailed`, `VerifyChanged`) writes its report to stdout before the error, and a command that hands the terminal to another program writes its output so far before doing so, which stays on stdout if it later fails. In JSON mode ancillary logs go only to the optional log file so stderr remains parseable; set `QUICKSTACKS_LOG_FILE`, or rerun without `--json`, to see why a `Defect` happened. A `--json` after `--` belongs to the command, not to quickstacks. Human mode emits logs to stderr and optionally to the same JSONL file. No streaming command exists in this base.
 
-Exit codes: usage/bad-input/not-found 2; config 3; upstream 4; verify failed or changed 5 (the verify report stays on stdout); permission 6; interruption 130; defect 1. Scripts that expect 1 for every failure get these specific codes instead. A closed stdout pipe exits quietly with 0, except after a verify failure, which keeps exit 5. Defects never become success.
+Exit codes: usage/bad-input/not-found 2, and validation failed 2 (the validate report stays on stdout); config 3; upstream 4; verify failed or changed 5 (the verify report stays on stdout); permission 6; interruption 130; defect 1. Scripts that expect 1 for every failure get these specific codes instead. A closed stdout pipe exits quietly with 0, except after a failure that keeps its report, which keeps its exit (2 for validate, 5 for verify). Defects never become success.
 
 Signals: Ctrl+C (SIGINT), SIGTERM or SIGHUP stops the command after its cleanup, with exit 130, and the processes it started are killed. A second Ctrl+C within a second of the first is treated as the same keypress (a wrapper such as `bun run dev` or `npx` forwards a copy); one a second or more later exits at once, killing those processes without further cleanup. While quickstacks has handed the terminal to another program, Ctrl+C and SIGQUIT belong to that program, and SIGTERM and SIGHUP are passed on to it; once that program exits, quickstacks stops too, with exit 130.
 

@@ -18,8 +18,14 @@ export class BadInput extends Schema.TaggedError<BadInput>()("BadInput", {
 }) {
   override readonly message = "Invalid input.";
 }
-/** Up to three known ids close to the one given, from `core/suggest.ts::closest`. */
-export const NotFoundDetails = Schema.Struct({ suggestions: Schema.Array(Schema.String) });
+/**
+ * Up to three known ids close to the one given, from `core/suggest.ts::closest`; `looked` is the
+ * path a lookup expected to find (validate's path argument, 1.5).
+ */
+export const NotFoundDetails = Schema.Struct({
+  suggestions: Schema.Array(Schema.String),
+  looked: Schema.optionalKey(Schema.String),
+});
 export class NotFound extends Schema.TaggedError<NotFound>()("NotFound", {
   details: Schema.optionalKey(NotFoundDetails),
 }) {
@@ -162,6 +168,16 @@ export class TargetNotEmpty extends Schema.TaggedError<TargetNotEmpty>()("Target
 }) {
   override readonly message = "The target directory is not empty.";
 }
+/** `validate` found at least one error finding; the report stays on stdout. Counts, not text. */
+export const ValidationFailedDetails = Schema.Struct({
+  errors: Schema.Number,
+  warnings: Schema.Number,
+});
+export class ValidationFailed extends Schema.TaggedError<ValidationFailed>()("ValidationFailed", {
+  details: Schema.optionalKey(ValidationFailedDetails),
+}) {
+  override readonly message = "Validation failed.";
+}
 export class Interrupted extends Schema.TaggedError<Interrupted>()("Interrupted", {}) {
   override readonly message = "Command interrupted.";
 }
@@ -198,6 +214,7 @@ export const errorClasses = [
   EntryInvalid,
   ComposeConflict,
   TargetNotEmpty,
+  ValidationFailed,
   Interrupted,
   Defect,
   BrokenPipe,
@@ -218,6 +235,7 @@ export const errorTable = {
   EntryInvalid: { exit: 2, retryable: false, keepsResult: false },
   ComposeConflict: { exit: 2, retryable: false, keepsResult: false },
   TargetNotEmpty: { exit: 2, retryable: false, keepsResult: false },
+  ValidationFailed: { exit: 2, retryable: false, keepsResult: true },
   Interrupted: { exit: 130, retryable: false, keepsResult: false },
   Defect: { exit: 1, retryable: false, keepsResult: false },
   BrokenPipe: { exit: 0, retryable: false, keepsResult: false },
@@ -276,16 +294,22 @@ export function detailLines(error: AppError): string[] {
     case "BadInput":
       return error.details ? [`Id: ${printable(error.details.id)}`] : [];
     case "NotFound": {
-      // Details mean an entry id was looked up, so the list of entries is the next step.
+      // `looked` means a path was missing (validate); otherwise details mean an entry id was
+      // looked up, so the list of entries is the next step.
       const details = error.details;
       if (!details) return [];
       return [
+        ...(details.looked ? [`Looked for: ${printable(details.looked)}`] : []),
         ...(details.suggestions.length
           ? [`Did you mean: ${details.suggestions.map(printable).join(", ")}?`]
           : []),
-        "Next: quickstacks list shows every stack and fragment.",
+        ...(details.looked ? [] : ["Next: quickstacks list shows every stack and fragment."]),
       ];
     }
+    case "ValidationFailed":
+      return error.details
+        ? [`Errors: ${error.details.errors}, warnings: ${error.details.warnings}`]
+        : [];
     case "EntryInvalid": {
       const details = error.details;
       if (!details) return [];
@@ -365,6 +389,8 @@ export function encodeDetails(error: AppError): Effect.Effect<unknown, Schema.Sc
       return encodeClosed(ComposeConflictDetails, error.details);
     case "TargetNotEmpty":
       return encodeClosed(TargetNotEmptyDetails, error.details);
+    case "ValidationFailed":
+      return encodeClosed(ValidationFailedDetails, error.details);
     case "InvalidConfig":
       return encodeClosed(InvalidConfigDetails, error.details);
     case "NotConfigured":

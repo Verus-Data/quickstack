@@ -50,7 +50,10 @@ proposal (D23).
    count it, because that is what the agent reads, and 1.5 reports `fixedWords` beside
    `briefWords` so a CLI wording change that pushes a stack over is visible. Blocks
    [1.5](phases/phase-1.5-validate-and-brief-budget.md), and should be settled before
-   [1.6a](phases/phase-1.6a-bundled-stack-content.md) measures anything.
+   [1.6a](phases/phase-1.6a-bundled-stack-content.md) measures anything. Still defaulted
+   to "counted" as of 2026-10-26: 1.5 shipped counting it, and switching to authored text
+   only is a small change where `src/core/validate/compositions.ts` compares a size with
+   its limit.
 8. Is the agent's own log of the questions it asked the user (`## Asked` in
    `.quickstacks/NOTES.md`) good enough to count interventions in interactive runs, or do
    interactive runs only count as anecdotes and headless bench runs carry the measure?
