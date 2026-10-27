@@ -68,7 +68,7 @@ stacks new <stack> [dir]    # dir defaults to the slug of --name, else <stack>; 
   --author "A. Name"             # author for templates (default: setting, then git user.name)
   --dry-run                      # render and report the plan without writing or launching
   --scope acme                   # npm scope for {{package_scope}} (default: the `package_scope` setting)
-  --launch codex                 # the agent to hand off to: claude, codex, opencode or cursor
+  --launch codex                 # harness: claude, codex, opencode, cursor, copilot or codex-app
   --no-launch                    # print the prompt instead of starting an agent
   --json                         # one NewResult object; never starts an agent
 ```
@@ -95,7 +95,9 @@ The handoff for a real run, first match wins (the manifest's `handoff` records w
 
 1. Run from inside an agent session (an agent marker such as `CLAUDECODE` or `AI_AGENT` is set): stdout ends with `NEXT STEP FOR THE AGENT: ...`, telling that agent to read the brief and loop on `verify`. With an untrusted entry it says `STOP` instead: show the user the entries and the brief's first section, and continue only if they confirm.
 2. `--json`, `--no-launch`, stdin or stdout not a terminal, or any untrusted entry: the prompt is printed (with an example command, for a human) and nothing is launched. An untrusted entry never launches an agent.
-3. Otherwise the first agent CLI on PATH (`--launch` alone, else the `agents` setting, then `claude`, `codex`, `opencode`, `cursor-agent`) starts in the project with the prompt as its first message, with your environment and the terminal. If it can't be started, the manifest's `handoff` is rewritten to `print`. stacks exits with that agent's status, with no error envelope: the project was written either way. None on PATH: the prompt is printed. `--launch` with `--no-launch` or `--json` is `Usage` (exit 2).
+3. Otherwise `--launch` selects a harness explicitly. Without it, the first available agent in the `agents` setting launches without asking. With none configured and available, one found harness launches immediately; several show a numbered picker after the summary. The order is `claude`, `codex`, `opencode`, `cursor-agent`, `copilot`, then the Codex app on macOS. Enter selects the first row; an invalid answer gets one retry, and EOF or two invalid answers print the prompt and exit 0. A choice isn't saved as a preference and doesn't change adapter targets. With none found, the prompt is printed. `--launch` with `--no-launch` or `--json` is `Usage` (exit 2).
+
+Terminal harnesses receive your environment and terminal in the project directory, and stacks exits with the agent's status. Copilot CLI receives `copilot -i <prompt>`. The Codex app is detected only on macOS with `open` on PATH and `Codex.app` under `/Applications` or `$HOME/Applications`. It opens `codex://new?path=<dir>&prompt=<prompt>` and exits 0; an opener failure keeps the project and prints the prompt. The manifest records `codex-app` as `codex`, `copilot` as `other`, and an unanswered picker as `print`. If a terminal agent can't be started, the manifest's `handoff` is also rewritten to `print`.
 
 ### What `new` checks and writes
 

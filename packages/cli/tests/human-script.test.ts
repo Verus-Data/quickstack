@@ -7,7 +7,7 @@ import { AGENT_MARKER_NAMES } from "../src/config";
 import { tempDir } from "./helpers/cli";
 
 const launchError =
-  "human: new and add launch your coding agent in a terminal; add --no-launch to QA the output, or pass --launch <agent> to test the launch on purpose.";
+  "human: new and add launch your coding agent in a terminal; add --no-launch to QA the output, or pass --launch <agent> or --allow-launch to test the launch on purpose.";
 
 test("human output removes every agent marker and undefined values, keeping other variables", () => {
   const env: Record<string, string | undefined> = {

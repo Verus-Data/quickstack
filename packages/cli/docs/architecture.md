@@ -45,7 +45,7 @@ Render turns a composition into bytes. One function, `composeFiles`, renders eve
 
 Write (`src/core/scaffold/write.ts`) is the only code that writes into a project. It refuses any path that resolves outside the project's real path, creates files exclusively so it never overwrites, and rolls back everything it wrote if a later step fails or you press Ctrl+C.
 
-Hand off decides what happens next, by the first rule that matches. Inside an agent session, stacks prints a "NEXT STEP FOR THE AGENT" line. With `--json`, `--dry-run`, `--no-launch`, a non-terminal or any untrusted entry, it prints the prompt. Otherwise it starts an agent CLI in the project, with the prompt as its first message: the one `--launch` names, or else the first one on your PATH from your `agents` setting, then `claude`, `codex`, `opencode` and `cursor-agent`. The [command reference](reference/commands.md) has the full rule order.
+Hand off decides what happens next, by the first rule that matches. Inside an agent session, stacks prints a "NEXT STEP FOR THE AGENT" line. With `--json`, `--dry-run`, `--no-launch`, a non-terminal or any untrusted entry, it prints the prompt. Otherwise `--launch` selects a harness explicitly, or the first available agent in the `agents` setting launches. Without an available configured agent, one found harness launches immediately, and several show a numbered picker after the summary. The order is `claude`, `codex`, `opencode`, `cursor-agent`, `copilot`, then the Codex app on macOS. Terminal agents receive the prompt and terminal in the project; the app opens a project URL and exits 0. The [command reference](reference/commands.md) has the full rule order and app detection requirements.
 
 ## The rules the design keeps
 

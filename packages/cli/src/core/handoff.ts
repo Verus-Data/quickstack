@@ -1,5 +1,5 @@
 import { BRIEF_PATH } from "../project-layout";
-import type { AgentId, DetectedAgent } from "../schemas/entry";
+import type { AgentId, DetectedAgent, Harness } from "../schemas/entry";
 import type { Audience } from "../services/output";
 import { shellArg } from "./shell";
 import { printable } from "./text";
@@ -11,7 +11,8 @@ export type PrintReason =
   | "not-a-terminal"
   | "untrusted"
   | "no-agent-found"
-  | "agent-not-found";
+  | "agent-not-found"
+  | "not-chosen";
 
 /**
  * What `new` does once the project is written: tell the agent that called it what to do next,
@@ -23,24 +24,90 @@ export type HandoffDecision =
       agent: Exclude<DetectedAgent, "none">;
       untrusted: ReadonlyArray<string>;
     }
-  | { kind: "launch"; agent: AgentId; bin: string; args: ReadonlyArray<string> }
-  | { kind: "print"; reason: PrintReason; agent?: AgentId; untrusted: ReadonlyArray<string> };
+  | LaunchDecision
+  | { kind: "choose"; options: ReadonlyArray<LaunchDecision>; untrusted: ReadonlyArray<string> }
+  | { kind: "print"; reason: PrintReason; agent?: Harness; untrusted: ReadonlyArray<string> };
+
+type LaunchDecision =
+  | { kind: "launch"; agent: Harness; via: "terminal"; bin: string; args: ReadonlyArray<string> }
+  | { kind: "launch"; agent: Harness; via: "app" };
+
+type Launcher =
+  | {
+      via: "terminal";
+      label: string;
+      bin: string;
+      args: (prompt: string) => string[];
+      checked?: string;
+    }
+  | {
+      via: "app";
+      label: string;
+      app: string;
+      url: (dir: string, prompt: string) => string;
+      checked?: string;
+    };
 
 /**
  * How each agent CLI starts an interactive session with a first prompt. `checked` is the date
  * the row was last checked against the agent's documentation; unset until someone has.
  */
-export const LAUNCH_ARGS: Readonly<
-  Record<AgentId, { bin: string; args: (prompt: string) => string[]; checked?: string }>
-> = {
-  claude: { bin: "claude", args: (prompt) => [prompt] },
-  codex: { bin: "codex", args: (prompt) => [prompt] },
-  opencode: { bin: "opencode", args: (prompt) => ["--prompt", prompt] },
-  cursor: { bin: "cursor-agent", args: (prompt) => [prompt] },
-};
+export const LAUNCH_ARGS = {
+  claude: {
+    via: "terminal",
+    label: "Claude Code",
+    bin: "claude",
+    args: (prompt: string) => [prompt],
+  },
+  codex: { via: "terminal", label: "Codex CLI", bin: "codex", args: (prompt: string) => [prompt] },
+  opencode: {
+    via: "terminal",
+    label: "OpenCode",
+    bin: "opencode",
+    args: (prompt: string) => ["--prompt", prompt],
+  },
+  cursor: {
+    via: "terminal",
+    label: "Cursor CLI",
+    bin: "cursor-agent",
+    args: (prompt: string) => [prompt],
+  },
+  copilot: {
+    via: "terminal",
+    label: "Copilot CLI",
+    bin: "copilot",
+    args: (prompt: string) => ["-i", prompt],
+  },
+  "codex-app": {
+    via: "app",
+    label: "Codex app",
+    app: "Codex.app",
+    url: (dir: string, prompt: string) =>
+      `codex://new?path=${encodeURIComponent(dir)}&prompt=${encodeURIComponent(prompt)}`,
+  },
+} as const satisfies Readonly<Record<Harness, Launcher>>;
 
 /** Tried after `Settings.agents`, when `--launch` isn't given. */
-const LAUNCH_ORDER: ReadonlyArray<AgentId> = ["claude", "codex", "opencode", "cursor"];
+export const LAUNCH_ORDER: ReadonlyArray<Harness> = [
+  "claude",
+  "codex",
+  "opencode",
+  "cursor",
+  "copilot",
+  "codex-app",
+];
+
+/** The one constructor used by automatic selection and the picker. */
+export function launchDecision(agent: Harness, bin: string, prompt: string): LaunchDecision {
+  const launcher = LAUNCH_ARGS[agent];
+  return launcher.via === "app"
+    ? { kind: "launch", agent, via: "app" }
+    : { kind: "launch", agent, via: "terminal", bin, args: launcher.args(prompt) };
+}
+
+export const pickerQuestion = (count: number) => `Hand the project to [1-${count}, Enter for 1]: `;
+export const pickerText = (options: ReadonlyArray<Harness>) =>
+  `Agents found:\n${options.map((agent, i) => `  ${i + 1}) ${LAUNCH_ARGS[agent].label}`).join("\n")}\n`;
 
 /** The one prompt every outcome gives the agent. No quotes or backticks, so it pastes into a shell. */
 export const agentPrompt = (invocation: string) =>
@@ -57,28 +124,29 @@ export type HandoffInput = {
   /** Ids of the composed entries with `trusted: false`. */
   untrusted: ReadonlyArray<string>;
   /** `--launch`. */
-  preferred?: AgentId;
+  preferred?: Harness;
   /** `Settings.agents`, in the user's order. */
   configured: ReadonlyArray<AgentId>;
   /** Each agent's binary that `Processes.which` found, by agent. */
-  found: ReadonlyMap<AgentId, string>;
+  found: ReadonlyMap<Harness, string>;
   /** `agentPrompt(Host.invocation)`. */
   prompt: string;
 };
 
 /** The agents to try, in order: `--launch` alone, else the configured ones, then the rest. */
-export const candidates = (preferred: AgentId | undefined, configured: ReadonlyArray<AgentId>) =>
+export const candidates = (preferred: Harness | undefined, configured: ReadonlyArray<AgentId>) =>
   preferred ? [preferred] : [...new Set([...configured, ...LAUNCH_ORDER])];
 
 /**
  * The handoff, first matching rule wins: a detected agent; `--json`; `--no-launch`; no terminal;
- * an untrusted entry; else the first agent binary found. An untrusted entry never reaches
+ * an untrusted entry; else an explicit or configured harness, the only harness, or a choice.
+ * An untrusted entry never reaches
  * `launch`.
  */
 export function decideHandoff(input: HandoffInput): HandoffDecision {
   const { untrusted } = input;
   if (input.detected !== "none") return { kind: "inside-agent", agent: input.detected, untrusted };
-  const print = (reason: PrintReason, agent?: AgentId): HandoffDecision => ({
+  const print = (reason: PrintReason, agent?: Harness): HandoffDecision => ({
     kind: "print",
     reason,
     ...(agent ? { agent } : {}),
@@ -88,17 +156,37 @@ export function decideHandoff(input: HandoffInput): HandoffDecision {
   if (!input.launch) return print("no-launch");
   if (!input.stdinIsTTY || !input.stdoutIsTTY) return print("not-a-terminal");
   if (untrusted.length) return print("untrusted");
-  for (const agent of candidates(input.preferred, input.configured)) {
-    const bin = input.found.get(agent);
-    if (bin) return { kind: "launch", agent, bin, args: LAUNCH_ARGS[agent].args(input.prompt) };
+  if (input.preferred) {
+    const bin = input.found.get(input.preferred);
+    return bin
+      ? launchDecision(input.preferred, bin, input.prompt)
+      : print("agent-not-found", input.preferred);
   }
-  return input.preferred ? print("agent-not-found", input.preferred) : print("no-agent-found");
+  for (const agent of input.configured) {
+    const bin = input.found.get(agent);
+    if (bin) return launchDecision(agent, bin, input.prompt);
+  }
+  const options = LAUNCH_ORDER.flatMap((agent) => {
+    const bin = input.found.get(agent);
+    return bin ? [launchDecision(agent, bin, input.prompt)] : [];
+  });
+  const first = options[0];
+  if (!first) return print("no-agent-found");
+  if (options.length > 1) return { kind: "choose", options, untrusted };
+  return first;
 }
+
+const recordedAgent = (agent: Harness | "other"): AgentId | "other" => {
+  if (agent === "codex-app") return "codex";
+  return agent === "copilot" ? "other" : agent;
+};
 
 /** The manifest's `handoff` record. */
 export const handoffRecord = (decision: HandoffDecision, at: string) => ({
-  kind: decision.kind,
-  ...(decision.kind === "print" ? {} : { agent: decision.agent }),
+  kind: decision.kind === "choose" ? "print" : decision.kind,
+  ...(decision.kind === "print" || decision.kind === "choose"
+    ? {}
+    : { agent: recordedAgent(decision.agent) }),
   at,
 });
 
@@ -112,7 +200,7 @@ const quote = (text: string) =>
  * gets a ready-to-run example command; an agent has the prompt on the line above it already.
  */
 export function renderHandoff(
-  decision: Exclude<HandoffDecision, { kind: "launch" }>,
+  decision: Exclude<HandoffDecision, { kind: "launch" | "choose" }>,
   context: { shown: string; invocation: string; audience: Audience; agent: AgentId | undefined },
 ): string {
   const ids = decision.untrusted.map(printable).join(", ");
@@ -122,17 +210,26 @@ export function renderHandoff(
       ? `STOP: this project uses entries this machine hasn't trusted: ${ids}. Don't start. Show the user the list and ${BRIEF_PATH}'s first section, and continue only if they confirm.`
       : `NEXT STEP FOR THE AGENT: read ${BRIEF_PATH} now and carry it out, working in ${where}. Loop on ${context.invocation} verify until it passes. Don't stop here to report back; the brief says when to ask the user.`;
   const prompt = agentPrompt(context.invocation);
-  const example = LAUNCH_ARGS[decision.agent ?? context.agent ?? "claude"];
+  const requested = LAUNCH_ARGS[decision.agent ?? context.agent ?? "claude"];
+  const example = requested.via === "terminal" ? requested : LAUNCH_ARGS[context.agent ?? "claude"];
   const dir = printable(shellArg(context.shown));
   const lines: string[] = [];
   if (decision.reason === "untrusted")
     lines.push(
       `Not launching an agent: this project uses entries this machine hasn't trusted (${ids}; listed above). Read them and the brief's first section before an agent acts on it.`,
     );
-  if (decision.reason === "agent-not-found") lines.push(`${example.bin} isn't on PATH.`);
+  if (decision.reason === "agent-not-found")
+    lines.push(
+      requested.via === "app"
+        ? "The Codex app isn't installed (macOS only)."
+        : `${requested.bin} isn't on PATH.`,
+    );
   if (decision.reason === "no-agent-found")
     lines.push(
-      `No agent CLI found on PATH (looked for ${LAUNCH_ORDER.map((id) => LAUNCH_ARGS[id].bin).join(", ")}).`,
+      `No agent CLI found on PATH (looked for ${LAUNCH_ORDER.flatMap((id) => {
+        const launcher = LAUNCH_ARGS[id];
+        return launcher.via === "terminal" ? [launcher.bin] : [];
+      }).join(", ")}).`,
     );
   lines.push(`Next: open ${dir} in your coding agent and give it this prompt:`, `  ${prompt}`);
   if (context.audience === "human")

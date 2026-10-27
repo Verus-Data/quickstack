@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 import { BRIEF_PATH } from "../project-layout";
-import { AgentId, Kind, Origin } from "./entry";
+import { AgentId, Harness, Kind, Origin } from "./entry";
 
 const EntryRef = Schema.Struct({ kind: Kind, id: Schema.String });
 
@@ -92,9 +92,10 @@ export const NewResult = Schema.Struct({
         "untrusted",
         "no-agent-found",
         "agent-not-found",
+        "not-chosen",
       ]),
       /** The `--launch` agent that wasn't on PATH. */
-      agent: Schema.optionalKey(AgentId),
+      agent: Schema.optionalKey(Harness),
       untrusted: Schema.Array(Schema.String),
       prompt: Schema.String,
     }),

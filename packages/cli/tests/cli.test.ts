@@ -213,7 +213,7 @@ test("main maps a defect once and never leaks its object", async () => {
 test.each([
   ["agents", "gemini", "claude, codex, opencode or cursor", []],
   ["agents", "codx", "claude, codex, opencode or cursor", ["codex"]],
-  ["launch", "codx", "claude, codex, opencode or cursor", ["codex"]],
+  ["launch", "codx", "claude, codex, opencode, cursor, copilot, codex-app", ["codex"]],
   ["preset", "other", '"default" | "sandbox"', undefined],
 ])(
   "invalid --%s value %s names the input and expectation in every audience",

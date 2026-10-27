@@ -27,7 +27,7 @@ The blue steps are yours, and this guide walks through each one. The purple loop
 
 - [Node](https://nodejs.org) 22 or newer, on macOS or Linux. `npx` comes with it.
 - git.
-- A coding agent CLI on your PATH, if you want stacks to hand the project over for you. `claude`, `codex`, `opencode` and `cursor-agent` are recognized.
+- A coding agent CLI on your PATH, if you want stacks to hand the project over for you: `claude`, `codex`, `opencode`, `cursor-agent` or `copilot`. On macOS, the Codex app is another option; see [app detection requirements](agents.md#agent-adapters). With several harnesses and no available configured agent, stacks asks you to pick.
 - Whatever the stack builds with. A Go stack needs Go, a Python stack needs uv, and so on. stacks tells you if something is missing; it never fails because of it.
 
 ## Get the CLI

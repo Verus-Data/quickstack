@@ -63,3 +63,4 @@ Pickers are built with effect/cli's `Prompt` (`Select`, `MultiSelect`, `AutoComp
 - effect/cli's `Prompt` inside the Bun-compiled binary hasn't been tried; `create`'s confirmation shows `Terminal` works, but the richer prompts redraw more. Run the compiled binary early.
 - People may expect `new` with no arguments to show the agent guide or help instead. If manual QA finds that confusing, print the picker's first line as "No stack given; pick one (Ctrl+C to quit)".
 - The `Running:` echo assumes every pick maps to a flag. If a pick ever doesn't, that pick is the bug, not the echo.
+- 2026-10-27: `Prompt.select` and `MultiSelect` redraw with cursor movement, which `.claude/rules/cli/cli.md` forbids. [4.4c](phase-4.4c-agent-picker.md)'s agent picker is a numbered list read with `Terminal.readLine` for that reason; build these pickers on it rather than add a second prompt mechanism, or change the rule first.

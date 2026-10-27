@@ -16,7 +16,21 @@ test("SIGTERM to stacks while the agent runs reaches the agent; stacks then stop
   // As a shell starts a job: its own process group, so the test's signal reaches only it.
   const cli = spawn(
     "/bin/sh",
-    ["-c", 'exec bun "$@"', "sh", fixture, newRegistry, "new", "fixture-stack", "app", "--sandbox"],
+    // `--launch claude`: the PATH below keeps the real one for bun, which may hold other agents
+    // that would bring up the picker (4.4c).
+    [
+      "-c",
+      'exec bun "$@"',
+      "sh",
+      fixture,
+      newRegistry,
+      "new",
+      "fixture-stack",
+      "app",
+      "--sandbox",
+      "--launch",
+      "claude",
+    ],
     {
       cwd: dir.path,
       detached: true,

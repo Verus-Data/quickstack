@@ -15,7 +15,7 @@ import {
   Usage,
 } from "./errors";
 import { defectTrace, entry, Logging } from "./logging";
-import { AgentId } from "./schemas/entry";
+import { AgentId, Harness } from "./schemas/entry";
 import { Host } from "./services/host";
 import { Invocation } from "./services/invocation";
 import { Output } from "./services/output";
@@ -73,7 +73,12 @@ function invalidValueUsage(error: CliError.InvalidValue): Usage {
       value: error.value,
       expected: error.expected,
       ...(error.option === "agents" || error.option === "launch"
-        ? { suggestions: closest(error.value, AgentId.literals) }
+        ? {
+            suggestions: closest(
+              error.value,
+              error.option === "launch" ? Harness.literals : AgentId.literals,
+            ),
+          }
         : {}),
     },
   });
