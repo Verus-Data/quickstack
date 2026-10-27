@@ -7,13 +7,9 @@ on:
 permissions:
   contents: read
 jobs:
+  # Linux only: macOS runners cost too much. Tests named "(macOS)" run in lefthook's pre-commit.
   check:
-    strategy:
-      fail-fast: false
-      matrix:
-        # Process spawning, signals and the compiled binary differ between Linux and macOS.
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v6
@@ -32,11 +28,11 @@ jobs:
       - uses: actions/upload-artifact@v6
         if: failure()
         with:
-          name: diagnostics-${{ matrix.os }}
+          name: diagnostics
           path: |
             packages/*/coverage/
             packages/*/logs/
-  # The one required check: green only when every matrix job passed.
+  # The one required check: green only when check passed.
   ci-ok:
     needs: check
     if: always()

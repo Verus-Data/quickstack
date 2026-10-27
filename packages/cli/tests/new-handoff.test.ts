@@ -285,19 +285,23 @@ describe("launching an agent", () => {
     },
   );
 
-  test("an agent binary the OS can't execute is a defect; the record says print, not launch", async () => {
-    const home = temp();
-    mkdirSync(join(home, "bin"));
-    // Executable bits, but no shebang and no valid binary format: exec fails with ENOEXEC.
-    const bin = join(home, "bin", "claude");
-    writeFileSync(bin, "\u007fELF not really\n");
-    chmodSync(bin, 0o755);
-    const { status, stdout, stderr, app } = await newCli([], { home, host: terminal });
-    expect(status).toBe(1);
-    expect(stdout).toContain(`Launching ${bin} in app...`);
-    expect(stderr).toBe("An unexpected error occurred.\n");
-    expect(manifestOf(app).handoff).toEqual({ kind: "print", at: manifestOf(app).createdAt });
-  });
+  // Linux's exec falls back to /bin/sh for a file it can't execute, so only macOS sees ENOEXEC.
+  test.runIf(process.platform === "darwin")(
+    "an agent binary the OS can't execute is a defect; the record says print, not launch (macOS)",
+    async () => {
+      const home = temp();
+      mkdirSync(join(home, "bin"));
+      // Executable bits, but no shebang and no valid binary format: exec fails with ENOEXEC.
+      const bin = join(home, "bin", "claude");
+      writeFileSync(bin, "\u007fELF not really\n");
+      chmodSync(bin, 0o755);
+      const { status, stdout, stderr, app } = await newCli([], { home, host: terminal });
+      expect(status).toBe(1);
+      expect(stdout).toContain(`Launching ${bin} in app...`);
+      expect(stderr).toBe("An unexpected error occurred.\n");
+      expect(manifestOf(app).handoff).toEqual({ kind: "print", at: manifestOf(app).createdAt });
+    },
+  );
 });
 
 describe("printing the prompt", () => {

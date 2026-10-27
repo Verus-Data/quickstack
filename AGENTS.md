@@ -173,7 +173,7 @@ Install lefthook on PATH (e.g. brew install lefthook), then bun install. Pre-com
 
 ## CI
 
-.github/workflows/ci.yml runs a sequential `check` job on ubuntu-latest and macos-latest for main pushes, PRs and manual runs, then `ci-ok`, which passes only when both did; contents:read only. Bun comes from packageManager, Node from .node-version. Frozen install, lint, typecheck, coverage, binary e2e; upload each package's logs/coverage on failure. Required check: ci-ok. Upgrade official action tags after checking upstream; SHA pins are deferred.
+.github/workflows/ci.yml runs a sequential `check` job on ubuntu-latest only (macOS runners cost too much) for main pushes, PRs and manual runs, then `ci-ok`, which passes only when it did; contents:read only. Tests whose meaningful branch is macOS-only carry `(macOS)` in their name; lefthook's pre-commit runs them on a Mac (`bun run test:macos` in `packages/cli`), and a test that can't pass on Linux is `test.runIf(process.platform === "darwin")`. Bun comes from packageManager, Node from .node-version. Frozen install, lint, typecheck, coverage, binary e2e; upload each package's logs/coverage on failure. Required check: ci-ok. Upgrade official action tags after checking upstream; SHA pins are deferred.
 
 ## Build workarounds
 

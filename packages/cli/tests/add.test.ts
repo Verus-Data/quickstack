@@ -822,7 +822,7 @@ describe("add realistic existing-project cases", () => {
     expect(snapshot(project.root)).toEqual(before);
   });
 
-  test("case-colliding destinations are parked on case-insensitive volumes [3.0#29]", async () => {
+  test("case-colliding destinations are parked on case-insensitive volumes (macOS) [3.0#29]", async () => {
     const project = addProject();
     put(project.root, "readme.md", "user's lower-case readme\n");
     const insensitive = existsSync(join(project.root, "README.md"));

@@ -431,7 +431,8 @@ function shippedScripts(): string[] {
 }
 
 describe("the hooks run on bash 3.2 [1.6d#2]", () => {
-  test("every agent-ops hook runs clean under the system bash, 3.x on macOS [1.6d#2]", () => {
+  // macOS's /bin/bash is 3.2; elsewhere this runs under PATH's bash.
+  test("every agent-ops hook runs clean under the system bash (macOS) [1.6d#2]", () => {
     if (process.platform === "darwin") {
       expect(bash).toBe("/bin/bash");
       expect(bashVersion).toMatch(/^3\./);

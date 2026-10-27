@@ -4,6 +4,11 @@ pre-commit:
       glob: "*.{ts,tsx,js,json,jsonc}"
       run: bunx --no-install biome check --write --files-ignore-unknown=true --no-errors-on-unmatched {staged_files}
       stage_fixed: true
+    # CI runs on Linux only, so tests named "(macOS)" (ENOEXEC, bash 3.2, case-insensitive
+    # volumes) run here, on a maintainer's Mac, about 4 s.
+    - name: macos-tests
+      glob: "packages/cli/**/*.{ts,sh,json,md,tmpl}"
+      run: '[ "$(uname)" != Darwin ] || bun run --cwd packages/cli test:macos'
 commit-msg:
   jobs:
     - name: conventional-commit
