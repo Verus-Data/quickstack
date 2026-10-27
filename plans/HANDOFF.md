@@ -20,7 +20,7 @@ A maintainer still has to confirm each run, and the other four bundled stacks ha
 - Assumption 1, first result: an agent followed composed briefs of 3,200 to 4,800 words to a green `verify` in 3 to 5 minutes with nothing asked, once the briefs' own contradictions were fixed.
 - D5: the 6,000-word budget held with room to spare for these stacks; no run tested a brief near the limit.
 
-## Phases 2 and 3 (2026-10-27, in progress)
+## Phases 2 and 3 (2026-10-27, executed)
 
 Phases 2 and 3 are being executed through Codex delegates (`/execute:codex`), one test-author
 then one implementer per sub-phase, merged to `main` as each lands. Work runs off the dev build
@@ -52,6 +52,25 @@ reworded for `dist/quickstacks` or deferred in its plan.
   question 18.
 - Left to maintainers: the real bench runs beyond a few seed runs, and the proofs that need
   them (3.3a-c, parts of 3.4a, 3.4b, 3.5b and 2.0b).
+- After the last unit: one codebase-quality refactor (one `fitsStack` rule, an `isStack` guard),
+  then two production reviews (CLI; harness and shipped entries), whose fixes are merged: `create`
+  refuses to silently shadow an existing id, `add` names what blocks a planned path, project
+  names with `"` or `\` are refused, the shipped destructive guard keeps every shell pattern
+  when the TypeScript guard runs and fails closed, the shared lexer decodes `$'...'`, and the
+  Codex adapter's hooks refuse when their guard is missing. The repo's own Codex delegates now
+  run the destructive guard too.
+- Open from the reviews, for maintainers:
+  - The agent skill (and its plugin copy) falls back to `npx -y quickstacks@latest`, and the
+    npm name is unreserved, so anyone could publish under it. Reserve the name or drop the
+    fallback before the plugin is published.
+  - `.rr.yaml` names one maintainer's hosts (rr is opt-in per clone, `git config
+    quickstacks.rr true`); another maintainer who opts in needs hosts with the same names.
+  - The repo's own shell hooks (`.claude/hooks/*.sh`) have drifted from the shipped ones;
+    `tests/hooks/harness-sync.test.ts` checks only `_lib.ts` and `_shell.ts`.
+  - Cursor's `Write` payload for an edit to an existing file isn't recorded; the fixture
+    follows the docs. Record a live payload to confirm the secrets guard sees edits.
+  - `list` still shows the three 1.6b stacks as proven while `validate` notes their
+    compositions changed since that run; rerun them with `bun run bench`.
 
 ## Current state (2026-10-26)
 
