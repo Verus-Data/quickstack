@@ -1,6 +1,7 @@
 import { Effect, Option, Schema } from "effect";
 import { Argument, Command, Flag } from "effect/cli";
-import { renderShow, showReport } from "../core/show";
+import { showReport } from "../core/show";
+import { renderShow } from "../core/show-report";
 import { shownPath } from "../core/shown-path";
 import { ShowReport } from "../schemas/show";
 import { Host } from "../services/host";

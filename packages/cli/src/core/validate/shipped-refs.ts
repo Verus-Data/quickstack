@@ -1,7 +1,8 @@
 import { Effect, Result } from "effect";
 import type { Finding } from "../../schemas/validate";
 import { proseLines } from "../brief/headings";
-import { runnerTarget, shellWords } from "./commands";
+import { shellWords } from "../shell";
+import { runnerTarget } from "./commands";
 import { type Composed, sourceOf, uniqueFindings } from "./composed";
 import { isNativeConfig, parseNativeConfig } from "./native-config";
 import { nativeReferences } from "./native-refs";

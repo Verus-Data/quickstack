@@ -1,8 +1,8 @@
 import { Effect } from "effect";
 import type { FragmentMeta } from "../../schemas/entry";
 import type { Finding } from "../../schemas/validate";
-import { fitsStack } from "../compose/compose";
 import { scanConditionals } from "../compose/conditionals";
+import { fitsStack } from "../compose/selection";
 import { type Entry, isStack } from "../registry/entry";
 import { type Check, entryFile, finding, type View } from "./view";
 

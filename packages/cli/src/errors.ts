@@ -1,5 +1,6 @@
 import { Effect, Schema } from "effect";
 import { TEMPLATE_VARIABLES } from "./core/scaffold/template";
+import { shellArg } from "./core/shell";
 import { printable } from "./core/text";
 import { BRIEF_PATH, MANIFEST_PATH } from "./project-layout";
 import { Kind, Origin } from "./schemas/entry";
@@ -520,9 +521,6 @@ export function changeLines(change: typeof VerifyChange.Type): string[] {
       : ["Which steps changed is not itemized: there are no per-step digests to compare with."]),
   ];
 }
-/** A value as a shell argument: plain when it is safe, else single-quoted. */
-const shellArg = (text: string) =>
-  /^[A-Za-z0-9._/+-]+$/.test(text) ? text : `'${text.replaceAll("'", "'\\''")}'`;
 function badInputLines(details: typeof BadInputDetails.Type): string[] {
   const id = printable(details.id);
   switch (details.flag) {

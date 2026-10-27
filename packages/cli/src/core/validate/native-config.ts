@@ -1,6 +1,6 @@
 import { Result, Schema } from "effect";
 import { parse as parseToml } from "smol-toml";
-import { shellWords } from "./commands";
+import { shellWords } from "../shell";
 
 const record = Schema.Record(Schema.String, Schema.Unknown);
 /** Reject misspellings of known keys without closing unrelated agent settings. */

@@ -10,7 +10,8 @@ import { APP_TAG, type FragmentMeta, type StackMeta } from "../../schemas/entry"
 import type { Finding, SizeRow } from "../../schemas/validate";
 import { countWords } from "../brief/words";
 import { targetAgents } from "../compose/agents";
-import { type ComposeWarning, type Composition, compose, fitsStack } from "../compose/compose";
+import { type ComposeWarning, type Composition, compose } from "../compose/compose";
+import { fitsStack } from "../compose/selection";
 import type { Entry } from "../registry/entry";
 import { bodyLimit, canonicalBrief, composedLimit } from "./budget";
 import { type Check, entryFile, finding, type View } from "./view";

@@ -6,7 +6,7 @@ const n = (value: number) => value.toLocaleString("en-US");
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
 
 /** A path or id as one shell word: as is when it is plain, single-quoted otherwise. */
-export function shellWord(text: string): string {
+function shellWord(text: string): string {
   return /^[\w@%+=:,./-]+$/.test(text) ? text : `'${text.replaceAll("'", `'\\''`)}'`;
 }
 

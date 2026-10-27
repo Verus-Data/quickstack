@@ -1,22 +1,20 @@
 import { Effect, Option, Path, Schema } from "effect";
 import { Argument, Command, Flag } from "effect/cli";
-import { fitsStack } from "../core/compose/compose";
 import { readLedger } from "../core/ledger";
-import { type Group, groups, listResult, renderList, toRow, wrap } from "../core/list";
+import { type Group, groups, listResult, projectChoices, toRow } from "../core/list";
+import { renderAddable, renderList } from "../core/list-report";
 import { MANIFEST_PATH, readManifest } from "../core/manifest";
 import { type Entry, isRejected } from "../core/registry/entry";
 import { defaultRoots, Registry } from "../core/registry/registry";
+import { shellArg } from "../core/shell";
 import { shownPath } from "../core/shown-path";
 import { closest } from "../core/suggest";
 import { printable } from "../core/text";
 import { Usage } from "../errors";
 import { METADATA_DIR } from "../project-layout";
-import { ListResult, type ListRow } from "../schemas/list";
+import { ListResult } from "../schemas/list";
 import { Host } from "../services/host";
 import { Output } from "../services/output";
-
-const shellArg = (value: string) =>
-  /^[A-Za-z0-9._/+-]+$/.test(value) ? value : `'${value.replaceAll("'", "'\\''")}'`;
 
 const isGroup = (value: string): value is Group =>
   (groups as ReadonlyArray<string>).includes(value);
@@ -108,24 +106,6 @@ export const listCommand = Command.make(
   ),
 );
 
-function projectChoices(
-  all: ReadonlyArray<ListRow>,
-  manifest: Effect.Success<ReturnType<typeof readManifest>> | undefined,
-) {
-  const stack = all.find((row) => row.kind === "stack" && row.id === manifest?.stack?.id);
-  const applied = manifest?.fragments.map((entry) => entry.id) ?? [];
-  const addable = all.filter(
-    (row) =>
-      row.kind === "fragment" &&
-      !applied.includes(row.id) &&
-      (!stack || fitsStack(row.appliesTo ?? [], stack)),
-  );
-  const project = manifest
-    ? { stack: manifest.stack?.id ?? null, applied, addable: addable.map((row) => row.id) }
-    : undefined;
-  return { project, addable };
-}
-
 function descriptionWidth(
   agent: boolean,
   host: { stdoutIsTTY: boolean; stdoutColumns?: number },
@@ -134,36 +114,6 @@ function descriptionWidth(
   if (host.stdoutIsTTY && host.stdoutColumns) return Math.min(80, Math.max(20, host.stdoutColumns));
   return 80;
 }
-type AddableContext = {
-  addable: ReadonlyArray<ListRow>;
-  rejected: ListResult["rejected"];
-  width: number;
-  invocation: string;
-  dirFlag: string;
-};
-function renderAddable({ addable, rejected, width, invocation, dirFlag }: AddableContext): string {
-  return [
-    "Fragments you can add",
-    ...addable.flatMap((row) => [
-      `  ${printable(row.id)}${row.trusted ? "" : "  untrusted"}`,
-      ...wrap(printable(row.description.replace(/\s+/g, " ")), width, "    "),
-      `    Next: ${invocation} add ${row.id}${dirFlag}`,
-    ]),
-    ...(rejected.length
-      ? [
-          "",
-          "Rejected",
-          ...rejected.flatMap((entry) => [
-            `  ${entry.kind} ${printable(entry.id)} (${entry.origin}): ${printable(entry.error)}`,
-            `    ${printable(entry.dir)}`,
-          ]),
-        ]
-      : []),
-    "",
-    `Next: ${invocation} list stacks${dirFlag}`,
-  ].join("\n");
-}
-
 const selectedGroup = (group: Option.Option<string>) =>
   Effect.gen(function* () {
     const typed = Option.getOrUndefined(group);
