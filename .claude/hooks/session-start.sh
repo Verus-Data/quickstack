@@ -30,9 +30,9 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   dirty=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ') || dirty="?"
   say "Repo state: branch \`$branch\`, $dirty changed file(s)."
   # No nag before the first commit: a new project's initial commit goes on main. Repos that
-  # work on main by design opt out with `git config stacks.allowMain true`.
+  # work on main by design opt out with `git config quickstacks.allowMain true`.
   if git rev-parse -q --verify HEAD >/dev/null 2>&1 &&
-    [ "$(git config --bool stacks.allowMain 2>/dev/null || true)" != "true" ]; then
+    [ "$(git config --bool quickstacks.allowMain 2>/dev/null || true)" != "true" ]; then
     case "$branch" in
     main | master) say "You're on \`$branch\`: create a branch before committing non-trivial work." ;;
     esac

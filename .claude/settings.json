@@ -168,6 +168,16 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun \"${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-repo-content.ts\"",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "PostToolUse": [
