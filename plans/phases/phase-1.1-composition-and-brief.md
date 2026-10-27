@@ -1,6 +1,6 @@
 # Phase 1.1: Composition and the brief
 
-Status: EXECUTED 2026-10-26 on feat/phase-1 (reviewed once, fixes applied). Selection order, apps, the
+Status: EXECUTED 2026-10-26; reviewed, fixed, merged to main (PR #4). Selection order, apps, the
 split brief, decision prefixes, `--with` fit warnings and `NotFound` details revised
 2026-10-26 for the amended D18
 

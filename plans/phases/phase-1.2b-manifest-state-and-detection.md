@@ -1,6 +1,6 @@
 # Phase 1.2b: `new`: manifest, state record and agent detection
 
-Status: EXECUTED 2026-10-26 on feat/phase-1 (awaiting batch review)
+Status: EXECUTED 2026-10-26; batch-reviewed, fixed, merged to main (PR #4)
 
 Acceptance tests: traced
 

@@ -1,6 +1,6 @@
 # Phase 1.2a: `new`: scaffold and templates
 
-Status: EXECUTED 2026-10-26 on feat/phase-1 (awaiting review)
+Status: EXECUTED 2026-10-26; batch-reviewed, fixed, merged to main (PR #4)
 
 Acceptance tests: traced
 

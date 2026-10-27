@@ -1,6 +1,6 @@
 # Phase 1.0: Entry format and registry
 
-Status: EXECUTED 2026-10-26 on feat/phase-1 (reviewed once; fixes applied). Format sections rewritten
+Status: EXECUTED 2026-10-26; reviewed, fixed, merged to main (PR #4). Format sections rewritten
 2026-10-26 to the amended D18 (snake_case keys, literal dotfiles, apps as fragments,
 `expect` steps), which the maintainers have not yet agreed; see "What this plan may get
 wrong"

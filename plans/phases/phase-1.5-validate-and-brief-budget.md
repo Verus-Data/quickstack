@@ -1,6 +1,6 @@
 # Phase 1.5: `validate` and the brief budget
 
-Status: EXECUTED 2026-10-26 on feat/phase-1 (merged from feat/phase-1.5; batch-reviewed once, fixes being applied)
+Status: EXECUTED 2026-10-26; batch-reviewed, fixed, merged to main (PR #4)
 
 Acceptance tests: traced
 
