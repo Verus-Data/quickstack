@@ -63,7 +63,9 @@ bun run check   # the full gate, before finishing a feature
 ## Do not
 
 - commit or push (leave the changes for review)
-- disable a lint rule, weaken a test or add a cast to get green
+- disable a lint rule, weaken a test or add a cast to get green; a function over Biome's
+  complexity limit gets split into named steps, and no file joins the warning override list
+  (AGENTS.md "Conventions")
 - add features, options or abstractions the goal doesn't need
 - mention any repository outside this one in a tracked file; a reference repo named in "Read
   first" is for you only
