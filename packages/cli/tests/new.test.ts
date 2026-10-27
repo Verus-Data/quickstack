@@ -91,6 +91,7 @@ const expectedWritten = [
   ".quickstacks/.gitignore",
   ".quickstacks/BRIEF.md",
   ".quickstacks/NOTES.md",
+  ".quickstacks/manifest.json",
   "README.md",
   "plain.txt",
 ];
@@ -119,7 +120,7 @@ describe("new writes a project", () => {
       untrusted: [],
       warnings: [],
       git: "none",
-      stateRecord: false,
+      stateRecord: true,
       handoff: {
         kind: "print",
         next: "Read .quickstacks/BRIEF.md and carry it out. It is your full task for this project; you're done when `quickstacks verify` passes.",
@@ -138,6 +139,7 @@ describe("new writes a project", () => {
       ".quickstacks/.gitignore",
       ".quickstacks/BRIEF.md",
       ".quickstacks/NOTES.md",
+      ".quickstacks/manifest.json",
       ".quickstacks/state",
       "README.md",
       "plain.txt",
@@ -737,8 +739,11 @@ describe("a real CLI process", () => {
     });
     await vi.waitFor(() => expect(existsSync(marker)).toBe(true), { timeout: 10000 });
     expect(existsSync(join(home, "app", ".quickstacks", "BRIEF.md"))).toBe(true);
+    const records = join(home, ".local", "state", "quickstacks", "projects");
+    expect(readdirSync(records)).toHaveLength(1);
     process.kill(-(child.pid as number), "SIGINT");
     expect(await closed).toBe(130);
     expect(existsSync(join(home, "app"))).toBe(false);
+    expect(readdirSync(records)).toEqual([]);
   }, 20000);
 });

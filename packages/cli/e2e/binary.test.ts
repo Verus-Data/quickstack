@@ -10,7 +10,9 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { Schema } from "effect";
 import { version } from "../package.json";
+import { Manifest } from "../src/schemas/manifest";
 
 const binary = join(import.meta.dir, "../dist/quickstacks");
 async function invoke(
@@ -122,6 +124,14 @@ describe("real standalone binary", () => {
       expect(readFileSync(join(app, "README.md"), "utf8")).toStartWith("# app\n");
       expect(statSync(join(app, ".githooks/pre-commit")).mode & 0o111).not.toBe(0);
       expect(existsSync(join(app, "ran"))).toBe(false);
+      expect(created.stateRecord).toBe(true);
+      expect(created.written).toContain(".quickstacks/manifest.json");
+      const manifest = Schema.decodeUnknownSync(Manifest)(
+        JSON.parse(readFileSync(join(app, ".quickstacks/manifest.json"), "utf8")),
+        { onExcessProperty: "error" },
+      );
+      expect(manifest).toMatchObject({ schemaVersion: 1, mode: "new", preset: "sandbox" });
+      expect(manifest.briefWords).toBe(created.briefWords);
     } finally {
       rmSync(out, { recursive: true, force: true });
     }

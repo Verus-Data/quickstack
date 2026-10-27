@@ -51,7 +51,10 @@ export const NewResult = Schema.Struct({
     }),
   ),
   git: Schema.Literals(["fresh", "parent", "none"]),
-  /** Whether the out-of-project state record was written; always false until 1.2b. */
+  /**
+   * Whether the out-of-project state record was written; false when the state directory isn't
+   * writable (verify's tamper check is then manifest-only).
+   */
   stateRecord: Schema.Boolean,
   /** `print` until 1.4: show `next` to the user or act on it. */
   handoff: Schema.Struct({ kind: Schema.Literal("print"), next: Schema.String }),

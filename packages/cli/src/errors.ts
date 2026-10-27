@@ -148,11 +148,14 @@ export class ComposeConflict extends Schema.TaggedError<ComposeConflict>()("Comp
 }
 /**
  * `new` refuses a directory holding anything besides `.git` and OS litter. `path` is the target;
- * `entries` names up to ten of what is in it, sorted, litter excluded.
+ * `entries` names up to ten of what is in it, sorted, litter excluded. `scaffold` is set when the
+ * target already holds `.quickstacks/manifest.json`: `green` once its state record has
+ * `firstGreenAt`, else `unfinished`.
  */
 export const TargetNotEmptyDetails = Schema.Struct({
   path: Schema.String,
   entries: Schema.Array(Schema.String),
+  scaffold: Schema.optionalKey(Schema.Literals(["unfinished", "green"])),
 });
 export class TargetNotEmpty extends Schema.TaggedError<TargetNotEmpty>()("TargetNotEmpty", {
   details: Schema.optionalKey(TargetNotEmptyDetails),
@@ -257,7 +260,17 @@ export function detailLines(error: AppError): string[] {
         ...(details.entries.length
           ? [`Contains: ${details.entries.map(printable).join(", ")}`]
           : []),
-        "Next: pick a directory that doesn't exist yet or is empty.",
+        ...(details.scaffold === "unfinished"
+          ? [
+              "Scaffold: unfinished. An earlier `new` wrote this.",
+              "Next: continue with .quickstacks/BRIEF.md, or remove the directory to start again.",
+            ]
+          : details.scaffold === "green"
+            ? [
+                "Scaffold: green. This is a finished project.",
+                "Next: pick another directory for a new project; `add` will extend this one once it ships.",
+              ]
+            : ["Next: pick a directory that doesn't exist yet or is empty."]),
       ];
     }
     case "BadInput":

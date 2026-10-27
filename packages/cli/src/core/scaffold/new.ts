@@ -1,4 +1,4 @@
-import { Clock, Effect, Option, Path, Schema } from "effect";
+import { Clock, Effect, Exit, Option, Path, Schema } from "effect";
 import { AppConfig } from "../../config";
 import { BadInput, ComposeConflict, EntryInvalid } from "../../errors";
 import { NpmScope } from "../../schemas/config";
@@ -9,6 +9,8 @@ import { Processes } from "../../services/processes";
 import { type GitState, renderBrief } from "../brief/render";
 import { targetAgents } from "../compose/agents";
 import { type Composition, compose, dropFlags, missingTools } from "../compose/compose";
+import { buildManifest, encodeManifest, MANIFEST_PATH } from "../manifest";
+import { removeProjectState, writeProjectState } from "../project-state";
 import type { Entry } from "../registry/entry";
 import { Registry } from "../registry/registry";
 import { gitInit, gitInstalled, gitUserName, probeGit } from "./git";
@@ -115,9 +117,13 @@ export const scaffold = (options: NewOptions) =>
     };
     const files = yield* renderFiles(composition, registry, values);
 
-    const written = [...files.map((file) => file.path), IGNORE_PATH, BRIEF_PATH, NOTES_PATH].sort(
-      (a, b) => (a < b ? -1 : a > b ? 1 : 0),
-    );
+    const written = [
+      ...files.map((file) => file.path),
+      IGNORE_PATH,
+      BRIEF_PATH,
+      NOTES_PATH,
+      MANIFEST_PATH,
+    ].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
     const yes = options.yes || options.sandbox;
     const brief = (state: GitState) =>
       renderBrief(composition, {
@@ -131,8 +137,9 @@ export const scaffold = (options: NewOptions) =>
     let rendered = brief(git.state);
     let gitState = git.state;
     const warnings: Array<NewResult["warnings"][number]> = [...composition.warnings];
+    const manifest = yield* buildManifest(composition, { briefWords: rendered.briefWords });
 
-    yield* Effect.scoped(
+    const state = yield* Effect.scoped(
       Effect.gen(function* () {
         const writer = yield* openProject(dir);
         for (const file of files) yield* writer.write(file.path, file.data, file.executable);
@@ -140,7 +147,14 @@ export const scaffold = (options: NewOptions) =>
         yield* writer.write(BRIEF_PATH, encoder.encode(rendered.text));
         yield* writer.write(NOTES_PATH, encoder.encode(NOTES));
         yield* writer.directory(".quickstacks/state");
-        // 1.2b writes the manifest and the state record here, before git.
+        yield* writer.write(MANIFEST_PATH, encoder.encode(encodeManifest(manifest)));
+        // Outside the project, so the writer doesn't track it: its own release undoes it on a
+        // failure or interruption from here on. Acquiring is uninterruptible, so a written record
+        // always has its release.
+        const record = yield* Effect.acquireRelease(
+          writeProjectState(manifest, path.join(writer.root, MANIFEST_PATH)),
+          (write, exit) => (Exit.isSuccess(exit) ? Effect.void : removeProjectState(write)),
+        );
         if (git.init) {
           // Adopted first, so an interrupt while git runs also takes its `.git` away.
           yield* writer.adopt(".git");
@@ -150,8 +164,14 @@ export const scaffold = (options: NewOptions) =>
             warnings.push({ code: "git_init_failed", id: "git", exitCode: code });
             rendered = brief(gitState);
             yield* writer.replace(BRIEF_PATH, encoder.encode(rendered.text));
+            // Only the count changed; the digest, and so the state record, stay as written.
+            yield* writer.replace(
+              MANIFEST_PATH,
+              encoder.encode(encodeManifest({ ...manifest, briefWords: rendered.briefWords })),
+            );
           }
         }
+        return record;
       }),
     );
 
@@ -173,7 +193,7 @@ export const scaffold = (options: NewOptions) =>
       untrusted: [...composition.untrusted],
       warnings,
       git: gitState.kind,
-      stateRecord: false,
+      stateRecord: state.written,
       handoff: { kind: "print", next: nextPrompt(host.invocation) },
     } satisfies NewResult;
   });

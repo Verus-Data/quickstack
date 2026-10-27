@@ -1,6 +1,6 @@
 # Phase 1.2b: `new`: manifest, state record and agent detection
 
-Status: IN PROGRESS 2026-10-26: core executed on feat/phase-1b; wiring into new waits for 1.2a
+Status: EXECUTED 2026-10-26 on feat/phase-1 (awaiting batch review)
 
 | Field | Value |
 |---|---|
@@ -346,3 +346,33 @@ Through `runCli` with temp HOME, XDG dirs and a temp `cwd`.
   - **`childEnv` is unchanged.** It already takes a `remove` list; 1.3a passes
     `AGENT_MARKER_NAMES` when it builds a verify step's environment. Git commands from
     `new` don't strip them.
+- 2026-10-26, from wiring the core into `new` on feat/phase-1:
+  - **The manifest is in `NewResult.written`** (and so in the brief's list of files
+    written), like every other file `new` writes. The `new` tests' expected file lists
+    gained it on purpose.
+  - **The manifest is built once, before the first write**, from the brief's first count.
+    When `git init` fails and 1.2a re-renders the brief, the manifest is replaced through
+    the safe writer with the new `briefWords`; its id and digest stay, so the state record
+    written before git still matches it.
+  - **The state record's rollback is `Effect.acquireRelease`**, not a hook into the
+    writer: the record is outside the project, so the writer doesn't track it. Acquiring
+    is uninterruptible, so a record that was written always has its release.
+  - **`details.scaffold` is computed only when the target's entries include
+    `.quickstacks`.** A missing manifest (including a `.quickstacks/` without one) gives
+    no `scaffold` key; one that can't be read or decoded, or a newer `schemaVersion`, is
+    `unfinished`. The record is looked up by project id only, not by `manifestPath`.
+  - **The `green` hint doesn't tell the user to run `add`**, which doesn't exist until
+    3.0. It reads "This is a finished project." and "Next: pick another directory for a
+    new project; `add` will extend this one once it ships." 3.0 should point it at the real
+    command. Both hints end with a `Next:` line, replacing the generic one.
+  - **Test file**: the `new` acceptance tests are in `tests/new-manifest.test.ts`
+    (tests 1, 2, 5, 6, 7, 11, and 9 through `new`), plus a test that the rewritten
+    brief's count reaches the manifest. `tests/new.test.ts`'s SIGINT test on a real
+    process now also checks the state record is removed. Test 6 uses the interrupt during
+    `git init`, the only step after the state record; there is no later file write to make
+    unwritable.
+  - **Manual run** with the realistic fixture registry in sandbox mode: ten files
+    written (the manifest included), a fresh repository, `stateRecord: true`, the record
+    under `$XDG_STATE_HOME/quickstacks/projects/` with the manifest's real path, and a
+    rerun into the same directory gave `TargetNotEmpty` with `scaffold: "unfinished"`
+    and the hint.
