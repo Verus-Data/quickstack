@@ -6,6 +6,23 @@ A bun workspace; every package is in `packages/<name>/`. `packages/cli` is `quic
 
 The root owns the harness: `.claude/`, lefthook, CI, the root `biome.json`, `tsconfig.base.json`, and the root test suite in `tests/`: the hook tests in `tests/hooks/`, the delegate runner's in `tests/scripts/` and the check in `tests/acceptance/` that traces each plan's acceptance tests to tagged CLI tests. Each package owns its source, tests, `tsconfig.json` (extending `../../tsconfig.base.json`) and any Biome plugins in a nested `biome.json` (`"root": false, "extends": "//"`). See docs/harness.md.
 
+## Repository map
+
+| Path | What it holds |
+| --- | --- |
+| `packages/cli/` | The CLI: `src/` (see "Architecture map"), `tests/` (Vitest on Node), `e2e/` (Bun, compiled binary), `registry/` (the bundled stacks, fragments and `runs.json` ledger), `skill/` (the agent skill), `docs/authoring.md`, `scripts/` (build, bench, ledger import), `biome-plugins/` (Grit boundary rules) |
+| `packages/api/`, `packages/mcp/` | Placeholders |
+| `plans/` | `HANDOFF.md` (start here), `README.md` (conventions, decisions log), `roadmap.md` (phases, shared contracts table, error tags), `phases/` (one file per sub-phase), `runs/` (reviewed bench notes), `requirements.md`, `risks-and-open-questions.md` |
+| `product/` | Problem statement, pitch, demo outline |
+| `docs/harness.md` | Who owns which part of the harness |
+| `tests/` | Root suite: `hooks/` (the `.claude/hooks` guards), `scripts/` (`delegate.sh`), `acceptance/` (plan-to-test trace) |
+| `scripts/` | `delegate.sh` (runs a Codex delegate), `prepare.ts` (installs git hooks), `commit-msg.sh` |
+| `.github/workflows/` | CI (see "CI") |
+| `.claude/` | The agent harness, shared by Claude Code and Codex (below) |
+| `.agents/skills` | A tracked symlink to `.claude/skills`, where Codex discovers repo skills; edit the files under `.claude/skills/` |
+
+`.claude/` holds the harness. `settings.json` wires the hooks in `hooks/` (command guards, boundary and secret guards, lint and typecheck on write, format on stop; `.claude/README.md` lists each), which run for Claude Code only. `rules/` holds path-scoped guidance Claude Code loads automatically: `architecture.md` and `agent-ops.md` always, `typescript.md` for TypeScript, `cli/` (`cli.md` the UX contract, `effect.md`, `testing.md`, `verification.md`) for `packages/cli`. Codex doesn't load `rules/`; read the ones covering the files you change, and a delegate contract names them. `skills/` holds `effect` (current Effect 4 APIs) and `delegate` (the orchestrator's Codex workflow, with its contract templates). `agents/` holds `architect.md` (design review) and `code-reviewer.md` (the one code review of a diff, run by Claude Code as an agent and by Codex delegates as a prompt). `commands/` holds the slash commands `/check`, `/test`, `/feature` and `/execute:codex`. `settings.local.json` and `worktrees/` are gitignored; delegate and unit worktrees live under `.claude/worktrees/`.
+
 ## Planning
 
 Product planning lives in `plans/`; start with [plans/HANDOFF.md](plans/HANDOFF.md), then [product/PROBLEM_STATEMENT.md](product/PROBLEM_STATEMENT.md) and [plans/README.md](plans/README.md). Settled decisions live only in the plans README decisions log; proposals stay in `plans/requirements.md` until the maintainers agree them. Keep each plan file's `Status:` line current and update HANDOFF.md at the end of a session.
@@ -93,7 +110,18 @@ bin supplies platform, Host, Foreground and the stdout/stderr writers; AppLayer 
 
 Use namespaced Context.Service classes, static layer factories and fresh per-invocation state. No globals/caches across runs. Core uses Effect FileSystem/Path and remains unchanged under Node. Only bin/explicit adapters may use Bun; only `bin.ts` and `src/platform/` use Node process APIs (`process.kill`/`on`/`exit`, `node:child_process`, `@effect/platform-node`); everything else runs processes through `Processes`. Only config reads env: a child's whole environment comes from `AppConfig.childEnv` (nothing inherited), and `Processes.which` is the only PATH search, over the captured PATH. No direct console or stdout writes in application logic. Output has three audiences, resolved once per invocation by `services/output.ts::resolveAudience`: `json` with `--json`, `human` only when stdout is a terminal and `AppConfig.agent` is `"none"`, `agent` otherwise (the default: an agent's shell, a pipe, CI). Audiences never behave differently; commands only render by `Output.audience`, and agent text drops what an agent doesn't need (rules/cli/cli.md, "Three audiences"). Grit and adapter guards enforce platform/schema/env/output boundaries.
 
-Strict TypeScript 7: unchecked indices, verbatim modules, erasable syntax, explicit Bun/Node types and no emit. Biome: two spaces, double quotes, width 100, recommended rules and explicit type imports/exports. Structure rules are errors: cognitive complexity at most 15 per function, no nested ternaries, at most four parameters (pass an options object). Files written before those rules are listed in an override (root and `packages/cli/biome.json`) that downgrades them to warnings; the list only shrinks, so never add a file to it, and remove a file once its warnings are gone. Split an over-limit function into named steps rather than suppressing the rule. Prefer current patterns and dependencies; keep changes scoped.
+Strict TypeScript 7: unchecked indices, verbatim modules, erasable syntax, explicit Bun/Node types and no emit. Biome: two spaces, double quotes, width 100, recommended rules and explicit type imports/exports. Structure rules are errors: cognitive complexity at most 15 per function, no nested ternaries, at most four parameters (pass an options object). Files written before those rules are listed in an override in `packages/cli/biome.json` that downgrades them to warnings; the list only shrinks, so never add a file to it, and remove a file once its warnings are gone. Split an over-limit function into named steps rather than suppressing the rule. Prefer current patterns and dependencies; keep changes scoped.
+
+## Code structure
+
+Lint catches size; these are the placement mistakes it can't, each found in review here, with the fix.
+
+- A fallback beside a service field. A default path or value computed next to a `Host` or config field (from `import.meta.url`, say) hides a missing input and breaks in the compiled binary. Make the field required, set it in `bin.ts`, and give tests their value in `tests/helpers/cli.ts`.
+- A shared helper left in its first user's module. When a second command needs a helper from `commands/new.ts`, move it to the module named for its concept (as `commands/handoff.ts` holds the flow `new` and `add` share), not an import from the other command.
+- A growing `Effect.gen` body. A new case gets a named step (a function returning an Effect, or a small pure function) called from the body, not another branch inline. The body reads as the command's sequence of steps.
+- Registry-wide work on a per-entry path. A command that needs one entry or composition reads and checks only that one; whole-registry passes belong to `validate` of a registry and to tests. Ask how the cost grows with the registry.
+- Options nobody asked for. A parameter, flag or abstraction with one caller and no plan behind it is removed, not documented.
+- A wide function signature. More than four parameters, or several of the same type in a row, becomes one options object with named fields.
 
 ## Schemas
 
@@ -141,7 +169,7 @@ Application features, install/update distribution and release workflow (decision
 
 ## Delegates
 
-Claude Code orchestrates; Codex takes the coding tasks Claude delegates (`scripts/delegate.sh`, workflow in `.claude/skills/delegate/SKILL.md`). A delegate is trusted like Claude Code and works in its own worktree from a contract file with full access (network, `bun add`, git, the whole gate). It leaves its changes uncommitted and doesn't push, because Claude reviews, refactors and commits them, and it keeps to the contract's scope. A dependency it adds keeps shared versions in the root `workspaces.catalog`. The Claude hooks don't run for a delegate, so it runs the contract's checks itself (`bun run lint`, `bun run typecheck` and the named tests) and reports each result; Claude reviews, refactors and commits. `.claude/rules/` is Claude's: a contract names the rule files that apply to the task.
+Claude Code orchestrates; Codex takes the coding tasks Claude delegates (`scripts/delegate.sh`, workflow in `.claude/skills/delegate/SKILL.md`). A delegate is trusted like Claude Code and works in its own worktree from a contract file with full access (network, `bun add`, git, the whole gate). It leaves its changes uncommitted and doesn't push, because Claude reviews, refactors and commits them, and it keeps to the contract's scope. A dependency it adds keeps shared versions in the root `workspaces.catalog`. The Claude hooks don't run for a delegate, so it runs the contract's checks itself (`bun run lint`, `bun run typecheck` and the named tests) and reports each result; Claude reviews, refactors and commits. `.claude/rules/` is Claude's: a contract names the rule files that apply to the task. Before handing back, a delegate runs one review in a fresh Codex process with `.claude/agents/code-reviewer.md` as its prompt.
 
 ## Pending user actions
 

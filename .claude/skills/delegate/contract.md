@@ -64,8 +64,7 @@ bun run check   # the full gate, before finishing a feature
 
 - commit or push (leave the changes for review)
 - disable a lint rule, weaken a test or add a cast to get green; a function over Biome's
-  complexity limit gets split into named steps, and no file joins the warning override list
-  (AGENTS.md "Conventions")
+  complexity limit gets split into named steps (AGENTS.md "Code structure")
 - add features, options or abstractions the goal doesn't need
 - mention any repository outside this one in a tracked file; a reference repo named in "Read
   first" is for you only
@@ -73,25 +72,25 @@ bun run check   # the full gate, before finishing a feature
 ## Review before hand-off
 
 Once the acceptance checks pass, get one independent code review and fix what it finds, so the
-work comes back clean. The reviewer is the `ce:code-reviewer` agent,
-`${ce}agents/code-reviewer.md`: its body is the reviewer's instructions and its `skills:`
-frontmatter names the skills it loads (`${ce}skills/<name>/SKILL.md`).
+work comes back clean. The reviewer is this repo's `code-reviewer` agent,
+`.claude/agents/code-reviewer.md`, which extends the `ce:code-reviewer` agent
+(`${ce}agents/code-reviewer.md`); both bodies go into the prompt, the repo's last so it wins.
 
 Run it as a fresh Codex process, so it doesn't share your context, read-only, with its report
 going to a file outside the worktree:
 
 ```bash
 review="$(mktemp -d)"
+body() { awk 'NR==1&&/^---$/{f=1;next} f&&/^---$/{f=0;next} !f' "$1"; }  # without frontmatter
 {
-  # the agent's body, without its frontmatter
-  awk 'NR==1&&/^---$/{f=1;next} f&&/^---$/{f=0;next} !f' "${ce}agents/code-reviewer.md"
+  body "${ce}agents/code-reviewer.md"
   echo
-  echo "Load these skills first: <paths from its skills: line>."
-  # The merge base, not the branch tip: work merged into the base since this branch started
-  # would otherwise read as reverted by this diff.
-  echo "Review the uncommitted work in $PWD: git diff $(git merge-base HEAD {BASE BRANCH}), plus"
-  echo "every untracked file. Repo standards: AGENTS.md and .claude/rules/. Your sandbox is"
-  echo "read-only, so don't run Vitest; the author already ran the checks. The task's contract:"
+  body .claude/agents/code-reviewer.md
+  echo
+  echo "Skills: ${ce}skills/architecting-systems/SKILL.md, ${ce}skills/writing-tests/SKILL.md,"
+  echo "${ce}skills/handling-errors/SKILL.md. The base branch is {BASE BRANCH}; review the"
+  echo "uncommitted work in $PWD. Your sandbox is read-only, so don't run Vitest; the author"
+  echo "already ran the checks. The task's contract:"
   cat "{THIS CONTRACT'S PATH}"
 } > "$review/prompt.md"
 codex exec --ephemeral --sandbox read-only -m gpt-6.1-sol -c 'model_reasoning_effort="high"' \

@@ -4,7 +4,7 @@ AGENTS.md is the project map. Path-scoped rules explain local conventions; skill
 
 The shared TypeScript hooks use node APIs and run under Bun. `_lib.ts` handles payloads, process timeouts, project paths, and protocol output; `_shell.ts` parses shell commands so quoted examples and comments are not mistaken for execution. Generated-output guards protect tool-owned files; stack and application guards own their additional boundaries. Missing tools and advisory timeouts remain quiet.
 
-`/test` scopes feedback before the full test command. `/check` runs the complete gate. `/feature` records a design, reviews it, implements and verifies in an isolated worktree, and hands off a reviewed PR. The architect agent is read-only; code review uses `ce:code-reviewer`. Use documented development commands, inspect on-disk logs, and terminate only processes you started. Keep secrets out of commands and logs.
+`/test` scopes feedback before the full test command. `/check` runs the complete gate. `/feature` records a design, reviews it, implements and verifies in an isolated worktree, and hands off a reviewed PR. The architect agent is read-only; code review uses the `code-reviewer` agent (`.claude/agents/code-reviewer.md`), which extends `ce:code-reviewer` with this repo's checks. Use documented development commands, inspect on-disk logs, and terminate only processes you started. Keep secrets out of commands and logs.
 
 To inspect the harness, read `.claude/settings.json`, confirm each wired file exists once, then run the shipped hook tests through the project test command. Test guards with a deny and a near miss; test advisory hooks with a realistic temporary project. Never treat a hook as a replacement for tests or review.
 

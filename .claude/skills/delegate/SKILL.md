@@ -57,7 +57,7 @@ faster than you could write the contract, or when you can't yet say what done lo
    last message) is the command's output; full logs stay under `$TMPDIR/quickstacks-delegate/`.
 
 4. Review. `success` only means the turn finished. Codex has already run one
-   `ce:code-reviewer` pass on its own diff in a fresh Codex process and resolved the findings
+   `code-reviewer` pass (`.claude/agents/code-reviewer.md`) on its own diff in a fresh Codex process and resolved the findings
    (the contract's "Review before hand-off"); that is the one review pass in
    `rules/agent-ops.md`, so don't dispatch another. Read the hand-off report
    (`last-message.md` in the run's log directory) first, then the diff and new files, spending

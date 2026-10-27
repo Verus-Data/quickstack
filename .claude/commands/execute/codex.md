@@ -35,7 +35,7 @@ Fill a contract from `.claude/skills/delegate/contract.md` in the scratchpad. Ev
 - names the repo rules that apply (rules/cli/*.md, rules/typescript.md, rules/architecture.md, `.claude/skills/effect/SKILL.md`), since Codex reads only AGENTS.md on its own;
 - keeps the template's "Skills to apply" (Codex finds `ce:writing-tests` and `ce:architecting-systems` in the plugin cache itself), "Review before hand-off" with `feat/<plan>` as the base branch and the contract's own path filled in, and "Hand-off", unchanged.
 
-Codex finishes a unit only after it has run one `ce:code-reviewer` pass on its own diff, in a fresh Codex process, and resolved every finding. You don't dispatch a reviewer for delegated work; that pass is the one rules/agent-ops.md allows.
+Codex finishes a unit only after it has run one `code-reviewer` pass (`.claude/agents/code-reviewer.md`) on its own diff, in a fresh Codex process, and resolved every finding. You don't dispatch a reviewer for delegated work; that pass is the one rules/agent-ops.md allows.
 
 Run independent units as 2-4 delegates at once, each `scripts/delegate.sh <contract> --write --worktree <path>` with `run_in_background: true`. A unit that depends on another starts from a worktree branched after the first one is integrated.
 
