@@ -18,7 +18,8 @@
     "coverage": "vitest run --coverage",
     "e2e": "bun run build && bun test ./e2e",
     "check": "bun run lint && bun run typecheck && bun run test && bun run e2e",
-    "clean": "bun scripts/clean.ts"
+    "clean": "bun scripts/clean.ts",
+    "ledger:import": "bun scripts/ledger-import.ts"
   },
   "dependencies": {
     "@effect/platform-bun": "catalog:",
