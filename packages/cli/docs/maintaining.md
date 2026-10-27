@@ -29,6 +29,28 @@ The script discovers the repo from the working directory, archives only the regi
 
 It records only added fragments in `with`, removing fragments already selected by the default composition at that commit. Existing `(repoCommit, stack, date)` records are skipped. Incomplete notes are reported, other notes continue, and any failure exits 1. `--dry-run` prints a JSON array and writes no ledger; `--` ends options. Bun consumes an initial `--` before passing arguments to a script, so single-dash note names are also accepted directly. Use `./` for a note name that collides with a long option.
 
+## Search judgments and baseline
+
+`tests/fixtures/search/golden.json` records requests and relevance judgments for the bundled registry. `tests/helpers/search-golden.ts` owns its `GoldenSet` schema; `tests/helpers/search-eval.ts` evaluates any synchronous ranking function without calling a model or shipping code in the CLI.
+
+Read an entry's frontmatter and body before judging it. Add realistic requests from bench notes, issues, the demo, or your own work, never logged user queries. Give each request a unique id, one of the seven existing pools, a `tune` or `holdout` split, and its original text, including casing and punctuation. Keep about a third in holdout (25–40%, at least twelve), with both splits in every pool.
+
+Grade each relevant `{ kind, id }` independently: 2 means a right answer, 1 a fair alternative. Omit irrelevant entries. Set `first` only when there is one agreed best answer, and include it at grade 2 in `relevant`. It must lead its own kind's list. Leave `first` absent for ambiguous requests. Every bundled stack needs at least two first-result queries; every fragment needs at least one relevant judgment. Renaming or removing an entry requires reviewing its queries and replacement, rather than deleting coverage to make the test pass.
+
+Use `noMatch: true` when nothing fits: no hit of either kind may be `strong`, though weaker suggestions are allowed. An imperfect language or framework fit can instead have grade-1 judgments with no `first` and no `noMatch` flag. The `no-match` pool contains both cases.
+
+Keep golden queries out of search-sidecar drafting prompts and examples. Holdout queries must neither appear in sidecar `requests` nor share five consecutive words with them. Use only tune results while adjusting ranking or sidecars; check both splits at the gate.
+
+Run the coverage and metric tests after changing judgments:
+
+```sh
+bun run test:unit tests/search-golden-coverage.test.ts tests/search-eval.test.ts
+```
+
+`evaluate(rank, golden)` reports tune, holdout, and query-weighted total summaries. MRR includes queries with any relevant stack, counting only stack positions through ten. Recall@3 and fragment recall@5 average only queries with grade-2 judgments of that kind; ineligible queries do not dilute the average. Empty eligible groups score zero. First-result and no-match summaries carry passed/total counts. `pairwiseWins` separately counts same-kind competitors above a present `first`; a missing `first` scores zero there but fails the first-result check.
+
+The baseline in `gate` starts at zero. Phase 4.5c adds the real ranking and gate test, sets the first baseline, and requires every first-result and no-match case to pass. Each metric may fall at most 0.02 below its baseline. When an accepted ranking raises a metric, raise that baseline in the same commit; never lower another metric to offset it. Lowering a baseline requires a plan change with the reason recorded in 4.5c's "What this plan may get wrong". Review judgment changes as product decisions, explain their effect on the scores, and record the maintainers' review date in the evaluation-set plan once they agree them.
+
 ## Publishing the Claude Code plugin
 
 `plugin/` is a Claude Code plugin carrying the agent skill, published by hand after a CLI release to a marketplace repository the maintainers own (not created yet; see [marketplaces](https://code.claude.com/docs/en/plugin-marketplaces) and the [manifest reference](https://code.claude.com/docs/en/plugins-reference)). `skill/SKILL.md` is the source; `plugin/skills/stacks/SKILL.md` is a committed copy, because a plugin's paths can't leave its directory. `tests/native-agent-plugin.test.ts` fails when the copy or the manifest's `version` drifts from the skill and `package.json`.

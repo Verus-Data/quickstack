@@ -1,0 +1,845 @@
+{
+  "schemaVersion": 1,
+  "gate": {
+    "mrr": 0,
+    "recallAt3": 0,
+    "fragmentRecallAt5": 0
+  },
+  "queries": [
+    {
+      "id": "platform-phone-backend",
+      "pool": "platform",
+      "split": "tune",
+      "query": "an iPhone and Android app with a backend",
+      "first": {
+        "kind": "stack",
+        "id": "mobile-expo"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "mobile-expo",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "platform-macos",
+      "pool": "platform",
+      "split": "holdout",
+      "query": "a macOS desktop app",
+      "first": {
+        "kind": "stack",
+        "id": "tauri-react"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "tauri-react",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "platform-go",
+      "pool": "platform",
+      "split": "tune",
+      "query": "a command line tool in Go",
+      "first": {
+        "kind": "stack",
+        "id": "go-cli"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "go-cli",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "platform-typescript-terminal",
+      "pool": "platform",
+      "split": "holdout",
+      "query": "a command line tool in TypeScript",
+      "first": {
+        "kind": "stack",
+        "id": "typescript-cli"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "typescript-cli",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "platform-worker",
+      "pool": "platform",
+      "split": "tune",
+      "query": "a React website running on Cloudflare Workers with server rendering",
+      "first": {
+        "kind": "stack",
+        "id": "cloudflare-react-router"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "cloudflare-react-router",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "product-mdx-blog",
+      "pool": "product",
+      "split": "tune",
+      "query": "a personal blog with MDX posts",
+      "first": {
+        "kind": "stack",
+        "id": "astro-blog"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "astro-blog",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "product-typescript-rest",
+      "pool": "product",
+      "split": "holdout",
+      "query": "a REST API in TypeScript",
+      "first": {
+        "kind": "stack",
+        "id": "typescript-api"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "typescript-api",
+          "grade": 2
+        },
+        {
+          "kind": "stack",
+          "id": "astro-api",
+          "grade": 1
+        },
+        {
+          "kind": "fragment",
+          "id": "rest-api",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "product-ai-chat",
+      "pool": "product",
+      "split": "tune",
+      "query": "an AI chat web app",
+      "first": {
+        "kind": "stack",
+        "id": "react-router"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "react-router",
+          "grade": 2
+        },
+        {
+          "kind": "fragment",
+          "id": "openrouter-chat",
+          "grade": 2
+        },
+        {
+          "kind": "fragment",
+          "id": "openrouter-ai",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "product-fastapi-spa",
+      "pool": "product",
+      "split": "tune",
+      "query": "a FastAPI backend and a React single page app",
+      "first": {
+        "kind": "stack",
+        "id": "python-react"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "python-react",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "product-astro-effect",
+      "pool": "product",
+      "split": "holdout",
+      "query": "an Astro site with React islands and a separate Effect API",
+      "first": {
+        "kind": "stack",
+        "id": "astro-api"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "astro-api",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "paraphrase-workouts",
+      "pool": "paraphrase",
+      "split": "holdout",
+      "query": "something people install on their phone to log workouts",
+      "first": {
+        "kind": "stack",
+        "id": "mobile-expo"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "mobile-expo",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "paraphrase-rename",
+      "pool": "paraphrase",
+      "split": "tune",
+      "query": "a tool I run in my terminal to rename files",
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "go-cli",
+          "grade": 2
+        },
+        {
+          "kind": "stack",
+          "id": "typescript-cli",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "paraphrase-brochure",
+      "pool": "paraphrase",
+      "split": "tune",
+      "query": "mostly prebuilt pages, a few interactive widgets, and a typed Node backend they can call",
+      "first": {
+        "kind": "stack",
+        "id": "astro-api"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "astro-api",
+          "grade": 2
+        },
+        {
+          "kind": "stack",
+          "id": "react-router",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "paraphrase-computer",
+      "pool": "paraphrase",
+      "split": "tune",
+      "query": "an installable window on my computer with Rust doing the work behind the buttons",
+      "first": {
+        "kind": "stack",
+        "id": "tauri-react"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "tauri-react",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "paraphrase-server-pages",
+      "pool": "paraphrase",
+      "split": "holdout",
+      "query": "render pages on a Node server and handle form submissions in the same React project",
+      "first": {
+        "kind": "stack",
+        "id": "react-router"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "react-router",
+          "grade": 2
+        },
+        {
+          "kind": "stack",
+          "id": "cloudflare-react-router",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "trap-ios-health",
+      "pool": "trap",
+      "split": "tune",
+      "query": "an iOS health app",
+      "first": {
+        "kind": "stack",
+        "id": "mobile-expo"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "mobile-expo",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "trap-monitoring",
+      "pool": "trap",
+      "split": "holdout",
+      "query": "a monitoring dashboard",
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "react-router",
+          "grade": 2
+        },
+        {
+          "kind": "stack",
+          "id": "python-react",
+          "grade": 2
+        },
+        {
+          "kind": "stack",
+          "id": "cloudflare-react-router",
+          "grade": 2
+        },
+        {
+          "kind": "stack",
+          "id": "astro-api",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "trap-student-tests",
+      "pool": "trap",
+      "split": "tune",
+      "query": "a test prep app for students",
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "react-router",
+          "grade": 2
+        },
+        {
+          "kind": "stack",
+          "id": "python-react",
+          "grade": 2
+        },
+        {
+          "kind": "stack",
+          "id": "mobile-expo",
+          "grade": 2
+        },
+        {
+          "kind": "stack",
+          "id": "cloudflare-react-router",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "fragment-mobile-signin",
+      "pool": "fragment",
+      "split": "tune",
+      "query": "sign-in for my mobile app",
+      "first": {
+        "kind": "fragment",
+        "id": "clerk"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "clerk",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "fragment-fastapi-postgres",
+      "pool": "fragment",
+      "split": "holdout",
+      "query": "a Postgres database for my FastAPI app",
+      "first": {
+        "kind": "fragment",
+        "id": "postgres"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "postgres",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "fragment-go-release",
+      "pool": "fragment",
+      "split": "tune",
+      "query": "release binaries for my Go CLI",
+      "first": {
+        "kind": "fragment",
+        "id": "goreleaser"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "goreleaser",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "fragment-analytics",
+      "pool": "fragment",
+      "split": "holdout",
+      "query": "product analytics",
+      "first": {
+        "kind": "fragment",
+        "id": "posthog"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "posthog",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "fragment-ci-hooks",
+      "pool": "fragment",
+      "split": "tune",
+      "query": "run tests on GitHub pull requests and check my code before commits",
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "ci-github",
+          "grade": 2
+        },
+        {
+          "kind": "fragment",
+          "id": "git-hooks",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "fragment-agent-guidance",
+      "pool": "fragment",
+      "split": "tune",
+      "query": "shared project instructions for coding agents and guards against destructive shell commands",
+      "first": {
+        "kind": "fragment",
+        "id": "agent-ops"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "agent-ops",
+          "grade": 2
+        },
+        {
+          "kind": "fragment",
+          "id": "claude-harness",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "fragment-claude-harness",
+      "pool": "fragment",
+      "split": "holdout",
+      "query": "reusable TypeScript hooks and review commands for Claude Code",
+      "first": {
+        "kind": "fragment",
+        "id": "claude-harness"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "claude-harness",
+          "grade": 2
+        },
+        {
+          "kind": "fragment",
+          "id": "agent-ops",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "fragment-essentials",
+      "pool": "fragment",
+      "split": "tune",
+      "query": "enable Claude Essentials skills for debugging and code review in this project",
+      "first": {
+        "kind": "fragment",
+        "id": "ce-plugin"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "ce-plugin",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "fragment-boundary-schema",
+      "pool": "fragment",
+      "split": "tune",
+      "query": "use Effect schemas to validate config and generate JSON Schema for tools",
+      "first": {
+        "kind": "fragment",
+        "id": "effect-schema"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "effect-schema",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "fragment-virtual-time",
+      "pool": "fragment",
+      "split": "holdout",
+      "query": "test Effect services with isolated layers and virtual time",
+      "first": {
+        "kind": "fragment",
+        "id": "effect"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "effect",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "fragment-remote-checks",
+      "pool": "fragment",
+      "split": "tune",
+      "query": "offload my tests and builds to another machine over SSH",
+      "first": {
+        "kind": "fragment",
+        "id": "rr"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "rr",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "fragment-bun-binaries",
+      "pool": "fragment",
+      "split": "tune",
+      "query": "ship my Bun compiled CLI with a checksum verified installer and self update",
+      "first": {
+        "kind": "fragment",
+        "id": "bun-release"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "bun-release",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "fragment-provider",
+      "pool": "fragment",
+      "split": "holdout",
+      "query": "add OpenRouter model discovery and provider configuration to my TypeScript API",
+      "first": {
+        "kind": "fragment",
+        "id": "openrouter-ai"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "openrouter-ai",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "fragment-rest-conventions",
+      "pool": "fragment",
+      "split": "tune",
+      "query": "consistent resource URLs, status codes and cursor pagination for my API",
+      "first": {
+        "kind": "fragment",
+        "id": "rest-api"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "rest-api",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "fragment-worker-database",
+      "pool": "fragment",
+      "split": "tune",
+      "query": "local SQLite storage with migrations for my Cloudflare Worker",
+      "first": {
+        "kind": "fragment",
+        "id": "cloudflare-d1"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "cloudflare-d1",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "combined-blog-pages",
+      "pool": "combined",
+      "split": "holdout",
+      "query": "a static blog deployed to Cloudflare",
+      "first": {
+        "kind": "stack",
+        "id": "astro-blog"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "astro-blog",
+          "grade": 2
+        },
+        {
+          "kind": "fragment",
+          "id": "cloudflare-pages",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "combined-go-release",
+      "pool": "combined",
+      "split": "tune",
+      "query": "a Go command line tool with tagged cross platform binary releases",
+      "first": {
+        "kind": "stack",
+        "id": "go-cli"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "go-cli",
+          "grade": 2
+        },
+        {
+          "kind": "fragment",
+          "id": "goreleaser",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "combined-worker-d1",
+      "pool": "combined",
+      "split": "tune",
+      "query": "a React app on Cloudflare Workers backed by D1",
+      "first": {
+        "kind": "stack",
+        "id": "cloudflare-react-router"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "cloudflare-react-router",
+          "grade": 2
+        },
+        {
+          "kind": "fragment",
+          "id": "cloudflare-d1",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "combined-python-database",
+      "pool": "combined",
+      "split": "holdout",
+      "query": "a Python FastAPI and React app with Postgres and database migrations",
+      "first": {
+        "kind": "stack",
+        "id": "python-react"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "python-react",
+          "grade": 2
+        },
+        {
+          "kind": "fragment",
+          "id": "postgres",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "combined-node-container",
+      "pool": "combined",
+      "split": "tune",
+      "query": "a standalone TypeScript HTTP API published as a Docker image to GHCR",
+      "first": {
+        "kind": "stack",
+        "id": "typescript-api"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "typescript-api",
+          "grade": 2
+        },
+        {
+          "kind": "stack",
+          "id": "astro-api",
+          "grade": 1
+        },
+        {
+          "kind": "fragment",
+          "id": "docker-deploy",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "combined-terminal-chat",
+      "pool": "combined",
+      "split": "tune",
+      "query": "an AI chat tool in my terminal with a TypeScript codebase",
+      "first": {
+        "kind": "stack",
+        "id": "typescript-cli"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "typescript-cli",
+          "grade": 2
+        },
+        {
+          "kind": "fragment",
+          "id": "openrouter-chat-cli",
+          "grade": 2
+        },
+        {
+          "kind": "fragment",
+          "id": "openrouter-ai",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "nomatch-firmware",
+      "pool": "no-match",
+      "split": "holdout",
+      "query": "firmware for a microcontroller",
+      "noMatch": true,
+      "relevant": []
+    },
+    {
+      "id": "nomatch-unity",
+      "pool": "no-match",
+      "split": "tune",
+      "query": "a Unity game",
+      "noMatch": true,
+      "relevant": []
+    },
+    {
+      "id": "nomatch-kotlin",
+      "pool": "no-match",
+      "split": "tune",
+      "query": "an Android-only app in Kotlin",
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "mobile-expo",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "nomatch-swiftui",
+      "pool": "no-match",
+      "split": "holdout",
+      "query": "a native SwiftUI iPhone app",
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "mobile-expo",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "nomatch-python-cli",
+      "pool": "no-match",
+      "split": "tune",
+      "query": "a command line tool in Python",
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "go-cli",
+          "grade": 1
+        },
+        {
+          "kind": "stack",
+          "id": "typescript-cli",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "nomatch-gpu-training",
+      "pool": "no-match",
+      "split": "tune",
+      "query": "train a neural network on a GPU cluster",
+      "noMatch": true,
+      "relevant": []
+    }
+  ]
+}

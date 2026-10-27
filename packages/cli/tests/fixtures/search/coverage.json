@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "gate": { "mrr": 0, "recallAt3": 0, "fragmentRecallAt5": 0 },
+  "queries": [
+    {
+      "id": "sample-tune",
+      "pool": "product",
+      "split": "tune",
+      "query": "a sample tool",
+      "first": { "kind": "stack", "id": "sample" },
+      "relevant": [
+        { "kind": "stack", "id": "sample", "grade": 2 },
+        { "kind": "fragment", "id": "logging", "grade": 2 }
+      ]
+    },
+    {
+      "id": "sample-holdout",
+      "pool": "paraphrase",
+      "split": "holdout",
+      "query": "something to try from my terminal",
+      "first": { "kind": "stack", "id": "sample" },
+      "relevant": [{ "kind": "stack", "id": "sample", "grade": 2 }]
+    }
+  ]
+}
