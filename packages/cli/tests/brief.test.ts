@@ -31,7 +31,7 @@ const context = (over: Partial<BriefContext> = {}): BriefContext => ({
   written: [],
   missing: [],
   yes: false,
-  invocation: "quickstack",
+  invocation: "stacks",
   ...over,
 });
 /** The brief's level-2 headings, in order. */

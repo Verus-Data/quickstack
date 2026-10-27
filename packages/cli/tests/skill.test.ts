@@ -105,7 +105,7 @@ function commands(body: string) {
     .join("\n");
   return [
     ...code.matchAll(
-      /(?:\bquickstack(?:@[^\s`]+)?|<cli>)[ \t]+([a-z][a-z-]*)(.*?)(?=(?:\bquickstack(?:@[^\s`]+)?|<cli>)[ \t]+[a-z]|&&|\|\||[;|\n]|$)/g,
+      /(?:\bstacks(?:@[^\s`]+)?|<cli>)[ \t]+([a-z][a-z-]*)(.*?)(?=(?:\bstacks(?:@[^\s`]+)?|<cli>)[ \t]+[a-z]|&&|\|\||[;|\n]|$)/g,
     ),
   ].map((match) => ({
     name: match[1] ?? "",

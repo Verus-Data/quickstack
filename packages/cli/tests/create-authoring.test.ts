@@ -11,7 +11,7 @@ function examples(body: string) {
     .join("\n");
   return [
     ...code.matchAll(
-      /\bquickstack(?:@[^\s`]+)?[ \t]+([a-z][a-z-]*)(.*?)(?=\bquickstack[ \t]|&&|\|\||[;|\n]|$)/g,
+      /\bstacks(?:@[^\s`]+)?[ \t]+([a-z][a-z-]*)(.*?)(?=\bstacks[ \t]|&&|\|\||[;|\n]|$)/g,
     ),
   ].map((match) => {
     const name = match[1] ?? "";

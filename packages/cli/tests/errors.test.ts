@@ -84,7 +84,7 @@ test.each(
   expect(text.stderr.trimEnd().split("\n").at(-1)).toBe(`  Next: ${String(next)}`);
 });
 test("an unknown command names the CLI as invoked in its next action", async () => {
-  const result = await runCli(["lst"], { env: quiet, host: { invocation: "npx quickstack" } });
+  const result = await runCli(["lst"], { env: quiet, host: { invocation: "npx stacks" } });
   expect(result.status).toBe(2);
   expect(result.stdout).toBe("");
   expect(result.stderr).toBe(
@@ -154,7 +154,7 @@ test("a Next line names the CLI the way it was invoked", async () => {
   const human = await runCli([], {
     program: Effect.fail(new NotFound({ details: { suggestions: [] } })),
     env: quiet,
-    host: { ...terminal, invocation: "npx quickstack" },
+    host: { ...terminal, invocation: "npx stacks" },
   });
   expect(human.status).toBe(2);
   expect(human.stdout).toBe("");

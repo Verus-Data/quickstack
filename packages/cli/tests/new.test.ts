@@ -204,7 +204,7 @@ describe("new writes a project", () => {
       written: result.written,
       missing: missingTools(composed.value, () => false),
       yes: true,
-      invocation: "quickstack",
+      invocation: "stacks",
     });
     expect(brief).toBe(expected.text);
     expect(result.fixedWords).toBe(expected.fixedWords);
