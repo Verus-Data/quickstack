@@ -1,0 +1,117 @@
+# Author a stack or fragment
+
+Start with a project you trust and can build from an empty directory. A stack describes
+its structure and definition of done. A fragment adds a reusable capability; prefer one
+over a near-copy when only CI, deployment or a tool differs.
+
+```sh
+quickstacks create stack my-api --json
+quickstacks create fragment my-ci --category ci
+quickstacks create fragment my-app --category app
+quickstacks create stack go-cli --from bundled
+quickstacks create stack team-api --from project --yes
+```
+
+The result names the entry directory and this guide. Entries go under
+`$XDG_CONFIG_HOME/quickstacks/` (default `~/.config/quickstacks/`). Existing targets are
+preserved. Copies keep the same id and every byte, including `files/` and `adapters/`.
+The user copy shadows the bundled entry. Project entries and overridden bundled roots
+are untrusted: a person must review the full stderr report at a terminal. The yes flag
+skips the question, never the report or the refusal under an agent or without terminal
+stdin. The user origin is the destination and cannot be a copy source.
+
+## Distill the working project
+
+- Frontmatter holds package names by role (no versions), commands, verify steps,
+  decisions and fragment relationships. Every decision needs `(default: ...)`.
+- Prose holds durable rules and instructions for discovering current tool details.
+  Anything that would be wrong after the next major release belongs here, not in a
+  shipped configuration. Replace a stale fact with a durable rule, a discovery step
+  against current official docs, or a verify step that asks the tool.
+- `files/` holds stable starter content. Store dotfiles literally, such as
+  `files/.gitignore`. Put version-sensitive configuration requirements in prose for
+  the agent to generate. Adapter files live under `adapters/claude/`, `codex/`,
+  `opencode/` or `cursor/`.
+
+Use snake_case keys: `schema_version`, `applies_to`, `requires_tools`, `needs_own_repo`.
+An app is a fragment with `category: app`; fill its `applies_to` with a stack id or tag.
+
+Keep Setup numbered. Tell the agent to inspect current generator help and run the
+generator non-interactively into a subdirectory before moving its output into place.
+Do not freeze generator flags. Declare exactly one task-runner tag, `make` or `scripts`,
+and list every project command used by verify in `commands`.
+
+Verify calls project commands and covers install, lint, typecheck and test layers.
+Add build, docs and application checks when they prove a deliverable. A server probe:
+
+```yaml
+verify:
+  - name: dev
+    phase: serve
+    layer: serve
+    run: make dev
+    expect: { http: "http://localhost:3000/", within: 60s }
+```
+
+File checks are short shell commands in v1: the skeleton's README check requires a
+nonempty file without `quickstacks:fill`. Replace every fill marker yourself; validation
+currently does not flag them.
+
+A `.tmpl` file can use only `{{project_name}}`, `{{project_slug}}`, `{{env_prefix}}`,
+`{{package_scope}}`, `{{author}}` and `{{year}}`. Use `{{package_scope}}` for scoped
+package names. Conditional prose uses standalone markers, without nesting:
+
+```md
+<!-- quickstacks:when preset=sandbox -->
+Describe the local-only setup.
+<!-- quickstacks:end -->
+```
+
+Other condition keys are `stack`, `tag`, `tag!=`, `mode` and `with`.
+
+## Preview and remove rot
+
+```sh
+quickstacks validate ~/.config/quickstacks/stacks/my-api --json
+quickstacks show my-api --kind stack
+quickstacks validate ~/.config/quickstacks --brief my-api --sandbox
+quickstacks validate ~/.config/quickstacks --brief my-api --with my-ci
+```
+
+Use your XDG path when customized. Show includes every guidance branch and shipped
+path; preview shows the composed brief without writing or starting processes. Preview
+ignores personal always-fragments and the preset setting.
+
+Fix findings at their source: replace pinned versions and dated phrases with discovery
+instructions; move version-sensitive files into prose; use ATX headings; repair unknown
+references, unreachable conditionals and template variables. Imports must belong to the
+entry or its required dependencies. Declare commands and cover fragment deliverables
+with verify. Repair shipped hook/editor command references and stale run fingerprints.
+Review warnings as well as errors.
+
+Keep stack bodies below 2,000 words, fragments below 1,000 and apps below 3,000;
+the composed brief limit is 6,000 (9,000 with an app). Move optional shared material into
+a fragment, reference material into a shipped doc linked from the body, and cut what
+the agent would do anyway. Preview reports the resulting budget.
+
+## Prove it with a local bench run
+
+```sh
+quickstacks new my-api /tmp/my-api-bench --preset sandbox --json
+cd /tmp/my-api-bench
+quickstacks verify --json
+quickstacks runs --json
+```
+
+Choose an unused directory. Have an agent follow `.quickstacks/BRIEF.md`, then fix the
+project until verify is green without weakening its steps. Read `.quickstacks/NOTES.md`,
+including Asked and Findings, and improve the entry from what the run exposed. Record
+the composition, agent/version, brief size, timings, verify count, interventions,
+outcome and final run record in a run note. This uses existing CLI commands; there is
+no shipped bench subcommand yet.
+
+For future projects, set `"preset": "sandbox"` in `config.json` beside your user entries.
+An explicit preset flag wins over that setting, then the fallback is `default`.
+Use `quickstacks new my-api /tmp/my-api-default --preset default --json` to override it.
+The sandbox alias is compatible with an explicit sandbox preset, but conflicts with an
+explicit default preset. Add always uses the project's recorded preset.

@@ -3,6 +3,7 @@ import { Argument, Command, Flag } from "effect/cli";
 import { defaultRoots, Registry } from "../core/registry/registry";
 import { scaffold } from "../core/scaffold/new";
 import { renderNew } from "../core/scaffold/report";
+import { Usage } from "../errors";
 import { BRIEF_PATH } from "../project-layout";
 import { NewResult } from "../schemas/new";
 import { completeHandoff, prepareHandoff, projectFlags, splitValues } from "./handoff";
@@ -41,6 +42,12 @@ export const newCommand = Command.make(
       ),
       Flag.withDefault(false),
     ),
+    preset: Flag.Literals("preset", ["default", "sandbox"]).pipe(
+      Flag.withDescription(
+        "Composition preset. Default: the preset setting, else default. Sandbox implies --yes.",
+      ),
+      Flag.optional,
+    ),
     with: ids("with", "Add optional fragments, comma-separated or repeated."),
     without: ids("without", "Leave out default fragments, comma-separated or repeated."),
     ...sharedFlags,
@@ -56,6 +63,9 @@ export const newCommand = Command.make(
   (flags) =>
     Effect.gen(function* () {
       const { json } = yield* root;
+      const preset = Option.getOrUndefined(flags.preset);
+      if (flags.sandbox && preset === "default")
+        return yield* new Usage({ details: { flags: ["--sandbox", "--preset default"] } });
       const handoff = yield* prepareHandoff(flags, json);
       const { result, decision } = yield* scaffold({
         stack: flags.stack,
@@ -66,6 +76,7 @@ export const newCommand = Command.make(
         with: flags.with,
         without: flags.without,
         sandbox: flags.sandbox,
+        preset,
         yes: flags.yes,
         agents: flags.agents.length ? flags.agents : undefined,
         scope: Option.getOrUndefined(flags.scope),

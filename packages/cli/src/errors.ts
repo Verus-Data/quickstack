@@ -42,6 +42,10 @@ export const BadInputDetails = Schema.Struct({
     "fragment",
     "agents",
     "sandbox",
+    "create_id",
+    "create_target",
+    "from",
+    "confirmation",
   ]),
   known: Schema.optionalKey(Schema.Array(Schema.String)),
   alreadyApplied: Schema.optionalKey(Schema.Array(Schema.String)),
@@ -555,6 +559,20 @@ const shellArg = (text: string) =>
 function badInputLines(details: typeof BadInputDetails.Type): string[] {
   const id = printable(details.id);
   switch (details.flag) {
+    case "create_id":
+      return [
+        `Id: ${id}`,
+        "Next: use a lowercase kebab-case id, with only letters and digits between hyphens.",
+      ];
+    case "create_target":
+      return [`Path: ${id}`, "Next: edit the existing entry, or choose an unused id."];
+    case "from":
+      return [`Origin: ${id}`, "Next: copy from bundled or project; user is the destination."];
+    case "confirmation":
+      return [
+        "The copy was declined. Nothing was changed.",
+        "Next: review the entry before copying it.",
+      ];
     case "fragment":
       return details.alreadyApplied?.length
         ? [

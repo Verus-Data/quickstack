@@ -97,6 +97,21 @@ An identical installed file is unchanged. A differing file is preserved with `Ta
 
 ## Listing stacks and fragments
 
+Create personal entries with `quickstacks create stack my-api` or
+`quickstacks create fragment my-ci --category ci`. They are written into the user registry;
+existing targets are preserved. `quickstacks create stack go-cli --from bundled` copies an
+entry under the same id for editing, including all files and adapters. `--from project`
+requires a person at a terminal to review the full trust report; `--yes` skips only the
+question. Agents and non-terminal stdin cannot confer trust. `--from user` is refused.
+`--json` returns `{ kind, id, path, guide }` with absolute paths. Follow the shipped
+[authoring guide](docs/authoring.md) to preview, validate and prove the entry.
+
+Set `"preset": "sandbox"` in `config.json` to default new projects to sandbox.
+`new --preset default|sandbox` overrides the setting; `--sandbox` is a sandbox alias.
+Flags win, then the setting, then `default`. `--sandbox --preset default` is Usage
+(exit 2). Sandbox implies `--yes` regardless of how it was selected. `add` keeps the
+manifest's preset; `validate --brief` ignores the setting.
+
 ```sh
 quickstacks list                 # Addable fragments in a project; otherwise all groups
 quickstacks list stacks          # one group: stacks, fragments (apps excluded) or apps

@@ -1,5 +1,6 @@
 import { Command } from "effect/cli";
 import { addCommand } from "./commands/add";
+import { createCommand } from "./commands/create";
 import { doctorCommand } from "./commands/doctor";
 import { guideCommand, printGuide } from "./commands/guide";
 import { listCommand } from "./commands/list";
@@ -16,6 +17,7 @@ export const cli = root.pipe(
   Command.withHandler(() => printGuide),
   Command.withSubcommands([
     addCommand,
+    createCommand,
     doctorCommand,
     guideCommand,
     listCommand,

@@ -1,6 +1,7 @@
 # Phase 3.1b: `create` and the authoring guide
 
 Status: DRAFT 2026-10-26 (not agreed)
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -122,14 +123,30 @@ No new error tags.
 
 ## Acceptance tests
 
-1. `create stack my-api`, then `validate <userdir>/stacks/my-api --json`: zero errors, only fill-marker findings. Same for `create fragment my-ci`. `create fragment my-app --category app` gives exactly one error, the empty `applies_to`, and after `applies_to` names a stack, zero.
+1. `create stack my-api`, then `validate <userdir>/stacks/my-api --json`: the exact finding set is empty (measured against the reference skeleton with the current validator, 2026-10-27: fill markers produce no finding). Same for `create fragment my-ci`. `create fragment my-app --category app` gives exactly one error, the empty `applies_to`, and after `applies_to` names a stack, zero.
 2. `create stack go-cli --from bundled` copies the entry byte for byte; `list --json` then shows `go-cli` with `origin: "user"` and `shadows: ["bundled"]`; `new go-cli` uses the copy (a marker sentence added to its body appears in the brief).
 3. `create stack x --from project` with `CLAUDECODE=1` exits 6 and writes nothing; with `stdinIsTTY: false` and no marker, exits 6; with a TTY, no marker and `--yes`, stderr holds the trust report and the copy exists and is trusted.
 4. `create stack x --from user` exits 2.
 5. `Settings.preset: "sandbox"`: `new` records `preset: "sandbox"`; `new --preset default` records `"default"`; `--sandbox --preset default` exits 2 with the `Usage` tag in the envelope.
 6. `config.json` with an unknown key: `new` exits 3; `doctor` exits 0 and lists the config error.
-7. `create` starts no process and makes no network call (the `Processes` test layer records none).
-8. The package e2e from 0.2 asserts `docs/authoring.md` is in the packed tarball.
+7. `create` starts no process and makes no network call (2026-10-27: no recording `Processes` layer exists; git and common-tool shims on PATH leave no execution marker, and the HTTP boundary observes no request).
+8. `packages/cli/docs/authoring.md` exists, and every command and flag it shows exists in the real command tree, as the skill test checks its commands. The packed-tarball assertion returns with 0.2 (maintainers, 2026-10-27).
+
+### Realistic edge cases
+
+9. An existing empty directory, partial scaffold or regular file at the target is `BadInput`, with its bytes preserved.
+10. Ids containing traversal, uppercase, whitespace, non-ASCII or control characters are `BadInput` and create nothing.
+11. A symlinked dotfiles user root works with paths containing spaces, a leading dash and non-ASCII, from a different cwd inside a real repository; exported git repository variables do not redirect the write.
+12. File, directory and looping symlinks inside a copy source are `EntryInvalid`; no partial target or outside changes remain.
+13. An unwritable destination is `PermissionDenied` and preserves existing siblings.
+14. `--from` selects only the named origin despite higher-precedence entries; a missing id in that origin is `NotFound` without fallback.
+15. Every accepted category is written as requested; wrong-case and unknown categories are `Usage` and write nothing.
+16. A symlink at the target is `BadInput`; neither the link nor its destination is changed.
+17. An unreadable source file is `PermissionDenied`, leaves no partial copy and preserves existing entries.
+18. Interruption before filesystem I/O and after one, two or three output files exist for a skeleton or copy (bulk copies may expose them together) rolls back only that invocation's files and empty directories, after deterministically blocking at the filesystem boundary (including bulk copies and file handles).
+19. Explicit sandbox, the compatible sandbox aliases, and the absent-setting default obey preset precedence in result, manifest, fragment selection, production-step skipping and decision instructions.
+20. Wrong-case, unknown, null and numeric preset settings fail `new` with `InvalidConfig`; `doctor` reports them without failing.
+21. `validate --brief` ignores a configured sandbox preset and uses its own default.
 
 ## Exit criteria
 
@@ -143,3 +160,6 @@ No new error tags.
 - The skeleton's verify steps assume Make-style project commands. Stacks with package scripts will rewrite them every time; a `--scripts` flag may earn its place.
 - The interim review before 3.2b is `show`'s plain output. It lists everything but marks nothing; a person may skim it. 3.2b's allowlist marks are the fix, and project-entry copies are rare enough to wait.
 - 2026-10-26: this plan wrote camelCase skeleton keys, a `_dot_gitignore` file, a built-in `filled` check, and left `packageScope` to D28 and 3.3a. The amended D18 made keys snake_case, dotfiles literal, dropped built-in checks (the skeleton's README step is a command) and put `package_scope` in v1, so nothing about it is built here or in 3.3a. Apps became fragments with `category: app`, so `create` gets no `app` subcommand, only `--category app`, whose skeleton can't pass `validate` until the author names a stack.
+- 2026-10-27: no packed tarball exists until 0.2 (maintainers). Acceptance item 8 checks the package-local authoring guide and its real command/flag references now; restore the packed-tarball assertion when 0.2 lands. The current validator accepts fill markers without emitting findings; the reference skeleton declares its Make commands and the `make` tag to avoid 2.2 rot warnings.
+
+- 2026-10-27 implementation: no package `files` allowlist or shipped bench command exists yet. The guide is package-local and documents a local bench using `new`, `verify` and `runs`; package/tarball publication remains 0.2. Preview resolves its preset directly from its own sandbox flag and deliberately ignores `Settings.preset`, so it does not share new's settings precedence.

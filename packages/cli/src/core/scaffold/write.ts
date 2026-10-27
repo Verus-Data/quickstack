@@ -21,11 +21,11 @@ import { PermissionDenied, TargetNotEmpty } from "../../errors";
 export type ProjectWriter = {
   /** The project root's real path. */
   readonly root: string;
-  /** Creates `rel` with `data`; `executable` adds execute bits wherever read bits are set. */
+  /** Creates `rel`; true adds execute bits for read bits, a number preserves ordinary mode bits. */
   readonly write: (
     rel: string,
     data: Uint8Array,
-    executable?: boolean,
+    permissions?: boolean | number,
   ) => Effect.Effect<void, PermissionDenied | TargetNotEmpty>;
   /** Replaces a file this writer created, with the same checks. */
   readonly replace: (rel: string, data: Uint8Array) => Effect.Effect<void, PermissionDenied>;
@@ -65,14 +65,26 @@ const removeEmptyDirectory = (dir: string) => Effect.ignore(Effect.tryPromise(()
  * resolves its real path. The finalizer it adds to the current scope undoes every tracked write
  * unless the scope closes successfully.
  */
-export const openProject = (
+export function openProject(
   dir: string,
+): Effect.Effect<ProjectWriter, PermissionDenied, FileSystem.FileSystem | Path.Path | Scope.Scope>;
+export function openProject(
+  dir: string,
+  options: { exclusive: true },
 ): Effect.Effect<
   ProjectWriter,
-  PermissionDenied,
+  PermissionDenied | TargetNotEmpty,
   FileSystem.FileSystem | Path.Path | Scope.Scope
-> =>
-  Effect.gen(function* () {
+>;
+export function openProject(
+  dir: string,
+  options?: { exclusive: true },
+): Effect.Effect<
+  ProjectWriter,
+  PermissionDenied | TargetNotEmpty,
+  FileSystem.FileSystem | Path.Path | Scope.Scope
+> {
+  return Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
     const path = yield* Path.Path;
     const unwritable = (at: string) =>
@@ -150,13 +162,25 @@ export const openProject = (
     const missingParents: string[] = [];
     for (let at = absolute; ; at = path.dirname(at)) {
       const info = yield* Effect.option(fs.lstat(at));
-      if (info._tag === "Some") break;
+      if (info._tag === "Some") {
+        if (options?.exclusive && at === absolute)
+          return yield* new TargetNotEmpty({ details: { path: absolute, entries: [] } });
+        break;
+      }
       missingParents.unshift(at);
       if (path.dirname(at) === at) break;
     }
     for (const at of missingParents) {
-      yield* fs.makeDirectory(at).pipe(Effect.mapError(() => unwritable(at)));
-      chain.push(at);
+      yield* Effect.uninterruptible(
+        fs.makeDirectory(at).pipe(
+          Effect.mapError((error) =>
+            options?.exclusive && at === absolute && error.reason._tag === "AlreadyExists"
+              ? new TargetNotEmpty({ details: { path: absolute, entries: [] } })
+              : unwritable(at),
+          ),
+          Effect.tap(() => Effect.sync(() => chain.push(at))),
+        ),
+      );
     }
     root = yield* fs.realPath(absolute).pipe(Effect.mapError(() => unwritable(absolute)));
 
@@ -208,7 +232,7 @@ export const openProject = (
 
     // Finish each filesystem mutation and its tracking together. An interrupted async write
     // can otherwise finish after rollback has already run and leave an untracked file behind.
-    const create = (rel: string, data: Uint8Array, executable: boolean) =>
+    const create = (rel: string, data: Uint8Array, permissions: boolean | number) =>
       Effect.uninterruptible(
         Effect.gen(function* () {
           const parts = segments(rel);
@@ -216,7 +240,23 @@ export const openProject = (
           yield* ensure(parts.slice(0, -1), rel);
           const file = path.join(root, ...parts);
           // `wx`: never over an existing file, and never through a symlink in the last segment.
-          const written = yield* Effect.exit(fs.writeFile(file, data, { flag: "wx" }));
+          const written = yield* Effect.exit(
+            fs.writeFile(file, data, { flag: "wx" }).pipe(
+              Effect.onExit((exit) =>
+                Effect.sync(() => {
+                  const exists =
+                    Exit.isFailure(exit) &&
+                    exit.cause.reasons.some(
+                      (reason) =>
+                        reason._tag === "Fail" && reason.error.reason._tag === "AlreadyExists",
+                    );
+                  // Even cancelled I/O may already have created bytes. Track it in the finalizer,
+                  // which also runs when an adapter restores interruption inside the mutation.
+                  if (!exists) files.push(file);
+                }),
+              ),
+            ),
+          );
           if (Exit.isFailure(written)) {
             const exists = written.cause.reasons.some(
               (reason) => reason._tag === "Fail" && reason.error.reason._tag === "AlreadyExists",
@@ -224,7 +264,6 @@ export const openProject = (
             if (exists)
               return yield* new TargetNotEmpty({ details: { path: root, entries: [rel] } });
             // Created exclusively, so whatever is there now (a partial write) is ours.
-            files.push(file);
             return yield* unwritable(file);
           }
           // The parent was checked before the write; if it has moved out of the project since, the
@@ -233,19 +272,22 @@ export const openProject = (
             yield* Effect.ignore(fs.remove(file));
             return yield* escapes(path.join(root, rel));
           }
-          files.push(file);
-          if (executable) {
-            const info = yield* fs.stat(file).pipe(Effect.mapError(() => unwritable(file)));
-            yield* fs
-              .chmod(file, (info.mode & 0o777) | ((info.mode & 0o444) >> 2))
-              .pipe(Effect.mapError(() => unwritable(file)));
+          if (permissions !== false) {
+            const mode =
+              typeof permissions === "number"
+                ? permissions & 0o777
+                : yield* fs.stat(file).pipe(
+                    Effect.map((info) => (info.mode & 0o777) | ((info.mode & 0o444) >> 2)),
+                    Effect.mapError(() => unwritable(file)),
+                  );
+            yield* fs.chmod(file, mode).pipe(Effect.mapError(() => unwritable(file)));
           }
         }),
       );
 
     return {
       root,
-      write: (rel, data, executable = false) => create(rel, data, executable),
+      write: (rel, data, permissions = false) => create(rel, data, permissions),
       replace: (rel, data) =>
         Effect.gen(function* () {
           const parts = segments(rel);
@@ -296,3 +338,4 @@ export const openProject = (
         }),
     } satisfies ProjectWriter;
   });
+}

@@ -36,7 +36,11 @@ export type Skipped =
 type Candidate = { _tag: "Entry"; entry: Found } | { _tag: "Rejected"; rejection: Rejection };
 /** Every regular file under a directory, or the first symlink met (nothing past it is read). */
 type Walked =
-  | { _tag: "Files"; files: ReadonlyArray<{ rel: string; mode: number }> }
+  | {
+      _tag: "Files";
+      files: ReadonlyArray<{ rel: string; mode: number }>;
+      directories: ReadonlyArray<string>;
+    }
   | { _tag: "Link"; rel: string };
 
 const kinds = [
@@ -105,6 +109,14 @@ export class Registry extends Context.Service<
     readonly files: (
       entry: Entry,
     ) => Effect.Effect<ReadonlyArray<EntryFile>, EntryInvalid | PermissionDenied>;
+    /** Complete entry tree, including empty directories and author notes, for working copies. */
+    readonly tree: (entry: Entry) => Effect.Effect<
+      {
+        directories: ReadonlyArray<string>;
+        files: ReadonlyArray<{ source: string; mode: number }>;
+      },
+      EntryInvalid | PermissionDenied
+    >;
     /**
      * The text of one file in an entry, by its entry-relative `source`. Every path segment is
      * lstat'ed first, so a symlink anywhere under the entry is `EntryInvalid` (`symlink`) and
@@ -165,6 +177,7 @@ export class Registry extends Context.Service<
         const walk = (dir: string, rel = ""): Effect.Effect<Walked, PlatformError.PlatformError> =>
           Effect.gen(function* () {
             const files: Array<{ rel: string; mode: number }> = [];
+            const directories: string[] = [];
             const found = yield* fs.readDirectory(rel ? path.join(dir, rel) : dir);
             for (const name of [...found].sort()) {
               const at = rel ? `${rel}/${name}` : name;
@@ -173,10 +186,11 @@ export class Registry extends Context.Service<
               if (info.type === "Directory") {
                 const inner = yield* walk(dir, at);
                 if (inner._tag === "Link") return inner;
+                directories.push(at, ...inner.directories);
                 files.push(...inner.files);
               } else if (info.type === "File") files.push({ rel: at, mode: info.mode & 0o777 });
             }
-            return { _tag: "Files", files } as const;
+            return { _tag: "Files", files, directories } as const;
           });
 
         const candidate = (origin: Origin, kind: Kind, dir: string, id: string) =>
@@ -320,6 +334,28 @@ export class Registry extends Context.Service<
             return yield* read(path.join(entry.dir, source), denied, invalid("missing", source));
           });
 
+        const tree = (entry: Entry) =>
+          Effect.gen(function* () {
+            const walked = yield* walk(entry.dir).pipe(
+              Effect.mapError(
+                () => new PermissionDenied({ details: { reason: "read", path: entry.dir } }),
+              ),
+            );
+            if (walked._tag === "Link")
+              return yield* new EntryInvalid({
+                details: {
+                  id: entry.id,
+                  origin: entry.origin,
+                  reason: "symlink",
+                  path: walked.rel,
+                },
+              });
+            return {
+              directories: walked.directories,
+              files: walked.files.map(({ rel, mode }) => ({ source: rel, mode })),
+            };
+          });
+
         return {
           all: loaded.pipe(
             Effect.map((items) => items.map((item) => ("rejected" in item ? item.rejected : item))),
@@ -349,29 +385,17 @@ export class Registry extends Context.Service<
             }),
           files: (entry) =>
             Effect.gen(function* () {
-              const walked = yield* walk(entry.dir).pipe(
-                Effect.mapError(
-                  () => new PermissionDenied({ details: { reason: "read", path: entry.dir } }),
-                ),
-              );
-              if (walked._tag === "Link")
-                return yield* new EntryInvalid({
-                  details: {
-                    id: entry.id,
-                    origin: entry.origin,
-                    reason: "symlink",
-                    path: walked.rel,
-                  },
-                });
+              const walked = yield* tree(entry);
               // `files/<path>` and `adapters/<agent>/<path>`; anything else in the entry ships nothing.
               const shipped = /^(?:files|adapters\/[^/]+)\/(.+)$/;
               return walked.files
-                .flatMap(({ rel, mode }) => {
-                  const match = shipped.exec(rel);
-                  return match?.[1] ? [{ source: rel, path: match[1], mode }] : [];
+                .flatMap(({ source, mode }) => {
+                  const match = shipped.exec(source);
+                  return match?.[1] ? [{ source, path: match[1], mode }] : [];
                 })
                 .sort((a, b) => (a.source < b.source ? -1 : 1));
             }),
+          tree,
           read: (entry, source) =>
             checked(entry, source, (file, denied, missing) =>
               fs
