@@ -60,7 +60,7 @@ export function spawnChild(request: SpawnRequest): Effect.Effect<Child, { errno:
         });
       } catch (error) {
         // Node rejects some arguments synchronously, such as a NUL byte in argv or env.
-        resume(Effect.fail({ errno: (error as NodeJS.ErrnoException).code ?? "UNKNOWN" }));
+        resume(Effect.fail({ errno: errnoCode(error) ?? "UNKNOWN" }));
         return;
       }
       let spawned = false;
@@ -95,8 +95,15 @@ export function spawnChild(request: SpawnRequest): Effect.Effect<Child, { errno:
   });
 }
 
-function signalNumber(signal: string | null): number {
-  return signal ? (constants.signals[signal as NodeJS.Signals] ?? 0) : 0;
+function signalNumber(signal: NodeJS.Signals | null): number {
+  return signal ? (constants.signals[signal] ?? 0) : 0;
+}
+
+/** A thrown value's errno `code`, when it carries one. */
+function errnoCode(error: unknown): string | undefined {
+  return error instanceof Error && "code" in error && typeof error.code === "string"
+    ? error.code
+    : undefined;
 }
 
 /** Sends `signal` to every process in the group `pid` leads. False when none could be signaled. */
@@ -128,7 +135,7 @@ export function groupAlive(pid: number): boolean {
     process.kill(-pid, 0);
     return true;
   } catch (error) {
-    return (error as NodeJS.ErrnoException).code === "EPERM";
+    return errnoCode(error) === "EPERM";
   }
 }
 

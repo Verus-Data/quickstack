@@ -114,7 +114,8 @@ class Ring {
     this.size += chunk.length;
     while (this.size > TAIL_BYTES) {
       this.truncated = true;
-      const first = this.chunks[0] as Uint8Array;
+      const first = this.chunks[0];
+      if (first === undefined) break;
       const excess = this.size - TAIL_BYTES;
       if (first.length <= excess) {
         this.chunks.shift();
@@ -135,8 +136,7 @@ class Ring {
     }
     // A cut can land inside a UTF-8 character; start at the next whole one.
     let start = 0;
-    if (this.truncated)
-      while (start < all.length && ((all[start] as number) & 0xc0) === 0x80) start++;
+    if (this.truncated) while (((all[start] ?? 0) & 0xc0) === 0x80) start++;
     return new TextDecoder().decode(all.subarray(start));
   }
 }
@@ -151,8 +151,14 @@ const exitFields = (exit: ChildExit) => ({
   durationMs: exit.durationMs,
 });
 function errnoOf(error: PlatformError.PlatformError): string {
-  const cause = error.reason.cause as { code?: unknown } | undefined;
-  if (typeof cause?.code === "string") return cause.code;
+  const cause = error.reason.cause;
+  if (
+    typeof cause === "object" &&
+    cause !== null &&
+    "code" in cause &&
+    typeof cause.code === "string"
+  )
+    return cause.code;
   const tag = error.reason._tag;
   if (tag === "PermissionDenied") return "EACCES";
   if (tag === "BadResource") return "ENOTDIR";

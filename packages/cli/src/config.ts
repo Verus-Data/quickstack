@@ -166,7 +166,7 @@ export function configLayer(env: Environment = process.env) {
       );
       const logging = Effect.gen(function* () {
         const raw = (yield* read(text("LOG_LEVEL", "warn"))).toLowerCase();
-        const levels = {
+        const levels: Readonly<Record<string, LogSettings["level"]>> = {
           trace: "Trace",
           debug: "Debug",
           info: "Info",
@@ -174,8 +174,9 @@ export function configLayer(env: Environment = process.env) {
           error: "Error",
           fatal: "Fatal",
           none: "None",
-        } as const;
-        const level = levels[raw as keyof typeof levels] ?? "Warn";
+        };
+        // Own keys only: `constructor` or `__proto__` would otherwise read Object.prototype.
+        const level = (Object.hasOwn(levels, raw) ? levels[raw] : undefined) ?? "Warn";
         const format = yield* read(text("QUICKSTACKS_LOG_FORMAT"));
         return {
           level,
