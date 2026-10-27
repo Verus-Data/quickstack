@@ -7,7 +7,7 @@ description: A static Astro blog with MDX posts in a zod-validated content colle
 tags: [typescript, astro, react, web, static, blog, content, mdx, make, bun, node]
 deps:
   site: [astro, "@astrojs/mdx", "@astrojs/react", "@astrojs/sitemap", "@astrojs/rss", react, react-dom, tailwindcss, "@tailwindcss/vite", "@tailwindcss/typography", clsx, tailwind-merge]
-  site-dev: ["@astrojs/check", typescript, "@types/react", "@types/react-dom", vitest, "@vitest/coverage-v8", happy-dom, "@testing-library/react", "@testing-library/jest-dom", yaml, prettier, prettier-plugin-astro]
+  site-dev: ["@astrojs/check", typescript, "@types/react", "@types/react-dom", vitest, "@vitest/coverage-v8", happy-dom, "@testing-library/react", "@testing-library/dom", "@testing-library/jest-dom", yaml, prettier, prettier-plugin-astro]
   og-images: [satori, "@resvg/resvg-js"]
 tools: [bun, make, git]
 decisions:
@@ -18,6 +18,7 @@ decisions:
   - "Authors: one author in site config (default), or an authors data file."
 env:
   PORT_WEB: "4321"
+merge: [.claude/settings.json]
 fragments:
   default: [agent-ops, git-hooks, ci-github, posthog]
   optional: [cloudflare-pages, ce-plugin]
@@ -93,7 +94,7 @@ src/styles/global.css        Tailwind entry, typography plugin, theme tokens
 ## Tool configuration
 
 - **astro.config.mjs**: `output: "static"`, `site`, `trailingSlash` and `build.format` per the decision, integrations mdx, react, sitemap (filtered), Tailwind in `vite.plugins`, Shiki with light and dark themes.
-- **tsconfig.json**: Astro's strict preset, `jsx: "react-jsx"`, `jsxImportSource: "react"`, `@/*` -> `src/*`.
+- **tsconfig.json**: Astro's strict preset, `jsx: "react-jsx"`, `jsxImportSource: "react"`, `@/*` -> `src/*`, and `types` with `vitest/globals` and `@testing-library/jest-dom` so `astro check` accepts the tests.
 - **vitest.config.ts**: built with Astro's `getViteConfig()`; `happy-dom`, `globals: true`, a setup file importing jest-dom's vitest matchers, include `src/**/*.test.{ts,tsx}`, v8 coverage, and every vendor key (`PUBLIC_POSTHOG_KEY`) set to `""` in `test.env`.
 - **Prettier** with the Astro plugin: `make format` writes, `make lint` checks. `.prettierignore` covers build output, `.quickstacks/` and `.claude/`.
 

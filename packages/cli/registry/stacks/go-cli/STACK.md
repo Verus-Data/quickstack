@@ -16,6 +16,7 @@ decisions:
   - "Output: human with --json (default), or JSON with --pretty."
   - "Coverage floor: 50% (default)."
 env: {}
+merge: [.claude/settings.json]
 fragments:
   default: [agent-ops, git-hooks, ci-github]
   optional: [goreleaser, rr, ce-plugin]
@@ -53,7 +54,7 @@ A single-binary CLI: cobra commands, viper config (defaults < file < env < flags
 ## Layout
 
 ```
-cmd/<bin>/main.go      version/commit/date vars (ldflags), calls cli.Execute()
+cmd/<bin>/main.go      version/commit/date vars (ldflags), calls cli.Execute(version, commit, date)
 internal/cli/          root.go (persistent flags --config --json --verbose --no-color, Execute()),
                        version.go, one <command>.go + _test.go per command
 internal/config/       typed Config, Load() via a fresh viper instance, Validate()
@@ -76,7 +77,7 @@ No generator; write the code by hand at the root.
 
 ## Conventions
 
-- **Thin main**: declares `var version, commit, date = "dev", "none", "unknown"`, passes them to `cli`, calls `cli.Execute()`. Only `Execute()` calls `os.Exit`.
+- **Thin main**: declares `var version, commit, date = "dev", "none", "unknown"` and calls `cli.Execute(version, commit, date)`. Only `Execute` calls `os.Exit`.
 - **Commands**: constructors (`newFooCmd() *cobra.Command`), never package-level vars with `init()`, so tests get a fresh tree. `RunE`, cobra `Args` validators, including on the root: without one, an unknown subcommand is cobra's plain error (exit 1), not an `INVALID_INPUT` usage error (exit 2). Root sets `SilenceUsage`/`SilenceErrors`; `Execute()` prints each error once and builds the context with `signal.NotifyContext`.
 - **I/O**: `cmd.OutOrStdout()`/`cmd.ErrOrStderr()`, never `fmt.Println`. Results to stdout, everything else to stderr.
 - **Config**: `config.Load(flags)` uses `viper.New()` (never the global). Defaults, then the config file if present (missing is fine, malformed is an error), `SetEnvPrefix(<BIN upper>)`, `AutomaticEnv()`, a key replacer mapping `.` and `-` to `_`, bound persistent flags. Unmarshal into `Config`, call `Validate()`. Commands receive `Config`, never read viper.
