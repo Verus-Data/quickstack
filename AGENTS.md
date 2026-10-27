@@ -4,7 +4,7 @@
 
 A bun workspace; every package is in `packages/<name>/`. `packages/cli` is `quickstacks`, the CLI: Effect 4 commands/services, doctor/version, lazy configuration, safe output and logs. Bun compiles the executable; Node 24 runs Vitest. There is no product code, vendor, release tooling or network requirement. `packages/api` (`@quickstacks/api`) and `packages/mcp` (`@quickstacks/mcp`) are placeholders with no code or scripts. Code two packages share goes in its own package, never imported across another package's `src/`. How the monorepo works and how to add a package: README.md, "Monorepo".
 
-The root owns the harness: `.claude/`, lefthook, CI, the root `biome.json`, `tsconfig.base.json`, and the hook tests in `tests/hooks/`. Each package owns its source, tests, `tsconfig.json` (extending `../../tsconfig.base.json`) and any Biome plugins in a nested `biome.json` (`"root": false, "extends": "//"`). See docs/harness.md.
+The root owns the harness: `.claude/`, lefthook, CI, the root `biome.json`, `tsconfig.base.json`, and the root test suite in `tests/`: the hook tests in `tests/hooks/` and the check in `tests/acceptance/` that traces each plan's acceptance tests to tagged CLI tests. Each package owns its source, tests, `tsconfig.json` (extending `../../tsconfig.base.json`) and any Biome plugins in a nested `biome.json` (`"root": false, "extends": "//"`). See docs/harness.md.
 
 ## Planning
 
@@ -25,8 +25,8 @@ Root commands run from the repo root and fan out to every workspace package (`bu
 | `bun run typecheck` | Root harness tsc, then each package's |
 | `bun run lint` | Biome over the whole repo, with each package's nested plugins |
 | `bun run format` | Safe fixes and formatting |
-| `bun run test` | Hook tests, then each package's tests |
-| `bun run test:hooks` | Hook tests only (`tests/hooks/`, Vitest on Node) |
+| `bun run test` | Root tests (hooks and acceptance trace), then each package's tests |
+| `bun run test:hooks` | Root tests only: `tests/hooks/` and `tests/acceptance/` (Vitest on Node) |
 | `bun run coverage` | Each package's coverage |
 | `bun run e2e` | Each package's end-to-end checks |
 | `bun run check` | Lint, typecheck, test, e2e: the gate |
@@ -66,7 +66,7 @@ Paths below are relative to `packages/cli/`.
 - `src/schemas/`: config/report schemas and their types; `entry.ts` is entry format v1 (`StackMeta`, `FragmentMeta`, `VerifyStep`, `AgentId`, `DetectedAgent`, `withStepDefaults`), `list.ts` the `list --json` result, `new.ts` the `new --json` result (`NewResult`) and `manifest.ts` the project manifest (`Manifest`, `ManifestStep`, `EntryRef`).
 - `tests/`, `e2e/`: Node programs/hook tests and Bun standalone binary tests.
 - `scripts/`, `biome-plugins/`: lifecycle/build and enforced boundaries.
-- Repo root: `.claude/`, `.github/`, `docs/`, `tests/hooks/`: adapter, CI, harness guide and hook tests.
+- Repo root: `.claude/`, `.github/`, `docs/`, `tests/hooks/`, `tests/acceptance/`: adapter, CI, harness guide, hook tests and the acceptance trace.
 
 bin supplies platform, Output, Host and Foreground; AppLayer captures local services (config, logging, Processes) without opening config. main runs one scoped command. Doctor reads cached config and reports optional-file errors. Framework help is captured and flushed only on success; failures clear the output buffer.
 
