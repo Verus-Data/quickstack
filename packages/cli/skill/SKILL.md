@@ -15,7 +15,7 @@ A stack is a recipe: dependencies by role, starter files, agent guidance and a d
 
 Use `quickstack` if it is on PATH, otherwise `npx -y quickstack@latest`. Below, `<cli>` means that command. After `new`, use exactly the command the brief gives for verify: it is the same version that wrote the project. `<cli> <command> --help` lists a command's flags, exit codes and examples.
 
-With `--json`, a command writes one result to stdout. On failure the last stderr line is `{ "error": { "tag", "message", "retryable", "details" } }`: branch on the exit code (2 fix the input, 3 fix the config, 5 read the verify report on stdout, 6 ask the user).
+With `--json`, a command writes one result to stdout. On failure the last stderr line is `{ "error": { "tag", "message", "retryable", "next", "details" } }`: branch on the exit code (2 fix the input, 3 fix the config, 5 read the verify report on stdout, 6 ask the user) and do what `next` (in text output, the `Next:` line) says. `<cli> schema <name>` prints the JSON Schema of a `--json` result.
 
 ## Pick a stack
 
@@ -32,7 +32,6 @@ Read `.quickstack/BRIEF.md`. The brief is the whole task: follow it in order, an
 ## Loop to green
 
 Run `<cli> verify` from the project root with your shell tool's longest timeout. Read the failing step's name, command and output tail; fix the code or config it exercises, never the step, and run it again. Done is exit 0 with outcome `green`.
-
 ## Never weaken verify
 
 Don't edit `.quickstack/manifest.json`. Never edit the steps or weaken the definition of done: don't make commands pass without doing their job, skip tests, lower lint settings until they report nothing, or serve a stub instead of the app.

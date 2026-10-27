@@ -52,6 +52,7 @@ test.each(
       tag: "TargetNotEmpty",
       message: "The target directory is not empty.",
       retryable: false,
+      next: "pick a directory that doesn't exist yet or is empty.",
       details: { path: target, entries: [] },
     },
   });

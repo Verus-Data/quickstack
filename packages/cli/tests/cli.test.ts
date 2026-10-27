@@ -56,7 +56,12 @@ test.each([
   expect(result.status).toBe(2);
   expect(result.stdout).toBe("");
   expect(JSON.parse(result.stderr)).toEqual({
-    error: { tag: "Usage", message: "Invalid command. Run --help for usage.", retryable: false },
+    error: {
+      tag: "Usage",
+      message: "Invalid command.",
+      retryable: false,
+      next: "run quickstack --help to list the commands, or quickstack <command> --help for one.",
+    },
   });
 });
 test.each([
@@ -69,8 +74,9 @@ test.each([
   expect(JSON.parse(result.stderr)).toEqual({
     error: {
       tag: "Usage",
-      message: "Invalid command. Run --help for usage.",
+      message: "Invalid command.",
       retryable: false,
+      next: "pass a value from Expected; quickstack <command> --help lists every flag.",
       details: { flag, value: "", expected },
     },
   });
@@ -79,7 +85,9 @@ test("a mistyped subcommand is Usage with the close match under the message", as
   const result = await runCli(["doctr"], { env: quiet });
   expect(result.status).toBe(2);
   expect(result.stdout).toBe("");
-  expect(result.stderr).toBe("Invalid command. Run --help for usage.\n  Did you mean: doctor?\n");
+  expect(result.stderr).toBe(
+    "Invalid command.\n  Command: doctr\n  Did you mean: doctor?\n  Next: run quickstack --help to list the commands, or quickstack <command> --help for one.\n",
+  );
 });
 test("a mistyped subcommand with --json is one envelope naming the suggestions", async () => {
   const result = await runCli(["doctr", "--json"]);
@@ -88,8 +96,9 @@ test("a mistyped subcommand with --json is one envelope naming the suggestions",
   expect(JSON.parse(result.stderr.trimEnd().split("\n").at(-1) ?? "")).toEqual({
     error: {
       tag: "Usage",
-      message: "Invalid command. Run --help for usage.",
+      message: "Invalid command.",
       retryable: false,
+      next: "run quickstack --help to list the commands, or quickstack <command> --help for one.",
       details: { command: "doctr", suggestions: ["doctor"] },
     },
   });
@@ -98,7 +107,9 @@ test("an unknown subcommand with no close match gets no suggestion", async () =>
   const human = await runCli(["zzzz"], { env: quiet, host: terminal });
   expect(human.status).toBe(2);
   expect(human.stdout).toBe("");
-  expect(human.stderr).toBe("Invalid command. Run --help for usage.\n");
+  expect(human.stderr).toBe(
+    "Invalid command.\n  Command: zzzz\n  Next: run quickstack --help to list the commands, or quickstack <command> --help for one.\n",
+  );
   const json = await runCli(["zzzz", "--json"]);
   expect(json.status).toBe(2);
   expect(json.stdout).toBe("");
@@ -155,7 +166,7 @@ test("--json after -- belongs to the command, not quickstack", async () => {
   expect(hasFlag(["doctor", "--", "--json"], "--json")).toBe(false);
   const result = await runCli(["doctor", "--", "--json"]);
   expect(result.status).toBe(2);
-  expect(result.stderr).toMatch(/^Invalid command\. Run --help for usage\.\n/);
+  expect(result.stderr).toMatch(/^Invalid command\.\n/);
 });
 test("a defect's class and stack frames are logged, but not its message", async () => {
   const result = await runCli([], {
@@ -198,8 +209,9 @@ test.each([
     expect(JSON.parse(json.stderr)).toEqual({
       error: {
         tag: "Usage",
-        message: "Invalid command. Run --help for usage.",
+        message: "Invalid command.",
         retryable: false,
+        next: "pass a value from Expected; quickstack <command> --help lists every flag.",
         details,
       },
     });
@@ -209,12 +221,12 @@ test.each([
       expect(text.stdout).toBe("");
       expect(text.stderr).toBe(
         [
-          "Invalid command. Run --help for usage.",
+          "Invalid command.",
           `  Flag: --${flag}`,
           `  Value: ${value}`,
           `  Expected: ${expected}`,
           ...(suggestions?.length ? [`  Did you mean: ${suggestions.join(", ")}?`] : []),
-          "  Next: pass an expected value, or run --help for usage.",
+          "  Next: pass a value from Expected; quickstack <command> --help lists every flag.",
           "",
         ].join("\n"),
       );

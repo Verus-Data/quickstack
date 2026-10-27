@@ -134,6 +134,7 @@ test("errors keep the report on stdout, end stderr with the ValidationFailed env
       tag: "ValidationFailed",
       message: "Validation failed.",
       retryable: false,
+      next: "fix the error findings in the report on stdout, then run quickstack validate again.",
       details: { errors: 1, warnings: 0 },
     },
   });
@@ -218,6 +219,7 @@ test("a path that is no registry root, no entry and no bundled registry is NotFo
         tag: "NotFound",
         message: "Not found.",
         retryable: false,
+        next: "pass a registry root (a directory holding stacks/ or fragments/) or an entry directory inside one.",
         details: { suggestions: [], looked: path },
       },
     });
@@ -1191,10 +1193,10 @@ test("an unknown --brief id under a root list doesn't read points at validate fo
   expect(human.stderr).toBe(
     `Not found.\n  Stack: typscript-cli\n  Did you mean: typescript-cli?\n  Next: quickstack validate ${root} lists the ids under that root.\n`,
   );
-  // The bundled registry is what `list` shows, so its hint stays `list`.
+  // The bundled registry is what `list` shows, so a close match is the next step rather than `list`.
   const bundled = await run(["--brief", "typscript-cli"], { registry: realRegistry });
   expect(bundled.stderr).toBe(
-    "Not found.\n  Stack: typscript-cli\n  Did you mean: typescript-cli?\n  Next: quickstack list shows every stack and fragment.\n",
+    "Not found.\n  Stack: typscript-cli\n  Did you mean: typescript-cli?\n  Next: use one of the ids above.\n",
   );
 });
 

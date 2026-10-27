@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { Schema } from "effect";
 import { Manifest } from "../src/schemas/manifest";
 import { NewResult } from "../src/schemas/new";
-import { VerifyResult } from "../src/schemas/verify";
+import { VerifyEvent, VerifyResult } from "../src/schemas/verify";
 
 const binary = join(import.meta.dir, "../dist/quickstack");
 const modules = join(import.meta.dir, "../node_modules");
@@ -137,8 +137,17 @@ test("the compiled binary ships a runnable hook suite and a harness-owned test s
     ];
     const verify = await run(selection, project);
     expect(verify.status, verify.stderr).toBe(0);
-    expect(verify.stderr).toBe("");
     const verified = Schema.decodeUnknownSync(VerifyResult)(JSON.parse(verify.stdout));
+    // Stderr holds only live events (closed decode), one started per step that ran.
+    const events = verify.stderr
+      .trimEnd()
+      .split("\n")
+      .map((line) =>
+        Schema.decodeUnknownSync(VerifyEvent)(JSON.parse(line), { onExcessProperty: "error" }),
+      );
+    expect(events.flatMap((event) => (event.event === "step-started" ? [event.name] : []))).toEqual(
+      verified.steps.filter((step) => step.status !== "skipped").map((step) => step.name),
+    );
     expect(verified.outcome).toBe("partial");
     expect(verified.totals.failed).toBe(0);
     expect(
@@ -164,8 +173,11 @@ test("the compiled binary ships a runnable hook suite and a harness-owned test s
       );
       const failed = await run(selection, project);
       expect(failed.status).toBe(5);
-      expect(failed.stderr.trim().split("\n")).toHaveLength(1);
-      Schema.decodeUnknownSync(VerifyFailure)(JSON.parse(failed.stderr));
+      // Every line but the last is a live event; the last is the one envelope.
+      const lines = failed.stderr.trimEnd().split("\n");
+      for (const line of lines.slice(0, -1))
+        Schema.decodeUnknownSync(VerifyEvent)(JSON.parse(line), { onExcessProperty: "error" });
+      Schema.decodeUnknownSync(VerifyFailure)(JSON.parse(lines.at(-1) ?? ""));
       const failure = Schema.decodeUnknownSync(VerifyResult)(JSON.parse(failed.stdout));
       expect(failure.outcome).toBe("failed");
       expect(

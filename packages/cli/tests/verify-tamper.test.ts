@@ -25,6 +25,8 @@ import {
   recordPath,
   runRecords,
   type StepInput,
+  splitEvents,
+  startedSteps,
   stateEnv,
   verify,
   workspace,
@@ -37,8 +39,9 @@ afterEach(() => space.release());
 
 const has = (root: string, file: string) => existsSync(join(root, file));
 const asRoot = process.getuid?.() === 0;
-const NEXT_CHANGED =
-  "Next: the verify steps changed since they were recorded. Don't edit them back; ask the user to run quickstack verify --accept-changes from their own terminal, or to undo the change.";
+const CHANGED =
+  "the verify steps changed since they were recorded. Don't edit them back; ask the user to run quickstack verify --accept-changes from their own terminal, or to undo the change.";
+const NEXT_CHANGED = `Next: ${CHANGED}`;
 
 /** A recorded project (manifest plus state record), its home and the steps it was recorded with. */
 function recorded(steps: StepInput[], overrides: Partial<Manifest> = {}) {
@@ -69,6 +72,7 @@ function expectChanged(
       tag: "VerifyChanged",
       message: "Verify steps changed since they were recorded.",
       retryable: false,
+      next: CHANGED,
       details: decoded.changed,
     },
   });
@@ -79,7 +83,8 @@ describe("the tamper check", () => {
   test("a recorded, unchanged project runs with tamperCheck full", async () => {
     const { root, env } = recorded(BASE);
     const result = await verify(["--json"], { cwd: root, env });
-    expect(result.stderr).toBe("");
+    expect(splitEvents(result.stderr).rest).toBe("");
+    expect(startedSteps(result.stderr)).toEqual(["install", "lint", "unit"]);
     expect(result.status).toBe(0);
     const decoded = decodeResult(result.stdout);
     expect(decoded).toMatchObject({ outcome: "green", tamperCheck: "full", stateRecord: true });
@@ -198,7 +203,8 @@ describe("the tamper check", () => {
     const { root, env, home, manifest: written } = recorded(BASE);
     rmSync(recordPath(home, written.projectId));
     const result = await verify(["--json"], { cwd: root, env });
-    expect(result.stderr).toBe("");
+    expect(splitEvents(result.stderr).rest).toBe("");
+    expect(startedSteps(result.stderr)).toEqual(["install", "lint", "unit"]);
     expect(result.status).toBe(0);
     expect(decodeResult(result.stdout)).toMatchObject({
       outcome: "green",
@@ -327,6 +333,7 @@ describe("--accept-changes", () => {
           tag: "PermissionDenied",
           message: "Permission denied.",
           retryable: false,
+          next: "ask the user to run this command from their own terminal.",
           details: { reason: "agent" },
         },
       });
@@ -397,7 +404,8 @@ describe("--accept-changes", () => {
       env: project.env,
       host: tty,
     });
-    expect(result.stderr).toBe("");
+    expect(splitEvents(result.stderr).rest).toBe("");
+    expect(startedSteps(result.stderr)).toEqual(["install", "lint", "unit"]);
     expect(result.status).toBe(0);
     expect(decodeResult(result.stdout)).toMatchObject({
       outcome: "green",

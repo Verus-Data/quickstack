@@ -15,6 +15,7 @@ Every command, its flags and what it does. `quickstack <command> --help` prints 
 | [`skill install`](#skill-install) | Install the agent skill |
 | [`guide`](#guide) | Print the guide for coding agents |
 | [`doctor`](#doctor) | Inspect the runtime, paths and configuration |
+| [`schema`](#schema) | Print the JSON Schema of a `--json` result |
 
 ## list
 
@@ -211,3 +212,22 @@ quickstack doctor --json
 ```
 
 `doctor` reports version, platform, compiled status, executable, config, data and working paths, the user entry directory, the bundled registry and skill paths (and whether each exists), and safe configuration errors. A missing configuration file is fine. A malformed optional file is reported in `configErrors` while doctor exits successfully; help and version don't open that file.
+
+## schema
+
+```sh
+quickstack schema                 # list the names and what each describes
+quickstack schema verify          # one JSON Schema
+```
+
+Prints the JSON Schema (draft 2020-12, objects closed) of a command's `--json` result, of the error envelope (`error`) or of verify's live events (`verify-event`), so a caller can validate what it parses. `--json` with no name returns `{ schemas: [{ name, describes }] }`. An unknown name is `Usage` (exit 2) with a did-you-mean.
+
+## Shell completions
+
+`--completions <shell>` prints a static completion script for `bash`, `zsh`, `fish` or `powershell`, covering every command and flag. Regenerate it after upgrading quickstack.
+
+```sh
+quickstack --completions bash >> ~/.bashrc
+quickstack --completions zsh > "${fpath[1]}/_quickstack"
+quickstack --completions fish > ~/.config/fish/completions/quickstack.fish
+```

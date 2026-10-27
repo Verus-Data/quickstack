@@ -32,7 +32,14 @@ import {
 } from "./helpers/add";
 import { gitEnv, spawnGit } from "./helpers/git";
 import { minimal, writeEntry } from "./helpers/registry";
-import { readManifestAt, readRecord, recordPath, writeRecordedProject } from "./helpers/verify";
+import {
+  readManifestAt,
+  readRecord,
+  recordPath,
+  splitEvents,
+  startedSteps,
+  writeRecordedProject,
+} from "./helpers/verify";
 
 afterEach(releaseAdd);
 const incoming = ".quickstack/incoming";
@@ -68,7 +75,9 @@ describe("add to an existing repository", () => {
       host: { stdinIsTTY: true },
     });
     expect(accept.status).toBe(0);
-    expect(accept.stderr).toBe("");
+    // stderr holds only verify's live events.
+    expect(splitEvents(accept.stderr).rest).toBe("");
+    expect(startedSteps(accept.stderr)).toEqual(["stack-check", "required-check"]);
     decodeVerify(accept.stdout);
     const accepted = readManifestAt(project.root);
     const result = await added(await addCli(project, ["add", "ci-github", "--json"]));
@@ -123,7 +132,8 @@ describe("add to an existing repository", () => {
     expect(after.briefWords).toBe(countWords(brief));
     const verified = await addCli(project, ["verify", "--json"]);
     expect(verified.status).toBe(0);
-    expect(verified.stderr).toBe("");
+    expect(splitEvents(verified.stderr).rest).toBe("");
+    expect(startedSteps(verified.stderr)).toEqual(["stack-check", "required-check", "ci-check"]);
     const report = decodeVerify(verified.stdout);
     expect(report.tamperCheck).toBe("full");
     expect(report.steps.map((step) => step.name)).toEqual([
@@ -233,7 +243,8 @@ describe("add to an existing repository", () => {
     );
     const verified = await addCli(project, ["verify", "--json"]);
     expect(verified.status).toBe(0);
-    expect(verified.stderr).toBe("");
+    expect(splitEvents(verified.stderr).rest).toBe("");
+    expect(startedSteps(verified.stderr)).toEqual(["stack-check", "required-check", "ci-check"]);
     expect(decodeVerify(verified.stdout).tamperCheck).toBe("manifest-only");
   });
 
@@ -276,7 +287,12 @@ describe("add to an existing repository", () => {
         host: { stdinIsTTY: true },
       });
       expect(accepted.status).toBe(0);
-      expect(accepted.stderr).toBe("");
+      expect(splitEvents(accepted.stderr).rest).toBe("");
+      expect(startedSteps(accepted.stderr)).toEqual([
+        "stack-check",
+        "required-check",
+        "local-check",
+      ]);
       expect(decodeVerify(accepted.stdout).outcome).toBe("green");
       expect(read(project.root, "local-ran")).toBe("ran");
     },

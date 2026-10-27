@@ -93,6 +93,7 @@ describe("verify from the real binary", () => {
           tag: "VerifyFailed",
           message: "Verify failed.",
           retryable: false,
+          next: "fix the code or config these steps exercise, not the steps, then run quickstack verify again.",
           details: { failed: [{ name: "test", failureKind: "step", exitCode: 1 }] },
         },
       });

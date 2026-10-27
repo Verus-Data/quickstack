@@ -274,8 +274,9 @@ test("an unknown group is Usage with exit 2 and one envelope [1.0#12]", async ()
   expect(JSON.parse(result.stderr)).toEqual({
     error: {
       tag: "Usage",
-      message: "Invalid command. Run --help for usage.",
+      message: "Invalid command.",
       retryable: false,
+      next: "run quickstack --help to list the commands, or quickstack <command> --help for one.",
       details: { command: "widgets", suggestions: [] },
     },
   });
@@ -285,7 +286,9 @@ test("a mistyped group suggests the group in human mode", async () => {
   const result = await list(["stack"], { host: terminal });
   expect(result.status).toBe(2);
   expect(result.stdout).toBe("");
-  expect(result.stderr).toBe("Invalid command. Run --help for usage.\n  Did you mean: stacks?\n");
+  expect(result.stderr).toBe(
+    "Invalid command.\n  Command: stack\n  Did you mean: stacks?\n  Next: run quickstack --help to list the commands, or quickstack <command> --help for one.\n",
+  );
 });
 
 test("human list shows Stacks, Fragments and Apps, then Next lines with the invocation [1.0#12a]", async () => {
@@ -461,6 +464,7 @@ test.skipIf(process.getuid?.() === 0)(
           tag: "PermissionDenied",
           message: "Permission denied.",
           retryable: false,
+          next: "check the path's read permissions, then run this command again.",
           details: { reason: "read", path: join(user, "stacks") },
         },
       });

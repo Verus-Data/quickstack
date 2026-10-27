@@ -24,6 +24,7 @@ export const guideText = (cli: string) =>
     "- Ask the user only what the brief says to ask.",
     "",
     `${cli} <command> --help shows each command's flags, exit codes and examples.`,
+    `On failure, do what the error's Next line (the envelope's next field with --json) says. ${cli} schema <name> prints the JSON Schema of any --json result.`,
     "",
     "The user's own stacks and fragments go in $XDG_CONFIG_HOME/quickstack/stacks/<id>/ and fragments/<id>/ (default ~/.config/quickstack/).",
   ].join("\n");

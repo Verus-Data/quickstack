@@ -116,6 +116,7 @@ export const verifyCommand = Command.make(
                   ]
                 : [],
             ),
+            ...(result.stages === undefined ? {} : { stages: result.stages }),
           },
         });
     }),

@@ -190,7 +190,7 @@ describe("flag contradictions", () => {
     expect(status).toBe(2);
     expect(stdout).toBe("");
     expect(stderr).toBe(
-      "Invalid command. Run --help for usage.\n  --launch and --no-launch can't be used together.\n  Next: drop one of them.\n",
+      "Invalid command.\n  --launch and --no-launch can't be used together.\n  Next: drop one of them.\n",
     );
   });
 
@@ -298,7 +298,9 @@ describe("launching an agent", () => {
       const { status, stdout, stderr, app } = await newCli([], { home, host: terminal });
       expect(status).toBe(1);
       expect(stdout).toContain(`Launching ${bin} in app...`);
-      expect(stderr).toBe("An unexpected error occurred.\n");
+      expect(stderr).toBe(
+        "An unexpected error occurred.\n  Next: set QUICKSTACK_LOG_FILE to a file path and run the command again; the file records where it failed. Report it if it repeats.\n",
+      );
       expect(manifestOf(app).handoff).toEqual({ kind: "print", at: manifestOf(app).createdAt });
     },
   );

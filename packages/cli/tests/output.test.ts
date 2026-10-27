@@ -38,9 +38,78 @@ test("in JSON mode progress writes nothing, so stderr holds only the envelope", 
   expect(result.status).toBe(2);
   expect(result.stdout).toBe("");
   expect(JSON.parse(result.stderr)).toEqual({
-    error: { tag: "BadInput", message: "Invalid input.", retryable: false },
+    error: {
+      tag: "BadInput",
+      message: "Invalid input.",
+      retryable: false,
+      next: "run quickstack --help for the command's flags.",
+    },
   });
 });
+test("in JSON mode an event is one JSON line on stderr, before the envelope", async () => {
+  const program = Effect.gen(function* () {
+    const output = yield* Output;
+    yield* output.event({ event: "step-started", name: "test" }, "> test");
+    return yield* Effect.fail(new BadInput());
+  });
+  const result = await runCli(["--json"], { program });
+  expect(result.status).toBe(2);
+  expect(result.stdout).toBe("");
+  expect(result.stderr.split("\n").map((line) => (line ? JSON.parse(line) : line))).toEqual([
+    { event: "step-started", name: "test" },
+    {
+      error: {
+        tag: "BadInput",
+        message: "Invalid input.",
+        retryable: false,
+        next: "run quickstack --help for the command's flags.",
+      },
+    },
+    "",
+  ]);
+});
+test("for an agent an event writes its agent text, and nothing without one", async () => {
+  const program = Effect.gen(function* () {
+    const output = yield* Output;
+    yield* output.event({ event: "step-started", name: "test" }, "> test");
+    yield* output.event({ event: "step-finished", name: "test" });
+    yield* output.result({ ok: true }, "done");
+  });
+  const result = await runCli([], { program, env: quiet });
+  expect(result).toEqual({ status: 0, stdout: "done\n", stderr: "> test\n" });
+});
+test("for a human an event writes nothing; progress carries the live lines", async () => {
+  const program = Effect.gen(function* () {
+    const output = yield* Output;
+    yield* output.event({ event: "step-started", name: "test" }, "> test");
+    yield* output.progress("Running step: test");
+    yield* output.result({ ok: true }, "done");
+  });
+  const result = await runCli([], { program, host: terminal, env: quiet });
+  expect(result).toEqual({ status: 0, stdout: "done\n", stderr: "Running step: test\n" });
+});
+test.each(["EPIPE", "EACCES"] as const)(
+  "an event write failing with %s stops later events and never fails the command",
+  async (code) => {
+    let attempts = 0;
+    const program = Effect.gen(function* () {
+      const output = yield* Output;
+      yield* output.event({ n: 1 }, "> one");
+      yield* output.event({ n: 2 }, "> two");
+      yield* output.result({ ok: true }, "done");
+    });
+    const result = await runCli([], {
+      program,
+      env: quiet,
+      stderr: async () => {
+        attempts++;
+        throw writeError(code);
+      },
+    });
+    expect(result).toEqual({ status: 0, stdout: "done\n", stderr: "" });
+    expect(attempts).toBe(1);
+  },
+);
 test("progress swallows EPIPE then EACCES, stops writing, and leaves the exit code alone", async () => {
   const codes = ["EPIPE", "EACCES"] as const;
   let attempts = 0;
@@ -101,7 +170,11 @@ test("flushNow then BadInput keeps the flushed text on stdout and writes the env
     return yield* Effect.fail(new BadInput());
   });
   const result = await runCli([], { program, env: quiet });
-  expect(result).toEqual({ status: 2, stdout: "handing off\n", stderr: "Invalid input.\n" });
+  expect(result).toEqual({
+    status: 2,
+    stdout: "handing off\n",
+    stderr: "Invalid input.\n  Next: run quickstack --help for the command's flags.\n",
+  });
 });
 test("in JSON mode flushNow writes nothing until the command ends", async () => {
   let finished = false;

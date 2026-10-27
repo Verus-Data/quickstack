@@ -17,6 +17,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { Schema } from "effect";
 import { version } from "../package.json";
+import { cli } from "../src/cli";
 import { Manifest } from "../src/schemas/manifest";
 
 const binary = join(import.meta.dir, "../dist/quickstack");
@@ -216,6 +217,20 @@ describe("real standalone binary", () => {
       expect(manifest.briefWords).toBe(created.briefWords);
     } finally {
       rmSync(out, { recursive: true, force: true });
+    }
+  });
+  test("completion scripts name every listed subcommand", async () => {
+    const names = cli.subcommands
+      .flatMap((group) => group.commands)
+      .filter((command) => !command.unlisted)
+      .map((command) => command.name);
+    expect(names.length).toBeGreaterThan(0);
+    for (const shell of ["bash", "zsh", "fish"]) {
+      const result = await invoke(["--completions", shell]);
+      expect(result.status).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("quickstack");
+      for (const name of names) expect(result.stdout).toMatch(new RegExp(`\\b${name}\\b`));
     }
   });
   test("does not autoload dotenv or bunfig from working directory", async () => {

@@ -17,6 +17,8 @@ import {
   lastLine,
   manifest,
   readPid,
+  splitEvents,
+  startedSteps,
   stepNamed,
   verify,
   workspace,
@@ -28,10 +30,12 @@ afterEach(() => space.release());
 
 const has = (root: string, file: string) => existsSync(join(root, file));
 const NOTE_PIPES = "the step left a process holding its output; it was stopped after 2 s";
-const NEXT_FIX =
-  "Next: fix the code or config these steps exercise, not the steps, then run quickstack verify again.";
-const NEXT_ENV =
-  "Next: the machine is missing something these steps need (see each reason); install or start it, then run quickstack verify again.";
+const FIX =
+  "fix the code or config these steps exercise, not the steps, then run quickstack verify again.";
+const ENV =
+  "the machine is missing something these steps need (see each reason); install or start it, then run quickstack verify again.";
+const NEXT_FIX = `Next: ${FIX}`;
+const NEXT_ENV = `Next: ${ENV}`;
 const NEXT_PARTIAL =
   "Next: this was a partial run; done means a full quickstack verify with outcome green.";
 
@@ -44,7 +48,8 @@ describe("phases", () => {
       { name: "clean", phase: "teardown", run: "touch torn" },
     ]);
     const result = await verify(["--json"], { cwd: root });
-    expect(result.stderr).toBe("");
+    expect(splitEvents(result.stderr).rest).toBe("");
+    expect(startedSteps(result.stderr)).toEqual(["install", "lint", "clean"]);
     expect(result.status).toBe(0);
     const decoded = decodeResult(result.stdout);
     expect(decoded).toMatchObject({
@@ -126,6 +131,7 @@ describe("phases", () => {
         tag: "VerifyFailed",
         message: "Verify failed.",
         retryable: false,
+        next: FIX,
         details: {
           failed: [
             { name: "lint", failureKind: "step", exitCode: 1 },
@@ -248,6 +254,7 @@ describe("running a step", () => {
         tag: "VerifyFailed",
         message: "Verify failed.",
         retryable: false,
+        next: ENV,
         details: { failed: [{ name: "tool", failureKind: "env", exitCode: 127 }] },
       },
     });
@@ -365,6 +372,7 @@ describe("step cwd", () => {
         tag: "VerifyFailed",
         message: "Verify failed.",
         retryable: false,
+        next: ENV,
         details: { failed: [{ name: "escape", failureKind: "env" }] },
       },
     });
@@ -423,7 +431,8 @@ describe("selection", () => {
     const root = space.dir();
     writeProject(root, steps);
     const result = await verify(["--only", "lint", "--json"], { cwd: root });
-    expect(result.stderr).toBe("");
+    expect(splitEvents(result.stderr).rest).toBe("");
+    expect(startedSteps(result.stderr)).toEqual(["install", "lint", "clean"]);
     expect(result.status).toBe(0);
     const decoded = decodeResult(result.stdout);
     expect(decoded).toMatchObject({ outcome: "partial", scope: "partial" });
@@ -469,6 +478,7 @@ describe("selection", () => {
         tag: "BadInput",
         message: "Invalid input.",
         retryable: false,
+        next: "pass --only names from that list; setup and teardown steps always run.",
         details: { id: "nope", flag: "only", known: ["lint", "test", "web"] },
       },
     });
@@ -676,6 +686,7 @@ describe("output", () => {
       expect(result.stderr).not.toContain("Next:");
     }
     const json = await verify(["--json"], { cwd: root });
-    expect(json.stderr.trim().split("\n")).toHaveLength(1);
+    expect(startedSteps(json.stderr)).toEqual(["lint", "test"]);
+    expect(splitEvents(json.stderr).rest.trim().split("\n")).toHaveLength(1);
   });
 });

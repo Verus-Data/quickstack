@@ -15,7 +15,7 @@ import {
   snapshot,
 } from "./helpers/add";
 import { minimal, writeEntry } from "./helpers/registry";
-import { type StepInput, writeRecordedProject } from "./helpers/verify";
+import { type StepInput, splitEvents, writeRecordedProject } from "./helpers/verify";
 
 afterEach(releaseAdd);
 
@@ -156,7 +156,9 @@ test("the add brief describes base then app stages in the same order verify runs
   await added(await addCli(project, ["add", "named", "--json"]));
   const run = await addCli(project, ["verify", "--json"]);
   expect(run.status).toBe(0);
-  expect(run.stderr).toBe("");
+  // stderr holds only verify's live events, which start the steps in the same order.
+  const { events, rest } = splitEvents(run.stderr);
+  expect(rest).toBe("");
   const verified = Schema.decodeUnknownSync(VerifyResult)(JSON.parse(run.stdout));
   const brief = read(project.root, ".quickstack/BRIEF.md");
   const order = [
@@ -168,6 +170,9 @@ test("the add brief describes base then app stages in the same order verify runs
     "app-teardown",
   ];
   expect(verified.steps.map((step) => step.name)).toEqual(order);
+  expect(events.flatMap((event) => (event.event === "step-started" ? [event.name] : []))).toEqual(
+    order,
+  );
   expect([...brief.matchAll(/^# ((?:base|app)-[a-z]+)$/gm)].map((match) => match[1])).toEqual(
     order,
   );

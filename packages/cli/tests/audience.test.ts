@@ -69,9 +69,12 @@ describe("agent output carries no log lines", () => {
     const result = await runCli(["doctr"]);
     expect(result.status).toBe(2);
     expect(result.stdout).toBe("");
-    expect(result.stderr).toBe("Invalid command. Run --help for usage.\n  Did you mean: doctor?\n");
+    expect(result.stderr).toBe(
+      "Invalid command.\n  Command: doctr\n  Did you mean: doctor?\n  Next: run quickstack --help to list the commands, or quickstack <command> --help for one.\n",
+    );
+    // A person sees the same lines: the failure's log record goes to the file, so Next ends stderr.
     const human = await runCli(["doctr"], { host: terminal });
-    expect(human.stderr).toMatch(/\n\S+ ERROR command failure\s*\n$/);
+    expect(human.stderr).toBe(result.stderr);
   });
   test("a warning goes to the log file, not stderr", async () => {
     const home = temp();
@@ -227,7 +230,10 @@ describe("verify for an agent", () => {
       "Next: fix the code or config these steps exercise, not the steps, then run quickstack verify again.",
       "",
     ]);
-    expect(agent.stderr).toBe("Verify failed.\n  Failed: lint (step, exit 1)\n");
+    // One `> name` event line per started step, then the failure; the report carries Next.
+    expect(agent.stderr).toBe(
+      "> install\n> lint\n> unit\nVerify failed.\n  Failed: lint (step, exit 1)\n",
+    );
     const human = await run(root, [], terminal);
     expect(human.status).toBe(5);
     expect(human.stdout).toMatch(/\n {2}passed {3}setup {5}install/);
@@ -246,7 +252,7 @@ describe("verify for an agent", () => {
     writeProject(root, [{ name: "unit", run: "true" }]);
     const agent = await run(root, []);
     expect(agent.status).toBe(0);
-    expect(agent.stderr).toBe("");
+    expect(agent.stderr).toBe("> unit\n");
     expect(agent.stdout).toMatch(
       /^verify: green \(full run; 1 passed, 0 failed, 0 skipped; [^)]+\)\n/,
     );

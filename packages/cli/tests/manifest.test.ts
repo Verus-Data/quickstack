@@ -261,11 +261,12 @@ test("InvalidConfig details reach the envelope, and human mode escapes the path 
       tag: "InvalidConfig",
       message: "Configuration is invalid.",
       retryable: false,
+      next: "upgrade quickstack, then run this command again.",
       details: { path: "/p/\u001b[31m/manifest.json", schemaVersion: 2 },
     },
   });
   const human = await runCli([], { program: Effect.fail(error), env: quiet, host: terminal });
   expect(human.stderr).toBe(
-    "Configuration is invalid.\n  Path: /p/\\u001b[31m/manifest.json\n  Schema version: 2, from a newer quickstack. Upgrade quickstack to read it.\n",
+    "Configuration is invalid.\n  Path: /p/\\u001b[31m/manifest.json\n  Schema version: 2, from a newer quickstack.\n  Next: upgrade quickstack, then run this command again.\n",
   );
 });

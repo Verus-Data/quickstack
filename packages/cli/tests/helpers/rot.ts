@@ -88,6 +88,7 @@ export async function validateRot(
         tag: "ValidationFailed",
         message: "Validation failed.",
         retryable: false,
+        next: "fix the error findings in the report on stdout, then run quickstack validate again.",
         details: { errors, warnings },
       },
     });

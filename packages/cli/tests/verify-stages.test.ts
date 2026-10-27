@@ -4,6 +4,7 @@ import { Schema } from "effect";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { digestSteps, encodeManifest, MANIFEST_PATH } from "../src/core/manifest";
 import { NewResult } from "../src/schemas/new";
+import type { VerifyResult } from "../src/schemas/verify";
 import { alive, quiet, runCli, terminal } from "./helpers/cli";
 import {
   answers,
@@ -16,6 +17,8 @@ import {
   recordPath,
   runRecords,
   type StepInput,
+  splitEvents,
+  startedSteps,
   stateEnv,
   stepNamed,
   verify,
@@ -60,30 +63,44 @@ async function composed() {
   return { home, root, env: stateEnv(home), file: recordPath(home, written.projectId) };
 }
 
+const FIX =
+  "fix the code or config these steps exercise, not the steps, then run quickstack verify again.";
+const APP_FIX =
+  'follow the application section ("Then: the application") of .quickstack/BRIEF.md, fix the code or config these steps exercise, then run quickstack verify again.';
+
+/** The steps that ran, in run order: each one, and only those, has a `step-started` event. */
+const ran = (result: VerifyResult) =>
+  result.steps.filter((step) => step.status !== "skipped").map((step) => step.name);
+
 function passed(run: CliRun) {
   expect(run.status).toBe(0);
-  expect(run.stderr).toBe("");
-  return decodeResult(run.stdout);
+  expect(splitEvents(run.stderr).rest).toBe("");
+  const result = decodeResult(run.stdout);
+  expect(startedSteps(run.stderr)).toEqual(ran(result));
+  return result;
 }
 
-function failed(run: CliRun, names: string[]) {
+function failed(run: CliRun, names: string[], next: string) {
   expect(run.status).toBe(5);
   const result = decodeResult(run.stdout);
   expect(result.outcome).toBe("failed");
   const failures = result.steps.filter((step) => step.status === "failed");
   expect(failures.map((step) => step.name).sort()).toEqual([...names].sort());
-  // Parse the entire stream: ancillary output or a second envelope must fail too.
-  expect(JSON.parse(run.stderr)).toEqual({
+  expect(startedSteps(run.stderr)).toEqual(ran(result));
+  // Parse every non-event line: ancillary output or a second envelope must fail too.
+  expect(JSON.parse(splitEvents(run.stderr).rest)).toEqual({
     error: {
       tag: "VerifyFailed",
       message: "Verify failed.",
       retryable: false,
+      next,
       details: {
         failed: failures.map((step) => ({
           name: step.name,
           failureKind: step.failureKind,
           exitCode: step.exitCode,
         })),
+        stages: result.stages,
       },
     },
   });
@@ -96,9 +113,11 @@ describe("verify with an app", () => {
   test("a failing composed base skips every app phase with base-failed [3.5b#1]", async () => {
     const project = await composed();
     writeFileSync(join(project.root, "app-ready"), "");
-    const result = failed(await verify(["--json"], { ...project, cwd: project.root }), [
-      "base-test",
-    ]);
+    const result = failed(
+      await verify(["--json"], { ...project, cwd: project.root }),
+      ["base-test"],
+      FIX,
+    );
     expect(
       result.steps
         .filter((step) => step.name.startsWith("app-"))
@@ -129,9 +148,11 @@ describe("verify with an app", () => {
   test("an app failure keeps the base green in the result and record [3.5b#2]", async () => {
     const project = await composed();
     writeFileSync(join(project.root, "base-ready"), "");
-    const result = failed(await verify(["--json"], { ...project, cwd: project.root }), [
-      "app-test",
-    ]);
+    const result = failed(
+      await verify(["--json"], { ...project, cwd: project.root }),
+      ["app-test"],
+      APP_FIX,
+    );
     expect(order(project.root)).toEqual([
       "base-setup",
       "base-lint",
@@ -171,8 +192,18 @@ describe("verify with an app", () => {
       const run = await verify([], { ...project, cwd: project.root, host });
       expect(run.status).toBe(5);
       const failure = "Verify failed.\n  Failed: app-test (step, exit 1)\n";
+      const started = [
+        "base-setup",
+        "base-test",
+        "base-lint",
+        "base-clean",
+        "app-setup",
+        "app-test",
+        "app-lint",
+        "app-clean",
+      ].map((name) => `> ${name}\n`);
       if (audience === "human") expect(run.stderr.endsWith(failure)).toBe(true);
-      else expect(run.stderr).toBe(failure);
+      else expect(run.stderr).toBe(`${started.join("")}${failure}`);
       expect(run.stdout).toContain("verify: failed");
       const next = lastLine(run.stdout);
       expect(next).toMatch(/^Next: .*application/i);
@@ -282,6 +313,7 @@ describe("verify with an app", () => {
           tag: "VerifyChanged",
           message: "Verify steps changed since they were recorded.",
           retryable: false,
+          next: "the verify steps changed since they were recorded. Don't edit them back; ask the user to run quickstack verify --accept-changes from their own terminal, or to undo the change.",
           details: expected,
         },
       });
@@ -378,9 +410,11 @@ describe("stage boundaries on real projects", () => {
         { name: "app-clean", phase: "teardown", tags: ["app"], run: "echo app-clean >> order.log" },
       ]);
       writeFileSync(join(project.root, "user.txt"), "keep\n");
-      const result = failed(await verify(["--json"], { ...project, cwd: project.root }), [
-        phase === "setup" ? "base-setup" : "base-clean",
-      ]);
+      const result = failed(
+        await verify(["--json"], { ...project, cwd: project.root }),
+        [phase === "setup" ? "base-setup" : "base-clean"],
+        FIX,
+      );
       expect(order(project.root)).toEqual(["base-clean"]);
       expect(
         result.steps
@@ -411,9 +445,11 @@ describe("stage boundaries on real projects", () => {
       { name: "app-test", tags: ["app"], run: "echo app-test >> order.log" },
       { name: "app-clean", phase: "teardown", tags: ["app"], run: "echo app-clean >> order.log" },
     ]);
-    const result = failed(await verify(["--json"], { ...project, cwd: project.root }), [
-      "app-setup",
-    ]);
+    const result = failed(
+      await verify(["--json"], { ...project, cwd: project.root }),
+      ["app-setup"],
+      APP_FIX,
+    );
     expect(order(project.root)).toEqual(["base-clean", "app-setup", "app-clean"]);
     expect(
       result.steps.filter((step) => step.status === "skipped").map((step) => step.name),
@@ -432,7 +468,7 @@ describe("stage boundaries on real projects", () => {
     );
     expect(base).toMatchObject({ outcome: "partial", firstGreen: false });
     expect(readRecord(project.file).firstGreenAt).toBeNull();
-    failed(await verify(["--json"], { ...project, cwd: project.root }), ["app-test"]);
+    failed(await verify(["--json"], { ...project, cwd: project.root }), ["app-test"], APP_FIX);
     expect(readRecord(project.file).firstGreenAt).toBeNull();
     writeFileSync(join(project.root, "app-ready"), "");
     const green = passed(await verify(["--json"], { ...project, cwd: project.root }));
@@ -526,9 +562,19 @@ describe("stage boundaries on real projects", () => {
       }
       expect(run.status).toBe(130);
       expect(run.stdout).toBe("");
-      expect(JSON.parse(run.stderr)).toEqual({
-        error: { tag: "Interrupted", message: "Command interrupted.", retryable: false },
+      expect(JSON.parse(splitEvents(run.stderr).rest)).toEqual({
+        error: {
+          tag: "Interrupted",
+          message: "Command interrupted.",
+          retryable: false,
+          next: "run the same command again when you're ready.",
+        },
       });
+      expect(startedSteps(run.stderr)).toEqual(
+        stage === "base"
+          ? ["base-test", "base-clean"]
+          : ["base-test", "base-clean", "app-setup", "app-test", "app-clean"],
+      );
       const pid = readPid(pidFile);
       if (pid === undefined) throw new Error("the hanging child did not write its pid");
       await vi.waitFor(() => expect(alive(pid)).toBe(false), { timeout: 2000 });

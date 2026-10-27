@@ -269,6 +269,7 @@ describe("a target that already holds a scaffold", () => {
         tag: "TargetNotEmpty",
         message: "The target directory is not empty.",
         retryable: false,
+        next: "continue with .quickstack/BRIEF.md, or remove the directory to start again.",
         details: {
           path: app,
           entries: [
@@ -310,7 +311,7 @@ describe("a target that already holds a scaffold", () => {
     expect(envelope(green.stderr).error.details).toMatchObject({ scaffold: "green" });
     const greenHuman = await newCli(["fixture-stack", "app"], { home });
     expect(greenHuman.stderr).toContain(
-      "  Scaffold: green. This is a finished project.\n  Next: pick another directory for a new project; `add` will extend this one once it ships.\n",
+      "  Scaffold: green. This is a finished project.\n  Next: pick another directory for a new project, or extend this one with quickstack add.\n",
     );
   });
 

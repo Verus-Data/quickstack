@@ -199,6 +199,8 @@ a maintainer by hand; CI builds and deploys are 5.2.
 | [4.2d Dependency telemetry: client and ingest](phases/phase-4.2d-dependency-telemetry-client-and-ingest.md) | A signed allowlist at `GET /v1/allowlist`; green verifies report allowlisted dependency names and majors read from manifest and lock files (nothing executed) under telemetry `schemaVersion: 2` with version 1 frozen; a second notice; ingest and a per-project dependency history | Assumption 2; "None of these are collected today" | 4.1e, 4.1d, 4.1c, 4.1a, 4.1b, 4.0c, 4.0d, 4.2b, 3.0, D17, D25 | Not started |
 | [4.2e Dependency trends and pages](phases/phase-4.2e-dependency-trends-and-pages.md) | Per-dependency and per-ecosystem numbers, major shares, adoption, drop and major transitions, co-installed lift, and dependency pages, under 4.2a's caps and gate | Assumption 2; the stack author | 4.2d, 4.2a; 4.2c soft | Not started |
 | [4.3 MCP server](phases/phase-4.3-mcp-server.md) | `@quickstack/mcp` exposing list, show, new (no launch) and verify over stdio, by running the published CLI's `--json` contract | Assumption 5 (entry point); D11 | 1.6c, 3.1a, and the start evidence in [open question 15](risks-and-open-questions.md#open-questions-for-the-maintainers) | Not started, gated |
+| [4.4a Human styling and live progress](phases/phase-4.4a-human-styling-and-live-progress.md) | Human audience only: colored status words decided once in Output, a live progress line for `verify` and `new`, and width-aware wrapping, with no new dependency and json and agent bytes unchanged | The human audience ("Three audiences" in `rules/cli/cli.md`); agents are the main users, so this lands late | 1.2a, 1.3a, 3.1a | Not started |
+| [4.4b Interactive pickers](phases/phase-4.4b-interactive-pickers.md) | Human audience only: `new`, `add` and `create` with missing arguments at a terminal offer effect/cli `Prompt` pickers and echo the equivalent command; agents, `--json`, CI and pipes keep the `Usage` error | Same as 4.4a; D9 (the direct-CLI entry point) | 1.2a, 1.4, 3.0, 3.1b; 4.4a soft | Not started |
 
 ### Phase 5: CI and scheduled inference
 
@@ -405,6 +407,13 @@ flowchart LR
   p16c --> p43[4.3 MCP]
   p31a --> p43
   p20b -.-> p43
+  p12a --> p44a[4.4a human styling + progress]
+  p13a --> p44a
+  p31a --> p44a
+  p12a --> p44b[4.4b interactive pickers]
+  p30 --> p44b
+  p31b --> p44b
+  p44a -.-> p44b
   p16c --> p50[5.0 CI release + checks]
   p50 --> p51[5.1 canary]
   p20b --> p51
@@ -523,9 +532,10 @@ names.
 | Contract | Symbol | Rule | Owner, then users |
 |---|---|---|---|
 | Error table | `src/errors.ts::errorTable` (`ErrorSpec = { exit, retryable, keepsResult }`) | Every tag has one row. A sub-phase that adds a tag adds its row and lists it under [Error tags](#error-tags) below | 0.3a; every later sub-phase |
-| Error envelope | `{ error: { tag, message, retryable, details? } }` | `details` is a closed `Schema.Struct` per tag, holding only CLI-produced values or arguments; `message` is fixed per tag | 0.3a |
+| Error envelope | `errors.ts::ErrorEnvelope`, `{ error: { tag, message, retryable, next?, details? } }` | `details` is a closed `Schema.Struct` per tag, holding only CLI-produced values or arguments; `message` is fixed per tag; `next` is the action `errors.ts::failureGuide` picks, the same text as the text modes' `Next:` line, present for every tag but BrokenPipe | 0.3a; 2026-10-27 (`next`) |
+| Result schemas | `core/result-schemas.ts::RESULT_SCHEMAS`, `quickstack schema [name]` | Every `--json` result, the error envelope and verify's event have a JSON Schema (draft 2020-12, closed objects) generated from their Effect Schema; a new printed shape adds an entry | 2026-10-27 |
 | Output audience | `services/output.ts::Output.audience` (`Audience` = `"json" \| "agent" \| "human"`), `resolveAudience` | Resolved once per invocation when the Output layer is built, from `--json`, `Host.stdoutIsTTY` and `AppConfig.agent`: `json` with `--json`; `human` only for a terminal with no agent detected; `agent` otherwise (the default). Audiences never behave differently (exit codes, files, side effects); a command picks only its text rendering by `audience`. Logs reach stderr only for `human`. What agent text omits is in `.claude/rules/cli/cli.md`, "Three audiences" (D29) | 2026-10-26 (D29); every command |
-| Progress and flush | `services/output.ts::Output.progress`, `Output.flushNow` | `progress` is human mode only and swallows every write error. `flushNow` runs in the human and agent audiences (a no-op in JSON); once it ran, "stdout empty on failure" no longer applies to that invocation | 0.3a; 1.3a, 1.4 |
+| Progress and flush | `services/output.ts::Output.progress`, `Output.event`, `Output.flushNow` | `progress` is human mode only and swallows every write error. `event` (D33) writes one JSON line to stderr in JSON mode and an optional short line in agent mode, nothing in human mode, with the same write-error policy; verify's events are `schemas/verify.ts::VerifyEvent`. `flushNow` runs in the human and agent audiences (a no-op in JSON); once it ran, "stdout empty on failure" no longer applies to that invocation | 0.3a; 1.3a, 1.4 |
 | Process service | `src/services/processes.ts::Processes` (`run`, `start`, `interactive`, `exec`, `which`), `ShellSpec`, `ArgvSpec`, `Captured`, `Finished`, `Running`, `SpawnFailed`, over the adapter `src/platform/process.ts` | `exec(argv, opts)` spawns argv directly with no shell, captures output and has a timeout; it is the only way to run a program on user-supplied arguments (3.2a's git). `run`, `start` and `exec` spawn detached group leaders with stdin `ignore`; `interactive` spawns `detached: false` with inherited stdio. `run` resolves on shell exit plus a 2 s drain, then kills the group and sets `Finished.pipesHeld` (callers read the flag, never parse the tail). `SpawnFailed { kind, errno }` is only for a missing cwd, a missing `/bin/sh`, resource errors, or a missing or non-executable binary for `interactive` and `exec`; a missing command under the shell is a normal exit 127. Only the adapter calls Node's spawn, `process.kill` and liveness checks (it spawns on `node:child_process`, not `effect/process`; see 0.3b). Every group is registered in the per-invocation `Foreground` holder that `bin.ts` SIGKILLs on a forced exit | 0.3b; 1.2a, 1.3a, 1.4, 2.0b, 3.2a |
 | Network layers | `src/platform/net.ts::NetLayer`: `HttpClient` (`effect/http`'s `FetchHttpClient`, redirects never followed) and `src/services/net.ts::Tcp` (`connect(host, port)`, an `effect/socket` `Socket` over `node:net`) | Core code takes `HttpClient` and `Tcp` from context and never imports a platform module; `bin.ts` and `tests/helpers/cli.ts` provide `NetLayer` | 1.3a; 4.0d |
 | Output tail size | `processes.ts::TAIL_BYTES` (256 KB kept), `TAIL_LINES` (60 reported) | One size everywhere; no sub-phase picks its own | 0.3b; 1.3a, 2.0b |
@@ -626,7 +636,7 @@ Names to use: `EntryInvalid` (not `InvalidEntry`), `ComposeConflict` (not
 | Bundled skill | `packages/cli/skill/SKILL.md`, found the same way as the registry and passed in as `Host.skill`; `doctor` reports `skill: { path, found }`; 3.4c adds it to the package `files` list and to 0.2's tarball assertion | 3.4c |
 | Bundled registry in the repo | `packages/cli/registry/`, found at runtime by `fileURLToPath(new URL("../registry/", import.meta.url))` in `bin.ts`, passed in as `Host.registry` (`doctor` reports `registry: { path, found }`, `found` only for a directory). `QUICKSTACK_REGISTRY_DIR` replaces it (resolved against the working directory; `bun run dev` resolves it against the caller's directory), and its entries are untrusted (Trust model, point 2); set to anything but a directory, it is a warning on `list` and in `doctor`. Until 0.2 lands, `bin.ts` runs on Bun and passes a stub path that tests override; the `import.meta.url` resolution is 0.2's. It ships empty until 1.6a, and an empty registry passes `validate` | 0.2, 1.0, 1.5 |
 | Prose markers | `<!-- quickstack:when key=v,v2 key2=v -->` ... `<!-- quickstack:end -->`, keys `stack`, `tag`, `tag!=`, `mode`, `preset`, `with`; comma is OR within a key, keys AND; no nesting; markers on their own line. `quickstack:fill` for text the agent must replace | 1.1 |
-| JSON contract | One result on stdout. A keeps-result failure keeps its result on stdout and still writes the error envelope as the last stderr line. A `--only` or `--skip-tag` verify run that passes exits 0 with outcome `partial`, which never counts as green | 0.3a, 1.3a |
+| JSON contract | One result on stdout. Stderr holds only `Output.event` lines (JSON objects, D33) and, on failure, the envelope as its last line. A keeps-result failure keeps its result on stdout and still writes the error envelope as the last stderr line. A `--only` or `--skip-tag` verify run that passes exits 0 with outcome `partial`, which never counts as green | 0.3a, 1.3a |
 | Environment | Only `config.ts` reads env, including agent markers and `PATH`. Only `bin.ts` and `src/platform/` touch Bun or Node process APIs or import `@effect/platform-node`; 0.3b creates `src/platform/` (the process adapter) and its Grit rule, and later adapters (1.3a's probe layers, 4.0d's HTTP client) go there | base, 0.2, 0.3b |
 | What the CLI executes | See [Trust model](#trust-model) | this file |
 | Verify step `layer` | Optional; one of `install`, `lint`, `typecheck`, `test`, `build`, `serve`, `docs`, `check`. `check` (added 2026-10-26) is a file or config check, such as a README with no fill markers or a hooks file that defines hooks; it isn't a D7 layer, so no stack needs one. D7 enforcement and run records rely on `layer`, so 1.5 warns (`step-layer`) when any validated step has none | 1.0, 1.5 |
@@ -771,7 +781,7 @@ question 9).
 | ID | What | Must be decided before | Status |
 |---|---|---|---|
 | A1 | Distribution | 0.2 | Open, recommendation [above](#open-architecture-questions) |
-| A2 | Streaming output | 0.3a; in the log before 1.6c | Open, recommendation in 0.3a |
+| A2 | Streaming output | 0.3a; in the log before 1.6c | Decided 2026-10-27 (D33): one result on stdout; JSON-line events on stderr in `--json`, short start lines in agent mode |
 | A3 | Signals during handoff | 0.3b; in the log before 1.6c | Open, recommendation in 0.3b |
 | A4 | Structured errors | 0.3a; in the log before 1.6c | Open, recommendation in 0.3a |
 | D5 | Brief budget | 1.5, and before 1.6a writes stack prose | Proposed |

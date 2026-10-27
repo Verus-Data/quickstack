@@ -93,6 +93,31 @@ export const VerifyResult = Schema.Struct({
 export type VerifyResult = typeof VerifyResult.Type;
 export type Outcome = VerifyResult["outcome"];
 
+/**
+ * One stderr line `verify --json` writes while it runs (`Output.event`): `step-started` before a
+ * step's command starts, `step-finished` when it ends. Skipped steps get no events; the result on
+ * stdout lists every step. The error envelope, when there is one, is still the last stderr line.
+ */
+export const VerifyEvent = Schema.Union([
+  Schema.Struct({
+    event: Schema.Literal("step-started"),
+    name: Schema.String,
+    phase: Phase,
+  }),
+  Schema.Struct({
+    event: Schema.Literal("step-finished"),
+    name: Schema.String,
+    phase: Phase,
+    status: StepResult.fields.status,
+    failureKind: Schema.optionalKey(FailureKind),
+    durationMs: Schema.Number,
+  }),
+]).annotate({
+  title: "Verify event",
+  description: "A live stderr line from verify --json: a step started or finished",
+});
+export type VerifyEvent = typeof VerifyEvent.Type;
+
 /** One step in a run record: no command, output, reason or path, so the file is safe to share. */
 export const RunStep = Schema.Struct({
   name: Schema.String,

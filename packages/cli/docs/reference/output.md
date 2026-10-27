@@ -25,7 +25,7 @@ flowchart TB
 
 The two text renderings carry the same result with the same exit code and files; agent output leaves out what an agent doesn't need:
 
-- No log lines on stderr (they go only to `QUICKSTACK_LOG_FILE` when it is set), so stderr is the failure message and its detail lines.
+- No log lines on stderr (they go only to `QUICKSTACK_LOG_FILE` when it is set), so stderr is the failure message, its detail lines and `Next:`, plus `verify`'s `> <step>` line as each step starts.
 - Paths in a command's result text print relative to the working directory when inside it, absolute otherwise. Paths in error details (`Path:`, `Looked for:`) stay absolute for now, and `--json` keeps every path absolute.
 - `new`: no written-file listing (the brief lists the files), no absolute `Project:` line, and no `For example:` command after a printed prompt (it repeats the prompt).
 - `verify`: no rows for passed steps (the summary counts them) and none on a `changed` run, where every step is skipped for the same reason and the error lists the change. Failed and skipped rows, output tails and the `Next:` line stay, and the per-command progress lines are human-only.
@@ -38,14 +38,20 @@ The two text renderings carry the same result with the same exit code and files;
 Stdout contains results only. `--json` emits one result object; JSON version is `{ "version": "0.1.0" }` and JSON help is `{ "help": "..." }`. Failures leave stdout empty, and stderr holds a safe diagnostic, or with `--json` exactly one envelope as the last stderr line:
 
 ```json
-{ "error": { "tag": "NotFound", "message": "Not found.", "retryable": false, "details": { "kind": "project", "looked": "/path", "suggestions": [] } } }
+{ "error": { "tag": "NotFound", "message": "Not found.", "retryable": false, "next": "run this command again from inside a project quickstack new created, or create one with quickstack new <stack> <dir>.", "details": { "kind": "project", "looked": "/path", "suggestions": [] } } }
 ```
 
-`message` is fixed per tag, so it's safe to match on. `details`, when present, is a closed per-tag object holding only values the CLI produced or arguments you passed (for example `{ "command", "suggestions" }` for an unknown subcommand). Text modes print the message, the detail lines indented under it, and usually a `Next:` line.
+`message` is fixed per tag, so it's safe to match on. `next` says what to do about the failure; every tag but `BrokenPipe` has one. `details`, when present, is a closed per-tag object holding only values the CLI produced or arguments you passed (for example `{ "command", "suggestions" }` for an unknown subcommand). Text modes print the message, the detail lines indented under it, then `Next:` with the same text as `next` (a failure that keeps its report on stdout prints its `Next:` line there instead).
+
+`verify --json` also writes live events to stderr while it runs, one JSON object per line: `{ "event": "step-started", "name", "phase" }` as a step starts, and `{ "event": "step-finished", "name", "phase", "status", "failureKind"?, "durationMs" }` when it ends. A failure's envelope still comes last, so read the last stderr line for the error and skip lines with an `event` key.
 
 Two exceptions keep stdout. A failure that carries a report (`VerifyFailed`, `VerifyChanged`, `ValidationFailed`) writes that report to stdout before the error. A command that hands the terminal to another program writes its output so far before doing so, which stays on stdout if it later fails.
 
-In JSON and agent output, ancillary logs go only to the optional log file, so stderr stays parseable and short; set `QUICKSTACK_LOG_FILE`, or rerun at a terminal, to see why a `Defect` happened. A `--json` after `--` belongs to the command, not to quickstack. Human output emits logs to stderr and optionally to the same JSONL file. No command streams results.
+In JSON and agent output, ancillary logs go only to the optional log file, so stderr stays parseable and short; set `QUICKSTACK_LOG_FILE`, or rerun at a terminal, to see why a `Defect` happened. A `--json` after `--` belongs to the command, not to quickstack. Human output emits logs to stderr, before any error, and optionally to the same JSONL file; the summary record of an expected failure goes to the file only, so `Next:` ends stderr (a `Defect`'s stays, with its stack frames).
+
+## JSON Schemas
+
+`quickstack schema` lists every JSON shape the CLI prints, and `quickstack schema <name>` prints one as a JSON Schema (draft 2020-12, objects closed): each command's `--json` result, `error` for the envelope and `verify-event` for verify's events.
 
 ## Exit codes
 

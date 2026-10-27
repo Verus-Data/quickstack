@@ -229,6 +229,7 @@ test("a source vanished during new's post-composition git probe leaves no projec
       tag: "EntryInvalid",
       message: "Entry is invalid.",
       retryable: false,
+      next: "fix that entry or leave it out; quickstack validate lists every problem in a registry.",
       details: { id: "sample", origin: "bundled", reason: "missing", path: "files/payload.bin" },
     },
   });
@@ -255,6 +256,7 @@ test("an unknown template variable fails before new writes and preserves existin
       tag: "EntryInvalid",
       message: "Entry is invalid.",
       retryable: false,
+      next: "use only project_name, project_slug, env_prefix, package_scope, author, year in that file's {{ }} tokens, or drop its .tmpl suffix to copy it as is.",
       details: {
         id: "sample",
         origin: "bundled",
@@ -285,6 +287,7 @@ test("a file blocking a later directory rolls back earlier writes and preserves 
       tag: "TargetNotEmpty",
       message: "The target directory is not empty.",
       retryable: false,
+      next: "pick a directory that doesn't exist yet or is empty.",
       details: { path: realpathSync(target), entries: ["desktop.ini"] },
     },
   });

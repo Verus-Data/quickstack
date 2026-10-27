@@ -6,6 +6,8 @@ import {
   readRecord,
   recordPath,
   runRecords,
+  splitEvents,
+  startedSteps,
   stateEnv,
   verify,
   workspace,
@@ -52,13 +54,30 @@ test.each(["base", "app"])(
       totals: { passed: stage === "base" ? 2 : 5, failed: 1, skipped: stage === "base" ? 3 : 0 },
       firstGreen: false,
     });
-    expect(JSON.parse(result.stderr)).toEqual({
+    expect(startedSteps(result.stderr)).toEqual(
+      stage === "base"
+        ? ["base-test", "base-first-clean", "base-last-clean"]
+        : [
+            "base-test",
+            "base-first-clean",
+            "base-last-clean",
+            "app-test",
+            "app-first-clean",
+            "app-last-clean",
+          ],
+    );
+    expect(JSON.parse(splitEvents(result.stderr).rest)).toEqual({
       error: {
         tag: "VerifyFailed",
         message: "Verify failed.",
         retryable: false,
+        next:
+          stage === "base"
+            ? "fix the code or config these steps exercise, not the steps, then run quickstack verify again."
+            : 'follow the application section ("Then: the application") of .quickstack/BRIEF.md, fix the code or config these steps exercise, then run quickstack verify again.',
         details: {
           failed: [{ name, failureKind: "step", exitCode: stage === "base" ? 7 : 8 }],
+          stages: report.stages,
         },
       },
     });
@@ -81,7 +100,8 @@ test("an app-only project treats the empty base as complete and runs app setup a
   ]);
   const result = await verify(["--json"], { home, cwd: root, env: stateEnv(home) });
   expect(result.status).toBe(0);
-  expect(result.stderr).toBe("");
+  expect(splitEvents(result.stderr).rest).toBe("");
+  expect(startedSteps(result.stderr)).toEqual(["app-setup", "app-test", "app-clean"]);
   expect(decodeResult(result.stdout)).toMatchObject({
     outcome: "green",
     stages: { base: "green", app: "green" },
