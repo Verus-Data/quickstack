@@ -178,3 +178,11 @@ holds a `pass` record for each bundled app, `with` including it, from a 2.0b ben
   1.5's, the ledger's `with` already names the app, and time to a green base is read from
   run records instead of a new state field. "Stack stage" became "base stage", matching
   1.1's brief.
+- 2026-10-27: stage outcomes need selection and tamper semantics too. A tamper-stopped
+  run with app steps reports `{ base: "changed", app: null }`. Selection skips make the
+  affected stage `partial`, while default skips still allow `green`, matching verify's
+  existing preset behavior. The app starts only after a green base; selection that leaves
+  the base partial skips app steps with the fixed reason "the base did not fully run; the
+  app stage waits for a full verify". `base-failed` is reserved for a failed or interrupted
+  base. A run interrupted in a stage (including during teardown) records that stage as
+  `interrupted`, tears down only started stages, and leaves an unstarted app `null`.

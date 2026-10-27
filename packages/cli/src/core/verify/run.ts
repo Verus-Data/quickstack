@@ -1,7 +1,7 @@
 import { Cause, Clock, Effect, Exit, FileSystem } from "effect";
 import { AGENT_MARKER_NAMES, AppConfig } from "../../config";
 import type { Manifest } from "../../schemas/manifest";
-import type { StepResult, VerifyResult } from "../../schemas/verify";
+import type { Outcome, StepResult, VerifyResult } from "../../schemas/verify";
 import { type PlannedStep, planVerify, type SelectOptions } from "./plan";
 import { runStep } from "./step";
 
@@ -21,14 +21,16 @@ export type RunResult = Omit<
 > & { outcome: Exclude<VerifyResult["outcome"], "changed"> };
 
 const SETUP_FAILED = "an earlier setup step failed";
+const BASE_FAILED = "base-failed";
+const BASE_PARTIAL = "the base did not fully run; the app stage waits for a full verify";
 const INTERRUPTED = "the run was interrupted";
 
 /**
  * Runs a project's verify steps and returns the result. The manifest is taken as already checked
  * (`tamper.ts::checkTamper` runs before this). Setup stops at its first failure, which skips the check
- * and serve steps; every check runs; teardown always runs, and so does `onFinished`, both in the
- * finalizer of the run, so an interrupted run still tears down and reports to `onFinished` (with
- * outcome `interrupted`) before the interruption ends the command.
+ * and serve steps; every check runs. Each stage tears down in its own finalizer before the next
+ * stage starts. A base failure skips every app step. `onFinished` runs in the run's finalizer,
+ * so an interrupted run still tears down and records its outcome before the command ends.
  */
 export const runVerify = (
   project: VerifyProject,
@@ -48,9 +50,6 @@ export const runVerify = (
     const context = { root: project.root, realRoot, env };
     const started = yield* Clock.currentTimeMillis;
     const results = new Map<string, StepResult>();
-    let setupFailed = false;
-    let current: { step: PlannedStep; started: number } | undefined;
-
     const skipped = (step: PlannedStep, reason: string): StepResult => ({
       name: step.name,
       phase: step.phase,
@@ -60,45 +59,82 @@ export const runVerify = (
       durationMs: 0,
       reason,
     });
-    const runOne = (step: PlannedStep) =>
-      Effect.gen(function* () {
-        const skip =
-          plan.skipped.get(step.name) ??
-          (setupFailed && step.phase !== "teardown" ? SETUP_FAILED : undefined);
-        if (skip !== undefined) {
-          results.set(step.name, skipped(step, skip));
-          return;
-        }
-        current = { step, started: yield* Clock.currentTimeMillis };
-        const result = yield* runStep(step, context);
-        current = undefined;
-        results.set(step.name, result);
-        if (step.phase === "setup" && result.status === "failed") setupFailed = true;
-      });
+    const base = plan.steps.filter((step) => !step.tags.includes("app"));
+    const app = plan.steps.filter((step) => step.tags.includes("app"));
+    let stages: NonNullable<RunResult["stages"]> = { base: "green", app: null };
+    let activeStage: "base" | "app" = "base";
 
-    let finished: RunResult | undefined;
-    const finish = (interrupted: boolean) =>
-      Effect.gen(function* () {
-        const now = yield* Clock.currentTimeMillis;
-        if (interrupted && current) {
-          const { step, started: at } = current;
-          results.set(step.name, {
-            ...skipped(step, INTERRUPTED),
-            status: "failed",
-            failureKind: "interrupted",
-            durationMs: now - at,
-          });
+    const runStage = (stage: "base" | "app", steps: ReadonlyArray<PlannedStep>) => {
+      activeStage = stage;
+      let setupFailed = false;
+      let current: { step: PlannedStep; started: number } | undefined;
+      const runOne = (step: PlannedStep) =>
+        Effect.gen(function* () {
+          const skip =
+            plan.skipped.get(step.name) ??
+            (setupFailed && step.phase !== "teardown" ? SETUP_FAILED : undefined);
+          if (skip !== undefined) {
+            results.set(step.name, skipped(step, skip));
+            return;
+          }
+          current = { step, started: yield* Clock.currentTimeMillis };
+          const result = yield* runStep(step, context);
           current = undefined;
+          results.set(step.name, result);
+          if (step.phase === "setup" && result.status === "failed") setupFailed = true;
+        });
+      return Effect.forEach(
+        steps.filter((step) => step.phase !== "teardown"),
+        runOne,
+        {
+          discard: true,
+        },
+      ).pipe(
+        Effect.onExit((exit) =>
+          Effect.gen(function* () {
+            const interrupted = Exit.isFailure(exit) && Cause.hasInterrupts(exit.cause);
+            if (interrupted && current) {
+              const { step, started: at } = current;
+              results.set(step.name, {
+                ...skipped(step, INTERRUPTED),
+                status: "failed",
+                failureKind: "interrupted",
+                durationMs: (yield* Clock.currentTimeMillis) - at,
+              });
+            }
+            if (interrupted)
+              for (const step of steps)
+                if (step.phase !== "teardown" && !results.has(step.name))
+                  results.set(step.name, skipped(step, INTERRUPTED));
+            yield* Effect.forEach(
+              steps.filter((step) => step.phase === "teardown"),
+              runOne,
+              { discard: true },
+            );
+            const outcome: Outcome = interrupted
+              ? "interrupted"
+              : steps.some((step) => results.get(step.name)?.status === "failed")
+                ? "failed"
+                : steps.some(
+                      (step) =>
+                        plan.skipped.has(step.name) && !(step.skipByDefault && !options.all),
+                    )
+                  ? "partial"
+                  : "green";
+            stages = { ...stages, [stage]: outcome };
+          }),
+        ),
+      );
+    };
+
+    const result = (interrupted: boolean) =>
+      Effect.gen(function* () {
+        // An interrupt during masked teardown reaches the outer run after the stage finalizer.
+        if (interrupted) {
+          stages = { ...stages, [activeStage]: "interrupted" };
+          if (activeStage === "base")
+            for (const step of app) results.set(step.name, skipped(step, BASE_FAILED));
         }
-        if (interrupted)
-          for (const step of plan.steps)
-            if (step.phase !== "teardown" && !results.has(step.name))
-              results.set(step.name, skipped(step, INTERRUPTED));
-        yield* Effect.forEach(
-          plan.steps.filter((step) => step.phase === "teardown"),
-          runOne,
-          { discard: true },
-        );
         const steps = plan.steps.map(
           (step) => results.get(step.name) ?? skipped(step, INTERRUPTED),
         );
@@ -106,15 +142,17 @@ export const runVerify = (
         const count = (status: StepResult["status"]) =>
           steps.filter((step) => step.status === status).length;
         const created = Date.parse(project.createdAt);
-        finished = {
-          outcome: interrupted
-            ? "interrupted"
-            : count("failed")
-              ? "failed"
-              : plan.scope === "partial"
-                ? "partial"
-                : "green",
+        const outcome: Exclude<Outcome, "changed"> = interrupted
+          ? "interrupted"
+          : count("failed")
+            ? "failed"
+            : plan.scope === "partial"
+              ? "partial"
+              : "green";
+        return {
+          outcome,
           scope: plan.scope,
+          ...(app.length ? { stages: { ...stages } } : {}),
           steps,
           totals: { passed: count("passed"), failed: count("failed"), skipped: count("skipped") },
           durationMs: ended - started,
@@ -122,15 +160,25 @@ export const runVerify = (
             ? Math.max(0, Math.floor((ended - created) / 1000))
             : 0,
         };
-        yield* onFinished(finished);
       });
 
-    yield* Effect.forEach(
-      plan.steps.filter((step) => step.phase !== "teardown"),
-      runOne,
-      { discard: true },
-    ).pipe(
-      Effect.onExit((exit) => finish(Exit.isFailure(exit) && Cause.hasInterrupts(exit.cause))),
+    return yield* Effect.gen(function* () {
+      yield* runStage("base", base);
+      if (stages.base !== "green") {
+        const reason = stages.base === "partial" ? BASE_PARTIAL : BASE_FAILED;
+        for (const step of app) results.set(step.name, skipped(step, reason));
+      } else if (app.some((step) => !plan.skipped.has(step.name))) {
+        yield* runStage("app", app);
+      } else {
+        for (const step of app)
+          results.set(step.name, skipped(step, plan.skipped.get(step.name) ?? INTERRUPTED));
+      }
+      return yield* result(false);
+    }).pipe(
+      Effect.onExit((exit) =>
+        Exit.isSuccess(exit)
+          ? onFinished(exit.value)
+          : result(Cause.hasInterrupts(exit.cause)).pipe(Effect.flatMap(onFinished)),
+      ),
     );
-    return finished as RunResult;
   });
