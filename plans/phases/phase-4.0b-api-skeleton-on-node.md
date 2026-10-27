@@ -1,6 +1,6 @@
 # Phase 4.0b: API skeleton on Node
 
-Status: DRAFT 2026-10-27 (not agreed; replaces the 2026-10-26 draft "API skeleton and hosting spike", whose Workers spike moved to 4.0f under D35)
+Status: EXECUTED 2026-10-27 in `stacks-api` (gate and `stacks verify` green; the first live deploy and the first hosted CI run are the maintainers' steps; replaces the 2026-10-26 draft "API skeleton and hosting spike", whose Workers spike moved to 4.0f under D35)
 
 | Field | Value |
 |---|---|
@@ -144,3 +144,9 @@ At the workspace root: `dev`, `build` (the API's Node bundle into `apps/api/dist
 - A public name for a host on a private network needs a tunnel or a proxy with a public address. If neither is available for the demo, the CLI's remote origin (4.0d) points at a local URL and the deploy waits.
 - The `_headers` subset may grow past what a small parser should handle. If 4.0c needs more than path patterns and fixed headers, move the cache rules into config and generate `_headers` from it in 4.0f.
 - The `astro-api` stack is new. If scaffolding from it needs fixes, they land in this repository's registry first, so the next scaffold gets them, and the private repository is patched by hand to match.
+- 2026-10-27, after execution: the response rewriting above runs in a global router middleware (`HttpRouter.middleware(..., { global: true })` in `app.ts`), not a server-level one; in Effect 4.0.6 a middleware passed to `HttpRouter.serve` can't replace the response.
+- 2026-10-27: Astro keeps its default `trailingSlash`. `"always"` made the dev server intercept the API proxy's paths; the static server's 301 to the slash form still covers `/stacks/x`.
+- 2026-10-27: acceptance test 3's `GET /nope` envelope holds only with no `STATIC_DIR`. With a static directory, a non-API miss is the site's `404.html` (test 6); the `/v1/` misses are the envelope either way.
+- 2026-10-27: `_headers` patterns match the whole path with literal dots, and a header two matching rules set is joined with `, ` in file order, which is what the Workers static assets layer does. The parser reads the file once at startup.
+- 2026-10-27: every `/v1/` path is answered by the API, so the static server never serves `v1/index.json` today. 4.0c, which writes the index there, has to serve existing static files under `/v1/` before the `NotFound` envelope.
+- 2026-10-27, host and deploy: the Node host is one Docker container in its own Compose project (`compose.yaml`, `Dockerfile` on `node:24-slim`) on the maintainers' server, in place of a service manager and a file copy. `bun run deploy` builds both apps, assembles the static directory and runs `docker compose up -d --build --wait` against the host's daemon over SSH (`DEPLOY_HOST`), so the image builds on the host and nothing goes through a registry or CI; it then checks `/healthz` and `/` at `DEPLOY_URL`. The container publishes `DEPLOY_PORT`, and the first deploy is checked on the host's LAN address; the reverse proxy, domain and its access-log setting are the maintainers' step and change only `DEPLOY_URL`. One replica, so a deploy has a few seconds' gap. Workers stays the production target (D16, 4.0f).

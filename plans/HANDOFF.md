@@ -52,6 +52,18 @@ ships Claude rules for Effect HTTP APIs, REST resource naming, testing through H
 real layers, verification and TypeScript, `/add-resource` and `/add-service` commands, and
 boundary and command guards with tests.
 
+## 4.0b executed (2026-10-27)
+
+[4.0b](phases/phase-4.0b-api-skeleton-on-node.md) is built in `stacks-api` (no remote yet):
+`/healthz`, `/openapi.json`, the 404 envelopes, a placeholder site, static serving with
+`_headers`, and `bun run deploy`, which builds and starts one Docker container on the
+maintainers' server over SSH and checks it at `DEPLOY_URL` (a LAN address and port for now).
+Maintainers' steps: the first deploy, then the proxy and domain, then a remote and a first
+hosted CI run. 4.0c must let static files under `/v1/` win over the API's 404 (the plan's
+"What this plan may get wrong"). Scaffolding it with `--agents claude,codex` showed Codex got
+less of the harness than Claude Code; the API stacks now ship their command guard, the shared
+hook helpers and an Agent harness section for Codex too.
+
 ## Agent picker (2026-10-27)
 
 [4.4c](phases/phase-4.4c-agent-picker.md) landed: at a terminal with several harnesses and
