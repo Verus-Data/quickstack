@@ -1,10 +1,10 @@
 import { Effect } from "effect";
 import type { ConditionalProblem } from "../../errors";
 import type { Finding } from "../../schemas/validate";
-import { scanConditionals } from "../compose/conditionals";
-import { markdownFile } from "../registry/entry";
+import { type Condition, scanConditionals } from "../compose/conditionals";
+import { type Entry, markdownFile } from "../registry/entry";
 import { Registry } from "../registry/registry";
-import { type Check, entryFile, finding } from "./view";
+import { type Check, entryFile, finding, type View } from "./view";
 
 const PROBLEMS: Record<ConditionalProblem, string> = {
   unclosed: "a when block has no end marker",
@@ -25,79 +25,99 @@ const PROBLEMS: Record<ConditionalProblem, string> = {
  */
 export const conditionalChecks: Check = (view) =>
   Effect.gen(function* () {
-    const registry = yield* Registry;
     const findings: Finding[] = [];
-    /**
-     * A `stack=` or `with=` id: unknown is an error; found only outside the root is the same
-     * `resolved-outside-root` note `referenceChecks` gives, since the block then depends on this
-     * machine.
-     */
-    const resolve = (kind: "stack" | "fragment", key: string, id: string) => {
-      const target = view.all.find((item) => item.kind === kind && item.id === id);
-      if (!target)
-        return {
-          check: "conditional-ids",
-          severity: "error",
-          message: `${key}=${id} names no ${kind}, so the block is never kept`,
-        } as const;
-      if (view.inRoot(target)) return undefined;
-      return {
-        check: "resolved-outside-root",
-        severity: "note",
-        message: `${key}=${id} names a ${kind} found in the ${target.origin} registry`,
-      } as const;
-    };
     const tags = new Set(
       view.all.flatMap((item) =>
         "meta" in item && item.meta.kind === "stack" ? item.meta.tags : [],
       ),
     );
-    for (const entry of view.entries) {
-      const file = entryFile(view, entry);
-      // The body is the file's tail, so file lines are body lines plus the lines before it.
-      const text = yield* Effect.option(registry.read(entry, markdownFile(entry.kind)));
-      const offset =
-        text._tag === "Some" ? text.value.split("\n").length - entry.body.split("\n").length : 0;
-      const scanned = scanConditionals(entry.body);
-      if (!("blocks" in scanned)) {
-        findings.push(
-          finding(entry, {
-            check: "conditional-syntax",
-            severity: "error",
-            file,
-            line: scanned.line + offset,
-            problem: scanned.problem,
-            message: PROBLEMS[scanned.problem],
-          }),
-        );
-        continue;
-      }
-      for (const block of scanned.blocks) {
-        const line = block.start + offset;
-        for (const [kind, key, ids] of [
-          ["stack", "stack", block.condition.stack ?? []],
-          ["fragment", "with", block.condition.with ?? []],
-        ] as const)
-          for (const id of ids) {
-            const found = resolve(kind, key, id);
-            if (found) findings.push(finding(entry, { ...found, file, line }));
-          }
-        for (const [key, values] of [
-          ["tag", block.condition.tag ?? []],
-          ["tag!", block.condition["tag!="] ?? []],
-        ] as const)
-          for (const tag of values)
-            if (!tags.has(tag))
-              findings.push(
-                finding(entry, {
-                  check: "conditional-tag",
-                  severity: "warning",
-                  file,
-                  line,
-                  message: `${key}=${tag} is a tag no stack declares`,
-                }),
-              );
-      }
-    }
+    for (const entry of view.entries)
+      findings.push(...(yield* entryConditionalFindings(view, entry, tags)));
     return { findings };
+  });
+
+/**
+ * A `stack=` or `with=` id: unknown is an error; found only outside the root is the same
+ * `resolved-outside-root` note `referenceChecks` gives, since the block then depends on this
+ * machine.
+ */
+function resolveId(view: View, kind: "stack" | "fragment", key: string, id: string) {
+  const target = view.all.find((item) => item.kind === kind && item.id === id);
+  if (!target)
+    return {
+      check: "conditional-ids",
+      severity: "error",
+      message: `${key}=${id} names no ${kind}, so the block is never kept`,
+    } as const;
+  if (view.inRoot(target)) return undefined;
+  return {
+    check: "resolved-outside-root",
+    severity: "note",
+    message: `${key}=${id} names a ${kind} found in the ${target.origin} registry`,
+  } as const;
+}
+
+type ConditionalFinding = Pick<Finding, "check" | "severity" | "message">;
+
+function idFindings(view: View, condition: Condition): ConditionalFinding[] {
+  const findings: ConditionalFinding[] = [];
+  for (const [kind, key, ids] of [
+    ["stack", "stack", condition.stack ?? []],
+    ["fragment", "with", condition.with ?? []],
+  ] as const)
+    for (const id of ids) {
+      const found = resolveId(view, kind, key, id);
+      if (found) findings.push(found);
+    }
+  return findings;
+}
+
+function tagFindings(tags: ReadonlySet<string>, condition: Condition): ConditionalFinding[] {
+  const findings: ConditionalFinding[] = [];
+  for (const [key, values] of [
+    ["tag", condition.tag ?? []],
+    ["tag!", condition["tag!="] ?? []],
+  ] as const)
+    for (const tag of values)
+      if (!tags.has(tag))
+        findings.push({
+          check: "conditional-tag",
+          severity: "warning",
+          message: `${key}=${tag} is a tag no stack declares`,
+        });
+  return findings;
+}
+
+const entryConditionalFindings = (view: View, entry: Entry, tags: ReadonlySet<string>) =>
+  Effect.gen(function* () {
+    const registry = yield* Registry;
+    const findings: Finding[] = [];
+    const file = entryFile(view, entry);
+    // The body is the file's tail, so file lines are body lines plus the lines before it.
+    const text = yield* Effect.option(registry.read(entry, markdownFile(entry.kind)));
+    const offset =
+      text._tag === "Some" ? text.value.split("\n").length - entry.body.split("\n").length : 0;
+    const scanned = scanConditionals(entry.body);
+    if (!("blocks" in scanned)) {
+      findings.push(
+        finding(entry, {
+          check: "conditional-syntax",
+          severity: "error",
+          file,
+          line: scanned.line + offset,
+          problem: scanned.problem,
+          message: PROBLEMS[scanned.problem],
+        }),
+      );
+      return findings;
+    }
+    for (const block of scanned.blocks) {
+      const line = block.start + offset;
+      for (const found of [
+        ...idFindings(view, block.condition),
+        ...tagFindings(tags, block.condition),
+      ])
+        findings.push(finding(entry, { ...found, file, line }));
+    }
+    return findings;
   });

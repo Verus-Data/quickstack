@@ -9,7 +9,7 @@ import {
   renderPreviewErrors,
   renderReport,
 } from "../core/validate/report";
-import { resolveTarget } from "../core/validate/target";
+import { resolveTarget, type Target } from "../core/validate/target";
 import { BadInput, ValidationFailed } from "../errors";
 import { BriefPreview, ValidateReport } from "../schemas/validate";
 import { Host } from "../services/host";
@@ -18,6 +18,35 @@ import { Output } from "../services/output";
 /** Repeated flags, each value also split on commas: `--with a --with b,c`. */
 const ids = (values: ReadonlyArray<string>) =>
   values.flatMap((value) => value.split(",")).filter((value) => value !== "");
+
+function compositionFlag(flags: {
+  with: ReadonlyArray<string>;
+  without: ReadonlyArray<string>;
+  sandbox: boolean;
+}) {
+  if (flags.with.length) return "--with";
+  if (flags.without.length) return "--without";
+  if (flags.sandbox) return "--sandbox";
+  return undefined;
+}
+
+const printPreview = (target: Target, options: Parameters<typeof previewBrief>[1]) =>
+  Effect.gen(function* () {
+    const output = yield* Output;
+    const preview = yield* previewBrief(target, options);
+    yield* output.result(Schema.encodeSync(BriefPreview)(preview), renderPreviewBrief(preview));
+    if (output.audience === "human") yield* output.progress(renderPreview(preview));
+    const count = (severity: string) =>
+      preview.findings.filter((finding) => finding.severity === severity).length;
+    if (count("error")) {
+      // A closed diagnostic stream must not replace the kept-result validation failure.
+      if (output.audience !== "json")
+        yield* output.note(renderPreviewErrors(preview)).pipe(Effect.ignore);
+      return yield* new ValidationFailed({
+        details: { errors: count("error"), warnings: count("warning") },
+      });
+    }
+  });
 
 export const validateCommand = Command.make(
   "validate",
@@ -54,35 +83,17 @@ export const validateCommand = Command.make(
       const path = Option.getOrUndefined(flags.path);
       const stack = Option.getOrUndefined(flags.brief);
       // The composition flags shape a --brief preview; alone they would be silently ignored.
-      const stray = flags.with.length
-        ? "--with"
-        : flags.without.length
-          ? "--without"
-          : flags.sandbox
-            ? "--sandbox"
-            : undefined;
+      const stray = compositionFlag(flags);
       if (stack === undefined && stray !== undefined)
         return yield* new BadInput({ details: { id: stray, flag: "brief" } });
       const target = yield* resolveTarget(path);
       if (stack !== undefined) {
-        const preview = yield* previewBrief(target, {
+        yield* printPreview(target, {
           stack,
           with: ids(flags.with),
           without: ids(flags.without),
           preset: flags.sandbox ? "sandbox" : "default",
         });
-        yield* output.result(Schema.encodeSync(BriefPreview)(preview), renderPreviewBrief(preview));
-        if (output.audience === "human") yield* output.progress(renderPreview(preview));
-        const count = (severity: string) =>
-          preview.findings.filter((finding) => finding.severity === severity).length;
-        if (count("error")) {
-          // A closed diagnostic stream must not replace the kept-result validation failure.
-          if (output.audience !== "json")
-            yield* output.note(renderPreviewErrors(preview)).pipe(Effect.ignore);
-          return yield* new ValidationFailed({
-            details: { errors: count("error"), warnings: count("warning") },
-          });
-        }
         return;
       }
       const report = yield* validate(target);
