@@ -189,7 +189,8 @@ ELAPSED=$(($(date +%s) - START))
 
 STATUS="failure"
 # A failed turn names its cause even when codex also exits nonzero (a capacity error does both).
-FAILED_EVENT="$(grep -m1 -E '"type":"(turn\.failed|error)"' "$EVENTS" 2>/dev/null | cut -c1-300)"
+# Only a top-level event counts: an error item inside a completed turn (the hook-trust warning) is not a failure.
+FAILED_EVENT="$(grep -m1 -E '^\{"type":"(turn\.failed|error)"' "$EVENTS" 2>/dev/null | cut -c1-300)"
 if [ -e "$TIMED_OUT_MARK" ]; then
     REASON="timed out after ${TIMEOUT_SECS}s"
 elif [ -n "$FAILED_EVENT" ]; then

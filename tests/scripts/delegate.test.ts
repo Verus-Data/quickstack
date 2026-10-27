@@ -21,6 +21,9 @@ done
 echo written > src.txt
 echo '{"type":"thread.started","thread_id":"thread-1"}'
 echo '{"type":"item.completed","item":{"type":"command_execution","command":"bun run test","exit_code":0}}'
+if [ "$FAKE_MODE" = warned ]; then
+  echo '{"type":"item.completed","item":{"id":"item_0","type":"error","message":"hooks may run without review"}}'
+fi
 if [ "$FAKE_MODE" = fail ]; then
   echo '{"type":"turn.failed","error":{"message":"boom"}}'
 elif [ "$FAKE_MODE" = capacity ]; then
@@ -132,6 +135,12 @@ describe("delegate.sh", () => {
     const result = run([contract, "--worktree", worktree, "--write"], { FAKE_MODE: "fail" });
     expect(result.status).toBe(1);
     expect(result.stdout).toContain("result:    failure - turn failed");
+  });
+
+  it("succeeds on a completed turn that carries an error item, such as the hook-trust warning", () => {
+    const result = run([contract, "--worktree", worktree, "--write"], { FAKE_MODE: "warned" });
+    expect(result.stdout).toContain("result:    success - turn completed");
+    expect(result.status).toBe(0);
   });
 
   it("names a turn's failure when codex exits nonzero, and says a capacity failure can resume", () => {
