@@ -2,12 +2,15 @@ import { homedir } from "node:os";
 import { Config, ConfigProvider, Context, Effect, FileSystem, Layer, Path, Schema } from "effect";
 import { InvalidConfig } from "./errors";
 import { Settings } from "./schemas";
+import { AgentId, type DetectedAgent } from "./schemas/entry";
 import { SLUG } from "./version";
 export type Environment = Record<string, string | undefined>;
 export type Paths = {
   config: string;
   data: string;
   cache: string;
+  /** Out-of-project state, such as project state records: `$XDG_STATE_HOME/quickstacks/`. */
+  state: string;
   /** The user registry root, beside config.json: `$XDG_CONFIG_HOME/quickstacks/`. */
   user: string;
   /**
@@ -22,6 +25,60 @@ export type LogSettings = {
   file: string;
   noColor: boolean;
 };
+/**
+ * One agent session marker: the environment variable `name`, set and non-empty (and equal to
+ * `equals` when given), means `agent`; `"by-value"` reads the agent from the value itself.
+ * `confirmed` is the date the marker was last checked against the agent's documentation.
+ */
+const AgentMarker = Schema.Struct({
+  name: Schema.String.check(Schema.isPattern(/^[A-Z][A-Z0-9_]*$/, { expected: "a variable name" })),
+  agent: Schema.Union([AgentId, Schema.Literal("by-value")]),
+  equals: Schema.optionalKey(Schema.String),
+  confirmed: Schema.String.check(Schema.isPattern(/^\d{4}-\d{2}-\d{2}$/, { expected: "a date" })),
+});
+export type AgentMarker = typeof AgentMarker.Type;
+const marker = (name: string, agent: AgentMarker["agent"], equals?: string) => ({
+  name,
+  agent,
+  ...(equals === undefined ? {} : { equals }),
+  confirmed: "2026-10-26",
+});
+/**
+ * Agent detection's markers, checked in order; the first match wins. `AI_AGENT` is the
+ * cross-agent convention: its value is matched by prefix against the known ids, and any other
+ * non-empty value is `"other"`. Cursor's trace id variable isn't here because its integrated
+ * terminal sets it for people too.
+ */
+export const AgentMarkers: ReadonlyArray<AgentMarker> = Schema.decodeUnknownSync(
+  Schema.Array(AgentMarker),
+)([
+  marker("CLAUDECODE", "claude"),
+  marker("CLAUDE_CODE", "claude"),
+  marker("CODEX_SANDBOX", "codex"),
+  marker("CODEX_CI", "codex"),
+  marker("CODEX_THREAD_ID", "codex"),
+  marker("OPENCODE", "opencode"),
+  marker("OPENCODE_CLIENT", "opencode"),
+  marker("CURSOR_AGENT", "cursor"),
+  marker("CURSOR_EXTENSION_HOST_ROLE", "cursor", "agent-exec"),
+  marker("AI_AGENT", "by-value"),
+]);
+/** Every marker variable: `childEnv`'s `remove` list for a verify step's environment (1.3a). */
+export const AGENT_MARKER_NAMES: ReadonlyArray<string> = [
+  ...new Set(AgentMarkers.map((item) => item.name)),
+];
+/** The agent `env` names, by `AgentMarkers` in order; a blank value counts as unset. */
+export function detectAgent(env: Environment): DetectedAgent {
+  for (const item of AgentMarkers) {
+    const value = env[item.name];
+    if (!value) continue;
+    if (item.equals !== undefined && value !== item.equals) continue;
+    if (item.agent !== "by-value") return item.agent;
+    const named = value.toLowerCase();
+    return AgentId.literals.find((id) => named.startsWith(id)) ?? "other";
+  }
+  return "none";
+}
 function provider(env: Environment) {
   return ConfigProvider.layer(
     ConfigProvider.fromEnvRecord(
@@ -51,11 +108,13 @@ export function configLayer(env: Environment = process.env) {
           ),
         );
         const cache = path.join(yield* xdg("XDG_CACHE_HOME", ".cache"), SLUG);
+        const state = path.join(yield* xdg("XDG_STATE_HOME", ".local", "state"), SLUG);
         const registry = yield* read(text("QUICKSTACKS_REGISTRY_DIR"));
         return {
           config: path.join(config, SLUG, "config.json"),
           data,
           cache,
+          state,
           user: path.join(config, SLUG),
           ...(registry ? { registry } : {}),
         };
@@ -105,7 +164,8 @@ export function configLayer(env: Environment = process.env) {
           if (value !== undefined && !remove.includes(key)) env[key] = value;
         return { ...env, ...set };
       };
-      return { get, paths, logging, childEnv };
+      const agent = Effect.sync(() => detectAgent(captured));
+      return { get, paths, logging, childEnv, agent };
     }),
   );
 }
@@ -120,6 +180,8 @@ export class AppConfig extends Context.Service<
      * (including its `PATH`): every captured name except `remove`, then `set` on top.
      */
     childEnv: (remove: readonly string[], set?: Record<string, string>) => Record<string, string>;
+    /** The agent this invocation runs under, from `AgentMarkers`; `"none"` when no marker is set. */
+    agent: Effect.Effect<DetectedAgent>;
   }
 >()("quickstacks/AppConfig") {
   static layer = () => configLayer();

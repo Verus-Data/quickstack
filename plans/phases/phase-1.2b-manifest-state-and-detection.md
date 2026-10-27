@@ -1,7 +1,6 @@
 # Phase 1.2b: `new`: manifest, state record and agent detection
 
-Status: DRAFT 2026-10-26 (not agreed). `ManifestStep` revised 2026-10-26 to mirror the
-amended D18 verify step (`expect` replaces `probe` and `check`; the `app` tag)
+Status: IN PROGRESS 2026-10-26: core executed on feat/phase-1b; wiring into new waits for 1.2a
 
 | Field | Value |
 |---|---|
@@ -291,3 +290,59 @@ Through `runCli` with temp HOME, XDG dirs and a temp `cwd`.
 - Writing `briefWords` into the manifest duplicates the result's value; if nothing reads
   it from the manifest by 2.0c, drop it under a version bump rather than keep a field
   without a reader.
+- 2026-10-26, from executing the core (everything that doesn't need `new`), on
+  feat/phase-1b in parallel with 1.2a:
+  - **What shipped.** `schemas/manifest.ts` (`Manifest`, `ManifestStep`, `EntryRef`);
+    `core/manifest.ts` (`buildManifest`, `encodeManifest`, `readManifest`,
+    `writeManifest`, `digestSteps`, `digestStep`, `digestSettings`, `canonicalJson`,
+    `MANIFEST_PATH`); `core/project-state.ts` (`ProjectState`, `projectStateFor`,
+    `writeProjectState`, `removeProjectState`, `readProjectState`, `projectStatePath`);
+    `config.ts` (`Paths.state`, `AgentMarkers`, `detectAgent`, `AppConfig.agent`,
+    `AGENT_MARKER_NAMES`). `DetectedAgent` already existed in `schemas/entry.ts` from 1.0.
+  - **What remains for the wiring step, after 1.2a merges.** In `commands/new.ts`: call
+    `buildManifest(composition, { briefWords })`, write `encodeManifest(manifest)` to
+    `MANIFEST_PATH` through 1.2a's safe writer (so its rollback tracks the file), then
+    `writeProjectState(manifest, <manifest path>)` before `git init`, register
+    `removeProjectState(write)` in the rollback finalizer, and set
+    `NewResult.stateRecord` to `write.written`. In `core/scaffold/target.ts`: when the
+    target holds `MANIFEST_PATH`, read it with `readManifest`, look the record up with
+    `readProjectState(manifest.projectId)`, and add `details.scaffold` (`green` when
+    `firstGreenAt` is set, else `unfinished`, also when the manifest doesn't decode) to
+    `TargetNotEmpty`, with the human hints above. Acceptance tests 1, 2 (end to end), 5
+    and 6 (through `new`), 7 (through `new`) and 11 belong to that step; the core of 2, 3,
+    4, 5, 7, 8, 9 and 10 is tested now in `tests/manifest.test.ts`,
+    `tests/project-state.test.ts` and `tests/agent-detection.test.ts`.
+  - **`InvalidConfig` gained details.** The tag had none. It now has the closed
+    `{ path, schemaVersion? }`; a manifest that isn't JSON or doesn't decode carries the
+    path, and one with `schemaVersion` above 1 carries the version too, checked before the
+    decode so a newer manifest with new keys still reports its version. The fixed "upgrade
+    quickstacks" text is a human detail line, since a tag's message is fixed. A missing
+    manifest is `NotFound` with no details (1.3a adds `looked`) and an unreadable one is
+    `PermissionDenied` `read`.
+  - **`ManifestStep` keeps `VerifyStep`'s optional fields.** It spreads
+    `VerifyStep.fields` without `VerifyStep`'s check (which refuses the CLI's `app` tag),
+    and keeps only the serve-needs-expect rule. `buildManifest` writes resolved steps, but
+    a hand-edited step that drops a default still decodes, and the digest applies
+    `withStepDefaults` so it matches.
+  - **`owner` is the entry id.** 1.1's owners are `{ kind, id }` because a stack and a
+    fragment may share an id; the manifest keeps the plan's string. `owner` is outside the
+    digest and only explains a step, so the ambiguity is cosmetic.
+  - **`projectId` is restricted** to letters, digits and `-`. It names the state record
+    file, so an edited manifest with `../` in it can't point 1.3b's lookup elsewhere.
+  - **The state record is written without following links.** It goes to a fresh
+    temporary file opened with exclusive create and is renamed over
+    `<projectId>.json`, which replaces a planted link instead of writing through it.
+    `manifestPath` is `FileSystem.realPath` of the manifest the caller just wrote; if that
+    fails the write is `PermissionDenied` `read`. Any filesystem failure under the state
+    directory is `{ written: false }` with one warning log line, not an error.
+  - **Project id.** Effect 4.0.6's `Random` has no UUID function, so `buildManifest`
+    builds a version 4 UUID from 16 `Random` bytes; a seeded `Random` gives a fixed id.
+  - **Scaffold facts.** `buildManifest` takes only the composition (which carries the
+    preset and agents) and `briefWords`. The project name and template variables have no
+    manifest field in this plan's schema, so they aren't passed.
+  - **Marker confirmation dates** are set to 2026-10-26, the date this plan's table was
+    written; they were not re-checked against each agent's documentation during
+    execution. Recheck them before 1.3b relies on detection.
+  - **`childEnv` is unchanged.** It already takes a `remove` list; 1.3a passes
+    `AGENT_MARKER_NAMES` when it builds a verify step's environment. Git commands from
+    `new` don't strip them.
