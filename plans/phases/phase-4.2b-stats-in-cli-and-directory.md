@@ -4,10 +4,10 @@ Status: DRAFT 2026-10-26 (not agreed)
 
 | Field | Value |
 |---|---|
-| Goal | Agents see per-stack stats in `list --json`, and the detail for one entry (step failures, per-agent breakdown, daily series with content-change markers) in `show --json`, from cached, bounded fetches that never fail a command, and people see a stats section on each directory page, built into the static site in `stacks-api/apps/web` from the stats routes, dated, with an explicit "not enough runs yet" state when there is nothing to show |
+| Goal | Agents see per-stack stats in `list --json`, and the detail for one entry (step failures, per-agent breakdown, weekly series with content-change markers) in `show --json`, from cached, bounded fetches that never fail a command, and people see a stats section on each directory page, built into the static site in `stacks-api/apps/web` from the stats routes, dated, with an explicit "not enough runs yet" state when there is nothing to show |
 | Traces to | The coding agent "runs `list --json`, picks a stack" and its frustration is "ambiguity". Success rows 1 and 2 across users |
 | Depends on | 4.2a (the stats routes and `window_metrics`), 4.0d (the cached-fetch rules this reuses), 4.0e (the directory pages in `apps/web` and their stats section component), 3.1a (`show` and `ShowReport`) |
-| Blocks | 4.2c |
+| Blocks | 4.2c's telemetry views, 4.2f |
 | Decisions needed | D17. If declined, this sub-phase is skipped: the directory already shows ledger results (4.0e) and `list --json` already shows `lastRun` (4.0d) |
 | Settles | The `stats` field in `list --json` and `show --json`; the agent guide's rule for using it; how stats reach the static pages (at build time, with an island for anything fresher); what a page says when it has no numbers |
 
@@ -39,15 +39,16 @@ The fetch follows 4.0d's rules exactly (cite, don't copy: 24-hour TTL, 1,500 ms 
 When `published` is true and the summary has the id, each `list --json` item gains:
 
 ```json
-"stats": { "window": 28, "projects": 214, "greenRate": 0.91, "greenRateLower": 0.86,
+"stats": { "window": 28, "through": "2026-10-25", "population": "stacks projects",
+           "projects": 215, "greenRate": 0.91, "greenRateLower": 0.86,
            "noVerifyShare": 0.12, "medianMinutesToGreen": 14 }
 ```
 
-with suppressed values as `null`. When the summary is unavailable or unpublished, the field is absent, never an error or a warning. Stats are fetched only from `AppConfig.apiUrl`, which `config.ts` takes from a constant `DEFAULT_API_URL` that `bin.ts` passes in, the same way it passes `INDEX_PUBLIC_KEYS` (4.0d). No env variable or setting can change it; only the test helper passes a different value, pointing at a local server. With a non-default `STACKS_INDEX_URL`, no stats are fetched, since they would describe a different set of entries. 4.2d sends dependency reports to the same `apiUrl`. Human `list` adds `green 91% (n=180)` when unsuppressed.
+with suppressed values as `null`. `population` and `through` are the summary's (4.2a), repeated per item so an agent quoting one stack's numbers has their label and date with them; seeded development data (4.2g) says so here. When the summary is unavailable or unpublished, the field is absent, never an error or a warning. Stats are fetched only from `AppConfig.apiUrl`, which `config.ts` takes from a constant `DEFAULT_API_URL` that `bin.ts` passes in, the same way it passes `INDEX_PUBLIC_KEYS` (4.0d). No env variable or setting can change it in a release build; only the test helper passes a different value, pointing at a local server, and a source build (`AppConfig.releaseBuild` false) also accepts a loopback `STACKS_DEV_API_URL` for the seeded local API (4.2g). With a non-default `STACKS_INDEX_URL`, no stats are fetched, since they would describe a different set of entries. 4.2d sends dependency reports to the same `apiUrl`. Human and agent `list` add `green 91% (n=180)` when unsuppressed, and `green 91% (n=180, seeded)` when `population` is `"seeded development data"`, so a seeded number never appears in text output without its label.
 
 ### `show`
 
-`show <id>` (3.1a) fetches `GET /v1/stats/stacks/:id` or `/v1/stats/fragments/:id` under the same rules, cached per entry as described above, and only for entries whose origin is `bundled` or `index`: a user, project or source copy is not what the numbers describe, the same rule 3.1a uses for `lastRun`. `ShowReport` gains an optional `stats` field (additive, decoded with `StatsDetail` from `packages/format`): the summary numbers, `through`, step failure shares, `byAgent`, `pickRate` and the daily series with its `changes` markers, suppressed values as `null`. Absent when the fetch fails, the summary is unpublished, or the origin doesn't qualify. Human `show` adds the summary line, the three steps that fail most before first green, and, when the latest marker is newer than the window start, `content changed <date>`.
+`show <id>` (3.1a) fetches `GET /v1/stats/stacks/:id` or `/v1/stats/fragments/:id` under the same rules, cached per entry as described above, and only for entries whose origin is `bundled` or `index`: a user, project or source copy is not what the numbers describe, the same rule 3.1a uses for `lastRun`. `ShowReport` gains an optional `stats` field (additive, decoded with `StatsDetail` from `packages/format`): the summary numbers, `population`, `through`, step failure shares, `byAgent`, `pickRate` and the weekly series (4.2a's 7-day stride) with its `changes` markers, suppressed values as `null`. Absent when the fetch fails, the summary is unpublished, or the origin doesn't qualify. Human and agent `show` add the summary line (ending `, seeded` inside its `n=` parenthesis for seeded data, as in `list`), the three steps that fail most before first green, and, when the latest marker is newer than the window start, `content changed <date>`.
 
 The detail route is what makes `show` useful to a stack author: which step breaks, and whether the break started when the content changed.
 
@@ -64,6 +65,8 @@ The pages stay static files built by `apps/web`. At build time, behind the `STAT
 The index page `/` gets one cell per stack the same way, with the fixed sentence shortened to "not enough runs yet". Pages keep 4.0e's `_headers` rule (`public, max-age=300`).
 
 The site is rebuilt after each index deploy and after each daily rollup (4.2a), by a scheduled job in `stacks-api`'s own CI, or by a maintainer by hand until that exists. A stack page also carries one small island that fetches `GET /v1/stats/stacks/:id` at view time and replaces the section when the response's `through` is newer than the built one, so a page is never more than a rollup behind; with JavaScript off or the fetch failing, the built section stays.
+
+This sub-phase builds the section's data path and its three states with plain markup. How the section looks, which chart answers which question, and the rest of the stack page's stats layout belong to [4.2f](phase-4.2f-stats-pages-and-charts.md), which rebuilds `StatsSection` from its components and merges this freshness island into its one history-chart island.
 
 ## Files and areas touched
 
@@ -83,11 +86,12 @@ The site is rebuilt after each index deploy and after each daily rollup (4.2a), 
 - CLI against a real local stats server: `list --json` items gain `stats`; with the server down, hanging, returning bad JSON, or under `--offline`, stdout equals the output without the feature except the absent field, and the command finishes within 1.5 s of the offline run.
 - `published: false`: no `stats` field.
 - A second `list` within 10 minutes of a failure makes no request. A failed detail fetch for one entry backs off only that entry's state file.
-- No env variable changes the stats host: with only `STACKS_API_URL` or similar set, requests still go to `AppConfig.apiUrl`.
+- No env variable changes the stats host of a release build: with only `STACKS_API_URL`, `STACKS_DEV_API_URL` or similar set and `releaseBuild: true`, requests still go to `AppConfig.apiUrl` (4.2g tests the source-build case).
 - With `STACKS_INDEX_URL` set to a non-default host: no stats request.
 - `verify` makes no stats request.
 - `show go-cli --json` against the local server has `stats` that decodes with `StatsDetail`, including `byAgent` and the series with a seeded change marker; with the server down, `show --json` equals the output without the feature minus the field. A user-directory copy of `go-cli` makes no detail request and has no `stats`.
 - Human `show` prints the three most-failing steps and `content changed <date>` for a seeded marker inside the window.
+- Against a server reporting `population: "seeded development data"`, human and agent `list` print `green 91% (n=180, seeded)` and `show` prints `seeded` in its summary line; with `"stacks projects"`, neither prints `seeded`.
 - Site, built against a local API with seeded metrics: `/stacks/go-cli/index.html` contains the stats section, the per-step failure shares and the computed and through dates; with the gate unmet, the section is the fixed "Not enough runs yet" sentence and the rest of the page is unchanged; a stack name or step name containing `<` in a fixture is escaped; with the API down, the build fails; with `STATS_ENABLED` off, no page has a stats section and no stats request is made.
 - The island, given a response with a newer `through`, replaces the section; given an older one or a failed fetch, leaves it.
 
@@ -98,6 +102,6 @@ The site is rebuilt after each index deploy and after each daily rollup (4.2a), 
 
 ## What this plan may get wrong
 
-- A stack author may want the daily series as a chart. With the site in Astro that is one more island over the detail route; it is left out until someone asks, and the series is in `show --json` for anyone who wants to plot it.
+- A stack author may want the daily series as a chart. With the site in Astro that is one more island over the detail route; it is left out until someone asks, and the series is in `show --json` for anyone who wants to plot it. 2026-10-27: the maintainers asked; [4.2f](phase-4.2f-stats-pages-and-charts.md) draws it, as a static chart with one island.
 - Agents may ignore `stats`. Test with a bench run (2.0b) where two stacks fit and see whether the pick and its explanation change before promoting it.
 - 2026-10-27: the plan rendered stats into the pages in the Worker by replacing a marker, with no client JavaScript. Under D35 the pages are an Astro site built at build time, so the Worker renders nothing and fresher numbers come from an island. A rebuild per daily rollup costs one CI run a day; if that becomes a burden, rely on the island and rebuild only after index deploys.

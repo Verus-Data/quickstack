@@ -21,6 +21,24 @@ official-only index and telemetry deferral below do not yet cover the full pitch
 Implementation status is unchanged. PITCH.md and PREP.md still use the old narrative;
 align those and reconcile the wider positioning with the product and registry plans.
 
+## Stats pages, seed data and search planned (2026-10-27)
+
+New plans, all drafts awaiting the maintainers: [4.2f](phases/phase-4.2f-stats-pages-and-charts.md)
+(the shared stats components, chart palette and the stack page's stats, static OpenChart SVG
+with one island; 4.2c and 4.2e build and test their pages from these components; the site's
+design tokens moved to [4.0e](phases/phase-4.0e-official-names-and-directory.md) so the
+telemetry-free directory has them without D17), [4.2g](phases/phase-4.2g-seed-telemetry.md)
+(deterministic seeded telemetry for local development only, labelled seeded everywhere and
+never shown in the demo), and [4.5a](phases/phase-4.5a-search-evaluation-set.md) to
+[4.5d](phases/phase-4.5d-semantic-retrieval.md) (a golden query set, reviewed search
+sidecars, `stacks search` with local ranking, and an opt-in semantic leg that starts only if
+the holdout paraphrase numbers need it). 4.2a gained a weekly series stride, `interval`,
+`previous` and summary `sort`/`limit`/`kind`. Proposals D36 (search privacy, opt-in through
+`stacks search-hybrid enable`) and D37 (sidecars outside the entry) are in
+[requirements.md](requirements.md#proposed-decisions); open questions 33-40 cover rounding,
+the agent dot plot, the golden set's growth, the embedding provider, the API's store layout,
+the 90-day window, server-side decoration and a native iOS stack.
+
 ## `stacks update` (2026-10-27)
 
 [4.4d](phases/phase-4.4d-self-update.md) landed (D31): `stacks update` reads the latest
@@ -211,6 +229,7 @@ amended D18); the roadmap's decision table says which sub-phase each one blocks.
 | Review requirements.md and roadmap.md; decide A1, D12, D22 and D23 first, then D5-D7, D9, D13, D14, D18-D20 | Maintainers | The gating table in [0.0](phases/phase-0.0-decisions-and-npm-name.md) says which can wait |
 | Review A2-A4 as answered in 0.3a and 0.3b | Maintainers | Must be in the decisions log before [1.6c](phases/phase-1.6c-first-release.md) publishes |
 | Answer the open questions in [risks-and-open-questions.md](risks-and-open-questions.md) | Maintainers | Question 1 (registry audience) decides which stacks ship bundled |
+| Review the 4.2f, 4.2g and 4.5a-4.5d drafts; decide D36 and D37; answer open questions 33-40 | Maintainers | 4.5a can start any time (data and pure functions); 4.5b and 4.5c need no API; the stats plans wait on D17 and 4.0f |
 | ~~Apply the batch review's fixes to phase 1 round 1 (1.0, 1.1, 1.2a, 1.2b, 1.5)~~ | Agents | Done 2026-10-26, merged in PR #4; notes in [archive/handoff-2026-10-26.md](archive/handoff-2026-10-26.md) |
 | Confirm 1.6b's three gate runs | Maintainers | One green counting run each for astro-blog, go-cli and python-react; the other four bundled stacks have none |
 | ~~Choose how `validate` treats a verify step no layer describes (a file-existence or config check)~~ | Maintainers | Decided 2026-10-26: `check` layer added (roadmap, "Verify step `layer`"). `step-layer` stays a warning and `check` isn't a D7 layer; see [1.5](phases/phase-1.5-validate-and-brief-budget.md), "What this plan may get wrong" |

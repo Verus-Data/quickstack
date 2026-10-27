@@ -6,10 +6,10 @@ Status: DRAFT 2026-10-26 (not agreed)
 |---|---|
 | Goal | The directory can be browsed, not only looked up: sorted list views (default, most used, highest success, trending, newest), a page per tag, a page per fragment with the fragments it is most often used with, a page per agent listing the stacks that work with it, and a page kept for every stack that left the registry, with a notice and a pointer to its replacement. Every page is a static Astro page in `stacks-api/apps/web`, built from this repository's signed index output and the stats routes; numbers come only from 4.2a's capped, suppressed `window_metrics` |
 | Traces to | The developer who starts projects often: "a stack that matches how they'd build it". The coding agent "runs `list --json`, picks a stack" (the directory is where a person checks that pick). Success row 5, "Stacks and fragments in `~/.stacks` and third-party sources" made visible. "Stacks don't rot" (a removed stack's page says so rather than vanishing) |
-| Depends on | 4.2b (the build-time stats fetch, the stats section and the `STATS_ENABLED` switch), 4.0c (the index build), 4.0e (the directory pages in `apps/web`, the stack pages, `OfficialNames`), 4.1d (`installs`, for install maturity in trending), D17 for the telemetry views |
+| Depends on | Every part: 4.0c (the index build), 4.0e (the directory pages in `apps/web`, the stack pages, `OfficialNames`, the site's design tokens). The telemetry views only (the stats-ordered pages, stats cells, "often used with", trending): D17, 4.2b (the build-time stats fetch, the stats section and the `STATS_ENABLED` switch), 4.2f (the stats components, states and charts they render through), 4.1d (`installs`, for install maturity in trending). The telemetry-free parts (the newest view, tag pages, fragment pages without stats, category alternatives, removed-stack pages, `v1/directory.json`) can execute as soon as 4.0e has landed |
 | Blocks | Nothing. 4.2e adds dependency pages beside these |
 | Decisions needed | D17. If declined, only the telemetry-free parts ship: the newest view, tag pages, fragment pages without stats, and removed-stack pages. [Open question 31](../risks-and-open-questions.md#open-questions-for-the-maintainers) (agent pages list stacks for one agent and never compare agents) |
-| Settles | The directory's views and their orderings; the trending score; `trending` in `StatsSummary`; co-installed fragment lift; how removed stacks are recorded and shown |
+| Settles | The directory's views and their orderings; the trending score; `trending` in `StatsSummary`; co-installed fragment lift; category alternatives on fragment pages; how removed stacks are recorded and shown |
 
 ## Scope
 
@@ -24,7 +24,7 @@ In:
 
 Out:
 
-- Search, client-side filters, pagination beyond one page per view (the catalog is small; revisit past 200 entries). Astro islands make these cheap later; nothing reads them yet.
+- Search, client-side filters, pagination beyond one page per view (the catalog is small; revisit past 200 entries). Astro islands make these cheap later; nothing reads them yet. Natural-language search is the CLI's `stacks search` (4.5c), for agents.
 - Directory visit analytics of any kind (roadmap, Won't have).
 - Dependency pages (4.2e).
 - Any ordering of agents against each other: an agent page lists stacks for that agent only.
@@ -100,6 +100,8 @@ computed over the capped projects of the 28-day window. A pair is shown only whe
 
 A fragment page has the fragment's name, description, the stacks it applies to (from its frontmatter), whether each stack includes it by default, the files it ships (paths only), the verify steps it adds (name, phase, layer, command), its last ledger run through a stack that included it (the same rule as 3.1a's `lastRun`), a link to its source, and the copy command `npx @steamfield/stacks new <stack> --with <id>` for each stack it applies to. With telemetry, the site build fills its stats section from `/v1/stats/fragments/:id`'s numbers and the "often used with" list.
 
+Added 2026-10-27: "Alternatives in <category>", the other current fragments with the same `category` that apply to at least one of the same stacks (from the index output, so it needs no telemetry), by name, each with its attach rate per shared stack when published. It answers "what else does this job" (a different deploy target, a different auth vendor) without ranking vendors against each other: the list is alphabetical. A fragment with no alternative omits the section. `category: app` fragments list other apps for the same stack. How every number on these pages is drawn is [4.2f](phase-4.2f-stats-pages-and-charts.md)'s.
+
 A tag page lists every current stack and fragment carrying that tag, by name, with the same cells as `/`. Tags come from entry frontmatter. A tag becomes a path segment, so `build:index` fails on a tag that isn't `^[a-z0-9-]+$` and names the entry; `validate` has no such rule today, and adding one is a format change for 1.5's owner to consider, not this sub-phase's.
 
 ## Files and areas touched
@@ -122,15 +124,20 @@ A tag page lists every current stack and fragment carrying that tag, by name, wi
 - Seeded `window_metrics`: `/` orders stacks by Wilson lower bound with suppressed ones after by name; `/browse/most-used/`, `/browse/highest-success/` match hand-sorted fixtures; ties break by id.
 - Trending: `last7 = 12`, `prior28 = 8` gives score `17 / 7`, about 2.43, listed; `last7 = 9` not listed and `trending.suppressed: true`; 12 projects from one install count 3 and don't qualify.
 - Lift over a seeded window matches a hand computation; a pair with an effective sample of 4 is not shown.
+- The `/fragments/cloudflare-pages/` page lists `docker-deploy` under "Alternatives in deploy" only if a fixture registry has both applying to one stack, alphabetically, with no telemetry; a fragment alone in its category has no such section.
 - `/agents/claude/` lists only stacks with an unsuppressed `claude` breakdown, and contains no other agent's numbers.
 - With `STATS_ENABLED` off: the site build writes no `/browse/trending/` or `/agents/claude/` page and makes no stats request, the served paths return the static 404, and `/browse/newest/`, tag, fragment and removed pages are built.
 - A `reason` or tag containing `<` in a fixture is escaped or rejected.
 - 4.2b's CLI decodes a summary with and without `trending`.
+- Page checks, with the stats built through 4.2f's components: every green-rate value on `/`, the browse pages, tag, fragment and agent pages has its interval and `n` (4.2f test 3's scan); those pages contain no `<script>` other than 4.0e's inline theme script; Axe (through Playwright) reports no violations on `/browse/highest-success/`, a fragment page and an agent page, in light and dark; no page lists agents in rate order.
+- Telemetry-free build: with `STATS_ENABLED` off and no 4.2b or 4.2f code paths reached, the newest view, tag, fragment and removed pages build and pass the same script and Axe checks.
 
 ## Exit criteria
 
 - Acceptance tests pass; `bun run check` green from this repository's root and in `stacks-api`.
 - One manual deploy (4.0e's deploy procedure) shows every view, and `build:index --check` passes, now covering `v1/directory.json`.
+- A maintainer reviews a browse page, a fragment page and an agent page in both themes and on a phone width (as 4.2f's exit criteria do for the stack page), and `/stats/about/` gains the trending score and lift in the words above.
+- The telemetry-free parts may be marked executed on their own, with the telemetry views recorded as deferred until D17 and 4.2f.
 
 ## What this plan may get wrong
 
@@ -138,4 +145,5 @@ A tag page lists every current stack and fragment carrying that tag, by name, wi
 - The trending constants (`+ 5`, the 10-project floor, the 1.5 threshold) are guesses. They are API config, applied when the summary route computes `trending`.
 - 2026-10-27: the plan wrote pages from `packages/cli/scripts/site/` and had the Worker render the stats-ordered views. Under D35 every page is in `stacks-api/apps/web`, so this repository now hands the site its git-derived facts as the signed `v1/directory.json`, a contract that didn't exist before. Its schema joins `packages/format`'s additive exports.
 - Git commit dates as added dates assume the build runs in a full clone. A shallow clone gives the clone date; the build checks for a shallow repository and fails rather than writing wrong dates.
+- 2026-10-27: the plan made 4.2f a dependency of every part, which put the telemetry-free views behind the D17 chain (4.2f, 4.2g, 4.2a). 4.2f, 4.2b and 4.1d are now dependencies of the telemetry views only, and the site's tokens come from 4.0e.
 - An agent page is a ranking of stacks per agent, which some readers will still read as agents compared. Open question 31 is the maintainers' call; if they say no, drop `/agents/*` and keep the stack page breakdown.

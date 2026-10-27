@@ -193,3 +193,61 @@ plan keeps its choice in each case; the maintainers confirm or change it.
     [3.2a](phases/phase-3.2a-git-sources-and-untrusted-origin.md) opens outside sources
     and before [3.3a](phases/phase-3.3a-release-and-deploy-fragments.md) proves entries in
     bulk.
+33. Should every public stats count be rounded to the nearest 5 (rates and interval bounds to
+    two decimals), as [4.2a](phases/phase-4.2a-stats-rollup-and-routes.md) now proposes?
+    Suppression stops small cells; rounding also blunts differencing between adjacent windows
+    and filtered series points, at the cost of "215 projects" where the real number is 213.
+    Blocks 4.2a's time filtering.
+34. Should a stack page draw green rate by agent as a dot plot
+    ([4.2f](phases/phase-4.2f-stats-pages-and-charts.md))? It is the same per-stack breakdown
+    question 31 asks about, but a chart invites comparing agents more than a table row does.
+    If not, the numbers stay in `show --json` and the page lists them without a chart.
+35. How does the search golden set ([4.5a](phases/phase-4.5a-search-evaluation-set.md)) grow
+    when no query text is ever logged (D36)? The plan's answer is bench requests, issues,
+    the demo script and maintainers' own requests, reviewed by hand. That keeps queries
+    private and makes the set reflect what maintainers imagine people ask.
+36. Which embedding provider does [4.5d](phases/phase-4.5d-semantic-retrieval.md) use, if it
+    starts: Workers AI through the Worker's binding (no new secret, request text stays on the
+    API's platform), or a model through OpenRouter (wider model choice, a key on the Worker,
+    and the request text sent to one more party)? The plan picks Workers AI. A third option
+    keeps the request on the machine: embed the query locally with a small WASM model that
+    the CLI downloads on demand into its cache (never bundled), and ship entry vectors in
+    the signed index. It keeps D2 (no model call leaves the machine, and the model is data
+    the CLI runs, not a service) and D36 (nothing is sent), and could make semantic search
+    the default rather than an opt-in. The cost is the download size, a model file the CLI
+    must verify like the index, and an exception to A1's single-bundle rule. Blocks 4.5d.
+37. `stacks-api/.claude/rules/api/effect-api.md` puts each store in
+    `api/services/<Name>Store.ts` (its "Store" row: an in-memory layer for tests and local
+    dev, a SQL layer needing only `SqlClient`); `apps/api/src` has no `services/` folder yet.
+    The 4.1 and 4.2 plans name `store/`, `ingest/`, `stats/` and `maintenance/` folders; the
+    new plans (4.2g, 4.5d) follow the rule for stores and still cite 4.1c's
+    `maintenance/maintain.ts`. The rule is settled; the question is only whether the older
+    plans move to it when they are executed. Related: [4.1b](phases/phase-4.1b-telemetry-ingest-and-storage.md)'s
+    `GET /v1/schema/telemetry-event.v<N>.json` route ends in a file extension, which the
+    API's routing rule reserves for static documents under `/v1/` (lowercase kebab segments
+    ending `.json`); publishing it as a static document such as
+    `v1/schema/telemetry-event-v1.json` fits that rule. 4.1b is not changed yet.
+38. Should the stats routes offer only 7- and 28-day windows
+    ([4.2a](phases/phase-4.2a-stats-rollup-and-routes.md))? A 90-day window was asked for, as
+    trending-data APIs often have one. The plan refuses it: nothing reads it, and network
+    hashes expire after 30 days (4.1c), so a 90-day cell couldn't apply the network cap; long
+    trends come from the weekly series of 28-day values. Saying yes means either keeping
+    hashes longer (a privacy cost) or publishing a 90-day cell with the install cap only.
+39. Should search metadata ever be written on the server
+    ([4.5b](phases/phase-4.5b-search-metadata.md))? The request was for metadata "authored or
+    LLM-decorated through OpenRouter on the server". The plan keeps drafting in a
+    maintainer-only script with review in pull requests, so every card is reviewed and the
+    CLI works offline. The cost: entries from outside this repository, git sources (3.2a) and
+    any future community index entries, get no card unless their author writes one, and rank
+    on name, description, tags and body only. A server decorator is the only thing that would
+    cover them, and it would need an LLM key on the Worker and a review step for text no
+    maintainer wrote.
+40. Should there be a native iOS stack? A request for "an iOS health app" now answers
+    `mobile-expo`, an Expo and React Native app whose tags don't include `ios` and whose body
+    warns that entitlements make `expo run:ios` demand signing; HealthKit is one such
+    entitlement. [4.5a](phases/phase-4.5a-search-evaluation-set.md) records that answer and
+    adds "a native SwiftUI iPhone app" with `mobile-expo` relevant at grade 1 and no `first`,
+    like the Kotlin case; [4.5b](phases/phase-4.5b-search-metadata.md)'s `caveats` field lets
+    the card tell the agent what HealthKit needs. The choice is a native Swift stack (with its
+    own verify loop on macOS only) or accepting cross-platform as the answer to platform
+    requests.

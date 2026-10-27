@@ -6,7 +6,7 @@ Status: DRAFT 2026-10-26 (not agreed)
 |---|---|
 | Goal | The rollup turns 4.2d's dependency reports into per-dependency and per-ecosystem numbers (how many projects use it, which majors, how that is moving, what it is used with, how it does per stack), under 4.2a's caps, suppression and publishing gate, and the directory in `stacks-api/apps/web` shows them on static pages built from two dependency stats routes, and in a dependencies section on each stack page |
 | Traces to | Assumption 2, "version-less prose rots much more slowly than versioned templates": a stack author sees which majors agents install today for their stack, and when that shifts, without rerunning anything. The stack author: "a way to know a stack still produces a working project without running it by hand" |
-| Depends on | 4.2d (the dependency reports and tables), 4.2a (the rollup, caps, suppression, gate and lease), 4.2b (the build-time stats fetch and rebuild schedule), 4.2c soft (the browse links; without it the pages stand alone) |
+| Depends on | 4.2d (the dependency reports and tables), 4.2a (the rollup, caps, suppression, gate and lease), 4.2b (the build-time stats fetch and rebuild schedule), 4.2f (the charts and states the pages render through: major shares as 100% stacked bars and areas, transitions as a `from → to` table, lift as a bar list), 4.2c soft (the browse links; without it the pages stand alone) |
 | Blocks | Nothing |
 | Decisions needed | D25 and D17, through 4.2d. The thresholds below reuse 4.2a's; any new one is listed here for the maintainers |
 | Settles | Dependency metrics and their definitions, transitions, co-installed dependency lift, the dependency pages, and the two dependency stats routes the site reads |
@@ -16,7 +16,7 @@ Status: DRAFT 2026-10-26 (not agreed)
 In:
 
 - New dimensions in 4.2a's daily rollup step: `dep`, `dep_major`, `dep_stack`, `dep_transition`, `dep_cooccur`, `ecosystem`.
-- `GET /v1/stats/deps/:ecosystem` (the ecosystem's numbers and its dependencies with their metrics) and `GET /v1/stats/deps/:ecosystem/:name` (one dependency's metrics), returning `StatsDeps` and `StatsDep` from `packages/format` (additive), with the same `{ value, suppressed }` shape and gate as 4.2a's routes. The site build is their named reader; the CLI doesn't call them.
+- `GET /v1/stats/deps/:ecosystem` (the ecosystem's numbers and its dependencies with their metrics) and `GET /v1/stats/deps/:ecosystem/:name` (one dependency's metrics), returning `StatsDeps` and `StatsDep` from `packages/format` (additive), with the same `{ value, suppressed }` shape and gate as 4.2a's routes, and 4.2a's `interval`, `from` and `to` parameters on `/v1/stats/deps/:ecosystem/:name`, which select stored series points of the major shares and never aggregate a new range. The site build is their named reader (the major-share area chart 4.2f specifies draws over time from them); the CLI doesn't call them.
 - Astro pages in `stacks-api/apps/web` at `/deps/`, `/deps/<ecosystem>/`, `/deps/<ecosystem>/<name>/`, built from those routes, and a dependencies section on `/stacks/<id>/` from the stack detail route's added `deps` field.
 
 Out:
@@ -50,7 +50,7 @@ Only 28-day windows over finalized days, as in 4.2a. Adoption, drop and transiti
 |---|---|---|
 | Who uses it | Reporting projects using X; share of reporting projects per stack using X | Dependency page; stack page section |
 | Which version do agents install | Major share for X, overall and per stack | Dependency page; stack page section |
-| Is it moving | Adoptions, drops and major transitions (A to B) per window, with the daily series of 28-day values | Dependency page |
+| Is it moving | Adoptions, drops and major transitions (A to B) per window, with the series of 28-day values at 4.2a's 7-day stride, selectable by `interval`, `from` and `to` | Dependency page |
 | What goes with it | Co-installed lift `P(Y | X) / P(Y)` over reporting projects, shown when both are used by an effective sample of 5 and lift is above 1, top five | Dependency page |
 | Does it work | Green rate of the stack's projects using X against those not using X, per stack, only when both cells pass 4.2a's rate thresholds | Stack page section |
 | Ecosystem | Reporting projects per ecosystem; top dependencies by projects; recent major transitions | `/deps/<ecosystem>/` |
@@ -100,11 +100,14 @@ The routes answer the same cases: 404 `NotFound` for a name not on the allowlist
 - An allowlisted dependency no project reported, after the gate is met, shows the fixed sentence; a name not on the allowlist has no page and `GET /v1/stats/deps/npm/<name>` returns 404; with `DEPS_ENABLED` off, no `/deps/` page is built and `/deps/npm/` returns the static 404; a name with `<` in a fixture is escaped; no built dependency page contains `<script>`.
 - Only `/v1/stats/deps/*` and `StatsDetail.deps` carry dependency numbers; every response decodes with its `packages/format` schema.
 - Under the local Workers runtime, the daily trigger writes the dependency rows and `GET /v1/stats/deps/npm` returns them with the cache header; the site built against that runtime renders them on `/deps/npm/`.
+- `GET /v1/stats/deps/npm/react?from=2026-09-01&to=2026-09-30` returns exactly the stored points with end days in September; `interval=28` returns every fourth; a span over 366 days, `from` after `to` or a malformed date is `400 BadInput`, as on 4.2a's routes.
+- Page checks, built through 4.2f's components: a dependency page shows its transitions as a `from → to` table with counts and renders no sankey; every green-rate value has its interval and `n` and every major share figure names its population (4.2f test 3's scan); Axe (through Playwright) reports no violations on `/deps/npm/` and a dependency page, in light and dark.
 
 ## Exit criteria
 
 - Acceptance tests pass; `bun run check` green in `stacks-api`, and from this repository's root for the `packages/format` additions.
-- The directory's about text and `stacks-api/AGENTS.md` define every dependency metric.
+- The directory's about text (`/stats/about/`, 4.2f) and `stacks-api/AGENTS.md` define every dependency metric.
+- A maintainer reviews `/deps/npm/` and a dependency page in both themes and on a phone width, as 4.2f's exit criteria do for the stack page.
 
 ## What this plan may get wrong
 
