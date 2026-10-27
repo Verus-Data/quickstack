@@ -43,6 +43,10 @@ export function outputPath(file: Pick<EntryFile, "path">): string {
 export function isRejected(value: Entry | RejectedEntry): value is RejectedEntry {
   return "error" in value;
 }
+/** A loaded (not rejected) stack. */
+export function isStack(value: Entry | RejectedEntry): value is Entry & { meta: StackMeta } {
+  return "meta" in value && value.meta.kind === "stack";
+}
 export const markdownFile = (kind: Kind) => (kind === "stack" ? "STACK.md" : "FRAGMENT.md");
 
 /**

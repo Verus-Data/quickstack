@@ -10,7 +10,7 @@ import { APP_TAG, type FragmentMeta, type StackMeta } from "../../schemas/entry"
 import type { Finding, SizeRow } from "../../schemas/validate";
 import { countWords } from "../brief/words";
 import { targetAgents } from "../compose/agents";
-import { type ComposeWarning, type Composition, compose } from "../compose/compose";
+import { type ComposeWarning, type Composition, compose, fitsStack } from "../compose/compose";
 import type { Entry } from "../registry/entry";
 import { bodyLimit, canonicalBrief, composedLimit } from "./budget";
 import { type Check, entryFile, finding, type View } from "./view";
@@ -88,9 +88,7 @@ export function compositionPlans(view: Omit<View, "composed">, stack: Stack) {
     ),
   );
   const fits = (meta: FragmentMeta) =>
-    meta.appliesTo.length === 0 ||
-    meta.appliesTo.includes(stack.id) ||
-    stack.meta.tags.some((tag) => meta.appliesTo.includes(tag));
+    fitsStack(meta.appliesTo, { id: stack.id, tags: stack.meta.tags });
   const apps = [...fragments.values()]
     .filter(({ item, meta }) => meta.category === "app" && fits(meta) && view.inRoot(item))
     .map(({ item }) => item.id);

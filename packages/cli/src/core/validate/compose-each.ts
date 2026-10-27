@@ -1,20 +1,12 @@
 import { Effect, Result } from "effect";
 import { AgentId, type FragmentMeta, type StackMeta } from "../../schemas/entry";
 import type { Finding } from "../../schemas/validate";
-import { type ComposeOptions, compose } from "../compose/compose";
-import type { Entry } from "../registry/entry";
+import { type ComposeOptions, compose, fitsStack } from "../compose/compose";
+import { type Entry, isStack } from "../registry/entry";
 import { canonicalBrief, composedLimit } from "./budget";
 import { uniqueFindings } from "./composed";
 import { compositionPlans, describe, replacementDefaults } from "./compositions";
 import { type Check, entryFile, finding, type View } from "./view";
-
-export function applies(fragment: FragmentMeta, stack: Entry & { meta: StackMeta }): boolean {
-  return (
-    fragment.appliesTo.length === 0 ||
-    fragment.appliesTo.includes(stack.id) ||
-    stack.meta.tags.some((tag) => fragment.appliesTo.includes(tag))
-  );
-}
 
 type Stack = Entry & { meta: StackMeta };
 type Fragment = Entry & { meta: FragmentMeta };
@@ -22,9 +14,7 @@ type Fragment = Entry & { meta: FragmentMeta };
 export const composeEachChecks: Check = (view) =>
   Effect.gen(function* () {
     const findings: Finding[] = [];
-    const stacks = view.all.filter(
-      (item): item is Entry & { meta: StackMeta } => "meta" in item && item.meta.kind === "stack",
-    );
+    const stacks = view.all.filter(isStack);
     const agents = AgentId.literals.filter((agent) =>
       [...view.sources.values()].some((sources) =>
         sources.files.some((file) => file.source.startsWith(`adapters/${agent}/`)),
@@ -41,7 +31,11 @@ export const composeEachChecks: Check = (view) =>
 
 function fragmentPlan(view: View, stack: Stack, fragment: Fragment) {
   const listed = Object.values(stack.meta.fragments).some((ids) => ids.includes(fragment.id));
-  if (!listed && (!fragment.meta.appliesTo.length || !applies(fragment.meta, stack)))
+  if (
+    !listed &&
+    (!fragment.meta.appliesTo.length ||
+      !fitsStack(fragment.meta.appliesTo, { id: stack.id, tags: stack.meta.tags }))
+  )
     return undefined;
   const inBase = [...stack.meta.fragments.required, ...stack.meta.fragments.default].includes(
     fragment.id,

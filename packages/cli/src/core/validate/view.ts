@@ -37,6 +37,15 @@ export type CheckEnv = Registry | FileSystem.FileSystem | Path.Path | Processes 
 /** One check group: findings (and size rows) for the validated set. Problems are findings, not failures. */
 export type Check = (view: View) => Effect.Effect<CheckResult, PermissionDenied, CheckEnv>;
 
+/** `inRoot` and `file` for the registry at `root`, whose entries live at `<kind dir>/<id>`. */
+export function rootPaths(path: Path.Path, root: string): Pick<View, "inRoot" | "file"> {
+  return {
+    inRoot: (item) => path.dirname(path.dirname(item.dir)) === root,
+    file: (item, inside) =>
+      [path.relative(root, item.dir).split(path.sep).join("/"), inside].filter(Boolean).join("/"),
+  };
+}
+
 /** A finding about one entry. */
 export function finding(
   entry: { kind: Kind; id: string },

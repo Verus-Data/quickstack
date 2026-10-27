@@ -1,6 +1,6 @@
 import { Effect } from "effect";
 import type { Finding } from "../../schemas/validate";
-import type { Entry } from "../registry/entry";
+import { type Entry, isStack } from "../registry/entry";
 import { closest } from "../suggest";
 import { type Check, entryFile, finding } from "./view";
 
@@ -16,11 +16,7 @@ export const referenceChecks: Check = (view) =>
     const findings: Finding[] = [];
     const fragments = view.all.filter((item) => item.kind === "fragment");
     const stacks = view.all.filter((item) => item.kind === "stack");
-    const tags = new Set(
-      stacks.flatMap((item) =>
-        "meta" in item && item.meta.kind === "stack" ? item.meta.tags : [],
-      ),
-    );
+    const tags = new Set(stacks.filter(isStack).flatMap((item) => item.meta.tags));
     const checkNamed = (entry: Entry) => {
       const file = entryFile(view, entry);
       const { meta } = entry;

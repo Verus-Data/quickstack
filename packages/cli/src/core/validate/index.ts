@@ -22,7 +22,7 @@ import { readSources } from "./sources";
 import type { Target } from "./target";
 import { templateChecks } from "./templates";
 import { versionSensitiveChecks } from "./version-sensitive";
-import type { Check, View } from "./view";
+import { type Check, rootPaths, type View } from "./view";
 
 /** Every check group; each module owns one class of findings over the same view. */
 export const checks: ReadonlyArray<Check> = [
@@ -94,8 +94,7 @@ export const validate = (target: Target) =>
     return yield* Effect.flatMap(snapshotRegistry, (registry) =>
       Effect.gen(function* () {
         const all = yield* registry.all;
-        const inRoot = (item: { dir: string }) =>
-          path.dirname(path.dirname(item.dir)) === target.root;
+        const { inRoot, file } = rootPaths(path, target.root);
         const wanted = (item: { kind: string; id: string }) =>
           target.only === undefined ||
           (target.only.kind === item.kind && target.only.id === item.id);
@@ -109,10 +108,7 @@ export const validate = (target: Target) =>
           sources: yield* readSources(all.filter((item): item is Entry => !isRejected(item))),
           wanted,
           inRoot,
-          file: (item, inside) =>
-            [path.relative(target.root, item.dir).split(path.sep).join("/"), inside]
-              .filter(Boolean)
-              .join("/"),
+          file,
         };
         const view: View = {
           ...sourceView,

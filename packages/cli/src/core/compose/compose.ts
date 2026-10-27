@@ -129,14 +129,18 @@ const byId = (a: string, b: string) => {
 const ref = (entry: Entry): EntryRef => ({ kind: entry.kind, id: entry.id });
 
 /** Whether a fragment's `appliesTo` names the stack or one of its tags; empty fits anywhere. */
-function fits(fragment: Fragment, stack: Stack): boolean {
-  const targets = fragment.meta.appliesTo;
+export function fitsStack(
+  appliesTo: ReadonlyArray<string>,
+  stack: { id: string; tags: ReadonlyArray<string> },
+): boolean {
   return (
-    !targets.length ||
-    targets.includes(stack.id) ||
-    stack.meta.tags.some((tag) => targets.includes(tag))
+    !appliesTo.length ||
+    appliesTo.includes(stack.id) ||
+    stack.tags.some((tag) => appliesTo.includes(tag))
   );
 }
+const fits = (fragment: Fragment, stack: Stack) =>
+  fitsStack(fragment.meta.appliesTo, { id: stack.id, tags: stack.meta.tags });
 
 type ConflictDetails = NonNullable<ComposeConflict["details"]>;
 const conflict = (details: ComposeConflict["details"]) => new ComposeConflict({ details });

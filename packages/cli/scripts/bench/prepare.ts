@@ -20,7 +20,7 @@ const State = Schema.fromJsonString(
   }),
 );
 
-export const requireSuccess = (result: Captured, label: string) =>
+const requireSuccess = (result: Captured, label: string) =>
   result.exitCode === 0 && !result.timedOut && !result.truncated
     ? Effect.succeed(result.stdout.trim())
     : Effect.fail(new Error(`${label} failed: ${result.stderr || result.stdout}`));

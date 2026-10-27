@@ -74,7 +74,7 @@ export function runnerTarget(command: string): string | undefined {
   return target.replace(/:\*$/, "");
 }
 
-export function runnerTargets(command: string): string[] {
+function runnerTargets(command: string): string[] {
   return command.split(/&&|\|\||[;|]/).flatMap((part) => {
     const target = runnerTarget(part);
     return target ? [target] : [];

@@ -15,7 +15,7 @@ import { gitChecks } from "./git";
 import { checks, compareFindings, validationRoots } from "./index";
 import { readSources } from "./sources";
 import type { Target } from "./target";
-import type { View } from "./view";
+import { rootPaths, type View } from "./view";
 
 export type PreviewOptions = {
   stack: string;
@@ -69,11 +69,7 @@ export const previewBrief = (target: Target, options: PreviewOptions) =>
         all,
         sources: yield* readSources(entries),
         wanted,
-        inRoot: (entry) => path.dirname(path.dirname(entry.dir)) === target.root,
-        file: (entry, inside) =>
-          [path.relative(target.root, entry.dir).split(path.sep).join("/"), inside]
-            .filter(Boolean)
-            .join("/"),
+        ...rootPaths(path, target.root),
         composition: { ...composition, options: composeOptions },
       };
       const view: View = {
