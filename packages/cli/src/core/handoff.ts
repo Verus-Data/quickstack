@@ -115,7 +115,7 @@ const quote = (text: string) =>
  */
 export function renderHandoff(
   decision: Exclude<HandoffDecision, { kind: "launch" }>,
-  context: { shown: string; invocation: string; audience: Audience },
+  context: { shown: string; invocation: string; audience: Audience; agent: AgentId | undefined },
 ): string {
   const ids = decision.untrusted.map(printable).join(", ");
   const where = context.shown === "." ? "the current directory" : printable(context.shown);
@@ -124,7 +124,7 @@ export function renderHandoff(
       ? `STOP: this project uses entries this machine hasn't trusted: ${ids}. Don't start. Show the user the list and ${BRIEF_PATH}'s first section, and continue only if they confirm.`
       : `NEXT STEP FOR THE AGENT: read ${BRIEF_PATH} now and carry it out, working in ${where}. Loop on ${context.invocation} verify until it passes. Don't stop here to report back; the brief says when to ask the user.`;
   const prompt = agentPrompt(context.invocation);
-  const example = LAUNCH_ARGS[decision.agent ?? "claude"];
+  const example = LAUNCH_ARGS[decision.agent ?? context.agent ?? "claude"];
   const dir = printable(shellArg(context.shown));
   const lines: string[] = [];
   if (decision.reason === "untrusted")
