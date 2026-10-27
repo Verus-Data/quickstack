@@ -9,8 +9,8 @@ export const guideText = (cli: string) =>
     `quickstacks starts projects for coding agents. It writes a stack's starter files and a brief, ${BRIEF_PATH}, and verify is the definition of done: the project's own checks, run from its manifest.`,
     "",
     "The loop:",
-    `1. ${cli} list --json: pick a stack and tell the user why.`,
-    `2. ${cli} new <stack> <dir> --sandbox --json: writes the project.`,
+    `1. ${cli} list --json: pick a stack (${cli} show <id> --json reviews one) and tell the user why.`,
+    `2. ${cli} new <stack> <dir> --sandbox --json: writes the project. Drop --sandbox when the user wants to make the brief's decisions or deploy.`,
     `3. Read <dir>/${BRIEF_PATH} and carry it out.`,
     `4. ${cli} verify in <dir>: fix what fails and run it again until it passes.`,
     "",
@@ -23,6 +23,8 @@ export const guideText = (cli: string) =>
     "- If verify reports VerifyChanged, stop and ask the user: only they can accept the change.",
     "- Ask the user only what the brief says to ask.",
     "",
+    `${cli} <command> --help shows each command's flags, exit codes and examples.`,
+    "",
     "The user's own stacks and fragments go in $XDG_CONFIG_HOME/quickstacks/stacks/<id>/ and fragments/<id>/ (default ~/.config/quickstacks/).",
   ].join("\n");
 
@@ -33,10 +35,16 @@ export const humanLead = (cli: string) =>
 /** The commands the guide's loop uses, for `--json` callers. */
 export const guideCommands = (cli: string) => [
   { name: "list", run: `${cli} list --json`, purpose: "See the stacks and fragments you can use." },
+  { name: "show", run: `${cli} show <id> --json`, purpose: "Review an entry before you pick it." },
   {
     name: "new",
     run: `${cli} new <stack> <dir> --sandbox --json`,
     purpose: "Write the project and its brief.",
+  },
+  {
+    name: "add",
+    run: `${cli} add <fragment...> --json`,
+    purpose: "Apply fragments to an existing repository.",
   },
   {
     name: "verify",
@@ -55,6 +63,6 @@ export const guideCommands = (cli: string) => [
 export const helpFooter = (cli: string) =>
   [
     `Start here (agents): ${cli} list --json, pick a stack and tell the user why,`,
-    `then ${cli} new <stack> <dir> --json, then follow ${BRIEF_PATH}`,
+    `then ${cli} new <stack> <dir> --sandbox --json, then follow ${BRIEF_PATH}`,
     `until ${cli} verify is green. Run ${cli} with no arguments for the full guide.`,
   ].join("\n");

@@ -48,8 +48,8 @@ export const newCommand = Command.make(
       ),
       Flag.optional,
     ),
-    with: ids("with", "Add optional fragments, comma-separated or repeated."),
-    without: ids("without", "Leave out default fragments, comma-separated or repeated."),
+    with: ids("with", "Add optional fragments or an app. Repeatable or comma-separated."),
+    without: ids("without", "Leave out default fragments. Repeatable or comma-separated."),
     ...sharedFlags,
     scope: Flag.String("scope").pipe(
       Flag.withDescription(
@@ -94,6 +94,21 @@ export const newCommand = Command.make(
     }),
 ).pipe(
   Command.withDescription(
-    `Start a project from a stack: write its starter files and ${BRIEF_PATH}, the task for your coding agent. Runs nothing from the stack; verify is the definition of done.`,
+    `Start a project from a stack: write its starter files and ${BRIEF_PATH}, the task for your coding agent. Runs nothing from the stack; verify is the definition of done. Exits 0 on success, 2 on bad input, an unknown entry, a non-empty target (TargetNotEmpty) or conflicting fragments (ComposeConflict), 3 on bad configuration, 6 when a write is refused, 130 when interrupted; after launching an agent, the agent's own status.`,
   ),
+  Command.withShortDescription("Start a project from a stack and write its brief."),
+  Command.withExamples(({ commandPath }) => [
+    {
+      command: `${commandPath.join(" ")} typescript-cli my-cli`,
+      description: "Write the project, then hand it to your coding agent",
+    },
+    {
+      command: `${commandPath.join(" ")} astro-blog my-blog --sandbox --dry-run`,
+      description: "Preview a local-only project without writing anything",
+    },
+    {
+      command: `${commandPath.join(" ")} typescript-cli my-cli --sandbox --json`,
+      description: "Write the project and get a NewResult object, as an agent would",
+    },
+  ]),
 );

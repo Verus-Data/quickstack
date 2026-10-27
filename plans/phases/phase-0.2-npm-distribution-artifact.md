@@ -258,6 +258,11 @@ Not `.github/workflows/`.
 
 ## What this plan may get wrong
 
+- Recorded 2026-10-27: `packages/cli/README.md` is now a short entry page, and user docs
+  live in `packages/cli/docs/`. The install, pack and manual Node 22 e2e instructions this
+  plan puts in the README belong in `docs/quickstart.md` (install) and
+  `docs/maintaining.md` (pack and the Node 22 run) instead.
+
 - `@effect/platform-node` under `bun run dev` is assumed to work for everything the CLI
   needs, including child processes (0.3b). Check this before switching; if it doesn't,
   development keeps a Bun platform layer in `src/platform/` and only the bundle uses

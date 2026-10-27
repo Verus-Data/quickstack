@@ -30,6 +30,18 @@ export const showCommand = Command.make(
     }),
 ).pipe(
   Command.withDescription(
-    "Review a stack or fragment: metadata, full guidance, shipped files and its last recorded run. Reads only; starts no processes.",
+    "Review a stack or fragment (apps are fragments): metadata, full guidance, shipped files and its last recorded run. Reads only; starts no processes. Exits 0, 2 on an unknown or rejected id, an id that needs --kind or a stack whose default fragments conflict (ComposeConflict), 3 on a broken config.json, 6 when the entry can't be read, 130 when interrupted.",
   ),
+  Command.withShortDescription("Review one stack or fragment before you use it."),
+  Command.withExamples(({ commandPath }) => [
+    { command: `${commandPath.join(" ")} typescript-cli`, description: "Read a stack's guidance" },
+    {
+      command: `${commandPath.join(" ")} postgres --json`,
+      description: "Get one ShowReport object, as an agent would",
+    },
+    {
+      command: `${commandPath.join(" ")} effect --kind fragment`,
+      description: "Look the id up among fragments only",
+    },
+  ]),
 );

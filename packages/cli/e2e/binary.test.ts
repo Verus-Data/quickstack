@@ -7,8 +7,10 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  realpathSync,
   rmSync,
   statSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -70,6 +72,21 @@ describe("real standalone binary", () => {
     expect(result.status).toBe(0);
     expect(JSON.parse(result.stdout)).toMatchObject({ version, compiled: true, configErrors: [] });
     expect(result.stderr).toBe("");
+  });
+  test("a symlinked binary finds the registry beside its real path", async () => {
+    const prefix = mkdtempSync(join(tmpdir(), "cli-binary-link-"));
+    try {
+      const link = join(prefix, "quickstacks");
+      symlinkSync(binary, link);
+      const result = await invoke(["doctor", "--json"], undefined, {}, link);
+      expect(result.status).toBe(0);
+      expect(JSON.parse(result.stdout).registry).toEqual({
+        path: join(realpathSync(join(import.meta.dir, "..")), "registry"),
+        found: true,
+      });
+    } finally {
+      rmSync(prefix, { recursive: true, force: true });
+    }
   });
   test("human doctor and help are readable", async () => {
     expect((await invoke(["doctor"])).stdout).toContain("Compiled: true");

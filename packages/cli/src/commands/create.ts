@@ -60,10 +60,34 @@ const entryCommand = (kind: Kind) =>
         );
       }),
   ).pipe(
-    Command.withDescription(`Create a ${kind} in the user registry without running any tools.`),
+    Command.withDescription(
+      `Create a ${kind} in the user registry without running any tools: a skeleton, or with --from a copy of an existing entry. Prints the entry path and the authoring guide. Exits 0, 2 on a bad id, an id another registry already has, an occupied target, an unknown source or a declined confirmation, 6 when the user registry can't be written or an untrusted copy can't be confirmed by a person at a terminal, 130 when interrupted.`,
+    ),
+    Command.withShortDescription(`Create a ${kind} in the user registry.`),
+    Command.withExamples(({ commandPath }) =>
+      kind === "stack"
+        ? [
+            { command: `${commandPath.join(" ")} my-api`, description: "Start a stack skeleton" },
+            {
+              command: `${commandPath.join(" ")} go-cli --from bundled`,
+              description: "Copy a bundled stack to edit",
+            },
+          ]
+        : [
+            {
+              command: `${commandPath.join(" ")} my-ci --category ci`,
+              description: "Start a fragment skeleton",
+            },
+            {
+              command: `${commandPath.join(" ")} postgres --from bundled --json`,
+              description: "Copy a bundled fragment and get its paths",
+            },
+          ],
+    ),
   );
 
 export const createCommand = Command.make("create").pipe(
   Command.withDescription("Start a stack or fragment, or copy an existing entry for editing."),
+  Command.withShortDescription("Create or copy a stack or fragment for editing."),
   Command.withSubcommands([entryCommand("stack"), entryCommand("fragment")]),
 );
