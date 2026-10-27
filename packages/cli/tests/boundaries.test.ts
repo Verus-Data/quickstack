@@ -6,6 +6,10 @@ import { tempDir } from "./helpers/cli";
 
 const pkg = join(import.meta.dirname, "..");
 
+const moduleLocations = ["url", "dirname", "filename"] as const;
+const moduleLocationMessage =
+  "Resolve paths from the module location only in bin.ts; pass them through Host.";
+
 const nodeProcess = [
   'process.kill(1, "SIGTERM");',
   'process.on("SIGINT", () => {});',
@@ -80,5 +84,15 @@ test("core/verify/probe.ts imports nothing from node: or @effect/platform-node [
 test.each(nodeProcess)("Grit allows %s in src/platform/process.ts", (source) => {
   const result = lint("src/platform/process.ts", source);
   expect(result.stdout + result.stderr).not.toContain("Node process APIs belong");
+  expect(result.status).toBe(0);
+});
+test.each(moduleLocations)("Grit rejects import.meta.%s in a service", (property) => {
+  const result = lint("src/services/host.ts", `export const value = import.meta.${property};`);
+  expect(result.stdout + result.stderr).toContain(moduleLocationMessage);
+  expect(result.status).not.toBe(0);
+});
+test.each(moduleLocations)("Grit allows import.meta.%s in bin.ts", (property) => {
+  const result = lint("src/bin.ts", `export const value = import.meta.${property};`);
+  expect(result.stdout + result.stderr).not.toContain(moduleLocationMessage);
   expect(result.status).toBe(0);
 });
