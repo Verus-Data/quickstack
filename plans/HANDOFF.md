@@ -44,8 +44,9 @@ between hosts. The index and `names.json` are still built and signed here. `@sta
 (4.0a) is now published, with a `dist/` build, because the API consumes it across repositories.
 
 The bundled `astro-api` stack is what `stacks-api` is scaffolded from; it builds on the
-backend-only `typescript-api`. Until a CLI release includes it, scaffold from this checkout:
-`bun run dev new astro-api <path>` (next session, for the new repository). Neither stack has
+backend-only `typescript-api`. Release 0.3.1 includes it, so scaffold with the installed CLI
+(`stacks new astro-api <path>`): `bun run dev new` keeps the project's state record in the
+checkout's `packages/cli/.dev/state`, where the installed `stacks verify` can't find it. Neither stack has
 a bench run yet, so `list` shows them unproven; that first build is the bench. The backend
 ships Claude rules for Effect HTTP APIs, REST resource naming, testing through HTTP with
 real layers, verification and TypeScript, `/add-resource` and `/add-service` commands, and
