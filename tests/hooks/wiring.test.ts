@@ -16,6 +16,8 @@ describe("hook wiring", () => {
     ["PreToolUse", "guard-commands", "Bash"],
     ["PreToolUse", "guard-generated", "Write"],
     ["PreToolUse", "guard-generated", "Edit"],
+    ["PreToolUse", "guard-repo-content", "Write"],
+    ["PreToolUse", "guard-repo-content", "Edit"],
     ["PostToolUse", "typecheck-on-write", "Write"],
     ["PostToolUse", "typecheck-on-write", "Edit"],
   ])("wires %s %s for %s", (event, name, tool) => {
