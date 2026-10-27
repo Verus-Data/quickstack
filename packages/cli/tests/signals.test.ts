@@ -110,6 +110,7 @@ const waitFor = (dir: string, file: string) =>
 describe("signals reaching a real CLI process", () => {
   test("SIGINT to the process group belongs to the interactive child; the parent keeps running", async () => {
     const dir = tempDir();
+    writeFileSync(join(dir.path, "release"), "");
     const cli = launch([fixture, "interactive", dir.path], pkg, dir.path);
     try {
       await waitFor(dir.path, "child-ready");
@@ -130,6 +131,7 @@ describe("signals reaching a real CLI process", () => {
       process.kill(-cli.pid, "SIGINT");
       await waitFor(dir.path, "parent-done");
       process.kill(cli.pid, "SIGINT");
+      writeFileSync(join(dir.path, "release"), "");
       expect((await cli.closed).status).toBe(7);
     } finally {
       cleanup(cli.child, dir);

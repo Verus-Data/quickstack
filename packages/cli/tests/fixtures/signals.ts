@@ -1,7 +1,7 @@
 // A stand-in for bin.ts in tests/signals.test.ts: the real signal policy, the real Bun platform
 // layer and the live Processes service, running one scenario instead of the command tree.
 // Usage: bun tests/fixtures/signals.ts <interactive|start|slow> <dir>
-import { writeFileSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { BunServices } from "@effect/platform-bun";
 import { Duration, Effect, Layer } from "effect";
@@ -30,8 +30,10 @@ const program = Effect.gen(function* () {
       env,
     });
     yield* mark("parent-done", String(code));
-    // Stay a moment, as a command does after a handoff, so a late signal still finds the CLI.
-    yield* Effect.sleep(Duration.millis(800));
+    // Stay, as a command does after a handoff, until the test has sent its late signal and says
+    // so with a `release` file (at most 10 s), so a loaded machine can't close the window first.
+    for (let waited = 0; waited < 10_000 && !existsSync(join(dir, "release")); waited += 20)
+      yield* Effect.sleep(Duration.millis(20));
     return code;
   }
   yield* processes.start({ command: "echo $$ > leader; sleep 60", cwd: dir, env });
