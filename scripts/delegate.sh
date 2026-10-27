@@ -11,24 +11,21 @@
 # Wall clock: DELEGATE_TIMEOUT_SECS (default 3600). Run it in the background from Claude; a
 # foreground Bash call is capped at 10 minutes.
 #
-# Boundary: Codex runs as you inside its sandbox. It writes the worktree, its git dir (index,
-# HEAD), the temp dirs and Bun's install cache, reads the rest of the machine, and has the
-# network, so it can `bun add`, read docs, use git and run the whole gate. --ignore-user-config skips
-# ~/.codex/config.toml (MCP servers, plugins); every setting is passed below. The project stays
-# untrusted, so the worktree's own .codex/ config (which the delegate could edit) never loads.
-# Shell commands get Codex's "core" environment, not your shell's, so no tokens are inherited.
+# Trust: Codex is trusted as much as Claude Code. With --write it runs without a sandbox, with
+# your environment and your own ~/.codex/config.toml (MCP servers included), so feature work has
+# the network, `bun add`, git, process inspection and the whole gate. The worktree isolates the
+# work from other work; it doesn't contain Codex. Read-only mode uses Codex's read-only sandbox.
 #
 # Logs go outside the worktree so they survive its removal:
 #   ${DELEGATE_LOG_ROOT:-$TMPDIR/quickstacks-delegate}/<worktree>-<timestamp>/
 
 set -uo pipefail
 
-PREAMBLE="You are a delegate working in a git worktree; the orchestrator reviews and commits your work. Do not commit, push or call gh. Keep your edits inside this worktree. Add a dependency only when the task needs one, with bun add (shared versions go in the root workspaces catalog). Run the checks the contract names. End with: the files you changed, each check you ran with its result, and open questions."
+PREAMBLE="You are working in a git worktree for an orchestrator that reviews, refactors and commits your work, so leave your changes uncommitted and don't push. Work in this worktree, not the main checkout. Run the checks the contract names. End with: the files you changed, each check you ran with its result, and open questions."
 
 MODEL="${DELEGATE_MODEL:-gpt-6.1-sol}"
 EFFORT="${DELEGATE_EFFORT:-high}"
 TIMEOUT_SECS="${DELEGATE_TIMEOUT_SECS:-3600}"
-BUN_CACHE="${BUN_INSTALL_CACHE_DIR:-$HOME/.bun/install/cache}"
 LOG_ROOT="${DELEGATE_LOG_ROOT:-${TMPDIR:-/tmp}/quickstacks-delegate}"
 LAST_MESSAGE_LINES=60
 
@@ -76,8 +73,6 @@ GIT_COMMON_ABS="$(cd "$WT" && cd "$(git rev-parse --git-common-dir)" && pwd -P)"
 [ "$GIT_DIR_ABS" != "$GIT_COMMON_ABS" ] ||
     die "refusing to run a delegate in the main checkout ($WT); create a worktree under .claude/worktrees/"
 [ -d "$WT/node_modules" ] || die "$WT has no node_modules; run bun install --frozen-lockfile there first"
-mkdir -p "$BUN_CACHE" || die "cannot create Bun's install cache $BUN_CACHE"
-
 CODEX="${CODEX_BIN:-$(command -v codex)}"
 [ -n "$CODEX" ] && [ -x "$CODEX" ] || die "codex not found on PATH (or set CODEX_BIN)"
 
@@ -142,20 +137,16 @@ BEFORE="$(changed_paths)"
 sleep 1 # mtime granularity: anything written from here on is -newer the mark
 
 SANDBOX="read-only"
-[ "$WRITE" = 1 ] && SANDBOX="workspace-write"
+[ "$WRITE" = 1 ] && SANDBOX="danger-full-access"
 
 START=$(date +%s)
 run_capped "$TIMEOUT_SECS" "$CODEX" exec \
-    --ignore-user-config \
     --ephemeral \
     --cd "$WT" \
     --sandbox "$SANDBOX" \
     --model "$MODEL" \
     -c "model_reasoning_effort=\"$EFFORT\"" \
     -c 'approval_policy="never"' \
-    -c 'sandbox_workspace_write.network_access=true' \
-    -c "sandbox_workspace_write.writable_roots=[\"$BUN_CACHE\",\"$GIT_DIR_ABS\"]" \
-    -c 'shell_environment_policy.inherit="core"' \
     --json \
     --output-last-message "$LAST_FILE" \
     "$PROMPT" \

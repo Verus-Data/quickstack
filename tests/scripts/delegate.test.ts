@@ -1,15 +1,7 @@
 // scripts/delegate.sh against a fake `codex` (CODEX_BIN) in a throwaway repo with a linked
 // worktree: what it refuses, the flags it passes Codex, and how it judges and digests a run.
 import { execFileSync, spawnSync } from "node:child_process";
-import {
-  chmodSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  realpathSync,
-  rmSync,
-  writeFileSync,
-} from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -78,7 +70,6 @@ const run = (args: string[], env: Record<string, string> = {}) =>
       CODEX_BIN: join(root, "codex"),
       FAKE_ARGS: join(root, "args.txt"),
       DELEGATE_LOG_ROOT: join(root, "logs"),
-      BUN_INSTALL_CACHE_DIR: join(root, "bun-cache"),
       ...env,
     },
   });
@@ -97,20 +88,16 @@ describe("delegate.sh", () => {
     expect(result.stderr).toContain("no node_modules");
   });
 
-  it("runs Codex on sol 6.1 at high effort with the network and digests a completed turn", () => {
+  it("runs Codex unsandboxed on sol 6.1 at high effort and digests a completed turn", () => {
     const result = run([contract, "--worktree", worktree, "--write"]);
     expect(result.status, result.stderr).toBe(0);
     const args = readFileSync(join(root, "args.txt"), "utf8").split("\n");
-    const gitDir = execFileSync("git", ["rev-parse", "--absolute-git-dir"], { cwd: worktree })
-      .toString()
-      .trim();
     expect(args).toEqual(
       expect.arrayContaining([
-        "workspace-write",
+        "danger-full-access",
         "gpt-6.1-sol",
         'model_reasoning_effort="high"',
-        "sandbox_workspace_write.network_access=true",
-        `sandbox_workspace_write.writable_roots=["${join(root, "bun-cache")}","${realpathSync(gitDir)}"]`,
+        'approval_policy="never"',
       ]),
     );
     expect(args.join("\n")).toContain("Do the thing.");

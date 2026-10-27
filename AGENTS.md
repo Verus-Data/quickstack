@@ -123,7 +123,7 @@ Application features, install/update distribution and release workflow (decision
 
 ## Delegates
 
-Claude Code orchestrates; Codex takes the coding tasks Claude delegates (`scripts/delegate.sh`, workflow in `.claude/skills/delegate/SKILL.md`). A delegate works in its own worktree from a contract file, inside Codex's write sandbox with the network on: it can `bun add`, use git in its worktree and run the whole gate. It leaves its changes uncommitted and doesn't push, because Claude reviews, refactors and commits them, and it keeps to the contract's scope. A dependency it adds keeps shared versions in the root `workspaces.catalog`. The Claude hooks don't run for a delegate, so it runs the contract's checks itself (`bun run lint`, `bun run typecheck` and the named tests) and reports each result; Claude reviews, refactors and commits. `.claude/rules/` is Claude's: a contract names the rule files that apply to the task.
+Claude Code orchestrates; Codex takes the coding tasks Claude delegates (`scripts/delegate.sh`, workflow in `.claude/skills/delegate/SKILL.md`). A delegate is trusted like Claude Code and works in its own worktree from a contract file with full access (network, `bun add`, git, the whole gate). It leaves its changes uncommitted and doesn't push, because Claude reviews, refactors and commits them, and it keeps to the contract's scope. A dependency it adds keeps shared versions in the root `workspaces.catalog`. The Claude hooks don't run for a delegate, so it runs the contract's checks itself (`bun run lint`, `bun run typecheck` and the named tests) and reports each result; Claude reviews, refactors and commits. `.claude/rules/` is Claude's: a contract names the rule files that apply to the task.
 
 ## Pending user actions
 

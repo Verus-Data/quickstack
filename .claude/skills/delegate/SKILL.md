@@ -7,11 +7,10 @@ description: Hand a coding task to a Codex delegate (gpt-6.1-sol, high effort) i
 
 Claude is the orchestrator. Codex writes the first draft of the code in an isolated worktree;
 Claude writes the contract, reviews the diff, does a refactor pass, runs the gate and commits.
-With `--write`, Codex runs in its write sandbox with the network on: it writes the worktree,
-its git dir, temp dirs and Bun's cache, so it can `bun add`, use git and run the whole gate,
-including the compiled-binary e2e. It leaves its changes uncommitted because the review and
-refactor come before the commit. Anything outside the worktree (other checkouts, your home
-config) is out of its reach; do that part yourself. Claude
+Codex is trusted like Claude Code: with `--write` it runs unsandboxed, with your environment
+and your own Codex config, so it has the network, `bun add`, git and the whole gate, including
+the compiled-binary e2e and the process-group tests. It leaves its changes uncommitted only
+because the review and refactor come before the commit. Claude
 subagents still go through the Agent tool, never this script.
 
 ## When it fits
