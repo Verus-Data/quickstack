@@ -6,7 +6,7 @@ import { planVerify } from "../core/verify/plan";
 import { type RecordFacts, recordRun } from "../core/verify/record";
 import { renderVerify } from "../core/verify/report";
 import { runVerify } from "../core/verify/run";
-import { acceptChanges, changedResult, checkTamper } from "../core/verify/tamper";
+import { acceptChanges, changedResult, checkTamper, createdAtOf } from "../core/verify/tamper";
 import { changeLines, PermissionDenied, VerifyChanged, VerifyFailed } from "../errors";
 import { VerifyResult } from "../schemas/verify";
 import { Host } from "../services/host";
@@ -93,7 +93,8 @@ export const verifyCommand = Command.make(
       // services are captured here, before the callback leaves this context.
       const services = yield* Effect.context<FileSystem.FileSystem | Path.Path | AppConfig>();
       let facts: RecordFacts = { firstGreen: false, stateRecord: false };
-      const run = yield* runVerify({ root: located.root, manifest }, options, (finished) =>
+      const project = { root: located.root, manifest, createdAt: createdAtOf(manifest, tamper) };
+      const run = yield* runVerify(project, options, (finished) =>
         recordRun(context, finished).pipe(
           Effect.tap((settled) =>
             Effect.sync(() => {

@@ -58,7 +58,18 @@ export const Manifest = Schema.Struct({
   fragments: Schema.Array(EntryRef),
   env: Schema.Record(Schema.String, Schema.String),
   commands: Schema.Record(Schema.String, Schema.String),
-  verify: Schema.Array(ManifestStep),
+  /** Names are unique, as `compose` makes them: verify keys results and digests by step name. */
+  verify: Schema.Array(ManifestStep).check(
+    Schema.makeFilter((steps) => {
+      const seen = new Set<string>();
+      for (const [index, step] of steps.entries()) {
+        if (seen.has(step.name))
+          return { path: [index, "name"], issue: "step names must be unique" };
+        seen.add(step.name);
+      }
+      return undefined;
+    }),
+  ),
   /** `"sha256:<hex>"` from `core/manifest.ts::digestSteps`. */
   verifyDigest: Schema.String,
   briefWords: Schema.Number,
