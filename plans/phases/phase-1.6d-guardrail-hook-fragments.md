@@ -195,3 +195,23 @@ no workflow change.
   - The claude-harness TypeScript hooks wire different commands from agent-ops (package
     manager, generated-file and typecheck guards), so the two never double-wire; test 4
     also fails if two wired scripts share a name across languages.
+- 2026-10-26, after review: the guards missed shapes the fixtures didn't list, so each
+  is now a fixture case with a near miss.
+  - Git rules match through git's global options (`-C dir`, `-c k=v`, `--no-pager`,
+    `--git-dir=`, `--work-tree=`) before the subcommand. `git commit -n` and clusters
+    holding it (`-nm`, `-anm`) count as `--no-verify`; `-n` as the argument of `-m`,
+    `-c`, `-C`, `-F` or `-t` doesn't, and `git push -n` (dry run) stays allowed. A `-n`
+    in a commit message's text (`-m "fix -n"`) is denied, an accepted false positive.
+  - The discard rules take a ref or options before `.` or `:/` (`git checkout HEAD -- .`,
+    `git restore --source=HEAD .`). `git restore` with only `--staged`/`-S` just unstages
+    and stays allowed; with `--worktree`/`-W` too it's denied. Each restore on the line
+    is judged alone.
+  - rm targets accept the quote before the slash (`"$HOME"/`, `"$HOME"/*`, `"$PWD"/*`).
+  - Every `sh -c` payload on a line is checked, not only the last, and a payload's
+    escaped quotes (`\"` in double quotes, `'\''` in single) no longer cut it short.
+  - The generic secret rule ignores case (`apiKey`, `API_KEY`, `clientSecret`,
+    `AUTH_TOKEN`). Its own fixture shape now covers it.
+  - Reading `.env.development`, `.env.test` and `.env.staging` is denied too, still by
+    name rather than `.env.*` for the reason above, so a project with another real
+    `.env.<name>` file adds its own rule. The rules cover the project root only; an
+    `apps/web/.env` read isn't denied.

@@ -13,9 +13,34 @@
         "rm -rf *",
         "rm -rf /*",
         "cd /tmp && rm -rf ~/",
-        "echo \"cleaning \\\"all\\\"\"\n\trm -rf ~"
+        "echo \"cleaning \\\"all\\\"\"\n\trm -rf ~",
+        "rm -rf \"$HOME\"/",
+        "rm -rf \"$HOME\"/*",
+        "rm -rf \"${HOME}\"/",
+        "rm -rf \"$PWD\"/*"
       ],
-      "allowed": ["rm -rf ./dist", "rm -f build.log && cd .."]
+      "allowed": ["rm -rf ./dist", "rm -f build.log && cd ..", "rm -rf \"$HOME\"/.cache/app"]
+    },
+    {
+      "pattern": "a shell's -c payload, every one on the line",
+      "blocked": [
+        "sh -c 'rm -rf ~'",
+        "sh -c 'rm -rf ~'; sh -c 'echo ok'",
+        "bash -c \"echo \\\"hi\\\"; rm -rf ~\"",
+        "sh -c 'echo '\\''hi'\\''; rm -rf ~'"
+      ],
+      "allowed": ["sh -c 'rm -rf ./dist'; sh -c 'echo ok'", "bash -c \"echo \\\"rm -rf ~\\\"\""]
+    },
+    {
+      "pattern": "git global options before the subcommand",
+      "blocked": [
+        "git -C app reset --hard",
+        "git -c core.hooksPath=/dev/null commit --no-verify -m wip",
+        "git --no-pager clean -fd",
+        "git --git-dir=.git --work-tree=. checkout .",
+        "git -C app push --force"
+      ],
+      "allowed": ["git -C app status", "git --no-pager log -p", "git -c color.ui=never diff"]
     },
     {
       "pattern": "git reset --hard",
@@ -29,13 +54,33 @@
     },
     {
       "pattern": "git checkout -- .",
-      "blocked": ["git checkout -- .", "git checkout ."],
-      "allowed": ["git checkout -- src/index.ts"]
+      "blocked": [
+        "git checkout -- .",
+        "git checkout .",
+        "git checkout HEAD -- .",
+        "git checkout main ."
+      ],
+      "allowed": [
+        "git checkout -- src/index.ts",
+        "git checkout main -- src/index.ts",
+        "git checkout main && ls ."
+      ]
     },
     {
       "pattern": "git restore .",
-      "blocked": ["git restore ."],
-      "allowed": ["git restore src/index.ts"]
+      "blocked": [
+        "git restore .",
+        "git restore -- .",
+        "git restore --staged --worktree .",
+        "git restore -SW .",
+        "git restore --source=HEAD .",
+        "git restore --staged src/index.ts && git restore ."
+      ],
+      "allowed": [
+        "git restore src/index.ts",
+        "git restore --staged file.ts",
+        "git restore --staged ."
+      ]
     },
     {
       "pattern": "git branch -D",
@@ -54,8 +99,20 @@
     },
     {
       "pattern": "git commit or git push with --no-verify",
-      "blocked": ["git commit --no-verify -m wip", "git push --no-verify"],
-      "allowed": ["git commit -m 'verify the build'"]
+      "blocked": [
+        "git commit --no-verify -m wip",
+        "git push --no-verify",
+        "git commit -n -m wip",
+        "git commit -nm wip",
+        "git commit -anm wip"
+      ],
+      "allowed": [
+        "git commit -m 'verify the build'",
+        "git push -n",
+        "git commit -mn",
+        "git commit --signoff -m wip",
+        "git commit --amend --no-edit"
+      ]
     },
     {
       "pattern": "chmod -R 777",
