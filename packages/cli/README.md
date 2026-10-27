@@ -15,6 +15,8 @@ bun run build
 ./dist/quickstacks doctor --json
 ```
 
+`bun run dev` runs the CLI from source in the directory you ran it from (a subdirectory of the repo works), with Bun's `.env` and `bunfig.toml` autoload off there. From outside the repo, Bun hides that directory, so pass it: `INIT_CWD="$PWD" bun run --cwd <repo> dev new <stack> app`.
+
 `doctor` reports version, platform, compiled status, executable/config/data/working paths, the user entry directory, the bundled registry path (and whether it exists), and safe configuration errors. A missing configuration file is fine. A malformed optional file is reported in `configErrors` while doctor exits successfully; help and version do not open that file.
 
 ## Listing stacks and fragments
@@ -38,6 +40,27 @@ Each root holds `stacks/<id>/STACK.md` and `fragments/<id>/FRAGMENT.md`, each wi
 The markdown file starts with YAML frontmatter between two `---` lines, then guidance prose for the building agent. Frontmatter keys are snake_case (`schema_version`, `applies_to`, `needs_own_repo`, `requires_tools`); unknown keys, including camelCase spellings, are errors. Output from the CLI spells the same fields in camelCase (`appliesTo`).
 
 The same id in a higher root wins; `list --json` marks the winner's `shadows` with the origins it hides. An entry that fails to load is listed under `rejected` with a one-line error and is never silently replaced by a lower copy. An entry with a newer `schema_version` than this CLI reads is skipped with a warning, and the next root's copy is used.
+
+## Starting a project
+
+```sh
+quickstacks new <stack> [dir]    # dir defaults to <stack>; `.` is the current directory
+  --with a --with b              # add optional fragments (repeatable, or comma-separated)
+  --without a                    # remove default fragments
+  --sandbox                      # every default, nothing deployed or released; implies --yes
+  --yes                          # the brief tells the agent to take each decision's default
+  --agents claude,codex          # adapter targets (default: the `agents` setting, else claude)
+  --scope acme                   # npm scope for {{package_scope}} (default: the `package_scope` setting)
+  --json                         # one NewResult object
+```
+
+`new` composes the stack, writes its files and `.quickstacks/` (`BRIEF.md`, `NOTES.md`, a `.gitignore` that ignores both, and an empty `state/`), runs `git init` when the target isn't already inside a repository and git is on PATH, then prints the prompt to give your coding agent. It never runs a command from a stack or fragment.
+
+- The target must not exist, or be empty. A directory holding only `.git` or OS litter (`.DS_Store`, `Thumbs.db`, `desktop.ini`, `._*`) counts as empty; anything else fails `TargetNotEmpty` (exit 2).
+- Inside another repository nothing is initialized, and a fragment with `needs_own_repo` is refused (`ComposeConflict`, with the `--without` flags that would avoid it).
+- Files ending `.tmpl` are rendered and lose the suffix. The only variables are `project_name` (the directory's name), `project_slug`, `env_prefix`, `package_scope`, `author` (the `author` setting, else `git config user.name`) and `year`; a token is `{{ name }}` on one line, and an unknown name fails `EntryInvalid` before anything is written. Every other file is copied byte for byte, keeping its executable bit.
+- Every write is checked against the project's real path, so nothing lands outside it (`PermissionDenied`, reason `escape`). A failure or Ctrl+C removes everything `new` wrote.
+- Missing tools never fail `new`: they are listed in the result and the brief, with the `--without` flag that would drop the fragment needing one.
 
 ## Configuration
 

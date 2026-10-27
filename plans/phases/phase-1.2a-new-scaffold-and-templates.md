@@ -1,7 +1,6 @@
 # Phase 1.2a: `new`: scaffold and templates
 
-Status: DRAFT 2026-10-26 (not agreed). Revised 2026-10-26 for the amended D18: literal
-dotfiles, `package_scope` and `--scope`
+Status: EXECUTED 2026-10-26 on feat/phase-1 (awaiting review)
 
 | Field | Value |
 |---|---|
@@ -343,3 +342,53 @@ that need it skip with a message when it is absent).
   `package_scope` to a later format version built in 3.3a (the old D28). The amended D18
   stores dotfiles literally and puts `package_scope` and `--scope` in v1, built here. If
   npm's packing drops a bundled `.gitignore`, that is 0.2's to fix, not this writer's.
+- 2026-10-26, found while executing:
+  - The same id in `--with` and `--without` stays `BadInput` with `details.id`, the
+    contract 1.1 shipped and the roadmap records, not `Usage`. The exit is 2 either way;
+    test 18 asserts `BadInput` for that case and `Usage` for `--agents nope`.
+  - `NewResult.missingTools` is 1.1's `MissingTool` as shipped: `{ tool, owners: EntryRef[],
+    drop: { id, flag }[] }`, not `owners: string[]` and `without: string[]`. A tool the
+    stack or a required fragment needs has `drop: []`. `untrusted` items carry `kind`, as
+    the Composition row says. `warnings` items take an optional `exitCode`, and
+    `git_init_failed` uses the id `git`.
+  - `needs_own_repo` puts the enclosing repository's root in `details.path`. `fix` lists
+    `--without` flags only; when any of the fragments could only be dropped by changing a
+    `--with`, or is required, `fix` is empty. The drop rule is `compose.ts::dropFlags`,
+    shared with `missingTools`.
+  - An entry file planned under `.quickstacks/` or `.git/` is refused before writing as
+    `ComposeConflict` `file_owner`: the CLI owns both.
+  - `Registry` gained `bytes`, so copies are byte for byte (binary files included) and
+    still never follow a symlink. Roadmap Registry view row updated.
+  - There is no `author.ts`: the `git config user.name` lookup is one constant command and
+    lives in `scaffold/git.ts` with the other git commands.
+  - When `git init` fails, the brief has already been written with a fresh repo in it, so
+    `new` re-renders it with git `none` and replaces it; `briefWords` is the rewritten
+    brief's.
+  - An existing target that isn't a directory (a file, a dangling symlink) is
+    `TargetNotEmpty` with `entries: []`. A write that finds its file already there
+    (anything planted mid-run, or a symlink in the final segment) is also `TargetNotEmpty`;
+    it is never written through. Any other write failure is `PermissionDenied` `unwritable`.
+  - Rollback removes the files it wrote only while their parent still resolves inside the
+    project, and removes the directories it made only when they are empty, so files some
+    other process added during `new` survive. A target directory that held only `.git` gets
+    its `.git` removed on rollback only if `new` itself ran `git init` in it.
+  - Test 4's "symlinked `files/` target" is covered twice over: the registry already
+    refuses any symlink inside an entry (1.0's tests), and `new.test.ts` plants a symlink in
+    the target under an OS-litter name, which the emptiness check ignores, so the writer's
+    own real-path check is what stops it.
+  - Interruption is tested through `runCli`'s signal and through a real CLI process sent
+    SIGINT, both while a `git` shim's `init` sleeps after every file is written.
+  - The dev wrapper ran the CLI in `packages/cli`, so `new` wrote there. It now runs it with
+    `cwd` set to the caller's directory and with Bun's dotenv and bunfig autoload disabled
+    for that child. Bun 1.4 sets neither `INIT_CWD` nor the caller's `PWD` for a script, but
+    it does set `npm_config_local_prefix` to the directory `bun run` started in, so the root
+    `dev` script passes that on. Under `bun run --cwd <repo>` nothing carries the caller,
+    so a run from outside the repository sets `INIT_CWD="$PWD"` itself.
+  - Human `NotFound` for an entry id now ends with
+    `Next: quickstacks list shows every stack and fragment.`, with or without suggestions;
+    a far-off id used to print a bare "Not found.".
+  - Manual runs used the realistic fixture registry: its stack in sandbox mode wrote nine
+    files, a fresh repository and a brief of about 4,000 words (about 6,000 with its app
+    fragment). Those entries show as untrusted because a non-default
+    `QUICKSTACKS_REGISTRY_DIR` is untrusted, while human output labels them by origin
+    (`bundled`), which reads oddly next to "Untrusted".

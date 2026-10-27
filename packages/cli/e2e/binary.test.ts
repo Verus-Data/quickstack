@@ -1,5 +1,13 @@
 import { describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { version } from "../package.json";
@@ -97,6 +105,26 @@ describe("real standalone binary", () => {
       stderr: "",
       status: 0,
     });
+  });
+  test("new --sandbox --json writes the project, its brief and an executable hook", async () => {
+    const out = mkdtempSync(join(tmpdir(), "cli-binary-new-"));
+    try {
+      const app = join(out, "app");
+      const result = await invoke(["new", "fixture-stack", app, "--sandbox", "--json"], undefined, {
+        QUICKSTACKS_REGISTRY_DIR: join(import.meta.dir, "../tests/fixtures/registry-new"),
+      });
+      expect(result.stderr).toBe("");
+      expect(result.status).toBe(0);
+      const created = JSON.parse(result.stdout);
+      expect(created).toMatchObject({ project: app, stack: "fixture-stack", preset: "sandbox" });
+      expect(created.written).toContain(".quickstacks/BRIEF.md");
+      for (const rel of created.written) expect(existsSync(join(app, rel))).toBe(true);
+      expect(readFileSync(join(app, "README.md"), "utf8")).toStartWith("# app\n");
+      expect(statSync(join(app, ".githooks/pre-commit")).mode & 0o111).not.toBe(0);
+      expect(existsSync(join(app, "ran"))).toBe(false);
+    } finally {
+      rmSync(out, { recursive: true, force: true });
+    }
   });
   test("does not autoload dotenv or bunfig from working directory", async () => {
     const result = await invoke(["doctor", "--json"], (dir) => {

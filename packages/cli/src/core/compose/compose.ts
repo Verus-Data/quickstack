@@ -534,28 +534,36 @@ export function missingTools(
   composition: Composition,
   found: (tool: string) => boolean,
 ): MissingTool[] {
+  return composition.tools
+    .filter(({ tool }) => !found(tool))
+    .map(({ tool, owners }) => ({ tool, owners, drop: dropFlags(composition, owners) }));
+}
+
+/**
+ * The flags that would leave every one of `owners` out of the composition (`missingTools`' rule,
+ * also used for `needs_own_repo`): empty when the stack or a required fragment is among them.
+ */
+export function dropFlags(
+  composition: Composition,
+  owners: ReadonlyArray<EntryRef>,
+): MissingTool["drop"] {
+  if (owners.some((owner) => owner.kind === "stack")) return [];
   const via = new Map(composition.selection.map((item) => [item.id, item.via]));
   const requirers = (id: string) =>
     composition.fragments
       .filter((fragment) => isFragment(fragment) && fragment.meta.requires.includes(id))
       .map((fragment) => fragment.id);
-  return composition.tools
-    .filter(({ tool }) => !found(tool))
-    .map(({ tool, owners }) => {
-      if (owners.some((owner) => owner.kind === "stack")) return { tool, owners, drop: [] };
-      const removed = new Set<string>();
-      const pending = owners.map((owner) => owner.id);
-      for (let id = pending.pop(); id !== undefined; id = pending.pop()) {
-        if (removed.has(id)) continue;
-        removed.add(id);
-        pending.push(...requirers(id));
-      }
-      if ([...removed].some((id) => via.get(id) === "required")) return { tool, owners, drop: [] };
-      const drop = [...removed].sort(byId).flatMap((id): MissingTool["drop"] => {
-        const how = via.get(id);
-        if (how === "with") return [{ id, flag: "with" }];
-        return how === "default" || how === "always" ? [{ id, flag: "without" }] : [];
-      });
-      return { tool, owners, drop };
-    });
+  const removed = new Set<string>();
+  const pending = owners.map((owner) => owner.id);
+  for (let id = pending.pop(); id !== undefined; id = pending.pop()) {
+    if (removed.has(id)) continue;
+    removed.add(id);
+    pending.push(...requirers(id));
+  }
+  if ([...removed].some((id) => via.get(id) === "required")) return [];
+  return [...removed].sort(byId).flatMap((id): MissingTool["drop"] => {
+    const how = via.get(id);
+    if (how === "with") return [{ id, flag: "with" }];
+    return how === "default" || how === "always" ? [{ id, flag: "without" }] : [];
+  });
 }

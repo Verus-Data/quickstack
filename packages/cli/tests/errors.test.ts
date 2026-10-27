@@ -33,6 +33,7 @@ test("the published error table, written out row by row", () => {
     PermissionDenied: { exit: 6, retryable: false, keepsResult: false },
     EntryInvalid: { exit: 2, retryable: false, keepsResult: false },
     ComposeConflict: { exit: 2, retryable: false, keepsResult: false },
+    TargetNotEmpty: { exit: 2, retryable: false, keepsResult: false },
     Interrupted: { exit: 130, retryable: false, keepsResult: false },
     Defect: { exit: 1, retryable: false, keepsResult: false },
     BrokenPipe: { exit: 0, retryable: false, keepsResult: false },

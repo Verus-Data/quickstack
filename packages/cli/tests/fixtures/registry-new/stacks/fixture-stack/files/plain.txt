@@ -1,0 +1,1 @@
+Not a template: {{package_scope}} and {{ github }} stay as written.

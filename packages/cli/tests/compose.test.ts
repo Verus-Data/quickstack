@@ -446,7 +446,9 @@ test("the NotFound envelope carries only its suggestions", async () => {
   }).pipe(Effect.asVoid, Effect.provide(Registry.layer(bundledAt(composeRegistry))));
   const human = await runCli([], { program: close, env: quiet });
   expect(human.status).toBe(2);
-  expect(human.stderr).toBe("Not found.\n  Did you mean: web-stack?\n");
+  expect(human.stderr).toBe(
+    "Not found.\n  Did you mean: web-stack?\n  Next: quickstacks list shows every stack and fragment.\n",
+  );
 });
 
 test("target agents: Claude Code by default, the setting next, the flag over both; only their adapters are planned", async () => {

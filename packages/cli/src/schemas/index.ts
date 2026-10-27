@@ -13,3 +13,4 @@ export {
   withStepDefaults,
 } from "./entry";
 export { ListResult, ListRow } from "./list";
+export { NewResult } from "./new";

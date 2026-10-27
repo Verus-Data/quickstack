@@ -2,7 +2,7 @@ import { Schema } from "effect";
 import { AgentId } from "./entry";
 
 /** An npm scope, with or without its leading `@`: lowercase and URL-safe, no `/`. */
-const NpmScope = Schema.String.check(
+export const NpmScope = Schema.String.check(
   Schema.isPattern(/^@?[a-z0-9-~][a-z0-9-._~]*$/, { expected: "an npm scope such as @acme" }),
 );
 

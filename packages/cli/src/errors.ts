@@ -45,9 +45,13 @@ export class VerifyFailed extends Schema.TaggedError<VerifyFailed>()("VerifyFail
 export class VerifyChanged extends Schema.TaggedError<VerifyChanged>()("VerifyChanged", {}) {
   override readonly message = "Verify steps changed since they were recorded.";
 }
-/** `reason` is a closed set later sub-phases extend; `path` is the file or directory involved. */
+/**
+ * `reason` is a closed set later sub-phases extend; `path` is the file or directory involved.
+ * `escape`: a write would land outside the project (its real path isn't under the project's).
+ * `unwritable`: the project directory or a file in it couldn't be created or written.
+ */
 export const PermissionDeniedDetails = Schema.Struct({
-  reason: Schema.Literals(["write", "read"]),
+  reason: Schema.Literals(["write", "read", "escape", "unwritable"]),
   path: Schema.optionalKey(Schema.String),
 });
 export class PermissionDenied extends Schema.TaggedError<PermissionDenied>()("PermissionDenied", {
@@ -58,7 +62,8 @@ export class PermissionDenied extends Schema.TaggedError<PermissionDenied>()("Pe
 /**
  * An entry that can't be used: its frontmatter didn't decode, it contains a symlink, its `id`
  * differs from its directory name, a file is missing, a conditional block is malformed, a merged
- * file isn't JSON, or a template sits on a merge path. `path` is the file or link involved,
+ * file isn't JSON, a template sits on a merge path, or a template names an unknown variable
+ * (`template`). `path` is the file or link involved,
  * relative to the entry; `line` is a 1-based line in that file; `problem` says what is wrong with a
  * `conditional` marker.
  */
@@ -85,6 +90,7 @@ export const EntryInvalidDetails = Schema.Struct({
     "conditional",
     "merge_json",
     "merge_template",
+    "template",
   ]),
   path: Schema.optionalKey(Schema.String),
   line: Schema.optionalKey(Schema.Number),
@@ -100,7 +106,9 @@ export class EntryInvalid extends Schema.TaggedError<EntryInvalid>()("EntryInval
  * (it always reads first); `ids` names the fragments involved, in the order the reason reads (the
  * requirer before what it requires; a cycle in order). A stack and a fragment may share an id, so
  * the stack never appears in `ids`. `path`, `step` and `key` name the file, verify step or env key
- * two entries disagree on.
+ * two entries disagree on. For `needs_own_repo`, `path` is the enclosing repository's root and
+ * `fix` lists the `--without` flags that would leave every such fragment out (empty when no
+ * `--without` can).
  */
 export const ComposeConflictDetails = Schema.Struct({
   reason: Schema.Literals([
@@ -114,17 +122,32 @@ export const ComposeConflictDetails = Schema.Struct({
     "step_name",
     "file_owner",
     "env",
+    "needs_own_repo",
   ]),
   stack: Schema.optionalKey(Schema.String),
   ids: Schema.Array(Schema.String),
   path: Schema.optionalKey(Schema.String),
   step: Schema.optionalKey(Schema.String),
   key: Schema.optionalKey(Schema.String),
+  fix: Schema.optionalKey(Schema.Array(Schema.String)),
 });
 export class ComposeConflict extends Schema.TaggedError<ComposeConflict>()("ComposeConflict", {
   details: Schema.optionalKey(ComposeConflictDetails),
 }) {
   override readonly message = "These entries can't be composed.";
+}
+/**
+ * `new` refuses a directory holding anything besides `.git` and OS litter. `path` is the target;
+ * `entries` names up to ten of what is in it, sorted, litter excluded.
+ */
+export const TargetNotEmptyDetails = Schema.Struct({
+  path: Schema.String,
+  entries: Schema.Array(Schema.String),
+});
+export class TargetNotEmpty extends Schema.TaggedError<TargetNotEmpty>()("TargetNotEmpty", {
+  details: Schema.optionalKey(TargetNotEmptyDetails),
+}) {
+  override readonly message = "The target directory is not empty.";
 }
 export class Interrupted extends Schema.TaggedError<Interrupted>()("Interrupted", {}) {
   override readonly message = "Command interrupted.";
@@ -161,6 +184,7 @@ export const errorClasses = [
   PermissionDenied,
   EntryInvalid,
   ComposeConflict,
+  TargetNotEmpty,
   Interrupted,
   Defect,
   BrokenPipe,
@@ -180,6 +204,7 @@ export const errorTable = {
   PermissionDenied: { exit: 6, retryable: false, keepsResult: false },
   EntryInvalid: { exit: 2, retryable: false, keepsResult: false },
   ComposeConflict: { exit: 2, retryable: false, keepsResult: false },
+  TargetNotEmpty: { exit: 2, retryable: false, keepsResult: false },
   Interrupted: { exit: 130, retryable: false, keepsResult: false },
   Defect: { exit: 1, retryable: false, keepsResult: false },
   BrokenPipe: { exit: 0, retryable: false, keepsResult: false },
@@ -203,14 +228,41 @@ export function detailLines(error: AppError): string[] {
       return error.details?.suggestions.length
         ? [`Did you mean: ${error.details.suggestions.join(", ")}?`]
         : [];
-    case "PermissionDenied":
-      return error.details?.path ? [`Path: ${error.details.path}`] : [];
+    case "PermissionDenied": {
+      const details = error.details;
+      if (!details) return [];
+      const why =
+        details.reason === "escape"
+          ? ["The path resolves outside the project directory, through a symlink or `..`."]
+          : details.reason === "unwritable"
+            ? ["The project directory or a file in it can't be written. Nothing was left behind."]
+            : [];
+      return [...(details.path ? [`Path: ${printable(details.path)}`] : []), ...why];
+    }
+    case "TargetNotEmpty": {
+      const details = error.details;
+      if (!details) return [];
+      return [
+        `Path: ${printable(details.path)}`,
+        ...(details.entries.length
+          ? [`Contains: ${details.entries.map(printable).join(", ")}`]
+          : []),
+        "Next: pick a directory that doesn't exist yet or is empty.",
+      ];
+    }
     case "BadInput":
       return error.details ? [`Id: ${printable(error.details.id)}`] : [];
-    case "NotFound":
-      return error.details?.suggestions.length
-        ? [`Did you mean: ${error.details.suggestions.map(printable).join(", ")}?`]
-        : [];
+    case "NotFound": {
+      // Details mean an entry id was looked up, so the list of entries is the next step.
+      const details = error.details;
+      if (!details) return [];
+      return [
+        ...(details.suggestions.length
+          ? [`Did you mean: ${details.suggestions.map(printable).join(", ")}?`]
+          : []),
+        "Next: quickstacks list shows every stack and fragment.",
+      ];
+    }
     case "EntryInvalid": {
       const details = error.details;
       if (!details) return [];
@@ -228,9 +280,20 @@ export function detailLines(error: AppError): string[] {
         `Reason: ${details.reason}`,
         ...(details.stack ? [`Stack: ${printable(details.stack)}`] : []),
         ...(details.ids.length ? [`Fragments: ${details.ids.map(printable).join(", ")}`] : []),
-        ...(details.path ? [`Path: ${printable(details.path)}`] : []),
+        ...(details.path
+          ? [
+              `${details.reason === "needs_own_repo" ? "Repository" : "Path"}: ${printable(details.path)}`,
+            ]
+          : []),
         ...(details.step ? [`Step: ${printable(details.step)}`] : []),
         ...(details.key ? [`Key: ${printable(details.key)}`] : []),
+        ...(details.reason === "needs_own_repo"
+          ? [
+              details.fix?.length
+                ? `Next: run again with ${details.fix.map(printable).join(" ")}, or pick a directory outside that repository.`
+                : "Next: pick a directory outside that repository.",
+            ]
+          : []),
       ];
     }
     case "NotConfigured":
@@ -266,6 +329,8 @@ export function encodeDetails(error: AppError): Effect.Effect<unknown, Schema.Sc
       return encodeClosed(NotFoundDetails, error.details);
     case "ComposeConflict":
       return encodeClosed(ComposeConflictDetails, error.details);
+    case "TargetNotEmpty":
+      return encodeClosed(TargetNotEmptyDetails, error.details);
     case "NotConfigured":
     case "InvalidConfig":
     case "UpstreamUnavailable":

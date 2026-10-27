@@ -14,6 +14,13 @@ export const brokenRegistry = join(fixtures, "registry-broken");
  * stacks with a misfit default and a required app.
  */
 export const composeRegistry = join(fixtures, "registry-compose");
+/**
+ * `new` cases around `fixture-stack`: a template using every variable and the token rules, a
+ * literal `.gitignore`, a non-template holding `{{...}}`, a merged settings file, an executable
+ * hook, missing tools on the stack and on a default fragment, a `touch ran` verify step, and a
+ * `needs_own_repo` fragment that is a default here and required by `own-stack`.
+ */
+export const newRegistry = join(fixtures, "registry-new");
 
 /** Writes `<root>/<stacks|fragments>/<dir>/<STACK|FRAGMENT>.md` and returns the entry directory. */
 export function writeEntry(

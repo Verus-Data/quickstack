@@ -103,6 +103,11 @@ export class Registry extends Context.Service<
       entry: Entry,
       source: string,
     ) => Effect.Effect<string, EntryInvalid | PermissionDenied>;
+    /** `read`, as raw bytes: what `new` copies, byte for byte. */
+    readonly bytes: (
+      entry: Entry,
+      source: string,
+    ) => Effect.Effect<Uint8Array, EntryInvalid | PermissionDenied>;
   }
 >()("quickstacks/Registry") {
   /**
@@ -257,6 +262,44 @@ export class Registry extends Context.Service<
         });
         const loaded = yield* Effect.cached(load);
 
+        /**
+         * `lstat`s the entry directory and every prefix of `source` down to the file, so a symlink
+         * anywhere is `EntryInvalid` (`symlink`) and nothing behind it is read, then runs `read`.
+         */
+        const checked = <A>(
+          entry: Entry,
+          source: string,
+          read: (
+            file: string,
+            denied: (at: string) => PermissionDenied,
+            missing: EntryInvalid,
+          ) => Effect.Effect<A, EntryInvalid | PermissionDenied>,
+        ) =>
+          Effect.gen(function* () {
+            const invalid = (reason: "symlink" | "missing", at: string) =>
+              new EntryInvalid({
+                details: { id: entry.id, origin: entry.origin, reason, path: at },
+              });
+            const denied = (at: string) =>
+              new PermissionDenied({ details: { reason: "read", path: at } });
+            const segments = source.split("/");
+            if (segments.some((segment) => segment === "" || segment === "." || segment === ".."))
+              return yield* invalid("missing", source);
+            for (let depth = 0; depth <= segments.length; depth++) {
+              const rel = segments.slice(0, depth).join("/") || ".";
+              const at = path.join(entry.dir, rel);
+              const info = yield* fs
+                .lstat(at)
+                .pipe(
+                  Effect.mapError((error) =>
+                    notFound(error) ? invalid("missing", source) : denied(at),
+                  ),
+                );
+              if (info.type === "SymbolicLink") return yield* invalid("symlink", rel);
+            }
+            return yield* read(path.join(entry.dir, source), denied, invalid("missing", source));
+          });
+
         return {
           all: loaded.pipe(
             Effect.map((items) => items.map((item) => ("rejected" in item ? item.rejected : item))),
@@ -309,38 +352,17 @@ export class Registry extends Context.Service<
                 .sort((a, b) => (a.source < b.source ? -1 : 1));
             }),
           read: (entry, source) =>
-            Effect.gen(function* () {
-              const invalid = (reason: "symlink" | "missing", at: string) =>
-                new EntryInvalid({
-                  details: { id: entry.id, origin: entry.origin, reason, path: at },
-                });
-              const denied = (at: string) =>
-                new PermissionDenied({ details: { reason: "read", path: at } });
-              const segments = source.split("/");
-              if (segments.some((segment) => segment === "" || segment === "." || segment === ".."))
-                return yield* invalid("missing", source);
-              // The entry directory itself, then each prefix of `source` down to the file.
-              for (let depth = 0; depth <= segments.length; depth++) {
-                const rel = segments.slice(0, depth).join("/") || ".";
-                const at = path.join(entry.dir, rel);
-                const info = yield* fs
-                  .lstat(at)
-                  .pipe(
-                    Effect.mapError((error) =>
-                      notFound(error) ? invalid("missing", source) : denied(at),
-                    ),
-                  );
-                if (info.type === "SymbolicLink") return yield* invalid("symlink", rel);
-              }
-              const file = path.join(entry.dir, source);
-              return yield* fs
+            checked(entry, source, (file, denied, missing) =>
+              fs
                 .readFileString(file)
-                .pipe(
-                  Effect.mapError((error) =>
-                    notFound(error) ? invalid("missing", source) : denied(file),
-                  ),
-                );
-            }),
+                .pipe(Effect.mapError((error) => (notFound(error) ? missing : denied(file)))),
+            ),
+          bytes: (entry, source) =>
+            checked(entry, source, (file, denied, missing) =>
+              fs
+                .readFile(file)
+                .pipe(Effect.mapError((error) => (notFound(error) ? missing : denied(file)))),
+            ),
         };
       }),
     );
