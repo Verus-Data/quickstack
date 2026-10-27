@@ -1,6 +1,6 @@
 # Phase 3.2a: Git sources and the untrusted origin
 
-Status: DRAFT 2026-10-26 (not agreed). Gated: starts only when someone outside the maintainers asks for third-party sources, and after open question 18 is answered.
+Status: DEFERRED 2026-10-27 to phase 4 or later. Gated: starts only when someone outside the maintainers asks for third-party sources, and after open question 18 is answered. Neither has happened, so the phase 2-3 run on 2026-10-27 left it unbuilt; the release's remote origin (roadmap, Feature gaps, "3.2c") reuses its hardened git calls and still needs its own plan.
 
 | Field | Value |
 |---|---|
