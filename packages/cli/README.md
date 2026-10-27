@@ -83,12 +83,15 @@ The core loop: `new <stack>` writes the starter files and `.quickstacks/BRIEF.md
 ## Starting a project
 
 ```sh
-quickstacks new <stack> [dir]    # dir defaults to <stack>; `.` is the current directory
+quickstacks new <stack> [dir]    # dir defaults to the slug of --name, else <stack>; `.` is the current directory
   --with a --with b              # add optional fragments (repeatable, or comma-separated)
   --without a                    # remove default fragments
   --sandbox                      # every default, nothing deployed or released; implies --yes
   --yes                          # the brief tells the agent to take each decision's default
   --agents claude,codex          # adapter targets (default: the `agents` setting, else claude)
+  --name "My App"                # project_name for templates (default: directory base name)
+  --author "A. Name"             # author for templates (default: setting, then git user.name)
+  --dry-run                      # render and report the plan without writing or launching
   --scope acme                   # npm scope for {{package_scope}} (default: the `package_scope` setting)
   --launch codex                 # the agent to hand off to: claude, codex, opencode or cursor
   --no-launch                    # print the prompt instead of starting an agent
@@ -97,7 +100,11 @@ quickstacks new <stack> [dir]    # dir defaults to <stack>; `.` is the current d
 
 `new` composes the stack, writes its files and `.quickstacks/` (`BRIEF.md`, `NOTES.md`, `manifest.json`, an empty `state/`, and a `.gitignore` that ignores `BRIEF.md`, `NOTES.md`, `state/` and `incoming/`), writes a state record outside the project, runs `git init` when the target isn't already inside a repository and git is on PATH, then hands off to an agent. It never runs a command from a stack or fragment.
 
-The handoff, first match wins (the manifest's `handoff` records which, with the agent and time):
+`--dry-run` checks the same target, composes and renders every file in memory, including the manifest, then stops before writing. It creates no directory, state record or git repository and starts no agent. Its JSON result has `dryRun: true`, `stateRecord: false`, and `written` lists the planned files; real runs have `dryRun: false`. Git, fingerprints, word counts and missing tools describe the planned scaffold. Read-only git probes and the author fallback still run. A preview's handoff is `print` with reason `no-launch`, even inside an agent session; text output ends with `Dry run: nothing was written.`. `--dry-run --launch` is `Usage` (exit 2).
+
+`--name` sets `project_name` and, when no directory is given, chooses the directory through its slug. An explicit directory stays the target. Slugs strip npm scopes, fold accents with NFKD, split camelCase and digit boundaries, then join lowercase ASCII words with dashes; names without ASCII words become `project`. `--author` overrides the `author` setting and git fallback; an explicit empty value suppresses both.
+
+The handoff for a real run, first match wins (the manifest's `handoff` records which, with the agent and time):
 
 1. Run from inside an agent session (an agent marker such as `CLAUDECODE` or `AI_AGENT` is set): stdout ends with `NEXT STEP FOR THE AGENT: ...`, telling that agent to read the brief and loop on `verify`. With an untrusted entry it says `STOP` instead: show the user the entries and the brief's first section, and continue only if they confirm.
 2. `--json`, `--no-launch`, stdin or stdout not a terminal, or any untrusted entry: the prompt is printed (with an example command, for a human) and nothing is launched. An untrusted entry never launches an agent.
@@ -111,7 +118,7 @@ The handoff, first match wins (the manifest's `handoff` records which, with the 
 - The state record is a second copy of the verify digest at `$XDG_STATE_HOME/quickstacks/projects/<projectId>.json` (`QUICKSTACKS_STATE_DIR` replaces `$XDG_STATE_HOME/quickstacks`), so editing the project's files can't hide a changed verify step. When that directory isn't writable, `new` still succeeds with `stateRecord: false`, and verify's tamper check uses the manifest only.
 - The target must not exist, or be empty. A directory holding only `.git` or OS litter (`.DS_Store`, `Thumbs.db`, `desktop.ini`, `._*`) counts as empty; anything else fails `TargetNotEmpty` (exit 2).
 - Inside another repository nothing is initialized, and a fragment with `needs_own_repo` is refused (`ComposeConflict`, with the `--without` flags that would avoid it). A target that is itself a repository's root is that project's own repository, so those fragments are allowed. When git fails for any reason other than "not a git repository" (a broken `.git`, unsafe ownership), nothing is initialized and the result carries a `git_unusable` warning.
-- Files ending `.tmpl` are rendered and lose the suffix. The only variables are `project_name` (the directory's name, which may not contain control characters), `project_slug`, `env_prefix`, `package_scope`, `author` (the `author` setting, else `git config user.name`; quotes, backslashes and line breaks are removed) and `year`; a token is `{{ name }}` on one line, and an unknown name fails `EntryInvalid` before anything is written. Every other file is copied byte for byte, keeping its executable bit.
+- Files ending `.tmpl` are rendered and lose the suffix. The only variables are `project_name` (`--name`, else the directory's base name; control characters are refused), `project_slug`, `env_prefix`, `package_scope`, `author` (`--author`, else the `author` setting, else `git config user.name`; quotes, backslashes and line breaks are removed, and other control characters in the flag fail `BadInput`) and `year`; a token is `{{ name }}` on one line, and an unknown name fails `EntryInvalid` before anything is written. Every other file is copied byte for byte, keeping its executable bit.
 - No entry may write under `.git/` or `.quickstacks/`, in any letter case (`ComposeConflict`, reason `reserved_path`), and two entry files whose paths differ only in case collide (`file_owner`).
 - Every write is checked against the project's real path, so nothing lands outside it (`PermissionDenied`, reason `escape`). A failure or Ctrl+C removes everything `new` wrote, the state record included.
 - Missing tools never fail `new`: they are listed in the result and the brief, with the `--without` flag that would drop the fragment needing one.

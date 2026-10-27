@@ -6,7 +6,8 @@ import { printable } from "../text";
 /** Warnings the Git line already reports, so the Warnings list leaves them out. */
 const GIT_WARNINGS: ReadonlyArray<string> = ["git_init_failed", "git_unusable"];
 
-const gitLine = (result: Pick<NewResult, "warnings" | "git">) => {
+const gitLine = (result: Pick<NewResult, "warnings" | "git" | "dryRun">) => {
+  if (result.dryRun && result.git === "fresh") return "would create a new repository";
   const failed = result.warnings.find((warning) => warning.code === "git_init_failed");
   if (failed) return `git init failed (exit ${failed.exitCode ?? "unknown"}); no repository`;
   const unusable = result.warnings.find((warning) => warning.code === "git_unusable");
@@ -50,8 +51,8 @@ const missingLine = (item: NewResult["missingTools"][number]) => {
  * `new`'s text summary: the stack, fragments, git, the brief, missing tools with their skip flags,
  * warnings and untrusted entries; `core/handoff.ts` renders the next step after it. A human also
  * gets the project's absolute path and the written files collapsed; an agent reads the files from
- * the brief and the disk. Every value that came from an entry or the filesystem is escaped for
- * the terminal.
+ * the brief and the disk; a dry run lists its planned files for both, since nothing is on disk.
+ * Every value that came from an entry or the filesystem is escaped for the terminal.
  */
 export function renderNew(
   result: Omit<NewResult, "handoff">,
@@ -59,20 +60,20 @@ export function renderNew(
 ): string {
   const human = context.audience === "human";
   const lines = [
-    `Created ${printable(context.shown)} from ${printable(result.stack)}${result.preset === "sandbox" ? " (sandbox)" : ""}.`,
+    `${result.dryRun ? "Planned" : "Created"} ${printable(context.shown)} from ${printable(result.stack)}${result.preset === "sandbox" ? " (sandbox)" : ""}.`,
     // `shown` is the absolute path when the project isn't under the current directory.
     ...(human && context.shown !== result.project ? [`Project: ${printable(result.project)}`] : []),
     `Fragments: ${result.fragments.length ? result.fragments.map(printable).join(", ") : "none"}`,
     `Agents: ${result.agents.join(", ")}`,
     `Git: ${gitLine(result)}`,
-    ...(human
+    ...(human || result.dryRun
       ? [
-          `Wrote ${result.written.length} files:`,
+          `${result.dryRun ? "Would write" : "Wrote"} ${result.written.length} files:`,
           ...collapsePaths(result.written).map((line) => `  ${printable(line)}`),
         ]
       : []),
     `Brief: ${result.brief} (${result.briefWords} words)`,
-    ...(result.stateRecord
+    ...(result.stateRecord || result.dryRun
       ? []
       : [
           "State record: not written (the state directory isn't writable), so verify's tamper check will use the manifest only.",
@@ -94,5 +95,6 @@ export function renderNew(
           `  ${entry.kind} ${printable(entry.id)} (${entry.origin}): ${printable(entry.dir)}`,
       ),
     );
+  if (result.dryRun) lines.push("Dry run: nothing was written.");
   return lines.join("\n");
 }
