@@ -1,6 +1,7 @@
 # Phase 3.4b: Native agent adapters
 
 Status: DRAFT 2026-10-26 (not agreed)
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -76,11 +77,21 @@ This sub-phase adds no telemetry and depends on none. Whether an adapter is wort
 
 ## Acceptance tests
 
-- For each bundled stack and each agent: `new <stack> --agents <agent> --no-launch --json` writes that agent's adapter files and no other agent's; `--agents claude,codex` writes both with no ownership conflict.
-- Each new reference check has a fixture with a hook entry naming a missing file and one naming an undeclared project command, each giving one error; a valid fixture gives zero findings; an unparseable config gives `ref-json`.
-- The shared guard script, called through each agent's input shim with a recorded sample hook payload, blocks the same command it blocks for Claude Code.
-- A `codex` bench run of one bundled stack is `pass` with `hooksFired` non-null.
-- The plugin manifest decodes against the marketplace's documented schema (a recorded copy in test fixtures), and the skill path it names exists in the packed tarball.
+1. For each bundled stack and each agent: `new <stack> --agents <agent> --no-launch --json` writes that agent's documented config and no other agent's config; `--agents claude,codex` writes both with no ownership conflict. Codex's default project policy is `workspace-write` with `on-request` approvals. The portable guidance fragments identified below also supply valid agent-readable instructions or skills. OpenCode lints written files and formats session files on idle through documented callbacks.
+2. Each new reference check has a fixture naming a missing composed script and one naming an undeclared project command, each giving exactly one error; valid references give zero findings. Use existing `ref-hook`, `ref-command` and `ref-json` codes; invalid TOML gives `ref-toml`. Include Codex inline TOML hooks, OpenCode formatter command arrays and permission rules, and Cursor hooks.
+3. The shared guard, reached through each agent's configured hook or local plugin with a recorded or documented representative payload, blocks the same destructive command as Claude Code and permits a near miss. Codex Bash can call the shared script directly; native `apply_patch` writes need translation from `tool_input.command`. OpenCode's documented plugin callback rejects to block, rather than consuming stdin itself.
+4. The Claude Code plugin manifest decodes against the recorded metadata/skills schema and names a contained skill directory with the same content as `packages/cli/skill/SKILL.md`; its version matches the CLI package. See the packaging gap below.
+
+Maintainer-owned proof, 2026-10-27 (formerly the fourth unnumbered acceptance item): a real `codex` bench run of one bundled stack is `pass` with `hooksFired` non-null. This is not an automated acceptance number, following 2.0b's real-run split. Marketplace publication is also maintainer-owned and remains an exit criterion.
+
+### Realistic edge cases
+
+5. Configured guards still run through a symlinked project path containing spaces and non-ASCII characters.
+6. References resolve files and commands supplied by another merged owner, with one correctly attributed finding across repeated validation compositions.
+7. Malformed or wrong-case native config reports a format/schema finding without cascading references; documented OpenCode JSONC comments and trailing commas still allow reference checks.
+8. Explicit target agents override inherited agent markers and repeated agent names are deduplicated without leaking other agents' config.
+9. Secret-write translation preserves quotes, backslashes and newlines, handles Codex additions, updates and multi-file patches, blocks credentials and real `.env` files independently, and permits example files and harmless writes.
+10. The package README's agent table distinguishes enforced guards from instructions and labels OpenCode/Cursor unproved with the missing bench-adapter reason.
 
 ## Exit criteria
 
@@ -90,6 +101,35 @@ This sub-phase adds no telemetry and depends on none. Whether an adapter is wort
 
 ## What this plan may get wrong
 
+- Reference findings extend 2.2 with `ref-toml` (invalid TOML syntax) and `ref-config`
+  (invalid native reference structure, including wrong-case keys). Both are errors and
+  skip reference checks for that file, as `ref-json` does for invalid JSON. Native
+  commands resolve against the merged commands map; Claude retains 2.2’s inline-code allowance.
+
 - Agent config formats move faster than stack prose, which is the rot D1 warns about. Adapters ship only config whose shape is stable and documented; 2.2's dated-phrase check and the bench are the tripwires.
 - Some agents have no hook mechanism. For them the guardrails are instructions, which an agent can ignore; the README's agent table says which agents get enforced guards and which get instructions.
 - The input shim per agent is a seam where behavior can drift. The shared sample-payload test is the guard.
+
+### Format findings checked 2026-10-27
+
+- Codex documents project `.codex/config.toml`, `.codex/hooks.json` and the matching hook payload/deny protocol in [advanced config](https://developers.openai.com/codex/config-advanced/) and [hooks](https://developers.openai.com/codex/hooks/). The contract's codex-cli 0.164 Bash recording agrees. Native edits differ: the docs report `tool_name: "apply_patch"` with patch text in `tool_input.command`; `Edit|Write` are matcher aliases, not payload tool names. Secret-write tests use patches. Project trust is required; the contract also records main-checkout hook discovery from linked worktrees. The offline tests prove dispatch and guard behavior, not trust/worktree discovery inside a real agent. Sandbox and approval choices above express the default intent; sandbox-preset policy remains outside these tests.
+- OpenCode documents [JSON and JSONC project config](https://opencode.ai/docs/config/), [permission patterns](https://opencode.ai/docs/permissions/), [auto-loaded local plugins and tool callbacks](https://opencode.ai/docs/plugins/), and [formatter command arrays](https://opencode.ai/docs/formatters/). Therefore an instructions-only fallback for guards is not justified. The tests host the local plugin boundary with real Bun and filesystem paths, without a live agent. This selects the documented OpenCode 1 format; the separately documented V2 format is not silently mixed into it. Offline lifecycle tests send write/file-edited and session-idle callbacks and observe a real local tool executable; live-agent lifecycle proof remains unproved.
+- Cursor documents [project hooks, preToolUse, matchers and permission output](https://cursor.com/docs/hooks) and [MDC project rules](https://cursor.com/docs/rules). Tests select `preToolUse` for shell and write guarding, with `alwaysApply: true` project rules for guardrail instructions; this covers writes before they occur as well as shell commands. Cursor's documented response uses `permission`, unlike Claude/Codex. The payload fixture is transcribed from docs, not claimed to be a live recording.
+- The skill is a Claude Code skill, so the listing uses [Claude Code's plugin manifest](https://code.claude.com/docs/en/plugins-reference), at `plugin/.claude-plugin/plugin.json`. Component paths must stay inside the plugin root: `../skill` is invalid. Ship a content-identical skill directory under `plugin/`; `skills` may name that directory directly or its parent scan directory. The test prevents drift. The schema is documented as field tables, so the fixture explicitly transcribes its metadata/skills subset. `packages/cli/package.json` is private and has no `files`, `bin` or packing script; AGENTS.md "Deferred" postpones distribution. No packed artifact exists to assert on today. A future release test must inspect the tarball; these tests check the shipped source tree.
+
+### Bundled fragment inventory and adapter decisions
+
+Eight fragments currently ship `adapters/claude/` (including hidden files):
+
+| Fragment | Counterpart decision and reason |
+|---|---|
+| `agent-ops` | All three: native config, shared bash guards with protocol translation where needed, plus guardrail instructions. |
+| `bun-release` | All three: portable build/checksum/update guidance belongs in documented instructions or skills. |
+| `effect` | All three: portable Effect guidance belongs in documented instructions or skills. |
+| `rr` | All three: portable remote-test guidance; Claude's marketplace registration stays Claude-only. |
+| `openrouter-chat` | All three for portable app rules, skills and workflows; no automatic migration of Claude plugin settings. |
+| `openrouter-chat-cli` | All three for portable app rules, skills and workflows; its TypeScript harness guards/tests stay Claude-only under the 3.4a exclusion. |
+| `claude-harness` | No counterpart here: the TypeScript harness, review agents and commands are explicitly outside this sub-phase. Its `requires: [agent-ops]` still supplies base native guards. |
+| `ce-plugin` | No counterpart: it explicitly installs the Claude Essentials marketplace plugin and routes Claude skills; inventing another agent's plugin packaging is outside scope. |
+
+Portable instruction forms: Codex [AGENTS.md](https://developers.openai.com/codex/guides/agents-md/) or [project skills](https://developers.openai.com/codex/skills/); OpenCode [AGENTS.md and configured instructions](https://opencode.ai/docs/rules/) or [project skills](https://opencode.ai/docs/skills/); Cursor MDC rules. Tests accept those forms without prescribing filenames for each fragment. A brief-only copy does not count as an adapter. Stacks also ship Claude-specific TypeScript harness extensions, intentionally left with 3.4a; composition itself already supports all four `AgentId` values and needs no new flag, result field or test-facing export.

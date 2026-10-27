@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "Recorded 2026-10-27 from https://code.claude.com/docs/en/plugins-reference, Fields and Path-only fields. JSON Schema transcription of the skill-only manifest fields, not an upstream downloadable schema. Other component fields remain outside this fixture's scope.",
+  "type": "object",
+  "required": ["name"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "name": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+    "displayName": { "type": "string" },
+    "version": { "type": "string" },
+    "description": { "type": "string" },
+    "author": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "url": { "type": "string" }
+      }
+    },
+    "homepage": { "type": "string" },
+    "repository": { "type": "string" },
+    "license": { "type": "string" },
+    "keywords": { "type": "array", "items": { "type": "string" } },
+    "skills": {
+      "anyOf": [
+        { "type": "string", "pattern": "^(\\./|\\.$)" },
+        {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^(\\./|\\.$)" }
+        }
+      ]
+    }
+  }
+}

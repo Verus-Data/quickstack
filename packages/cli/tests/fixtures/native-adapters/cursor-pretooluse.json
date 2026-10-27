@@ -1,0 +1,14 @@
+{
+  "conversation_id": "fixture-conversation",
+  "generation_id": "fixture-generation",
+  "model": "fixture-model",
+  "hook_event_name": "preToolUse",
+  "cursor_version": "1.7.2",
+  "workspace_roots": ["/project"],
+  "user_email": null,
+  "transcript_path": null,
+  "tool_name": "Shell",
+  "tool_input": { "command": "git status", "working_directory": "/project" },
+  "tool_use_id": "fixture-tool",
+  "cwd": "/project"
+}
