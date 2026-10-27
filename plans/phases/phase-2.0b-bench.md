@@ -1,6 +1,7 @@
 # Phase 2.0b: Bench
 
-Status: BLOCKED 2026-10-27 (implementation and review fixes done; locked-test corrections needed)
+Status: EXECUTED 2026-10-27 (`bun run bench` with the claude and codex adapters, tested
+against fake agents; real runs and their proofs are the maintainers')
 Acceptance tests: traced
 
 | Field | Value |
@@ -360,8 +361,9 @@ confirms the run and reads the notes):
 - 2026-10-27: The locked helper passes a fallible output flush to an infallible runner;
   the first bench test compares brief word counts across parent and fresh git contexts;
   kept-root and binary comparisons enumerate compiled-binary buffers and exhaust Node's
-  heap, including a 16 GB retry. These acceptance blockers need the test owner's correction.
-  The implementation leaves the locked files unchanged.
+  heap, including a 16 GB retry. Resolved in review: the helper orDies the flush, the
+  baseline brief runs in the fresh context, and the binary comparisons hash files instead of
+  comparing buffers. Each test file compiles the probed binary once (about 23 s, from 57 s).
 
 - 2026-10-27: The bench uses the dev build and a fresh binary-plus-registry prefix until
   0.2 lands; packing returns with 0.2.

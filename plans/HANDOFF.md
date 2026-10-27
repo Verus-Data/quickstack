@@ -35,8 +35,10 @@ reworded for `dist/quickstacks` or deferred in its plan.
   [3.0](phases/phase-3.0-add-fragments-to-repo.md) (`add`),
   [3.1a](phases/phase-3.1a-show-and-preview.md) (`show` and the brief preview),
   [2.2](phases/phase-2.2-deterministic-rot-checks.md) (rot checks; reread the condensed
-  `effect` and `effect-schema` guidance it trimmed to fit `mobile-expo --with effect`).
-- In progress: 2.0b, 3.1b; then 3.4a, 3.4b and 3.3a-c.
+  `effect` and `effect-schema` guidance it trimmed to fit `mobile-expo --with effect`),
+  [2.0b](phases/phase-2.0b-bench.md) (`bun run bench`, fake-agent tested),
+  [3.1b](phases/phase-3.1b-create-and-authoring-guide.md) (`create` and the authoring guide).
+- In progress: 3.4a, 3.4b and the deterministic parts of 3.3a-c.
 - Deferred to phase 4 or later: [3.2a](phases/phase-3.2a-user-sources.md) and
   [3.2b](phases/phase-3.2b-source-trust-and-updates.md), gated on outside demand and open
   question 18.

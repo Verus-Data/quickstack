@@ -1,6 +1,7 @@
 # Phase 3.1b: `create` and the authoring guide
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: EXECUTED 2026-10-27 (`create stack|fragment`, `--from bundled|project`, the preset
+setting and `new --preset`, `docs/authoring.md`; the personal-stack trial is the maintainers')
 Acceptance tests: traced
 
 | Field | Value |
