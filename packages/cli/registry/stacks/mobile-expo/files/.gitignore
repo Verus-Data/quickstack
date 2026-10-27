@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Build output (bun run bundle writes dist/)
+dist/
+build/
+*.tsbuildinfo
+
+# Expo: continuous native generation, so ios/ and android/ are regenerated on demand
+.expo/
+apps/mobile/ios/
+apps/mobile/android/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Logs (bun run dev writes .logs/)
+.logs/
+*.log
+
+# Test output
+coverage/
+
+# Agent worktrees (Biome's nested-config discovery only honours the root .gitignore)
+.claude/settings.local.json
+.claude/worktrees/
+
+# Editors and OS
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

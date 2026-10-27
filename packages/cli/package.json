@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "bun scripts/dev.ts",
     "build": "bun scripts/build.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.registry.json",
     "lint": "biome check .",
     "format": "biome check --write .",
     "test": "bun run test:unit",

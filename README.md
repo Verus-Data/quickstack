@@ -4,7 +4,7 @@ A bun workspace. Product planning is in [plans/](plans/README.md) and [product/]
 
 | Path | What it is |
 | --- | --- |
-| [packages/cli](packages/cli/README.md) | `quickstacks`, the CLI: Effect 4, Bun-compiled binary, `doctor` and `--version` only |
+| [packages/cli](packages/cli/README.md) | `quickstacks`, the CLI: Effect 4, Bun-compiled binary. `new <stack>` writes a project and the brief your coding agent builds it from; the bundled stacks are listed in its README |
 | [packages/api](packages/api/README.md) | `@quickstacks/api`, the HTTP API (placeholder, no code yet) |
 | [packages/mcp](packages/mcp/README.md) | `@quickstacks/mcp`, the MCP server (placeholder, no code yet) |
 | `.claude/`, `docs/harness.md` | The agent harness: hooks, rules, skills and their tests in `tests/hooks/`, and the acceptance trace in `tests/acceptance/` |

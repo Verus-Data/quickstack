@@ -2,5 +2,11 @@
   "$schema": "https://biomejs.dev/schemas/2.6.3/schema.json",
   "root": false,
   "extends": "//",
-  "plugins": ["./biome-plugins/boundaries.grit"]
+  "plugins": ["./biome-plugins/boundaries.grit"],
+  "overrides": [
+    {
+      "includes": ["registry/stacks/mobile-expo/**"],
+      "javascript": { "formatter": { "quoteStyle": "single" } }
+    }
+  ]
 }

@@ -42,6 +42,10 @@ When the repo already has an `AGENTS.md`, the skeleton isn't copied (it's listed
 
 This stack's own `.claude/settings.json` merges in allow rules for its `bun run` scripts, so they're already approved; add rules only for commands you create beyond those.
 <!-- quickstacks:end -->
+<!-- quickstacks:when stack=mobile-expo,python-react -->
+
+The stack's `.claude/settings.json` merges in allow rules for its non-destructive root scripts, so they're already approved; add rules only for commands you create beyond those.
+<!-- quickstacks:end -->
 
 If the project has a linter, confirm `lint-on-write.sh` reports a deliberate lint error, then revert. If it's silent, check the linter is where the hook looks (`.venv`, `node_modules/.bin`, PATH); `session-start.sh` also flags a `package.json` or `pyproject.toml` whose dependencies aren't installed. `format-changed.sh` formats, on Stop, only the files the current session wrote (lint-on-write records them per session), so parallel agents in one checkout don't reformat each other's work in progress. If the project uses biome or eslint, add `.claude/worktrees/` to the root `.gitignore`: both discover nested config and trip over Claude Code worktrees. Project-specific guards (a generated file never hand-edited) belong in hooks written like the existing ones (bash 3.2, `set -euo pipefail`, quiet exit when a tool is missing).
 <!-- quickstacks:when with=claude-harness -->

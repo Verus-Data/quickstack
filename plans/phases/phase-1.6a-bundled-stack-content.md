@@ -1,6 +1,10 @@
 # Phase 1.6a: Bundled catalog in format v1
 
-Status: DRAFT 2026-10-26 (not agreed). Re-scoped 2026-10-26 by the roadmap to "Bundled
+Status: EXECUTED 2026-10-26 on feat/phase-1-catalog (awaiting review). The tarball tests (acceptance, unnumbered) wait for 0.2
+
+Acceptance tests: traced
+
+Re-scoped 2026-10-26 by the roadmap to "Bundled
 catalog: bring into v1 and validate": bring the whole bundled catalog into entry format v1 as
 amended and pass `validate`, recording each composed size, instead of writing three
 stacks to D13's word targets. Body rewritten to match 2026-10-26
@@ -200,15 +204,19 @@ the tarball tests wait with it.
 
 ## Acceptance tests
 
-- `validate` on `packages/cli/registry`: zero errors, zero warnings (1.5's
-  `tests/bundled-registry.test.ts`, now with content).
-- `tests/registry.test.ts`, for each stack and preset: `new --no-launch --json` into a temp
-  dir succeeds; `briefWords` is under 1.5's cap; the manifest has every D7 layer; and no
-  command was run (PATH holds only a recording shim for `git`, which `new` may call). No
-  rendered file contains `{{`. For each app, the same with `--with <app>`, and the
-  manifest's app steps carry the `app` tag.
-- The git-ignore guard in `tests/registry.test.ts` passes, and its file count covers the
-  catalog, so the guard is known to have run over it.
+1. `validate` on `packages/cli/registry`: zero errors, zero warnings (1.5's
+   `tests/bundled-registry.test.ts`, now with content).
+2. `tests/registry.test.ts`, for each stack and preset: `new --no-launch --json` into a temp
+   dir succeeds; `briefWords` is under 1.5's cap; the manifest has every D7 layer; and no
+   command was run (PATH holds only a recording shim for `git`, which `new` may call). No
+   rendered file contains `{{`.
+3. For each app, the same with `--with <app>`, and the manifest's app steps carry the `app`
+   tag.
+4. The git-ignore guard in `tests/registry.test.ts` passes, and its file count covers the
+   catalog, so the guard is known to have run over it.
+
+Checked by the gate rather than by a tagged test:
+
 - Shipped files lint clean: Biome over every shipped `.ts` and `.json` under the
   registry, through the package's `lint` (confirm the root Biome includes reach the
   registry path, and that dotfiles get the right parser). Biome doesn't lint Markdown, and
@@ -249,3 +257,40 @@ the tarball tests wait with it.
   `agent-ops` steps are shell commands because v1 has no built-in checks. The catalog is
   much larger than three stacks, so writing it is bigger work than this plan's original
   shape, and the bench proofs it unlocks are spread over 3.3a, 3.3b, 3.3c, 3.4a and 3.5b.
+- 2026-10-26, on execution:
+  - `new` has no `--no-launch` yet (1.4 adds the handoff in parallel). The composition
+    tests run `new <stack> app --json` with PATH holding only the recording `git` shim, so
+    no agent can be found or launched; add `--no-launch` to `newFromCatalog` in
+    `tests/registry.test.ts` when 1.4 lands.
+  - The `agent-ops` steps are `agents-md-filled` and `claude-readme-filled` with
+    `layer: check`, not `agents-md` and `readme` with `layer: docs`: the roadmap's "Verify
+    step `layer`" row defines `check` for file and config checks, and each stack ships its
+    own `readme-filled` step (also `check`).
+  - The layer enum has no slot for service setup and teardown. Steps that start, migrate or
+    stop a local database (`postgres`, `cloudflare-d1`, `mobile-expo`'s `db-*`) use
+    `install`; contract checks (`check-api`, `bindings-check`, `db:check`, `expo:check`,
+    `release-check`) use `check`; `tauri-react`'s crate-edge check uses `lint`.
+  - D7 needed two stack changes: `astro-blog` had no lint step, so it gains a `make lint`
+    target (`prettier --check`) and step, and `make check` (astro check) carries
+    `typecheck`; `go-cli` had no typecheck step, so it gains `make vet` (`go vet ./...`,
+    which type-checks test files too) as `typecheck`.
+  - `mobile-expo` with `rr` was 6,115 words once `agent-ops`' and `ci-github`'s stack and
+    monorepo blocks were restored. Prose cuts (a lefthook gotcha `git-hooks` already
+    covers, the NativeWind gotcha folded into Setup, Commands text the commands map
+    repeats) bring it to 5,984, 16 words under the cap: any growth in `agent-ops` (1.6d's
+    hooks paragraph) or `rr` pushes it over, and the next cut belongs in `mobile-expo`.
+  - Shipped TypeScript typechecks with no added dependency: `tsconfig.registry.json` uses
+    `rootDirs` over each entry's `adapters/claude` so a stack's hooks resolve
+    `claude-harness`'s `_lib.ts` as they do in a project, and lists `.claude/hooks/*.ts`
+    explicitly because `tsc` globs skip dot-directories. Every shipped `.ts` (43 files)
+    imports only node, bun, vitest and effect packages this repo installs; source that
+    targets Astro, React Router, Expo or Tauri ships as prose or `.tmpl`, which neither
+    `tsc` nor Biome reads. `.tmpl` output is checked only by the composition tests.
+  - Biome lints shipped `.ts` and `.json` through the package `lint`. `mobile-expo`'s own
+    rules use single quotes, so `packages/cli/biome.json` overrides the quote style for
+    that stack instead of reformatting its shipped file against its own convention.
+  - Entry content rules beyond what `validate` checks (no versions, setup as a numbered
+    procedure) were not re-audited across the imported entries; a few version mentions
+    remain (for example "Tauri 2" in `tauri-react`'s description). That audit belongs with
+    each entry's bench proof (1.6b, 3.3a to 3.5b).
+  - The tarball tests (`e2e/registry-pack.test.ts`) wait for 0.2, which packs nothing yet.

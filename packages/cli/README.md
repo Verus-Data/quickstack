@@ -33,13 +33,30 @@ Entries come from three roots, highest precedence first:
 | --- | --- | --- |
 | `project` | `./.quickstacks/` in the working directory | no: a cloned repository can ship these |
 | `user` | `$XDG_CONFIG_HOME/quickstacks/` (`~/.config/quickstacks/`), beside `config.json` | yes |
-| `bundled` | the registry shipped with the CLI (`packages/cli/registry/` in this repo, empty until the bundled catalog lands; `QUICKSTACKS_REGISTRY_DIR` replaces it) | yes, unless `QUICKSTACKS_REGISTRY_DIR` set it |
+| `bundled` | the registry shipped with the CLI (`packages/cli/registry/` in this repo; `QUICKSTACKS_REGISTRY_DIR` replaces it) | yes, unless `QUICKSTACKS_REGISTRY_DIR` set it |
 
 Each root holds `stacks/<id>/STACK.md` and `fragments/<id>/FRAGMENT.md`, each with optional `files/` (copied into every project) and `adapters/<agent>/` (copied when that agent is a target; agents are `claude`, `codex`, `opencode`, `cursor`). An app is a fragment with `category: app`. Files are stored under their real names, dotfiles included: `files/.gitignore` is written as `.gitignore`. An entry directory may not be or contain a symlink, and nothing past one is read. The project root and its `stacks/` and `fragments/` must be real directories (a symlinked one is skipped with a warning); the user and bundled roots may be symlinks.
 
 The markdown file starts with YAML frontmatter between two `---` lines, then guidance prose for the building agent. Frontmatter keys are snake_case (`schema_version`, `applies_to`, `needs_own_repo`, `requires_tools`); unknown keys, including camelCase spellings, are errors. Output from the CLI spells the same fields in camelCase (`appliesTo`).
 
 The same id in a higher root wins; `list --json` marks the winner's `shadows` with the origins it hides. An entry that fails to load is listed under `rejected` with a one-line error and is never silently replaced by a lower copy. An entry with a newer `schema_version` than this CLI reads is skipped with a warning, and the next root's copy is used.
+
+## Bundled stacks
+
+The core loop: `new <stack>` writes the starter files and `.quickstacks/BRIEF.md`, your coding agent builds the project from the brief, and `verify` runs the stack's steps until they pass. `--sandbox` keeps it local: every decision takes its default, deploy, release and app fragments stay out unless named with `--with`, and steps tagged `prod` are skipped.
+
+| Stack | What it builds | App (`--with`) |
+| --- | --- | --- |
+| `astro-blog` | Static Astro blog: MDX posts in a validated collection, React islands, Tailwind, RSS and sitemap | |
+| `cloudflare-react-router` | React Router on the local Workers runtime with typed bindings and Workers integration tests | |
+| `go-cli` | Go CLI: cobra, viper config, structured errors, human and JSON output, golangci-lint | |
+| `mobile-expo` | Expo Router app and a Bun + Hono API on Postgres, sharing zod schemas through a typed client | |
+| `python-react` | FastAPI backend and a React SPA talking through a client generated from the OpenAPI spec | |
+| `react-router` | React Router framework mode with SSR, Effect services, typed HTTP errors, Tailwind and shadcn | `openrouter-chat` |
+| `tauri-react` | Tauri desktop app: Rust crates behind a thin shell, typed IPC, a React frontend with a mock transport | |
+| `typescript-cli` | Bun-compiled TypeScript CLI on Effect with typed errors, safe output and logs | `openrouter-chat-cli` |
+
+`quickstacks list` shows each stack's fragments; `validate` reports every stack's composed brief size in both presets.
 
 ## Starting a project
 

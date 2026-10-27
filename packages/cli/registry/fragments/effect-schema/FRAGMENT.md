@@ -24,6 +24,9 @@ Install `effect` (Schema is part of it). Never install the standalone `@effect/s
 
 **Where schemas live.** One file per domain in the schema directory from Decisions, re-exported from an `index.ts`. Schemas import only `effect`, so both client and server code can use them.
 
+<!-- quickstacks:when tag=web -->
+Put shared request/response schemas where browser and server can import them without platform dependencies. Loaders/actions decode params and input at their boundaries.
+<!-- quickstacks:end -->
 <!-- quickstacks:when tag=cli -->
 Use src/schemas for arguments, flags, stdin, config, storage, and machine-readable output as those capabilities are added. The optional config file uses a closed schema.
 <!-- quickstacks:end -->

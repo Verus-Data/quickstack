@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["bun", "node"],
+    "rootDirs": [
+      "registry/fragments/claude-harness/adapters/claude",
+      "registry/fragments/openrouter-chat-cli/adapters/claude",
+      "registry/stacks/react-router/adapters/claude",
+      "registry/stacks/tauri-react/adapters/claude",
+      "registry/stacks/typescript-cli/adapters/claude"
+    ]
+  },
+  "include": ["registry/**/*.ts", "registry/**/.claude/hooks/*.ts"]
+}
