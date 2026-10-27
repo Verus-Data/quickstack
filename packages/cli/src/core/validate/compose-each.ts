@@ -1,5 +1,5 @@
+import { AgentId, type FragmentMeta, type StackMeta } from "@stacks/format";
 import { Effect, Result } from "effect";
-import { AgentId, type FragmentMeta, type StackMeta } from "../../schemas/entry";
 import type { Finding } from "../../schemas/validate";
 import { type ComposeOptions, compose } from "../compose/compose";
 import { fitsStack } from "../compose/selection";

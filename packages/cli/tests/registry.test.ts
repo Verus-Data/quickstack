@@ -11,6 +11,7 @@ import {
 } from "node:fs";
 import { join, relative } from "node:path";
 import { NodeServices } from "@effect/platform-node";
+import { APP_TAG, Manifest } from "@stacks/format";
 import { Effect, Exit, Schema } from "effect";
 import { afterEach, describe, expect, test } from "vitest";
 import { MANIFEST_PATH } from "../src/core/manifest";
@@ -18,8 +19,6 @@ import { type Entry, isRejected } from "../src/core/registry/entry";
 import { Registry, type RegistryRoots, trustOf } from "../src/core/registry/registry";
 import { BUDGET } from "../src/core/validate/budget";
 import { EntryInvalid, NotFound, PermissionDenied } from "../src/errors";
-import { APP_TAG } from "../src/schemas/entry";
-import { Manifest } from "../src/schemas/manifest";
 import { NewResult } from "../src/schemas/new";
 import { quiet, runCli, tempDir } from "./helpers/cli";
 import { gitShim, spawnGit } from "./helpers/git";

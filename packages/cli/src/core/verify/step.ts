@@ -1,6 +1,7 @@
+import type { FailureKind } from "@stacks/format";
 import { Clock, Duration, Effect, FileSystem, Path } from "effect";
 import type { SpawnFailed } from "../../errors";
-import type { FailureKind, StepResult } from "../../schemas/verify";
+import type { StepResult } from "../../schemas/verify";
 import { Output } from "../../services/output";
 import { type Finished, Processes } from "../../services/processes";
 import { printable } from "../text";

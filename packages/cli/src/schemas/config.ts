@@ -1,5 +1,5 @@
+import { AgentId } from "@stacks/format";
 import { Schema } from "effect";
-import { AgentId } from "./entry";
 
 /** An npm scope, with or without its leading `@`: lowercase and URL-safe, no `/`. */
 export const NpmScope = Schema.String.check(

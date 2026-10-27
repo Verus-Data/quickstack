@@ -1,9 +1,9 @@
 import { NodeServices } from "@effect/platform-node";
+import type { Manifest } from "@stacks/format";
 import { Effect, Exit, type FileSystem, type Path, References } from "effect";
 import { AppConfig, type Environment } from "../../src/config";
 import type { Composition } from "../../src/core/compose/compose";
 import { buildManifest } from "../../src/core/manifest";
-import type { Manifest } from "../../src/schemas/manifest";
 import { composeExit } from "./compose";
 
 /**

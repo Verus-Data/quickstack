@@ -1,3 +1,4 @@
+import { AgentId, Harness } from "@stacks/format";
 import { Effect, FileSystem, Option, Path, Schema, Terminal } from "effect";
 import { CliError, Flag } from "effect/cli";
 import { AppConfig } from "../config";
@@ -17,7 +18,6 @@ import { openProject } from "../core/scaffold/write";
 import { shownPath } from "../core/shown-path";
 import { printable } from "../core/text";
 import { BrokenPipe, Interrupted, PermissionDenied, Usage } from "../errors";
-import { AgentId, Harness } from "../schemas/entry";
 import type { NewResult } from "../schemas/new";
 import { Host } from "../services/host";
 import { Invocation } from "../services/invocation";

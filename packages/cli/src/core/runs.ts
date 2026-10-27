@@ -1,6 +1,6 @@
+import { RunRecord } from "@stacks/format";
 import { Effect, FileSystem, Option, Path, Result, Schema } from "effect";
 import type { ProjectRuns } from "../schemas/runs";
-import { RunRecord } from "../schemas/verify";
 import { locateManifest, readManifest } from "./manifest";
 import { findProjectState } from "./project-state";
 import { printable } from "./text";

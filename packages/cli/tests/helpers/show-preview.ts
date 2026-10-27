@@ -8,10 +8,10 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { NodeServices } from "@effect/platform-node";
+import type { AgentId } from "@stacks/format";
 import { Effect, Exit, Schema } from "effect";
 import { expect } from "vitest";
 import { fingerprint } from "../../src/core/fingerprint";
-import type { AgentId } from "../../src/schemas/entry";
 import { BriefPreview } from "../../src/schemas/validate";
 import { bundledAt, composeExit } from "./compose";
 import { minimal, writeEntry } from "./registry";

@@ -1,9 +1,9 @@
 import { execFile, execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { RunRecord } from "@stacks/format";
 import { Schema } from "effect";
 import { afterEach, expect, test } from "vitest";
-import { RunRecord } from "../src/schemas/verify";
 import { projectFiles } from "./fixtures/composed-files";
 import { ledgerRegistry, registryFingerprint, stackBody } from "./helpers/ledger";
 import { minimal, writeEntry } from "./helpers/registry";

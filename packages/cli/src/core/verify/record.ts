@@ -1,8 +1,9 @@
+import type { Manifest } from "@stacks/format";
+import { RunRecord, type RunStep } from "@stacks/format";
 import { Clock, Effect, FileSystem, Option, Path, type PlatformError, Schema } from "effect";
 import { AppConfig } from "../../config";
 import { METADATA_DIR, RUNS_PATH, STATE_DIR } from "../../project-layout";
-import type { Manifest } from "../../schemas/manifest";
-import { RunRecord, type RunStep, type VerifyResult } from "../../schemas/verify";
+import type { VerifyResult } from "../../schemas/verify";
 import { VERSION } from "../../version";
 import { findProjectState, saveProjectState, warnUnwritten } from "../project-state";
 import { printable } from "../text";

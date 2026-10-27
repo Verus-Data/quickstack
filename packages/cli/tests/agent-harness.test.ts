@@ -1,8 +1,8 @@
 import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { Manifest } from "@stacks/format";
 import { Exit, Schema } from "effect";
 import { afterEach, expect, test } from "vitest";
-import { Manifest } from "../src/schemas/manifest";
 import { NewResult } from "../src/schemas/new";
 import { ValidateReport } from "../src/schemas/validate";
 import { quiet, runCli, tempDir } from "./helpers/cli";

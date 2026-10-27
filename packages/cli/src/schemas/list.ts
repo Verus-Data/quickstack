@@ -1,6 +1,7 @@
+import { Category, Kind } from "@stacks/format";
 import { Schema } from "effect";
-import { Category, Kind, Origin } from "./entry";
 import { LastRun } from "./ledger";
+import { Origin } from "./origin";
 
 export const ListRow = Schema.Struct({
   id: Schema.String,

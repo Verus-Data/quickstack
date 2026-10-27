@@ -1,8 +1,8 @@
+import type { AgentId } from "@stacks/format";
 import { Clock, Effect } from "effect";
 import { AppConfig } from "../config";
 import { BRIEF_PATH } from "../project-layout";
 import type { AddResult } from "../schemas/add";
-import type { AgentId } from "../schemas/entry";
 import { Host } from "../services/host";
 import { mergeAddManifest } from "./add/manifest";
 import { mergeNeeded } from "./add/plan";

@@ -1,3 +1,10 @@
+import {
+  type AgentId,
+  APP_TAG,
+  type Kind,
+  type ResolvedStep,
+  withStepDefaults,
+} from "@stacks/format";
 import { Effect } from "effect";
 import {
   type BadInput,
@@ -6,15 +13,7 @@ import {
   type NotFound,
   type PermissionDenied,
 } from "../../errors";
-import { type AgentId, APP_TAG, type ResolvedStep, withStepDefaults } from "../../schemas/entry";
-import {
-  type Entry,
-  entryRef,
-  isFragment,
-  type Kind,
-  markdownFile,
-  type Origin,
-} from "../registry/entry";
+import { type Entry, entryRef, isFragment, markdownFile, type Origin } from "../registry/entry";
 import { Registry } from "../registry/registry";
 import { resolveConditionals } from "./conditionals";
 import { conflict, parties } from "./conflicts";
@@ -36,25 +35,25 @@ export type ComposeOptions<M extends "new" | "add" = "new"> = {
 };
 
 /** Which entry: a stack and a fragment may share an id, so an id alone is ambiguous. */
-export type EntryRef = { kind: Kind; id: string };
+export type CompositionEntryRef = { kind: Kind; id: string };
 
 export type PlannedFile = {
   /** Output path, relative to the project root, `.tmpl` dropped. */
   path: string;
   /** The writing entry; for a merge, the first writer. */
-  owner: EntryRef;
+  owner: CompositionEntryRef;
   /** Every writer in composition order, including the first. */
-  owners: ReadonlyArray<EntryRef>;
+  owners: ReadonlyArray<CompositionEntryRef>;
   kind: "copy" | "template" | "merge";
   /** Copy and template: where the bytes come from. */
-  source?: { entry: EntryRef; file: string };
+  source?: { entry: CompositionEntryRef; file: string };
   /** Merge only: the merged JSON, final bytes. */
   content?: string;
   /** Permission bits of the source file (the first writer's, for a merge). */
   mode: number;
 };
 
-export type ComposedStep = ResolvedStep & { owner: EntryRef; skipByDefault: boolean };
+export type ComposedStep = ResolvedStep & { owner: CompositionEntryRef; skipByDefault: boolean };
 export type ComposeWarning = {
   code: "always_not_applicable" | "always_unknown" | "with_not_applicable" | "without_not_selected";
   id: string;
@@ -80,12 +79,12 @@ export type Composition<S extends Entry | null = Entry> = {
   verify: ReadonlyArray<ComposedStep>;
   commands: Record<string, string>;
   env: Record<string, string>;
-  decisions: ReadonlyArray<{ owner: EntryRef; text: string }>;
-  tools: ReadonlyArray<{ tool: string; owners: ReadonlyArray<EntryRef> }>;
+  decisions: ReadonlyArray<{ owner: CompositionEntryRef; text: string }>;
+  tools: ReadonlyArray<{ tool: string; owners: ReadonlyArray<CompositionEntryRef> }>;
   deps: ReadonlyArray<{
     role: string;
     names: ReadonlyArray<string>;
-    owners: ReadonlyArray<EntryRef>;
+    owners: ReadonlyArray<CompositionEntryRef>;
   }>;
   /** Fragment ids that refuse an enclosing repository (1.2a). */
   needsOwnRepo: ReadonlyArray<string>;
@@ -96,7 +95,7 @@ export type Composition<S extends Entry | null = Entry> = {
 /** A tool not on PATH: who needs it, and the flags that would have left it out (none if none can). */
 export type MissingTool = {
   tool: string;
-  owners: ReadonlyArray<EntryRef>;
+  owners: ReadonlyArray<CompositionEntryRef>;
   drop: ReadonlyArray<{ id: string; flag: "without" | "with" }>;
 };
 
@@ -290,7 +289,7 @@ export function missingTools(
  */
 export function dropFlags(
   composition: Composition<Entry | null>,
-  owners: ReadonlyArray<EntryRef>,
+  owners: ReadonlyArray<CompositionEntryRef>,
 ): MissingTool["drop"] {
   if (owners.some((owner) => owner.kind === "stack")) return [];
   const via = new Map(composition.selection.map((item) => [item.id, item.via]));

@@ -1,7 +1,6 @@
+import { AgentId, RunRecord } from "@stacks/format";
 import { Schema } from "effect";
 import { targetAgents } from "../src/core/compose/agents";
-import { AgentId } from "../src/schemas/entry";
-import { RunRecord } from "../src/schemas/verify";
 
 /** Required table fields are parsed explicitly; incomplete notes are reported, never inferred. */
 export function parseLedgerNote(markdown: string) {

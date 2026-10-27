@@ -1,5 +1,5 @@
+import type { AgentId, DetectedAgent, Harness } from "@stacks/format";
 import { BRIEF_PATH } from "../project-layout";
-import type { AgentId, DetectedAgent, Harness } from "../schemas/entry";
 import type { Audience } from "../services/output";
 import { shellArg } from "./shell";
 import { printable } from "./text";

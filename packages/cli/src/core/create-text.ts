@@ -1,4 +1,4 @@
-import type { Category, Kind } from "../schemas/entry";
+import type { Category, Kind } from "@stacks/format";
 
 /** Fixed entry-format-v1 scaffolding; rendered only after the id has been validated. */
 export function skeleton(kind: Kind, id: string, category: Category): string {

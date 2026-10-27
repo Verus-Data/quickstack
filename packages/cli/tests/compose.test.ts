@@ -6,7 +6,7 @@ import { afterEach, expect, test } from "vitest";
 import {
   type Composition,
   compose,
-  type EntryRef,
+  type CompositionEntryRef as EntryRef,
   missingTools,
 } from "../src/core/compose/compose";
 import { Registry } from "../src/core/registry/registry";

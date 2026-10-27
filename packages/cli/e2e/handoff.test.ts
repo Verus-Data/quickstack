@@ -2,8 +2,8 @@ import { expect, test } from "bun:test";
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { Manifest } from "@stacks/format";
 import { Schema } from "effect";
-import { Manifest } from "../src/schemas/manifest";
 
 import { binary, scratchPath } from "./package";
 

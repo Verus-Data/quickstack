@@ -1,6 +1,5 @@
+import { AgentId, RunRecord } from "@stacks/format";
 import { Schema } from "effect";
-import { AgentId } from "./entry";
-import { RunRecord } from "./verify";
 
 export const LedgerResult = Schema.Literals(["pass", "partial", "fail", "infra"]);
 

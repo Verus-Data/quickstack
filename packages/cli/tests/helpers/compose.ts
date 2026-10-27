@@ -1,12 +1,12 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { NodeServices } from "@effect/platform-node";
+import type { AgentId } from "@stacks/format";
 import { Effect } from "effect";
 import { AppConfig } from "../../src/config";
 import { targetAgents } from "../../src/core/compose/agents";
 import { type ComposeOptions, compose } from "../../src/core/compose/compose";
 import { Registry, type RegistryRoots } from "../../src/core/registry/registry";
-import type { AgentId } from "../../src/schemas/entry";
 import { tempDir } from "./cli";
 import { composeRegistry } from "./registry";
 

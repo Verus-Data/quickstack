@@ -1,0 +1,10 @@
+language js
+
+or {
+  JsModuleSource() as $src,
+  `import($src)`
+} where {
+  $filename <: r".*/src/.*\.ts$",
+  $src <: r"[\"'](?:node:[^\"']*|bun|bun:[^\"']*|@effect/platform-[^\"']*)[\"']",
+  register_diagnostic(span=$src, message="Format schemas must be portable; platform imports are forbidden.")
+}

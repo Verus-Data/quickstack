@@ -1,3 +1,4 @@
+import type { Category, FragmentMeta, Kind, StackMeta } from "@stacks/format";
 import { Effect } from "effect";
 import {
   BadInput,
@@ -6,8 +7,7 @@ import {
   NotFound,
   type PermissionDenied,
 } from "../../errors";
-import type { Category, FragmentMeta, StackMeta } from "../../schemas/entry";
-import { type Entry, isFragment, isRejected, isStack, type Kind } from "../registry/entry";
+import { type Entry, isFragment, isRejected, isStack } from "../registry/entry";
 import type { Registry } from "../registry/registry";
 import { closest } from "../suggest";
 import type { ComposeOptions, ComposeWarning, Via } from "./compose";

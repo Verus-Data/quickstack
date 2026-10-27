@@ -1,5 +1,5 @@
+import type { AgentId } from "@stacks/format";
 import { Result, Schema } from "effect";
-import type { AgentId } from "../../src/schemas/entry";
 
 export type AgentAdapter = {
   readonly id: AgentId;

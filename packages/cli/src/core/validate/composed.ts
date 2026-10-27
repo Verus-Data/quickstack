@@ -1,6 +1,6 @@
+import { AgentId } from "@stacks/format";
 import { Effect, Result } from "effect";
 import type { ComposeConflict, EntryInvalid } from "../../errors";
-import { AgentId } from "../../schemas/entry";
 import type { Finding } from "../../schemas/validate";
 import { targetAgents } from "../compose/agents";
 import { type ComposeOptions, type Composition, compose } from "../compose/compose";

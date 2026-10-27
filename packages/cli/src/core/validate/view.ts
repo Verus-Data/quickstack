@@ -1,10 +1,11 @@
+import type { Kind } from "@stacks/format";
 import type { Effect, FileSystem, Path } from "effect";
 import type { AppConfig } from "../../config";
 import type { PermissionDenied } from "../../errors";
 import type { Finding, SizeRow } from "../../schemas/validate";
 import type { Processes } from "../../services/processes";
 import type { ComposeOptions, Composition } from "../compose/compose";
-import { type Entry, type Kind, markdownFile, type RejectedEntry } from "../registry/entry";
+import { type Entry, markdownFile, type RejectedEntry } from "../registry/entry";
 import type { Registry } from "../registry/registry";
 import type { composedFiles } from "./composed";
 import type { EntrySources } from "./sources";

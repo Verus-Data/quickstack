@@ -1,5 +1,6 @@
 import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import type { ManifestStep } from "@stacks/format";
 import { Effect, Exit, Random } from "effect";
 import { afterEach, expect, test } from "vitest";
 import {
@@ -13,7 +14,6 @@ import {
   writeManifest,
 } from "../src/core/manifest";
 import { InvalidConfig, NotFound, PermissionDenied } from "../src/errors";
-import type { ManifestStep } from "../src/schemas/manifest";
 import { quiet, runCli, tempDir, terminal } from "./helpers/cli";
 import { composition, manifestOf, runWith, succeed } from "./helpers/state";
 

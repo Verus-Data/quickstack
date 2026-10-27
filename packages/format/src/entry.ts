@@ -1,28 +1,11 @@
 import { Effect, Schema } from "effect";
 
-/** The agents an entry can ship adapters for (`adapters/<AgentId>/`), and `--agents` names. */
-export const AgentId = Schema.Literals(["claude", "codex", "opencode", "cursor"]);
-export type AgentId = typeof AgentId.Type;
-
-/** Launch targets; see roadmap contracts, "Agent ids". Adapter ids stay unchanged. */
-export const Harness = Schema.Literals([...AgentId.literals, "copilot", "codex-app"]);
-export type Harness = typeof Harness.Type;
-/**
- * The agent the CLI runs under: a known `AgentId`, `"other"` for a generic agent marker that
- * names no known agent, or `"none"`. Declared here so every reader imports one schema.
- */
-export const DetectedAgent = Schema.Literals([...AgentId.literals, "other", "none"]);
-export type DetectedAgent = typeof DetectedAgent.Type;
-
-/** Where an entry was found; 3.2a adds "source" and 4.0d "index". */
-export const Origin = Schema.Literals(["project", "user", "bundled"]);
-export type Origin = typeof Origin.Type;
 export const Kind = Schema.Literals(["stack", "fragment"]);
 export type Kind = typeof Kind.Type;
 
 /** A string with at least one non-whitespace character. */
 const NonBlank = Schema.String.check(Schema.isPattern(/\S/, { expected: "a non-blank string" }));
-const Kebab = Schema.String.check(
+export const Kebab = Schema.String.check(
   Schema.isPattern(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, { expected: "a kebab-case id" }),
 );
 /** "500ms", "90s", "10m". */

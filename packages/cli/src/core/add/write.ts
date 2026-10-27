@@ -1,3 +1,4 @@
+import type { Manifest } from "@stacks/format";
 import { Effect, FileSystem, Path } from "effect";
 import { PermissionDenied } from "../../errors";
 import {
@@ -9,7 +10,6 @@ import {
   NOTES_PATH,
   STATE_DIR,
 } from "../../project-layout";
-import type { Manifest } from "../../schemas/manifest";
 import type { Brief } from "../brief/render";
 import { encodeManifest } from "../manifest";
 import {

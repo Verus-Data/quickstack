@@ -1,3 +1,4 @@
+import { APP_TAG, type FragmentMeta, type StackMeta } from "@stacks/format";
 import { Effect, Result } from "effect";
 import type {
   BadInput,
@@ -6,7 +7,6 @@ import type {
   NotFound,
   PermissionDenied,
 } from "../../errors";
-import { APP_TAG, type FragmentMeta, type StackMeta } from "../../schemas/entry";
 import type { Finding, SizeRow } from "../../schemas/validate";
 import { countWords } from "../brief/words";
 import { targetAgents } from "../compose/agents";

@@ -1,4 +1,5 @@
 import { it } from "@effect/vitest";
+import { AgentId, DetectedAgent, Harness } from "@stacks/format";
 import { Schema } from "effect";
 import { describe, expect, test } from "vitest";
 import {
@@ -8,7 +9,6 @@ import {
   LAUNCH_ARGS,
   renderHandoff,
 } from "../src/core/handoff";
-import { AgentId, DetectedAgent, Harness } from "../src/schemas/entry";
 
 const prompt = agentPrompt("stacks");
 const base: HandoffInput = {

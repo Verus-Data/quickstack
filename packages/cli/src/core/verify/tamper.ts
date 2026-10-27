@@ -1,8 +1,8 @@
+import type { Manifest, TamperCheck } from "@stacks/format";
 import { Clock, Effect, FileSystem, type Path } from "effect";
 import type { AppConfig } from "../../config";
 import { type InvalidConfig, PermissionDenied } from "../../errors";
-import type { Manifest } from "../../schemas/manifest";
-import type { TamperCheck, VerifyChange, VerifyResult } from "../../schemas/verify";
+import type { VerifyChange, VerifyResult } from "../../schemas/verify";
 import { digestSettings, digestStep, digestSteps, writeManifest } from "../manifest";
 import {
   type FoundState,

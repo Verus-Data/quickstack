@@ -1,5 +1,5 @@
+import { Kind } from "@stacks/format";
 import { Schema } from "effect";
-import { Kind } from "./entry";
 
 /** The entry written in the user registry, and its companion guide; both paths are absolute. */
 export const CreateResult = Schema.Struct({

@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "projectId": "format-fixture-1",
+  "createdAt": "2026-10-27T00:00:00.000Z",
+  "cli": "0.3.1",
+  "mode": "new",
+  "name": "demo",
+  "preset": "default",
+  "agents": ["codex"],
+  "stack": { "id": "demo", "origin": "bundled", "trusted": true },
+  "fragments": [],
+  "env": {},
+  "commands": {},
+  "verify": [
+    {
+      "name": "test",
+      "run": "npm test",
+      "phase": "check",
+      "tags": [],
+      "timeout": "10m",
+      "owner": "demo",
+      "skipByDefault": false
+    }
+  ],
+  "verifyDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+  "briefWords": 10
+}
