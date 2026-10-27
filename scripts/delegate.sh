@@ -21,7 +21,7 @@
 
 set -uo pipefail
 
-PREAMBLE="You are working in a git worktree for an orchestrator that reviews, refactors and commits your work, so leave your changes uncommitted and don't push. Work in this worktree, not the main checkout. Run the checks the contract names. End with: the files you changed, each check you ran with its result, and open questions."
+PREAMBLE="You are working in a git worktree for an orchestrator that reviews, refactors and commits your work, so leave your changes uncommitted and don't push. Work in this worktree, not the main checkout. Run the checks the contract names. End with the hand-off report the contract asks for; if it asks for none, end with the files you changed, each check you ran with its result, what the orchestrator should look closer at, and open questions."
 
 MODEL="${DELEGATE_MODEL:-gpt-6.1-sol}"
 EFFORT="${DELEGATE_EFFORT:-high}"

@@ -16,6 +16,16 @@ implements, if any.}
   `.claude/rules/cli/testing.md` and `.claude/skills/effect/SKILL.md`.
 - {The plan section, and the existing files whose patterns to follow.}
 
+## Skills to apply
+
+Read each and apply it to this task; your hand-off says where it changed what you did.
+
+- `{absolute path to ce:writing-tests SKILL.md}`: for every test you write. Where it and
+  `.claude/rules/cli/testing.md` differ, the rule wins.
+- `{absolute path to ce:architecting-systems SKILL.md}`, with its `references/structure.md`,
+  `coupling.md` and `boundaries.md`: before adding or changing a module, service, schema or
+  contract. `.claude/rules/architecture.md` adds this repo's constraints on top.
+
 ## Interface
 
 {Signatures, types, schema names, error tags, file paths. Cite contracts by the name in the
@@ -47,8 +57,18 @@ bun run check   # the full gate, before finishing a feature
 - disable a lint rule, weaken a test or add a cast to get green
 - add features, options or abstractions the goal doesn't need
 
-## Finish with
+## Hand-off
 
-1. The files you created or changed.
-2. Each check you ran and its result.
-3. Open questions and anything you were unsure of or left undone.
+You're done when the acceptance checks pass or you're blocked. Leave everything uncommitted and
+end with this report as your final message; the orchestrator reviews from it, so be specific
+and name files and symbols.
+
+1. Summary: what you built, in two or three sentences.
+2. Files: each file created or changed, with one line on why.
+3. Decisions: choices the contract left open and why you made them; any deviation from the
+   plan or contract and the reason; where the skills changed your approach.
+4. Checks: each command you ran and its result (test counts, not just "passed").
+5. Look closer at: the places most likely to be wrong, such as assumptions you couldn't verify,
+   edge cases you didn't cover, code you're least sure of, tests that are weaker than you'd
+   like, and anything in the plan that looked wrong.
+6. Open: what's left undone or blocked, and the questions you'd ask.

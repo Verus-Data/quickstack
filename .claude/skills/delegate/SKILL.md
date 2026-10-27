@@ -51,10 +51,15 @@ faster than you could write the contract, or when you can't yet say what done lo
    2-4 delegates at once, one worktree each. The digest (result, commands run, files written,
    last message) is the command's output; full logs stay under `$TMPDIR/quickstacks-delegate/`.
 
-4. Review. `success` only means the turn finished. Read `git -C <worktree> diff` and the new
-   files in full, check every changed path is in scope, and check each claim in the last
-   message against the code and a rerun of the tests it names. A diff that took the wrong shape
-   goes back as a narrower follow-up contract rather than a rewrite.
+4. Review. `success` only means the turn finished. Read the whole hand-off report
+   (`last-message.md` in the run's log directory), then `git -C <worktree> diff` and the new
+   files in full. Check every changed path is in scope, each claim against the code and a rerun
+   of the checks it names, and each "look closer at" item yourself. Then dispatch
+   `ce:code-reviewer` once on the worktree's diff, with the contract, the hand-off report and the
+   skills that apply in its prompt, and send its findings back to Codex as a follow-up contract
+   in the same worktree. That is the one review pass in `rules/agent-ops.md`; don't re-review
+   after the fixes. A diff that took the wrong shape also goes back as a narrower follow-up
+   contract rather than a rewrite.
 
 5. Refactor pass. Bring the code to the standard you would have written it to, with the Edit
    tool so the lint, typecheck and boundary hooks see every change (none of them ran for
@@ -66,9 +71,8 @@ faster than you could write the contract, or when you can't yet say what done lo
    touched outside the task gets reverted.
 
 6. Gate and commit. Run `bun run check` in the worktree, commit there with a Conventional
-   Commits message, and land it the way the task calls for. The one `ce:code-reviewer` pass in
-   `rules/agent-ops.md` still runs on the finished diff; your review and refactor are part of
-   producing it, not a second review. Remove the worktree and branch once landed.
+   Commits message, and land it the way the task calls for. Remove the worktree and branch once
+   landed. `/execute:codex <plan>` runs this loop over a whole plan.
 
 A session that is itself isolated in a worktree may not be able to run git in another one: copy
 the reviewed files (the digest lists them) into your own worktree and commit there.
