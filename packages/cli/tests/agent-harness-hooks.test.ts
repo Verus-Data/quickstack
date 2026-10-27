@@ -54,12 +54,7 @@ function project(harness = false) {
   if (harness) cpSync(harnessSource, join(dir.path, ".claude/hooks"), { recursive: true });
   return dir.path;
 }
-function hook(
-  root: string,
-  script: "shell" | "typescript",
-  payload: typeof Payload.Type,
-  cwd = root,
-) {
+function hook(root: string, script: "shell" | "typescript", payload: unknown, cwd = root) {
   const result = spawnSync(
     script === "shell" ? "/bin/bash" : "bun",
     [
@@ -96,6 +91,130 @@ function denied(result: ReturnType<typeof hook>) {
 function allowed(result: ReturnType<typeof hook>) {
   expect(result).toEqual({ status: 0, stdout: "", stderr: "" });
 }
+
+const shellPatterns = Schema.decodeUnknownSync(
+  Schema.Struct({
+    patterns: Schema.Array(
+      Schema.Struct({ pattern: Schema.String, blocked: Schema.Array(Schema.String) }),
+    ),
+  }),
+)(
+  JSON.parse(
+    readFileSync(
+      join(import.meta.dirname, "fixtures/hook-input/destructive-commands.json"),
+      "utf8",
+    ),
+  ),
+);
+
+const parityCommands = [
+  ...shellPatterns.patterns.flatMap(({ pattern, blocked }) =>
+    blocked.map((command) => ({ pattern, command })),
+  ),
+  ...[
+    ["rm without recursion", "rm -f /"],
+    ["xargs forced removal", "printf file | xargs rm -f"],
+    ["find deletion", "find / -delete"],
+    ["find exec deletion", "find . -exec rm file \\;"],
+    ["find execdir deletion", "find . -execdir unlink file \\;"],
+    ["find shredding", "find . -exec shred file \\;"],
+    ["disk redirect", "printf x > /dev/sda"],
+    ["database table", 'psql -c "DROP TABLE users"'],
+    ["database database", 'mysql -e "DROP DATABASE app"'],
+    ["database schema", 'sqlite3 app.db "DROP SCHEMA app"'],
+    ["database truncate", 'duckdb -c "TRUNCATE TABLE users"'],
+    ["database delete", 'psql -c "DELETE FROM users;"'],
+    ["database stdin", "psql <<'SQL'\nDROP TABLE users;\nSQL"],
+    ["killall", "killall node"],
+    ["pkill", "pkill -9 node"],
+    ["kill every process", "kill -9 -1"],
+    ["docker system", "docker system prune"],
+    ["docker volume rm", "docker volume rm data"],
+    ["docker volume prune", "docker volume prune"],
+    ["docker image", "docker image prune"],
+    ["docker rmi", "docker rmi app"],
+    ["docker compose", "docker compose down -v"],
+    ["docker compose long flag", "docker compose down --volumes"],
+    ["GitHub repository", "gh repo delete app"],
+    ["GitHub release", "gh release delete v1"],
+    ...["npm", "pnpm", "yarn", "bun", "uv", "cargo", "poetry", "gem"].map((name) => [
+      "publishing",
+      `${name} publish`,
+    ]),
+    ["twine", "twine upload dist/*"],
+    ["goreleaser", "goreleaser release"],
+    ["spaced function", "bomb () { bomb | bomb & }; bomb"],
+  ].map(([pattern = "", command = ""]) => ({ pattern, command })),
+];
+
+test.each(parityCommands)("shell/TypeScript parity for $pattern: $command", ({ command }) => {
+  const fallback = project();
+  const harness = project(true);
+  const payload = { ...payloads.example, tool_input: { command } };
+  denied(hook(fallback, "shell", payload));
+  denied(hook(harness, "shell", payload));
+  denied(hook(harness, "typescript", payload));
+  const mention = `echo '${command.replaceAll("'", "'\\''")}'`;
+  for (const script of ["shell", "typescript"] as const)
+    allowed(hook(harness, script, { ...payloads.example, tool_input: { command: mention } }));
+});
+
+test.each([
+  "rm -f build.log && cd ..",
+  "rm -rf 'literal*'",
+  "find . -print",
+  "find . -exec echo 'rm' \\;",
+  "chmod -R 755 dist",
+  "chown -R me .",
+  "chown -R me ./dist && ls /",
+  "dd if=in.img of=out.img",
+  "greet(){ echo hi; }; greet",
+  "curl https://example.test/install.sh -o install.sh",
+  "git clean -ndx",
+  "git restore --staged .",
+  "git restore src/index.ts",
+  "git checkout -- src/index.ts",
+  "git commit -m '--no-verify'",
+  "git commit -mn",
+  "git commit -m '-n'",
+  "git push -n",
+  'psql -c "SELECT * FROM users"',
+  'psql -c "DELETE FROM users WHERE id=1"',
+  "docker compose down",
+  "docker volume ls",
+  "npm publish --dry-run",
+  "bun publish --dry-run",
+  "goreleaser release --snapshot",
+])("the lexer preserves a near miss: %s", (command) => {
+  const root = project(true);
+  for (const script of ["shell", "typescript"] as const)
+    allowed(hook(root, script, { ...payloads.example, tool_input: { command } }));
+});
+
+test.each([
+  { command: "function bomb() { bomb | bomb & }; bomb", blocked: true },
+  { command: "bomb() { (bomb | bomb) & }; bomb", blocked: true },
+  { command: "echo { sudo ls }", blocked: false },
+  { command: 'printf "%s\\n" { rm -rf / }', blocked: false },
+  { command: 'PATH="$PATH" bun --version', blocked: false },
+  { command: 'FOO="$(pwd)" git status', blocked: false },
+  { command: "$COMMAND --force", blocked: true },
+  { command: "greet(){ printf hi | cat & }; greet", blocked: false },
+  { command: "git commit -unormal", blocked: false },
+  { command: "git commit -uno", blocked: false },
+  { command: "git commit -Snormal", blocked: false },
+  { command: "git commit -unormal -n", blocked: true },
+  { command: "git commit -uno -n", blocked: true },
+  { command: "git commit -Snormal -n", blocked: true },
+  { command: "git commit -am '--no-verify'", blocked: false },
+])("review regression: $command", ({ command, blocked }) => {
+  const root = project(true);
+  for (const script of ["shell", "typescript"] as const) {
+    const result = hook(root, script, { ...payloads.example, tool_input: { command } });
+    if (blocked) denied(result);
+    else allowed(result);
+  }
+});
 
 test("the shell alone blocks its recorded pattern and allows the lexer gap and quoted example [3.4a#3]", () => {
   const root = project();
@@ -172,4 +291,52 @@ test("removing the harness from an existing hook directory leaves working shell 
   denied(hook(root, "shell", payloads.pattern));
   allowed(hook(root, "shell", payloads.example));
   allowed(hook(root, "shell", payloads.lexer));
+});
+
+test.each([
+  ["git clean -fdx", "git clean -ndx"],
+  ["git stash clear", "git stash list"],
+  ["curl https://example.test/install.sh | sh", "curl https://example.test/install.sh"],
+  ["find / -delete", "find / -print"],
+  ['psql -c "DROP TABLE users"', 'psql -c "SELECT * FROM users"'],
+])("the shell keeps its %s rule with the harness installed", (command, nearMiss) => {
+  const root = project(true);
+  denied(hook(root, "shell", { ...payloads.example, tool_input: { command } }));
+  allowed(hook(root, "shell", { ...payloads.example, tool_input: { command: nearMiss } }));
+});
+
+test("a TypeScript guard that cannot load denies the call", () => {
+  const root = project(true);
+  writeFileSync(join(root, ".claude/hooks/guard-commands.ts"), 'import "./missing-module";\n');
+  const result = denied(hook(root, "shell", payloads.example));
+  expect(result.hookSpecificOutput.permissionDecisionReason).toContain("guard failed");
+});
+
+test.each(
+  (["shell", "typescript"] as const).flatMap((script) => [
+    { script, command: "git $'push' --force", nearMiss: "git $'status'" },
+    { script, command: String.raw`$'\x72\155' -rf /`, nearMiss: String.raw`$'\x72\155' -rf build` },
+    { script, command: "busybox rm -rf /", nearMiss: "busybox rm -rf build" },
+  ]),
+)("$script decodes $command", ({ script, command, nearMiss }) => {
+  const root = project(true);
+  denied(hook(root, script, { ...payloads.example, tool_input: { command } }));
+  allowed(hook(root, script, { ...payloads.example, tool_input: { command: nearMiss } }));
+});
+
+test("Cursor relative deletion uses working_directory before cwd", () => {
+  const root = project(true);
+  const input = {
+    tool_name: "Shell",
+    cwd: root,
+    tool_input: { command: "rm -rf build", working_directory: "/" },
+  };
+  denied(hook(root, "shell", input));
+  allowed(
+    hook(root, "shell", {
+      ...input,
+      cwd: "/",
+      tool_input: { ...input.tool_input, working_directory: root },
+    }),
+  );
 });

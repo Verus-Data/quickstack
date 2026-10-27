@@ -22,7 +22,7 @@ Project instructions live in `AGENTS.md` at the repo root, which every coding ag
 | `_lib.sh` | (sourced) | Shared helpers: the payload reader, the deny and context responses, project root, `find_up`, a portable `with_timeout`, the per-session file list. |
 | <!-- quickstacks:fill One row per other file in hooks/ (harness, stack, and app hooks such as TypeScript guards): name, event and matcher from settings.json, what it does. Delete this row if there are none. --> | | |
 
-When `claude-harness` is installed, `block-destructive.sh` delegates to its `guard-commands.ts` through Bun. Keep only the shell guard wired; removing the TypeScript guard or Bun restores the shell pattern checks. The table above describes the shell fallback. The TypeScript guard instead uses a lexer to check recursive deletion outside the project, dirty hard resets, history rewrites and raw disk writes, plus package-manager rules; see `docs/harness.md`.
+When `claude-harness` and Bun are installed, `block-destructive.sh` passes its saved payload to `guard-commands.ts`. The TypeScript guard covers the command families in the table using lexed words, so quoted examples and heredoc text stay allowed, and checks Git status before denying a hard reset. It also checks recursive deletion outside the project, history rewrites and package-manager rules; see `docs/harness.md`. Keep only the shell guard wired. A TypeScript guard that fails to run denies the call; without the TypeScript guard or Bun, the raw shell patterns remain the fallback.
 
 How they behave:
 

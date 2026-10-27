@@ -17,20 +17,22 @@ source "$hook_dir/_lib.sh"
 # shellcheck source=_destructive-patterns.sh
 source "$hook_dir/_destructive-patterns.sh"
 
-# Resolve from the hook, including through symlinked project paths and unrelated working dirs.
+input=$(cat)
+# Prefer lexed commands, resolving from the hook even when the tool runs elsewhere.
 if [ -f "$hook_dir/guard-commands.ts" ] && command -v bun >/dev/null 2>&1; then
   export CLAUDE_PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(cd "$hook_dir/../.." && pwd -P)}"
-  exec bun "$hook_dir/guard-commands.ts"
+  if output=$(printf '%s' "$input" | bun "$hook_dir/guard-commands.ts" 2>/dev/null); then
+    [ -z "$output" ] || printf '%s\n' "$output"
+  else
+    hook_deny "BLOCKED: The command guard failed to run. Ask the user first. Never work around this block."
+  fi
+  exit 0
 fi
 
-input=$(cat)
 command=$(hook_get "$input" tool_input.command) || exit 0
 [ -z "$command" ] && exit 0
-
 found=$(is_destructive "$command") || exit 0
-
 reason=${found%%$'\t'*}
 suggestion=${found#*$'\t'}
-
 hook_deny "BLOCKED: $reason"$'\n\n'"$suggestion"$'\n'"Never work around this block."
 exit 0
