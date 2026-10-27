@@ -1,8 +1,8 @@
 import { homedir } from "node:os";
+import { AgentId, type DetectedAgent } from "@stacks/format";
 import { Config, ConfigProvider, Context, Effect, FileSystem, Layer, Path, Schema } from "effect";
 import { InvalidConfig } from "./errors";
 import { Settings } from "./schemas";
-import { AgentId, type DetectedAgent } from "./schemas/entry";
 import { SLUG } from "./version";
 export type Environment = Record<string, string | undefined>;
 export type Paths = {

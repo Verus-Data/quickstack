@@ -36,7 +36,8 @@
     "vitest": "catalog:",
     "effect": "catalog:",
     "smol-toml": "catalog:",
-    "yaml": "catalog:"
+    "yaml": "catalog:",
+    "@stacks/format": "workspace:*"
   },
   "description": "Compose project guidance and verify agent-built projects.",
   "bin": {

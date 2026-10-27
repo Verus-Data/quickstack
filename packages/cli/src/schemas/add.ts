@@ -1,7 +1,7 @@
+import { TamperCheck } from "@stacks/format";
 import { Schema } from "effect";
 import { BRIEF_PATH } from "../project-layout";
 import { NewResult } from "./new";
-import { TamperCheck } from "./verify";
 
 /** The files and manifest changes made by `add`, and the agent's next task. */
 export const AddResult = Schema.Struct({

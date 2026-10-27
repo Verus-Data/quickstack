@@ -10,9 +10,9 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
+import type { AgentId } from "@stacks/format";
 import { Schema } from "effect";
 import { expect } from "vitest";
-import type { AgentId } from "../../src/schemas/entry";
 import { NewResult } from "../../src/schemas/new";
 import { quiet, runCli, tempDir } from "./cli";
 

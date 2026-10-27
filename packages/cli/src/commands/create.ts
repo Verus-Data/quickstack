@@ -1,10 +1,11 @@
+import { Category, type Kind } from "@stacks/format";
 import { Effect, Option, Schema } from "effect";
 import { Argument, Command, Flag } from "effect/cli";
 import { createEntry } from "../core/create";
 import { shownPath } from "../core/shown-path";
 import { printable } from "../core/text";
 import { CreateResult } from "../schemas/create";
-import { Category, type Kind, Origin } from "../schemas/entry";
+import { Origin } from "../schemas/origin";
 import { Host } from "../services/host";
 import { Output } from "../services/output";
 

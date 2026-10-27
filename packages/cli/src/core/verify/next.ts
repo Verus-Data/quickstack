@@ -1,5 +1,6 @@
+import type { FailureKind, Outcome } from "@stacks/format";
 import { BRIEF_PATH } from "../../project-layout";
-import type { FailureKind, Outcome, VerifyResult } from "../../schemas/verify";
+import type { VerifyResult } from "../../schemas/verify";
 
 /**
  * The fixed next action after a non-green verify run, worded as the brief's rules word it. `kinds`

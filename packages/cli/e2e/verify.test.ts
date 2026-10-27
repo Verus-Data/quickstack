@@ -3,10 +3,11 @@ import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import type { Manifest } from "@stacks/format";
+import { RunRecord } from "@stacks/format";
 import { Schema } from "effect";
 import { digestSteps, encodeManifest, MANIFEST_PATH } from "../src/core/manifest";
-import type { Manifest } from "../src/schemas/manifest";
-import { RunRecord, VerifyResult } from "../src/schemas/verify";
+import { VerifyResult } from "../src/schemas/verify";
 
 import { binary, node, npmCli, scratchPath, tarball } from "./package";
 

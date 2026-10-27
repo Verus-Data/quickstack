@@ -1,8 +1,9 @@
+import type { Category, Kind } from "@stacks/format";
 import { Effect, FileSystem, Option, Path, Schema, Terminal } from "effect";
 import { AppConfig } from "../config";
 import { BadInput, Interrupted, NotFound, PermissionDenied } from "../errors";
 import type { CreateResult } from "../schemas/create";
-import type { Category, Kind, Origin } from "../schemas/entry";
+import type { Origin } from "../schemas/origin";
 import { Host } from "../services/host";
 import { Output } from "../services/output";
 import { skeleton, starterFiles, trustQuestion } from "./create-text";

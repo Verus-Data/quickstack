@@ -1,7 +1,7 @@
+import type { ManifestStep } from "@stacks/format";
+import { type Phase, type ResolvedStep, withStepDefaults } from "@stacks/format";
 import { Effect } from "effect";
 import { BadInput } from "../../errors";
-import { type Phase, type ResolvedStep, withStepDefaults } from "../../schemas/entry";
-import type { ManifestStep } from "../../schemas/manifest";
 
 export const PHASES: ReadonlyArray<Phase> = ["setup", "check", "serve", "teardown"];
 

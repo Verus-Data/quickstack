@@ -1,7 +1,7 @@
+import { type Manifest, ProjectId } from "@stacks/format";
 import { Effect, Exit, FileSystem, Path, type PlatformError, Random, Schema } from "effect";
 import { AppConfig } from "../config";
 import { InvalidConfig, PermissionDenied } from "../errors";
-import { type Manifest, ProjectId } from "../schemas/manifest";
 import { digestSettings, digestStep } from "./manifest";
 import { printable } from "./text";
 

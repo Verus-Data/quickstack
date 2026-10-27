@@ -1,7 +1,7 @@
+import { RunRecord } from "@stacks/format";
 import { Duration, Effect, FileSystem, Path, Schema } from "effect";
 import { countAsked } from "../../src/core/runs";
 import { ProjectRuns } from "../../src/schemas/runs";
-import { RunRecord } from "../../src/schemas/verify";
 import { type Captured, Processes } from "../../src/services/processes";
 import type { Prepared } from "./prepare";
 import type { AgentRun } from "./run";

@@ -1,5 +1,5 @@
+import type { AgentId } from "@stacks/format";
 import type { Settings } from "../../schemas/config";
-import type { AgentId } from "../../schemas/entry";
 
 /**
  * The agents a composition ships adapters for: `new --agents` when given, else `Settings.agents`

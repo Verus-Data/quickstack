@@ -1,3 +1,4 @@
+import type { Kind } from "@stacks/format";
 import { Context, Effect, FileSystem, Layer, Path, type PlatformError } from "effect";
 import { AppConfig } from "../../config";
 import { EntryInvalid, NotFound, PermissionDenied } from "../../errors";
@@ -8,7 +9,6 @@ import {
   decodeEntry,
   type Entry,
   type EntryFile,
-  type Kind,
   markdownFile,
   type Origin,
   type RejectedEntry,

@@ -1,3 +1,4 @@
+import type { DetectedAgent } from "@stacks/format";
 import { Context, Effect, Layer } from "effect";
 import { AppConfig } from "../config";
 import {
@@ -9,7 +10,6 @@ import {
   PermissionDenied,
   retryable,
 } from "../errors";
-import type { DetectedAgent } from "../schemas/entry";
 import { Host } from "./host";
 /**
  * Who reads this invocation's output. `json`: `--json` was given. `human`: stdout is a terminal

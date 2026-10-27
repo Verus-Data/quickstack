@@ -1,8 +1,9 @@
+import { FragmentMeta, type Kind, StackMeta } from "@stacks/format";
 import { Effect, Result, Schema, SchemaIssue } from "effect";
 import { parseDocument } from "yaml";
-import { FragmentMeta, type Kind, type Origin, StackMeta } from "../../schemas/entry";
+import type { Origin } from "../../schemas/origin";
 
-export type { Kind, Origin } from "../../schemas/entry";
+export type { Origin } from "../../schemas/origin";
 
 export type Entry = {
   id: string;

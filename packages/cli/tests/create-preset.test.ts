@@ -1,11 +1,11 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { Manifest } from "@stacks/format";
 import { Schema } from "effect";
 import { afterEach, expect, test } from "vitest";
 import * as T from "../src/core/brief/text";
 import { Settings } from "../src/schemas/config";
 import { DoctorReport } from "../src/schemas/doctor";
-import { Manifest } from "../src/schemas/manifest";
 import { NewResult } from "../src/schemas/new";
 import { BriefPreview } from "../src/schemas/validate";
 import {

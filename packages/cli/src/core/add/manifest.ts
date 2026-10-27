@@ -1,5 +1,4 @@
-import type { DetectedAgent } from "../../schemas/entry";
-import type { Manifest } from "../../schemas/manifest";
+import type { DetectedAgent, Manifest } from "@stacks/format";
 import { digestSteps } from "../manifest";
 
 /** Merge checked fragment contributions; the project's accepted step form stays authoritative. */

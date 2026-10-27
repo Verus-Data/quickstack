@@ -12,12 +12,12 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, isAbsolute, join, relative } from "node:path";
+import { Manifest } from "@stacks/format";
 import { Schema } from "effect";
 import { afterAll, test as baseTest, describe, expect, vi } from "vitest";
 import type { AgentAdapter } from "../scripts/bench/agents";
 import { AgentMarkers } from "../src/config";
 import { shellArg } from "../src/core/shell";
-import { Manifest } from "../src/schemas/manifest";
 import { NewResult } from "../src/schemas/new";
 import { ProjectRuns } from "../src/schemas/runs";
 import { projectFiles } from "./fixtures/composed-files";

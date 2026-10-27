@@ -1,5 +1,6 @@
+import type { FailureKind } from "@stacks/format";
 import { changeLines } from "../../errors";
-import type { FailureKind, StepResult, VerifyResult } from "../../schemas/verify";
+import type { StepResult, VerifyResult } from "../../schemas/verify";
 import type { Audience } from "../../services/output";
 import { printable } from "../text";
 import { nextLine } from "./next";

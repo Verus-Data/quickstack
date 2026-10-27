@@ -10,9 +10,9 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
+import { Manifest } from "@stacks/format";
 import { Schema } from "effect";
 import { afterEach, describe, expect, test } from "vitest";
-import { Manifest } from "../src/schemas/manifest";
 import { NewResult } from "../src/schemas/new";
 import { fakeAgent } from "./helpers/agents";
 import { quiet, runCli, tempDir } from "./helpers/cli";

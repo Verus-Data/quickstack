@@ -1,7 +1,7 @@
+import type { Kind } from "@stacks/format";
 import { Effect, Result } from "effect";
 import { AppConfig } from "../config";
 import { BadInput, NotFound } from "../errors";
-import type { Kind } from "../schemas/entry";
 import type { LedgerRecord } from "../schemas/ledger";
 import type { ShowReport } from "../schemas/show";
 import { Output } from "../services/output";

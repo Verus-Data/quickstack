@@ -1,3 +1,4 @@
+import type { AgentId } from "@stacks/format";
 import { Effect, Exit, FileSystem, Option, Path } from "effect";
 import { AppConfig } from "../../config";
 import { BadInput, ComposeConflict } from "../../errors";
@@ -10,7 +11,6 @@ import {
   projectFiles,
   STATE_DIR,
 } from "../../project-layout";
-import type { AgentId } from "../../schemas/entry";
 import type { NewResult } from "../../schemas/new";
 import { Host } from "../../services/host";
 import { type GitState, renderBrief } from "../brief/render";

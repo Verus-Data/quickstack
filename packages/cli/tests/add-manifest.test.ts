@@ -1,7 +1,7 @@
+import type { DetectedAgent } from "@stacks/format";
 import { expect, test } from "vitest";
 import { mergeAddManifest } from "../src/core/add/manifest";
 import { digestSteps } from "../src/core/manifest";
-import type { DetectedAgent } from "../src/schemas/entry";
 import { manifest } from "./helpers/verify";
 
 const incoming = () =>

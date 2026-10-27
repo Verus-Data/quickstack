@@ -3,8 +3,8 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSyn
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { Manifest } from "@stacks/format";
 import { Schema } from "effect";
-import { Manifest } from "../src/schemas/manifest";
 import { NewResult } from "../src/schemas/new";
 import { VerifyEvent, VerifyResult } from "../src/schemas/verify";
 

@@ -1,3 +1,4 @@
+import { AgentId, Harness } from "@stacks/format";
 import { Cause, Clock, Console, Effect, Exit, Logger, Random, References } from "effect";
 import { CliError, Command } from "effect/cli";
 import { cli } from "./cli";
@@ -15,7 +16,6 @@ import {
   Usage,
 } from "./errors";
 import { defectTrace, entry, Logging } from "./logging";
-import { AgentId, Harness } from "./schemas/entry";
 import { Host } from "./services/host";
 import { Invocation } from "./services/invocation";
 import { Output } from "./services/output";

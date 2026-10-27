@@ -1,7 +1,7 @@
+import type { AgentId } from "@stacks/format";
 import { Effect, Result } from "effect";
 import { EntryInvalid } from "../../errors";
 import { METADATA_DIR } from "../../project-layout";
-import type { AgentId } from "../../schemas/entry";
 import { type Entry, type EntryFile, entryRef, outputPath } from "../registry/entry";
 import type { Registry } from "../registry/registry";
 import type { PlannedFile } from "./compose";

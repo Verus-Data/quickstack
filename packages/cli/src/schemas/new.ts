@@ -1,6 +1,7 @@
+import { AgentId, Harness, Kind } from "@stacks/format";
 import { Schema } from "effect";
 import { BRIEF_PATH } from "../project-layout";
-import { AgentId, Harness, Kind, Origin } from "./entry";
+import { Origin } from "./origin";
 
 const EntryRef = Schema.Struct({ kind: Kind, id: Schema.String });
 

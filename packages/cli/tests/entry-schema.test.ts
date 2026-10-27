@@ -1,9 +1,9 @@
 import { it } from "@effect/vitest";
+import { FragmentMeta, StackMeta } from "@stacks/format";
 import { Effect, Schema } from "effect";
 import { expect, test } from "vitest";
 import { parse, stringify } from "yaml";
 import { decodeEntry, splitFrontmatter } from "../src/core/registry/entry";
-import { FragmentMeta, StackMeta } from "../src/schemas";
 
 test("an unknown YAML tag is a decode problem, and nothing is printed", async () => {
   const writes: unknown[] = [];

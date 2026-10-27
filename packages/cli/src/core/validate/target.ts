@@ -1,7 +1,8 @@
+import type { Kind } from "@stacks/format";
 import { Effect, FileSystem, Path } from "effect";
 import { NotFound } from "../../errors";
 import { Host } from "../../services/host";
-import { type Kind, markdownFile } from "../registry/entry";
+import { markdownFile } from "../registry/entry";
 import { bundledRoot } from "../registry/registry";
 
 /**

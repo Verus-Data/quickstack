@@ -2,7 +2,7 @@
 
 ## Overview
 
-A bun workspace; every package is in `packages/<name>/`. `packages/cli` is `stacks`, the CLI: Effect 4 commands/services, doctor/version, lazy configuration, safe output and logs. Bun bundles the Node ESM package; Node 24 runs Vitest. There is no product code, vendor or release tooling, and no network requirement except `update`'s one request to the npm registry. `packages/mcp` (`@stacks/mcp`) is a placeholder with no code or scripts. The hosted API lives in a separate private repository, `stacks-api` (plans README, D35); its plans stay in `plans/`. Code two packages share goes in its own package, never imported across another package's `src/`. How the monorepo works and how to add a package: README.md, "Monorepo".
+A bun workspace; every package is in `packages/<name>/`. `packages/cli` is `stacks`, the CLI: Effect 4 commands/services, doctor/version, lazy configuration, safe output and logs. Bun bundles the Node ESM package; Node 24 runs Vitest. `packages/format` (`@stacks/format`) owns the portable entry, manifest, run-record and canonical bundle contracts. There is no vendor or release tooling, and no network requirement except `update`'s one request to the npm registry. `packages/mcp` (`@stacks/mcp`) is a placeholder with no code or scripts. The hosted API lives in a separate private repository, `stacks-api` (plans README, D35); its plans stay in `plans/`. Code two packages share goes in its own package, never imported across another package's `src/`. How the monorepo works and how to add a package: README.md, "Monorepo".
 
 The root owns the harness: `.claude/`, lefthook, CI, the root `biome.json`, `tsconfig.base.json`, and the root test suite in `tests/`: the hook tests in `tests/hooks/`, the delegate runner's in `tests/scripts/` and the check in `tests/acceptance/` that traces each plan's acceptance tests to tagged CLI tests. Each package owns its source, tests, `tsconfig.json` (extending `../../tsconfig.base.json`) and any Biome plugins in a nested `biome.json` (`"root": false, "extends": "//"`). See docs/harness.md.
 
@@ -11,6 +11,7 @@ The root owns the harness: `.claude/`, lefthook, CI, the root `biome.json`, `tsc
 | Path | What it holds |
 | --- | --- |
 | `packages/cli/` | The CLI: `src/` (see "Architecture map"), `tests/` (Vitest on Node), `e2e/` (Bun tests, installed Node package), `registry/` (the bundled stacks, fragments and `runs.json` ledger), `skill/` (the agent skill), `docs/` (user docs: quick start, concepts, agents, architecture, the reference pages under `docs/reference/`, maintaining, and `authoring.md`, the one doc the package ships), `scripts/` (build, bench, ledger import), `biome-plugins/` (Grit boundary rules) |
+| `packages/format/` | Portable schemas and canonical bundles: `src/` (public `index.ts`), `tests/` (Vitest on Node), `scripts/pack.ts` (published metadata and tarball), `biome-plugins/` (no platform imports). Workspace exports resolve source; build emits `dist/` JavaScript and declarations for publishing |
 | `packages/mcp/` | Placeholder |
 | `plans/` | `HANDOFF.md` (start here), `README.md` (conventions, decisions log), `roadmap.md` (phases, shared contracts table, error tags), `phases/` (one file per sub-phase), `runs/` (reviewed bench notes), `requirements.md`, `risks-and-open-questions.md` |
 | `product/` | Problem statement, pitch, demo outline |
@@ -122,7 +123,8 @@ Paths below are relative to `packages/cli/`.
 - `src/config.ts`: lazy per-invocation AppConfig; independent paths/log settings; agent detection (`AgentMarkers`, `AppConfig.agent`, `AGENT_MARKER_NAMES` for `childEnv`'s strip list).
 - `src/errors.ts`, `logging.ts`, `runtime.ts`, `version.ts`: stable boundaries.
 - `src/schemas/add.ts::AddResult` records new files, skips, parked merges, retained commands, warnings, name provenance, tamper/state/digest status and handoff.
-- `src/schemas/`: config/report schemas and their types; `entry.ts` is entry format v1 (`StackMeta`, `FragmentMeta`, `VerifyStep`, `AgentId`, `DetectedAgent`, `withStepDefaults`), `list.ts` the `list --json` result, `new.ts` the `new --json` result (`NewResult`), `guide.ts` the guide's `--json` result (`GuideResult`), `manifest.ts` the project manifest (`Manifest`, `ManifestStep`, `EntryRef`; optional `name`, written by `new` and `add`, with inference for older manifests) and `verify.ts` the `verify --json` result (`VerifyResult`, `StepResult`, `FailureKind`, `VerifyChange`, `TamperCheck`) and the run record (`RunRecord`, `RunStep`).
+- `src/schemas/`: CLI config/report schemas and their types; `origin.ts` owns the registry's `Origin`, `list.ts` the `list --json` result, `new.ts` the `new --json` result (`NewResult`), `guide.ts` the guide's `--json` result (`GuideResult`) and `verify.ts` the `verify --json` result and live events (`VerifyResult`, `StepResult`, `VerifyChange`, `VerifyEvent`). Shared contracts are imported directly from `@stacks/format`, with no CLI re-exports.
+- `packages/format/src/` (from the repo root): `agent.ts` owns `AgentId`, `DetectedAgent` and `Harness`; `entry.ts` owns entry format v1 (`StackMeta`, `FragmentMeta`, `VerifyStep`, `withStepDefaults`); `manifest.ts` owns `Manifest`, `ManifestStep`, `EntryRef` and `ProjectId` (including optional `Manifest.name`, written by `new` and `add`, inferred for older manifests); `run-record.ts` owns `RunRecord`, `RunStep`, `Outcome`, `FailureKind` and `TamperCheck`. `bundle.ts` owns `BundlePath`, `EntryBundle`, `canonicalBundle` and `bundleDigest` (Web Crypto SHA-256). `index.ts` is the public package boundary. Composition, fingerprinting and registry I/O stay in the CLI.
 - `tests/`, `e2e/`: Node programs/hook tests and Bun tests of the installed Node package.
 - `scripts/`, `biome-plugins/`: lifecycle/build and enforced boundaries.
 - Repo root: `.claude/`, `.github/`, `docs/`, `tests/hooks/`, `tests/acceptance/`: adapter, CI, harness guide, hook tests and the acceptance trace.
@@ -148,7 +150,7 @@ Lint catches size; these are the placement mistakes it can't, each found in revi
 
 ## Schemas
 
-`src/schemas/` contains Settings, DoctorReport, the entry frontmatter schemas and ListResult, each sharing its schema/type name. Decode unknown input at boundaries; encode reports for output. Config rejects excess properties. Use branded ids when adding domain ids, Schema.TaggedError for errors, and Schema.toJsonSchemaDocument with onExcessProperty:error for closed external JSON schemas. Keep framework validators; do not add @effect/schema or competing validators.
+The CLI's `src/schemas/` contains Settings, DoctorReport and ListResult; `packages/format/src/entry.ts` owns entry frontmatter schemas. Schemas share their type name. Decode unknown input at boundaries; encode reports for output. Config rejects excess properties. Use branded ids when adding domain ids, Schema.TaggedError for errors, and Schema.toJsonSchemaDocument with onExcessProperty:error for closed external JSON schemas. Keep framework validators; do not add @effect/schema or competing validators.
 
 ## Testing
 

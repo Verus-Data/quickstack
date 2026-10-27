@@ -1,6 +1,6 @@
+import type { Manifest } from "@stacks/format";
 import type { LedgerRecord } from "../schemas/ledger";
 import type { ListResult, ListRow } from "../schemas/list";
-import type { Manifest } from "../schemas/manifest";
 import { fitsStack } from "./compose/selection";
 import { lastRun } from "./ledger";
 import { type Entry, isRejected, type RejectedEntry } from "./registry/entry";

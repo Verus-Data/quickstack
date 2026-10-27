@@ -7,10 +7,10 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
+import { Manifest } from "@stacks/format";
 import { Schema } from "effect";
 import { afterEach, describe, expect, test } from "vitest";
 import { MANIFEST_PATH } from "../src/core/manifest";
-import { Manifest } from "../src/schemas/manifest";
 import { NewResult } from "../src/schemas/new";
 import type { HostInfo } from "../src/services/host";
 import { fakeAgent } from "./helpers/agents";

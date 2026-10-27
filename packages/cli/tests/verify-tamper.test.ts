@@ -8,13 +8,13 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
+import type { Manifest } from "@stacks/format";
 import { Deferred, Effect, Fiber, FileSystem, Schema } from "effect";
 import { afterEach, describe, expect, test } from "vitest";
 import { AgentMarkers } from "../src/config";
 import { digestStep, digestSteps, MANIFEST_PATH, readManifest } from "../src/core/manifest";
 import { ProjectState, projectStateFor } from "../src/core/project-state";
 import { acceptChanges, checkTamper } from "../src/core/verify/tamper";
-import type { Manifest } from "../src/schemas/manifest";
 import { runWith, succeed } from "./helpers/state";
 import {
   decodeResult,

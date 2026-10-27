@@ -16,13 +16,14 @@
       "name": "@steamfield/stacks",
       "version": "0.3.1",
       "bin": {
-        "stacks": "dist/stacks.mjs",
+        "stacks": "dist/stacks",
       },
       "devDependencies": {
         "@biomejs/biome": "catalog:",
         "@effect/platform-bun": "catalog:",
         "@effect/platform-node": "catalog:",
         "@effect/vitest": "catalog:",
+        "@stacks/format": "workspace:*",
         "@types/bun": "catalog:",
         "@types/node": "catalog:",
         "@vitest/coverage-v8": "catalog:",
@@ -31,6 +32,22 @@
         "typescript": "catalog:",
         "vitest": "catalog:",
         "yaml": "catalog:",
+      },
+    },
+    "packages/format": {
+      "name": "@stacks/format",
+      "version": "0.1.0",
+      "dependencies": {
+        "effect": "catalog:",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "catalog:",
+        "@effect/vitest": "catalog:",
+        "@types/bun": "catalog:",
+        "@types/node": "catalog:",
+        "@vitest/coverage-v8": "catalog:",
+        "typescript": "catalog:",
+        "vitest": "catalog:",
       },
     },
     "packages/mcp": {
@@ -142,6 +159,8 @@
     "@rolldown/binding-win32-x64-msvc": ["@rolldown/binding-win32-x64-msvc@1.2.14", "", { "os": "win32", "cpu": "x64" }, "sha512-9mE94bf2GZUaR/fUSXCMpBoWkctu421Mi0ORpm4zqfbkjKep7RxzPFa5etcGs5h+2KApoWBOA/hAJa/7saGgEQ=="],
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.1", "", {}, "sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw=="],
+
+    "@stacks/format": ["@stacks/format@workspace:packages/format"],
 
     "@stacks/mcp": ["@stacks/mcp@workspace:packages/mcp"],
 

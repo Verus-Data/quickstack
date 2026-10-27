@@ -1,11 +1,12 @@
+import { FailureKind, Kind } from "@stacks/format";
 import { Effect, Schema } from "effect";
 import { TEMPLATE_VARIABLES } from "./core/scaffold/template";
 import { shellArg } from "./core/shell";
 import { printable } from "./core/text";
 import { verifyNext } from "./core/verify/next";
 import { BRIEF_PATH, MANIFEST_PATH } from "./project-layout";
-import { Kind, Origin } from "./schemas/entry";
-import { FailureKind, VerifyChange, VerifyResult } from "./schemas/verify";
+import { Origin } from "./schemas/origin";
+import { VerifyChange, VerifyResult } from "./schemas/verify";
 /**
  * An unknown subcommand: what was typed and up to three close known names (`core/suggest.ts`).
  * Or two flags that can't be used together, as typed (`new --launch` with `--no-launch`, 1.4).

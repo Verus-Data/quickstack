@@ -10,11 +10,11 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
+import { Category, FragmentMeta, StackMeta } from "@stacks/format";
 import { Schema } from "effect";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { parseDocument } from "yaml";
 import { splitFrontmatter } from "../src/core/registry/entry";
-import { Category, FragmentMeta, StackMeta } from "../src/schemas/entry";
 import { ListResult } from "../src/schemas/list";
 import { NewResult } from "../src/schemas/new";
 import { ValidateReport } from "../src/schemas/validate";

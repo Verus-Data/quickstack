@@ -12,8 +12,8 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { Manifest } from "@stacks/format";
 import { Schema } from "effect";
-import { Manifest } from "../src/schemas/manifest";
 import { minimal, writeEntry } from "../tests/helpers/registry";
 import { binary, node } from "./package";
 

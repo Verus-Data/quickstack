@@ -1,5 +1,6 @@
 import { Schema } from "effect";
-import { AgentId, VerifyStep } from "./entry";
+import { AgentId } from "./agent.js";
+import { VerifyStep } from "./entry.js";
 
 /**
  * An entry the project was composed from. `origin` is any non-empty string, not the `Origin`

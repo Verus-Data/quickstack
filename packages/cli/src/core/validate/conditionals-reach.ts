@@ -1,5 +1,5 @@
+import type { FragmentMeta } from "@stacks/format";
 import { Effect } from "effect";
-import type { FragmentMeta } from "../../schemas/entry";
 import type { Finding } from "../../schemas/validate";
 import { scanConditionals } from "../compose/conditionals";
 import { fitsStack } from "../compose/selection";

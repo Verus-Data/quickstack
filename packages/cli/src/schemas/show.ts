@@ -1,5 +1,5 @@
+import { Category, VerifyStep } from "@stacks/format";
 import { Schema } from "effect";
-import { Category, VerifyStep } from "./entry";
 import { LastRun } from "./ledger";
 import { ListRow } from "./list";
 

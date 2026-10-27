@@ -1,7 +1,7 @@
+import type { Manifest, Outcome } from "@stacks/format";
 import { Cause, Clock, Effect, Exit, FileSystem } from "effect";
 import { AGENT_MARKER_NAMES, AppConfig } from "../../config";
-import type { Manifest } from "../../schemas/manifest";
-import type { Outcome, StepResult, VerifyResult } from "../../schemas/verify";
+import type { StepResult, VerifyResult } from "../../schemas/verify";
 import { stepFinished, stepStarted } from "./events";
 import { type PlannedStep, planVerify, type SelectOptions } from "./plan";
 import { runStep } from "./step";

@@ -1,6 +1,7 @@
 import { chmodSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { NodeServices } from "@effect/platform-node";
+import { Manifest } from "@stacks/format";
 import { Effect, Schema } from "effect";
 import { afterEach, expect, test } from "vitest";
 import { renderBrief } from "../src/core/brief/render";
@@ -10,7 +11,6 @@ import { composeFiles, NEUTRAL_VARS, type RenderedFile } from "../src/core/compo
 import { fingerprint } from "../src/core/fingerprint";
 import { TEMPLATE_VARIABLES } from "../src/core/scaffold/template";
 import type { EntryInvalid, PermissionDenied } from "../src/errors";
-import { Manifest } from "../src/schemas/manifest";
 import {
   BODY,
   composition,

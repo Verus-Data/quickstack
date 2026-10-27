@@ -1,6 +1,6 @@
+import type { Manifest } from "@stacks/format";
+import { APP_TAG, DEFAULT_STEP_TIMEOUT, withStepDefaults } from "@stacks/format";
 import { METADATA_DIR } from "../../project-layout";
-import { APP_TAG, DEFAULT_STEP_TIMEOUT, withStepDefaults } from "../../schemas/entry";
-import type { Manifest } from "../../schemas/manifest";
 import type { ComposedStep, Composition, MissingTool } from "../compose/compose";
 import type { Entry } from "../registry/entry";
 import { nest } from "./headings";

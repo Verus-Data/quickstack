@@ -1,6 +1,6 @@
+import { Kind } from "@stacks/format";
 import { Schema } from "effect";
 import { ConditionalProblem } from "../errors";
-import { Kind } from "./entry";
 
 /** `error` exits 2; `warning` fails only the bundled registry's zero-warning gate; `note` never fails. */
 export const Severity = Schema.Literals(["error", "warning", "note"]);

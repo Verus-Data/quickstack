@@ -121,12 +121,16 @@ Rules (roadmap, Contracts: Canonical bundle): files sorted by path using byte or
 
 - Acceptance tests pass; `bun run check` green from the repo root, now including `packages/format`.
 - The CLI suite passes with no test file changed except import lines (`bun run test`, `bun run coverage` and `bun run e2e` in `packages/cli`); a diff of `packages/cli/tests/` and `e2e/` shows only import changes.
-- The CLI's packed tarball has no `@stacks/format` in its `package.json`, and 0.2's existing packed-tarball e2e (installs it and runs `list --json`) passes unchanged.
+- The CLI's packed tarball names `@stacks/format` in no runtime field of its `package.json` (`dependencies`, `peerDependencies`, `optionalDependencies`), and 0.2's existing packed-tarball e2e (installs it and runs `list --json`) passes unchanged.
 - No file under `packages/cli/src/` defines a symbol that `packages/format` exports.
 - `AGENTS.md` describes the package.
 
 ## What this plan may get wrong
 
+- 2026-10-27: Bun's Node-target build does not select the proposed `bun` condition. The workspace uses standard `types` and `import` source conditions; packing replaces the exports map with `types` and `default` pointing at built `dist/`. Bun's build, Vitest and TypeScript therefore resolve source without consumer configuration or a prior build, and published consumers resolve built files.
+- 2026-10-27: `Probe`, `Check`, `EntryId` and `Digest` in the sketches do not exist in the current schemas. The extraction preserves `Expect`; `EntryBundle.id` uses the existing entry id schema and `bundleDigest` returns an Effect of a `sha256:`-prefixed string, matching the CLI's fingerprint representation.
+- 2026-10-27: the CLI's composition module already exported a different `EntryRef` shape (`{ kind, id }`). It is renamed to `CompositionEntryRef` so the persisted `EntryRef` has one definition under its exported name, as this extraction's acceptance requires; composition behavior is unchanged.
+- 2026-10-27: Bun retains development dependencies in packed metadata, including workspace dependencies resolved to versions. Keeping the format dependency in CLI devDependencies therefore does not by itself remove it from the CLI tarball. npm never installs a dependency's devDependencies, and the CLI's other inlined packages sit there too, so the exit criterion now names only the runtime fields rather than rewriting the packed metadata.
 - 2026-10-27: the plan exported only `.ts` source with no build, assuming every consumer transforms TypeScript. A published package is read from `node_modules`, where Node's type stripping refuses `.ts`, so the published copy now builds `dist/` and the workspace keeps resolving source through an exports condition.
 - Exports conditions are resolved differently by Bun, Vitest and TypeScript. If one of them picks `dist/` inside the workspace, the CLI would run stale code after an edit without a rebuild; the acceptance tests run without a prior build to catch that.
 - `crypto.subtle.digest` is async, so `bundleDigest` returns an Effect. If a caller needs it synchronously, that caller is wrong about where it runs, not the function.

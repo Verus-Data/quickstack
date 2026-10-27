@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { Manifest, type ManifestStep, withStepDefaults } from "@stacks/format";
 import {
   Clock,
   Effect,
@@ -11,8 +12,6 @@ import {
 } from "effect";
 import { InvalidConfig, NotFound, PermissionDenied } from "../errors";
 import { MANIFEST_PATH } from "../project-layout";
-import { withStepDefaults } from "../schemas/entry";
-import { Manifest, type ManifestStep } from "../schemas/manifest";
 import { VERSION } from "../version";
 import type { Composition } from "./compose/compose";
 import type { Entry } from "./registry/entry";

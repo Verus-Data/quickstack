@@ -8,11 +8,11 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
+import { Manifest } from "@stacks/format";
 import { Schema } from "effect";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { digestStep, digestSteps, MANIFEST_PATH } from "../src/core/manifest";
 import { ProjectState } from "../src/core/project-state";
-import { Manifest } from "../src/schemas/manifest";
 import { NewResult } from "../src/schemas/new";
 import { quiet, runCli, tempDir, terminal } from "./helpers/cli";
 import { gitShim, NOT_A_REPO } from "./helpers/git";
