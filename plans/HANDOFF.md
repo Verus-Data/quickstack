@@ -27,15 +27,17 @@ Phase 1 round 1 ([1.0](phases/phase-1.0-entry-format-and-registry.md),
 [1.1](phases/phase-1.1-composition-and-brief.md),
 [1.2a](phases/phase-1.2a-new-scaffold-and-templates.md),
 [1.2b](phases/phase-1.2b-manifest-state-and-detection.md) and
-[1.5](phases/phase-1.5-validate-and-brief-budget.md)) is executed on branch
-`feat/phase-1`, has had its one batch review, and the review's fixes are being applied.
+[1.5](phases/phase-1.5-validate-and-brief-budget.md)) is executed, batch-reviewed once
+with its fixes applied, and merged to `main` (PR #4).
 Before it started, D18 (entry format v1) was amended on 2026-10-26:
 snake_case frontmatter, literal dotfiles, `package_scope` in v1, apps as
 `category: app` fragments, and `expect` on serve steps. That is an agent's proposal and
 still needs the maintainers' agreement; it supersedes D26 and D28, withdraws 3.5a and
-re-scopes 1.6a to bring the whole bundled catalog into v1 and validate it. The CLI still has only
-`doctor` and `--version` on `main`, run from the repo (`bun run dev`) or the compiled
-binary. The repo is a bun-workspace monorepo (D11): the CLI is `packages/cli`, with
+re-scopes 1.6a to bring the whole bundled catalog into v1 and validate it. The CLI on `main`
+has `doctor`, `--version`, `list`, `new` and `validate`, run from the repo (`bun run dev`) or
+the compiled binary; `verify` (1.3a) is next. The bundled registry holds its first stack,
+`typescript-cli`, with the fragments it names, and validates clean; conditional blocks for stacks
+and tags it doesn't have yet were trimmed and come back when 1.6a brings those in. The repo is a bun-workspace monorepo (D11): the CLI is `packages/cli`, with
 `packages/api` and `packages/mcp` as placeholders.
 
 Three foundation questions are product design and are open architecture questions A2-A4
@@ -77,7 +79,7 @@ amended D18); the roadmap's decision table says which sub-phase each one blocks.
 | Review A2-A4 as answered in 0.3a and 0.3b | Maintainers | Must be in the decisions log before [1.6c](phases/phase-1.6c-first-release.md) publishes |
 | Answer the open questions in [risks-and-open-questions.md](risks-and-open-questions.md) | Maintainers | Question 1 (registry audience) decides which stacks ship bundled |
 | Apply the batch review's fixes to phase 1 round 1 (1.0, 1.1, 1.2a, 1.2b, 1.5) | Agents, then maintainers | All five executed on `feat/phase-1` and batch-reviewed once; fixes are being applied (`validate` and the docs on one branch, `new` and `errors.ts` on another). 1.0 done (registry, `list`, reviewed once). 1.1 executed (composition and the brief, no command; reviewed once, fixes applied). 1.5 executed (`validate`, the brief budget and `validate --brief`); the realistic brief with an app measures about 6,000 words and passes its 9,000 limit. A non-default `QUICKSTACKS_REGISTRY_DIR` is untrusted. 1.2a executed 2026-10-26 (`new`: writer with rollback, templates, `.quickstacks/`, git init; awaiting review). `bun run dev` now runs the CLI in the caller's directory, including a subdirectory of the repo; Bun hides the caller under `bun run --cwd`, so from outside the repo set `INIT_CWD="$PWD"`. 1.2b executed 2026-10-26 (awaiting batch review): `new` writes `.quickstacks/manifest.json` and the out-of-project state record under `$XDG_STATE_HOME/quickstacks/projects/` (`stateRecord: false` when that isn't writable), rolls both back on failure or interrupt, and a rerun into an earlier scaffold is `TargetNotEmpty` with `scaffold: unfinished` or `green`; agent detection is in `config.ts`. Marker confirmation dates weren't re-checked against agent docs; recheck before 1.3b |
-| Choose how `validate` treats a verify step no layer describes (a file-existence or config check) | Maintainers | Either add a `check` layer through the roadmap's "Verify step `layer`" contract row, or downgrade `step-layer` from a warning to a note. Today the zero-warning gate for bundled entries pushes authors to mislabel such steps; see [1.5](phases/phase-1.5-validate-and-brief-budget.md), "What this plan may get wrong" |
+| ~~Choose how `validate` treats a verify step no layer describes (a file-existence or config check)~~ | Maintainers | Decided 2026-10-26: `check` layer added (roadmap, "Verify step `layer`"). `step-layer` stays a warning and `check` isn't a D7 layer; see [1.5](phases/phase-1.5-validate-and-brief-budget.md), "What this plan may get wrong" |
 | Decide D19 (project-origin entries untrusted by default) | Maintainers | The only decision [1.0](phases/phase-1.0-entry-format-and-registry.md) blocks on besides D18; 1.0 is being built to the proposal |
 | Execute 0.2 (distribution) | Agent, after A1, D12 and D22 | Deferred 2026-10-26 to the final step before public release, with the npm reservation and 1.6c. Changes `bin.ts` |
 | Decide open questions 24-28 (behavior kept on purpose in phases 0-1) | Maintainers | Before 1.0, 1.1, 1.3b and 1.6c, as each question says. Question 26 changed: 1.1 now proposes a warning, not an error, for a `--with` fragment that doesn't fit. The rest (D25, D27, questions 29-31) can wait for phases 3-4 |

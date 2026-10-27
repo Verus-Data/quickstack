@@ -247,15 +247,27 @@ function runOrder(steps: ReadonlyArray<ComposedStep>): ComposedStep[] {
 
 /** The verify table. Commands stay out of it: escaping `|` in a cell would change them. */
 function table(ordered: ReadonlyArray<ComposedStep>): string[] {
+  const rows = ordered.map((step) => ({
+    step,
+    expects: [
+      ...(step.expect ? [T.done.within(step.expect.http, step.expect.within)] : []),
+      ...(step.skipByDefault ? [T.done.skipped] : []),
+      ...(step.timeout !== DEFAULT_STEP_TIMEOUT ? [T.done.timeout(step.timeout)] : []),
+    ].join("; "),
+  }));
+  // A column no step in this table fills is left out.
+  const layer = rows.some(({ step }) => step.layer !== undefined);
+  const expects = rows.some((row) => row.expects !== "");
   return [
-    ...T.done.tableHead,
-    ...ordered.map((step) => {
-      const expects = [
-        ...(step.expect ? [T.done.within(step.expect.http, step.expect.within)] : []),
-        ...(step.skipByDefault ? [T.done.skipped] : []),
-        ...(step.timeout !== DEFAULT_STEP_TIMEOUT ? [T.done.timeout(step.timeout)] : []),
+    ...T.done.tableHead({ layer, expects }),
+    ...rows.map((row) => {
+      const cells = [
+        cell(T.code(row.step.name)),
+        row.step.phase,
+        ...(layer ? [row.step.layer ?? ""] : []),
+        ...(expects ? [cell(row.expects)] : []),
       ];
-      return `| ${cell(T.code(step.name))} | ${step.phase} | ${step.layer ?? ""} | ${cell(expects.join("; "))} |`;
+      return `| ${cells.join(" | ")} |`;
     }),
   ];
 }

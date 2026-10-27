@@ -612,6 +612,43 @@ test("verify-layers: D7 layers in the default composition, and a probed serve st
   ]);
 });
 
+test("verify-layers names a step that matches the missing layer but has no layer, and how to fix it", async () => {
+  const root = temp();
+  writeEntry(
+    root,
+    "stack",
+    "ported",
+    minimal(
+      "stack",
+      "ported",
+      [
+        "tags: [cli, make]",
+        "verify:",
+        '  - { name: install, phase: setup, layer: install, run: "true" }',
+        '  - { name: lint, run: "true" }',
+        '  - { name: typecheck, layer: typecheck, run: "true" }',
+        '  - { name: tests, run: "true" }',
+      ].join("\n"),
+    ),
+    SETUP,
+  );
+  const { report: got } = await report([root]);
+  expect(only(got.findings, "verify-layers").map((finding) => finding.message)).toEqual([
+    "no verify step with layer lint (default, sandbox); step lint has no layer: add layer: lint to it",
+    // No step is named test, so there is nothing to point at.
+    "no verify step with layer test (default, sandbox)",
+  ]);
+});
+
+test("a check-layer step is a described step: no step-layer warning, and no D7 layer is needed for it", async () => {
+  const root = temp();
+  stack(root, "checked", '  - { name: readme, layer: check, run: "true" }');
+  fragment(root, "hooks", 'verify:\n  - { name: hooks-defined, layer: check, run: "true" }');
+  const { status, report: got } = await report([root]);
+  expect(status).toBe(0);
+  expect(got.findings).toEqual([]);
+});
+
 test("stack-setup-section, task-runner-tag, step-layer and dep-version [1.5#1] [1.5#8]", async () => {
   const root = temp();
   stack(root, "no-setup", "", "# Guide\n\n### Setup\n");
@@ -893,7 +930,7 @@ test.skipIf(git.status !== 0)(
         entry: "hides",
         file: "stacks/hides/files/.env.example.tmpl",
         message:
-          "git ignores .env.example.tmpl here (rule .env.* in stacks/hides/files/.gitignore), so it never reaches a commit",
+          "git ignores .env.example.tmpl here (rule .env.* in stacks/hides/files/.gitignore), so it never reaches a commit; ship stacks/hides/files/.gitignore as .gitignore.tmpl, which git doesn't read as ignore rules and new still writes as .gitignore",
       },
     ]);
     // Outside a checkout there is nothing to check.
@@ -941,11 +978,49 @@ test.skipIf(git.status !== 0)(
     expect(only(got.findings, "git-ignored").map((f) => [f.file, f.message])).toEqual([
       [
         "stacks/odd/files/-dash.tmpl",
-        "git ignores -dash.tmpl here (rule -dash.tmpl in stacks/odd/files/.gitignore), so it never reaches a commit",
+        "git ignores -dash.tmpl here (rule -dash.tmpl in stacks/odd/files/.gitignore), so it never reaches a commit; ship stacks/odd/files/.gitignore as .gitignore.tmpl, which git doesn't read as ignore rules and new still writes as .gitignore",
       ],
       [
         "stacks/odd/files/my notes.tmpl",
-        "git ignores my notes.tmpl here (rule my notes.tmpl in stacks/odd/files/.gitignore), so it never reaches a commit",
+        "git ignores my notes.tmpl here (rule my notes.tmpl in stacks/odd/files/.gitignore), so it never reaches a commit; ship stacks/odd/files/.gitignore as .gitignore.tmpl, which git doesn't read as ignore rules and new still writes as .gitignore",
+      ],
+    ]);
+  },
+);
+
+test.skipIf(git.status !== 0)(
+  "git-ignored suggests .gitignore.tmpl only for an ignore file the entry ships, and a shipped .gitignore.tmpl hides nothing",
+  async () => {
+    const repo = temp();
+    spawnGit(["init", "-q", repo]);
+    // An ignore file beside STACK.md isn't shipped, so renaming it is no fix.
+    const local = stack(repo, "local");
+    writeFileSync(join(local, ".gitignore"), "*.tmpl\n");
+    mkdirSync(join(local, "files"));
+    writeFileSync(join(local, "files", "a.tmpl"), "x\n");
+    // One in adapters/ is shipped like one in files/.
+    const adapted = stack(repo, "adapted");
+    mkdirSync(join(adapted, "adapters", "claude", ".claude"), { recursive: true });
+    writeFileSync(join(adapted, "adapters", "claude", ".claude", ".gitignore"), "*.local.json\n");
+    writeFileSync(join(adapted, "adapters", "claude", ".claude", "settings.local.json"), "{}\n");
+    // The fix applied: the same rules as .gitignore.tmpl, with no tokens, hide nothing.
+    const fixed = stack(repo, "fixed");
+    mkdirSync(join(fixed, "files"));
+    writeFileSync(join(fixed, "files", ".gitignore.tmpl"), ".env.*\n");
+    writeFileSync(join(fixed, "files", ".env.example.tmpl"), "KEY=\n");
+    const env = { PATH: process.env.PATH ?? "" };
+    const { status, report: got } = await report([repo], { env });
+    expect(status).toBe(0);
+    expect(got.findings.map((f) => [f.check, f.entry, f.message])).toEqual([
+      [
+        "git-ignored",
+        "adapted",
+        "git ignores settings.local.json here (rule *.local.json in stacks/adapted/adapters/claude/.claude/.gitignore), so it never reaches a commit; ship stacks/adapted/adapters/claude/.claude/.gitignore as .gitignore.tmpl, which git doesn't read as ignore rules and new still writes as .gitignore",
+      ],
+      [
+        "git-ignored",
+        "local",
+        "git ignores a.tmpl here (rule *.tmpl in stacks/local/.gitignore), so it never reaches a commit",
       ],
     ]);
   },
@@ -1028,7 +1103,7 @@ test("--brief failures are compose's own: an unknown stack suggests the close on
   expect(result.stdout).toBe("");
   expect(JSON.parse(result.stderr).error).toMatchObject({
     tag: "NotFound",
-    details: { suggestions: ["typescript-cli"] },
+    details: { suggestions: ["typescript-cli"], id: "typscript-cli", kind: "stack" },
   });
 });
 
@@ -1067,16 +1142,16 @@ test("an unknown --brief id under a root list doesn't read points at validate fo
   expect(result.stdout).toBe("");
   expect(JSON.parse(result.stderr).error).toMatchObject({
     tag: "NotFound",
-    details: { suggestions: ["typescript-cli"], root },
+    details: { suggestions: ["typescript-cli"], id: "typscript-cli", kind: "stack", root },
   });
   const human = await run([root, "--brief", "typscript-cli"], { home });
   expect(human.stderr).toBe(
-    `Not found.\n  Did you mean: typescript-cli?\n  Next: quickstacks validate ${root} lists the ids under that root.\n`,
+    `Not found.\n  Stack: typscript-cli\n  Did you mean: typescript-cli?\n  Next: quickstacks validate ${root} lists the ids under that root.\n`,
   );
   // The bundled registry is what `list` shows, so its hint stays `list`.
   const bundled = await run(["--brief", "typscript-cli"], { registry: realRegistry });
   expect(bundled.stderr).toBe(
-    "Not found.\n  Did you mean: typescript-cli?\n  Next: quickstacks list shows every stack and fragment.\n",
+    "Not found.\n  Stack: typscript-cli\n  Did you mean: typescript-cli?\n  Next: quickstacks list shows every stack and fragment.\n",
   );
 });
 

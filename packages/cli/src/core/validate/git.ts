@@ -99,12 +99,17 @@ export const gitChecks: Check = (view) =>
       // Only a rule file inside the entry's own directory is the entry's doing.
       if (!rule.source.startsWith(`${entryDir}${path.sep}`)) continue;
       const source = rule.source.split(path.sep).join("/");
+      // A .gitignore the entry ships (under files/ or adapters/) can be shipped as a template
+      // instead: git doesn't read `.gitignore.tmpl`, and `new` renders it to `.gitignore`.
+      const within = path.relative(entryDir, rule.source).split(path.sep);
+      const shipped =
+        (within[0] === "files" || within[0] === "adapters") && within.at(-1) === ".gitignore";
       findings.push(
         finding(owner, {
           check: "git-ignored",
           severity: "warning",
           file,
-          message: `git ignores ${path.basename(file)} here (rule ${rule.pattern} in ${source}), so it never reaches a commit`,
+          message: `git ignores ${path.basename(file)} here (rule ${rule.pattern} in ${source}), so it never reaches a commit${shipped ? `; ship ${source} as .gitignore.tmpl, which git doesn't read as ignore rules and new still writes as .gitignore` : ""}`,
         }),
       );
     }

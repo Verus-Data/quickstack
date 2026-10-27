@@ -1,0 +1,93 @@
+#!/usr/bin/env bash
+# Installs {{project_slug}} from GitHub Releases:
+#
+#   curl -fsSL https://github.com/{{package_scope}}/{{project_slug}}/releases/latest/download/install.sh | bash
+#
+# Downloads the binary for this OS and CPU, checks it against the release's SHA256SUMS, and
+# installs it as ${{env_prefix}}_INSTALL_DIR/{{project_slug}} (default ~/.local/bin). Nothing is installed if the
+# checksum doesn't match. Settings (env):
+#   {{env_prefix}}_INSTALL_DIR    where to put {{project_slug}} (default ~/.local/bin)
+#   {{env_prefix}}_VERSION        a tag like v0.2.0 (default: the latest release)
+#   {{env_prefix}}_RELEASES_REPO  owner/repo (default {{package_scope}}/{{project_slug}})
+#   {{env_prefix}}_RELEASES_URL   the GitHub API base (default https://api.github.com; tests use a stub)
+set -euo pipefail
+
+repo="${{{env_prefix}}_RELEASES_REPO:-{{package_scope}}/{{project_slug}}}"
+api="${{{env_prefix}}_RELEASES_URL:-https://api.github.com}"
+dir="${{{env_prefix}}_INSTALL_DIR:-$HOME/.local/bin}"
+version="${{{env_prefix}}_VERSION:-}"
+
+fail() {
+  echo "install.sh: $*" >&2
+  exit 1
+}
+
+case "$(uname -s)" in
+  Darwin) os=darwin ;;
+  Linux) os=linux ;;
+  *) fail "no {{project_slug}} build for $(uname -s); build from source (see README)" ;;
+esac
+case "$(uname -m)" in
+  x86_64 | amd64) arch=x64 ;;
+  arm64 | aarch64) arch=arm64 ;;
+  *) fail "no {{project_slug}} build for $(uname -m)" ;;
+esac
+# musl's ldd exits 1 for --version, so capture its output rather than piping it (pipefail).
+if [ "$os" = linux ]; then
+  ldd_out="$(ldd --version 2>&1 || true)"
+  case "$ldd_out" in
+    *musl* | *MUSL* | *Musl*) fail "musl Linux (Alpine) isn't supported yet; use a glibc distro or build from source" ;;
+  esac
+fi
+# Under Rosetta, uname says x86_64 on an Apple Silicon Mac; the native build is faster.
+if [ "$os" = darwin ] && [ "$arch" = x64 ] && [ "$(sysctl -n sysctl.proc_translated 2>/dev/null || echo 0)" = 1 ]; then
+  arch=arm64
+fi
+asset="{{project_slug}}-$os-$arch"
+
+if [ -n "$version" ]; then
+  release_url="$api/repos/$repo/releases/tags/$version"
+else
+  release_url="$api/repos/$repo/releases/latest"
+fi
+release="$(curl -fsSL -H 'Accept: application/vnd.github+json' "$release_url")" ||
+  fail "couldn't read $release_url"
+
+# The download URL of a named asset, from the release JSON (no jq needed).
+url_of() {
+  printf '%s' "$release" | tr ',' '\n' | grep '"browser_download_url"' | sed -E 's/.*"browser_download_url" *: *"([^"]+)".*/\1/' |
+    grep -E "/$1\$" | head -n 1
+}
+binary_url="$(url_of "$asset")" || fail "the release has no $asset"
+sums_url="$(url_of SHA256SUMS)" || fail "the release has no SHA256SUMS"
+[ -n "$binary_url" ] || fail "the release has no $asset"
+[ -n "$sums_url" ] || fail "the release has no SHA256SUMS"
+
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+curl -fsSL "$binary_url" -o "$tmp/$asset" || fail "couldn't download $binary_url"
+curl -fsSL "$sums_url" -o "$tmp/SHA256SUMS" || fail "couldn't download $sums_url"
+
+expected="$(awk -v name="$asset" '{ file = $2; sub(/^\*/, "", file); if (file == name) print $1 }' "$tmp/SHA256SUMS")"
+if command -v sha256sum >/dev/null 2>&1; then
+  actual="$(sha256sum "$tmp/$asset" | awk '{ print $1 }')"
+else
+  actual="$(shasum -a 256 "$tmp/$asset" | awk '{ print $1 }')"
+fi
+[ -n "$expected" ] || fail "SHA256SUMS has no line for $asset"
+[ "$expected" = "$actual" ] || fail "checksum mismatch for $asset (expected $expected, got $actual); nothing installed"
+
+mkdir -p "$dir"
+# Staged in the install dir and renamed over {{project_slug}} there: a rename within one filesystem is
+# atomic, so a running {{project_slug}} is never overwritten mid-read and an interrupted install leaves the
+# old binary. ($tmp may be on another filesystem, where mv would copy instead.)
+staged="$dir/.{{project_slug}}.install.$$"
+trap 'rm -rf "$tmp" "$staged"' EXIT
+cp "$tmp/$asset" "$staged"
+chmod 0755 "$staged"
+mv -f "$staged" "$dir/{{project_slug}}"
+echo "Installed {{project_slug}} to $dir/{{project_slug}}"
+case ":$PATH:" in
+  *":$dir:"*) ;;
+  *) echo "Add $dir to your PATH, e.g.: echo 'export PATH=\"$dir:\$PATH\"' >> ~/.zshrc" ;;
+esac

@@ -1,0 +1,17 @@
+{
+  "extraKnownMarketplaces": {
+    "rr": {
+      "source": {
+        "source": "github",
+        "repo": "rileyhilliard/rr"
+      },
+      "autoUpdate": true
+    }
+  },
+  "enabledPlugins": {
+    "rr@rr": true
+  },
+  "permissions": {
+    "allow": ["Bash(rr doctor *)", "Bash(rr status *)", "Bash(rr tasks *)"]
+  }
+}

@@ -136,7 +136,16 @@ export const done = {
   commandsBelow: "Each step's command, exactly as verify runs it:",
   noSteps: (cli: string) =>
     `There are no verify steps, so ${verify(cli)} has nothing to check. Run the project's own lint and test commands as well.`,
-  tableHead: ["| Step | Phase | Layer | Expects |", "|---|---|---|---|"],
+  /** `Layer` and `Expects` appear only when some step in the table fills them. */
+  tableHead: (columns: { layer: boolean; expects: boolean }) => {
+    const names = [
+      "Step",
+      "Phase",
+      ...(columns.layer ? ["Layer"] : []),
+      ...(columns.expects ? ["Expects"] : []),
+    ];
+    return [`| ${names.join(" | ")} |`, `|${names.map(() => "---|").join("")}`];
+  },
   within: (url: string, within: string) => `${code(url)} within ${within}`,
   skipped: "skipped (`prod`, sandbox)",
   timeout: (timeout: string) => `timeout ${timeout}`,

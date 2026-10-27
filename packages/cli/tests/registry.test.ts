@@ -126,7 +126,7 @@ test("get on an entry holding a symlink fails EntryInvalid with the link's path"
   );
 });
 
-test("get on an unknown id, or the right id under the other kind, fails NotFound", async () => {
+test("get on an unknown id, or the right id under the other kind, fails NotFound naming the id and kind", async () => {
   for (const [kind, id] of [
     ["stack", "nope"],
     ["fragment", "bun-web"],
@@ -135,7 +135,7 @@ test("get on an unknown id, or the right id under the other kind, fails NotFound
       bundled,
       Effect.flatMap(Registry, (registry) => registry.get(kind, id)),
     );
-    expect(exit).toEqual(Exit.fail(new NotFound()));
+    expect(exit).toEqual(Exit.fail(new NotFound({ details: { suggestions: [], id, kind } })));
   }
 });
 

@@ -1,0 +1,83 @@
+// Repo boundaries from .claude/rules/src/ that a pattern can check. Messages name the rule to read.
+// Only src/bin.ts and src/tui/** may touch Bun or OpenTUI: everything else runs under vitest on
+// Node, so it goes through Effect's FileSystem, Path, Stdio, and HttpClient instead.
+language js
+
+or {
+  or {
+    JsModuleSource() as $src,
+    `import($src)`
+  } where {
+    $filename <: r".*/src/.*",
+    or {
+      and {
+        $src <: r"[\"'](?:bun|bun:[^\"']*|@effect/platform-bun[^\"']*|@opentui/[^\"']*)[\"']",
+        $filename <: not r".*/src/(?:bin\.ts|tui/.*)",
+        register_diagnostic(span=$src, message="Bun or OpenTUI import outside src/bin.ts and src/tui/: this code runs under vitest on Node. Use Effect's FileSystem, Path, Stdio, or HttpClient. See .claude/rules/src/cli.md, Platform boundary.")
+      },
+      and {
+        $src <: r"[\"'](?:zod|zod/[^\"']*|@effect/schema[^\"']*)[\"']",
+        register_diagnostic(span=$src, message="Schemas are Effect Schema (Schema from effect). Zod and @effect/schema are not used here. See .claude/rules/effect.md.")
+      },
+      and {
+        $src <: r"[\"'](?:effect|effect/[^\"']*|@effect/[^\"']*)[\"']",
+        $filename <: r".*/src/tui/.*",
+        $filename <: not r".*/src/tui/launch\.tsx?",
+        register_diagnostic(span=$src, message="TUI components don't import effect: they get plain functions from the bridge in src/tui/launch.tsx. See .claude/rules/openrouter-chat-cli/tui.md.")
+      }
+    }
+  },
+  // A static import of src/tui/ from outside it loads OpenTUI on every run and in vitest. A dynamic
+  // import("../tui/launch") (importTui in src/commands/load-tui.ts) is the way in, so only
+  // JsModuleSource counts.
+  JsModuleSource() as $src where {
+    $filename <: r".*/src/.*",
+    $filename <: not r".*/src/tui/.*",
+    // Matched on where the specifier resolves: ./tui from src/, ../tui one level down, and so on.
+    or {
+      $src <: r"[\"']~/tui(?:/[^\"']*)?[\"']",
+      and { $filename <: r".*/src/[^/]+", $src <: r"[\"']\./tui(?:/[^\"']*)?[\"']" },
+      and { $filename <: r".*/src/[^/]+/[^/]+", $src <: r"[\"']\.\./tui(?:/[^\"']*)?[\"']" },
+      and {
+        $filename <: r".*/src/[^/]+/[^/]+/[^/]+",
+        $src <: r"[\"']\.\./\.\./tui(?:/[^\"']*)?[\"']"
+      }
+    },
+    register_diagnostic(span=$src, message="Static import of src/tui/ from outside it: that loads OpenTUI everywhere. Load it with importTui from src/commands/load-tui.ts, a dynamic import. See .claude/rules/openrouter-chat-cli/tui.md, The bridge.")
+  },
+  `console.$m($args)` as $c where {
+    $filename <: r".*/src/.*",
+    register_diagnostic(span=$c, message="No console in src/: results go through the Output service, diagnostics through Effect.log*. See .claude/rules/src/cli.md, stdout contract.")
+  },
+  `process.env` as $e where {
+    $filename <: r".*/src/.*",
+    $filename <: not r".*/src/(?:config|bin)\.ts",
+    register_diagnostic(span=$e, message="Only src/config.ts reads the environment (Effect Config). Add the variable there.")
+  },
+  // stdout carries results only; src/bin.ts hands main its writers. stderr is also used by
+  // src/logging.ts (the terminal sink) and src/config.ts (isTTY for the color default).
+  `process.stdout` as $o where {
+    $filename <: r".*/src/.*",
+    $filename <: not r".*/src/bin\.ts",
+    register_diagnostic(span=$o, message="process.stdout outside src/bin.ts: results go through the Output service. See .claude/rules/src/cli.md, stdout contract.")
+  },
+  `process.stderr` as $o where {
+    $filename <: r".*/src/.*",
+    $filename <: not r".*/src/(?:bin|logging|config)\.ts",
+    register_diagnostic(span=$o, message="process.stderr outside src/bin.ts, src/logging.ts, and src/config.ts: notes go through Output.note, diagnostics through Effect.log*. See .claude/rules/src/cli.md, stdout contract.")
+  },
+  `Bun.$x` as $b where {
+    $filename <: r".*/src/.*",
+    $filename <: not r".*/src/(?:bin\.ts|tui/.*)",
+    register_diagnostic(span=$b, message="The Bun global outside src/bin.ts and src/tui/: this code runs under vitest on Node. See .claude/rules/src/cli.md, Platform boundary.")
+  },
+  or {
+    JsStringLiteralExpression(),
+    JsTemplateChunkElement()
+  } as $s where {
+    $filename <: r".*/src/tui/.*",
+    $filename <: not r".*/src/tui/theme\.ts",
+    $s <: r"(?s).*#[0-9a-fA-F]{3,8}\b.*",
+    register_diagnostic(span=$s, message="Hex color in a TUI component: use a token from src/tui/theme.ts. See DESIGN.md, Color roles.")
+  }
+}

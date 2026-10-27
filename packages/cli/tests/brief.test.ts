@@ -176,6 +176,54 @@ test("the brief holds every section in order, every step, the env defaults, ever
   expect(brief).not.toMatch(/=<free port> quickstacks verify/);
 });
 
+test("a verify table leaves out Layer and Expects when no step in that table fills them", async () => {
+  /** Each verify table: its header and every row up to the blank line after it. */
+  const tables = (text: string) =>
+    text
+      .split("\n\n")
+      .filter((block) => block.startsWith("| Step "))
+      .map((block) => block.split("\n"));
+  const user = temp();
+  const stack = (id: string, verify: string[]) =>
+    writeEntry(user, "stack", id, minimal("stack", id, ["verify:", ...verify].join("\n")), "");
+  const brief = async (stackId: string, withIds: string[] = []) =>
+    renderBrief(
+      await composed(
+        { stack: stackId, with: withIds },
+        { roots: [{ origin: "user", path: user }] },
+      ),
+      context(),
+    ).text;
+  stack("bare", ['  - { name: a, run: "true" }', '  - { name: b, phase: setup, run: "true" }']);
+  stack("layered", ['  - { name: a, layer: lint, run: "true" }', '  - { name: b, run: "true" }']);
+  stack("timed", ['  - { name: a, timeout: 5m, run: "true" }']);
+  writeEntry(
+    user,
+    "fragment",
+    "plain-app",
+    minimal(
+      "fragment",
+      "plain-app",
+      'applies_to: [layered]\nverify:\n  - { name: e2e, run: "true" }',
+    ).replace("category: tooling", "category: app"),
+    "",
+  );
+  expect(tables(await brief("bare"))).toEqual([
+    ["| Step | Phase |", "|---|---|", "| `b` | setup |", "| `a` | check |"],
+  ]);
+  expect(tables(await brief("layered"))).toEqual([
+    ["| Step | Phase | Layer |", "|---|---|---|", "| `a` | check | lint |", "| `b` | check |  |"],
+  ]);
+  expect(tables(await brief("timed"))).toEqual([
+    ["| Step | Phase | Expects |", "|---|---|---|", "| `a` | check | timeout 5m |"],
+  ]);
+  // With an app, the base table and the application's table each decide for themselves.
+  expect(tables(await brief("layered", ["plain-app"]))).toEqual([
+    ["| Step | Phase | Layer |", "|---|---|---|", "| `a` | check | lint |", "| `b` | check |  |"],
+    ["| Step | Phase |", "|---|---|", "| `e2e` | check |"],
+  ]);
+});
+
 test("the rules about servers appear only when a step serves", async () => {
   const user = temp();
   writeEntry(

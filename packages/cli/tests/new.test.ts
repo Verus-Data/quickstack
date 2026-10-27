@@ -416,14 +416,36 @@ describe("new refuses before writing", () => {
     expect(stdout).toBe("");
     expect(envelope(stderr).error).toMatchObject({
       tag: "NotFound",
-      details: { suggestions: ["fixture-stack"] },
+      details: { suggestions: ["fixture-stack"], id: "fixture-stak", kind: "stack" },
     });
     const far = await newCli(["nope"]);
     expect(far.status).toBe(2);
     expect(far.stdout).toBe("");
     expect(far.stderr).toBe(
-      "Not found.\n  Next: quickstacks list shows every stack and fragment.\n",
+      "Not found.\n  Stack: nope\n  Next: quickstacks list shows every stack and fragment.\n",
     );
+  });
+
+  test("an unknown --with or --without id is NotFound naming the fragment, not the stack", async () => {
+    for (const flag of ["--with", "--without"]) {
+      const json = await newCli(["fixture-stack", "app", flag, "bogus", "--json"]);
+      expect(json.status).toBe(2);
+      expect(json.stdout).toBe("");
+      expect(json.stderr.trim().split("\n")).toHaveLength(1);
+      expect(envelope(json.stderr).error).toEqual({
+        tag: "NotFound",
+        message: "Not found.",
+        retryable: false,
+        details: { suggestions: [], id: "bogus", kind: "fragment" },
+      });
+      expect(existsSync(join(json.home, "app"))).toBe(false);
+      const human = await newCli(["fixture-stack", "app", flag, "bogus"]);
+      expect(human.status).toBe(2);
+      expect(human.stdout).toBe("");
+      expect(human.stderr).toBe(
+        "Not found.\n  Fragment: bogus\n  Next: quickstacks list shows every stack and fragment.\n",
+      );
+    }
   });
 
   test("an entry file under .quickstacks/ or .git/, in any case and at any depth, is reserved_path: the CLI owns them", async () => {
@@ -682,6 +704,25 @@ describe("template variables", () => {
       details: { id: name, flag: "dir" },
     });
     expect(readdirSync(home).filter((entry) => entry.startsWith("bad"))).toEqual([]);
+  });
+
+  test("a .gitignore shipped as .gitignore.tmpl with no tokens is written as .gitignore, unchanged", async () => {
+    const home = setup();
+    const registry = join(home, "registry");
+    const stack = writeEntry(registry, "stack", "ignores", minimal("stack", "ignores"));
+    mkdirSync(join(stack, "files"));
+    // Braces that aren't a token, a negation and a trailing-space escape stay as written.
+    const rules = "node_modules/\n.env.*\n!.env.example\n# {not a token}\nkeep\\ \n";
+    writeFileSync(join(stack, "files", ".gitignore.tmpl"), rules);
+    const { status, stdout, stderr } = await newCli(["ignores", "app", "--json"], {
+      home,
+      registry,
+    });
+    expect(status).toBe(0);
+    expect(stderr).toBe("");
+    expect(decode(stdout).written).toContain(".gitignore");
+    expect(readFileSync(join(home, "app", ".gitignore"), "utf8")).toBe(rules);
+    expect(existsSync(join(home, "app", ".gitignore.tmpl"))).toBe(false);
   });
 
   test("project_name is the directory's base name; slug and env prefix follow it [1.2a#12]", async () => {

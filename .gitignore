@@ -12,6 +12,8 @@ coverage/
 .env
 .env.*
 !.env.example
+# An entry's template for its project's .env.example (packages/cli/registry)
+!.env.example.tmpl
 
 # Agent worktrees
 .claude/worktrees/

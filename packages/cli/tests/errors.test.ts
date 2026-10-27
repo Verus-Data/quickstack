@@ -214,6 +214,11 @@ test.each([
     "Not found.\n  Did you mean: web?\n  Next: quickstacks validate '/work/my registry' lists the ids under that root.\n",
   ],
   [
+    "NotFound naming the fragment id it didn't find",
+    new NotFound({ details: { suggestions: ["lint"], id: "lnt\u001b", kind: "fragment" } }),
+    "Not found.\n  Fragment: lnt\\u001b\n  Did you mean: lint?\n  Next: quickstacks list shows every stack and fragment.\n",
+  ],
+  [
     "EntryInvalid for an unknown template variable",
     new EntryInvalid({
       details: { id: "web", origin: "user", reason: "template", path: "files/a.tmpl", line: 2 },

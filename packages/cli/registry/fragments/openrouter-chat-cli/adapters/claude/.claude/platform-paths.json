@@ -1,0 +1,1 @@
+{ "paths": ["tui/"], "bunTestPaths": ["tests/tui", "app-e2e"] }
