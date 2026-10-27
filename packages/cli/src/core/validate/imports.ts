@@ -1,5 +1,4 @@
-import { posix } from "node:path";
-import { Effect } from "effect";
+import { Effect, Path } from "effect";
 import type { Finding } from "../../schemas/validate";
 import type { Entry } from "../registry/entry";
 import { shellWords } from "./commands";
@@ -9,6 +8,7 @@ import { type Check, finding, type View } from "./view";
 type ImportFiles = {
   byPath: ReadonlyMap<string, Composed["files"][number]>;
   paths: ReadonlySet<string>;
+  path: Path.Path;
 };
 type ImportRef = { spec: string; line: number };
 const JS_EXT = /\.(?:ts|tsx|js|mjs)$/;
@@ -93,17 +93,18 @@ function shellImports(text: string): ImportRef[] {
   return refs;
 }
 
-function resolve(from: string, spec: string, paths: ReadonlySet<string>, js: boolean) {
+function resolve(from: string, spec: string, files: ImportFiles, js: boolean) {
+  const { path, paths } = files;
   const base = spec.startsWith("/")
-    ? posix.normalize(spec.slice(1))
-    : posix.join(posix.dirname(from), spec);
+    ? path.normalize(spec.slice(1))
+    : path.join(path.dirname(from), spec);
   const candidates = [base];
   if (js) {
     if (base.endsWith(".js"))
       candidates.push(base.replace(/\.js$/, ".ts"), base.replace(/\.js$/, ".tsx"));
-    if (!posix.extname(base))
+    if (!path.extname(base))
       candidates.push(...[".ts", ".tsx", ".js", ".mjs"].map((ext) => base + ext));
-    candidates.push(posix.join(base, "index.ts"));
+    candidates.push(path.join(base, "index.ts"));
   }
   return candidates.find((candidate) => paths.has(candidate));
 }
@@ -125,12 +126,13 @@ function allowedOwners(view: View, entry: Entry): Set<string> {
 
 export const importChecks: Check = (view) =>
   Effect.gen(function* () {
+    const path = yield* Path.Path;
     const findings: Finding[] = [];
     for (const snapshot of (yield* view.composed).snapshots) {
       const byPath = new Map(snapshot.files.map((file) => [file.path, file]));
       const paths = new Set(byPath.keys());
       for (const file of snapshot.files)
-        findings.push(...fileImportFindings(view, snapshot, file, { byPath, paths }));
+        findings.push(...fileImportFindings(view, snapshot, file, { byPath, paths, path }));
     }
     return { findings: uniqueFindings(findings) };
   });
@@ -139,8 +141,9 @@ function fileImportFindings(
   view: View,
   snapshot: Composed,
   file: Composed["files"][number],
-  { byPath, paths }: ImportFiles,
+  files: ImportFiles,
 ): Finding[] {
+  const { byPath } = files;
   const findings: Finding[] = [];
   const js = JS_EXT.test(file.path);
   if (!js && !file.path.endsWith(".sh")) return findings;
@@ -148,7 +151,7 @@ function fileImportFindings(
   if (!source || !view.entries.some((entry) => entry.dir === source.entry.dir)) return findings;
   const allowed = allowedOwners(view, source.entry);
   const checkImport = (ref: ImportRef) => {
-    const target = resolve(file.path, ref.spec, paths, js);
+    const target = resolve(file.path, ref.spec, files, js);
     const owner = target === undefined ? undefined : byPath.get(target)?.owner;
     if (owner?.split("+").some((key) => allowed.has(key))) return;
     const field = source.entry.kind === "stack" ? "fragments.required" : "requires";

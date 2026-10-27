@@ -30,9 +30,11 @@ export class Usage extends Schema.TaggedError<Usage>()("Usage", {
  * and `--without`; `dir`, a project directory whose name has a control character; `brief`, a
  * flag (`--with`, `--without`, `--sandbox`, in `id`) that `validate` takes only with `--brief`;
  * `only`, a `verify --only` name that is no check or serve step, with those steps' names in
- * `known` (1.3a); `name` or `author`, a naming flag with an unsupported control character.
+ * `known` (1.3a); `name` or `author`, a naming flag with an unsupported control character;
+ * `name` also rejects double quotes and backslashes.
  * `fragment` is an add request for a stack or an applied fragment (listed in `alreadyApplied`);
  * `agents` and `sandbox` are add flags that disagree with the manifest.
+ * `create_shadows` names an existing id, with its winning and shadowed origins in `origins`.
  */
 export const BadInputDetails = Schema.Struct({
   id: Schema.String,
@@ -51,11 +53,13 @@ export const BadInputDetails = Schema.Struct({
     "sandbox",
     "create_id",
     "create_target",
+    "create_shadows",
     "from",
     "confirmation",
   ]),
   known: Schema.optionalKey(Schema.Array(Schema.String)),
   alreadyApplied: Schema.optionalKey(Schema.Array(Schema.String)),
+  origins: Schema.optionalKey(Schema.Array(Origin)),
 });
 export class BadInput extends Schema.TaggedError<BadInput>()("BadInput", {
   details: Schema.optionalKey(BadInputDetails),
@@ -133,6 +137,7 @@ export class VerifyChanged extends Schema.TaggedError<VerifyChanged>()("VerifyCh
 /**
  * `reason` is a closed set later sub-phases extend; `path` is the file or directory involved.
  * `escape`: a write would land outside the project (its real path isn't under the project's).
+ * `blocked`: a live file or directory blocks a planned add path; `path` is the blocker.
  * `unwritable`: the project directory or a file in it couldn't be created or written.
  * `agent` and `no-tty`: a confirmation only a person at a terminal may give (Trust model, point 4)
  * was asked for under a detected agent, or without a terminal on stdin.
@@ -145,6 +150,7 @@ export const PermissionDeniedDetails = Schema.Struct({
     "read",
     "escape",
     "unwritable",
+    "blocked",
     "agent",
     "no-tty",
     "state-unwritable",
@@ -525,6 +531,12 @@ function badInputLines(details: typeof BadInputDetails.Type): string[] {
         `Id: ${id}`,
         "Next: use a lowercase kebab-case id, with only letters and digits between hyphens.",
       ];
+    case "create_shadows":
+      return [
+        `Id: ${id}`,
+        `Origins: ${details.origins?.join(", ") ?? ""}`,
+        `Next: use --from ${details.origins?.[0] ?? "<origin>"} to start from a copy, or pick another id.`,
+      ];
     case "create_target":
       return [`Path: ${id}`, "Next: edit the existing entry, or choose an unused id."];
     case "from":
@@ -559,6 +571,10 @@ function badInputLines(details: typeof BadInputDetails.Type): string[] {
         `Next: name ${id} in only one of --with and --without.`,
       ];
     case "name":
+      return [
+        `Flag: --name ${id}`,
+        "Next: pass --name without control characters, double quotes or backslashes.",
+      ];
     case "author":
       return [
         `Flag: --${details.flag} ${id}`,
@@ -639,6 +655,11 @@ function permissionReason(reason: (typeof PermissionDeniedDetails.Type)["reason"
       return [
         "The path resolves outside the project directory, through a symlink or `..`.",
         "Next: remove that symlink from the project directory, or pick another directory.",
+      ];
+    case "blocked":
+      return [
+        "A file or directory in the project is in the way of a planned path. Nothing was changed.",
+        "Next: move or rename the blocking item, then run add again.",
       ];
     case "unwritable":
       return [

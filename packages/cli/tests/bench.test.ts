@@ -346,6 +346,51 @@ test.for(["stack", "fingerprint"])(
   },
 );
 
+test("a continuation refuses a previous note symlink without changing its target", async ({
+  space,
+}) => {
+  const f = benchFixture(space, compiled);
+  passed(await f.invoke(["--keep"]));
+  const first = record(f);
+  if (!first.note) throw new Error("missing first note");
+  const root = kept(f);
+  const sentinel = join(f.root, "outside.md");
+  writeFileSync(sentinel, "keep this sentinel\n");
+  rmSync(join(f.root, first.note));
+  symlinkSync(sentinel, join(f.root, first.note));
+  commitRun(f);
+  f.git("add", "outside.md");
+  f.git("commit", "--quiet", "-m", "fixture: preserve outside sentinel");
+  const before = f.snapshot();
+  const result = await f.invoke(["--existing", root, "--keep"]);
+  expect(result.status).toBe(1);
+  expect(result.stdout).toBe("");
+  expect(result.stderr).toMatch(/note|plans\/runs/i);
+  expect(readFileSync(sentinel, "utf8")).toBe("keep this sentinel\n");
+  expect(f.snapshot()).toEqual(before);
+}, 60_000);
+
+test.for(["../outside.md", "/tmp/outside.md", "plans/runs/nested/note.md"])(
+  "a continuation refuses an unsafe state note: %s",
+  { timeout: 60_000 },
+  async (note, { space }) => {
+    const f = benchFixture(space, compiled);
+    passed(await f.invoke(["--no-record", "--keep"]));
+    const root = kept(f);
+    const file = join(root, "bench/state.json");
+    const state = JSON.parse(readFileSync(file, "utf8"));
+    writeFileSync(file, JSON.stringify({ ...state, note }));
+    const before = digests(root);
+    const repoBefore = f.snapshot();
+    const result = await f.invoke(["--existing", root, "--keep"]);
+    expect(result.status).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toMatch(/Invalid existing bench manifest or kept state/);
+    expect(digests(root)).toEqual(before);
+    expect(f.snapshot()).toEqual(repoBefore);
+  },
+);
+
 test("only executed shipped hooks are recorded, without duplicates [2.0b#13]", async ({
   space,
 }) => {
