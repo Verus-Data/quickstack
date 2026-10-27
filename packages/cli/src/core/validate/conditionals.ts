@@ -27,10 +27,26 @@ export const conditionalChecks: Check = (view) =>
   Effect.gen(function* () {
     const registry = yield* Registry;
     const findings: Finding[] = [];
-    const stackIds = new Set(view.all.filter((item) => item.kind === "stack").map((i) => i.id));
-    const fragmentIds = new Set(
-      view.all.filter((item) => item.kind === "fragment").map((item) => item.id),
-    );
+    /**
+     * A `stack=` or `with=` id: unknown is an error; found only outside the root is the same
+     * `resolved-outside-root` note `referenceChecks` gives, since the block then depends on this
+     * machine.
+     */
+    const resolve = (kind: "stack" | "fragment", key: string, id: string) => {
+      const target = view.all.find((item) => item.kind === kind && item.id === id);
+      if (!target)
+        return {
+          check: "conditional-ids",
+          severity: "error",
+          message: `${key}=${id} names no ${kind}, so the block is never kept`,
+        } as const;
+      if (view.inRoot(target)) return undefined;
+      return {
+        check: "resolved-outside-root",
+        severity: "note",
+        message: `${key}=${id} names a ${kind} found in the ${target.origin} registry`,
+      } as const;
+    };
     const tags = new Set(
       view.all.flatMap((item) =>
         "meta" in item && item.meta.kind === "stack" ? item.meta.tags : [],
@@ -58,28 +74,14 @@ export const conditionalChecks: Check = (view) =>
       }
       for (const block of scanned.blocks) {
         const line = block.start + offset;
-        for (const id of block.condition.stack ?? [])
-          if (!stackIds.has(id))
-            findings.push(
-              finding(entry, {
-                check: "conditional-ids",
-                severity: "error",
-                file,
-                line,
-                message: `stack=${id} names no stack, so the block is never kept`,
-              }),
-            );
-        for (const id of block.condition.with ?? [])
-          if (!fragmentIds.has(id))
-            findings.push(
-              finding(entry, {
-                check: "conditional-ids",
-                severity: "error",
-                file,
-                line,
-                message: `with=${id} names no fragment, so the block is never kept`,
-              }),
-            );
+        for (const [kind, key, ids] of [
+          ["stack", "stack", block.condition.stack ?? []],
+          ["fragment", "with", block.condition.with ?? []],
+        ] as const)
+          for (const id of ids) {
+            const found = resolve(kind, key, id);
+            if (found) findings.push(finding(entry, { ...found, file, line }));
+          }
         for (const [key, values] of [
           ["tag", block.condition.tag ?? []],
           ["tag!", block.condition["tag!="] ?? []],

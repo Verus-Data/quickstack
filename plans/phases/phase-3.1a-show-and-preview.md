@@ -43,7 +43,7 @@ Go CLI (go-cli), stack, origin bundled, trusted
 A Go command-line tool with ...
 Fragments: required none; default agent-ops, git-hooks, ci-github; optional goreleaser
 Verify: install, build, lint, test, smoke, readme-filled
-Brief: 2,980 words with defaults (cap 5,000)
+Brief: 2,980 words with defaults (cap 6,000; 9,000 with an app)
 Last run: green 2026-11-02, same content
 --- guidance ---
 <body, every conditional branch>
@@ -91,19 +91,21 @@ Human output prints the brief to stdout and the size report to stderr. `--json` 
 ```json
 {
   "stack": "go-cli",
-  "fragments": ["agent-ops", "git-hooks", "ci-github"],
   "preset": "sandbox",
-  "agent": "claude",
+  "fragments": ["agent-ops", "git-hooks", "ci-github"],
+  "app": null,
+  "briefWords": 2980,
+  "fixedWords": 750,
+  "limit": 6000,
+  "warnings": [],
   "brief": "# Build example: Go CLI\n...",
-  "words": {
-    "brief": 2980,
-    "cap": 5000,
-    "entries": [{ "id": "go-cli", "body": 1266, "cap": 2000 }]
-  },
   "fingerprint": "sha256:...",
   "findings": []
 }
 ```
+
+The fields up to `brief` are 1.5's `BriefPreview` as shipped; `limit` is 6,000, or 9,000
+when `app` is set (1.5's `BUDGET`). This phase adds `fingerprint` and `findings`.
 
 `findings` are 1.5's findings for the composed entries, with 1.5's severities ([Other shared facts: validate severities](../roadmap.md#other-shared-facts)). Any `error` (a composed brief over the cap among them) exits 2 with `ValidationFailed`, which keeps its result, so stdout still holds the brief and the author can read what to cut.
 

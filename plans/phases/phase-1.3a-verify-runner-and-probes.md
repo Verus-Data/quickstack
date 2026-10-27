@@ -235,7 +235,7 @@ On failure the result stays on stdout and the error envelope is the last stderr 
 | `partial`, every selected step passed | 0 | none; the brief says done means `green` |
 | `failed` (including every failure being `env`) | 5 | `VerifyFailed`, `details: { failed: [{ name, failureKind, exitCode? }] }` |
 | `interrupted` | 130 | `Interrupted` |
-| No manifest found walking up | 2 | `NotFound`, `details: { looked: [<dirs>] }` (`looked` is an optional key this sub-phase adds to the closed `NotFound` details struct 1.1 defines as `{ suggestions }`); the fixed message names `quickstacks new` |
+| No manifest found walking up | 2 | `NotFound`, `details: { suggestions: [], looked: <start dir> }`, reusing the optional string `looked` 1.5 added to the closed `NotFound` details struct (the resolved directory the walk started from, not a list); the fixed message names `quickstacks new` |
 | Manifest fails to decode | 3 | `InvalidConfig`, `details: { path, field }`; a higher `schemaVersion` gets the fixed "upgrade quickstacks" message ([roadmap, Schema versions](../roadmap.md#schema-versions)) |
 
 `VerifyFailed`'s `details` is a closed `Schema.Struct` holding only step names, kinds and

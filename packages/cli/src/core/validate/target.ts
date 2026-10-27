@@ -57,11 +57,11 @@ export const resolveTarget = (given: string | undefined) =>
     for (const { dir } of kinds)
       if (yield* isDirectory(path.join(at, dir)))
         return { root: at, bundled: yield* isBundled(at) } satisfies Target;
+    // A directory directly under `stacks/` or `fragments/` is that kind's entry, even with its
+    // markdown file missing or the other kind's in its place: the checks report what's wrong.
+    const parent = path.dirname(at);
     for (const { kind, dir } of kinds) {
-      if (!(yield* exists(path.join(at, markdownFile(kind))))) continue;
-      const parent = path.dirname(at);
-      // An entry outside a `stacks/` or `fragments/` directory belongs to no registry.
-      if (path.basename(parent) !== dir) return yield* missing(at);
+      if (path.basename(parent) !== dir) continue;
       const root = path.dirname(parent);
       return {
         root,
@@ -69,6 +69,9 @@ export const resolveTarget = (given: string | undefined) =>
         only: { kind, id: path.basename(at) },
       } satisfies Target;
     }
+    // An entry outside a `stacks/` or `fragments/` directory belongs to no registry.
+    for (const { kind } of kinds)
+      if (yield* exists(path.join(at, markdownFile(kind)))) return yield* missing(at);
     if (yield* isBundled(at)) return { root: at, bundled: true } satisfies Target;
     return yield* missing(at);
   });

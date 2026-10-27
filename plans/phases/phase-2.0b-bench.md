@@ -128,6 +128,9 @@ it in-process.
    `minutesToGreen`, `minutesToFirstTest` and `interventions` come from `runs --json`,
    so they mean exactly what 2.0c says. The bench's own verify is excluded from
    `verifyRuns` (it subtracts one), because the measure is the agent's loop.
+   `minutesToGreen` is the whole run's (`firstGreenAt`, which 3.5b keeps meaning the whole
+   project), never the base stage's; for a run with an app, the run note records the time to
+   a green base, read from the first run record whose `stages.base` is `green` (3.5b).
 9. **Classify** into 2.0c's `result` values:
    - `infra` when the adapter reports `error` and the snapshot from step 5 is unchanged
      (the agent wrote no files, `NOTES.md` included).

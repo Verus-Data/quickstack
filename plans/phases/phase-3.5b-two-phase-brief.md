@@ -14,7 +14,7 @@ for each bundled app with a stub provider. Body rewritten to match 2026-10-26
 | Traces to | The developer who starts projects often: "I want it set up the way I'd set it up myself"; assumption 1 (brief size): splitting a brief into a base and an application is the other tool against brief growth besides the budget; the coding agent's frustration with "ambiguity" |
 | Depends on | [1.1](phase-1.1-composition-and-brief.md) (apps as `category: app` fragments, the `app` tag, the split brief), [1.2b](phase-1.2b-manifest-state-and-detection.md) (the manifest and `digestSteps`, which covers tags), [1.3a](phase-1.3a-verify-runner-and-probes.md) (the step runner, `VerifyResult`), [1.3b](phase-1.3b-tamper-detection-and-run-records.md) (the tamper check and `RunRecord`), [1.5](phase-1.5-validate-and-brief-budget.md) (app budgets and checks), [2.0b](phase-2.0b-bench.md) (the bench run that proves each app), [2.0c](phase-2.0c-run-ledger.md) (the ledger) |
 | Blocks | Nothing. [3.3b](phase-3.3b-bundled-stack-expansion.md) may move a stack's slice into an app when it won't fit D5 |
-| Decisions needed | D18 as amended (apps are fragments). D5: the app caps the roadmap's Feature gaps row proposes. D14 unchanged: app steps and their `app` tag are in the digest |
+| Decisions needed | D18 as amended (apps are fragments). D5 as amended: an app body 3,000 words and a composed brief with an app 9,000, which 1.5 enforces (`budget.ts::BUDGET`). D14 unchanged: app steps and their `app` tag are in the digest |
 | Settles | How verify orders and reports the two stages; the run record's `stages`; how app proofs are keyed in the ledger |
 
 ## Scope
@@ -82,7 +82,9 @@ the app stage failed, the `Next:` line points at the application section of
 `RunRecord` gains the same optional `stages` field; new optional fields don't bump the run
 record's version (roadmap, Schema versions). `firstGreenAt` keeps meaning the whole
 project. Time to a green base is read from the first run record whose `stages.base` is
-`green`, so the state record gains no field (it follows the manifest's version rule, and
+`green`; its reader is 2.0b's run note, which records it beside the whole run's
+`minutesToGreen` (2.0c's ledger, `runs` and 4.1a's telemetry keep only the whole-run
+outcome, and 4.0a moves `RunRecord` with the field). So the state record gains no field (it follows the manifest's version rule, and
 1.2b declared no such optional field).
 
 An app is selected with `--with`, so an app run's `LedgerKey` already names it in `with`;

@@ -319,7 +319,8 @@ Through `runCli` with temp HOME, XDG dirs and a temp `cwd`.
     path, and one with `schemaVersion` above 1 carries the version too, checked before the
     decode so a newer manifest with new keys still reports its version. The fixed "upgrade
     quickstacks" text is a human detail line, since a tag's message is fixed. A missing
-    manifest is `NotFound` with no details (1.3a adds `looked`) and an unreadable one is
+    manifest is `NotFound` with no details (1.3a sets `looked`, the string 1.5 added, to the
+    directory its walk started from) and an unreadable one is
     `PermissionDenied` `read`.
   - **`ManifestStep` keeps `VerifyStep`'s optional fields.** It spreads
     `VerifyStep.fields` without `VerifyStep`'s check (which refuses the CLI's `app` tag),

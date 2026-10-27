@@ -3,7 +3,7 @@
 Status: DRAFT 2026-10-26 (not agreed). Revised 2026-10-26: runs use a compiled binary or
 a packed tarball, since packaging (0.2) moved to the final step before public release;
 the "release tarball" this file ends with is produced by 1.6c in that case. With 1.6a now
-porting the whole catalog, D20 implies one run per bundled stack unless the maintainers
+bringing the whole catalog into v1 and validating it, D20 implies one run per bundled stack unless the maintainers
 narrow it to D13's three
 
 | Field | Value |

@@ -24,6 +24,14 @@ type Reason = "decode" | "symlink" | "id_mismatch" | "missing" | "unreadable";
 /** A rejected entry plus what `get` needs to report it. */
 type Rejection = { rejected: RejectedEntry; reason: Reason; path?: string };
 type Found = Omit<Entry, "shadows" | "trusted">;
+/**
+ * What loading passed over without an entry or a rejection: an entry whose `schema_version` is
+ * newer than this CLI reads (a lower origin's copy may win instead), or a project root or its
+ * `stacks/` or `fragments/` that is a symlink, with everything under it.
+ */
+export type Skipped =
+  | { reason: "newer"; origin: Origin; kind: Kind; id: string; dir: string; version: number }
+  | { reason: "symlink"; origin: Origin; dir: string };
 type Candidate = { _tag: "Entry"; entry: Found } | { _tag: "Rejected"; rejection: Rejection };
 /** Every regular file under a directory, or the first symlink met (nothing past it is read). */
 type Walked =
@@ -85,6 +93,8 @@ export class Registry extends Context.Service<
   {
     /** Every winning entry and every rejected one: stacks first, then fragments, each by id. */
     readonly all: Effect.Effect<ReadonlyArray<Entry | RejectedEntry>, PermissionDenied>;
+    /** What loading skipped, in load order; `validate` reports it. */
+    readonly skipped: Effect.Effect<ReadonlyArray<Skipped>, PermissionDenied>;
     /** An unreadable entry is `PermissionDenied`; any other rejected one is `EntryInvalid`. */
     readonly get: (
       kind: Kind,
@@ -201,6 +211,7 @@ export class Registry extends Context.Service<
                 yield* Effect.logWarning(
                   `Skipped ${origin} ${kind} ${printable(id)}: schema_version ${decoded.version} is newer than this CLI reads`,
                 );
+                skipped.push({ reason: "newer", origin, kind, id, dir, version: decoded.version });
                 return undefined;
               case "Invalid":
                 return reject("decode", decoded.error, file);
@@ -222,10 +233,16 @@ export class Registry extends Context.Service<
           const found = new Map<string, Array<{ root: RegistryRoot; candidate: Candidate }>>();
           for (const root of roots) {
             const strict = root.origin === "project";
-            if (strict && (yield* linked(root.path))) continue;
+            if (strict && (yield* linked(root.path))) {
+              skipped.push({ reason: "symlink", origin: root.origin, dir: root.path });
+              continue;
+            }
             for (const { kind, dir } of kinds) {
               const parent = path.join(root.path, dir);
-              if (strict && (yield* linked(parent))) continue;
+              if (strict && (yield* linked(parent))) {
+                skipped.push({ reason: "symlink", origin: root.origin, dir: parent });
+                continue;
+              }
               for (const id of yield* names(parent)) {
                 const loaded = yield* candidate(root.origin, kind, path.join(parent, id), id);
                 if (!loaded) continue;
@@ -260,6 +277,8 @@ export class Registry extends Context.Service<
             return x.kind !== y.kind ? (x.kind === "stack" ? -1 : 1) : x.id < y.id ? -1 : 1;
           });
         });
+        /** Filled while `load` runs; read only after it has. */
+        const skipped: Skipped[] = [];
         const loaded = yield* Effect.cached(load);
 
         /**
@@ -304,6 +323,7 @@ export class Registry extends Context.Service<
           all: loaded.pipe(
             Effect.map((items) => items.map((item) => ("rejected" in item ? item.rejected : item))),
           ),
+          skipped: loaded.pipe(Effect.map(() => [...skipped])),
           get: (kind, id) =>
             Effect.gen(function* () {
               const item = (yield* loaded).find((value) => {
