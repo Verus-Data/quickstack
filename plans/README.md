@@ -97,6 +97,24 @@ A contract used by more than one sub-phase is defined once, in the roadmap's
 table names, and every other file cites it by name. The same holds for the
 [trust model](roadmap.md#trust-model).
 
+A plan's `## Acceptance tests` section is a numbered list (`1.`, `2.`, and `12a.` for one
+inserted later), ending with a `### Realistic edge cases` subsection whose items continue
+the numbering. Those are the cases from `.claude/rules/cli/testing.md` "Realistic edge
+cases" that apply to this sub-phase, and each becomes a test like any other item. Every
+item's test carries a tag in its name, `[<sub-phase>#<number>]`, such as
+`test("a second new into the same directory is TargetNotEmpty [1.2a#4]", ...)`. A plan
+opts into checking with a line `Acceptance tests: traced` under its status line; from
+then on the root `tests/acceptance/trace.test.ts` fails when a number has no tagged test
+under `packages/cli/tests` or `packages/cli/e2e`, or when a tag names a number the plan
+doesn't list.
+
+Each new sub-phase, starting with 1.3a, gets its acceptance tests before its code. A test
+author, a different agent from the implementer, writes them from the plan as tagged,
+failing tests and adds the traced line. The implementer makes them pass without editing
+their assertions. A change to a test's intent is a change to the plan, made there first.
+A test the implementer believes is wrong is reported to the maintainers, not quietly
+rewritten.
+
 No individual's name appears in a plan. Owners are "the maintainers" or "an agent".
 
 New work gets a file at this level named for its topic (`topic.md`), or

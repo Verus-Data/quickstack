@@ -37,6 +37,18 @@ Replace a service with a test layer only at a real boundary: the process and ter
 - Commands that run steps or spawn processes: run real, tiny, deterministic programs (a script in the temp dir that writes a file or exits with a code) rather than faking the process service, unless the test is about a failure the OS won't produce on demand.
 - A fake must behave like the real thing on the paths the test uses, including its failures (EPIPE, permission denied, missing file).
 
+## Realistic edge cases
+
+Tests written next to the code tend to confirm the path the author had in mind. In phase 1, review found bugs in every sub-phase that full line coverage had missed, and they all came from the same few places. Before calling a feature done, ask what real users, real machines and real entries will throw at it, and write a test for each case that applies. Realistic means it happens without an attacker: a dotfiles repo, a Docker volume, a macOS laptop, an agent's shell, a half-finished earlier run.
+
+- The filesystem as it is. Symlinks anywhere on a path (inside an entry, as a root, as an intermediate directory, pointing at `/` or in a loop), case-insensitive volumes (`.GIT` is `.git` on APFS, `README.md` and `readme.md` collide), paths with spaces, leading dashes and non-ASCII names, and real paths that differ from the given one (`/var` and `/private/var`).
+- State that was already there. A target holding a broken `.git`, a partial scaffold from an interrupted run, a parent repository, a directory that is its own repository, an unreadable file or directory, a file where a directory is expected.
+- The environment the CLI inherits. Variables a git hook or a wrapper exports (`GIT_DIR` and friends), agent markers, a missing or relative `XDG_*`, a working directory other than the package's.
+- Text from entries and users. Control characters, escape sequences and newlines in names and descriptions, quotes and backslashes in template values, YAML that parses with warnings, and keys in the wrong case.
+- Interruption and partial failure at each step that writes, not only the last one, with a test that rollback removes what the step created and nothing it didn't.
+
+Check findings, not just the happy result. When a command reports problems (`validate`, `list`'s rejected rows), assert the exact set it reports, so a duplicate or a false positive fails the test as surely as a missing finding.
+
 ## Effect-specific rules
 
 - Test failures as values. Expected failures are tagged errors, and the test asserts which error came out and what exit code and envelope it maps to. Every error tag in `errors.ts` stays covered by the exhaustive table test.
@@ -45,8 +57,16 @@ Replace a service with a test layer only at a real boundary: the process and ter
 - Build fresh layers for each test. Nothing is cached across invocations, so a test that needs a "second run" builds a second layer.
 - Don't widen a service's interface or add test-only exports to make something testable. Put helpers in `tests/helpers/`.
 
+## Manual QA as the user
+
+Agents are this CLI's main user, so the agent building a command is also its first user. Before a sub-phase is called done, run the changed command for real, as `rules/cli/cli.md` "Verifying UX" describes: through `bun run dev` or the compiled binary, in human and `--json` modes, on success and on the realistic failures above.
+
+Then judge it as the agent that will depend on it. Could I pick the next step from this output alone? Is anything missing, noisy, ambiguous or surprising? Would I want a different flag, default, message or exit code? Does the JSON give me what I need to branch without parsing prose? Fix what fails that judgement, or record it with a reason in the plan's "What this plan may get wrong". The implementer's report ends with a short QA note: the commands run, what it judged, and what it changed.
+
 ## Process and gate
 
+- Each new sub-phase, starting with 1.3a, is test-first. A test author, a different agent from the implementer, writes the plan's numbered acceptance tests and its realistic edge cases as tagged, failing tests. The implementer makes them pass without editing their assertions. A change to a test's intent goes back to the plan, and a test the implementer believes is wrong is reported, not quietly rewritten.
+- Tag each acceptance test in its name with the plan's sub-phase and number, `[1.3a#4]` or `[1.0#12a]`, one tag per number it covers. For a plan carrying the line `Acceptance tests: traced`, the root `tests/acceptance/trace.test.ts` fails on any number with no tagged test under `packages/cli/tests` or `packages/cli/e2e`, and on any tag naming a number its plan doesn't list.
 - A bug fix starts with a failing test that reproduces it through the narrowest real interface (`runCli` if possible).
 - Never weaken, skip or delete an existing assertion to get green. If a contract changes on purpose, change its test in the same commit and say why.
 - Name tests after behavior ("--json after -- belongs to the command"), not after functions.
