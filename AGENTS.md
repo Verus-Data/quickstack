@@ -4,7 +4,7 @@
 
 A bun workspace; every package is in `packages/<name>/`. `packages/cli` is `quickstacks`, the CLI: Effect 4 commands/services, doctor/version, lazy configuration, safe output and logs. Bun compiles the executable; Node 24 runs Vitest. There is no product code, vendor, release tooling or network requirement. `packages/api` (`@quickstacks/api`) and `packages/mcp` (`@quickstacks/mcp`) are placeholders with no code or scripts. Code two packages share goes in its own package, never imported across another package's `src/`. How the monorepo works and how to add a package: README.md, "Monorepo".
 
-The root owns the harness: `.claude/`, lefthook, CI, the root `biome.json`, `tsconfig.base.json`, and the root test suite in `tests/`: the hook tests in `tests/hooks/` and the check in `tests/acceptance/` that traces each plan's acceptance tests to tagged CLI tests. Each package owns its source, tests, `tsconfig.json` (extending `../../tsconfig.base.json`) and any Biome plugins in a nested `biome.json` (`"root": false, "extends": "//"`). See docs/harness.md.
+The root owns the harness: `.claude/`, lefthook, CI, the root `biome.json`, `tsconfig.base.json`, and the root test suite in `tests/`: the hook tests in `tests/hooks/`, the delegate runner's in `tests/scripts/` and the check in `tests/acceptance/` that traces each plan's acceptance tests to tagged CLI tests. Each package owns its source, tests, `tsconfig.json` (extending `../../tsconfig.base.json`) and any Biome plugins in a nested `biome.json` (`"root": false, "extends": "//"`). See docs/harness.md.
 
 ## Planning
 
@@ -27,7 +27,7 @@ Root commands run from the repo root and fan out to every workspace package (`bu
 | `bun run lint` | Biome over the whole repo, with each package's nested plugins |
 | `bun run format` | Safe fixes and formatting |
 | `bun run test` | Root tests (hooks and acceptance trace), then each package's tests |
-| `bun run test:hooks` | Root tests only: `tests/hooks/` and `tests/acceptance/` (Vitest on Node) |
+| `bun run test:hooks` | Root tests only: `tests/hooks/`, `tests/scripts/` and `tests/acceptance/` (Vitest on Node) |
 | `bun run coverage` | Each package's coverage |
 | `bun run e2e` | Each package's end-to-end checks |
 | `bun run check` | Lint, typecheck, test, e2e: the gate |
@@ -123,6 +123,10 @@ The shipped dev wrapper was adapted to forward directly delivered SIGINT/SIGTERM
 ## Deferred
 
 Application features, install/update distribution and release workflow (decision A1, open in `plans/`), and SHA-pinned CI actions.
+
+## Delegates
+
+Claude Code orchestrates; Codex takes the coding tasks Claude delegates (`scripts/delegate.sh`, workflow in `.claude/skills/delegate/SKILL.md`). A delegate is trusted like Claude Code and works in its own worktree from a contract file with full access (network, `bun add`, git, the whole gate). It leaves its changes uncommitted and doesn't push, because Claude reviews, refactors and commits them, and it keeps to the contract's scope. A dependency it adds keeps shared versions in the root `workspaces.catalog`. The Claude hooks don't run for a delegate, so it runs the contract's checks itself (`bun run lint`, `bun run typecheck` and the named tests) and reports each result; Claude reviews, refactors and commits. `.claude/rules/` is Claude's: a contract names the rule files that apply to the task.
 
 ## Pending user actions
 

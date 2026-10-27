@@ -31,6 +31,8 @@
       "Bash(bun test ./packages/*)",
       "Bash(./dist/*)",
       "Bash(./packages/*/dist/*)",
+      "Bash(scripts/delegate.sh *)",
+      "Bash(./scripts/delegate.sh *)",
       "Bash(git status)",
       "Bash(git status *)",
       "Bash(git diff)",
