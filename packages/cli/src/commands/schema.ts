@@ -55,6 +55,18 @@ export const schemaCommand = Command.make(
     }),
 ).pipe(
   Command.withDescription(
-    "Print the JSON Schema of a --json result, the error envelope or verify's live events, so a caller can validate what it parses. With no name, list the names.",
+    "Print the JSON Schema of a --json result, the error envelope or verify's live events, so a caller can validate what it parses. With no name, list the names. Exits 0, 2 on a usage error or an unknown name, 130 when interrupted.",
   ),
+  Command.withShortDescription("Print the JSON Schema of a --json result."),
+  Command.withExamples(({ commandPath }) => [
+    { command: commandPath.join(" "), description: "List the schema names" },
+    {
+      command: `${commandPath.join(" ")} verify`,
+      description: "Print the schema of verify --json's result",
+    },
+    {
+      command: `${commandPath.join(" ")} error --json`,
+      description: "Print the error envelope's schema as compact JSON",
+    },
+  ]),
 );

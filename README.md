@@ -1,6 +1,8 @@
 # quickstacks
 
-A bun workspace. Product planning is in [plans/](plans/README.md) and [product/](product/PROBLEM_STATEMENT.md); there is no product code yet.
+quickstacks starts projects for coding agents. To use it, follow the [quick start](packages/cli/docs/quickstart.md); the [docs index](packages/cli/docs/README.md) has everything else.
+
+This repository is a bun workspace. Product planning is in [plans/](plans/README.md) and [product/](product/PROBLEM_STATEMENT.md).
 
 | Path | What it is |
 | --- | --- |
@@ -9,7 +11,7 @@ A bun workspace. Product planning is in [plans/](plans/README.md) and [product/]
 | [packages/mcp](packages/mcp/README.md) | `@quickstacks/mcp`, the MCP server (placeholder, no code yet) |
 | `.claude/`, `docs/harness.md` | The agent harness: hooks, rules, skills and their tests in `tests/hooks/`, and the acceptance trace in `tests/acceptance/` |
 
-## Quick start
+## Development quick start
 
 Use Bun 1.4.2 and Node 24 LTS. Install lefthook (`brew install lefthook` on macOS) and jq for the development hooks.
 

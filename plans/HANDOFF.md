@@ -9,6 +9,16 @@ Start here, then read repo `AGENTS.md`, the README's
 next steps, who owns each. When it grows past a couple of screens, move the dated detail
 to `archive/` and leave a link.
 
+## User documentation (2026-10-27)
+
+The CLI's user docs live in `packages/cli/docs/` (index: `docs/README.md`): quick start,
+concepts, agents, architecture, the reference pages that used to be the CLI README, and
+maintaining. `packages/cli/README.md` is now a short entry page. Every command's `--help`
+states its exit codes and examples (`tests/help.test.ts`), and `tests/docs.test.ts` checks
+the docs' links and command names. Not done: structured `--help --json` (still `{ help }`),
+and `create --from` still lists `user` as a choice it refuses. The Mermaid diagrams weren't
+rendered locally; check them on GitHub once pushed.
+
 ## 1.6b gate runs (2026-10-27)
 
 [1.6b](phases/phase-1.6b-mvp-gate-runs.md) ran headless from the compiled binary for D13's
@@ -46,7 +56,7 @@ reworded for `dist/quickstacks` or deferred in its plan.
   `claude-harness`, sharing one shell lexer with the repo's own hooks),
   [3.4b](phases/phase-3.4b-native-agent-adapters.md) (Codex, OpenCode and Cursor adapters
   calling the same shell guards, a reference check per config format, and the skill's Claude
-  Code plugin; publishing it is a manual step in `packages/cli/README.md`).
+  Code plugin; publishing it is a manual step in `packages/cli/docs/maintaining.md`).
 - Deferred to phase 4 or later: [3.2a](phases/phase-3.2a-git-sources-and-untrusted-origin.md) and
   [3.2b](phases/phase-3.2b-source-updates-and-trust-report.md), gated on outside demand and open
   question 18.

@@ -8,7 +8,7 @@ import { runCli } from "./helpers/cli";
 
 const decode = (stdout: string) => Schema.decodeUnknownSync(GuideResult)(JSON.parse(stdout));
 const FOOTER =
-  "Start here (agents): quickstacks list --json, pick a stack and tell the user why,\nthen quickstacks new <stack> <dir> --json, then follow .quickstacks/BRIEF.md\nuntil quickstacks verify is green. Run quickstacks with no arguments for the full guide.";
+  "Start here (agents): quickstacks list --json, pick a stack and tell the user why,\nthen quickstacks new <stack> <dir> --sandbox --json, then follow .quickstacks/BRIEF.md\nuntil quickstacks verify is green. Run quickstacks with no arguments for the full guide.";
 
 test("quickstacks with no arguments prints the agent guide, under 250 words, with the trust and VerifyChanged rules [1.4#11]", async () => {
   const { status, stdout, stderr } = await runCli([]);
@@ -42,7 +42,9 @@ test("quickstacks --json with no subcommand returns the guide and its commands [
   expect(result.guide.startsWith("quickstacks starts projects")).toBe(true);
   expect(result.commands.map((command) => command.name)).toEqual([
     "list",
+    "show",
     "new",
+    "add",
     "verify",
     "validate",
     "guide",

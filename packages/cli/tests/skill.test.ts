@@ -20,6 +20,7 @@ import { splitFrontmatter } from "../src/core/registry/entry";
 import { DoctorReport } from "../src/schemas/doctor";
 import { quiet, runCli, tempDir, terminal } from "./helpers/cli";
 import { spawnGit } from "./helpers/git";
+import { declaredFlags } from "./helpers/help";
 
 const shipped = fileURLToPath(new URL("../skill/", import.meta.url));
 const fixture = fileURLToPath(new URL("./fixtures/skill/", import.meta.url));
@@ -110,19 +111,6 @@ function commands(body: string) {
     name: match[1] ?? "",
     flags: [...new Set(match[2]?.match(/--[a-z][a-z-]*/g) ?? [])],
   }));
-}
-
-/** Only the option column under FLAGS declares flags; descriptions can mention other commands. */
-function declaredFlags(help: string): Set<string> {
-  const flags = new Set<string>();
-  let options = false;
-  for (const line of help.split("\n")) {
-    if (/^[A-Z][A-Z ]*$/.test(line)) options = line === "FLAGS" || line === "GLOBAL FLAGS";
-    if (!options) continue;
-    const declaration = /^ {2}(--[a-z][a-z-]*)(?=[ ,\t]|$)/.exec(line);
-    if (declaration?.[1]) flags.add(declaration[1]);
-  }
-  return flags;
 }
 
 describe("shipped agent skill", () => {
