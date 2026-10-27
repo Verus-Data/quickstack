@@ -62,7 +62,7 @@ Each exit code means one next action, and a published code never changes meaning
 | 0 | | Success. For `verify`, check the outcome: `partial` is exit 0 but not done |
 | 1 | `Defect` | A bug in quickstack; not retryable |
 | 2 | `Usage`, `BadInput`, `NotFound`, `EntryInvalid`, `ComposeConflict`, `TargetNotEmpty`, `ValidationFailed` | Fix the input. `ValidationFailed` keeps its report on stdout |
-| 3 | `NotConfigured`, `InvalidConfig` | Fix the configuration or manifest, or upgrade quickstack for a newer schema |
+| 3 | `NotConfigured`, `InvalidConfig` | Fix the configuration or manifest, or upgrade @steamfield/stacks for a newer schema |
 | 4 | `UpstreamUnavailable` | Retry later |
 | 5 | `VerifyFailed`, `VerifyChanged` | Read the verify report on stdout |
 | 6 | `PermissionDenied` | Ask a person |

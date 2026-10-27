@@ -211,7 +211,7 @@ stacks doctor
 stacks doctor --json
 ```
 
-`doctor` reports version, platform, compiled status, executable, config, data and working paths, the user entry directory, the bundled registry and skill paths (and whether each exists), and safe configuration errors. A missing configuration file is fine. A malformed optional file is reported in `configErrors` while doctor exits successfully; help and version don't open that file.
+`doctor` reports version, platform, executable, config, data and working paths, the user entry directory, the bundled registry and skill paths (and whether each exists), and safe configuration errors. A missing configuration file is fine. A malformed optional file is reported in `configErrors` while doctor exits successfully; help and version don't open that file.
 
 ## schema
 

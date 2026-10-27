@@ -76,7 +76,7 @@ describe("installed Node package", () => {
     expect(JSON.parse(result.stdout)).toMatchObject({
       version,
       configErrors: [],
-      registry: { path: `${packageRoot}/registry/`, found: true },
+      registry: { path: `${packageRoot}/registry`, found: true },
       skill: { path: `${packageRoot}/skill/`, found: true },
     });
     expect(result.stderr).toBe("");
@@ -89,7 +89,7 @@ describe("installed Node package", () => {
       const result = await invoke(["doctor", "--json"], undefined, {}, link);
       expect(result.status).toBe(0);
       expect(JSON.parse(result.stdout).registry).toEqual({
-        path: `${realpathSync(packageRoot)}/registry/`,
+        path: `${realpathSync(packageRoot)}/registry`,
         found: true,
       });
     } finally {

@@ -145,7 +145,9 @@ export const bundledRoot = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
   const paths = yield* (yield* AppConfig).paths;
   const overridden = paths.registry !== undefined;
-  const at = paths.registry === undefined ? host.registry : path.resolve(host.cwd, paths.registry);
+  // resolve also drops the trailing slash a URL-derived Host.registry keeps, which validate's
+  // root comparison depends on.
+  const at = path.resolve(host.cwd, paths.registry ?? host.registry);
   const found = yield* fs.stat(at).pipe(
     Effect.map((info) => info.type === "Directory"),
     Effect.orElseSucceed(() => false),

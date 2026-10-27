@@ -170,7 +170,7 @@ test("runs refuses a state record written by a newer CLI", async () => {
       tag: "InvalidConfig",
       message: "Configuration is invalid.",
       retryable: false,
-      next: "upgrade quickstack, then run this command again.",
+      next: "upgrade @steamfield/stacks, then run this command again.",
       details: { path: p.file, schemaVersion: 2 },
     },
   });

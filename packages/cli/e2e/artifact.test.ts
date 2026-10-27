@@ -116,7 +116,8 @@ test("runtime guards refuse Bun and old Node before loading the bundle", () => {
     expect(run([process.execPath, binary, "--version"], root)).toEqual({
       status: 1,
       stdout: "",
-      stderr: "quickstack runs on Node. Bun is not supported; run it with npx or node.\n",
+      stderr:
+        "stacks runs on Node 22 or newer, not Bun. Run stacks directly, or npx -y @steamfield/stacks.\n",
     });
     const preload = join(root, "floor.mjs");
     writeFileSync(
@@ -126,7 +127,7 @@ test("runtime guards refuse Bun and old Node before loading the bundle", () => {
     expect(run([node, "--import", preload, binary, "--version"], root)).toEqual({
       status: 1,
       stdout: "",
-      stderr: "quickstack needs Node 22 or newer.\n",
+      stderr: "stacks needs Node 22 or newer.\n",
     });
   } finally {
     rmSync(root, { recursive: true, force: true });

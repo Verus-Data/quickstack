@@ -8,12 +8,16 @@ import {
   readdirSync,
   readFileSync,
   rmSync,
+  utimesSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { gunzipSync, gzipSync } from "node:zlib";
 import { name, version } from "../package.json";
+
+/** The fixed time npm packers give every member. */
+const PACKED_AT = new Date("1985-10-26T08:15:00Z");
 
 const packed = Bun.spawnSync(["bun", "pm", "pack", "--destination", "dist/pack", "--quiet"], {
   stdin: "inherit",
@@ -26,6 +30,14 @@ const tarball = `dist/pack/${filename}`;
 restoreGitignores(tarball);
 const digest = createHash("sha256").update(readFileSync(tarball)).digest("hex");
 writeFileSync(`${tarball}.sha256`, `${digest}  ${filename}\n`);
+
+/** Root ownership with no names, in bsdtar's (macOS) or GNU tar's (Linux) spelling. */
+function anonymousOwner(): string[] {
+  const bsd = execFileSync("tar", ["--version"], { encoding: "utf8" }).includes("bsdtar");
+  return bsd
+    ? ["--uid", "0", "--gid", "0", "--uname", "", "--gname", ""]
+    : ["--owner=0", "--group=0", "--numeric-owner"];
+}
 
 /** npm packers and installers drop .gitignore; bin.ts exposes these escaped assets as data. */
 function restoreGitignores(archive: string) {
@@ -45,9 +57,12 @@ function restoreGitignores(archive: string) {
         throw new Error("Registry packaging escape collides");
       mkdirSync(dirname(join(staging, target)), { recursive: true });
       copyFileSync(join("registry", file), join(staging, target));
+      // npm's fixed member time, so the tarball is reproducible.
+      utimesSync(join(staging, target), PACKED_AT, PACKED_AT);
     }
-    // Append preserves the packer's manifest, modes and all existing archive members.
-    execFileSync("tar", ["-rf", tar, "-C", staging, ...additions]);
+    // Append preserves the packer's manifest, modes and all existing archive members. The added
+    // members carry no owner of the machine that packed them.
+    execFileSync("tar", ["-rf", tar, ...anonymousOwner(), "-C", staging, ...additions]);
     writeFileSync(archive, gzipSync(readFileSync(tar), { level: 9 }));
   } finally {
     rmSync(staging, { recursive: true, force: true });

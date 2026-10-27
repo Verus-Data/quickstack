@@ -866,7 +866,7 @@ test("a stacks/ the project registry skips as a symlink is one registry finding,
       "fragment",
       "newer",
       "fragments/newer/FRAGMENT.md",
-      "schema_version is newer than this CLI reads; update quickstack",
+      "schema_version is newer than this CLI reads; update @steamfield/stacks",
     ],
   ]);
 });
@@ -1107,6 +1107,14 @@ test("the realistic fixture registry validates without errors, its app brief ins
     expect(row.words).toBeGreaterThan(BUDGET.composed - 500);
     expect(row.words).toBeLessThanOrEqual(BUDGET.composedWithApp);
   }
+});
+
+test("validate with no path checks a bundled registry whose path ends in a slash", async () => {
+  // bin.ts resolves the packaged registry from a URL, which keeps the trailing slash.
+  const { status, report: got } = await report([], { registry: `${realRegistry}/` });
+  expect(status).toBe(0);
+  expect(got.entries.stacks).toBeGreaterThan(0);
+  expect(got.entries.fragments).toBeGreaterThan(0);
 });
 
 test("--brief prints the composed brief and its counts, and --json decodes as a BriefPreview [1.5#13]", async () => {

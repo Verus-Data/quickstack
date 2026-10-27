@@ -496,7 +496,7 @@ function notFoundGuide(error: NotFound, invocation: string): FailureGuide {
   if (details.path)
     return guide(
       [`Path: ${printable(details.path)}`],
-      `restore the bundled skill directory or reinstall quickstack, then run ${invocation} doctor.`,
+      `restore the bundled skill directory or reinstall @steamfield/stacks, then run ${invocation} doctor.`,
     );
   if (details.kind === "project")
     return guide(
@@ -566,7 +566,7 @@ function configGuide(error: InvalidConfig, invocation: string): FailureGuide {
         `Path: ${printable(details.path)}`,
         `Schema version: ${details.schemaVersion}, from a newer quickstack.`,
       ],
-      "upgrade quickstack, then run this command again.",
+      "upgrade @steamfield/stacks, then run this command again.",
     );
   return guide(
     [`Path: ${printable(details.path)}`],
