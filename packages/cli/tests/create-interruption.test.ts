@@ -19,29 +19,31 @@ import { minimal, writeEntry } from "./helpers/registry";
 
 afterEach(releaseCreate);
 
+type BlockedCommandOptions = {
+  args: string[];
+  target: string;
+  when: "before" | "during";
+  files: number;
+  marker: string;
+};
 // A pending filesystem operation can already have written bytes when it is cancelled. Pause
 // before I/O or after real output exists, including bulk copies, atomic renames and file handles.
 // The injected wait is interruptible even when the caller masks its mutation and bookkeeping.
-function blockedCommand(
-  args: string[],
-  target: string,
-  when: "before" | "during",
-  files: number,
-  marker: string,
-) {
+function blockedCommand({ args, target, when, files, marker }: BlockedCommandOptions) {
   return Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
+    const writtenFiles = (stage: "before" | "during") =>
+      stage === "during"
+        ? entrySnapshot(target).filter((entry) => entry.type === "file").length
+        : 0;
     const checkpoint = (path: string, stage: "before" | "during") =>
       Effect.gen(function* () {
-        if ((path === target || path.startsWith(`${target}/`)) && when === stage) {
-          const written =
-            stage === "during"
-              ? entrySnapshot(target).filter((entry) => entry.type === "file").length
-              : 0;
-          if (written < files) return;
-          yield* Effect.sync(() => writeFileSync(marker, "blocked\n"));
-          yield* Effect.interruptible(Effect.never);
-        }
+        if (when !== stage) return;
+        if (path !== target && !path.startsWith(`${target}/`)) return;
+        const written = writtenFiles(stage);
+        if (written < files) return;
+        yield* Effect.sync(() => writeFileSync(marker, "blocked\n"));
+        yield* Effect.interruptible(Effect.never);
       });
     const mutation = <A, E, R>(path: string, operation: Effect.Effect<A, E, R>) =>
       Effect.gen(function* () {
@@ -93,7 +95,12 @@ test.each([
   async ({ kind, from, when, files }) => {
     const home = createWorkspace();
     const registry = createWorkspace();
-    const entry = writeEntry(registry, "fragment", "x", minimal("fragment", "x"));
+    const entry = writeEntry({
+      root: registry,
+      kind: "fragment",
+      dir: "x",
+      frontmatter: minimal("fragment", "x"),
+    });
     putCreate(entry, "files/a.txt", "first\n");
     putCreate(entry, "adapters/claude/b.txt", "second\n");
     const original = entrySnapshot(registry);
@@ -110,7 +117,7 @@ test.each([
     const pending = createCli(home, args, {
       host: { registry },
       signal: controller.signal,
-      program: blockedCommand(args, target, when, files, marker),
+      program: blockedCommand({ args, target, when, files, marker }),
     }).finally(() => {
       settled = true;
     });

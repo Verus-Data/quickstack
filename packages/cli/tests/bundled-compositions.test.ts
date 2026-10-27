@@ -348,18 +348,23 @@ function conflict(run: Awaited<ReturnType<typeof runCli>>, reason: string, ids: 
 
 test("conflicting releases fail in either selection order before creating a project [3.3a#3]", async () => {
   const registry = join(home, "conflicts");
-  writeEntry(registry, "stack", "fixture", minimal("stack", "fixture", "tags: [fixture]"));
+  writeEntry({
+    root: registry,
+    kind: "stack",
+    dir: "fixture",
+    frontmatter: minimal("stack", "fixture", "tags: [fixture]"),
+  });
   for (const id of ["release-one", "release-two"])
-    writeEntry(
-      registry,
-      "fragment",
-      id,
-      minimal(
+    writeEntry({
+      root: registry,
+      kind: "fragment",
+      dir: id,
+      frontmatter: minimal(
         "fragment",
         id,
         `applies_to: [fixture]\nconflicts: [${id === "release-one" ? "release-two" : "release-one"}]`,
       ).replace("category: tooling", "category: release"),
-    );
+    });
   for (const ids of [
     ["release-one", "release-two"],
     ["release-two", "release-one"],
@@ -399,13 +404,18 @@ test("effect pulls in effect-schema on a stack that defaults to neither [3.3c#2]
 
 test("a service template renders its bytes inside a project path with spaces and Unicode [3.3c#3]", async () => {
   const registry = join(home, "service-template-registry");
-  writeEntry(registry, "stack", "fixture", minimal("stack", "fixture"));
-  const service = writeEntry(
-    registry,
-    "fragment",
-    "database",
-    minimal("fragment", "database").replace("category: tooling", "category: service"),
-  );
+  writeEntry({
+    root: registry,
+    kind: "stack",
+    dir: "fixture",
+    frontmatter: minimal("stack", "fixture"),
+  });
+  const service = writeEntry({
+    root: registry,
+    kind: "fragment",
+    dir: "database",
+    frontmatter: minimal("fragment", "database").replace("category: tooling", "category: service"),
+  });
   mkdirSync(join(service, "files/services"), { recursive: true });
   writeFileSync(
     join(service, "files/services/database.md.tmpl"),
@@ -423,13 +433,18 @@ test("a service template renders its bytes inside a project path with spaces and
 
 test("a service file collision fails before writing a partial scaffold [3.3c#4]", async () => {
   const registry = join(home, "collision");
-  const stack = writeEntry(registry, "stack", "fixture", minimal("stack", "fixture"));
-  const service = writeEntry(
-    registry,
-    "fragment",
-    "database",
-    minimal("fragment", "database").replace("category: tooling", "category: service"),
-  );
+  const stack = writeEntry({
+    root: registry,
+    kind: "stack",
+    dir: "fixture",
+    frontmatter: minimal("stack", "fixture"),
+  });
+  const service = writeEntry({
+    root: registry,
+    kind: "fragment",
+    dir: "database",
+    frontmatter: minimal("fragment", "database").replace("category: tooling", "category: service"),
+  });
   for (const [entry, text] of [
     [stack, "stack bytes"],
     [service, "service bytes"],

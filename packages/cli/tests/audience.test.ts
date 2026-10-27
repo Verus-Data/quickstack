@@ -303,12 +303,12 @@ describe("list for an agent", () => {
     const home = temp();
     const user = join(home, "config", "quickstacks");
     const description = Array.from({ length: 40 }, (_, i) => `word${i}`).join(" ");
-    writeEntry(
-      user,
-      "stack",
-      "long",
-      minimal("stack", "long").replace("long description.", description),
-    );
+    writeEntry({
+      root: user,
+      kind: "stack",
+      dir: "long",
+      frontmatter: minimal("stack", "long").replace("long description.", description),
+    });
     for (const host of [{}, { stdoutIsTTY: true, stdoutColumns: 50 }]) {
       const agent = await runCli(["list", "stacks"], {
         home,
@@ -323,7 +323,12 @@ describe("list for an agent", () => {
   test("names a rejected entry's directory relative to the working directory", async () => {
     const home = temp();
     const user = join(home, "config", "quickstacks");
-    writeEntry(user, "stack", "broken", minimal("stack", "broken", "extra: 1"));
+    writeEntry({
+      root: user,
+      kind: "stack",
+      dir: "broken",
+      frontmatter: minimal("stack", "broken", "extra: 1"),
+    });
     const agent = await runCli(["list"], {
       home,
       env: quiet,

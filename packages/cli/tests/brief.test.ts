@@ -185,7 +185,13 @@ test("a verify table leaves out Layer and Expects when no step in that table fil
       .map((block) => block.split("\n"));
   const user = temp();
   const stack = (id: string, verify: string[]) =>
-    writeEntry(user, "stack", id, minimal("stack", id, ["verify:", ...verify].join("\n")), "");
+    writeEntry({
+      root: user,
+      kind: "stack",
+      dir: id,
+      frontmatter: minimal("stack", id, ["verify:", ...verify].join("\n")),
+      body: "",
+    });
   const brief = async (stackId: string, withIds: string[] = []) =>
     renderBrief(
       await composed(
@@ -197,17 +203,17 @@ test("a verify table leaves out Layer and Expects when no step in that table fil
   stack("bare", ['  - { name: a, run: "true" }', '  - { name: b, phase: setup, run: "true" }']);
   stack("layered", ['  - { name: a, layer: lint, run: "true" }', '  - { name: b, run: "true" }']);
   stack("timed", ['  - { name: a, timeout: 5m, run: "true" }']);
-  writeEntry(
-    user,
-    "fragment",
-    "plain-app",
-    minimal(
+  writeEntry({
+    root: user,
+    kind: "fragment",
+    dir: "plain-app",
+    frontmatter: minimal(
       "fragment",
       "plain-app",
       'applies_to: [layered]\nverify:\n  - { name: e2e, run: "true" }',
     ).replace("category: tooling", "category: app"),
-    "",
-  );
+    body: "",
+  });
   expect(tables(await brief("bare"))).toEqual([
     ["| Step | Phase |", "|---|---|", "| `b` | setup |", "| `a` | check |"],
   ]);
@@ -226,12 +232,12 @@ test("a verify table leaves out Layer and Expects when no step in that table fil
 
 test("the rules about servers appear only when a step serves", async () => {
   const user = temp();
-  writeEntry(
-    user,
-    "stack",
-    "quiet-stack",
-    minimal("stack", "quiet-stack", "verify:\n  - { name: test, run: bun run test }"),
-  );
+  writeEntry({
+    root: user,
+    kind: "stack",
+    dir: "quiet-stack",
+    frontmatter: minimal("stack", "quiet-stack", "verify:\n  - { name: test, run: bun run test }"),
+  });
   const composition = await composed(
     { stack: "quiet-stack" },
     { roots: [{ origin: "user", path: user }] },
@@ -295,7 +301,13 @@ test("briefWords counts the whole brief; fixedWords is all of it when entries br
   expect(full.briefWords).toBe(countWords(full.text));
   expect(full.fixedWords).toBeLessThan(full.briefWords);
   const user = temp();
-  writeEntry(user, "stack", "empty-stack", minimal("stack", "empty-stack"), "");
+  writeEntry({
+    root: user,
+    kind: "stack",
+    dir: "empty-stack",
+    frontmatter: minimal("stack", "empty-stack"),
+    body: "",
+  });
   const empty = await composed(
     { stack: "empty-stack" },
     { roots: [{ origin: "user", path: user }] },

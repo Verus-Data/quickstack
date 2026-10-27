@@ -60,8 +60,8 @@ if (config.scenario === "block") {
   const debugAt = args.indexOf("--debug-file");
   if (debugAt >= 0 && args[debugAt + 1]) writeFileSync(args[debugAt + 1], config.hooks);
   const error = ["infra", "write-error", "notes-error"].includes(scenario);
-  process.stdout.write(
-    scenario === "malformed" ? '{"type":"result",' : error ? config.error : config.success,
-  );
+  let result = error ? config.error : config.success;
+  if (scenario === "malformed") result = '{"type":"result",';
+  process.stdout.write(result);
   process.exitCode = error || scenario === "nonzero" ? 1 : 0;
 }

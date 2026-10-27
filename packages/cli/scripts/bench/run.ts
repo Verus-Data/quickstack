@@ -29,7 +29,9 @@ export const run = (prepared: Prepared) =>
       timeout: Duration.millis(prepared.options.minutes * 60_000),
     });
     const parsed = adapter.readResult(result.tail);
-    const ended = result.timedOut ? "timeout" : result.exitCode !== 0 ? "error" : parsed.ended;
+    let ended: typeof parsed.ended | "timeout" = parsed.ended;
+    if (result.timedOut) ended = "timeout";
+    else if (result.exitCode !== 0) ended = "error";
     yield* fs.writeFileString(path.join(bench, "agent-result.txt"), result.tail);
     const log = yield* fs
       .readFileString(debug)

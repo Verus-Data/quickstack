@@ -275,17 +275,17 @@ test("preview reports the selected entries' exact findings and keeps warning-onl
 
 test("an explicitly added app gets a split brief, the 9000-word cap and a fingerprint [3.1a#17]", async () => {
   const { registry, preview } = fixture();
-  writeEntry(
-    registry,
-    "fragment",
-    "application",
-    minimal(
+  writeEntry({
+    root: registry,
+    kind: "fragment",
+    dir: "application",
+    frontmatter: minimal(
       "fragment",
       "application",
       'applies_to: [sample]\nverify:\n  - { name: application-check, layer: test, run: "entry-command --application" }',
     ).replace("category: tooling", "category: app"),
-    "# APPLICATION BODY\n",
-  );
+    body: "# APPLICATION BODY\n",
+  });
   const report = previewResult(await preview(["--with", "application", "--sandbox"]));
   expect(report).toMatchObject({
     app: "application",

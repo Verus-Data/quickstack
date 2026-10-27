@@ -774,13 +774,13 @@ describe("add realistic existing-project cases", () => {
 
   test("a new fragment's malformed conditionals fail before any writes [3.0#28]", async () => {
     const project = addProject();
-    const dir = writeEntry(
-      project.registry,
-      "fragment",
-      "bad-conditional",
-      minimal("fragment", "bad-conditional"),
-      "<!-- quickstacks:when mode=add -->\nunclosed\n",
-    );
+    const dir = writeEntry({
+      root: project.registry,
+      kind: "fragment",
+      dir: "bad-conditional",
+      frontmatter: minimal("fragment", "bad-conditional"),
+      body: "<!-- quickstacks:when mode=add -->\nunclosed\n",
+    });
     put(dir, "files/should-not-exist.txt", "must not land\n");
     const before = snapshot(project.root);
     expect(

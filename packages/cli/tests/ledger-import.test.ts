@@ -44,13 +44,13 @@ async function repository() {
   git("commit", "--quiet", "-m", "fixture: original registry");
   const commit = git("rev-parse", "HEAD");
   const original = await registryFingerprint(registry);
-  writeEntry(
-    registry,
-    "stack",
-    "sample",
-    minimal("stack", "sample"),
-    `${stackBody}Changed guidance.\n`,
-  );
+  writeEntry({
+    root: registry,
+    kind: "stack",
+    dir: "sample",
+    frontmatter: minimal("stack", "sample"),
+    body: `${stackBody}Changed guidance.\n`,
+  });
   git("add", ".");
   git("commit", "--quiet", "-m", "fixture: changed body");
   const current = await registryFingerprint(registry);
@@ -69,12 +69,11 @@ async function repository() {
           env,
           timeout: 15_000,
         },
-        (error, stdout, stderr) =>
-          resolve({
-            status: error === null ? 0 : typeof error.code === "number" ? error.code : -1,
-            stdout,
-            stderr,
-          }),
+        (error, stdout, stderr) => {
+          let status = 0;
+          if (error !== null) status = typeof error.code === "number" ? error.code : -1;
+          resolve({ status, stdout, stderr });
+        },
       );
     });
   return { root, registry, note, commit, original, current, git, invoke };
@@ -201,7 +200,12 @@ test.each(["unknown commit", "old invalid registry"])(
     const f = await repository();
     let badCommit = "0".repeat(40);
     if (kind === "old invalid registry") {
-      writeEntry(f.registry, "stack", "sample", minimal("stack", "sample", "unknown_key: true"));
+      writeEntry({
+        root: f.registry,
+        kind: "stack",
+        dir: "sample",
+        frontmatter: minimal("stack", "sample", "unknown_key: true"),
+      });
       f.git("add", "packages/cli/registry");
       f.git("commit", "--quiet", "-m", "fixture: invalid old registry");
       badCommit = f.git("rev-parse", "HEAD");

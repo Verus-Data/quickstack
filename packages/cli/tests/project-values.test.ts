@@ -12,7 +12,12 @@ test.each([
   { configured: undefined, git: "Bad\tAuthor", expected: "" },
 ])("add uses the shared template author precedence: %j", async ({ configured, git, expected }) => {
   const project = addProject();
-  const entry = writeEntry(project.registry, "fragment", "author", minimal("fragment", "author"));
+  const entry = writeEntry({
+    root: project.registry,
+    kind: "fragment",
+    dir: "author",
+    frontmatter: minimal("fragment", "author"),
+  });
   put(entry, "files/author.txt.tmpl", "{{author}}\n");
   expect(spawnGit(["-C", project.root, "config", "user.name", git]).status).toBe(0);
   if (configured !== undefined)

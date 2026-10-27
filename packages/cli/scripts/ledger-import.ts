@@ -14,32 +14,8 @@ import { Foreground, Processes } from "../src/services/processes";
 
 /** Required table fields are parsed explicitly; incomplete notes are reported, never inferred. */
 function parseNote(markdown: string) {
-  const fields = new Map<string, string>();
-  for (const line of markdown.split(/\r?\n/)) {
-    const row = /^\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*$/.exec(line);
-    if (row?.[1] && row[2]) fields.set(row[1], row[2]);
-  }
-  const required = (name: string) => {
-    const value = fields.get(name);
-    if (!value) throw new Error(`Missing ${name}`);
-    return value;
-  };
-  const capture = (value: string, pattern: RegExp, name: string) => {
-    const matched = pattern.exec(value)?.[1];
-    if (matched === undefined) throw new Error(`Invalid ${name}`);
-    return matched;
-  };
-  const composition = required("Stack and fragments");
-  const stack = capture(composition, /^`([^`]+)`/, "Stack and fragments");
-  const preset = capture(composition, /preset `([^`]+)`/, "preset");
-  if (preset !== "default" && preset !== "sandbox") throw new Error("Invalid preset");
-  const fragments =
-    composition.slice(composition.indexOf("`", 1) + 1).split(/,?\s*preset /)[0] ?? "";
-  if (!/no added fragments|\bwith\b/.test(fragments))
-    throw new Error("Invalid Stack and fragments");
-  const withIds = [...fragments.matchAll(/`([^`]+)`/g)]
-    .map((match) => match[1])
-    .filter((id) => id !== undefined);
+  const { fields, required } = noteFields(markdown);
+  const { stack, preset, withIds } = noteComposition(required("Stack and fragments"));
   const commit = capture(required("Repo commit"), /`([a-f\d]{7,40})`/i, "Repo commit");
   const agentText = required("Agent");
   const agentName = capture(
@@ -66,28 +42,11 @@ function parseNote(markdown: string) {
   const interventions = /^None\b/i.test(interventionsText)
     ? 0
     : Number(capture(interventionsText, /^(\d+)\b/, "Interventions"));
-  const outcomeText = required("Outcome");
-  const outcome = capture(outcomeText, /`(green|partial|failed|infra)`/, "Outcome");
-  const tamperCheck = capture(
-    outcomeText,
-    /tamperCheck: "(full|manifest-only)"/,
-    "Outcome tamperCheck",
-  );
-  const endedText = fields.get("Agent ended");
-  const agentEnded =
-    endedText === undefined
-      ? "exit"
-      : capture(endedText, /\b(exit|error|timeout)\b/, "Agent ended");
-  const recordSection = markdown.match(/^## Run record\s*\n([\s\S]*?)(?=^## |$(?![\s\S]))/m)?.[1];
-  const json = recordSection?.match(/```json\s*\n([\s\S]*?)\n```/)?.[1];
-  if (recordSection && !json) throw new Error("Invalid final Run record");
-  const run = json === undefined ? null : Schema.decodeUnknownSync(RunRecord)(JSON.parse(json));
-  if (
-    run &&
-    (run.tamperCheck !== tamperCheck ||
-      ((outcome === "green" || outcome === "partial") && run.outcome !== "green"))
-  )
-    throw new Error("Outcome contradicts the final Run record");
+  const { outcome, tamperCheck, agentEnded, run } = noteOutcome({
+    outcomeText: required("Outcome"),
+    endedText: fields.get("Agent ended"),
+    markdown,
+  });
   const targetsText = fields.get("Target agents");
   const targets = targetAgents(
     targetsText === undefined
@@ -102,14 +61,7 @@ function parseNote(markdown: string) {
   if (!cli)
     throw new Error("CLI version is missing (include quickstacks@<version> or a final Run record)");
   const agentMinutesText = fields.get("Agent minutes");
-  const result =
-    outcome === "partial"
-      ? "partial"
-      : outcome === "infra"
-        ? "infra"
-        : outcome === "green" && tamperCheck === "full" && agentEnded === "exit"
-          ? "pass"
-          : "fail";
+  const result = ledgerResult(outcome, tamperCheck, agentEnded);
   return {
     schemaVersion: 1,
     date: capture(markdown, /^# Gate run: .+, (\d{4}-\d{2}-\d{2})\s*$/m, "date"),
@@ -138,6 +90,24 @@ function parseNote(markdown: string) {
   };
 }
 
+const importArguments = (args: string[]) =>
+  Effect.gen(function* () {
+    let options = true;
+    let dryRun = false;
+    const notes: string[] = [];
+    for (const arg of args) {
+      if (!options) {
+        notes.push(arg);
+        continue;
+      }
+      if (arg === "--") options = false;
+      else if (arg === "--dry-run") dryRun = true;
+      else if (arg.startsWith("--")) return yield* Effect.fail(new Error(`Unknown option: ${arg}`));
+      else notes.push(arg);
+    }
+    return { notes, dryRun };
+  });
+
 const program = Effect.scoped(
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
@@ -160,16 +130,7 @@ const program = Effect.scoped(
               : Effect.fail(new Error(`${argv[0]} failed`)),
           ),
         );
-    let options = true;
-    let dryRun = false;
-    const notes: string[] = [];
-    for (const arg of process.argv.slice(2)) {
-      if (options && arg === "--") options = false;
-      else if (options && arg === "--dry-run") dryRun = true;
-      else if (options && arg.startsWith("--"))
-        return yield* Effect.fail(new Error(`Unknown option: ${arg}`));
-      else notes.push(arg);
-    }
+    const { notes, dryRun } = yield* importArguments(process.argv.slice(2));
     if (!notes.length)
       return yield* Effect.fail(new Error("Usage: ledger-import.ts <notes>... [--dry-run]"));
     const root = yield* exec(["git", "rev-parse", "--show-toplevel"]);
@@ -268,3 +229,68 @@ process.exitCode = await Effect.runPromise(
     Effect.provide(layer),
   ),
 );
+
+function noteFields(markdown: string) {
+  const fields = new Map<string, string>();
+  for (const line of markdown.split(/\r?\n/)) {
+    const row = /^\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*$/.exec(line);
+    if (row?.[1] && row[2]) fields.set(row[1], row[2]);
+  }
+  const required = (name: string) => {
+    const value = fields.get(name);
+    if (!value) throw new Error(`Missing ${name}`);
+    return value;
+  };
+  return { fields, required };
+}
+
+function capture(value: string, pattern: RegExp, name: string) {
+  const matched = pattern.exec(value)?.[1];
+  if (matched === undefined) throw new Error(`Invalid ${name}`);
+  return matched;
+}
+
+function noteComposition(composition: string) {
+  const stack = capture(composition, /^`([^`]+)`/, "Stack and fragments");
+  const preset = capture(composition, /preset `([^`]+)`/, "preset");
+  if (preset !== "default" && preset !== "sandbox") throw new Error("Invalid preset");
+  const fragments =
+    composition.slice(composition.indexOf("`", 1) + 1).split(/,?\s*preset /)[0] ?? "";
+  if (!/no added fragments|\bwith\b/.test(fragments))
+    throw new Error("Invalid Stack and fragments");
+  const withIds = [...fragments.matchAll(/`([^`]+)`/g)]
+    .map((match) => match[1])
+    .filter((id) => id !== undefined);
+  return { stack, preset, withIds };
+}
+
+type NoteOutcomeInput = { outcomeText: string; endedText: string | undefined; markdown: string };
+function noteOutcome({ outcomeText, endedText, markdown }: NoteOutcomeInput) {
+  const outcome = capture(outcomeText, /`(green|partial|failed|infra)`/, "Outcome");
+  const tamperCheck = capture(
+    outcomeText,
+    /tamperCheck: "(full|manifest-only)"/,
+    "Outcome tamperCheck",
+  );
+  const agentEnded =
+    endedText === undefined
+      ? "exit"
+      : capture(endedText, /\b(exit|error|timeout)\b/, "Agent ended");
+  const recordSection = markdown.match(/^## Run record\s*\n([\s\S]*?)(?=^## |$(?![\s\S]))/m)?.[1];
+  const json = recordSection?.match(/```json\s*\n([\s\S]*?)\n```/)?.[1];
+  if (recordSection && !json) throw new Error("Invalid final Run record");
+  const run = json === undefined ? null : Schema.decodeUnknownSync(RunRecord)(JSON.parse(json));
+  if (
+    run &&
+    (run.tamperCheck !== tamperCheck ||
+      ((outcome === "green" || outcome === "partial") && run.outcome !== "green"))
+  )
+    throw new Error("Outcome contradicts the final Run record");
+  return { outcome, tamperCheck, agentEnded, run };
+}
+
+function ledgerResult(outcome: string, tamperCheck: string, agentEnded: string) {
+  if (outcome === "partial") return "partial";
+  if (outcome === "infra") return "infra";
+  return outcome === "green" && tamperCheck === "full" && agentEnded === "exit" ? "pass" : "fail";
+}

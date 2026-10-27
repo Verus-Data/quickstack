@@ -16,12 +16,37 @@ const decode = (stdout: string) =>
 test("list attaches only the latest default-composition bundled proof and preserves other fields [2.0c#4]", async () => {
   const home = space.dir();
   const registry = ledgerRegistry(space.dir());
-  writeEntry(registry, "stack", "unproven", minimal("stack", "unproven"));
-  writeEntry(registry, "fragment", "extra", minimal("fragment", "extra"));
-  writeEntry(registry, "stack", "shadowed", minimal("stack", "shadowed"));
+  writeEntry({
+    root: registry,
+    kind: "stack",
+    dir: "unproven",
+    frontmatter: minimal("stack", "unproven"),
+  });
+  writeEntry({
+    root: registry,
+    kind: "fragment",
+    dir: "extra",
+    frontmatter: minimal("fragment", "extra"),
+  });
+  writeEntry({
+    root: registry,
+    kind: "stack",
+    dir: "shadowed",
+    frontmatter: minimal("stack", "shadowed"),
+  });
   const user = join(home, "config", "quickstacks");
-  writeEntry(user, "stack", "shadowed", minimal("stack", "shadowed"));
-  writeEntry(user, "stack", "user-only", minimal("stack", "user-only"));
+  writeEntry({
+    root: user,
+    kind: "stack",
+    dir: "shadowed",
+    frontmatter: minimal("stack", "shadowed"),
+  });
+  writeEntry({
+    root: user,
+    kind: "stack",
+    dir: "user-only",
+    frontmatter: minimal("stack", "user-only"),
+  });
   const list = () => runCli(["list", "--json"], { home, env: quiet, host: { registry } });
   const before = await list();
   expect(before.status).toBe(0);
@@ -109,8 +134,18 @@ test("list attaches only the latest default-composition bundled proof and preser
 test("human and agent list label passing, failed and unproven stacks [2.0c#4]", async () => {
   const home = space.dir();
   const registry = ledgerRegistry(space.dir());
-  writeEntry(registry, "stack", "failed", minimal("stack", "failed"));
-  writeEntry(registry, "stack", "unproven", minimal("stack", "unproven"));
+  writeEntry({
+    root: registry,
+    kind: "stack",
+    dir: "failed",
+    frontmatter: minimal("stack", "failed"),
+  });
+  writeEntry({
+    root: registry,
+    kind: "stack",
+    dir: "unproven",
+    frontmatter: minimal("stack", "unproven"),
+  });
   const record = await ledgerRecord(registry);
   writeLedger(registry, [record, { ...record, stack: "failed", result: "fail" }]);
   for (const host of [terminal, { stdoutIsTTY: false }]) {

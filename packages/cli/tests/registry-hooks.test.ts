@@ -376,41 +376,47 @@ const BASH4 = [
   ["coproc", /\bcoproc\b/, "code"],
 ] as const;
 
+type ShellText = { out: string; quote: string | undefined };
+
+function quotedCharacter(source: string, i: number, text: ShellText, keepDouble: boolean) {
+  const c = source[i];
+  if (text.quote === "'") {
+    if (c === "'") text.quote = undefined;
+    return i;
+  }
+  if (keepDouble) text.out += c;
+  if (c === "\\") {
+    i++;
+    if (keepDouble) text.out += source[i] ?? "";
+  } else if (c === '"') text.quote = undefined;
+  return i;
+}
+
+function unquotedCharacter(source: string, i: number, text: ShellText) {
+  const c = source[i] as string;
+  if (c === "\\") return i + 1;
+  if (c === "'" || c === '"') {
+    text.quote = c;
+    text.out += " ";
+    return i;
+  }
+  if (c === "#" && (i === 0 || /\s/.test(source[i - 1] as string))) {
+    while (i < source.length && source[i] !== "\n") i++;
+    text.out += "\n";
+    return i;
+  }
+  text.out += c;
+  return i;
+}
+
 /** The script without comments and single-quoted strings, and without double-quoted ones unless `keepDouble`. */
 function unquoted(source: string, keepDouble: boolean): string {
-  let out = "";
-  let quote: string | undefined;
+  const text: ShellText = { out: "", quote: undefined };
   for (let i = 0; i < source.length; i++) {
-    const c = source[i] as string;
-    if (quote === "'") {
-      if (c === "'") quote = undefined;
-      continue;
-    }
-    if (quote === '"') {
-      if (keepDouble) out += c;
-      if (c === "\\") {
-        i++;
-        if (keepDouble) out += source[i] ?? "";
-      } else if (c === '"') quote = undefined;
-      continue;
-    }
-    if (c === "\\") {
-      i++;
-      continue;
-    }
-    if (c === "'" || c === '"') {
-      quote = c;
-      out += " ";
-      continue;
-    }
-    if (c === "#" && (i === 0 || /\s/.test(source[i - 1] as string))) {
-      while (i < source.length && source[i] !== "\n") i++;
-      out += "\n";
-      continue;
-    }
-    out += c;
+    if (text.quote !== undefined) i = quotedCharacter(source, i, text, keepDouble);
+    else i = unquotedCharacter(source, i, text);
   }
-  return out;
+  return text.out;
 }
 function bash4Constructs(source: string): string[] {
   const views = { code: unquoted(source, false), expanded: unquoted(source, true) };

@@ -42,7 +42,14 @@ const mutations: ReadonlyArray<{
 }> = [
   {
     name: "stack body",
-    change: (f) => writeEntry(f.root, "stack", "sample", STACK_META, `${BODY}More guidance.\n`),
+    change: (f) =>
+      writeEntry({
+        root: f.root,
+        kind: "stack",
+        dir: "sample",
+        frontmatter: STACK_META,
+        body: `${BODY}More guidance.\n`,
+      }),
   },
   {
     name: "fragment body",
@@ -61,13 +68,13 @@ const mutations: ReadonlyArray<{
   {
     name: "stack frontmatter value",
     change: (f) =>
-      writeEntry(
-        f.root,
-        "stack",
-        "sample",
-        STACK_META.replace("sample name", "Changed name"),
-        BODY,
-      ),
+      writeEntry({
+        root: f.root,
+        kind: "stack",
+        dir: "sample",
+        frontmatter: STACK_META.replace("sample name", "Changed name"),
+        body: BODY,
+      }),
   },
   {
     name: "fragment frontmatter value",
@@ -199,7 +206,13 @@ test("YAML layout, quoting and nested key order do not change decoded frontmatte
   )
     .replace("schema_version: 1\nid: sample", "id: 'sample'\nschema_version: 1")
     .replace("required: [sample, z-extra]", "required:\n    - sample\n    - z-extra");
-  writeEntry(fixture.root, "stack", "sample", reformatted, BODY);
+  writeEntry({
+    root: fixture.root,
+    kind: "stack",
+    dir: "sample",
+    frontmatter: reformatted,
+    body: BODY,
+  });
   const after = await composition(fixture);
   expect(after.stack.meta).toEqual(before.stack.meta);
   expect(after.stack.body).toBe(before.stack.body);

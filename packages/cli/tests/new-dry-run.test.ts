@@ -435,9 +435,10 @@ describe("dry-run with existing files and environment", () => {
       writeFileSync(join(app, ".DS_Store"), "OS litter");
       const before = snapshot(home);
       const planned = success(await invoke(home, ["app", "--dry-run", "--json"], { env: withGit }));
-      expect(planned.git).toBe(
-        kind === "committed" ? "parent" : kind === "fresh" ? "fresh" : "none",
-      );
+      let expectedGit = "none";
+      if (kind === "committed") expectedGit = "parent";
+      else if (kind === "fresh") expectedGit = "fresh";
+      expect(planned.git).toBe(expectedGit);
       expect(planned.written).toEqual(expectedFiles);
       expect(planned.warnings).toEqual(
         kind === "broken" ? [{ code: "git_unusable", id: "git", exitCode: 128 }] : [],

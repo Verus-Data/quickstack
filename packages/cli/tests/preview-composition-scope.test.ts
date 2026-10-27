@@ -54,13 +54,13 @@ test("preview file checks use only the selected preset", async () => {
   stack(registry, "sample", "fragments:\n  default: [shared, deployment]");
   const shared = fragment(registry, "shared");
   shipped(shared, "adapters/codex/AGENTS.md", "Shared guidance.\n");
-  const deployment = writeEntry(
-    registry,
-    "fragment",
-    "deployment",
-    minimal("fragment", "deployment").replace("category: tooling", "category: deploy"),
-    "Deployment guidance.\n",
-  );
+  const deployment = writeEntry({
+    root: registry,
+    kind: "fragment",
+    dir: "deployment",
+    frontmatter: minimal("fragment", "deployment").replace("category: tooling", "category: deploy"),
+    body: "Deployment guidance.\n",
+  });
   shipped(deployment, "adapters/codex/AGENTS.md", "Deployment guidance.\n");
 
   const result = await runCli(["validate", "--brief", "sample", "--sandbox", "--json"], {

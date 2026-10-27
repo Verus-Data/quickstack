@@ -196,11 +196,11 @@ test("an ambiguous id needs --kind, and an app reports camelCase metadata and ma
   stack(registry, "by-id");
   stack(registry, "by-tag");
   stack(registry, "unrelated", "");
-  writeEntry(
-    registry,
-    "fragment",
-    "sample",
-    minimal(
+  writeEntry({
+    root: registry,
+    kind: "fragment",
+    dir: "sample",
+    frontmatter: minimal(
       "fragment",
       "sample",
       [
@@ -211,12 +211,22 @@ test("an ambiguous id needs --kind, and an app reports camelCase metadata and ma
         "needs_own_repo: true",
       ].join("\n"),
     ).replace("category: tooling", "category: app"),
-  );
+  });
   fragment(registry, "helper");
   fragment(registry, "extra");
   // Only by-tag and sample match cli; unrelated intentionally has no matching tag.
-  writeEntry(registry, "stack", "by-id", minimal("stack", "by-id", "tags: [scripts]"));
-  writeEntry(registry, "stack", "unrelated", minimal("stack", "unrelated", "tags: [scripts]"));
+  writeEntry({
+    root: registry,
+    kind: "stack",
+    dir: "by-id",
+    frontmatter: minimal("stack", "by-id", "tags: [scripts]"),
+  });
+  writeEntry({
+    root: registry,
+    kind: "stack",
+    dir: "unrelated",
+    frontmatter: minimal("stack", "unrelated", "tags: [scripts]"),
+  });
   const ambiguous = await show(["sample"]);
   failure(ambiguous, "BadInput");
   expect(ambiguous.stderr).toContain("stack");
@@ -246,12 +256,12 @@ test("unknown show ids suggest nearby entries [3.1a#11]", async () => {
 
 test("wrong-case YAML metadata is EntryInvalid instead of falling back to a hidden copy [3.1a#12]", async () => {
   const { home, show } = fixture();
-  writeEntry(
-    join(home, "config", "quickstacks"),
-    "stack",
-    "sample",
-    minimal("stack", "sample", "Tools: [node]"),
-  );
+  writeEntry({
+    root: join(home, "config", "quickstacks"),
+    kind: "stack",
+    dir: "sample",
+    frontmatter: minimal("stack", "sample", "Tools: [node]"),
+  });
   const result = await show(["sample"]);
   failure(result, "EntryInvalid", {
     id: "sample",
@@ -296,13 +306,16 @@ test.each(["malformed", "directory"])(
 test("JSON keeps entry text and unusual file names losslessly [3.1a#15]", async () => {
   const { registry, show } = fixture();
   const body = '## Setup\n\nQuotes: \\"hello\\", café.\n\u001b[31mliteral body text\u001b[0m\n';
-  const entry = writeEntry(
-    registry,
-    "stack",
-    "sample",
-    minimal("stack", "sample").replace("name: sample name", 'name: "A name\\nwith a second line"'),
+  const entry = writeEntry({
+    root: registry,
+    kind: "stack",
+    dir: "sample",
+    frontmatter: minimal("stack", "sample").replace(
+      "name: sample name",
+      'name: "A name\\nwith a second line"',
+    ),
     body,
-  );
+  });
   shipped(entry, "files/-café notes.txt");
   const report = await showReport(await show(["sample"]));
   expect(report).toMatchObject({
@@ -319,11 +332,11 @@ test("text audiences expose all guidance branches, commands, verify runs and shi
   const { home, registry } = fixture();
   const body =
     "## Setup\n\n<!-- quickstacks:when preset=default -->\nDefault-only guidance.\n<!-- quickstacks:end -->\n<!-- quickstacks:when preset=sandbox -->\nSandbox-only guidance.\n<!-- quickstacks:end -->\n";
-  const entry = writeEntry(
-    registry,
-    "stack",
-    "sample",
-    minimal(
+  const entry = writeEntry({
+    root: registry,
+    kind: "stack",
+    dir: "sample",
+    frontmatter: minimal(
       "stack",
       "sample",
       [
@@ -334,7 +347,7 @@ test("text audiences expose all guidance branches, commands, verify runs and shi
       ].join("\n"),
     ),
     body,
-  );
+  });
   for (const source of [
     "files/.gitignore",
     "files/README.md.tmpl",

@@ -12,7 +12,13 @@ export const startedAt = "2026-10-27T09:00:00.000Z";
 export const stackBody = "# Build it\n\nKeep the public API small.\n";
 
 export function ledgerRegistry(root: string) {
-  const stack = writeEntry(root, "stack", "sample", minimal("stack", "sample"), stackBody);
+  const stack = writeEntry({
+    root,
+    kind: "stack",
+    dir: "sample",
+    frontmatter: minimal("stack", "sample"),
+    body: stackBody,
+  });
   mkdirSync(join(stack, "files"));
   writeFileSync(join(stack, "files", "README.md.tmpl"), "# {{ project_name }}\n");
   return root;

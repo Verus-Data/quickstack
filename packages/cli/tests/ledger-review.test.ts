@@ -61,12 +61,11 @@ async function repository() {
         "bun",
         ["--no-env-file", "--config=/dev/null", script, note],
         { cwd: root, env, timeout: 15_000 },
-        (error, stdout, stderr) =>
-          resolve({
-            status: error === null ? 0 : typeof error.code === "number" ? error.code : -1,
-            stdout,
-            stderr,
-          }),
+        (error, stdout, stderr) => {
+          let status = 0;
+          if (error !== null) status = typeof error.code === "number" ? error.code : -1;
+          resolve({ status, stdout, stderr });
+        },
       );
     });
   const records = () =>

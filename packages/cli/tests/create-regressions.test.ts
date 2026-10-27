@@ -41,7 +41,12 @@ test.each(["null", "true", "123"])(
 test("working copies preserve empty directories, binary bytes and asymmetric executable bits", async () => {
   const home = createWorkspace();
   const registry = createWorkspace();
-  const entry = writeEntry(registry, "fragment", "x", minimal("fragment", "x"));
+  const entry = writeEntry({
+    root: registry,
+    kind: "fragment",
+    dir: "x",
+    frontmatter: minimal("fragment", "x"),
+  });
   mkdirSync(join(entry, "empty"));
   putCreate(entry, "files/data.bin", Buffer.from([0, 255, 13, 10]));
   putCreate(entry, "adapters/claude/hook.sh", "#!/bin/sh\nexit 0\n");
@@ -68,13 +73,13 @@ function answering(args: string[], answer: string) {
 
 test.each(["yes", "n", ""])("a person answers %j after the full trust report", async (answer) => {
   const home = createWorkspace();
-  const source = writeEntry(
-    join(home, ".quickstacks"),
-    "fragment",
-    "x",
-    minimal("fragment", "x"),
-    "REVIEW BEFORE COPYING\n",
-  );
+  const source = writeEntry({
+    root: join(home, ".quickstacks"),
+    kind: "fragment",
+    dir: "x",
+    frontmatter: minimal("fragment", "x"),
+    body: "REVIEW BEFORE COPYING\n",
+  });
   const args = ["create", "fragment", "x", "--from", "project", "--json"];
   const run = await createCli(home, args, {
     host: { stdinIsTTY: true },
@@ -147,10 +152,25 @@ test("relative XDG configuration returns an absolute path rooted at the invocati
 test("a missing source id suggests only usable entries of the same kind in that origin", async () => {
   const home = createWorkspace();
   const registry = createWorkspace();
-  writeEntry(registry, "stack", "go-cli", minimal("stack", "go-cli"));
-  writeEntry(registry, "fragment", "go-clx", minimal("fragment", "go-clx"));
+  writeEntry({
+    root: registry,
+    kind: "stack",
+    dir: "go-cli",
+    frontmatter: minimal("stack", "go-cli"),
+  });
+  writeEntry({
+    root: registry,
+    kind: "fragment",
+    dir: "go-clx",
+    frontmatter: minimal("fragment", "go-clx"),
+  });
   putCreate(registry, "stacks/go-clj/STACK.md", "invalid entry\n");
-  writeEntry(join(home, ".quickstacks"), "stack", "go-clp", minimal("stack", "go-clp"));
+  writeEntry({
+    root: join(home, ".quickstacks"),
+    kind: "stack",
+    dir: "go-clp",
+    frontmatter: minimal("stack", "go-clp"),
+  });
   const error = createFailure(
     await createCli(home, ["create", "stack", "go-cl", "--from", "bundled", "--json"], {
       host: { registry },

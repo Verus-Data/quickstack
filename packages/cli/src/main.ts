@@ -1,7 +1,7 @@
 import { Cause, Clock, Console, Effect, Exit, Logger, References } from "effect";
 import { CliError, Command } from "effect/cli";
 import { cli } from "./cli";
-import { AppConfig } from "./config";
+import { AppConfig, type LogSettings } from "./config";
 import { helpFooter } from "./core/guide";
 import { closest } from "./core/suggest";
 import {
@@ -48,12 +48,9 @@ function rootHelp(args: readonly string[]): boolean {
  * framework's own `UnknownSubcommand.suggestions` is discarded in favor of `closest`.
  */
 function usage(error: CliError.CliError): Usage {
-  const unknown =
-    error._tag === "ShowHelp"
-      ? error.errors.find((e) => e._tag === "UnknownSubcommand")
-      : error._tag === "UnknownSubcommand"
-        ? error
-        : undefined;
+  let unknown: CliError.CliError | undefined;
+  if (error._tag === "ShowHelp") unknown = error.errors.find((e) => e._tag === "UnknownSubcommand");
+  else if (error._tag === "UnknownSubcommand") unknown = error;
   return unknown?._tag === "UnknownSubcommand"
     ? new Usage({
         details: {
@@ -81,30 +78,7 @@ export function main(
       const started = yield* Clock.currentTimeMillis;
       const invocationId = `${started}-${Math.random().toString(36).slice(2, 10)}`;
       const framework: string[] = [];
-      const capture = (...values: ReadonlyArray<unknown>) => {
-        framework.push(values.map(String).join(" "));
-      };
-      const captured: Console.Console = {
-        assert: (_condition, ...values) => capture(...values),
-        clear: () => {},
-        count: capture,
-        countReset: () => {},
-        debug: capture,
-        dir: capture,
-        dirxml: capture,
-        error: capture,
-        group: capture,
-        groupCollapsed: capture,
-        groupEnd: () => {},
-        info: capture,
-        log: capture,
-        table: capture,
-        time: () => {},
-        timeEnd: () => {},
-        timeLog: capture,
-        trace: capture,
-        warn: capture,
-      };
+      const captured = captureConsole(framework);
       const reported = Invocation.make();
       const exit = yield* Effect.exit(
         restore(
@@ -117,106 +91,208 @@ export function main(
           ),
         ),
       );
-      let error: AppError | undefined;
-      let defect: string | undefined;
-      let help = false;
-      if (Exit.isFailure(exit)) {
-        const failure = exit.cause.reasons.find(Cause.isFailReason);
-        if (
-          failure &&
-          CliError.isCliError(failure.error) &&
-          failure.error._tag === "ShowHelp" &&
-          failure.error.errors.length === 0
-        )
-          help = true;
-        else
-          error = Cause.hasInterruptsOnly(exit.cause)
-            ? new Interrupted()
-            : failure
-              ? (knownError(failure.error) ??
-                (CliError.isCliError(failure.error) ? usage(failure.error) : new Defect()))
-              : new Defect();
-        if (error instanceof Defect && !knownError(failure?.error))
-          defect = defectTrace(Cause.squash(exit.cause));
-      }
-      if (error instanceof BrokenPipe) return 0;
-      if (!error && (help || framework.length)) {
-        const plain = framework
-          .join("\n")
-          .replace(new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g"), "");
-        // The root's help ends with where an agent starts; a subcommand's help doesn't.
-        const text = rootHelp(args) ? `${plain}\n\n${helpFooter(invocation)}` : plain;
-        yield* output.result(
-          hasFlag(args, "--version", "-v") ? { version: VERSION } : { help: text },
-          hasFlag(args, "--version", "-v") ? VERSION : text,
-        );
-      }
+      const observed = observeExit(exit);
+      if (observed.error instanceof BrokenPipe) return 0;
+      if (hasFrameworkOutput(observed, framework))
+        yield* writeFramework({ framework, args, invocation });
+      const written = yield* settleOutput(observed.error, invocation);
+      if (written.closed) return 0;
+      const { error, unwritten } = written;
+      const defect = written.defect ?? observed.defect;
       // A command's own status (a launched agent's) applies only when the command succeeded.
-      let status = error ? exitCode(error) : (reported.state.status ?? 0);
-      // The tag of a write error that lost a kept result; the exit stays the failure's own.
-      let unwritten: string | undefined;
-      if (error) {
-        // A keeps-result failure (a failing verify) writes its report first; the envelope still
-        // comes last on stderr. A closed stdout or stderr can't turn it into a pass.
-        const keep = keepsResult(error);
-        if (keep) {
-          const flushed = yield* Effect.exit(output.flush);
-          const failure = Exit.isFailure(flushed)
-            ? flushed.cause.reasons.find(Cause.isFailReason)
-            : undefined;
-          if (failure && !(failure.error instanceof BrokenPipe))
-            unwritten = knownError(failure.error)?._tag ?? "Defect";
-        } else yield* output.clear;
-        const written = yield* Effect.exit(output.error(error, invocation));
-        if (
-          !keep &&
-          Exit.isFailure(written) &&
-          written.cause.reasons.some(
-            (reason) => Cause.isFailReason(reason) && reason.error instanceof BrokenPipe,
-          )
-        )
-          return 0;
-        if (Exit.isFailure(written) && written.cause.reasons.some(Cause.isDieReason)) {
-          // The details didn't encode against their closed schema: report a defect instead.
-          error = new Defect();
-          defect = defectTrace(Cause.squash(written.cause));
-          status = exitCode(error);
-          yield* output.error(error, invocation).pipe(Effect.catchCause(() => Effect.void));
-        }
-      } else {
-        const flushed = yield* Effect.exit(output.flush);
-        if (Exit.isFailure(flushed)) {
-          const failure = flushed.cause.reasons.find(Cause.isFailReason);
-          if (failure?.error instanceof BrokenPipe) return 0;
-          error = failure ? (knownError(failure.error) ?? new Defect()) : new Defect();
-          if (error instanceof Defect) defect = defectTrace(Cause.squash(flushed.cause));
-          status = exitCode(error);
-          yield* output.error(error, invocation).pipe(Effect.catchCause(() => Effect.void));
-        }
-      }
+      const status = error ? exitCode(error) : (reported.state.status ?? 0);
       const finished = yield* Clock.currentTimeMillis;
-      const rank = { Trace: 0, Debug: 1, Info: 2, Warn: 3, Error: 4, Fatal: 5, None: 6 };
-      if (rank[settings.level] <= (error ? 4 : 2))
-        logging.records.push(
-          entry({
-            date: new Date(finished),
-            level: error ? "Error" : "Info",
-            message: "command",
-            annotations: {
-              invocationId,
-              duration: finished - started,
-              outcome: error ? "failure" : "success",
-              status,
-              ...reported.state.fields,
-              ...(defect ? { defect } : {}),
-              ...(unwritten ? { result: "unwritten", resultError: unwritten } : {}),
-            },
-            error,
-          }),
-        );
+      recordCommand({
+        settings,
+        logging,
+        finished,
+        started,
+        invocationId,
+        error,
+        defect,
+        unwritten,
+        status,
+        fields: reported.state.fields,
+      });
       // Log lines reach stderr only for a human; an agent or JSON reader gets them in the file only.
       yield* logging.flush(settings, output.audience !== "human");
       return status;
     }),
   );
+}
+
+function captureConsole(framework: string[]): Console.Console {
+  const capture = (...values: ReadonlyArray<unknown>) => {
+    framework.push(values.map(String).join(" "));
+  };
+  const captured: Console.Console = {
+    assert: (_condition, ...values) => capture(...values),
+    clear: () => {},
+    count: capture,
+    countReset: () => {},
+    debug: capture,
+    dir: capture,
+    dirxml: capture,
+    error: capture,
+    group: capture,
+    groupCollapsed: capture,
+    groupEnd: () => {},
+    info: capture,
+    log: capture,
+    table: capture,
+    time: () => {},
+    timeEnd: () => {},
+    timeLog: capture,
+    trace: capture,
+    warn: capture,
+  };
+  return captured;
+}
+
+type ObservedExit = { error?: AppError; defect?: string; help: boolean };
+
+function failureError(cause: Cause.Cause<unknown>): AppError {
+  if (Cause.hasInterruptsOnly(cause)) return new Interrupted();
+  const failure = cause.reasons.find(Cause.isFailReason);
+  if (!failure) return new Defect();
+  const known = knownError(failure.error);
+  if (known) return known;
+  if (CliError.isCliError(failure.error)) return usage(failure.error);
+  return new Defect();
+}
+
+function observeExit(exit: Exit.Exit<void, unknown>): ObservedExit {
+  if (Exit.isSuccess(exit)) return { help: false };
+  const failure = exit.cause.reasons.find(Cause.isFailReason);
+  if (
+    failure &&
+    CliError.isCliError(failure.error) &&
+    failure.error._tag === "ShowHelp" &&
+    failure.error.errors.length === 0
+  )
+    return { help: true };
+  const error = failureError(exit.cause);
+  if (error instanceof Defect && !knownError(failure?.error))
+    return { error, help: false, defect: defectTrace(Cause.squash(exit.cause)) };
+  return { error, help: false };
+}
+
+type FrameworkOutput = { framework: string[]; args: readonly string[]; invocation: string };
+const writeFramework = ({ framework, args, invocation }: FrameworkOutput) =>
+  Effect.gen(function* () {
+    const output = yield* Output;
+    const plain = framework
+      .join("\n")
+      .replace(new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g"), "");
+    // The root's help ends with where an agent starts; a subcommand's help doesn't.
+    const text = rootHelp(args) ? `${plain}\n\n${helpFooter(invocation)}` : plain;
+    yield* output.result(
+      hasFlag(args, "--version", "-v") ? { version: VERSION } : { help: text },
+      hasFlag(args, "--version", "-v") ? VERSION : text,
+    );
+  });
+
+type WriteOutcome = { error?: AppError; defect?: string; unwritten?: string; closed?: boolean };
+
+const flushKeptResult = Effect.gen(function* () {
+  const output = yield* Output;
+  const flushed = yield* Effect.exit(output.flush);
+  if (Exit.isSuccess(flushed)) return undefined;
+  const failure = flushed.cause.reasons.find(Cause.isFailReason);
+  if (failure && !(failure.error instanceof BrokenPipe))
+    return knownError(failure.error)?._tag ?? "Defect";
+  return undefined;
+});
+
+const writeFailure = (
+  error: AppError,
+  invocation: string,
+): Effect.Effect<WriteOutcome, never, Output> =>
+  Effect.gen(function* () {
+    const output = yield* Output;
+    // A keeps-result failure writes its report first; the envelope still comes last on stderr.
+    // A closed stdout or stderr can't turn it into a pass.
+    const keep = keepsResult(error);
+    const unwritten = keep ? yield* flushKeptResult : undefined;
+    if (!keep) yield* output.clear;
+    const written = yield* Effect.exit(output.error(error, invocation));
+    if (Exit.isSuccess(written)) return { error, unwritten };
+    if (
+      !keep &&
+      written.cause.reasons.some(
+        (reason) => Cause.isFailReason(reason) && reason.error instanceof BrokenPipe,
+      )
+    )
+      return { closed: true };
+    if (!written.cause.reasons.some(Cause.isDieReason)) return { error, unwritten };
+    // The details didn't encode against their closed schema: report a defect instead.
+    error = new Defect();
+    const defect = defectTrace(Cause.squash(written.cause));
+    yield* output.error(error, invocation).pipe(Effect.catchCause(() => Effect.void));
+    return { error, defect, unwritten };
+  });
+
+const flushSuccess = (invocation: string): Effect.Effect<WriteOutcome, never, Output> =>
+  Effect.gen(function* () {
+    const output = yield* Output;
+    const flushed = yield* Effect.exit(output.flush);
+    if (Exit.isSuccess(flushed)) return {};
+    const failure = flushed.cause.reasons.find(Cause.isFailReason);
+    if (failure?.error instanceof BrokenPipe) return { closed: true };
+    const error = failure ? (knownError(failure.error) ?? new Defect()) : new Defect();
+    const defect = error instanceof Defect ? defectTrace(Cause.squash(flushed.cause)) : undefined;
+    yield* output.error(error, invocation).pipe(Effect.catchCause(() => Effect.void));
+    return { error, defect };
+  });
+
+const settleOutput = (error: AppError | undefined, invocation: string) =>
+  error ? writeFailure(error, invocation) : flushSuccess(invocation);
+
+type CommandLog = {
+  settings: LogSettings;
+  logging: { records: ReturnType<typeof entry>[] };
+  finished: number;
+  started: number;
+  invocationId: string;
+  error: AppError | undefined;
+  defect: string | undefined;
+  unwritten: string | undefined;
+  status: number;
+  fields: Readonly<Record<string, string | number | boolean | null>>;
+};
+function recordCommand({
+  settings,
+  logging,
+  finished,
+  started,
+  invocationId,
+  error,
+  defect,
+  unwritten,
+  status,
+  fields,
+}: CommandLog) {
+  const rank = { Trace: 0, Debug: 1, Info: 2, Warn: 3, Error: 4, Fatal: 5, None: 6 };
+  if (rank[settings.level] <= (error ? 4 : 2))
+    logging.records.push(
+      entry({
+        date: new Date(finished),
+        level: error ? "Error" : "Info",
+        message: "command",
+        annotations: {
+          invocationId,
+          duration: finished - started,
+          outcome: error ? "failure" : "success",
+          status,
+          ...fields,
+          ...(defect ? { defect } : {}),
+          ...(unwritten ? { result: "unwritten", resultError: unwritten } : {}),
+        },
+        error,
+      }),
+    );
+}
+
+function hasFrameworkOutput(observed: ObservedExit, framework: string[]): boolean {
+  return !observed.error && (observed.help || framework.length > 0);
 }

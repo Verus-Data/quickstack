@@ -75,6 +75,20 @@ export class Logging extends Context.Service<
           }),
         );
       });
+      const warnUnavailable = (quiet: boolean) =>
+        Effect.gen(function* () {
+          if (!warned && !quiet) {
+            warned = true;
+            yield* output
+              .note("Log file unavailable; continuing with stderr.")
+              .pipe(Effect.catchCause(() => Effect.void));
+          }
+        });
+      const appendRecord = (file: string, record: LogEntry, quiet: boolean) =>
+        fs.makeDirectory(path.dirname(file), { recursive: true }).pipe(
+          Effect.andThen(fs.writeFileString(file, `${JSON.stringify(record)}\n`, { flag: "a" })),
+          Effect.catchCause(() => warnUnavailable(quiet)),
+        );
       return {
         logger,
         records,
@@ -83,28 +97,10 @@ export class Logging extends Context.Service<
             for (const record of records.splice(0)) {
               if (!quiet)
                 yield* output
-                  .note(
-                    settings.format === "json"
-                      ? JSON.stringify(record)
-                      : `${record.time} ${record.level.toUpperCase()} ${record.msg} ${record.outcome ?? ""}`,
-                  )
+                  .note(logLine(record, settings))
                   .pipe(Effect.catchCause(() => Effect.void));
               if (settings.file) {
-                yield* fs.makeDirectory(path.dirname(settings.file), { recursive: true }).pipe(
-                  Effect.andThen(
-                    fs.writeFileString(settings.file, `${JSON.stringify(record)}\n`, { flag: "a" }),
-                  ),
-                  Effect.catchCause(() =>
-                    Effect.gen(function* () {
-                      if (!warned && !quiet) {
-                        warned = true;
-                        yield* output
-                          .note("Log file unavailable; continuing with stderr.")
-                          .pipe(Effect.catchCause(() => Effect.void));
-                      }
-                    }),
-                  ),
-                );
+                yield* appendRecord(settings.file, record, quiet);
               }
             }
           }),
@@ -112,4 +108,9 @@ export class Logging extends Context.Service<
     }),
   );
   static memory = () => Logging.layer;
+}
+
+function logLine(record: LogEntry, settings: LogSettings): string {
+  if (settings.format === "json") return JSON.stringify(record);
+  return `${record.time} ${record.level.toUpperCase()} ${record.msg} ${record.outcome ?? ""}`;
 }

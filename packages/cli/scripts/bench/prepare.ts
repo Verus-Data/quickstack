@@ -35,15 +35,22 @@ export const prepare = (options: Options, adapters: readonly AgentAdapter[]) =>
     const processes = yield* Processes;
     const captured = config.childEnv([]);
     const detected = yield* config.agent;
-    const chosen = options.agent ?? (adapters.some((a) => a.id === detected) ? detected : "claude");
-    const adapter = adapters.find((a) => a.id === chosen);
-    if (!adapter) return yield* Effect.fail(new Error(`Unsupported agent: ${chosen}`));
-    const token = captured[adapter.auth.env];
-    if (!token?.trim())
-      return yield* Effect.fail(new Error(`Set ${adapter.auth.env} using ${adapter.auth.obtain}`));
-    const found = yield* processes.which(adapter.binary);
-    if (Option.isNone(found))
-      return yield* Effect.fail(new Error(`${adapter.binary} is not on PATH`));
+    const chosen = chosenAgent(options, adapters, detected);
+    const findAgent = Effect.gen(function* () {
+      const adapter = adapters.find((a) => a.id === chosen);
+      if (!adapter) return yield* Effect.fail(new Error(`Unsupported agent: ${chosen}`));
+      const token = captured[adapter.auth.env];
+      if (!token?.trim())
+        return yield* Effect.fail(
+          new Error(`Set ${adapter.auth.env} using ${adapter.auth.obtain}`),
+        );
+      const found = yield* processes.which(adapter.binary);
+      if (Option.isNone(found))
+        return yield* Effect.fail(new Error(`${adapter.binary} is not on PATH`));
+
+      return { adapter, token, found };
+    });
+    const { adapter, token, found } = yield* findAgent;
 
     // Construct every environment through config, retaining only the explicit allowlist.
     const environment = (set: Record<string, string> = {}) =>
@@ -91,55 +98,70 @@ export const prepare = (options: Options, adapters: readonly AgentAdapter[]) =>
       };
     }).pipe(Effect.provide(Registry.layer([{ origin: "bundled", path: registry }])));
 
-    let root: string;
-    let ports: Record<string, string>;
-    let fixedWords: number;
-    let previousNote: string | undefined;
     let scaffold: NewResult | undefined;
-    if (options.existing) {
-      root = yield* fs.realPath(path.resolve(host.cwd, options.existing));
-      const kept = yield* Effect.gen(function* () {
-        const manifest = yield* readManifest(path.join(root, "run/.quickstacks/manifest.json"));
-        const state = yield* fs
-          .readFileString(path.join(root, "bench/state.json"))
-          .pipe(Effect.flatMap(Schema.decodeUnknownEffect(State)));
-        return { manifest, state };
-      }).pipe(Effect.mapError(() => new Error("Invalid existing bench manifest or kept state")));
-      if (
-        kept.manifest.stack?.id !== options.stack ||
-        kept.manifest.preset !== options.preset ||
-        kept.manifest.agents.length !== 1 ||
-        kept.manifest.agents[0] !== adapter.id ||
-        JSON.stringify(kept.state.with) !== JSON.stringify(added)
-      )
-        return yield* Effect.fail(
-          new Error("Existing stack, fragments, preset or agent do not match"),
+    const checkExistingSelection = (kept: {
+      manifest: Effect.Success<ReturnType<typeof readManifest>>;
+      state: typeof State.Type;
+    }) =>
+      Effect.gen(function* () {
+        if (
+          kept.manifest.stack?.id !== options.stack ||
+          kept.manifest.preset !== options.preset ||
+          kept.manifest.agents.length !== 1 ||
+          kept.manifest.agents[0] !== adapter.id ||
+          JSON.stringify(kept.state.with) !== JSON.stringify(added)
+        )
+          return yield* Effect.fail(
+            new Error("Existing stack, fragments, preset or agent do not match"),
+          );
+      });
+    const openWorkspace = Effect.gen(function* () {
+      let root: string;
+      let ports: Record<string, string>;
+      let fixedWords: number;
+      let previousNote: string | undefined;
+      if (options.existing) {
+        root = yield* fs.realPath(path.resolve(host.cwd, options.existing));
+        const kept = yield* Effect.gen(function* () {
+          const manifest = yield* readManifest(path.join(root, "run/.quickstacks/manifest.json"));
+          const state = yield* fs
+            .readFileString(path.join(root, "bench/state.json"))
+            .pipe(Effect.flatMap(Schema.decodeUnknownEffect(State)));
+          return { manifest, state };
+        }).pipe(Effect.mapError(() => new Error("Invalid existing bench manifest or kept state")));
+        yield* checkExistingSelection(kept);
+        const current = yield* fingerprint(composition).pipe(
+          Effect.provide(Registry.layer([{ origin: "bundled", path: registry }])),
         );
-      const current = yield* fingerprint(composition).pipe(
-        Effect.provide(Registry.layer([{ origin: "bundled", path: registry }])),
-      );
-      if (kept.manifest.fingerprint !== current)
-        return yield* Effect.fail(
-          new Error("Existing fingerprint differs from current composition"),
+        if (kept.manifest.fingerprint !== current)
+          return yield* Effect.fail(
+            new Error("Existing fingerprint differs from current composition"),
+          );
+        ports = { ...kept.state.ports };
+        fixedWords = kept.state.fixedWords;
+        previousNote = kept.state.note;
+      } else {
+        const created = yield* Effect.acquireRelease(
+          fs.makeTempDirectory({
+            ...(captured.TMPDIR ? { directory: captured.TMPDIR } : {}),
+            prefix: "quickstacks-bench-",
+          }),
+          (directory) =>
+            options.keep
+              ? Effect.void
+              : fs.remove(directory, { recursive: true }).pipe(Effect.orDie),
         );
-      ports = { ...kept.state.ports };
-      fixedWords = kept.state.fixedWords;
-      previousNote = kept.state.note;
-    } else {
-      const created = yield* Effect.acquireRelease(
-        fs.makeTempDirectory({
-          ...(captured.TMPDIR ? { directory: captured.TMPDIR } : {}),
-          prefix: "quickstacks-bench-",
-        }),
-        (directory) =>
-          options.keep ? Effect.void : fs.remove(directory, { recursive: true }).pipe(Effect.orDie),
-      );
-      // The real path, so every path the agent is given matches what `pwd` prints there
-      // (macOS's TMPDIR is under /var, a symlink to /private/var).
-      root = yield* fs.realPath(created);
-      ports = {};
-      fixedWords = 0;
-    }
+        // The real path, so every path the agent is given matches what `pwd` prints there
+        // (macOS's TMPDIR is under /var, a symlink to /private/var).
+        root = yield* fs.realPath(created);
+        ports = {};
+        fixedWords = 0;
+      }
+      return { root, ports, fixedWords, previousNote };
+    });
+    const workspace = yield* openWorkspace;
+    const { root, ports, previousNote } = workspace;
+    let fixedWords = workspace.fixedWords;
     if (options.existing && !options.keep)
       yield* Effect.addFinalizer(() => fs.remove(root, { recursive: true }).pipe(Effect.orDie));
     const home = path.join(root, "home");
@@ -155,16 +177,7 @@ export const prepare = (options: Options, adapters: readonly AgentAdapter[]) =>
       XDG_STATE_HOME: path.join(home, "state"),
       XDG_CACHE_HOME: path.join(home, "cache"),
     });
-    if (!options.existing) {
-      for (const directory of [
-        home,
-        bench,
-        path.join(prefix, "bin"),
-        ...Object.entries(env)
-          .filter(([key]) => key.startsWith("XDG_"))
-          .map(([, value]) => value),
-      ])
-        yield* fs.makeDirectory(directory, { recursive: true });
+    const allocatePorts = Effect.gen(function* () {
       for (const key of Object.keys(composition.env)
         .filter((key) => key.startsWith("PORT_"))
         .sort()) {
@@ -174,6 +187,18 @@ export const prepare = (options: Options, adapters: readonly AgentAdapter[]) =>
         } while (Object.values(ports).includes(port));
         ports[key] = port;
       }
+    });
+    const scaffoldFresh = Effect.gen(function* () {
+      for (const directory of [
+        home,
+        bench,
+        path.join(prefix, "bin"),
+        ...Object.entries(env)
+          .filter(([key]) => key.startsWith("XDG_"))
+          .map(([, value]) => value),
+      ])
+        yield* fs.makeDirectory(directory, { recursive: true });
+      yield* allocatePorts;
       if (!options.cli) yield* exec(["bun", "run", "build"], repo);
       yield* fs.copyFile(
         options.cli
@@ -234,8 +259,21 @@ export const prepare = (options: Options, adapters: readonly AgentAdapter[]) =>
 - Stop when verify is green.
 `,
       );
-    }
+    });
+    if (!options.existing) yield* scaffoldFresh;
     const manifest = yield* readManifest(path.join(project, ".quickstacks/manifest.json"));
+    const runEvidence = Effect.gen(function* () {
+      return {
+        // Fresh runs keep precisely what new returned; continuations retain that manifest.
+        fingerprint: scaffold?.fingerprint ?? manifest.fingerprint ?? "",
+        briefWords: scaffold?.briefWords ?? manifest.briefWords,
+        cliVersion: manifest.cli,
+        before: yield* snapshot(project),
+        shippedHooks: composition.files
+          .filter((file) => file.path.startsWith(`.${adapter.id}/hooks/`))
+          .map((file) => path.basename(file.path)),
+      };
+    });
     return {
       options,
       date,
@@ -255,20 +293,19 @@ export const prepare = (options: Options, adapters: readonly AgentAdapter[]) =>
       ports,
       fixedWords,
       previousNote,
-      // Fresh runs keep precisely what new returned; continuations retain that manifest.
-      fingerprint: scaffold?.fingerprint ?? manifest.fingerprint ?? "",
-      briefWords: scaffold?.briefWords ?? manifest.briefWords,
-      cliVersion: manifest.cli,
-      before: yield* snapshot(project),
-      shippedHooks: composition.files
-        .filter((file) => file.path.startsWith(`.${adapter.id}/hooks/`))
-        .map((file) => path.basename(file.path)),
-      agentChoice: options.agent
-        ? "explicit --agent"
-        : detected === chosen
-          ? "detected agent marker"
-          : "default fallback to claude",
+      ...(yield* runEvidence),
+      agentChoice: agentChoice(options.agent, detected === chosen),
     };
   });
 
 export type Prepared = Effect.Success<ReturnType<typeof prepare>>;
+
+function agentChoice(explicit: Options["agent"], detected: boolean): string {
+  if (explicit) return "explicit --agent";
+  if (detected) return "detected agent marker";
+  return "default fallback to claude";
+}
+
+function chosenAgent(options: Options, adapters: readonly AgentAdapter[], detected: string) {
+  return options.agent ?? (adapters.some((a) => a.id === detected) ? detected : "claude");
+}

@@ -27,16 +27,22 @@ const steps = [
 
 /** A clean stack, so preview findings cannot come from an incomplete fixture. */
 export function stack(root: string, id = "sample", extra = "", body = setupBody) {
-  return writeEntry(
+  return writeEntry({
     root,
-    "stack",
-    id,
-    minimal("stack", id, `tags: [cli, scripts]\n${steps}\n${extra}`),
+    kind: "stack",
+    dir: id,
+    frontmatter: minimal("stack", id, `tags: [cli, scripts]\n${steps}\n${extra}`),
     body,
-  );
+  });
 }
 export function fragment(root: string, id: string, extra = "", body = "# Fragment guidance\n") {
-  return writeEntry(root, "fragment", id, minimal("fragment", id, extra), body);
+  return writeEntry({
+    root,
+    kind: "fragment",
+    dir: id,
+    frontmatter: minimal("fragment", id, extra),
+    body,
+  });
 }
 export function shipped(entry: string, source: string, text = "fixture\n") {
   const path = join(entry, source);
