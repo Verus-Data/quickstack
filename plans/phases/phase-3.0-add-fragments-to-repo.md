@@ -1,6 +1,8 @@
 # Phase 3.0: `add`
 
-Status: IMPLEMENTED 2026-10-27 (reviewed once; implementation findings fixed; acceptance blocked on locked watcher test 7)
+Status: EXECUTED 2026-10-27 (`add`, parked conflicts under `.quickstacks/incoming/`, the add
+brief, `list` in a project; reviewed once and fixed, then refactored into named stages sharing
+`new`'s handoff flow). Test 7 is the deterministic writer-level interrupt test
 Acceptance tests: traced
 
 | Field | Value |

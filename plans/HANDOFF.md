@@ -20,19 +20,6 @@ A maintainer still has to confirm each run, and the other four bundled stacks ha
 - Assumption 1, first result: an agent followed composed briefs of 3,200 to 4,800 words to a green `verify` in 3 to 5 minutes with nothing asked, once the briefs' own contradictions were fixed.
 - D5: the 6,000-word budget held with room to spare for these stacks; no run tested a brief near the limit.
 
-## 3.0 shared pipeline refactor (2026-10-27)
-
-The refactor against `fa2b3e3` is left uncommitted for orchestrator review. `new` and `add`
-share command handoff, project layout, template values and tool lookups; add planning,
-project reading, manifest merging, reporting and writes each have their own module.
-`replaceProjectState` owns scoped state-record restoration. The independent review found
-no additional issues, and lint, typecheck, 14 new tests and 18 binary tests pass.
-
-The gate has 130 passing harness tests and 1,071 passing CLI tests, with one failure:
-`tests/skill.test.ts` requires that the skill omit add and say existing repos are unsupported.
-That contradicts the requested skill update. The skill now documents add within 462 words;
-permission to update those obsolete assertions is pending. Existing tests remain unchanged.
-
 ## Phases 2 and 3 (2026-10-27, in progress)
 
 Phases 2 and 3 are being executed through Codex delegates (`/execute:codex`), one test-author
@@ -42,9 +29,11 @@ reworded for `dist/quickstacks` or deferred in its plan.
 
 - Executed: [2.0a](phases/phase-2.0a-composed-files-and-fingerprint.md) (composed files and
   the fingerprint), [3.5b](phases/phase-3.5b-two-phase-brief.md) (base then app stages in
-  `verify`), [3.4c](phases/phase-3.4c-agent-skill.md) (the agent skill and `skill install`).
-- In progress: 3.0 (`add`), 2.0c (run ledger), 3.1c (`new --dry-run`); then 3.1a, 2.2, 2.0b,
-  3.1b, 3.4a, 3.4b and 3.3a-c.
+  `verify`), [3.4c](phases/phase-3.4c-agent-skill.md) (the agent skill and `skill install`),
+  [3.1c](phases/phase-3.1c-new-dry-run-and-naming.md) (`new --dry-run`),
+  [2.0c](phases/phase-2.0c-run-ledger.md) (the run ledger, `runs`, seeded from the 1.6b notes),
+  [3.0](phases/phase-3.0-add-fragments-to-repo.md) (`add`).
+- In progress: 3.1a, 2.2, 2.0b; then 3.1b, 3.4a, 3.4b and 3.3a-c.
 - Deferred to phase 4 or later: [3.2a](phases/phase-3.2a-user-sources.md) and
   [3.2b](phases/phase-3.2b-source-trust-and-updates.md), gated on outside demand and open
   question 18.
