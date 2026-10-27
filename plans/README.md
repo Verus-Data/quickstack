@@ -120,7 +120,7 @@ item's test carries a tag in its name, `[<sub-phase>#<number>]`, such as
 `test("a second new into the same directory is TargetNotEmpty [1.2a#4]", ...)`. A plan
 opts into checking with a line `Acceptance tests: traced` under its status line; from
 then on the root `tests/acceptance/trace.test.ts` fails when a number has no tagged test
-under `packages/cli/tests` or `packages/cli/e2e`, or when a tag names a number the plan
+under any package's `tests/` or `e2e/` (`packages/<name>/tests`), or when a tag names a number the plan
 doesn't list.
 
 Each new sub-phase, starting with 1.3a, gets its acceptance tests before its code. A test

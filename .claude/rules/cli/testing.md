@@ -66,7 +66,7 @@ Then judge it as the agent that will depend on it. Could I pick the next step fr
 ## Process and gate
 
 - Each new sub-phase, starting with 1.3a, is test-first. A test author, a different agent from the implementer, writes the plan's numbered acceptance tests and its realistic edge cases as tagged, failing tests. The implementer makes them pass without editing their assertions. A change to a test's intent goes back to the plan, and a test the implementer believes is wrong is reported, not quietly rewritten.
-- Tag each acceptance test in its name with the plan's sub-phase and number, `[1.3a#4]` or `[1.0#12a]`, one tag per number it covers. For a plan carrying the line `Acceptance tests: traced`, the root `tests/acceptance/trace.test.ts` fails on any number with no tagged test under `packages/cli/tests` or `packages/cli/e2e`, and on any tag naming a number its plan doesn't list.
+- Tag each acceptance test in its name with the plan's sub-phase and number, `[1.3a#4]` or `[1.0#12a]`, one tag per number it covers. For a plan carrying the line `Acceptance tests: traced`, the root `tests/acceptance/trace.test.ts` fails on any number with no tagged test under any package's `tests/` or `e2e/` (`packages/cli/tests`, `packages/format/tests`), and on any tag naming a number its plan doesn't list.
 - A bug fix starts with a failing test that reproduces it through the narrowest real interface (`runCli` if possible).
 - Never weaken, skip or delete an existing assertion to get green. If a contract changes on purpose, change its test in the same commit and say why.
 - Name tests after behavior ("--json after -- belongs to the command"), not after functions.

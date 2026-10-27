@@ -100,17 +100,17 @@ Rules (roadmap, Contracts: Canonical bundle): files sorted by path using byte or
 
 ## Acceptance tests
 
-- The CLI suite passes with no test file changed except import lines: `bun run test`, `bun run coverage` and `bun run e2e` in `packages/cli`. A diff of `packages/cli/tests/` and `e2e/` shows only import changes.
-- The schema tests that belonged to the moved code move with it and pass in `packages/format`; the fingerprint tests stay in the CLI unchanged.
-- `packages/format` typechecks with `types: []`; adding `import "node:fs"` to a probe file fails lint (Grit probe on a real temporary file, as the CLI's boundary tests do).
-- The packed tarball from 0.2's build has no `@stacks/format` in its `package.json`, and `npx` of the tarball in a temp directory runs `list --json` (0.2's existing packed-tarball e2e, unchanged, is the check).
-- `canonicalBundle`: the same files in a different order give identical bytes; a CRLF file and its LF copy give different digests; a binary file round-trips through `base64`; property test over random file sets that decode-then-canonicalize is stable.
-- `BundlePath` rejects `../x`, `/x`, `a/../../x`, `a\\b` and an empty string.
-- The packed `@stacks/format` tarball holds only `dist/`, `package.json` and the license; installed into a temporary project under Node 22 with no TypeScript loader, `import { bundleDigest, Manifest } from "@stacks/format"` runs and decodes a fixture manifest, and the declarations typecheck a consumer file with `tsc`.
+1. The schema tests that belonged to the moved code move with it and pass in `packages/format`; the fingerprint tests stay in the CLI unchanged.
+2. `packages/format` typechecks with `types: []`; adding `import "node:fs"` to a probe file fails lint (Grit probe on a real temporary file, as the CLI's boundary tests do).
+3. `canonicalBundle`: the same files in a different order give identical bytes; a CRLF file and its LF copy give different digests; a binary file round-trips through `base64`; property test over random file sets that decode-then-canonicalize is stable.
+4. `BundlePath` rejects `../x`, `/x`, `a/../../x`, `a\\b` and an empty string.
+5. The packed `@stacks/format` tarball holds only `dist/`, `package.json` and the license; installed into a temporary project under Node 22 with no TypeScript loader, `import { bundleDigest, Manifest } from "@stacks/format"` runs and decodes a fixture manifest, and the declarations typecheck a consumer file with `tsc`.
 
 ## Exit criteria
 
 - Acceptance tests pass; `bun run check` green from the repo root, now including `packages/format`.
+- The CLI suite passes with no test file changed except import lines (`bun run test`, `bun run coverage` and `bun run e2e` in `packages/cli`); a diff of `packages/cli/tests/` and `e2e/` shows only import changes.
+- The CLI's packed tarball has no `@stacks/format` in its `package.json`, and 0.2's existing packed-tarball e2e (installs it and runs `list --json`) passes unchanged.
 - No file under `packages/cli/src/` defines a symbol that `packages/format` exports.
 - `AGENTS.md` describes the package.
 

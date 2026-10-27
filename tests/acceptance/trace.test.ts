@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -122,10 +122,13 @@ describe("acceptance tracing", () => {
     ]);
   });
 
-  it("holds for this repo's plans and CLI tests", () => {
-    const cli = join(REPO, "packages", "cli");
+  it("holds for this repo's plans and every package's tests", () => {
+    const packages = join(REPO, "packages");
+    const dirs = readdirSync(packages).flatMap((name) =>
+      ["tests", "e2e"].map((dir) => join(packages, name, dir)).filter((dir) => existsSync(dir)),
+    );
     const plans = readPlans(join(REPO, "plans", "phases"));
-    const tags = readTags(REPO, [join(cli, "tests"), join(cli, "e2e")]);
+    const tags = readTags(REPO, dirs);
     expect(traceProblems(plans, tags)).toEqual([]);
   });
 });
