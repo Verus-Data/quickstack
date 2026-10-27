@@ -7,6 +7,98 @@
     {
       "includes": ["registry/stacks/mobile-expo/**"],
       "javascript": { "formatter": { "quoteStyle": "single" } }
+    },
+    {
+      "includes": ["registry/**"],
+      "linter": {
+        "rules": {
+          "complexity": { "noExcessiveCognitiveComplexity": "off", "useMaxParams": "off" },
+          "style": { "noNestedTernary": "off" }
+        }
+      }
+    },
+    {
+      "includes": [
+        "scripts/bench/files.ts",
+        "scripts/bench/prepare.ts",
+        "scripts/bench/record.ts",
+        "scripts/bench/run.ts",
+        "scripts/bench/verify.ts",
+        "scripts/ledger-import.ts",
+        "src/commands/handoff.ts",
+        "src/commands/list.ts",
+        "src/commands/skill.ts",
+        "src/commands/validate.ts",
+        "src/commands/verify.ts",
+        "src/core/add/plan.ts",
+        "src/core/add/prepare.ts",
+        "src/core/add/write.ts",
+        "src/core/brief/render.ts",
+        "src/core/brief/text.ts",
+        "src/core/compose/agents.ts",
+        "src/core/compose/compose.ts",
+        "src/core/compose/conditionals.ts",
+        "src/core/compose/files.ts",
+        "src/core/create.ts",
+        "src/core/list.ts",
+        "src/core/registry/entry.ts",
+        "src/core/registry/registry.ts",
+        "src/core/manifest.ts",
+        "src/core/runs.ts",
+        "src/core/scaffold/git.ts",
+        "src/core/scaffold/new.ts",
+        "src/core/scaffold/report.ts",
+        "src/core/scaffold/target.ts",
+        "src/core/scaffold/values.ts",
+        "src/core/scaffold/write.ts",
+        "src/core/show.ts",
+        "src/core/skill.ts",
+        "src/core/suggest.ts",
+        "src/core/validate/commands.ts",
+        "src/core/validate/compose-each.ts",
+        "src/core/validate/composed.ts",
+        "src/core/validate/compositions.ts",
+        "src/core/validate/conditionals-reach.ts",
+        "src/core/validate/conditionals.ts",
+        "src/core/validate/dated.ts",
+        "src/core/validate/files.ts",
+        "src/core/validate/format.ts",
+        "src/core/validate/git.ts",
+        "src/core/validate/imports.ts",
+        "src/core/validate/index.ts",
+        "src/core/validate/ledger-notes.ts",
+        "src/core/validate/references.ts",
+        "src/core/validate/report.ts",
+        "src/core/validate/shipped-refs.ts",
+        "src/core/validate/target.ts",
+        "src/core/validate/templates.ts",
+        "src/core/verify/record.ts",
+        "src/core/verify/report.ts",
+        "src/core/verify/run.ts",
+        "src/core/verify/step.ts",
+        "src/errors.ts",
+        "src/logging.ts",
+        "src/main.ts",
+        "src/services/processes.ts",
+        "tests/create-interruption.test.ts",
+        "tests/create.test.ts",
+        "tests/fixtures/bench/agent.cjs",
+        "tests/helpers/agents.ts",
+        "tests/helpers/registry.ts",
+        "tests/ledger-import.test.ts",
+        "tests/ledger-review.test.ts",
+        "tests/list.test.ts",
+        "tests/new-dry-run.test.ts",
+        "tests/registry-hooks.test.ts",
+        "tests/validate.test.ts",
+        "tests/verify.test.ts"
+      ],
+      "linter": {
+        "rules": {
+          "complexity": { "noExcessiveCognitiveComplexity": "warn", "useMaxParams": "warn" },
+          "style": { "noNestedTernary": "warn" }
+        }
+      }
     }
   ]
 }

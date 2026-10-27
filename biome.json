@@ -22,13 +22,37 @@
       "style": {
         "useImportType": "error",
         "useExportType": "error",
-        "useConst": "error"
+        "useConst": "error",
+        "noNestedTernary": "error"
       },
       "correctness": {
         "noUnusedImports": "error"
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": {
+          "level": "error",
+          "options": { "maxAllowedComplexity": 15 }
+        },
+        "useMaxParams": "error"
       }
     }
   },
+  "overrides": [
+    {
+      "includes": [
+        ".claude/hooks/_shell.ts",
+        ".claude/hooks/guard-boundaries.ts",
+        ".claude/hooks/typecheck-on-write.ts",
+        "tests/helpers/acceptance.ts"
+      ],
+      "linter": {
+        "rules": {
+          "complexity": { "noExcessiveCognitiveComplexity": "warn", "useMaxParams": "warn" },
+          "style": { "noNestedTernary": "warn" }
+        }
+      }
+    }
+  ],
   "javascript": {
     "formatter": {
       "quoteStyle": "double"
