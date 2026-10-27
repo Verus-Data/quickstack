@@ -153,6 +153,32 @@ The core loop: `new <stack>` writes the starter files and `.quickstacks/BRIEF.md
 
 `quickstacks list` shows each stack's fragments; `validate` reports every stack's composed brief size in both presets.
 
+## Agent adapters
+
+`--agents` selects native config; it does not change which agent drives the handoff.
+All targets receive `AGENTS.md`. Guard scripts are shared under `.claude/hooks/`;
+only selected agents receive their config. A blocked action means ask the user.
+
+| Agent | Enforced guards and instructions | Proof |
+| --- | --- | --- |
+| Claude Code (`claude`) | Enforced destructive-command and secret-write hooks; lint-on-write, format-on-stop; CLAUDE.md imports AGENTS.md and path rules carry instructions | Existing Claude bench adapter; see the composition's ledger record |
+| Codex (`codex`) | Enforced Bash and native apply_patch guards after hook trust; workspace-write sandbox, on-request approvals; AGENTS.md and project skills carry instructions; lint/format are instructions | Bench adapter exists; a real pass with hooksFired is still required for native adapter proof |
+| OpenCode (`opencode`) | Enforced permissions and plugin callback guards; lint-on-write, format-on-idle; AGENTS.md and project skills carry instructions | Unproved: 2.0b has no OpenCode bench adapter; composition and offline callbacks only |
+| Cursor (`cursor`) | Enforced preToolUse shell/write guards; always-applied MDC instructions; lint/format are instructions | Unproved: 2.0b has no Cursor bench adapter; composition and offline hooks only |
+
+Codex project hooks require review and trust through `/hooks`. Linked-worktree hook
+discovery needs a live-agent check; offline payload tests prove protocol decisions.
+OpenCode targets its documented local-plugin format; no Claude marketplace settings
+or TypeScript harness extensions are migrated to the other agents.
+
+Formats: [Codex config](https://developers.openai.com/codex/config-advanced/),
+[Codex hooks](https://developers.openai.com/codex/hooks/),
+[Codex skills](https://developers.openai.com/codex/skills/),
+[OpenCode permissions](https://opencode.ai/docs/permissions/),
+[plugins](https://opencode.ai/docs/plugins/), [formatters](https://opencode.ai/docs/formatters/),
+[skills](https://opencode.ai/docs/skills/),
+[Cursor hooks](https://cursor.com/docs/hooks) and [rules](https://cursor.com/docs/rules).
+
 ## Starting a project
 
 ```sh

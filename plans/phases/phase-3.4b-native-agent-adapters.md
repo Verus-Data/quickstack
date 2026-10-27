@@ -104,6 +104,11 @@ Maintainer-owned proof, 2026-10-27 (formerly the fourth unnumbered acceptance it
 - Agent config formats move faster than stack prose, which is the rot D1 warns about. Adapters ship only config whose shape is stable and documented; 2.2's dated-phrase check and the bench are the tripwires.
 - Some agents have no hook mechanism. For them the guardrails are instructions, which an agent can ignore; the README's agent table says which agents get enforced guards and which get instructions.
 - The input shim per agent is a seam where behavior can drift. The shared sample-payload test is the guard.
+- Shared shell guards must move from `agent-ops/adapters/claude/.claude/hooks/` into `agent-ops/files/.claude/hooks/` to compose once for every target. The existing 3.4a `agent-harness-hooks.test.ts::project` helper copies the old source directory directly; its source setup must follow the move without changing behavioral assertions. The adapter-content contract excludes existing test edits, so this needs an orchestrator-owned helper update.
+- Existing `bundled-compositions.test.ts` pins legacy canonical brief hashes. Keep those fragment bodies unchanged; native configuration and instruction files carry the new adapter guidance without adding prose to those briefs.
+- OpenCode also documents native `apply_patch` callbacks with `args.patchText`. They use the same patch translator as Codex for guards, and collect every added, updated or moved path for linting and session formatting. An object-valued formatter config enables built-ins, so disable the documented built-ins explicitly before deferring formatting to idle. The offline regression host models this documented dispatch with a real local Ruff executable; it does not prove live OpenCode behavior.
+- D5, D18 and D27 are currently in `plans/requirements.md`, not the decisions log in `plans/README.md` named by the contract. Their format and budget constraints still apply.
+- Codex documents hook entry-point lookup from the git root and runs commands in the session cwd; it does not document a project-dir environment variable for project hooks. The entry point therefore follows that documented lookup; shared libraries and protocol shims resolve paths from their own file location. A live linked-worktree discovery check remains necessary.
 
 ### Format findings checked 2026-10-27
 
