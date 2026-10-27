@@ -31,6 +31,25 @@ test("destructive shell hook denies actual reset and allows status", async () =>
     ).stdout,
   ).toBe("");
 });
+test("destructive shell hook asks the user before a publish instead of denying it", async () => {
+  for (const command of ["npm publish ./pkg.tgz --access public", "bun publish"]) {
+    const result = await runHook(
+      "PreToolUse",
+      "block-destructive",
+      { tool_name: "Bash", tool_input: { command } },
+      options(),
+    );
+    expect(result.stdout, command).toContain('"ask"');
+    expect(result.stdout, command).not.toContain('"deny"');
+  }
+  const dryRun = await runHook(
+    "PreToolUse",
+    "block-destructive",
+    { tool_name: "Bash", tool_input: { command: "npm publish --dry-run" } },
+    options(),
+  );
+  expect(dryRun.stdout).toBe("");
+});
 test("secret hook denies a PEM marker and allows environment lookup", async () => {
   const file = join(project.dir, "key.ts");
   const marker = ["-----BEGIN", "PRIVATE KEY-----"].join(" ");
