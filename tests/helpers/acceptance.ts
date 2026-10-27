@@ -22,23 +22,28 @@ export function readPlans(dir: string): Plan[] {
     .map((name) => {
       const text = readFileSync(join(dir, name), "utf8");
       const lines = text.split("\n");
-      const numbers: string[] = [];
-      let inSection = false;
-      let inFence = false;
-      for (const line of lines) {
-        if (line.startsWith("```")) inFence = !inFence;
-        if (inFence) continue;
-        if (line.startsWith("## ")) inSection = line.trim() === "## Acceptance tests";
-        const number = inSection ? NUMBERED.exec(line)?.[1] : undefined;
-        if (number !== undefined) numbers.push(number);
-      }
       return {
         subPhase: PLAN_FILE.exec(name)?.[1] as string,
         file: name,
         traced: lines.some((line) => line.trim() === TRACED_MARKER),
-        numbers,
+        numbers: acceptanceNumbers(lines),
       };
     });
+}
+
+/** The numbers listed under a plan's "## Acceptance tests" heading, outside code fences. */
+function acceptanceNumbers(lines: string[]): string[] {
+  const numbers: string[] = [];
+  let inSection = false;
+  let inFence = false;
+  for (const line of lines) {
+    if (line.startsWith("```")) inFence = !inFence;
+    if (inFence) continue;
+    if (line.startsWith("## ")) inSection = line.trim() === "## Acceptance tests";
+    const number = inSection ? NUMBERED.exec(line)?.[1] : undefined;
+    if (number !== undefined) numbers.push(number);
+  }
+  return numbers;
 }
 
 /** Every tag in the `.ts` files under `roots`, with its file relative to `base`. */
