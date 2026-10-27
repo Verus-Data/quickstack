@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { BunServices } from "@effect/platform-bun";
 import { Effect, Layer } from "effect";
 import { hasFlag, main } from "./main";
@@ -42,8 +42,13 @@ const platform = Layer.mergeAll(
     ...(process.stdout.isTTY && process.stdout.columns
       ? { stdoutColumns: process.stdout.columns }
       : {}),
-    // A stub until 0.2 resolves the bundled registry inside the npm package.
-    registry: join(import.meta.dirname, "..", "registry"),
+    // A stub until 0.2 resolves the bundled registry inside the npm package. A compiled binary's
+    // `import.meta.dirname` is Bun's virtual `/$bunfs`, so it looks beside its own `bin/`
+    // directory instead: `dist/quickstacks` finds the package's `registry/`, and a copy installed
+    // as `<prefix>/bin/quickstacks` finds `<prefix>/registry`.
+    registry: Bun.isStandaloneExecutable
+      ? join(dirname(process.execPath), "..", "registry")
+      : join(import.meta.dirname, "..", "registry"),
     invocation: "quickstacks",
   }),
 );

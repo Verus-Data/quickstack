@@ -281,3 +281,9 @@ Not `.github/workflows/`.
   visible to authors) or a check that fails the pack when the tarball's `registry/` file
   list differs from the tree. 1.6a's tarball file-list test is that check; the escape is
   needed only if the check fails.
+- 2026-10-26: the registry stub in `bin.ts` used `import.meta.dirname`, which inside a Bun
+  standalone binary is the virtual `/$bunfs`, so the compiled binary found no bundled
+  registry at all. Ahead of 0.2, a compiled binary now looks for `registry/` beside its own
+  `bin/` directory (`dist/quickstacks` finds the package's, `<prefix>/bin/quickstacks` finds
+  `<prefix>/registry`), so 1.6b's gate runs can use an installed copy of the binary. 0.2
+  still decides where the npm package's registry lives and replaces the stub.

@@ -1,5 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import {
+  chmodSync,
+  copyFileSync,
+  cpSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -15,15 +18,26 @@ import { version } from "../package.json";
 import { Manifest } from "../src/schemas/manifest";
 
 const binary = join(import.meta.dir, "../dist/quickstacks");
+/** A copy of the binary in `<prefix>/bin/`, with `registry` (if given) copied to `<prefix>/registry`. */
+function install(registry?: string): { bin: string; prefix: string } {
+  const prefix = mkdtempSync(join(tmpdir(), "cli-binary-prefix-"));
+  mkdirSync(join(prefix, "bin"));
+  const bin = join(prefix, "bin", "quickstacks");
+  copyFileSync(binary, bin);
+  chmodSync(bin, 0o755);
+  if (registry) cpSync(registry, join(prefix, "registry"), { recursive: true });
+  return { bin, prefix };
+}
 async function invoke(
   args: readonly string[],
   prepare?: (dir: string) => void,
   extra: Record<string, string> = {},
+  executable = binary,
 ) {
   const dir = mkdtempSync(join(tmpdir(), "cli-binary-"));
   try {
     prepare?.(dir);
-    const child = Bun.spawn([binary, ...args], {
+    const child = Bun.spawn([executable, ...args], {
       cwd: dir,
       env: {
         HOME: dir,
@@ -119,12 +133,37 @@ describe("real standalone binary", () => {
     expect(brief.stdout).toMatch(/\nBrief: [\d,]+ words \(fixed text [\d,]+\), limit 6,000\n/);
   });
   test("list with no registry suggests doctor", async () => {
-    const result = await invoke(["list"]);
-    expect(result).toEqual({
-      stdout: "No stacks or fragments found.\n\nNext: quickstacks doctor\n",
-      stderr: "",
-      status: 0,
-    });
+    const { bin, prefix } = install();
+    try {
+      const result = await invoke(["list"], undefined, {}, bin);
+      expect(result).toEqual({
+        stdout: "No stacks or fragments found.\n\nNext: quickstacks doctor\n",
+        stderr: "",
+        status: 0,
+      });
+    } finally {
+      rmSync(prefix, { recursive: true, force: true });
+    }
+  });
+  test("a compiled binary reads the registry installed beside its bin directory, as trusted", async () => {
+    const { bin, prefix } = install(join(import.meta.dir, "../tests/fixtures/registry-real"));
+    try {
+      const result = await invoke(["list", "--json"], undefined, {}, bin);
+      expect(result.status).toBe(0);
+      expect(result.stderr).toBe("");
+      const listed = JSON.parse(result.stdout);
+      expect(listed.rejected).toEqual([]);
+      expect(listed.entries.length).toBeGreaterThan(0);
+      for (const row of listed.entries) expect(row).toMatchObject({ trusted: true });
+    } finally {
+      rmSync(prefix, { recursive: true, force: true });
+    }
+  });
+  test("the built binary lists the bundled catalog", async () => {
+    const result = await invoke(["list", "stacks", "--json"]);
+    expect(result.status).toBe(0);
+    const ids = JSON.parse(result.stdout).entries.map((row: { id: string }) => row.id);
+    expect(ids).toEqual(expect.arrayContaining(["astro-blog", "go-cli", "python-react"]));
   });
   test("new --sandbox --json writes the project, its brief and an executable hook", async () => {
     const out = mkdtempSync(join(tmpdir(), "cli-binary-new-"));
