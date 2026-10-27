@@ -1,3 +1,5 @@
+import { hasControl } from "../text";
+
 /** The fixed template variables (D18 as amended). No entry can add one. */
 export const TEMPLATE_VARIABLES = [
   "project_name",
@@ -9,6 +11,16 @@ export const TEMPLATE_VARIABLES = [
 ] as const;
 export type TemplateVariable = (typeof TEMPLATE_VARIABLES)[number];
 export type TemplateValues = Record<TemplateVariable, string>;
+
+/**
+ * The `author` value from a raw name (the setting, or git's user.name): `"`, `\` and line breaks
+ * removed, since templates insert it raw into JSON strings and YAML; `undefined` when it still
+ * holds another control character.
+ */
+export function authorValue(raw: string): string | undefined {
+  const value = raw.replace(/["\\\r\n]/g, "");
+  return hasControl(value) ? undefined : value;
+}
 
 /**
  * The one token: `{{`, optional spaces or tabs, an identifier, optional spaces or tabs, `}}`,

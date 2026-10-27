@@ -1,4 +1,4 @@
-import { chmodSync, mkdirSync, symlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, mkdirSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { it } from "@effect/vitest";
 import { Effect, Schema } from "effect";
@@ -735,10 +735,49 @@ test("--brief failures are compose's own: an unknown stack suggests the close on
 test("--with, --without or --sandbox without --brief is BadInput naming the flag", async () => {
   const result = await run(["--sandbox", "--json"], { registry: realRegistry });
   expect(result.status).toBe(2);
+  expect(result.stdout).toBe("");
   expect(JSON.parse(result.stderr).error).toMatchObject({
     tag: "BadInput",
-    details: { id: "--sandbox" },
+    details: { id: "--sandbox", flag: "brief" },
   });
+  const human = await run(["--with", "x"], { registry: realRegistry });
+  expect(human.status).toBe(2);
+  expect(human.stdout).toBe("");
+  expect(human.stderr).toBe(
+    "Invalid input.\n  Flag: --with\n  Next: --with, --without and --sandbox need --brief <stack>; add it, or drop the flag.\n",
+  );
+});
+
+test("a missing path's human failure says what a valid path is", async () => {
+  const home = temp();
+  const result = await run([join(home, "nonexistent")], { home });
+  expect(result.status).toBe(2);
+  expect(result.stdout).toBe("");
+  expect(result.stderr).toBe(
+    `Not found.\n  Looked for: ${join(home, "nonexistent")}\n  Next: pass a registry root (a directory holding stacks/ or fragments/) or an entry directory inside one.\n`,
+  );
+});
+
+test("an unknown --brief id under a root list doesn't read points at validate for that root", async () => {
+  const home = temp();
+  const root = join(home, "root");
+  cpSync(realRegistry, root, { recursive: true });
+  const result = await run([root, "--brief", "typscript-cli", "--json"], { home });
+  expect(result.status).toBe(2);
+  expect(result.stdout).toBe("");
+  expect(JSON.parse(result.stderr).error).toMatchObject({
+    tag: "NotFound",
+    details: { suggestions: ["typescript-cli"], root },
+  });
+  const human = await run([root, "--brief", "typscript-cli"], { home });
+  expect(human.stderr).toBe(
+    `Not found.\n  Did you mean: typescript-cli?\n  Next: quickstacks validate ${root} lists the ids under that root.\n`,
+  );
+  // The bundled registry is what `list` shows, so its hint stays `list`.
+  const bundled = await run(["--brief", "typscript-cli"], { registry: realRegistry });
+  expect(bundled.stderr).toBe(
+    "Not found.\n  Did you mean: typescript-cli?\n  Next: quickstacks list shows every stack and fragment.\n",
+  );
 });
 
 it.effect("validate --help documents the path and every flag", () =>

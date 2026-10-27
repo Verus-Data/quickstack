@@ -1,4 +1,5 @@
 import { Effect } from "effect";
+import { NotFound } from "../../errors";
 import type { BriefPreview } from "../../schemas/validate";
 import { targetAgents } from "../compose/agents";
 import { compose } from "../compose/compose";
@@ -27,7 +28,15 @@ export const previewBrief = (target: Target, options: PreviewOptions) =>
       agents: targetAgents(undefined, {}),
       always: [],
       mode: "new",
-    }).pipe(Effect.provide(Registry.layer(roots)));
+    }).pipe(
+      Effect.provide(Registry.layer(roots)),
+      // `list` doesn't read a root given to validate, so the not-found hint names this root.
+      Effect.mapError((error) =>
+        error._tag === "NotFound" && error.details && !target.bundled
+          ? new NotFound({ details: { ...error.details, root: target.root } })
+          : error,
+      ),
+    );
     const brief = canonicalBrief(composition);
     return {
       stack: composition.stack.id,

@@ -88,7 +88,7 @@ test("a requires cycle fails with the cycle's ids in order", async () => {
 
 test("the same id in --with and --without is BadInput naming it", async () => {
   expect(await composeExit({ with: ["hooks-a", "ci"], without: ["ci"] })).toEqual(
-    Exit.fail(new BadInput({ details: { id: "ci" } })),
+    Exit.fail(new BadInput({ details: { id: "ci", flag: "with_without" } })),
   );
 });
 

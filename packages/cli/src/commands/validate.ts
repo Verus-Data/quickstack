@@ -56,7 +56,7 @@ export const validateCommand = Command.make(
             ? "--sandbox"
             : undefined;
       if (stack === undefined && stray !== undefined)
-        return yield* new BadInput({ details: { id: stray } });
+        return yield* new BadInput({ details: { id: stray, flag: "brief" } });
       const target = yield* resolveTarget(path);
       if (stack !== undefined) {
         const preview = yield* previewBrief(target, {

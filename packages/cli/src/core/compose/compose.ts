@@ -161,7 +161,8 @@ export const compose = (
     const without = new Set(options.without);
     const withIds = [...new Set(options.with)].sort(byId);
     const both = withIds.find((id) => without.has(id));
-    if (both !== undefined) return yield* new BadInput({ details: { id: both } });
+    if (both !== undefined)
+      return yield* new BadInput({ details: { id: both, flag: "with_without" } });
 
     const stackEntry = yield* registry.get("stack", options.stack);
     if (!isStack(stackEntry)) return yield* Effect.die(new Error("Registry returned a non-stack"));
@@ -373,6 +374,22 @@ function resolver(
 
 const TEMPLATE = ".tmpl";
 
+/** Code points HFS+ ignores in names (git's `is_hfs_dotgit`): `.git` with one inside opens `.git`. */
+const HFS_IGNORABLE = /[\u{200c}-\u{200f}\u{202a}-\u{202e}\u{206a}-\u{206f}\u{feff}]/gu;
+/** A name the way a case-insensitive filesystem compares it. */
+const fold = (name: string) => name.normalize("NFC").toLowerCase();
+
+/**
+ * Whether a path segment names `.git` or `.quickstacks` on some filesystem: the directories the
+ * CLI owns in a project. After git's `is_hfs_dotgit` and `is_ntfs_dotgit`: case folded, HFS+
+ * ignorable code points dropped, anything from a `:` (an NTFS stream) on and trailing dots and
+ * spaces cut, and the NTFS short names `git~1` and `quicks~1` included.
+ */
+export function reservedSegment(segment: string): boolean {
+  const name = (fold(segment.replace(HFS_IGNORABLE, "")).split(":")[0] ?? "").replace(/[. ]+$/, "");
+  return name === ".git" || name === ".quickstacks" || name === "git~1" || name === "quicks~1";
+}
+
 /** Every output path with one owner, or one JSON merge of writers that all list it in `merge`. */
 function planFiles(
   registry: Registry["Service"],
@@ -394,6 +411,8 @@ function planFiles(
           return yield* Effect.die(
             new Error("A planned path is empty or escapes the project root"),
           );
+        if (path.split("/").some(reservedSegment))
+          return yield* conflict({ reason: "reserved_path", ...parties([entry]), path });
         if (template && entry.meta.merge.includes(path))
           return yield* new EntryInvalid({
             details: {
@@ -409,10 +428,32 @@ function planFiles(
         ]);
       }
     const planned: PlannedFile[] = [];
+    /** Folded file paths, and folded directories on the way to one, each to a path that made it. */
+    const files = new Map<string, string>();
+    const dirs = new Map<string, string>();
     for (const path of [...byPath.keys()].sort(byId)) {
       const writers = byPath.get(path) ?? [];
       const [first] = writers;
       if (!first) continue;
+      // Two paths a case-insensitive filesystem treats as one, or a file where another path needs
+      // a directory, would only fail mid-write; refuse them before anything is written.
+      const parents = path
+        .split("/")
+        .slice(0, -1)
+        .map((_, i, all) => fold(all.slice(0, i + 1).join("/")));
+      const key = fold(path);
+      const other =
+        files.get(key) ??
+        dirs.get(key) ??
+        parents.map((parent) => files.get(parent)).find((found) => found !== undefined);
+      if (other !== undefined)
+        return yield* conflict({
+          reason: "file_owner",
+          ...parties([...(byPath.get(other) ?? []), ...writers].map((writer) => writer.entry)),
+          path,
+        });
+      files.set(key, path);
+      for (const parent of parents) dirs.set(parent, path);
       if (writers.length === 1) {
         planned.push({
           path,

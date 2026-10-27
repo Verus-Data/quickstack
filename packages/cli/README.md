@@ -54,12 +54,15 @@ quickstacks new <stack> [dir]    # dir defaults to <stack>; `.` is the current d
   --json                         # one NewResult object
 ```
 
-`new` composes the stack, writes its files and `.quickstacks/` (`BRIEF.md`, `NOTES.md`, a `.gitignore` that ignores both, and an empty `state/`), runs `git init` when the target isn't already inside a repository and git is on PATH, then prints the prompt to give your coding agent. It never runs a command from a stack or fragment.
+`new` composes the stack, writes its files and `.quickstacks/` (`BRIEF.md`, `NOTES.md`, `manifest.json`, an empty `state/`, and a `.gitignore` that ignores `BRIEF.md`, `NOTES.md`, `state/` and `incoming/`), writes a state record outside the project, runs `git init` when the target isn't already inside a repository and git is on PATH, then prints the prompt to give your coding agent. It never runs a command from a stack or fragment.
 
+- `.quickstacks/manifest.json` records the stack, fragments, preset, agents and the verify steps with their digest; it is committed with the project. A manifest whose `schemaVersion` is newer than this CLI reads fails `InvalidConfig` (exit 3): upgrade quickstacks.
+- The state record is a second copy of the verify digest at `$XDG_STATE_HOME/quickstacks/projects/<projectId>.json` (`QUICKSTACKS_STATE_DIR` replaces `$XDG_STATE_HOME/quickstacks`), so editing the project's files can't hide a changed verify step. When that directory isn't writable, `new` still succeeds with `stateRecord: false`, and verify's tamper check uses the manifest only.
 - The target must not exist, or be empty. A directory holding only `.git` or OS litter (`.DS_Store`, `Thumbs.db`, `desktop.ini`, `._*`) counts as empty; anything else fails `TargetNotEmpty` (exit 2).
-- Inside another repository nothing is initialized, and a fragment with `needs_own_repo` is refused (`ComposeConflict`, with the `--without` flags that would avoid it).
-- Files ending `.tmpl` are rendered and lose the suffix. The only variables are `project_name` (the directory's name), `project_slug`, `env_prefix`, `package_scope`, `author` (the `author` setting, else `git config user.name`) and `year`; a token is `{{ name }}` on one line, and an unknown name fails `EntryInvalid` before anything is written. Every other file is copied byte for byte, keeping its executable bit.
-- Every write is checked against the project's real path, so nothing lands outside it (`PermissionDenied`, reason `escape`). A failure or Ctrl+C removes everything `new` wrote.
+- Inside another repository nothing is initialized, and a fragment with `needs_own_repo` is refused (`ComposeConflict`, with the `--without` flags that would avoid it). A target that is itself a repository's root is that project's own repository, so those fragments are allowed. When git fails for any reason other than "not a git repository" (a broken `.git`, unsafe ownership), nothing is initialized and the result carries a `git_unusable` warning.
+- Files ending `.tmpl` are rendered and lose the suffix. The only variables are `project_name` (the directory's name, which may not contain control characters), `project_slug`, `env_prefix`, `package_scope`, `author` (the `author` setting, else `git config user.name`; quotes, backslashes and line breaks are removed) and `year`; a token is `{{ name }}` on one line, and an unknown name fails `EntryInvalid` before anything is written. Every other file is copied byte for byte, keeping its executable bit.
+- No entry may write under `.git/` or `.quickstacks/`, in any letter case (`ComposeConflict`, reason `reserved_path`), and two entry files whose paths differ only in case collide (`file_owner`).
+- Every write is checked against the project's real path, so nothing lands outside it (`PermissionDenied`, reason `escape`). A failure or Ctrl+C removes everything `new` wrote, the state record included.
 - Missing tools never fail `new`: they are listed in the result and the brief, with the `--without` flag that would drop the fragment needing one.
 
 ## Validating a registry
@@ -107,14 +110,15 @@ Environment settings:
 | Setting | Meaning |
 | --- | --- |
 | `QUICKSTACKS_DATA_DIR` | Data path; defaults to `$XDG_DATA_HOME/quickstacks` (`$HOME/.local/share/quickstacks`) |
+| `QUICKSTACKS_STATE_DIR` | Project state records; defaults to `$XDG_STATE_HOME/quickstacks` (`$HOME/.local/state/quickstacks`) |
 | `QUICKSTACKS_LOG_FORMAT` | `json` for JSON diagnostics, otherwise plain readable logs |
 | `QUICKSTACKS_LOG_FILE` | Optional JSONL file; directory recreated when needed |
 | `LOG_LEVEL` | trace/debug/info/warn/error/fatal/none; default and invalid-value fallback warn |
 | `QUICKSTACKS_REGISTRY_DIR` | A directory used as the bundled registry instead of the one shipped with the CLI, relative to the working directory; its entries are untrusted |
 | `NO_COLOR` | Keep output free of ANSI (current formatter always uses plain text) |
-| `HOME`, `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_CACHE_HOME` | Path roots; an unset `HOME` means the user's home directory. The cache is `$XDG_CACHE_HOME/quickstacks` (`$HOME/.cache/quickstacks`) |
+| `HOME`, `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`, `XDG_CACHE_HOME` | Path roots; an unset `HOME` means the user's home directory. The cache is `$XDG_CACHE_HOME/quickstacks` (`$HOME/.cache/quickstacks`) |
 
-The development wrapper sets info logging, appends `logs/cli.jsonl`, copies noninteractive stderr to `logs/cli.log`, and uses `.dev/data`. Logs rotate above 5 MiB. It forwards arguments, terminal behavior, signals and the child's exit status. `.env` is optional for source development. The standalone build disables dotenv, bunfig, tsconfig and package autoload, following the [Bun compile API](https://bun.sh/docs/bundler/executables).
+The development wrapper sets info logging, appends `logs/cli.jsonl`, copies noninteractive stderr to `logs/cli.log`, and uses `.dev/data` and `.dev/state`. Logs rotate above 5 MiB. It forwards arguments, terminal behavior, signals and the child's exit status. `.env` is optional for source development. The standalone build disables dotenv, bunfig, tsconfig and package autoload, following the [Bun compile API](https://bun.sh/docs/bundler/executables).
 
 ## Output contract
 

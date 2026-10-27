@@ -205,8 +205,8 @@ and notes print in 1.5's notes section. No `ValidateReport` field is added.
 
 1. Composition and content checks, one fixture each: `compose-each` fails for an
    optional fragment that conflicts with one stack's default (and passes for the stack it
-   doesn't conflict with); `conditional-dead-branch` is a warning for a `stack=go-cli`
-   block in a fragment whose `applies_to` is `[python]`, and a note when `go-cli` could add
+   doesn't conflict with); `conditional-dead-branch` is a warning for a `stack=<go-stack>`
+   block in a fragment whose `applies_to` is `[python]`, and a note when `<go-stack>` could add
    it with `--with`; `undeclared-command` fires on `make lnt` where `commands` has `lint`,
    and not on `make lint`; `template-expression` fires on `${{ github }}` in a `.tmpl` and
    not on `${{ github.sha }}`; `setext-heading` fires on an underlined heading;

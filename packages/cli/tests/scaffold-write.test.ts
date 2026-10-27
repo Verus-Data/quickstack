@@ -5,6 +5,7 @@ import {
   readdirSync,
   readFileSync,
   realpathSync,
+  renameSync,
   statSync,
   symlinkSync,
 } from "node:fs";
@@ -63,6 +64,49 @@ test("a directory on the way that is a symlink out of the project is an escape",
   });
   expect(readdirSync(outside)).toEqual([]);
   expect(readdirSync(target)).toEqual(["linked"]);
+});
+
+test("a symlinked directory on the way out of the project is refused before anything is made through it", async () => {
+  const parent = temp();
+  const outside = join(parent, "outside");
+  mkdirSync(outside);
+  const target = join(parent, "app");
+  mkdirSync(target);
+  symlinkSync(outside, join(target, "linked"));
+  for (const rel of ["linked/sub/evil.txt", "linked/sub/deeper/evil.txt"]) {
+    const exit = await run(target, (writer) => writer.write(rel, bytes("x")));
+    expect(failure(exit)).toMatchObject({
+      _tag: "PermissionDenied",
+      details: { reason: "escape", path: join(realpathSync(target), rel) },
+    });
+    expect(readdirSync(outside)).toEqual([]);
+  }
+  const exit = await run(target, (writer) => writer.directory("linked/made"));
+  expect(failure(exit)).toMatchObject({ _tag: "PermissionDenied", details: { reason: "escape" } });
+  expect(readdirSync(outside)).toEqual([]);
+  expect(readdirSync(target)).toEqual(["linked"]);
+});
+
+test("rollback leaves a directory alone once its parent resolves outside the project", async () => {
+  const parent = temp();
+  const outside = join(parent, "outside");
+  mkdirSync(join(outside, "b"), { recursive: true });
+  const target = join(parent, "app");
+  mkdirSync(target);
+  const exit = await run(target, (writer) =>
+    Effect.gen(function* () {
+      yield* writer.write("a/b/f.txt", bytes("1"));
+      // Another process swaps `a` for a link out of the project before the rollback runs.
+      yield* Effect.sync(() => {
+        renameSync(join(target, "a"), join(target, "moved"));
+        symlinkSync(outside, join(target, "a"));
+      });
+      return yield* Effect.fail("later failure");
+    }),
+  );
+  expect(failure(exit)).toBe("later failure");
+  expect(readdirSync(outside)).toEqual(["b"]);
+  expect(readdirSync(join(target, "moved", "b"))).toEqual(["f.txt"]);
 });
 
 test("a final-segment symlink is never written through", async () => {

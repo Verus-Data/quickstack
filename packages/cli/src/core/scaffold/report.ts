@@ -2,9 +2,15 @@ import type { NewResult } from "../../schemas/new";
 import { collapsePaths } from "../brief/paths";
 import { printable } from "../text";
 
+/** Warnings the Git line already reports, so the Warnings list leaves them out. */
+const GIT_WARNINGS: ReadonlyArray<string> = ["git_init_failed", "git_unusable"];
+
 const gitLine = (result: NewResult) => {
   const failed = result.warnings.find((warning) => warning.code === "git_init_failed");
   if (failed) return `git init failed (exit ${failed.exitCode ?? "unknown"}); no repository`;
+  const unusable = result.warnings.find((warning) => warning.code === "git_unusable");
+  if (unusable)
+    return `git couldn't tell whether this is inside a repository${unusable.exitCode === undefined ? "" : ` (exit ${unusable.exitCode})`}; none used`;
   return result.git === "fresh"
     ? "new repository, nothing committed"
     : result.git === "parent"
@@ -24,7 +30,8 @@ const warningLine = (warning: NewResult["warnings"][number]) => {
     case "without_not_selected":
       return `--without ${id}: it wasn't selected anyway`;
     case "git_init_failed":
-      return "git init failed; the files are written, without a repository";
+    case "git_unusable":
+      return `${warning.code}: see the Git line`;
   }
 };
 
@@ -50,21 +57,28 @@ const shellArg = (text: string) =>
 export function renderNew(result: NewResult, context: { shown: string }): string {
   const lines = [
     `Created ${printable(context.shown)} from ${printable(result.stack)}${result.preset === "sandbox" ? " (sandbox)" : ""}.`,
-    `Project: ${printable(result.project)}`,
+    // `shown` is the absolute path when the project isn't under the current directory.
+    ...(context.shown === result.project ? [] : [`Project: ${printable(result.project)}`]),
     `Fragments: ${result.fragments.length ? result.fragments.map(printable).join(", ") : "none"}`,
     `Agents: ${result.agents.join(", ")}`,
     `Git: ${gitLine(result)}`,
     `Wrote ${result.written.length} files:`,
     ...collapsePaths(result.written).map((line) => `  ${printable(line)}`),
     `Brief: ${result.brief} (${result.briefWords} words)`,
+    ...(result.stateRecord
+      ? []
+      : [
+          "State record: not written (the state directory isn't writable), so verify's tamper check will use the manifest only.",
+        ]),
   ];
   if (result.missingTools.length)
     lines.push(
       "Missing tools (the brief tells the agent):",
       ...result.missingTools.map((item) => `  ${missingLine(item)}`),
     );
-  if (result.warnings.length)
-    lines.push("Warnings:", ...result.warnings.map((warning) => `  ${warningLine(warning)}`));
+  const warnings = result.warnings.filter((warning) => !GIT_WARNINGS.includes(warning.code));
+  if (warnings.length)
+    lines.push("Warnings:", ...warnings.map((warning) => `  ${warningLine(warning)}`));
   if (result.untrusted.length)
     lines.push(
       "Untrusted entries (the brief makes the agent ask you before using them):",

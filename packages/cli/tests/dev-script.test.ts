@@ -90,6 +90,42 @@ test("dev wrapper resolves a relative QUICKSTACKS_REGISTRY_DIR against the calle
   }
 }, 10000);
 
+test("dev wrapper keeps data and state under .dev unless the caller set its own", async () => {
+  const dir = tempDir();
+  try {
+    mkdirSync(join(dir.path, "scripts"));
+    mkdirSync(join(dir.path, "src"));
+    copyFileSync(join(import.meta.dirname, "../scripts/dev.ts"), join(dir.path, "scripts/dev.ts"));
+    writeFileSync(
+      join(dir.path, "src/bin.ts"),
+      `import { writeFileSync } from "node:fs"; writeFileSync(process.env.HOME + "/dirs", JSON.stringify({ data: process.env.QUICKSTACKS_DATA_DIR, state: process.env.QUICKSTACKS_STATE_DIR }));`,
+    );
+    const run = async (extra: Record<string, string>) => {
+      const child = spawn("bun", ["scripts/dev.ts"], {
+        cwd: dir.path,
+        stdio: "ignore",
+        env: { PATH: process.env.PATH, HOME: dir.path, ...extra },
+      });
+      const status = await new Promise<number | null>((resolve, reject) => {
+        child.on("error", reject);
+        child.on("close", resolve);
+      });
+      expect(status).toBe(0);
+      return JSON.parse(readFileSync(join(dir.path, "dirs"), "utf8")) as unknown;
+    };
+    expect(await run({})).toEqual({
+      data: join(realpathSync(dir.path), ".dev", "data"),
+      state: join(realpathSync(dir.path), ".dev", "state"),
+    });
+    expect(await run({ QUICKSTACKS_DATA_DIR: "/d", QUICKSTACKS_STATE_DIR: "/s" })).toEqual({
+      data: "/d",
+      state: "/s",
+    });
+  } finally {
+    dir.cleanup();
+  }
+}, 10000);
+
 test("bun run dev from a subdirectory of the repository runs the CLI in that subdirectory", async () => {
   const dir = tempDir();
   try {

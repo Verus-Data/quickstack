@@ -82,7 +82,7 @@ Two bench runs of the same stack (`astro-blog` is the TypeScript-capable small s
 - `new astro-blog --with agent-harness-ts --no-launch --json`: composes, the merged `.claude/settings.json` has the guard entry exactly once, no file has two owners, and `validate` reports zero warnings.
 - The shipped hook suite passes when run from a scaffolded project (the composition test runs `bun test` inside a temp project only in the e2e layer, since it executes shipped code).
 - `guard-destructive.sh` from `agent-ops` alone blocks its patterns; with the harness present it delegates and blocks the lexer's cases, including one chained command the pattern list misses.
-- `--with` the fragment on `go-cli`, which its `applies_to` excludes, composes it with a `with_not_applicable` warning (1.1 as built: an explicit `--with` is kept), and `validate`'s per-fragment composition doesn't pair it with that stack.
+- `--with` the fragment on `<go-stack>`, a stack its `applies_to` excludes, composes it with a `with_not_applicable` warning (1.1 as built: an explicit `--with` is kept), and `validate`'s per-fragment composition doesn't pair it with that stack.
 - Both bench runs are in the ledger, the harness run is `pass`, and its `hooksFired` names the guard and typecheck hooks.
 
 ## Exit criteria

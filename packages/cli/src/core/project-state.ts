@@ -1,7 +1,7 @@
 import { Effect, FileSystem, Path, type PlatformError, Random, Schema } from "effect";
 import { AppConfig } from "../config";
 import { PermissionDenied } from "../errors";
-import type { Manifest } from "../schemas/manifest";
+import { type Manifest, ProjectId } from "../schemas/manifest";
 import { digestSettings, digestStep } from "./manifest";
 import { printable } from "./text";
 
@@ -46,9 +46,13 @@ export function projectStateFor(manifest: Manifest, manifestPath: string): Proje
   };
 }
 
-/** Where a project's record lives. The manifest schema limits ids to letters, digits and `-`. */
+/**
+ * Where a project's record lives, or `undefined` for an id `ProjectId` refuses (letters, digits
+ * and `-` only), so no caller can turn an arbitrary string into a path outside `projects/`.
+ */
 export const projectStatePath = (projectId: string) =>
   Effect.gen(function* () {
+    if (!Schema.is(ProjectId)(projectId)) return undefined;
     const path = yield* Path.Path;
     const paths = yield* (yield* AppConfig).paths;
     return path.join(paths.state, "projects", `${projectId}.json`);
@@ -81,6 +85,7 @@ export const writeProjectState = (
         ),
       );
     const target = yield* projectStatePath(manifest.projectId);
+    if (target === undefined) return { written: false } as const;
     const text = `${JSON.stringify(Schema.encodeSync(ProjectState)(projectStateFor(manifest, real)), null, 2)}\n`;
     const suffix = (yield* Random.nextIntBetween(0, 0xffffff)).toString(16);
     const temporary = `${target}.${suffix}.tmp`;
@@ -123,6 +128,7 @@ export const readProjectState = (
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
     const target = yield* projectStatePath(projectId);
+    if (target === undefined) return undefined;
     return yield* fs.readFileString(target).pipe(
       Effect.flatMap((text) =>
         Effect.try({ try: () => JSON.parse(text) as unknown, catch: () => undefined }),

@@ -100,6 +100,34 @@ test("details go into the JSON envelope and as indented lines in human mode", as
   expect(human.status).toBe(6);
   expect(human.stderr).toBe("Permission denied.\n  Path: /private/target\n");
 });
+test.each([
+  [
+    "escape",
+    "The path resolves outside the project directory, through a symlink or `..`.\n  Next: remove that symlink from the project directory, or pick another directory.",
+  ],
+  [
+    "unwritable",
+    "The project directory or a file in it can't be written. Nothing was left behind.\n  Next: pick a directory you can write to, or fix this one's permissions.",
+  ],
+] as const)("PermissionDenied %s ends with a Next line", async (reason, lines) => {
+  const error = new PermissionDenied({ details: { reason, path: "/work/app" } });
+  const human = await runCli([], { program: Effect.fail(error), env: quiet });
+  expect(human.status).toBe(6);
+  expect(human.stdout).toBe("");
+  expect(human.stderr).toBe(`Permission denied.\n  Path: /work/app\n  ${lines}\n`);
+});
+test("a Next line names the CLI the way it was invoked", async () => {
+  const human = await runCli([], {
+    program: Effect.fail(new NotFound({ details: { suggestions: [] } })),
+    env: quiet,
+    host: { invocation: "npx quickstacks" },
+  });
+  expect(human.status).toBe(2);
+  expect(human.stdout).toBe("");
+  expect(human.stderr).toBe(
+    "Not found.\n  Next: npx quickstacks list shows every stack and fragment.\n",
+  );
+});
 test("a details object mutated to carry an extra property is a defect, not a leak", async () => {
   const dir = tempDir();
   try {
@@ -160,7 +188,38 @@ test.each([
     new ComposeConflict({ details: { reason: "cycle", ids: ["cycle-a", "cycle-b"] } }),
     "These entries can't be composed.\n  Reason: cycle\n  Fragments: cycle-a, cycle-b\n",
   ],
-  ["BadInput", new BadInput({ details: { id: "ci" } }), "Invalid input.\n  Id: ci\n"],
+  [
+    "BadInput for an id in --with and --without",
+    new BadInput({ details: { id: "ci", flag: "with_without" } }),
+    "Invalid input.\n  Id: ci\n  Flags: --with and --without\n  Next: name ci in only one of --with and --without.\n",
+  ],
+  [
+    "BadInput for --scope",
+    new BadInput({ details: { id: "Acme/x", flag: "scope" } }),
+    "Invalid input.\n  Flag: --scope Acme/x\n  Next: pass an npm scope such as acme or @acme: lowercase, URL-safe, no /.\n",
+  ],
+  [
+    "BadInput for a directory name",
+    new BadInput({ details: { id: "a\u0007b", flag: "dir" } }),
+    "Invalid input.\n  Directory name: a\\u0007b\n  Next: pick a project directory whose name has no control characters.\n",
+  ],
+  [
+    "BadInput for a flag that needs --brief",
+    new BadInput({ details: { id: "--with", flag: "brief" } }),
+    "Invalid input.\n  Flag: --with\n  Next: --with, --without and --sandbox need --brief <stack>; add it, or drop the flag.\n",
+  ],
+  [
+    "NotFound for an id in a registry root list doesn't read",
+    new NotFound({ details: { suggestions: ["web"], root: "/work/my registry" } }),
+    "Not found.\n  Did you mean: web?\n  Next: quickstacks validate '/work/my registry' lists the ids under that root.\n",
+  ],
+  [
+    "EntryInvalid for an unknown template variable",
+    new EntryInvalid({
+      details: { id: "web", origin: "user", reason: "template", path: "files/a.tmpl", line: 2 },
+    }),
+    "Entry is invalid.\n  Entry: web (user, template)\n  Path: files/a.tmpl:2\n  Next: use only project_name, project_slug, env_prefix, package_scope, author, year in that file's {{ }} tokens, or drop its .tmpl suffix to copy it as is.\n",
+  ],
   [
     "EntryInvalid with a line and a problem",
     new EntryInvalid({
@@ -178,7 +237,7 @@ test.each([
   [
     "NotFound with the path it looked for",
     new NotFound({ details: { suggestions: [], looked: "/work/regsitry" } }),
-    "Not found.\n  Looked for: /work/regsitry\n",
+    "Not found.\n  Looked for: /work/regsitry\n  Next: pass a registry root (a directory holding stacks/ or fragments/) or an entry directory inside one.\n",
   ],
   [
     "ValidationFailed with its counts",
@@ -202,7 +261,7 @@ test.each([
 );
 test.each([
   ["ComposeConflict", () => new ComposeConflict({ details: { reason: "cycle", ids: ["a"] } })],
-  ["BadInput", () => new BadInput({ details: { id: "ci" } })],
+  ["BadInput", () => new BadInput({ details: { id: "ci", flag: "with_without" } })],
   ["ValidationFailed", () => new ValidationFailed({ details: { errors: 1, warnings: 0 } })],
 ] as const)(
   "%s details mutated to carry an extra key are a defect, not a leak",

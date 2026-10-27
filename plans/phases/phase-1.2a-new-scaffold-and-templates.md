@@ -80,8 +80,19 @@ resolves the parent's real path, and refuses with `PermissionDenied`
 (`details: { reason: "escape", path }`) unless that real path is the root's real path or
 under it. Both sides are real paths: on macOS a temp target under `/var/...` resolves to
 `/private/var/...`, and comparing a real path with a non-real one would reject every write
-there (or, the other way round, accept an escape). Checking the parent after creating it
-means a symlink planted between checks can't redirect a write.
+there (or, the other way round, accept an escape). On the way down, a symlinked directory is
+resolved and each directory created is checked before anything is made beneath it, and
+after each file is written its parent is checked again; a file whose parent moved out of
+the project is removed and refused. That narrows a race without closing it: a process that
+swaps a directory for a symlink between the last check and the write can land one
+exclusively created file outside the project until the recheck removes it. Closing it
+needs `openat`-style calls, which Effect's FileSystem doesn't have.
+
+A path segment equal to `.git` or `.quickstacks` in any letter case (and the spellings git
+itself treats as those on HFS+ and NTFS: ignorable code points, trailing dots or spaces,
+`:` streams, `git~1`) is refused at compose time as `ComposeConflict` `reserved_path`, so
+3.0's `add` gets the same check. So are two planned files whose paths differ only in case,
+or where one is a directory prefix of the other (`docs` and `docs/x.md`): `file_owner`.
 
 Files are written to the `PlannedFile.path` from 1.1, the output path (1.0, Dotfiles):
 `files/.gitignore` lands as `.gitignore`, under the same name it has in the entry. Files
@@ -95,11 +106,11 @@ exactly these variables (D18 as amended; an unknown name is an error, below):
 
 | Variable | Value |
 |---|---|
-| `project_name` | The target directory's base name as given |
+| `project_name` | The target directory's base name as given. A name with a control character is `BadInput` (flag `dir`) before anything is read or written |
 | `project_slug` | `scaffold/slug.ts::slug(project_name)`, rule below |
 | `env_prefix` | Slug upper-cased with `-` turned to `_`, prefixed `_` if it starts with a digit |
 | `package_scope` | `new --scope <scope>`, else `Settings.package_scope` (1.1), else empty. Accepted with or without a leading `@` and stored without it; it must be a valid npm scope (lowercase, URL-safe, no `/`), or `new` fails `BadInput` for the flag and `InvalidConfig` for the setting before writing anything. Templates use it where a scope belongs, and entry prose says what to do when it is empty (publish unscoped); there are no template conditionals (D1) |
-| `author` | `Settings.author` (1.1), else `git config user.name` (when git is on PATH; the CLI's own constant command, cwd the target's nearest existing parent, 10 s timeout), else empty |
+| `author` | `Settings.author` (1.1), else `git config user.name` (when git is on PATH; the CLI's own constant command, cwd the target's nearest existing parent, 10 s timeout), else empty. Either source loses `"`, `\`, CR and LF, so the value fits inside a JSON or TOML string; any other control character left makes the setting `InvalidConfig` and a git `user.name` unused (empty) |
 | `year` | The current UTC year from `Clock` |
 
 `package_scope` is in v1's set from the start, so no entry needs a newer
@@ -172,6 +183,9 @@ edit the ignore file; quickstacks preserves an existing one.
 |---|---|---|
 | git on PATH, target not in a repo | `git init` (the CLI's own command, not an entry's) | Fresh repo; skip generators' git setup; commit once verify is green |
 | Target inside a repo | Nothing | Part of the repo at `<toplevel>`; don't commit without asking |
+| Target is its own repo root, with commits | Nothing; `needs_own_repo` fragments are allowed | Same as inside a repo |
+| Target is its own repo root, nothing committed | Nothing | Same as a fresh repo |
+| git fails other than "not a git repository" | Nothing; `git_unusable` warning | Same as git missing |
 | git missing | Nothing | No git; skip commits; say so in the final summary |
 | `git init` fails (non-zero exit, timeout) | Nothing more; git state `none`, and a `git_init_failed` warning in the result with the exit code. The scaffold is kept: the files are fine without a repo | Same as git missing |
 
@@ -188,8 +202,8 @@ is no `core/tools.ts`. Missing ones go into the brief's ground rules and the res
 never fail `new`: the agent may be able to install them. Each missing tool carries
 `without`: the ids of the optional or default fragments that need it, which
 `--without` would drop (a tool the stack itself or a required fragment needs has an empty
-`without`). Human output prints it as `uv not found (needed by python-tooling; skip with
---without python-tooling)`.
+`without`). Human output prints it as `<tool> not found (needed by <fragment>; skip with
+--without <fragment>)`.
 
 ### Invocation string
 
@@ -234,12 +248,16 @@ Human output lists the stack, fragments, the written files collapsed by 1.1's
 |---|---|---|---|
 | Unknown stack or fragment | `NotFound` | 2 | From 1.1, with known ids |
 | Unknown `--agents` id; same id in `--with` and `--without` | `Usage` | 2 | The parser's usage error naming the flag |
-| `--scope` isn't a valid npm scope | `BadInput` | 2 | Nothing written |
+| `--scope` isn't a valid npm scope | `BadInput` | 2 | `details: { id, flag: "scope" }`; nothing written |
+| Project directory name has a control character | `BadInput` | 2 | `details: { id, flag: "dir" }`; nothing written |
+| An entry file under `.git/` or `.quickstacks/`, any case | `ComposeConflict` | 2 | `reason: "reserved_path"`, `path`; nothing written |
+| Two planned files differing only in case, or a file where another needs a directory | `ComposeConflict` | 2 | `reason: "file_owner"`, both owners, `path`; nothing written |
 | `Settings.package_scope` isn't a valid npm scope (and no `--scope`) | `InvalidConfig` | 3 | Nothing written |
 | Composition conflict, needs own repo | `ComposeConflict` | 2 | `details.reason`; for `needs_own_repo`, `ids` and `fix` |
 | Unknown template variable | `EntryInvalid` | 2 | `details: { id, origin, reason: "template", path }`; nothing written |
 | Target has files | `TargetNotEmpty` | 2 | `details: { path, entries: <first 10 names, litter excluded> }` (1.2b adds `scaffold`) |
-| `git init` fails | none | 0 | `git_init_failed` warning; `git: "none"` |
+| `git init` fails | none | 0 | `git_init_failed` warning; `git: "none"`; a partial `.git` it made is removed |
+| git can't read the target's repository state (a broken `.git`, unsafe ownership, a timeout) | none | 0 | `git_unusable` warning; `git: "none"`; no `git init` |
 | Target unwritable | `PermissionDenied` | 6 | `details: { reason: "unwritable", path }`; no files left behind |
 | A write would escape the project | `PermissionDenied` | 6 | `details: { reason: "escape", path }` |
 | Interrupted mid-write | `Interrupted` | 130 | Written files removed |
@@ -392,3 +410,37 @@ that need it skip with a message when it is absent).
     fragment). Those entries show as untrusted because a non-default
     `QUICKSTACKS_REGISTRY_DIR` is untrusted, while human output labels them by origin
     (`bundled`), which reads oddly next to "Untrusted".
+- 2026-10-26, from the code review on feat/phase-1:
+  - **The reserved-path check moved into `compose`** (`compose.ts::reservedSegment`), so
+    3.0's `add` reuses it, and it folds case: on APFS `files/.GIT/config` used to land in
+    `.git/config`. It is its own reason, `reserved_path`, instead of `file_owner` with
+    empty `ids`. `compose` also refuses planned paths that collide under case folding
+    (`README.md` and `readme.md`) or where one is a directory prefix of another, as
+    `file_owner` naming both owners; they used to fail halfway through the write as
+    `TargetNotEmpty`.
+  - **Git probing distinguishes "no repository" from "git failed".** Only git's
+    "not a git repository" (read with `LC_ALL=C`) makes the target fresh, and only when
+    the target has no `.git` of its own; anything else (a broken `.git`, unsafe
+    ownership, a timeout) is `none` with a `git_unusable` warning and no `git init`. A
+    pre-existing `.git` used to be inited over and adopted, so an interrupt deleted it.
+    `.git` is adopted for rollback only when it was absent right before `git init`, and a
+    failed init's partial `.git` is removed before the brief is re-rendered.
+  - **A target that is its own repository root** is fresh when nothing is committed and
+    `parent` (don't commit without asking) once it has commits, but `needs_own_repo`
+    fragments are no longer refused there: the repository is the project's own.
+  - **The writer's rollback removes directories only when empty** (`rmdir` semantics)
+    and only while their parent still resolves inside the project. Effect's FileSystem
+    has no `rmdir` and its `remove` refuses a directory unless it recurses, so `write.ts`
+    imports `rmdir` from `node:fs/promises`, its one Node API.
+  - **Template values are checked.** See the variable table: `project_name` refuses
+    control characters, `author` loses quotes, backslashes and line breaks.
+  - **BadInput details gained a closed `flag`** (`scope`, `with_without`, `dir`,
+    `brief`), so human mode names the flag and ends with a `Next:` line.
+  - **Human report.** The `Project:` line is dropped when it repeats the `Created` path,
+    and `git_init_failed` is shown once, on the git line, not again under Warnings.
+  - **Test naming.** "SIGINT while new writes exits 130" interrupted `git init`, not a
+    file write; it is now named for what it does. Every interrupt shim makes `.git`
+    before it sleeps, so the rollback of a real partial `.git` is exercised.
+  - **Not covered by a test:** the post-write recheck that removes a file whose parent
+    moved outside the project. Reproducing it needs a swap timed between two system
+    calls, and the writer has no test hook for that.

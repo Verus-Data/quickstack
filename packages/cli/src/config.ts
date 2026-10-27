@@ -9,7 +9,10 @@ export type Paths = {
   config: string;
   data: string;
   cache: string;
-  /** Out-of-project state, such as project state records: `$XDG_STATE_HOME/quickstacks/`. */
+  /**
+   * Out-of-project state, such as project state records: QUICKSTACKS_STATE_DIR, else
+   * `$XDG_STATE_HOME/quickstacks/`.
+   */
   state: string;
   /** The user registry root, beside config.json: `$XDG_CONFIG_HOME/quickstacks/`. */
   user: string;
@@ -28,20 +31,22 @@ export type LogSettings = {
 /**
  * One agent session marker: the environment variable `name`, set and non-empty (and equal to
  * `equals` when given), means `agent`; `"by-value"` reads the agent from the value itself.
- * `confirmed` is the date the marker was last checked against the agent's documentation.
+ * `confirmed` is the date the marker was last checked against the agent's documentation; it is
+ * unset until someone has checked (none has been yet; the 1.2b plan lists them for 1.3b).
  */
 const AgentMarker = Schema.Struct({
   name: Schema.String.check(Schema.isPattern(/^[A-Z][A-Z0-9_]*$/, { expected: "a variable name" })),
   agent: Schema.Union([AgentId, Schema.Literal("by-value")]),
   equals: Schema.optionalKey(Schema.String),
-  confirmed: Schema.String.check(Schema.isPattern(/^\d{4}-\d{2}-\d{2}$/, { expected: "a date" })),
+  confirmed: Schema.optionalKey(
+    Schema.String.check(Schema.isPattern(/^\d{4}-\d{2}-\d{2}$/, { expected: "a date" })),
+  ),
 });
 export type AgentMarker = typeof AgentMarker.Type;
 const marker = (name: string, agent: AgentMarker["agent"], equals?: string) => ({
   name,
   agent,
   ...(equals === undefined ? {} : { equals }),
-  confirmed: "2026-10-26",
 });
 /**
  * Agent detection's markers, checked in order; the first match wins. `AI_AGENT` is the
@@ -126,7 +131,12 @@ export function configLayer(env: Environment = process.env) {
           ),
         );
         const cache = path.join(yield* xdg("XDG_CACHE_HOME", ".cache"), SLUG);
-        const state = path.join(yield* xdg("XDG_STATE_HOME", ".local", "state"), SLUG);
+        const state = yield* read(
+          text(
+            "QUICKSTACKS_STATE_DIR",
+            path.join(yield* xdg("XDG_STATE_HOME", ".local", "state"), SLUG),
+          ),
+        );
         const registry = yield* read(text("QUICKSTACKS_REGISTRY_DIR"));
         return {
           config: path.join(config, SLUG, "config.json"),

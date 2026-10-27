@@ -152,8 +152,9 @@ stays the pass/fail test; the per-part digests only explain a failure.
 matches however the project was reached. This is the second copy D14 compares against; an
 agent that edits both the manifest steps and `verifyDigest` leaves this one unchanged.
 
-`config.ts::Paths` gains `state` (`XDG_STATE_HOME`, default `~/.local/state`, plus
-`SLUG`). If the state directory isn't writable (some agent sandboxes allow writes only in
+`config.ts::Paths` gains `state` (`QUICKSTACKS_STATE_DIR` when set, else
+`XDG_STATE_HOME`, default `~/.local/state`, plus `SLUG`); `bun run dev` points it at
+`packages/cli/.dev/state`, as it does data at `.dev/data`. If the state directory isn't writable (some agent sandboxes allow writes only in
 the project), `new` still succeeds and reports `stateRecord: false`; 1.3b then reports
 the tamper check as manifest-only, which never passes the gate (D20). The state record is
 written after `.quickstacks/` and before `git init` (1.2a's write order), and 1.2a's
@@ -176,8 +177,9 @@ and 3.0 all need it and 1.2b is the first sub-phase they all depend on. 1.2b its
 defines and tests it; 1.4 uses it for handoff and 1.3b for `--accept-changes`
 ([Trust model](../roadmap.md#trust-model), point 4).
 
-`config.ts::AgentMarkers` is one schema-checked constant, with the date each marker was
-last confirmed from the agent's docs:
+`config.ts::AgentMarkers` is one schema-checked constant. Each marker has an optional
+`confirmed` date, set only once someone has checked it against the agent's docs; none
+has been yet (open item below):
 
 | Agent | Markers (any one set and non-empty) |
 |---|---|
@@ -281,8 +283,8 @@ Through `runCli` with temp HOME, XDG dirs and a temp `cwd`.
 - `XDG_STATE_HOME` may not be writable in exactly the sandboxes where tamper detection
   matters most. If 1.6b's gate runs show `stateRecord: false` often, D14's second copy is
   weaker than it looks and D14's row should say so.
-- Agent markers change without notice; the confirmation dates in `AgentMarkers` are the
-  only defense. An agent whose shell tool sets no marker is `"none"` (open question 9).
+- Agent markers change without notice; checking them against each agent's docs and
+  recording `confirmed` is the only defense. An agent whose shell tool sets no marker is `"none"` (open question 9).
 - 2026-10-26: the step fields this plan first digested included `check` and `probe`.
   The amended D18 replaced them with `expect` and dropped built-in checks; the digest
   covers whatever `VerifyStep` has, so only test 3's field list changed. The same change
@@ -340,9 +342,9 @@ Through `runCli` with temp HOME, XDG dirs and a temp `cwd`.
   - **Scaffold facts.** `buildManifest` takes only the composition (which carries the
     preset and agents) and `briefWords`. The project name and template variables have no
     manifest field in this plan's schema, so they aren't passed.
-  - **Marker confirmation dates** are set to 2026-10-26, the date this plan's table was
-    written; they were not re-checked against each agent's documentation during
-    execution. Recheck them before 1.3b relies on detection.
+  - **Marker confirmation dates** were first all set to 2026-10-26, the date this
+    plan's table was written, without checking any agent's documentation. Review
+    removed them: `confirmed` is now optional and unset on every marker.
   - **`childEnv` is unchanged.** It already takes a `remove` list; 1.3a passes
     `AGENT_MARKER_NAMES` when it builds a verify step's environment. Git commands from
     `new` don't strip them.
@@ -376,3 +378,21 @@ Through `runCli` with temp HOME, XDG dirs and a temp `cwd`.
     under `$XDG_STATE_HOME/quickstacks/projects/` with the manifest's real path, and a
     rerun into the same directory gave `TargetNotEmpty` with `scaffold: "unfinished"`
     and the hint.
+- 2026-10-26, from the code review of `new` on feat/phase-1:
+  - **Open item for 1.3b: every agent marker is unverified.** No row of
+    `AgentMarkers` has been checked against its agent's documentation, so none has a
+    `confirmed` date. `CLAUDE_CODE`, `CODEX_CI` and `CODEX_THREAD_ID` may not exist at
+    all; `CLAUDECODE`, `CODEX_SANDBOX`, `OPENCODE`, `OPENCODE_CLIENT`, `CURSOR_AGENT`,
+    `CURSOR_EXTENSION_HOST_ROLE=agent-exec` and `AI_AGENT` need checking too. Before
+    1.3b makes `--accept-changes` depend on detection, check each one, drop those that
+    don't exist and set `confirmed` on the rest.
+  - **`QUICKSTACKS_STATE_DIR`** replaces the whole state directory (no `quickstacks/`
+    appended), matching `QUICKSTACKS_DATA_DIR`. `bun run dev new` used to write its
+    records into the developer's real `~/.local/state`.
+  - **`projectStatePath` checks the id itself.** `ProjectId` is exported from
+    `schemas/manifest.ts` and `projectStatePath` returns no path for an id it refuses, so
+    `readProjectState` gives no record and `writeProjectState` gives `{ written: false }`
+    whatever string a caller passes, not only for a decoded manifest.
+  - **Human mode says when the record wasn't written**: "State record: not written (the
+    state directory isn't writable), so verify's tamper check will use the manifest
+    only." JSON callers already had `stateRecord: false`.

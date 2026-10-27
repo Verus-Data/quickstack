@@ -6,6 +6,7 @@
 //   - JSON log lines go to logs/cli.jsonl (QUICKSTACKS_LOG_FILE), appended across runs.
 //   - stderr is copied to logs/cli.log. Both files move to *.prev.* past 5 MB.
 //   - Development data is saved in .dev/data (QUICKSTACKS_DATA_DIR), not your real ~/.local/share/quickstacks.
+//   - Project state records go to .dev/state (QUICKSTACKS_STATE_DIR), not ~/.local/state/quickstacks.
 // Everything else (stdin, stdout, the exit code, Ctrl+C) passes straight through.
 import { appendFileSync, existsSync, mkdirSync, renameSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -44,6 +45,7 @@ const child = Bun.spawn(
       LOG_LEVEL: process.env.LOG_LEVEL || "info",
       QUICKSTACKS_LOG_FILE: process.env.QUICKSTACKS_LOG_FILE ?? join(logs, "cli.jsonl"),
       QUICKSTACKS_DATA_DIR: process.env.QUICKSTACKS_DATA_DIR || join(root, ".dev", "data"),
+      QUICKSTACKS_STATE_DIR: process.env.QUICKSTACKS_STATE_DIR || join(root, ".dev", "state"),
       ...(registry ? { QUICKSTACKS_REGISTRY_DIR: resolve(caller, registry) } : {}),
       // Colors survive the pipe when the real stderr is a terminal.
       ...(process.stderr.isTTY && !process.env.NO_COLOR ? { FORCE_COLOR: "1" } : {}),

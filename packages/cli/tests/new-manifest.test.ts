@@ -15,6 +15,7 @@ import { ProjectState } from "../src/core/project-state";
 import { Manifest } from "../src/schemas/manifest";
 import { NewResult } from "../src/schemas/new";
 import { quiet, runCli, tempDir } from "./helpers/cli";
+import { gitShim, NOT_A_REPO } from "./helpers/git";
 import { minimal, newRegistry, writeEntry } from "./helpers/registry";
 
 const dirs: ReturnType<typeof tempDir>[] = [];
@@ -65,14 +66,6 @@ const envelope = (stderr: string) =>
   JSON.parse(stderr.trim().split("\n").at(-1) ?? "") as {
     error: { tag: string; message: string; retryable: boolean; details?: unknown };
   };
-/** A PATH holding only a `git` script with `body` as its case arms on "$1". */
-function gitShim(home: string, body: string) {
-  const bin = join(home, "shim-bin");
-  mkdirSync(bin, { recursive: true });
-  writeFileSync(join(bin, "git"), `#!/bin/sh\ncase "$1" in\n${body}\n  *) exit 1 ;;\nesac\n`);
-  chmodSync(join(bin, "git"), 0o755);
-  return bin;
-}
 
 describe("new writes the manifest and the state record", () => {
   test("new --sandbox --json writes a manifest that decodes, with the result's brief count, and a state record", async () => {
@@ -137,6 +130,16 @@ describe("new writes the manifest and the state record", () => {
     expect(run.status).toBe(0);
     expect(decode(run.stdout).stateRecord).toBe(false);
     expect(existsSync(join(home, "app", MANIFEST_PATH))).toBe(true);
+    const human = await newCli(["fixture-stack", "human"], {
+      home,
+      env: { XDG_STATE_HOME: notDir },
+    });
+    expect(human.status).toBe(0);
+    expect(human.stdout).toContain(
+      "State record: not written (the state directory isn't writable), so verify's tamper check will use the manifest only.\n",
+    );
+    const recorded = await newCli(["fixture-stack", "recorded"], { home });
+    expect(recorded.stdout).not.toContain("State record:");
     if (asRoot) return;
     const locked = join(home, "locked");
     mkdirSync(locked);
@@ -156,7 +159,7 @@ describe("new writes the manifest and the state record", () => {
 
   test("when git init fails and the brief is rewritten, the manifest's brief count follows it", async () => {
     const home = temp();
-    const bin = gitShim(home, "  rev-parse) exit 128 ;;\n  init) exit 1 ;;");
+    const bin = gitShim(home, `${NOT_A_REPO}\n  init) exit 1 ;;`);
     const { status, stdout } = await newCli(["fixture-stack", "app", "--json"], {
       home,
       env: { PATH: bin },
@@ -178,7 +181,7 @@ describe("new writes the manifest and the state record", () => {
     const marker = join(home, "init-started");
     const bin = gitShim(
       home,
-      `  rev-parse) exit 128 ;;\n  init) /usr/bin/touch ${JSON.stringify(marker)}; exec /bin/sleep 30 ;;`,
+      `${NOT_A_REPO}\n  init) /bin/mkdir .git; /usr/bin/touch ${JSON.stringify(marker)}; exec /bin/sleep 30 ;;`,
     );
     const controller = new AbortController();
     const running = newCli(["fixture-stack", "app", "--json"], {

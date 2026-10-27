@@ -35,7 +35,7 @@ export type ManifestStep = typeof ManifestStep.Type;
  * A project id names the state record file, so it is limited to letters, digits and `-`: an
  * edited manifest can't point the state lookup outside its directory.
  */
-const ProjectId = Schema.String.check(
+export const ProjectId = Schema.String.check(
   Schema.isPattern(/^[A-Za-z0-9][A-Za-z0-9-]*$/, { expected: "a project id such as a UUID" }),
 );
 

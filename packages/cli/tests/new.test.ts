@@ -21,7 +21,7 @@ import { missingTools } from "../src/core/compose/compose";
 import { NewResult } from "../src/schemas/new";
 import { quiet, runCli, tempDir } from "./helpers/cli";
 import { bundledAt, composeExit } from "./helpers/compose";
-import { spawnGit } from "./helpers/git";
+import { gitShim, NOT_A_REPO, spawnGit } from "./helpers/git";
 import { copyEntry, minimal, newRegistry, writeEntry } from "./helpers/registry";
 
 const dirs: ReturnType<typeof tempDir>[] = [];
@@ -75,14 +75,9 @@ function tree(dir: string, rel = ""): string[] {
   }
   return out;
 }
-/** A PATH holding only a `git` script with `body` as its case arms on "$1". */
-function gitShim(home: string, body: string) {
-  const bin = join(home, "shim-bin");
-  mkdirSync(bin, { recursive: true });
-  writeFileSync(join(bin, "git"), `#!/bin/sh\ncase "$1" in\n${body}\n  *) exit 1 ;;\nesac\n`);
-  chmodSync(join(bin, "git"), 0o755);
-  return bin;
-}
+/** A shim's `init` arm that creates `.git`, as git does first, then hangs after `marker`. */
+const hangingInit = (marker: string) =>
+  `  init) /bin/mkdir .git; /usr/bin/touch ${JSON.stringify(marker)}; exec /bin/sleep 30 ;;`;
 
 const expectedWritten = [
   ".claude/settings.json",
@@ -214,10 +209,11 @@ describe("new writes a project", () => {
   });
 
   test("human output lists the files collapsed, the brief, missing tools with skip flags, and the next step", async () => {
-    const { status, stdout, stderr } = await newCli(["fixture-stack", "app", "--sandbox"]);
+    const { status, stdout, stderr, home } = await newCli(["fixture-stack", "app", "--sandbox"]);
     expect(stderr).toBe("");
     expect(status).toBe(0);
     expect(stdout).toContain("Created app from fixture-stack (sandbox).");
+    expect(stdout).toContain(`Project: ${join(home, "app")}\n`);
     expect(stdout).toContain("Fragments: base-req, hooked, own-repo, ran-check, tooled");
     expect(stdout).toContain("Git: git not found; no repository");
     expect(stdout).toMatch(/Brief: \.quickstacks\/BRIEF\.md \(\d+ words\)/);
@@ -229,6 +225,18 @@ describe("new writes a project", () => {
       "Next: cd app, then start your coding agent there with this prompt:",
       "  Read .quickstacks/BRIEF.md and carry it out. It is your full task for this project; you're done when `quickstacks verify` passes.",
     ]);
+  });
+
+  test("a project outside the current directory is named once, by its absolute path", async () => {
+    const home = setup();
+    const elsewhere = tempDir();
+    dirs.push(elsewhere);
+    const app = join(elsewhere.path, "app");
+    const { status, stdout, stderr } = await newCli(["fixture-stack", app], { home });
+    expect(stderr).toBe("");
+    expect(status).toBe(0);
+    expect(stdout).toContain(`Created ${app} from fixture-stack.\n`);
+    expect(stdout).not.toContain("Project:");
   });
 
   test("missing tools are in the result and the brief; a stack's tool has no skip flag", async () => {
@@ -365,7 +373,7 @@ describe("new refuses before writing", () => {
     expect(stdout).toBe("");
     expect(envelope(stderr).error).toMatchObject({
       tag: "BadInput",
-      details: { id: "Acme/x" },
+      details: { id: "Acme/x", flag: "scope" },
     });
     expect(existsSync(join(home, "app"))).toBe(false);
   });
@@ -396,7 +404,9 @@ describe("new refuses before writing", () => {
     });
     expect(both.status).toBe(2);
     expect(both.stdout).toBe("");
-    expect(both.stderr).toBe("Invalid input.\n  Id: extra\n");
+    expect(both.stderr).toBe(
+      "Invalid input.\n  Id: extra\n  Flags: --with and --without\n  Next: name extra in only one of --with and --without.\n",
+    );
     expect(existsSync(join(home, "app"))).toBe(false);
   });
 
@@ -416,18 +426,85 @@ describe("new refuses before writing", () => {
     );
   });
 
-  test("an entry file under .quickstacks/ or .git/ is refused: the CLI owns them", async () => {
-    for (const reserved of [".quickstacks/BRIEF.md", ".git/hooks/pre-commit"]) {
+  test("an entry file under .quickstacks/ or .git/, in any case and at any depth, is reserved_path: the CLI owns them", async () => {
+    for (const reserved of [
+      ".quickstacks/BRIEF.md",
+      ".git/hooks/pre-commit",
+      ".GIT/config",
+      ".Quickstacks/BRIEF.md",
+      "vendor/.Git/HEAD",
+      "git~1/config",
+      ".git. /config",
+    ]) {
       const home = setup();
       const registry = join(home, "registry");
       const stack = writeEntry(registry, "stack", "sneaky", minimal("stack", "sneaky"));
       mkdirSync(join(stack, "files", reserved, ".."), { recursive: true });
       writeFileSync(join(stack, "files", reserved), "planted");
-      const { status, stderr } = await newCli(["sneaky", "app", "--json"], { home, registry });
+      const { status, stdout, stderr } = await newCli(["sneaky", "app", "--json"], {
+        home,
+        registry,
+      });
       expect(status).toBe(2);
+      expect(stdout).toBe("");
       expect(envelope(stderr).error).toMatchObject({
         tag: "ComposeConflict",
-        details: { reason: "file_owner", stack: "sneaky", ids: [], path: reserved },
+        details: { reason: "reserved_path", stack: "sneaky", ids: [], path: reserved },
+      });
+      expect(existsSync(join(home, "app"))).toBe(false);
+    }
+  });
+
+  test("a reserved path in human mode says the CLI owns .git/ and .quickstacks/", async () => {
+    const home = setup();
+    const registry = join(home, "registry");
+    const stack = writeEntry(registry, "stack", "sneaky", minimal("stack", "sneaky"));
+    mkdirSync(join(stack, "files", ".GIT"), { recursive: true });
+    writeFileSync(join(stack, "files", ".GIT", "config"), "planted");
+    const { status, stdout, stderr } = await newCli(["sneaky", "app"], { home, registry });
+    expect(status).toBe(2);
+    expect(stdout).toBe("");
+    expect(stderr).toBe(
+      [
+        "These entries can't be composed.",
+        "  Reason: reserved_path",
+        "  Stack: sneaky",
+        "  Path: .GIT/config",
+        "  The CLI owns .git/ and .quickstacks/ in a project; no entry may write under them, in any letter case.",
+        "  Next: remove or rename that file in the entry.",
+        "",
+      ].join("\n"),
+    );
+  });
+
+  test("planned files that differ only in case, or a file that is also a directory, are file_owner before writing", async () => {
+    for (const [stackFile, fragmentFile, path] of [
+      ["README.md", "readme.md", "readme.md"],
+      ["docs", "docs/x.md", "docs/x.md"],
+      ["Docs", "docs/x.md", "docs/x.md"],
+    ] as const) {
+      const home = setup();
+      const registry = join(home, "registry");
+      const stack = writeEntry(
+        registry,
+        "stack",
+        "clash",
+        minimal("stack", "clash", "fragments:\n  default: [other]"),
+      );
+      const fragment = writeEntry(registry, "fragment", "other", minimal("fragment", "other"));
+      mkdirSync(join(stack, "files"), { recursive: true });
+      writeFileSync(join(stack, "files", stackFile), "stack");
+      mkdirSync(join(fragment, "files", fragmentFile, ".."), { recursive: true });
+      writeFileSync(join(fragment, "files", fragmentFile), "fragment");
+      const { status, stdout, stderr } = await newCli(["clash", "app", "--json"], {
+        home,
+        registry,
+      });
+      expect(status).toBe(2);
+      expect(stdout).toBe("");
+      expect(envelope(stderr).error).toMatchObject({
+        tag: "ComposeConflict",
+        details: { reason: "file_owner", stack: "clash", ids: ["other"], path },
       });
       expect(existsSync(join(home, "app"))).toBe(false);
     }
@@ -573,6 +650,40 @@ describe("template variables", () => {
     },
   );
 
+  test("author loses quotes, backslashes and line breaks; any other control character in the setting is InvalidConfig", async () => {
+    expect(
+      await readme([], { home: configured({ author: 'Ada "The" \\Count\r\nLovelace' }) }),
+    ).toContain("- author: Ada The CountLovelace\n");
+    const home = configured({ author: "Ada\tLovelace" });
+    const { status, stdout, stderr } = await newCli(["fixture-stack", "app", "--json"], { home });
+    expect(status).toBe(3);
+    expect(stdout).toBe("");
+    expect(envelope(stderr).error.tag).toBe("InvalidConfig");
+    expect(existsSync(join(home, "app"))).toBe(false);
+  });
+
+  test.skipIf(!hasGit)(
+    "a git user.name with a control character is not used as the author",
+    async () => {
+      const home = setup();
+      writeFileSync(join(home, ".gitconfig"), '[user]\n\tname = "Git\\tName"\n');
+      expect(await readme([], { home, env: withGit })).toContain("- author: \n");
+    },
+  );
+
+  test("a project directory whose name has a control character is BadInput dir, nothing written", async () => {
+    const home = setup();
+    const name = "bad\u0007name";
+    const { status, stdout, stderr } = await newCli(["fixture-stack", name, "--json"], { home });
+    expect(status).toBe(2);
+    expect(stdout).toBe("");
+    expect(envelope(stderr).error).toMatchObject({
+      tag: "BadInput",
+      details: { id: name, flag: "dir" },
+    });
+    expect(readdirSync(home).filter((entry) => entry.startsWith("bad"))).toEqual([]);
+  });
+
   test("project_name is the directory's base name; slug and env prefix follow it", async () => {
     const run = await newCli(["fixture-stack", "nested/My App", "--json"]);
     expect(run.status).toBe(0);
@@ -659,6 +770,31 @@ describe.skipIf(!hasGit)("new and git", () => {
     expect(readFileSync(join(app, ".git", "HEAD"), "utf8")).toBe(head);
   });
 
+  test("a target that is its own repository with commits takes a needs_own_repo fragment, and the brief still says not to commit without asking", async () => {
+    const home = setup();
+    const app = join(home, "app");
+    mkdirSync(app);
+    expect(spawnGit(["init", "--quiet"], { cwd: app }).status).toBe(0);
+    const commit = ["-c", "user.name=T", "-c", "user.email=t@example.com", "commit"];
+    expect(
+      spawnGit([...commit, "--quiet", "--allow-empty", "-m", "init"], { cwd: app }).status,
+    ).toBe(0);
+    const head = spawnGit(["rev-parse", "HEAD"], { cwd: app }).stdout.toString();
+    const { status, stdout, stderr } = await newCli(["fixture-stack", "app", "--json"], {
+      home,
+      env: withGit,
+    });
+    expect(stderr).toBe("");
+    expect(status).toBe(0);
+    const result = decode(stdout);
+    expect(result.git).toBe("parent");
+    expect(result.fragments).toContain("own-repo");
+    expect(readFileSync(join(app, ".quickstacks/BRIEF.md"), "utf8")).toContain(
+      "don't commit without asking the user",
+    );
+    expect(spawnGit(["rev-parse", "HEAD"], { cwd: app }).stdout.toString()).toBe(head);
+  });
+
   test("a GIT_DIR in the environment, as a git hook exports it, neither selects nor changes a repository", async () => {
     const home = setup();
     const elsewhere = join(home, "elsewhere");
@@ -680,7 +816,7 @@ describe.skipIf(!hasGit)("new and git", () => {
 describe("git init failing or interrupted", () => {
   test("git init exiting 1 keeps every file, with git none and a git_init_failed warning", async () => {
     const home = setup();
-    const bin = gitShim(home, "  rev-parse) exit 128 ;;\n  init) exit 1 ;;");
+    const bin = gitShim(home, `${NOT_A_REPO}\n  init) exit 1 ;;`);
     const { status, stdout, stderr } = await newCli(["fixture-stack", "app", "--json"], {
       home,
       env: { PATH: bin },
@@ -697,15 +833,31 @@ describe("git init failing or interrupted", () => {
     expect(countWords(brief)).toBe(result.briefWords);
     const human = await newCli(["fixture-stack", "app2"], { home, env: { PATH: bin } });
     expect(human.stdout).toContain("Git: git init failed (exit 1); no repository\n");
+    expect(human.stdout).not.toContain("Warnings:");
+    expect(human.stdout).not.toContain("git init failed;");
   });
 
-  test("an interrupt while git init runs exits 130 and leaves no files", async () => {
+  test("git init failing after it made a partial .git removes that .git", async () => {
+    const home = setup();
+    const bin = gitShim(home, `${NOT_A_REPO}\n  init) /bin/mkdir .git; exit 1 ;;`);
+    const { status, stdout, stderr } = await newCli(["fixture-stack", "app", "--json"], {
+      home,
+      env: { PATH: bin },
+    });
+    expect(stderr).toBe("");
+    expect(status).toBe(0);
+    const result = decode(stdout);
+    expect(result.git).toBe("none");
+    expect(result.warnings).toEqual([{ code: "git_init_failed", id: "git", exitCode: 1 }]);
+    const app = join(home, "app");
+    expect(existsSync(join(app, ".git"))).toBe(false);
+    for (const rel of result.written) expect(existsSync(join(app, rel))).toBe(true);
+  });
+
+  test("an interrupt while git init runs exits 130 and leaves no files, the new .git included", async () => {
     const home = setup();
     const marker = join(home, "init-started");
-    const bin = gitShim(
-      home,
-      `  rev-parse) exit 128 ;;\n  init) /usr/bin/touch ${JSON.stringify(marker)}; exec /bin/sleep 30 ;;`,
-    );
+    const bin = gitShim(home, `${NOT_A_REPO}\n${hangingInit(marker)}`);
     const controller = new AbortController();
     const running = newCli(["fixture-stack", "app", "--json"], {
       home,
@@ -714,12 +866,70 @@ describe("git init failing or interrupted", () => {
     });
     await vi.waitFor(() => expect(existsSync(marker)).toBe(true), { timeout: 5000 });
     expect(existsSync(join(home, "app", "README.md"))).toBe(true);
+    expect(statSync(join(home, "app", ".git")).isDirectory()).toBe(true);
     controller.abort();
     const { status, stdout } = await running;
     expect(status).toBe(130);
     expect(stdout).toBe("");
     expect(existsSync(join(home, "app"))).toBe(false);
   }, 15000);
+
+  test("a broken .git already in the target is never initialized over, and survives an interrupt", async () => {
+    const home = setup();
+    const app = join(home, "app");
+    mkdirSync(join(app, ".git"), { recursive: true });
+    writeFileSync(join(app, ".git", "keep"), "the user's");
+    const marker = join(home, "init-started");
+    const bin = gitShim(home, `${NOT_A_REPO}\n${hangingInit(marker)}`);
+    const controller = new AbortController();
+    let settled = false;
+    const running = newCli(["fixture-stack", "app", "--json"], {
+      home,
+      env: { PATH: bin },
+      signal: controller.signal,
+    }).finally(() => {
+      settled = true;
+    });
+    // Before the fix, init ran over this .git and the interrupt's rollback deleted it.
+    await vi.waitFor(() => expect(settled || existsSync(marker)).toBe(true), { timeout: 5000 });
+    if (existsSync(marker)) controller.abort();
+    const { status, stdout, stderr } = await running;
+    expect(readFileSync(join(app, ".git", "keep"), "utf8")).toBe("the user's");
+    expect(existsSync(marker)).toBe(false);
+    expect(stderr).toBe("");
+    expect(status).toBe(0);
+    const result = decode(stdout);
+    expect(result.git).toBe("none");
+    expect(result.warnings).toEqual([{ code: "git_unusable", id: "git", exitCode: 128 }]);
+    expect(readFileSync(join(app, ".quickstacks/BRIEF.md"), "utf8")).toContain(
+      T.ground.git({ kind: "none" }),
+    );
+  }, 15000);
+
+  test("a rev-parse failure other than 'not a git repository' is git none with a warning, and nothing is initialized", async () => {
+    const home = setup();
+    const marker = join(home, "init-started");
+    const bin = gitShim(
+      home,
+      `  rev-parse) echo "fatal: detected dubious ownership in repository at '/x'" >&2; exit 128 ;;\n  init) /usr/bin/touch ${JSON.stringify(marker)}; exit 0 ;;`,
+    );
+    const { status, stdout, stderr } = await newCli(["fixture-stack", "app", "--json"], {
+      home,
+      env: { PATH: bin },
+    });
+    expect(stderr).toBe("");
+    expect(status).toBe(0);
+    const result = decode(stdout);
+    expect(result.git).toBe("none");
+    expect(result.warnings).toEqual([{ code: "git_unusable", id: "git", exitCode: 128 }]);
+    expect(existsSync(marker)).toBe(false);
+    const human = await newCli(["fixture-stack", "app2"], { home, env: { PATH: bin } });
+    expect(human.status).toBe(0);
+    expect(human.stdout).toContain(
+      "Git: git couldn't tell whether this is inside a repository (exit 128); none used\n",
+    );
+    expect(human.stdout).not.toContain("Warnings:");
+  });
 });
 
 describe("a real CLI process", () => {
@@ -733,13 +943,10 @@ describe("a real CLI process", () => {
     child = undefined;
   });
 
-  test("SIGINT while new writes exits 130 and leaves no files", async () => {
+  test("SIGINT while git init runs exits 130 and leaves no files, .git and state record included", async () => {
     const home = setup();
     const marker = join(home, "init-started");
-    const shim = gitShim(
-      home,
-      `  rev-parse) exit 128 ;;\n  init) /usr/bin/touch ${JSON.stringify(marker)}; exec /bin/sleep 30 ;;`,
-    );
+    const shim = gitShim(home, `${NOT_A_REPO}\n${hangingInit(marker)}`);
     child = spawn("bun", ["--no-env-file", bin, "new", "fixture-stack", "app", "--json"], {
       cwd: home,
       detached: true,
@@ -757,6 +964,7 @@ describe("a real CLI process", () => {
     });
     await vi.waitFor(() => expect(existsSync(marker)).toBe(true), { timeout: 10000 });
     expect(existsSync(join(home, "app", ".quickstacks", "BRIEF.md"))).toBe(true);
+    expect(statSync(join(home, "app", ".git")).isDirectory()).toBe(true);
     const records = join(home, ".local", "state", "quickstacks", "projects");
     expect(readdirSync(records)).toHaveLength(1);
     process.kill(-(child.pid as number), "SIGINT");

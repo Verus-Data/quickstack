@@ -1,4 +1,5 @@
 import { Effect, Schema } from "effect";
+import { TEMPLATE_VARIABLES } from "./core/scaffold/template";
 import { printable } from "./core/text";
 import { Origin } from "./schemas/entry";
 /** An unknown subcommand: what was typed and up to three close known names (`core/suggest.ts`). */
@@ -11,8 +12,16 @@ export class Usage extends Schema.TaggedError<Usage>()("Usage", {
 }) {
   override readonly message = "Invalid command. Run --help for usage.";
 }
-/** `id`: the argument the input was wrong about, such as an id given to both --with and --without. */
-export const BadInputDetails = Schema.Struct({ id: Schema.String });
+/**
+ * `id`: the argument the input was wrong about. `flag` says which input it is: `scope`, a
+ * `--scope` value that isn't an npm scope; `with_without`, a fragment id given to both `--with`
+ * and `--without`; `dir`, a project directory whose name has a control character; `brief`, a
+ * flag (`--with`, `--without`, `--sandbox`, in `id`) that `validate` takes only with `--brief`.
+ */
+export const BadInputDetails = Schema.Struct({
+  id: Schema.String,
+  flag: Schema.Literals(["scope", "with_without", "dir", "brief"]),
+});
 export class BadInput extends Schema.TaggedError<BadInput>()("BadInput", {
   details: Schema.optionalKey(BadInputDetails),
 }) {
@@ -20,11 +29,13 @@ export class BadInput extends Schema.TaggedError<BadInput>()("BadInput", {
 }
 /**
  * Up to three known ids close to the one given, from `core/suggest.ts::closest`; `looked` is the
- * path a lookup expected to find (validate's path argument, 1.5).
+ * path a lookup expected to find (validate's path argument, 1.5); `root` is the registry root an
+ * id was looked up in when it isn't the usual set (`validate <root> --brief`).
  */
 export const NotFoundDetails = Schema.Struct({
   suggestions: Schema.Array(Schema.String),
   looked: Schema.optionalKey(Schema.String),
+  root: Schema.optionalKey(Schema.String),
 });
 export class NotFound extends Schema.TaggedError<NotFound>()("NotFound", {
   details: Schema.optionalKey(NotFoundDetails),
@@ -124,7 +135,9 @@ export class EntryInvalid extends Schema.TaggedError<EntryInvalid>()("EntryInval
  * the stack never appears in `ids`. `path`, `step` and `key` name the file, verify step or env key
  * two entries disagree on. For `needs_own_repo`, `path` is the enclosing repository's root and
  * `fix` lists the `--without` flags that would leave every such fragment out (empty when no
- * `--without` can).
+ * `--without` can). `file_owner` is also two planned paths that differ only in letter case, or a
+ * file at a path another planned file needs as a directory. `reserved_path` is an entry file under
+ * `.git` or `.quickstacks` (any segment, any case), which the CLI owns.
  */
 export const ComposeConflictDetails = Schema.Struct({
   reason: Schema.Literals([
@@ -139,6 +152,7 @@ export const ComposeConflictDetails = Schema.Struct({
     "file_owner",
     "env",
     "needs_own_repo",
+    "reserved_path",
   ]),
   stack: Schema.optionalKey(Schema.String),
   ids: Schema.Array(Schema.String),
@@ -252,8 +266,12 @@ export function keepsResult(error: AppError): boolean {
 export function knownError(value: unknown): AppError | undefined {
   return errorClasses.some((Class) => value instanceof Class) ? (value as AppError) : undefined;
 }
-/** The human lines shown under a failure's message, one per detail field worth showing. */
-export function detailLines(error: AppError): string[] {
+/**
+ * The human lines shown under a failure's message, one per detail field worth showing, ending
+ * with a `Next:` line where the details say what to do. `invocation` is `Host.invocation`, for
+ * commands quoted in those lines.
+ */
+export function detailLines(error: AppError, invocation: string): string[] {
   switch (error._tag) {
     case "Usage":
       return error.details?.suggestions.length
@@ -264,9 +282,15 @@ export function detailLines(error: AppError): string[] {
       if (!details) return [];
       const why =
         details.reason === "escape"
-          ? ["The path resolves outside the project directory, through a symlink or `..`."]
+          ? [
+              "The path resolves outside the project directory, through a symlink or `..`.",
+              "Next: remove that symlink from the project directory, or pick another directory.",
+            ]
           : details.reason === "unwritable"
-            ? ["The project directory or a file in it can't be written. Nothing was left behind."]
+            ? [
+                "The project directory or a file in it can't be written. Nothing was left behind.",
+                "Next: pick a directory you can write to, or fix this one's permissions.",
+              ]
             : [];
       return [...(details.path ? [`Path: ${printable(details.path)}`] : []), ...why];
     }
@@ -292,10 +316,10 @@ export function detailLines(error: AppError): string[] {
       ];
     }
     case "BadInput":
-      return error.details ? [`Id: ${printable(error.details.id)}`] : [];
+      return error.details ? badInputLines(error.details) : [];
     case "NotFound": {
-      // `looked` means a path was missing (validate); otherwise details mean an entry id was
-      // looked up, so the list of entries is the next step.
+      // `looked` means a path was missing (validate); `root`, an id missing from a registry root
+      // `list` doesn't read; otherwise an id missing from the registries `list` shows.
       const details = error.details;
       if (!details) return [];
       return [
@@ -303,7 +327,11 @@ export function detailLines(error: AppError): string[] {
         ...(details.suggestions.length
           ? [`Did you mean: ${details.suggestions.map(printable).join(", ")}?`]
           : []),
-        ...(details.looked ? [] : ["Next: quickstacks list shows every stack and fragment."]),
+        details.looked
+          ? "Next: pass a registry root (a directory holding stacks/ or fragments/) or an entry directory inside one."
+          : details.root
+            ? `Next: ${invocation} validate ${shellArg(printable(details.root))} lists the ids under that root.`
+            : `Next: ${invocation} list shows every stack and fragment.`,
       ];
     }
     case "ValidationFailed":
@@ -318,6 +346,11 @@ export function detailLines(error: AppError): string[] {
         `Entry: ${printable(details.id)} (${details.origin}, ${details.reason})`,
         ...(details.path ? [`Path: ${printable(details.path)}${line}`] : []),
         ...(details.problem ? [`Problem: ${details.problem}`] : []),
+        ...(details.reason === "template"
+          ? [
+              `Next: use only ${TEMPLATE_VARIABLES.join(", ")} in that file's {{ }} tokens, or drop its .tmpl suffix to copy it as is.`,
+            ]
+          : []),
       ];
     }
     case "ComposeConflict": {
@@ -340,7 +373,12 @@ export function detailLines(error: AppError): string[] {
                 ? `Next: run again with ${details.fix.map(printable).join(" ")}, or pick a directory outside that repository.`
                 : "Next: pick a directory outside that repository.",
             ]
-          : []),
+          : details.reason === "reserved_path"
+            ? [
+                "The CLI owns .git/ and .quickstacks/ in a project; no entry may write under them, in any letter case.",
+                "Next: remove or rename that file in the entry.",
+              ]
+            : []),
       ];
     }
     case "InvalidConfig": {
@@ -363,6 +401,35 @@ export function detailLines(error: AppError): string[] {
     case "Defect":
     case "BrokenPipe":
       return [];
+  }
+}
+/** A value as a shell argument: plain when it is safe, else single-quoted. */
+const shellArg = (text: string) =>
+  /^[A-Za-z0-9._/+-]+$/.test(text) ? text : `'${text.replaceAll("'", "'\\''")}'`;
+function badInputLines(details: typeof BadInputDetails.Type): string[] {
+  const id = printable(details.id);
+  switch (details.flag) {
+    case "scope":
+      return [
+        `Flag: --scope ${id}`,
+        "Next: pass an npm scope such as acme or @acme: lowercase, URL-safe, no /.",
+      ];
+    case "with_without":
+      return [
+        `Id: ${id}`,
+        "Flags: --with and --without",
+        `Next: name ${id} in only one of --with and --without.`,
+      ];
+    case "dir":
+      return [
+        `Directory name: ${id}`,
+        "Next: pick a project directory whose name has no control characters.",
+      ];
+    case "brief":
+      return [
+        `Flag: ${id}`,
+        "Next: --with, --without and --sandbox need --brief <stack>; add it, or drop the flag.",
+      ];
   }
 }
 const encodeClosed = <S extends Schema.Top>(schema: S, value: S["Type"] | undefined) =>

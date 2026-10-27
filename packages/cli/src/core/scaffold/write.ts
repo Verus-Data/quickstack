@@ -1,12 +1,22 @@
+import { rmdir } from "node:fs/promises";
 import { Effect, Exit, FileSystem, Path, type PlatformError, type Scope } from "effect";
 import { PermissionDenied, TargetNotEmpty } from "../../errors";
 
 /**
  * The one way `new` (and later `add`) writes into a project (roadmap, Types and schemas: Safe
  * writer). Every file is created exclusively (never over an existing file or through a final
- * symlink), only after its parent directory's real path is checked to be the project root's real
- * path or under it. Everything it creates is tracked, and a scope finalizer removes it when the
- * scope closes with a failure or an interruption, so a failed `new` leaves no half project.
+ * symlink). On the way down, every symlinked directory is resolved and every directory created is
+ * checked before anything is made beneath it, so nothing is created outside the project root's
+ * real path. After each file is written its parent's real path is checked again, and a file whose
+ * parent has moved out of the project is removed and refused.
+ *
+ * That narrows a race but doesn't close it: a process that swaps a directory for a symlink
+ * between the last check and the write can still land one exclusive-create file outside the
+ * project for as long as it takes to notice and remove it. Without `openat`-style calls (which
+ * Effect's FileSystem doesn't offer) no path-based writer can do better.
+ *
+ * Everything it creates is tracked, and a scope finalizer removes it when the scope closes with a
+ * failure or an interruption, so a failed `new` leaves no half project.
  */
 export type ProjectWriter = {
   /** The project root's real path. */
@@ -22,10 +32,15 @@ export type ProjectWriter = {
   /** Creates a directory (and its parents) under the root. */
   readonly directory: (rel: string) => Effect.Effect<void, PermissionDenied | TargetNotEmpty>;
   /**
-   * Hands a directory the CLI's own process just created (git's `.git`) to the rollback, which
-   * removes it whole.
+   * Hands a directory the CLI's own process is about to create (git's `.git`) to the rollback,
+   * which removes it whole.
    */
   readonly adopt: (rel: string) => Effect.Effect<void>;
+  /**
+   * Removes an adopted directory now, with the rollback's checks, and stops tracking it: for a
+   * `git init` that failed after creating part of its `.git`.
+   */
+  readonly discard: (rel: string) => Effect.Effect<void>;
 };
 
 const missing = (error: PlatformError.PlatformError) =>
@@ -35,6 +50,13 @@ const missing = (error: PlatformError.PlatformError) =>
 export function within(root: string, path: string, separator: string): boolean {
   return path === root || path.startsWith(root.endsWith(separator) ? root : root + separator);
 }
+
+/**
+ * Removes `dir` only if it is an empty directory, in one system call. Effect's FileSystem has no
+ * `rmdir` (its `remove` refuses a directory unless it recurses), and checking for emptiness first
+ * would leave a window in which a file added to it would be deleted with it.
+ */
+const removeEmptyDirectory = (dir: string) => Effect.ignore(Effect.tryPromise(() => rmdir(dir)));
 
 /**
  * Opens `dir` for writing, creating it and any missing parents (tracked for rollback), and
@@ -56,47 +78,59 @@ export const openProject = (
     const escapes = (at: string) =>
       new PermissionDenied({ details: { reason: "escape", path: at } });
 
-    /** Files, then whole directories git made, then directories, each in creation order. */
+    /**
+     * Files, then whole directories git made, then directories under the root, then the root and
+     * the parents created for it, each in creation order.
+     */
     const files: string[] = [];
     const adopted: string[] = [];
     const dirs: string[] = [];
+    const chain: string[] = [];
     let root = "";
 
+    const isInside = (at: string) =>
+      fs.realPath(at).pipe(
+        Effect.map((real) => root !== "" && within(root, real, path.sep)),
+        Effect.orElseSucceed(() => false),
+      );
+    /** A path is only removed while its parent still resolves inside the project. */
+    const inside = (at: string) => isInside(path.dirname(at));
+    const isDirectory = (at: string) =>
+      fs.lstat(at).pipe(
+        Effect.map((info) => info.type === "Directory"),
+        Effect.orElseSucceed(() => false),
+      );
+    const removeAdopted = (dir: string) =>
+      Effect.gen(function* () {
+        if ((yield* isDirectory(dir)) && (yield* inside(dir)))
+          yield* Effect.ignore(fs.remove(dir, { recursive: true }));
+      });
+
     const rollback = Effect.gen(function* () {
-      /** A path is only removed while its parent still resolves inside the project. */
-      const inside = (at: string) =>
-        fs.realPath(path.dirname(at)).pipe(
-          Effect.map((real) => root !== "" && within(root, real, path.sep)),
-          Effect.orElseSucceed(() => false),
-        );
       for (const file of [...files].reverse())
         if (yield* inside(file)) yield* Effect.ignore(fs.remove(file));
-      for (const dir of [...adopted].reverse()) {
-        const info = yield* Effect.option(fs.lstat(dir));
-        if (info._tag === "Some" && info.value.type === "Directory" && (yield* inside(dir)))
-          yield* Effect.ignore(fs.remove(dir, { recursive: true }));
-      }
+      for (const dir of [...adopted].reverse()) yield* removeAdopted(dir);
       // Only an empty directory goes: anything else in it isn't ours.
-      for (const dir of [...dirs].reverse()) {
-        const names = yield* Effect.option(fs.readDirectory(dir));
-        if (names._tag === "Some" && names.value.length === 0)
-          yield* Effect.ignore(fs.remove(dir, { recursive: true }));
-      }
+      for (const dir of [...dirs].reverse())
+        if ((yield* isDirectory(dir)) && (yield* inside(dir))) yield* removeEmptyDirectory(dir);
+      // The root and the parents made for it sit outside the root by definition.
+      for (const dir of [...chain].reverse())
+        if (yield* isDirectory(dir)) yield* removeEmptyDirectory(dir);
     });
     yield* Effect.addFinalizer((exit) => (Exit.isSuccess(exit) ? Effect.void : rollback));
 
     // The root and its missing parents, top down, so each one created is tracked.
     const absolute = path.resolve(dir);
-    const chain: string[] = [];
+    const missingParents: string[] = [];
     for (let at = absolute; ; at = path.dirname(at)) {
       const info = yield* Effect.option(fs.lstat(at));
       if (info._tag === "Some") break;
-      chain.unshift(at);
+      missingParents.unshift(at);
       if (path.dirname(at) === at) break;
     }
-    for (const at of chain) {
+    for (const at of missingParents) {
       yield* fs.makeDirectory(at).pipe(Effect.mapError(() => unwritable(at)));
-      dirs.push(at);
+      chain.push(at);
     }
     root = yield* fs.realPath(absolute).pipe(Effect.mapError(() => unwritable(absolute)));
 
@@ -108,9 +142,14 @@ export const openProject = (
         ? undefined
         : parts;
     };
-    /** Creates the directories down to `parts`, then checks the deepest one's real path. */
+    /**
+     * Creates the directories down to `parts`. A symlink on the way is resolved before anything
+     * is made beneath it, and each directory made is checked right after, so no directory is ever
+     * created outside the root.
+     */
     const ensure = (parts: ReadonlyArray<string>, rel: string) =>
       Effect.gen(function* () {
+        const escaped = escapes(path.join(root, rel));
         let at = root;
         for (const part of parts) {
           at = path.join(at, part);
@@ -131,12 +170,14 @@ export const openProject = (
                 ),
               );
             dirs.push(at);
-          } else if (info !== "Directory" && info !== "SymbolicLink")
+            if (!(yield* isInside(at))) return yield* escaped;
+          } else if (info === "SymbolicLink") {
+            if (!(yield* isInside(at))) return yield* escaped;
+          } else if (info !== "Directory")
             return yield* new TargetNotEmpty({ details: { path: root, entries: [rel] } });
         }
-        // Checked after creating, so a symlink planted on the way can't redirect the write.
         const real = yield* fs.realPath(at).pipe(Effect.mapError(() => unwritable(at)));
-        if (!within(root, real, path.sep)) return yield* escapes(path.join(root, rel));
+        if (!within(root, real, path.sep)) return yield* escaped;
       });
 
     const create = (rel: string, data: Uint8Array, executable: boolean) =>
@@ -155,6 +196,12 @@ export const openProject = (
           // Created exclusively, so whatever is there now (a partial write) is ours.
           files.push(file);
           return yield* unwritable(file);
+        }
+        // The parent was checked before the write; if it has moved out of the project since, the
+        // file landed outside. It is ours (created exclusively), so take it back and refuse.
+        if (!(yield* inside(file))) {
+          yield* Effect.ignore(fs.remove(file));
+          return yield* escapes(path.join(root, rel));
         }
         files.push(file);
         if (executable) {
@@ -188,6 +235,13 @@ export const openProject = (
       adopt: (rel) =>
         Effect.sync(() => {
           adopted.push(path.join(root, rel));
+        }),
+      discard: (rel) =>
+        Effect.gen(function* () {
+          const dir = path.join(root, rel);
+          if (!adopted.includes(dir)) return;
+          adopted.splice(adopted.indexOf(dir), 1);
+          yield* removeAdopted(dir);
         }),
     } satisfies ProjectWriter;
   });

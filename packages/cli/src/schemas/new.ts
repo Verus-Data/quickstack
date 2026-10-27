@@ -36,7 +36,12 @@ export const NewResult = Schema.Struct({
   untrusted: Schema.Array(
     Schema.Struct({ id: Schema.String, kind: Kind, origin: Origin, dir: Schema.String }),
   ),
-  /** Composition warnings, and `git_init_failed` (`id: "git"`, with git's exit code). */
+  /**
+   * Composition warnings; `git_init_failed` (`id: "git"`, with git's exit code); and
+   * `git_unusable` (`id: "git"`, with `git rev-parse`'s exit code when it ran): git couldn't say
+   * whether a repository encloses the target (a `.git` it can't read, an ownership refusal, a
+   * timeout), so `new` used none and initialized nothing.
+   */
   warnings: Schema.Array(
     Schema.Struct({
       code: Schema.Literals([
@@ -45,6 +50,7 @@ export const NewResult = Schema.Struct({
         "with_not_applicable",
         "without_not_selected",
         "git_init_failed",
+        "git_unusable",
       ]),
       id: Schema.String,
       exitCode: Schema.optionalKey(Schema.Number),

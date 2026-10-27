@@ -92,6 +92,40 @@ test("the state directory defaults to ~/.local/state/quickstacks", async () => {
   });
 });
 
+test("QUICKSTACKS_STATE_DIR replaces the state directory, quickstacks/ suffix included", async () => {
+  const manifest = await manifestOf();
+  const { via } = project(manifest);
+  const state = temp();
+  const env = { ...stateEnv(join(temp(), "xdg")), QUICKSTACKS_STATE_DIR: state };
+  expect(await succeed(runWith(writeProjectState(manifest, via), env))).toEqual({
+    written: true,
+    path: join(state, "projects", `${manifest.projectId}.json`),
+  });
+});
+
+test("a project id that isn't a valid id is never turned into a path: no write, no read", async () => {
+  const manifest = await manifestOf();
+  const { via } = project(manifest);
+  const state = temp();
+  const outside = join(state, "quickstacks", "escaped.json");
+  for (const projectId of ["../escaped", "a/b", "", ".hidden", "a\nb"]) {
+    expect(
+      await succeed(runWith(writeProjectState({ ...manifest, projectId }, via), stateEnv(state))),
+    ).toEqual({ written: false });
+  }
+  expect(existsSync(outside)).toBe(false);
+  expect(existsSync(join(state, "quickstacks"))).toBe(false);
+  // A record that does sit there under the escaping name is still not read.
+  mkdirSync(join(state, "quickstacks", "projects"), { recursive: true });
+  const good = await succeed(runWith(writeProjectState(manifest, via), stateEnv(state)));
+  expect(good.written).toBe(true);
+  writeFileSync(
+    outside,
+    readFileSync(join(state, "quickstacks", "projects", `${manifest.projectId}.json`)),
+  );
+  expect(await succeed(runWith(readProjectState("../escaped"), stateEnv(state)))).toBeUndefined();
+});
+
 test("an unwritable state directory gives written: false and leaves nothing behind", async () => {
   const manifest = await manifestOf();
   const { via } = project(manifest);
