@@ -18,7 +18,7 @@ In:
 - `packages/cli/scripts/build-index.ts`: validate, prove, carry forward, write bundles, sign, check.
 - `RegistryIndex`, `IndexEntry`, `LastRun` and `SignedIndex` schemas added to `packages/format` (additive).
 - The index public key list committed to `packages/format`.
-- A `_headers` file giving cache lifetimes for `v1/`, and the maintainer's by-hand deploy procedure in `packages/api/README.md`.
+- A `_headers` file giving cache lifetimes for `v1/`, and the maintainer's by-hand deploy procedure in `stacks-api/apps/api/README.md`.
 
 Out:
 
@@ -32,11 +32,11 @@ Out:
 
 ### Where this fits
 
-4.0b configured a host with an empty static assets directory. This sub-phase fills `v1/` in it. 4.0d teaches the CLI to read and verify what this writes. [4.0e](phase-4.0e-official-names-and-directory.md) adds the official-names file and the directory pages to the same build, and [4.2d](phase-4.2d-dependency-telemetry-client-and-ingest.md) adds the dependency allowlist; both are signed by the same step described here. 5.2 runs the same script in CI with the key as a deploy secret.
+4.0b configured a host that serves a static directory assembled at deploy time. This sub-phase builds the `v1/` files that go into it. 4.0d teaches the CLI to read and verify what this writes. [4.0e](phase-4.0e-official-names-and-directory.md) adds the official-names file and the directory pages to the same build, and [4.2d](phase-4.2d-dependency-telemetry-client-and-ingest.md) adds the dependency allowlist; both are signed by the same step described here. 5.2 runs the same script in CI with the key as a deploy secret.
 
 ### Why the build lives in the CLI package
 
-Every input is CLI code: the bundled registry, `validate`, `composeFiles`, `fingerprint`, the ledger reader. Moving them to `packages/format` to let `packages/api` run the build would turn 4.0a into a large extraction for one script. The script writes to an `--out` directory; the API package only serves what's there. No package imports another's `src/`.
+Every input is CLI code: the bundled registry, `validate`, `composeFiles`, `fingerprint`, the ledger reader. Moving them to `packages/format` to let `stacks-api` run the build would turn 4.0a into a large extraction for one script. The script writes to an `--out` directory; the API package only serves what's there. No package imports another's `src/`.
 
 ### Which content the index serves (open question 14)
 
@@ -127,11 +127,11 @@ The key list allows a second key to ship in a CLI release before it signs anythi
 
 ### Deploying by hand
 
-Documented in `packages/api/README.md`:
+Documented in `stacks-api/apps/api/README.md`:
 
-1. `bun run --cwd packages/cli build:index -- --out ../api/dist/static --previous https://<host>/v1/index.json --key <path>`
+1. `bun run --cwd packages/cli build:index -- --out <dir> --previous https://<host>/v1/index.json --key <path>`, where `<dir>` is a fresh directory outside both repositories (the output is never committed to either).
 2. Review the diff of `v1/index.json` against the live one (the script prints entries added, updated, carried forward and omitted).
-3. `bun run --cwd packages/api deploy`.
+3. Run `bun run deploy` in `stacks-api` with the `--out` directory as its index input; the deploy copies it into the assembled static directory beside the built site (4.0b, "Static files"; after 4.0f, the Workers deploy).
 4. `bun run --cwd packages/cli build:index -- --check https://<host>` against the live host.
 
 ### Failure modes
@@ -151,7 +151,7 @@ Documented in `packages/api/README.md`:
 | `packages/cli/scripts/build-index.ts`, `packages/cli/package.json` (`build:index`) | New |
 | `packages/format/src/index-schema.ts`, `src/index-keys.ts`, `src/index.ts` | New schemas and the public key list |
 | `packages/cli/tests/build-index.test.ts`, `tests/fixtures/index/` | New, with a test key pair used only by tests |
-| `packages/api/README.md` | Deploy procedure |
+| `stacks-api/apps/api/README.md` | Deploy procedure |
 | `AGENTS.md` | `build:index` in the CLI commands table |
 
 ## Acceptance tests
@@ -168,7 +168,7 @@ Over a fixture registry, fixture ledger and, for carry-forward, a real local HTT
 - A previous host serving a tampered bundle fails the build.
 - Neither `--key` nor `--unsigned`: exit non-zero, nothing written. `--unsigned`: every envelope has `signature: ""` and `--check` against it fails.
 - `--check` against the local server passes on a good build and fails, naming the file, when one byte of the served payload changes.
-- `_headers` has the two rules above; under the local Workers runtime from 4.0b, `GET /v1/index.json` and an entry file carry them.
+- `_headers` has the two rules above; served by 4.0b's Node server from a static directory holding the build output, `GET /v1/index.json` and an entry file carry them (a test in `stacks-api`, over a fixture build copied from this repository's test output).
 
 ## Exit criteria
 

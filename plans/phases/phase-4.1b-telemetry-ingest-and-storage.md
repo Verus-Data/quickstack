@@ -4,18 +4,18 @@ Status: DRAFT 2026-10-26 (not agreed)
 
 | Field | Value |
 |---|---|
-| Goal | `POST /v1/events` in `packages/api` accepts anonymous event batches, validates each event on its own, accepts only released CLI versions, stores each event at most once in D1 through `effect/sql`, updates the per-project row in the same atomic batch, rewrites anything unofficial to `custom`, recomputes what the client claims, rate-limits by hashed network, keeps no raw IP, and lets no excluded event touch a project row |
+| Goal | `POST /v1/events` in `stacks-api` accepts anonymous event batches, validates each event on its own, accepts only released CLI versions, stores each event at most once in D1 through `effect/sql`, updates the per-project row in the same atomic batch, rewrites anything unofficial to `custom`, recomputes what the client claims, rate-limits by hashed network, keeps no raw IP, and lets no excluded event touch a project row |
 | Traces to | "None of these are collected today." Success rows 1, 2 and 5. The trust job: "the user wants to start work in a project they don't have to audit first", which here means the server holds no more than the client promised to send |
-| Depends on | 4.1a (the `TelemetryEvent` schema; this sub-phase starts after it is fixed), 4.0b (the API, the platform layer, the test harness, D16), D17 |
+| Depends on | 4.1a (the `TelemetryEvent` schema; this sub-phase starts after it is fixed), 4.0b (the API and its program structure), 4.0f (Workers, the bound D1 database, the D1 driver and the Workers test harness; D16), D17 |
 | Blocks | 4.1c, 4.1d, and 4.2a through them |
-| Decisions needed | D16 (assumed Workers with D1; if the maintainers pick Node and Postgres, the same `effect/sql` code runs on the Postgres driver, migrations are rewritten for Postgres, and the batch becomes a transaction). D17 decides whether this ships |
+| Decisions needed | D17 decides whether this ships. D16 is decided: Workers with D1, so storage exists only after 4.0f and collection never runs on the Node host |
 | Settles | The ingest contract and its statuses, normalization, released-version and step-name checks, idempotent storage, which events update `projects`, the schema and migrations, rate limiting, network hashing, ASN capture, the store-backed `/healthz` |
 
 ## Scope
 
 In:
 
-- `POST /v1/events`, `GET /v1/schema/telemetry-event.v<N>.json` for each released schema version (4.1a's frozen snapshots), and the `/telemetry` privacy page (what is collected, what never is, how long each is kept, how to opt out, with a link to the schema).
+- `POST /v1/events`, `GET /v1/schema/telemetry-event.v<N>.json` for each released schema version (4.1a's frozen snapshots), and the `/telemetry` privacy page, an Astro page in `stacks-api/apps/web` (what is collected, what never is, how long each is kept, how to opt out, with a link to the schema).
 - The four ingest tags added to 4.0b's `apiErrorTable`, and `/healthz` backed by a store probe.
 - `EventStore`, `RateLimiter`, `NetworkHasher` and `ReleasedVersions` services, each with a D1 implementation and an in-memory one for tests.
 - Checked-in SQL migrations, applied by Wrangler locally and in tests.
@@ -50,6 +50,8 @@ Content-Type: application/json
 | `429` envelope with `Retry-After` | `RateLimited` (retryable) | Rate limited |
 | `503` envelope, `retryable: true` | `Unavailable` | Store unavailable, or the hashing secret is missing |
 
+The router itself has no 405: in the scaffolded stack a wrong method falls through to the 404 envelope. The 405 comes from 4.0b's server-level middleware: on a route miss it looks up the methods the `HttpApi` declares for that path and, when there are any, answers `MethodNotAllowed` with `Allow` listing them. 4.0b's acceptance test that pins `POST /healthz` to 404 changes to 405 with `Allow: GET` in the same commit. The 413 and 415 arrive the same way through that middleware: `HttpApiPayloadTooLarge` as a defect and the framework's own plain-text 415 response, both rewritten into the envelope.
+
 The body cap is enforced on the bytes read, not on `Content-Length`: the handler reads the request stream and aborts with 413 as soon as the count passes 512 KiB, so a chunked body with no length header can't get past it. A `Content-Length` over the cap is refused before reading.
 
 `GET /healthz` runs `SELECT 1` against the store. It returns 200 `{ "status": "ok" }` when that succeeds and 503 with the `Unavailable` envelope when it doesn't, so 4.1e's and 5.2's smoke checks and any uptime check test the database, not just the Worker.
@@ -69,7 +71,7 @@ Every non-202 keeps the batch in the client's spool, so a bad deploy can't make 
 
 ### Storage
 
-`effect/sql` with its D1 driver package (the one 4.0b's spike found for `effect` 4.0.6, or the adapter it called for; roadmap, Other shared facts: New dependencies). Migrations are plain SQL files in `packages/api/migrations/`, applied with `wrangler d1 migrations apply` locally and by the test harness before each test file (with the Workers pool, its D1 migration helper; otherwise the Wrangler local runtime). Remote migrations are applied by a maintainer by hand before a deploy.
+`effect/sql` with its D1 driver package (the one 4.0f's spike found for `effect` 4.0.6, or the adapter it called for; roadmap, Other shared facts: New dependencies). D1 starts empty at 4.0f, so the first migration here creates every table and nothing is carried over from the Node host. Migrations are plain SQL files in `stacks-api/apps/api/migrations/`, applied with `wrangler d1 migrations apply` locally and by the test harness before each test file (with the Workers pool, its D1 migration helper; otherwise the Wrangler local runtime). Remote migrations are applied by a maintainer by hand before a deploy.
 
 | Table | Columns |
 |---|---|
@@ -97,7 +99,7 @@ INSERT INTO projects (...) SELECT ... WHERE EXISTS
 
 `batch_id` is a random id per request. An event stored with an `excluded` reason fails the guard the same way, so the write-time rule above holds inside the one atomic batch. When the event already existed, `INSERT OR IGNORE` leaves the old row with its old `batch_id`, the `EXISTS` guard is false, and the project row is untouched. This avoids relying on `changes()` across statements. If the driver doesn't expose D1's batch, the D1 `EventStore` calls the binding's `batch` directly for this one write and uses `effect/sql` for everything else; record which in the code's header comment.
 
-`packages/api/src/store/projects.ts::rebuildProject` is owned here: it rebuilds one (install, project) row from that pair's events with `excluded` null, or deletes the row when no such scaffold remains, using the same column rules as the upsert above. Ingest doesn't call it; 4.1c calls it after re-including a version, and 4.1d's recheck calls it for every queued pair. A test builds rows incrementally through ingest and requires `rebuildProject` over the same stored events to produce identical rows.
+`stacks-api/apps/api/src/store/projects.ts::rebuildProject` is owned here: it rebuilds one (install, project) row from that pair's events with `excluded` null, or deletes the row when no such scaffold remains, using the same column rules as the upsert above. Ingest doesn't call it; 4.1c calls it after re-including a version, and 4.1d's recheck calls it for every queued pair. A test builds rows incrementally through ingest and requires `rebuildProject` over the same stored events to produce identical rows.
 
 ### Abuse resistance
 
@@ -120,13 +122,13 @@ export class EventStore extends Context.Service<EventStore, {
   readonly officialNames: Effect.Effect<OfficialNames, StoreUnavailable>;
   readonly releasedVersions: Effect.Effect<ReadonlySet<string>, StoreUnavailable>;
   readonly rebuildProject: (key: ProjectKey) => Effect.Effect<void, StoreUnavailable>; // store/projects.ts::rebuildProject
-}>()("quickstack/api/EventStore") {
+}>()("stacks-api/EventStore") {
   static memory: () => Layer.Layer<EventStore>;
   static d1: Layer.Layer<EventStore, never, SqlClient.SqlClient>;
 }
 ```
 
-`RateLimiter` (`quickstack/api/RateLimiter`) and `NetworkHasher` (`quickstack/api/NetworkHasher`) follow the same pattern. `EventStore` covers the write path and the lookups ingest needs; the lease, `maintenance_state`, per-day counts and pruning belong to 4.1c's `MaintenanceStore` (`quickstack/api/MaintenanceStore`), and the internal integrity tables to 4.1d's `IntegrityStore`. `src/platform/worker.ts` provides the D1 implementations and the `SqlClient` layer from the binding; nothing else touches bindings. `NETWORK_HASH_KEY` is read only in the API's `config.ts` and never logged. The privacy page and schema route are static text and `TelemetryEvent`'s JSON Schema export.
+`RateLimiter` (`stacks-api/RateLimiter`) and `NetworkHasher` (`stacks-api/NetworkHasher`) follow the same pattern. `EventStore` covers the write path and the lookups ingest needs; the lease, `maintenance_state`, per-day counts and pruning belong to 4.1c's `MaintenanceStore` (`stacks-api/MaintenanceStore`), and the internal integrity tables to 4.1d's `IntegrityStore`. `apps/api/src/platform/worker.ts` provides the D1 implementations and the `SqlClient` layer from the binding; nothing else touches bindings. The Node entry provides only the in-memory store for local development and never serves ingest in production. `NETWORK_HASH_KEY` is read only in the API's `config.ts` and never logged. The schema route serves `TelemetryEvent`'s JSON Schema export; the privacy page is static text built with the site.
 
 ### Failure modes
 
@@ -149,18 +151,18 @@ export class EventStore extends Context.Service<EventStore, {
 
 | Path | Change |
 |---|---|
-| `packages/api/src/handlers/events.ts`, `src/api.ts` | Route and group |
-| `packages/api/src/ingest/` | `normalize.ts`, `recompute.ts`, `versions.ts`, `steps.ts`, `classify.ts` (the `excluded` precedence), `body.ts` (streamed byte cap) |
-| `packages/api/src/errors.ts` | `MethodNotAllowed`, `PayloadTooLarge`, `UnsupportedMediaType`, `RateLimited` rows |
-| `packages/api/src/handlers/health.ts` | Store probe |
-| `packages/api/src/store/` | `EventStore`, `RateLimiter`, `NetworkHasher` (memory and D1); `projects.ts` (the upsert's column rules and `rebuildProject`) |
-| `packages/api/migrations/` | SQL migrations |
-| `packages/api/src/pages/telemetry.ts` | Privacy page |
-| `packages/api/src/config.ts`, `wrangler.jsonc` | D1 binding, secret, limits |
-| Root `package.json` catalog | The D1 driver package |
-| `packages/api/tests/ingest.test.ts` | New |
-| `.claude/rules/api/` | Never store or log a raw IP; no free-text fields |
-| `AGENTS.md` | Ingest invariants; how to run the API with local D1 |
+| `stacks-api/apps/api/src/handlers/events.ts`, `stacks-api/packages/contract/src/api.ts` | Route and group |
+| `stacks-api/apps/api/src/ingest/` | `normalize.ts`, `recompute.ts`, `versions.ts`, `steps.ts`, `classify.ts` (the `excluded` precedence), `body.ts` (streamed byte cap) |
+| `stacks-api/packages/contract/src/errors.ts` | `MethodNotAllowed`, `PayloadTooLarge`, `UnsupportedMediaType`, `RateLimited` rows |
+| `stacks-api/apps/api/src/handlers/health.ts` | Store probe |
+| `stacks-api/apps/api/src/store/` | `EventStore`, `RateLimiter`, `NetworkHasher` (memory and D1); `projects.ts` (the upsert's column rules and `rebuildProject`) |
+| `stacks-api/apps/api/migrations/` | SQL migrations |
+| `stacks-api/apps/web/src/pages/telemetry.astro` | Privacy page |
+| `stacks-api/apps/api/src/config.ts`, `apps/api/wrangler.jsonc` | Secret and limits (the D1 binding is 4.0f's) |
+| `stacks-api/apps/api/package.json` | The D1 driver package, if 4.0f didn't already add it (never this repository's root catalog) |
+| `stacks-api/apps/api/tests/ingest.test.ts` | New |
+| `stacks-api/.claude/rules/api/` | Never store or log a raw IP; no free-text fields |
+| `stacks-api/AGENTS.md` | Ingest invariants; how to run the API with local D1 |
 
 ## Acceptance tests
 
@@ -187,13 +189,14 @@ Through a real local HTTP server with the in-memory store, and again under the l
 
 ## Exit criteria
 
-- D16 and D17 decided. Acceptance tests pass; `bun run check` green from the repo root.
+- D17 decided. Acceptance tests pass; `bun run check` green in `stacks-api`, and from this repository's root for any change here.
 - Migrations apply cleanly to an empty local D1 and are idempotent.
-- `AGENTS.md` documents the ingest invariants.
+- `stacks-api/AGENTS.md` documents the ingest invariants.
 
 ## What this plan may get wrong
 
 - Caps and plausibility rules are guesses until real data exists. They are config, and changing them marks or unmarks rows rather than needing a migration.
 - Step-name checks are only as good as `v1/names.json`. A stack whose composition rules changed between releases may list names an old CLI never sent, which is harmless; one that loses a name it shipped would mark real runs implausible, which is why names are only ever added ([4.0e](phase-4.0e-official-names-and-directory.md)).
+- 2026-10-27: the 405 assumed the router answers a wrong method itself. The `astro-api` stack's router gives the 404 envelope for any miss, so the server-level middleware derives the 405 and `Allow` from the `HttpApi` definition. If looking up the declared methods per path proves awkward in Effect 4.0.6, a wrong method stays a 404 and this row and its acceptance test go.
 - A D1 row counter for rate limits costs a write per request. At expected volume that's fine; if not, use the platform's rate-limit binding behind the same `RateLimiter` service.
-- `effect/sql`'s D1 support in Effect 4 may be thin. The spike in 4.0b should have said so; if it didn't, the fallback above (raw batch for the one atomic write) keeps this sub-phase moving.
+- `effect/sql`'s D1 support in Effect 4 may be thin. The spike in 4.0f should have said so; if it didn't, the fallback above (raw batch for the one atomic write) keeps this sub-phase moving.

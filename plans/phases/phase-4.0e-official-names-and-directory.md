@@ -4,10 +4,10 @@ Status: DRAFT 2026-10-26 (not agreed)
 
 | Field | Value |
 |---|---|
-| Goal | The index build also writes a signed `v1/names.json` listing every stack and fragment id and verify step name that has ever been official, and a static directory page per indexed stack, both deployed by a maintainer by hand with the index |
+| Goal | The index build also writes a signed `v1/names.json` listing every stack and fragment id and verify step name that has ever been official, and `stacks-api/apps/web` builds a static directory page per indexed stack from the index output; both are deployed by a maintainer by hand with the index |
 | Traces to | "Stacks don't rot" made visible: the directory shows each stack's last ledger run. "None of these are collected today": the telemetry server (4.1c) needs to know which names are official so official usage is counted and custom names are not |
-| Depends on | 4.0c (the build script, the `SignedIndex` envelope, inline signing, `--check`, `_headers` and the deploy procedure), 1.6c (`v*` release tags exist to read) |
-| Blocks | 4.1c (official names come from `v1/names.json`), 4.2b (stats go into the directory pages through their marker), 5.2 |
+| Depends on | 4.0c (the build script, the `SignedIndex` envelope, inline signing, `--check`, `_headers` and the deploy procedure), 4.0b (the `apps/web` site), 1.6c (`v*` release tags exist to read) |
+| Blocks | 4.1c (official names come from `v1/names.json`), 4.2b (stats sections on the directory pages), 5.2 |
 | Decisions needed | None beyond 4.0c's D21: the names file is signed exactly as the index is |
 | Settles | The official-names format and sources; the directory's content and ownership; the cache rules for both |
 
@@ -18,7 +18,7 @@ In:
 - `OfficialNames` and `NamedComposition` schemas added to `packages/format` (additive).
 - `v1/names.json`, written and signed by `build:index` in the same run as the index.
 - `--check` extended to verify `v1/names.json`.
-- The static directory: `index.html` and one `stacks/<id>/index.html` per indexed stack.
+- The directory in `stacks-api/apps/web`: an Astro page at `/` and one `stacks/<id>/` page per indexed stack, generated at build time from the index output.
 - `_headers` rules for the names file and the pages, and the deploy procedure's review step for both.
 
 Out:
@@ -31,7 +31,7 @@ Out:
 
 ### Where this fits
 
-4.0c built and signed the index. This sub-phase adds two more outputs to the same build so they are always published together and signed with the same key: the names file 4.1c reads, and the directory 4.2b and 4.2c extend.
+4.0c built and signed the index. This sub-phase adds the names file 4.1c reads to the same build, so it is always published with the index and signed with the same key, and adds the directory pages 4.2b and 4.2c extend to the site in `stacks-api/apps/web`. The index and names file are built here because they need CLI code; the pages are built there because they are presentation and read only the published index.
 
 ### Official names (`v1/names.json`)
 
@@ -65,21 +65,31 @@ Each stack lists the composition of its default set and one composition per opti
 
 ### Directory
 
-Static HTML, no client-side JavaScript, generated from the index entries and their bundles. It ships whether or not D17 is agreed.
+Astro pages with static output, generated at build time from the index entries and their bundles. `apps/web` reads the `--out` directory of a `build:index` run (its path is site build config), verifies the index signature with the published `INDEX_PUBLIC_KEYS` from `@quickstack/format`, and decodes it as `RegistryIndex`; a build over an index that fails either check fails. The pages ship no island here, so no client JavaScript. The directory ships whether or not D17 is agreed, and is rebuilt after each index deploy.
 
 - `/`: each stack's name, description, tags, last ledger run (`passed <date> with <agent>` or `carried forward from <date>`), and the copy command.
-- `/stacks/<id>/`: deps by role and default and optional fragments from the stack's frontmatter, the verify steps (name, phase, layer, command), the last ledger run, a link to the entry's source in the repo, and the exact command `npx quickstack new <id>`.
+- `/stacks/<id>/`: deps by role and default and optional fragments from the stack's frontmatter, the verify steps (name, phase, layer, command), the last ledger run, a link to the entry's source in the repo, and the exact command `npx @steamfield/stacks new <id>`.
 
-The stack's prose body is not rendered: rendering Markdown needs a new dependency, and the source link covers it. Each stack page holds one `<!-- quickstack:stats -->` comment where 4.2b inserts stats; until then it renders as nothing.
+The stack's prose body is not rendered here, and the source link covers it; rendering it with Astro's Markdown support is a later choice that needs no new dependency. Each stack page has one stats section component that 4.2b fills; until then it renders as nothing.
 
-### Output added to 4.0c's tree
+### Output
+
+This repository's build adds to 4.0c's tree:
 
 ```
 <out>/
   v1/names.json                                  SignedIndex envelope around OfficialNames
+```
+
+The site build in `stacks-api/apps/web` writes:
+
+```
+apps/web/dist/
   index.html                                     directory: every indexed stack
   stacks/<id>/index.html                         one page per indexed stack
 ```
+
+4.0b's deploy assembles both into one static directory.
 
 `_headers` rules added:
 
@@ -90,17 +100,18 @@ The stack's prose body is not rendered: rendering Markdown needs a new dependenc
 
 ### Deploying by hand
 
-4.0c's procedure in `packages/api/README.md` is unchanged except step 2, which also reviews the names added since the live `v1/names.json` (the script prints them) and the pages added or removed.
+4.0c's procedure in `stacks-api/apps/api/README.md` is unchanged except step 2, which also reviews the names added since the live `v1/names.json` (the script prints them), and step 3, whose deploy now builds `apps/web` over the `--out` directory first and lists the pages added or removed.
 
 ## Files and areas touched
 
 | Path | Change |
 |---|---|
-| `packages/cli/scripts/build-index.ts` | Names and directory outputs; `--check` covers `v1/names.json` |
-| `packages/cli/scripts/site/` | New: directory page templates (plain template strings) |
-| `packages/format/src/names.ts`, `src/index.ts` | New schemas |
-| `packages/cli/tests/build-index.test.ts`, `tests/fixtures/index/` | Names and directory cases, a fixture repo with tags |
-| `packages/api/README.md` | Review step for names and pages |
+| `packages/cli/scripts/build-index.ts` | Names output; `--check` covers `v1/names.json` |
+| `packages/format/src/names.ts`, `src/index.ts` | New schemas, published before the site uses them |
+| `packages/cli/tests/build-index.test.ts`, `tests/fixtures/index/` | Names cases, a fixture repo with tags |
+| `stacks-api/apps/web/src/pages/index.astro`, `src/pages/stacks/[id]/index.astro`, `src/lib/index-data.ts` | New: the directory pages and the build-time index reader |
+| `stacks-api/apps/web/tests/directory.test.ts` | New, over a fixture index output |
+| `stacks-api/apps/api/README.md` | Review step for names and pages |
 
 ## Acceptance tests
 
@@ -110,8 +121,8 @@ Over 4.0c's fixtures plus a fixture git repo with tags:
 - A tag whose registry fails today's decode still contributes its ids, and the build prints a warning naming the tag.
 - `--check` against the local server fails, naming `v1/names.json`, when one byte of its payload changes, and passes on a good build.
 - `--unsigned`: `v1/names.json` has `signature: ""`.
-- One directory page per indexed stack, containing the exact string `npx quickstack new <id>`, the stats marker, and no `<script>`.
-- `_headers` has the rules above; under the local Workers runtime from 4.0b, `GET /v1/names.json` and a stack page carry them.
+- In `stacks-api`, the site built over a fixture index output has one directory page per indexed stack, containing the exact string `npx @steamfield/stacks new <id>` and no `<script>`; a fixture index with a bad signature fails the site build.
+- `_headers` has the rules above; served by 4.0b's Node server, `GET /v1/names.json` and `GET /stacks/<id>/` carry them.
 
 ## Exit criteria
 
@@ -121,4 +132,5 @@ Over 4.0c's fixtures plus a fixture git repo with tags:
 ## What this plan may get wrong
 
 - Composing old tags with today's `compose` may disagree with what that release composed if composition rules changed. Step names are what 4.1b checks, and those come from verify sections, which compose by concatenation; if a rule change ever alters step names, the build should run the tag's own CLI instead.
+- 2026-10-27: the directory pages were planned as plain template strings in `packages/cli/scripts/site/`. Under D35 the visualization layer moved to `stacks-api/apps/web` as an Astro site, so that directory is no longer planned here; only the signed files are built in this repository.
 - Reading every tag with `git archive` grows with the number of releases. At a release a week that is years before it matters; cache per tag in the build's temporary directory if it ever does.

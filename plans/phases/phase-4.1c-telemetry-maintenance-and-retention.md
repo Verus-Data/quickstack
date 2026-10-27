@@ -8,14 +8,14 @@ Status: DRAFT 2026-10-26 (not agreed)
 | Traces to | The trust job: "the user wants to start work in a project they don't have to audit first", which here means data is kept only as long as promised. "None of these are collected today" (the data this keeps usable) |
 | Depends on | 4.1b (the tables, services and `rebuildProject`), [4.0e](phase-4.0e-official-names-and-directory.md) (the signed `v1/names.json` the official names come from; its key is 4.0c's `INDEX_PUBLIC_KEYS`) |
 | Blocks | 4.1d, 4.2a |
-| Decisions needed | D16 (assumed Workers with R2 for the archive; with Node and Postgres, the same `Archive` service writes to any private object store and the schedule is a cron on the host). D17 |
+| Decisions needed | D17. D16 is decided (Workers, with R2 for the archive), and this sub-phase starts after 4.0f |
 | Settles | The maintenance schedule, the lease shared with every scheduled step, the last-success marker, the archive format, the prune-after-verify rule, hash expiry, registry snapshots, and where official names and released versions come from |
 
 ## Scope
 
 In:
 
-- The `scheduled` export in `src/platform/worker.ts` and a cron trigger in `wrangler.jsonc` (host config, not CI).
+- The maintenance program behind 4.0f's `scheduled` export in `apps/api/src/platform/worker.ts`, and a cron trigger in `apps/api/wrangler.jsonc` (host config, not CI).
 - An `Archive` service (R2 and in-memory).
 - A `maintain` program: take the lease; archive, verify, prune; expire hashes; refresh `official_names` and `registry_snapshots`; refresh `released_versions` and queue the rows it newly covers for 4.1d; drop old `rate_counts`; write `last_success`; release the lease.
 - `maintenance_lease`, `maintenance_state` and `registry_snapshots` tables, and the `MaintenanceStore` service over them and the per-day counts and deletes the steps need.
@@ -55,10 +55,10 @@ The lease is taken with one conditional upsert (`INSERT ... ON CONFLICT (name) D
 | Step | Rule |
 |---|---|
 | Archive | For each `received_day` older than 7 days and not yet archived: write `events/<day>.ndjson.gz` to the private bucket, one line per row with `network_hash` removed, and object metadata `{ rows, excludedRows }` |
-| Verify and prune | For each day older than 90 days: read the archive object's metadata; delete that day's rows only if the object exists and its `rows` and `excludedRows` equal the current counts for that day in `events`. From [4.2d](phase-4.2d-dependency-telemetry-client-and-ingest.md) on, the same D1 batch also deletes the `event_deps` rows of the pruned events, in `packages/api/src/maintenance/maintain.ts`. Otherwise leave the rows and log `archive_mismatch` |
+| Verify and prune | For each day older than 90 days: read the archive object's metadata; delete that day's rows only if the object exists and its `rows` and `excludedRows` equal the current counts for that day in `events`. From [4.2d](phase-4.2d-dependency-telemetry-client-and-ingest.md) on, the same D1 batch also deletes the `event_deps` rows of the pruned events, in `stacks-api/apps/api/src/maintenance/maintain.ts`. Otherwise leave the rows and log `archive_mismatch` |
 | Expire hashes | `UPDATE events SET network_hash = NULL WHERE received_day < now - 30 days`; delete `rate_counts` older than one day |
 | Official names | Read `v1/names.json` from the Worker's own static assets binding and verify it with `INDEX_PUBLIC_KEYS` (4.0c). Write `names_last_outcome` (`invalid` for a bad signature, `missing` for no file, `unchanged` when the digest equals `names_digest`, else `ok`). If its digest differs from `names_digest`, insert a `registry_snapshots` row and upsert every stack and fragment id, and every step name with the stack it belongs to, setting `first_seen` on insert and `last_seen` to now for every name still present. Names are never removed, so a withdrawn stack's history keeps counting as official |
-| Released versions | Fetch the npm registry document for `quickstack` and upsert every published version; then, for rows with `excluded = 'unreleased_version'` whose `cli_version` is now listed, re-run 4.1b's `classify` without the version candidate (the only reason this step may clear) and call 4.1b's `rebuildProject` for each affected (install, project) pair. 4.1d changes this step to add the pairs to its `recheck_queue` instead of rebuilding them here. If npm is unreachable, keep the table and retry tomorrow |
+| Released versions | Fetch the npm registry document for `@steamfield/stacks` (D34) and upsert every published version; then, for rows with `excluded = 'unreleased_version'` whose `cli_version` is now listed, re-run 4.1b's `classify` without the version candidate (the only reason this step may clear) and call 4.1b's `rebuildProject` for each affected (install, project) pair. 4.1d changes this step to add the pairs to its `recheck_queue` instead of rebuilding them here. If npm is unreachable, keep the table and retry tomorrow |
 
 ### Registry snapshots
 
@@ -74,7 +74,7 @@ The 90-day cutoff stays: raw rows are deleted after 90 days, and `projects` and 
 export class Archive extends Context.Service<Archive, {
   readonly put: (key: string, body: Uint8Array, meta: ArchiveMeta) => Effect.Effect<void, ArchiveFailed>;
   readonly head: (key: string) => Effect.Effect<Option.Option<ArchiveMeta>, ArchiveFailed>;
-}>()("quickstack/api/Archive") {
+}>()("stacks-api/Archive") {
   static memory: () => Layer.Layer<Archive>;
 }
 
@@ -87,7 +87,7 @@ export class MaintenanceStore extends Context.Service<MaintenanceStore, {
   readonly dayRows: (day: string) => Stream.Stream<ArchivedRow, StoreUnavailable>;
   readonly pruneDay: (day: string) => Effect.Effect<number, StoreUnavailable>;
   readonly expireHashes: (before: string) => Effect.Effect<number, StoreUnavailable>;
-}>()("quickstack/api/MaintenanceStore") {
+}>()("stacks-api/MaintenanceStore") {
   static memory: () => Layer.Layer<MaintenanceStore>;
   static d1: Layer.Layer<MaintenanceStore, never, SqlClient.SqlClient>;
 }
@@ -99,7 +99,7 @@ export const maintain: (now: Date) => Effect.Effect<MaintenanceReport, never,
   EventStore | MaintenanceStore | Archive | IndexAssets | HttpClient.HttpClient>;
 ```
 
-`src/platform/worker.ts` provides R2 for `Archive`, the assets binding for `IndexAssets`, and `IndexAssets` reads signed files from the static assets and verifies each with `INDEX_PUBLIC_KEYS` before returning it: `v1/names.json` here, and `v1/allowlist.json` for 4.2d's ingest. The same file runs `maintain` from `scheduled` with the time the trigger passed in. Tests drive `maintain` directly with `TestClock` and the in-memory services, and once under the local Workers runtime with its scheduled-test mode.
+`apps/api/src/platform/worker.ts` provides R2 for `Archive`, the assets binding for `IndexAssets`, and `IndexAssets` reads signed files from the static assets and verifies each with `INDEX_PUBLIC_KEYS` before returning it: `v1/names.json` here, and `v1/allowlist.json` for 4.2d's ingest. The same file runs `maintain` from `scheduled` with the time the trigger passed in. Tests drive `maintain` directly with `TestClock` and the in-memory services, and once under the local Workers runtime with its scheduled-test mode.
 
 ### Failure modes
 
@@ -117,13 +117,13 @@ export const maintain: (now: Date) => Effect.Effect<MaintenanceReport, never,
 
 | Path | Change |
 |---|---|
-| `packages/api/src/maintenance/` | `maintain.ts`, `archive.ts`, `names.ts`, `versions.ts`, `lease.ts` |
-| `packages/api/src/store/maintenance.ts` | `MaintenanceStore` (memory and D1) |
-| `packages/api/migrations/` | `maintenance_lease`, `maintenance_state`, `registry_snapshots` |
-| `packages/api/src/platform/worker.ts`, `wrangler.jsonc` | `scheduled` export, cron, R2 binding |
-| `packages/api/tests/maintenance.test.ts` | New |
-| `packages/api/src/pages/telemetry.ts` | Retention text: 30 days for network hashes, 90 days for raw events, private archive |
-| `AGENTS.md` | The retention rule |
+| `stacks-api/apps/api/src/maintenance/` | `maintain.ts`, `archive.ts`, `names.ts`, `versions.ts`, `lease.ts` |
+| `stacks-api/apps/api/src/store/maintenance.ts` | `MaintenanceStore` (memory and D1) |
+| `stacks-api/apps/api/migrations/` | `maintenance_lease`, `maintenance_state`, `registry_snapshots` |
+| `stacks-api/apps/api/src/platform/worker.ts`, `apps/api/wrangler.jsonc` | `scheduled` runs `maintain`; cron, R2 binding |
+| `stacks-api/apps/api/tests/maintenance.test.ts` | New |
+| `stacks-api/apps/web/src/pages/telemetry.astro` | Retention text: 30 days for network hashes, 90 days for raw events, private archive |
+| `stacks-api/AGENTS.md` | The retention rule |
 
 ## Acceptance tests
 
@@ -141,7 +141,7 @@ export const maintain: (now: Date) => Effect.Effect<MaintenanceReport, never,
 
 ## Exit criteria
 
-- Acceptance tests pass; `bun run check` green from the repo root.
+- Acceptance tests pass; `bun run check` green in `stacks-api`.
 - The `/telemetry` page states the retention rules exactly as implemented.
 - After the first deploy, one scheduled run has completed, `official_names` and `released_versions` are filled and `last_success` is set before any CLI release turns collection on (checked by 4.1e's procedure).
 

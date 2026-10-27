@@ -4,18 +4,21 @@ Status: DRAFT 2026-10-26 (not agreed)
 
 | Field | Value |
 |---|---|
-| Goal | Move the entry, manifest and run-record schemas out of `packages/cli` into a private `packages/format`, add `canonicalBundle` and `bundleDigest`, and leave every CLI behavior unchanged |
-| Traces to | D11: "shared code gets its own package". The index build (4.0c), the remote origin (4.0d), the API (4.0b onward) and telemetry (4.1a, 4.1b) all need the same schemas; this is the second consumer D11 waits for |
+| Goal | Move the entry, manifest and run-record schemas out of `packages/cli` into `packages/format`, published for the API's repository (D35), add `canonicalBundle` and `bundleDigest`, and leave every CLI behavior unchanged |
+| Traces to | D11: "shared code gets its own package". The index build (4.0c), the remote origin (4.0d), telemetry (4.1a) and the API's ingest (4.1b onward, through the published copy) all need the same schemas; this is the second consumer D11 waits for |
 | Depends on | 1.3b (`RunRecord` exists to move), 1.6c (the published package whose packing 0.2 defined) |
-| Blocks | 4.0b, 4.1a; through them all of phase 4 |
+| Blocks | 4.0c, 4.0d, 4.1a, and the API's first import in 4.1b. 4.0b doesn't import it: before 4.0f the API serves only `/healthz` and static files |
 | Decisions needed | None. If D11 is ever reversed, this sub-phase is skipped and later sub-phases import from `packages/cli` through a published entry point instead |
-| Settles | What lives in `packages/format`; how the CLI depends on it without publishing it; the canonical bundle form |
+| Settles | What lives in `packages/format`; how the CLI depends on it through the workspace while the API depends on the published copy; the canonical bundle form |
 
 ## Scope
 
 In:
 
-- A new private workspace package `packages/format` (`@quickstack/format`, `"private": true`), never published.
+- A new workspace package `packages/format` (`@quickstack/format`). Amended 2026-10-27 under D35: it was private and never published, but the API now lives in its own repository and can only depend on it through a registry, so it is published (under the CLI's npm scope; the name is decided at publish time, like D34's). The CLI still links it through the workspace and bundles it.
+- A build for the published copy: `dist/` JavaScript plus `.d.ts` declarations. Exports conditions give the workspace the source and npm consumers `dist/` (below).
+- A pack test that installs the packed tarball into a temporary project and imports it under Node 22 with no TypeScript transform.
+- Publishing by hand: a maintainer packs and publishes it, as with the CLI's 0.1.0, until 5.0's release workflow takes over. The contract is the roadmap's "Published format package" row.
 - Moving the contracts the roadmap marks "moves in 4.0a" (see roadmap, [Contracts: Types and schemas](../roadmap.md#types-and-schemas)): `AgentId` and `DetectedAgent`; Entry format v1 (`StackMeta`, `FragmentMeta`, `VerifyStep`, `Probe`, `Check`); `Manifest`, `ManifestStep`, `EntryRef`; `RunRecord`. Same names, same behavior. `RunRecord` moves carrying 3.5b's optional `stages` field.
 - New: `EntryBundle` schema, `canonicalBundle` and `bundleDigest` (roadmap, Contracts: Canonical bundle).
 - Rewriting every CLI import of the moved code to `@quickstack/format` in this one change, and deleting the old files.
@@ -31,22 +34,25 @@ Out:
 
 ### Where this fits
 
-This is the first of five 4.0 sub-phases. 4.0a is a pure refactor plus two small new functions. 4.0b creates `packages/api` and imports `@quickstack/format` inside the Workers runtime to prove it runs there. 4.0c uses `canonicalBundle` and `bundleDigest` to publish bundles, 4.0e uses the signed envelope 4.0c adds for the official-names file, and 4.0d uses the same two functions to compare remote and bundled copies. Once this lands, `packages/format` changes only by adding files (4.0c, 4.0e, 4.1a, 4.2a), never by changing what it exports.
+4.0a is a pure refactor plus two small new functions and a build for the published copy. The API (`stacks-api`, D35) first imports `@quickstack/format` in 4.1b, which starts after 4.0f, so 4.1b's tests are the first to run it inside the Workers runtime. The API depends on it through an npm alias (`"@quickstack/format": "npm:<published name>@^<version>"`), so its source imports `@quickstack/format` whatever the published name turns out to be. 4.0c uses `canonicalBundle` and `bundleDigest` to publish bundles, 4.0e uses the signed envelope 4.0c adds for the official-names file, and 4.0d uses the same two functions to compare remote and bundled copies. Once this lands, `packages/format` changes only by adding files (4.0c, 4.0e, 4.1a, 4.2a), never by changing what it exports.
 
 ### Package shape
 
 ```
 packages/format/
-  package.json     name @quickstack/format, private, type module,
-                   exports { ".": "./src/index.ts" }, scripts typecheck/test/coverage/check/clean
+  package.json     name @quickstack/format, type module,
+                   exports { ".": { "bun": "./src/index.ts", "types": "./dist/index.d.ts",
+                   "default": "./dist/index.js" } },
+                   scripts build/typecheck/test/coverage/check/clean/pack
   tsconfig.json    extends ../../tsconfig.base.json; types: [] (no Node, no Bun)
   biome.json       { "root": false, "extends": "//", "plugins": [...] }
   biome-plugins/   no-platform-imports.grit
   src/             agent.ts, entry.ts, manifest.ts, run-record.ts, bundle.ts, index.ts
+  dist/            generated, gitignored: index.js and .d.ts files, the only files packed
   tests/
 ```
 
-It exports TypeScript source. No build step: the CLI's Node bundle (0.2) inlines it, Vitest transforms it, and the API's Worker bundler inlines it. The tsconfig has no `@types/node` or `@types/bun`, which is the check that the package is safe to run on Workers. Only `effect` (the core package, through `catalog:`) is a dependency; `@effect/platform-*`, `node:*` and `bun` imports are banned by the Grit rule.
+Inside this workspace the package resolves to its source: Bun's build (the CLI's Node bundle, 0.2) picks the `bun` condition, and Vitest is configured with the same condition, so no build is needed to run the CLI or its tests. The published copy resolves to `dist/`, which `build` emits with `tsc` (JavaScript plus declarations) before packing, because Node refuses to strip types from files under `node_modules` and the API's bundler shouldn't need to transform a dependency. The exact condition name is checked against Bun and Vitest's resolvers during the work; a custom condition is the fallback if `bun` is resolved somewhere it shouldn't be. The tsconfig has no `@types/node` or `@types/bun`, which is the check that the package is safe to run on Workers. Only `effect` (the core package, through `catalog:`) is a dependency; `@effect/platform-*`, `node:*` and `bun` imports are banned by the Grit rule.
 
 The package needs `typecheck`, `test` and `coverage` scripts so the root fan-out (`bun run --filter '*'`) runs it locally and in the existing CI job, which already calls `bun run typecheck` and `bun run coverage` at the root. No workflow change is needed (D23; CI edits are phase 5).
 
@@ -84,7 +90,7 @@ Rules (roadmap, Contracts: Canonical bundle): files sorted by path using byte or
 
 | Path | Change |
 |---|---|
-| `packages/format/` | New package as above |
+| `packages/format/` | New package as above, with its `build` and `pack` scripts and a pack test under `packages/format/tests/` |
 | `packages/cli/src/schemas/entry.ts`, `manifest.ts`, `verify.ts` (the `RunRecord` part) | Moved into `packages/format/src/`; removed from the CLI. `src/core/fingerprint.ts` and `src/core/compose/` stay |
 | `packages/cli/src/**`, `tests/**` | Imports rewritten to `@quickstack/format` |
 | `packages/cli/package.json` | `@quickstack/format: workspace:*` in `devDependencies` |
@@ -100,6 +106,7 @@ Rules (roadmap, Contracts: Canonical bundle): files sorted by path using byte or
 - The packed tarball from 0.2's build has no `@quickstack/format` in its `package.json`, and `npx` of the tarball in a temp directory runs `list --json` (0.2's existing packed-tarball e2e, unchanged, is the check).
 - `canonicalBundle`: the same files in a different order give identical bytes; a CRLF file and its LF copy give different digests; a binary file round-trips through `base64`; property test over random file sets that decode-then-canonicalize is stable.
 - `BundlePath` rejects `../x`, `/x`, `a/../../x`, `a\\b` and an empty string.
+- The packed `@quickstack/format` tarball holds only `dist/`, `package.json` and the license; installed into a temporary project under Node 22 with no TypeScript loader, `import { bundleDigest, Manifest } from "@quickstack/format"` runs and decodes a fixture manifest, and the declarations typecheck a consumer file with `tsc`.
 
 ## Exit criteria
 
@@ -109,7 +116,8 @@ Rules (roadmap, Contracts: Canonical bundle): files sorted by path using byte or
 
 ## What this plan may get wrong
 
-- Exporting `.ts` source assumes every consumer transforms TypeScript. Vitest, Bun and Wrangler's bundler do. If a tool doesn't (a future Node-only script), add a build step then rather than now.
+- 2026-10-27: the plan exported only `.ts` source with no build, assuming every consumer transforms TypeScript. A published package is read from `node_modules`, where Node's type stripping refuses `.ts`, so the published copy now builds `dist/` and the workspace keeps resolving source through an exports condition.
+- Exports conditions are resolved differently by Bun, Vitest and TypeScript. If one of them picks `dist/` inside the workspace, the CLI would run stale code after an edit without a rebuild; the acceptance tests run without a prior build to catch that.
 - `crypto.subtle.digest` is async, so `bundleDigest` returns an Effect. If a caller needs it synchronously, that caller is wrong about where it runs, not the function.
 - 2026-10-26: `EntryBundle.kind` reserved `"app"` for 3.5a's entry kind, the bundle listed `APP.md`, and bundle paths kept `_dot_` escaped names. The amended D18 withdrew 3.5a (an app is a fragment), so `kind` is `stack | fragment`, and dotfiles are literal in the entry directory, so bundle paths are too. A bundle path starting with `.` is ordinary; `BundlePath`'s traversal rules are unchanged.
 - Leaving `compose`, `composeFiles` and `fingerprint` in the CLI means the API can never compose a stack or compute a fingerprint itself. Nothing in phase 4 needs it to; if that changes, they move then, with the same "second consumer" rule.

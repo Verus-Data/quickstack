@@ -39,7 +39,7 @@ Out:
 | `GET /v1/stats/summary` | `list --json` and human `list` (4.2b) |
 | `GET /v1/stats/stacks/:id` | `show <stack> --json` and human `show` (4.2b) |
 | `GET /v1/stats/fragments/:id` | `show <fragment> --json` and human `show` (4.2b) |
-| `window_metrics` | The directory stats sections (4.2b) and sorted pages (4.2c), read in the Worker |
+| `window_metrics` | The directory stats sections (4.2b) and sorted pages (4.2c), read through the stats routes by the site build in `stacks-api/apps/web` and by its islands at view time |
 
 A route or metric with no reader in this table is not built.
 
@@ -150,13 +150,13 @@ GET /v1/stats/fragments/:id  -> StatsDetail (fragment fields)
 
 | Path | Change |
 |---|---|
-| `packages/api/src/stats/` | `rollup.ts`, `wilson.ts`, `cap.ts`, `suppress.ts`, `gate.ts`, `markers.ts` |
-| `packages/api/src/handlers/stats.ts`, `src/api.ts` | Routes |
-| `packages/api/migrations/` | `window_metrics` table |
-| `packages/api/src/platform/worker.ts`, `wrangler.jsonc` | Hourly cron; daily step added after 4.1d's steps |
+| `stacks-api/apps/api/src/stats/` | `rollup.ts`, `wilson.ts`, `cap.ts`, `suppress.ts`, `gate.ts`, `markers.ts` |
+| `stacks-api/apps/api/src/handlers/stats.ts`, `stacks-api/packages/contract/src/api.ts` | Routes, in the contract both apps import |
+| `stacks-api/apps/api/migrations/` | `window_metrics` table |
+| `stacks-api/apps/api/src/platform/worker.ts`, `wrangler.jsonc` | Hourly cron; daily step added after 4.1d's steps |
 | `packages/format/src/stats.ts` | `StatsSummary`, `StatsDetail` |
-| `packages/api/tests/stats.test.ts` | New |
-| `AGENTS.md` | Metric definitions in the words above |
+| `stacks-api/apps/api/tests/stats.test.ts` | New |
+| `stacks-api/AGENTS.md` | Metric definitions in the words above |
 
 ## Acceptance tests
 
@@ -182,7 +182,7 @@ GET /v1/stats/fragments/:id  -> StatsDetail (fragment fields)
 
 ## Exit criteria
 
-- Acceptance tests pass; `bun run check` green from the repo root.
+- Acceptance tests pass; `bun run check` green in `stacks-api`, and from this repository's root for the `StatsSummary` and `StatsDetail` schemas added to `packages/format` (published before the API uses them).
 - The maintainers agree the gate thresholds and cap values, and answer open questions 30 and 31.
 - The publishing gate is computed by the rollup, never set by hand.
 

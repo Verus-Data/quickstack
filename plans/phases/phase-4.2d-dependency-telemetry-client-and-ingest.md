@@ -85,7 +85,7 @@ The Worker reads the allowlist through 4.1c's `IndexAssets` service: it loads `v
 | `event_deps` | (`event_id`, `ecosystem`, `name`) PK, `major` |
 | `project_deps` | (`install_id`, `project_id`, `ecosystem`, `name`, `major`) PK, `first_seen_day`, `last_seen_day` |
 
-`event_deps` follows `events`: 4.1c's verified prune step in `packages/api/src/maintenance/maintain.ts` gains a delete of the `event_deps` rows whose `event_id` it prunes, in the same batch, and the rows are archived inside the event's payload by 4.1c's archive step. `project_deps` is the long-lived history: a new row when a (project, dependency) appears with a major it hasn't had, `last_seen_day` updated on later reports. It holds no network hash, the same rule as `projects`. Each event's `event_deps` and `project_deps` writes join 4.1b's per-event D1 batch, so they share its retry guard.
+`event_deps` follows `events`: 4.1c's verified prune step in `stacks-api/apps/api/src/maintenance/maintain.ts` gains a delete of the `event_deps` rows whose `event_id` it prunes, in the same batch, and the rows are archived inside the event's payload by 4.1c's archive step. `project_deps` is the long-lived history: a new row when a (project, dependency) appears with a major it hasn't had, `last_seen_day` updated on later reports. It holds no network hash, the same rule as `projects`. Each event's `event_deps` and `project_deps` writes join 4.1b's per-event D1 batch, so they share its retry guard.
 
 The write-time rule is 4.1b's: an event stored with any `excluded` value writes `event_deps` (the raw record) but never touches `project_deps`. 4.1d's recheck step, for each queued (install, project) pair, rebuilds that pair's `project_deps` from its non-excluded raw events in the same pass that rebuilds `projects`, while raw events exist; after 90 days the history is final.
 
@@ -99,12 +99,12 @@ The write-time rule is 4.1b's: an event stored with any `excluded` value writes 
 | `packages/cli/scripts/build-index.ts` | Build and sign `v1/allowlist.json`; fail on a bundled `deps` name in no ecosystem |
 | `packages/cli/src/telemetry/deps.ts`, `events.ts`, `ids.ts` | Reader, `deps` on verify, `depsSentAt`, `noticeVersion` |
 | `packages/cli/src/core/allowlist.ts` | Allowlist fetch beside 4.0d's index refresh (`src/core/remote-index.ts`), reusing its fetch rules |
-| `packages/api/src/handlers/allowlist.ts`, `src/api.ts` | `GET /v1/allowlist` |
-| `packages/api/src/ingest/deps.ts`, `src/store/` | v2 handling and tables; the verified allowlist read through 4.1c's `IndexAssets` |
-| `packages/api/src/maintenance/maintain.ts` | `event_deps` delete in the prune step |
-| `packages/api/src/integrity/recheck.ts` (4.1d), `src/store/projects.ts` | Rebuild `project_deps` for queued pairs beside the `projects` rebuild |
-| `packages/api/migrations/` | `event_deps`, `project_deps` |
-| `packages/api/src/pages/telemetry.ts`, `packages/cli/README.md` | The new field and the changed never-sent line |
+| `stacks-api/apps/api/src/handlers/allowlist.ts`, `stacks-api/packages/contract/src/api.ts` | `GET /v1/allowlist` |
+| `stacks-api/apps/api/src/ingest/deps.ts`, `src/store/` | v2 handling and tables; the verified allowlist read through 4.1c's `IndexAssets` |
+| `stacks-api/apps/api/src/maintenance/maintain.ts` | `event_deps` delete in the prune step |
+| `stacks-api/apps/api/src/integrity/recheck.ts` (4.1d), `src/store/projects.ts` | Rebuild `project_deps` for queued pairs beside the `projects` rebuild |
+| `stacks-api/apps/api/migrations/` | `event_deps`, `project_deps` |
+| `stacks-api/apps/web/src/pages/telemetry.astro`, `packages/cli/README.md` | The new field and the changed never-sent line |
 | Tests in all three packages | New |
 
 ## Acceptance tests
@@ -125,7 +125,7 @@ The write-time rule is 4.1b's: an event stored with any `excluded` value writes 
 
 ## Exit criteria
 
-- D25 and D17 decided. Acceptance tests pass; `bun run check` green from the repo root.
+- D25 and D17 decided. Acceptance tests pass; `bun run check` green from this repository's root and in `stacks-api`.
 - The README, `/telemetry` and the notice text describe the field exactly as implemented.
 - 4.1e's production acceptance steps rerun for the release that turns `deps` on, including a debug-output check that only allowlisted names leave the machine.
 

@@ -4,12 +4,12 @@ Status: DRAFT 2026-10-26 (not agreed)
 
 | Field | Value |
 |---|---|
-| Goal | Agents see per-stack stats in `list --json`, and the detail for one entry (step failures, per-agent breakdown, daily series with content-change markers) in `show --json`, from cached, bounded fetches that never fail a command, and people see a stats section on each directory page, rendered by the API from `window_metrics`, dated, and cached for an hour, with an explicit "not enough runs yet" state when there is nothing to show |
+| Goal | Agents see per-stack stats in `list --json`, and the detail for one entry (step failures, per-agent breakdown, daily series with content-change markers) in `show --json`, from cached, bounded fetches that never fail a command, and people see a stats section on each directory page, built into the static site in `stacks-api/apps/web` from the stats routes, dated, with an explicit "not enough runs yet" state when there is nothing to show |
 | Traces to | The coding agent "runs `list --json`, picks a stack" and its frustration is "ambiguity". Success rows 1 and 2 across users |
-| Depends on | 4.2a (the stats routes and `window_metrics`), 4.0d (the cached-fetch rules this reuses), 4.0e (the static directory pages and their stats marker), 3.1a (`show` and `ShowReport`) |
+| Depends on | 4.2a (the stats routes and `window_metrics`), 4.0d (the cached-fetch rules this reuses), 4.0e (the directory pages in `apps/web` and their stats section component), 3.1a (`show` and `ShowReport`) |
 | Blocks | 4.2c |
 | Decisions needed | D17. If declined, this sub-phase is skipped: the directory already shows ledger results (4.0e) and `list --json` already shows `lastRun` (4.0d) |
-| Settles | The `stats` field in `list --json` and `show --json`; the agent guide's rule for using it; how stats reach static pages without client-side JavaScript; what a page says when it has no numbers |
+| Settles | The `stats` field in `list --json` and `show --json`; the agent guide's rule for using it; how stats reach the static pages (at build time, with an island for anything fresher); what a page says when it has no numbers |
 
 ## Scope
 
@@ -18,19 +18,19 @@ In:
 - A `Stats` service in the CLI fetching `/v1/stats/summary` and `/v1/stats/{stacks,fragments}/:id` with 4.0d's cache, deadline and backoff rules.
 - `stats` on each `list --json` item and one line in human `list`; `stats` on `show --json` from the detail route and a few lines in human `show`.
 - One sentence in the no-argument agent guide (1.4).
-- An API route that serves a directory stack page with its stats section filled in: the numbers, the per-step failure breakdown, the date they were computed, or a fixed "not enough runs yet" sentence.
+- The stats section of each directory stack page and the index page in `stacks-api/apps/web`, filled at site build time from the stats routes: the numbers, the per-step failure breakdown, the date they were computed, or a fixed "not enough runs yet" sentence. The site is rebuilt and redeployed after each index deploy and after each daily rollup.
 
 Out:
 
 - New metrics or suppression rules (4.2a owns them).
-- Any page that needs client-side JavaScript.
+- Rendering pages in the Worker. The API serves only JSON routes and static files.
 - Sorted list pages, tag pages, fragment pages and pages for removed stacks (4.2c).
 
 ## Design
 
 ### Where this fits
 
-4.2a computes and gates the numbers. This sub-phase shows them in two places. The static directory from 4.0e stays the source of every page; this adds only the stats section.
+4.2a computes and gates the numbers. This sub-phase shows them in two places. The Astro directory from 4.0e stays the source of every page; this adds only the stats section.
 
 ### CLI
 
@@ -55,14 +55,15 @@ The agent guide gains one sentence: "When two stacks fit equally well, prefer th
 
 ### Directory stats
 
-The pages stay static files built by 4.0e. The Worker serves `/stacks/<id>/` itself instead of letting the static assets layer answer (a route registered for that path, with the asset fetched through the assets binding):
+The pages stay static files built by `apps/web`. At build time, behind the `STATS_ENABLED` site switch (roadmap, Contracts: Site feature switches), the site fetches `GET /v1/stats/summary` and `GET /v1/stats/stacks/:id` for each indexed stack through `HttpApiClient` over `packages/contract`, decodes them with `StatsSummary` and `StatsDetail`, and fills each page's stats section component:
 
-1. Read the static page from the assets binding.
-2. Read that stack's rows from `window_metrics` and apply 4.2a's suppression and gate.
-3. Replace the `<!-- quickstack:stats -->` marker with a server-rendered HTML section (projects, green rate with interval, median time to green, no-verify share, the per-step failure shares before first green, the population label, and "computed <generatedAt>, through <through>"), escaping every value. Unpublished, or every value suppressed: the marker is replaced with one fixed sentence, "Not enough runs yet to publish numbers for this stack.", followed by the last ledger run line the static page already has, so a page with no numbers doesn't look broken.
-4. Respond with `Cache-Control: public, max-age=3600`.
+1. Published with values: projects, green rate with interval, median time to green, no-verify share, the per-step failure shares before first green, the population label, and "computed <generatedAt>, through <through>". Astro escapes every value.
+2. Unpublished, or every value suppressed: one fixed sentence, "Not enough runs yet to publish numbers for this stack.", followed by the last ledger run line the page already has, so a page with no numbers doesn't look broken.
+3. Stats routes unreachable during the build: the build fails rather than publishing pages that silently dropped their numbers; the previous deploy stays live.
 
-The replacement is a plain string operation on the marker, not a Workers-specific HTML rewriter, so the code stays platform-free and testable on the Node harness. If the stats query fails, the static page is served unchanged with the same cache header shortened to five minutes. The index page `/` gets the same treatment with one cell per stack, using the same fixed sentence (shortened to "not enough runs yet") for a stack with nothing to show.
+The index page `/` gets one cell per stack the same way, with the fixed sentence shortened to "not enough runs yet". Pages keep 4.0e's `_headers` rule (`public, max-age=300`).
+
+The site is rebuilt after each index deploy and after each daily rollup (4.2a), by a scheduled job in `stacks-api`'s own CI, or by a maintainer by hand until that exists. A stack page also carries one small island that fetches `GET /v1/stats/stacks/:id` at view time and replaces the section when the response's `through` is newer than the built one, so a page is never more than a rollup behind; with JavaScript off or the fetch failing, the built section stays.
 
 ## Files and areas touched
 
@@ -72,9 +73,9 @@ The replacement is a plain string operation on the marker, not a Workers-specifi
 | `packages/cli/src/config.ts`, `src/bin.ts`, `tests/helpers/cli.ts` | `AppConfig.apiUrl` from `DEFAULT_API_URL`, passed by `bin.ts`; the test helper passes the local server's URL |
 | `packages/cli/src/commands/list.ts`, `show.ts`, `src/core/guide.ts` | `stats` fields, show lines, guide sentence |
 | `packages/cli/src/schemas/` | `list --json` item and `ShowReport` gain optional `stats` |
-| `packages/api/src/handlers/directory.ts`, `src/stats/render.ts` | Page route and section renderer |
-| `packages/api/wrangler.jsonc` | Route `/stacks/*` and `/` to the Worker before assets |
-| Tests in both packages | New |
+| `stacks-api/apps/web/src/components/StatsSection.astro`, `src/components/StatsRefresh.tsx`, `src/lib/stats-data.ts` | The built section, the view-time island, the build-time fetch |
+| `stacks-api/apps/web/astro.config.mjs`, `apps/web/src/site-config.ts` | The `STATS_ENABLED` switch (`astro:env` `envField`, `context: "server"`) |
+| `packages/cli/tests/` and `stacks-api/apps/web/tests/` | New, one set in each repository |
 | `packages/cli/README.md` | The `stats` field |
 
 ## Acceptance tests
@@ -87,16 +88,16 @@ The replacement is a plain string operation on the marker, not a Workers-specifi
 - `verify` makes no stats request.
 - `show go-cli --json` against the local server has `stats` that decodes with `StatsDetail`, including `byAgent` and the series with a seeded change marker; with the server down, `show --json` equals the output without the feature minus the field. A user-directory copy of `go-cli` makes no detail request and has no `stats`.
 - Human `show` prints the three most-failing steps and `content changed <date>` for a seeded marker inside the window.
-- API: `/stacks/go-cli/` with seeded metrics contains the stats section, the per-step failure shares and the computed and through dates, and the static page's other content byte-for-byte; with the gate unmet, the marker is replaced by the fixed "Not enough runs yet" sentence and nothing else changes; a stack name or step name containing `<` in a fixture is escaped.
-- The page response has `Cache-Control: public, max-age=3600`.
+- Site, built against a local API with seeded metrics: `/stacks/go-cli/index.html` contains the stats section, the per-step failure shares and the computed and through dates; with the gate unmet, the section is the fixed "Not enough runs yet" sentence and the rest of the page is unchanged; a stack name or step name containing `<` in a fixture is escaped; with the API down, the build fails; with `STATS_ENABLED` off, no page has a stats section and no stats request is made.
+- The island, given a response with a newer `through`, replaces the section; given an older one or a failed fetch, leaves it.
 
 ## Exit criteria
 
-- Acceptance tests pass; `bun run check` green from the repo root.
-- `AGENTS.md`, the CLI README and the directory's about text define every metric in 4.2a's words.
+- Acceptance tests pass; `bun run check` green from this repository's root and in `stacks-api`.
+- `AGENTS.md`, the CLI README, `stacks-api/AGENTS.md` and the directory's about text define every metric in 4.2a's words.
 
 ## What this plan may get wrong
 
-- A stack author may want the daily series as a chart. That needs client-side JavaScript or an image renderer; the series is in `show --json` for anyone who wants to plot it.
+- A stack author may want the daily series as a chart. With the site in Astro that is one more island over the detail route; it is left out until someone asks, and the series is in `show --json` for anyone who wants to plot it.
 - Agents may ignore `stats`. Test with a bench run (2.0b) where two stacks fit and see whether the pick and its explanation change before promoting it.
-- Routing the stack pages through the Worker means a Worker outage takes the directory down with it, where pure static pages wouldn't. Workers and static assets share the same host, so the practical difference is small; if not, serve stats as a separate fragment URL instead.
+- 2026-10-27: the plan rendered stats into the pages in the Worker by replacing a marker, with no client JavaScript. Under D35 the pages are an Astro site built at build time, so the Worker renders nothing and fresher numbers come from an island. A rebuild per daily rollup costs one CI run a day; if that becomes a burden, rely on the island and rebuild only after index deploys.
