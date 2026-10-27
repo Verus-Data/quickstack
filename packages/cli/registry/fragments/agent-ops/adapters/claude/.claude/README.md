@@ -13,18 +13,20 @@ Project instructions live in `AGENTS.md` at the repo root, which every coding ag
 
 | Hook | Event | What it does |
 | --- | --- | --- |
-| `session-start.sh` | SessionStart | Adds branch, dirty-file count, a warning on `main`, a missing `.env`, uninstalled dependencies (a `package.json` without `node_modules/` or a `pyproject.toml` without `.venv/`, at the root or one directory down, with the install command), compose services that aren't running, and a note when jq is missing. |
-| `block-destructive.sh` | PreToolUse `Bash` | Denies commands that destroy work or data: `rm` of `/`, `~` or `.`, a hard git reset, a forced git clean, force push (`--force-with-lease` is allowed), `DROP TABLE`, `docker compose down -v`, publishing a release. The guard matches the raw command text, so write docs that name these commands with Edit/Write, not a shell heredoc. The agent sees the reason and asks you instead. |
-| `detect-secrets.sh` | PreToolUse `Edit\|Write` | Denies writes containing credential-shaped strings (cloud and SaaS keys, private keys, tokens, connection strings with passwords). |
+| `session-start.sh` | SessionStart | Adds branch, dirty-file count, a warning on `main`, a pointer to `.quickstacks/BRIEF.md` while `AGENTS.md` is still a skeleton, a missing `.env`, uninstalled dependencies (a `package.json` without `node_modules/` or a `pyproject.toml` without `.venv/`, at the root or one directory down, with the install command), and compose services that aren't running. At most 15 lines. |
+| `block-destructive.sh` | PreToolUse `Bash` | Denies commands that destroy work or data: `rm` of `/`, `~`, `.`, `..` or a bare `*`, a hard git reset, a forced git clean, `git checkout .`, `git restore .`, `git branch -D`, dropping the stash, force push (`--force-with-lease` is allowed), `--no-verify`, `chmod 777`, a recursive `chown` of `/` or `~`, `dd` or `mkfs` on a disk, a fork bomb, a download piped into a shell, `sudo`, `DROP TABLE`, `docker compose down -v`, publishing a release. The guard matches the raw command text, so write docs that name these commands with Edit/Write, not a shell heredoc. |
+| `detect-secrets.sh` | PreToolUse `Edit\|Write` | Denies any write to `.env` or `.env.*` other than `.env.example` (or `.sample`, `.template`), and writes containing credential-shaped strings (cloud and SaaS keys, private keys, tokens, connection strings with passwords). The reason names the kind of secret, never the matched text. |
 | `lint-on-write.sh` | PostToolUse `Edit\|Write` | Runs the project's linter on the file just written (ruff, biome or eslint, golangci-lint or gofmt, shellcheck) and hands diagnostics back to the agent. Also records the path for `format-changed.sh`. |
 | `format-changed.sh` | Stop | Formats the files this session wrote with the formatters the project has configured (ruff, biome or prettier, gofmt), then forgets them. `lint-on-write.sh` records each path written through Edit/Write in a per-session list under `$TMPDIR/quickstacks-hooks/`, keyed by the session id. Files you or other agents in the same checkout are editing aren't touched; no session id means nothing is formatted. |
 | `_destructive-patterns.sh` | (sourced) | The pattern list behind `block-destructive.sh`. Reuse it from any hook that approves or rewrites Bash commands. |
-| `_lib.sh` | (sourced) | Shared helpers: jq check, project root, `find_up`, a portable `with_timeout`, the per-session file list. |
+| `_lib.sh` | (sourced) | Shared helpers: the payload reader, the deny and context responses, project root, `find_up`, a portable `with_timeout`, the per-session file list. |
 | <!-- quickstacks:fill One row per other file in hooks/ (harness, stack, and app hooks such as TypeScript guards): name, event and matcher from settings.json, what it does. Delete this row if there are none. --> | | |
 
 How they behave:
 
-- **Quiet when there's nothing to do.** A hook whose tool isn't installed exits 0 with no output. Without jq, every hook that reads its input is a no-op, which is why the worst destructive commands are also in `permissions.deny` in `settings.json`, and why `session-start.sh` says so.
+- **A block means ask the user.** A guard's deny tells the agent why; the agent asks you instead of rephrasing the command, splitting it up, or writing the file another way. Never work around a deny.
+- **Accidents, not adversaries.** The guards match regexes against the command or file text, not a shell parse. Quoting, `eval`, aliases and scripts that run a command indirectly get past them.
+- **Quiet when there's nothing to do.** A hook whose tool isn't installed exits 0 with no output. The hooks read their input with jq when it's on PATH and with a small awk reader otherwise, so they decide the same way on a machine without jq.
 - **Guards deny; everything else advises.** Only guards block anything: `block-destructive.sh`, `detect-secrets.sh`, and any guard listed above. Lint results arrive as context and never block a write.
 - **Nothing is downloaded.** Linters and formatters run only from the project's own install (`.venv`, `node_modules/.bin`) or from PATH. The hooks never call `npx`, `bunx`, or `uv run`, which could fetch packages or sync environments mid-session.
 - **Timeouts everywhere.** Each external call runs under a timeout, so a stuck linter or Docker daemon can't stall the session.
@@ -35,6 +37,10 @@ To try a hook by hand, pipe it a payload:
 ```bash
 echo '{"tool_name":"Bash","tool_input":{"command":"git reset --hard"}}' | bash .claude/hooks/block-destructive.sh
 ```
+
+### Turning one off
+
+`/hooks` in Claude Code lists what's wired. To run a session without hooks, set `"disableAllHooks": true` in `settings.local.json` and remove it afterwards; the `permissions.deny` rules still apply. There's no per-hook switch: to drop one hook for good, delete its entry from `settings.json`.
 
 ### Changing them
 
@@ -48,7 +54,7 @@ echo '{"tool_name":"Bash","tool_input":{"command":"git reset --hard"}}' | bash .
 
 `permissions.allow` starts with read-only git only (`status`, `diff`, `log`, `show`, `branch --show-current`). Add the project's own non-destructive commands (lint, test, typecheck) as they settle; leave deploy, publish, and anything destructive to prompt.
 
-`permissions.deny` repeats the worst destructive shapes (`rm -rf /`, `rm -rf ~`, `rm -rf .`, force push, `git reset --hard`) so they stay blocked on a machine without jq, where `block-destructive.sh` can't run. They are exact rules on purpose: a wildcard such as `Bash(rm -rf /*)` would match every `rm -rf /some/abs/path`, and a deny rule can't be overridden by an allow rule.
+`permissions.deny` repeats the worst destructive shapes (`rm -rf /`, `rm -rf ~`, `rm -rf .`, force push, `git reset --hard`, `--no-verify` on commit and push) so they stay blocked with hooks turned off. They are exact rules on purpose: a wildcard such as `Bash(rm -rf /*)` would match every `rm -rf /some/abs/path`, and a deny rule can't be overridden by an allow rule. It also denies reading `.env`, `.env.local`, `.env.*.local` and `.env.production` (`.env.example` stays readable), and editing `.quickstacks/manifest.json`: the manifest records the verify steps the project was generated with, and `quickstacks verify` fails a changed step, so the agent changes it only by asking you.
 
 Depending on which quickstacks fragments are installed, `settings.json` may also:
 

@@ -13,10 +13,20 @@ hook_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 # shellcheck source=_lib.sh
 source "$hook_dir/_lib.sh"
 
-hook_require_jq
-
 input=$(cat)
-file_path=$(printf '%s' "$input" | jq -r '.tool_input.file_path // empty' 2>/dev/null) || exit 0
+file_path=$(hook_get "$input" tool_input.file_path | head -n 1) || exit 0
+
+# .env files hold the real values; only the committed templates may be written.
+case "$(basename "$file_path")" in
+.env.example | .env.sample | .env.template) ;;
+.env | .env.*)
+  hook_deny "BLOCKED: $(basename "$file_path") holds real credentials, so agents don't write it.
+
+Put the variable's name in .env.example and ask the user to set the value in their .env.
+Never work around this block."
+  exit 0
+  ;;
+esac
 
 # Files where example credentials are expected, or that can't hold one.
 case "$file_path" in
@@ -27,9 +37,11 @@ esac
 
 # Write carries .content, Edit carries .new_string; the legacy MultiEdit tool
 # carries .edits[].new_string.
-text=$(printf '%s' "$input" | jq -r '
-  [ .tool_input.content?, .tool_input.new_string?, (.tool_input.edits[]?.new_string?) ]
-  | map(select(type == "string")) | join("\n")' 2>/dev/null) || exit 0
+text=$(
+  hook_get "$input" tool_input.content
+  hook_get "$input" tool_input.new_string
+  hook_get "$input" tool_input.edits.[].new_string
+) || exit 0
 [ -z "$text" ] && exit 0
 
 # Drop allowlisted lines before scanning.
@@ -77,13 +89,8 @@ reason="BLOCKED: possible secret in the write to $(basename "$file_path").
 Detected:
 ${findings}
 Read credentials from environment variables (document them in .env.example) or a secrets manager.
-If this is a deliberate fixture, ask the user, then mark the line with a \"pragma: allowlist secret\" comment."
+If this is a deliberate fixture, ask the user, then mark the line with a \"pragma: allowlist secret\" comment.
+Never work around this block."
 
-jq -n --arg reason "$reason" '{
-  hookSpecificOutput: {
-    hookEventName: "PreToolUse",
-    permissionDecision: "deny",
-    permissionDecisionReason: $reason
-  }
-}'
+hook_deny "$reason"
 exit 0

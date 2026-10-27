@@ -10,7 +10,7 @@ deps:
   backend-dev: [ruff, mypy, pytest, pytest-asyncio, pytest-xdist, pytest-cov, pytest-randomly, httpx]
   frontend: [react, react-dom, react-router, "@tanstack/react-query", zod, tailwindcss, "@tailwindcss/vite", class-variance-authority, lucide-react]
   frontend-dev: ["@react-router/dev", vite, "@vitejs/plugin-react", typescript, eslint, "@eslint/js", typescript-eslint, eslint-plugin-react-hooks, eslint-plugin-jsx-a11y, globals, prettier, vitest, "@vitest/coverage-v8", happy-dom, "@testing-library/react", "@testing-library/jest-dom", "@testing-library/user-event", msw, "@faker-js/faker", orval, "@playwright/test"]
-tools: [uv, bun, make, git]
+tools: [uv, bun, make, git, jq]
 merge: [.claude/settings.json]
 decisions:
   - "Python version: the newest stable CPython that FastAPI, ruff, and mypy support (default). Setup writes it to .python-version and requires-python."

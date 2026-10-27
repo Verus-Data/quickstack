@@ -1,0 +1,80 @@
+{
+  "recorded": "2026-10-26",
+  "note": "Hook input as Claude Code sends it on stdin, one payload per event and tool, recorded 2026-10-26. Paths are placeholders the tests replace. If Claude Code changes these shapes, re-record them under a new date.",
+  "PreToolUse.Bash": {
+    "session_id": "3f2c9a1e-7b4d-4e8a-9c61-2d5b8f0e4a17",
+    "transcript_path": "/transcripts/3f2c9a1e-7b4d-4e8a-9c61-2d5b8f0e4a17.jsonl",
+    "cwd": "/project",
+    "permission_mode": "default",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Bash",
+    "tool_input": {
+      "command": "git status",
+      "description": "Show working tree status",
+      "timeout": 120000
+    },
+    "tool_use_id": "toolu_01HookInputBashFixture"
+  },
+  "PreToolUse.Write": {
+    "session_id": "3f2c9a1e-7b4d-4e8a-9c61-2d5b8f0e4a17",
+    "transcript_path": "/transcripts/3f2c9a1e-7b4d-4e8a-9c61-2d5b8f0e4a17.jsonl",
+    "cwd": "/project",
+    "permission_mode": "default",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Write",
+    "tool_input": {
+      "file_path": "/project/src/config.ts",
+      "content": "export const value = 1;\n"
+    },
+    "tool_use_id": "toolu_01HookInputWriteFixture"
+  },
+  "PreToolUse.Edit": {
+    "session_id": "3f2c9a1e-7b4d-4e8a-9c61-2d5b8f0e4a17",
+    "transcript_path": "/transcripts/3f2c9a1e-7b4d-4e8a-9c61-2d5b8f0e4a17.jsonl",
+    "cwd": "/project",
+    "permission_mode": "default",
+    "hook_event_name": "PreToolUse",
+    "tool_name": "Edit",
+    "tool_input": {
+      "file_path": "/project/src/config.ts",
+      "old_string": "export const value = 1;",
+      "new_string": "export const value = 2;",
+      "replace_all": false
+    },
+    "tool_use_id": "toolu_01HookInputEditFixture"
+  },
+  "PostToolUse.Write": {
+    "session_id": "3f2c9a1e-7b4d-4e8a-9c61-2d5b8f0e4a17",
+    "transcript_path": "/transcripts/3f2c9a1e-7b4d-4e8a-9c61-2d5b8f0e4a17.jsonl",
+    "cwd": "/project",
+    "permission_mode": "default",
+    "hook_event_name": "PostToolUse",
+    "tool_name": "Write",
+    "tool_input": {
+      "file_path": "/project/src/config.ts",
+      "content": "export const value = 1;\n"
+    },
+    "tool_response": {
+      "type": "create",
+      "filePath": "/project/src/config.ts",
+      "content": "export const value = 1;\n",
+      "structuredPatch": []
+    },
+    "tool_use_id": "toolu_01HookInputWriteFixture"
+  },
+  "Stop": {
+    "session_id": "3f2c9a1e-7b4d-4e8a-9c61-2d5b8f0e4a17",
+    "transcript_path": "/transcripts/3f2c9a1e-7b4d-4e8a-9c61-2d5b8f0e4a17.jsonl",
+    "cwd": "/project",
+    "permission_mode": "default",
+    "hook_event_name": "Stop",
+    "stop_hook_active": false
+  },
+  "SessionStart": {
+    "session_id": "3f2c9a1e-7b4d-4e8a-9c61-2d5b8f0e4a17",
+    "transcript_path": "/transcripts/3f2c9a1e-7b4d-4e8a-9c61-2d5b8f0e4a17.jsonl",
+    "cwd": "/project",
+    "hook_event_name": "SessionStart",
+    "source": "startup"
+  }
+}

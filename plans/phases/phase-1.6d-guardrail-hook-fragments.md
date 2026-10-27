@@ -1,6 +1,7 @@
 # Phase 1.6d: Guardrail hook fragments
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: EXECUTED 2026-10-26 on feat/phase-1-catalog (awaiting review)
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -96,25 +97,26 @@ scripts aren't prose and don't count.
 
 ## Acceptance tests
 
-`tests/registry-hooks.test.ts`, on the files `new astro-blog --no-launch` writes into a
-temp dir:
+`packages/cli/tests/registry-hooks.test.ts`, on the files `new astro-blog app --json`
+writes into a temp dir (numbered 2026-10-26 for the acceptance trace; the wording is
+the original bullets):
 
-- Each guard blocks every pattern in its list and allows a near miss for each (removing
-  `./dist`, a plain `git push`, `git reset --soft`, `.env.example`, a 10-character `sk-`
-  string), with the block response in the agent's documented shape and the pattern's
-  name, never the matched text, in the message.
-- Every hook runs under `/bin/bash` when it is bash 3.x (macOS), and under the `bash` on
-  PATH otherwise; the test prints which. A static check fails on any bash 4 construct
-  (`declare -A`, `mapfile`, `readarray`, `${x,,}`, `${x^^}`, `|&`, `;&`) in a shipped
-  script.
-- Every hook gives the same decision with `jq` on PATH and with a PATH built without it.
-- Composing each bundled stack, `.claude/settings.json` wires each hook command
-  exactly once, even though several fragments merge into it, and each deny rule appears
-  once.
-- Every shipped script is executable.
-- `lint-on-write.sh` with no lint command defined exits 0 silently; `format-on-stop.sh`
-  with a failing `format` command exits 0.
-- `validate` over the bundled registry still has zero errors and zero warnings.
+1. Each guard blocks every pattern in its list and allows a near miss for each (removing
+   `./dist`, a plain `git push`, `git reset --soft`, `.env.example`, a 10-character `sk-`
+   string), with the block response in the agent's documented shape and the pattern's
+   name, never the matched text, in the message.
+2. Every hook runs under `/bin/bash` when it is bash 3.x (macOS), and under the `bash` on
+   PATH otherwise; the test prints which. A static check fails on any bash 4 construct
+   (`declare -A`, `mapfile`, `readarray`, `${x,,}`, `${x^^}`, `|&`, `;&`) in a shipped
+   script.
+3. Every hook gives the same decision with `jq` on PATH and with a PATH built without it.
+4. Composing each bundled stack, `.claude/settings.json` wires each hook command
+   exactly once, even though several fragments merge into it, and each deny rule appears
+   once.
+5. Every shipped script is executable.
+6. `lint-on-write.sh` with no lint command defined exits 0 silently; `format-on-stop.sh`
+   with a failing `format` command exits 0.
+7. `validate` over the bundled registry still has zero errors and zero warnings.
 
 These run inside `bun run test`, so the existing CI job runs them on Ubuntu and macOS with
 no workflow change.
@@ -142,3 +144,54 @@ no workflow change.
   stack. 1.1's merge concatenates arrays, so "each hook command exactly once" depends on
   no two fragments shipping the same hook entry; if one does, the test fails and the
   duplicate moves to one owner.
+- 2026-10-26, on execution: the hooks already shipped with 1.6a, so this sub-phase
+  compared them with the design above, filled the gaps and kept the rest. What differs:
+  - Names. The shipped names stay: `_lib.sh` (plus `_destructive-patterns.sh`, the
+    pattern list in its own sourced file so another hook can reuse it),
+    `block-destructive.sh`, `detect-secrets.sh` and `format-changed.sh`, not `lib.sh`,
+    `guard-destructive.sh`, `guard-secrets.sh` and `format-on-stop.sh`. The acceptance
+    tests' names map onto them.
+  - jq. The shipped hooks were no-ops without jq. `_lib.sh::hook_get` now reads the
+    payload with jq when it's on PATH and with an awk walker otherwise (awk rather than
+    sed: a JSON string with escapes needs a small state machine), and every response is
+    written by `_lib.sh::hook_deny` / `hook_context` without jq, so both paths answer
+    alike. `jq` left `agent-ops`'s `tools`; python-react, whose own
+    `guard-generated.sh` still needs jq, now lists it.
+  - Destructive list. Added `git branch -D`, `--no-verify` on commit and push, `chown -R`
+    of `/` or `~`, a fork bomb, a download piped into a shell, and `sudo` (the last two in
+    command position only, so a commit message mentioning them passes). Kept from the
+    shipped list, broader than the plan: `git clean` with any `-f`, `chmod 777` without
+    `-R`, the stash drop, `find -delete`, database drops, Docker volume deletion,
+    publishing. Narrower, on purpose: `git push --force-with-lease` is allowed (the
+    guard's own suggestion for a needed force push), and `dd` blocks only disk devices
+    (`of=/dev/null` passes).
+  - Secrets. The shipped shapes cover the plan's list with length floors (`ghp_` plus
+    36 characters, `sk-` plus 40) and add more (GitLab, Google, npm, JWTs, connection
+    strings). Added: any write or edit to `.env` or `.env.*` is denied except
+    `.env.example`, `.env.sample` and `.env.template`. The shipped hook skips Markdown and
+    text files, where example keys are expected; kept.
+  - Settings deny rules. Added `--no-verify` on commit and push, reading `.env`,
+    `.env.local`, `.env.*.local` and `.env.production` (a `.env.*` wildcard would also
+    deny `.env.example`, and an allow can't override a deny), and
+    `Edit(./.quickstacks/manifest.json)` (Edit rules cover Write).
+  - Bounds. Lint diagnostics are capped at 60 lines (the shipped value), not 40; block
+    messages are a few lines. `session-start.sh` now stops at 15 lines.
+  - `session-start.sh` reports what it already did (branch, `main`, `.env`, dependencies,
+    compose services) and now points at `.quickstacks/BRIEF.md` while `AGENTS.md` still
+    has `quickstacks:fill` markers. It doesn't list missing tools (the manifest's tools
+    are nested JSON, out of reach of the jq-free reader) or detect "reached green"
+    (verify doesn't exist yet).
+  - `lint-on-write.sh` picks the linter by file extension from the project's own install
+    (ruff, biome or eslint, golangci-lint or gofmt, shellcheck) rather than a Makefile or
+    `package.json` `lint` target, which lints the whole project on every write. "No lint
+    command" in test 6 means no linter installed for the file.
+  - `format-changed.sh` formats the files this session wrote, recorded by
+    `lint-on-write.sh`, with the formatter the project configured, rather than a `format`
+    target over every file git reports changed, so parallel agents in one checkout don't
+    reformat each other's work. It now also traps any unhandled failure to exit 0.
+  - "Every shipped script is executable" now holds for the two sourced libraries too, in
+    the working tree and in git's index; the settings call each hook through `bash`, so
+    the bit is belt and braces.
+  - The claude-harness TypeScript hooks wire different commands from agent-ops (package
+    manager, generated-file and typecheck guards), so the two never double-wire; test 4
+    also fails if two wired scripts share a name across languages.

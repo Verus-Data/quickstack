@@ -117,6 +117,15 @@ is_destructive() {
     hit "chmod 777 makes files world-writable." "Use 755 for directories and 644 for files."
     return 0
   fi
+  if m "${word}chown[[:space:]]+([^;&|]*[[:space:]])?-[[:alpha:]]*R[^;&|]*[[:space:]][\"']?(/|~|\\\$HOME|\\\$\{HOME\})/?[\"']?${end}"; then
+    hit "Recursive chown of the filesystem root or home." "Name the exact directory. Ask the user first."
+    return 0
+  fi
+  # :(){ :|:& };: and the same shape under any function name.
+  if m "\(\)[[:space:]]*\{[^}]*\|[^}]*&[^}]*\}[[:space:]]*;"; then
+    hit "A fork bomb exhausts the machine's processes." "Do not run it."
+    return 0
+  fi
 
   # --- Git: discarding uncommitted work --------------------------------------
   if m "git[[:space:]]+checkout[[:space:]]+(--[[:space:]]+)?\.${end}"; then
@@ -138,6 +147,17 @@ is_destructive() {
   fi
   if m "git[[:space:]]+stash[[:space:]]+(drop|clear)"; then
     hit "git stash drop/clear destroys stashed work." "Other sessions may have work in the stash. Ask the user first."
+    return 0
+  fi
+  if m "git[[:space:]]+branch[[:space:]](.*[[:space:]])?-[a-zA-Z]*D"; then
+    hit "git branch -D deletes a branch even when its commits are merged nowhere." \
+      "Use git branch -d, which refuses unmerged work. Ask the user first."
+    return 0
+  fi
+
+  # --- Git: skipping the project's hooks ---------------------------------------
+  if m "git[[:space:]]+(commit|push)[[:space:]](.*[[:space:]])?--no-verify"; then
+    hit "--no-verify skips the project's git hooks." "Fix what the hook reports instead. Ask the user first."
     return 0
   fi
 
@@ -183,6 +203,22 @@ is_destructive() {
     m "${word}goreleaser[[:space:]]+release"; } &&
     ! m "(--dry-run|--snapshot)"; then
     hit "Publishing a release is irreversible." "Releases are user-initiated. Ask the user first."
+    return 0
+  fi
+
+  # --- Running downloaded code and raising privileges --------------------------
+  # Only in command position (start, after a separator, then/do), so a commit
+  # message or an echo that mentions them isn't blocked.
+  local cmd='(^|[;&|(`]|then|do)[[:space:]]*'
+  local shell_word='(sudo[[:space:]]+)?(ba|z|da|k)?sh([[:space:]]|$)'
+  if m "${cmd}(curl|wget)[[:space:]][^;&|]*\|[[:space:]]*${shell_word}" ||
+    m "${cmd}(ba|z|da|k)?sh[[:space:]]+<\([[:space:]]*(curl|wget)[[:space:]]"; then
+    hit "Piping a download into a shell runs code nobody has read." \
+      "Download the script, show it to the user, and ask before running it."
+    return 0
+  fi
+  if m "${cmd}sudo([[:space:]]|$)"; then
+    hit "sudo runs the command as root." "Ask the user to run it themselves if it is needed."
     return 0
   fi
 

@@ -4,14 +4,88 @@
 #
 # Written for bash 3.2 (the macOS default) under `set -euo pipefail`.
 
-# Every hook that parses its JSON payload needs jq. Without it the hook drains
-# stdin and exits 0, so a machine missing jq loses the hooks instead of failing
-# every tool call. session-start.sh says so once per session.
-hook_require_jq() {
-  if ! command -v jq >/dev/null 2>&1; then
-    cat >/dev/null 2>&1 || true
-    exit 0
+# hook_get <payload-json> <path>: print every string value at <path>, one per
+# line (a value may itself hold newlines). <path> names object keys joined by
+# dots, with [] for any array element: tool_input.command,
+# tool_input.edits.[].new_string. Only string values are read.
+#
+# jq reads the payload when it is on PATH. Without it a small awk reader walks
+# the JSON instead, so every hook makes the same decision either way. The
+# reader decodes the standard escapes and \u escapes for printable ASCII; other
+# \u escapes stay as written, which no pattern in these hooks depends on.
+hook_get() {
+  if command -v jq >/dev/null 2>&1; then
+    printf '%s' "$1" | jq -r --arg want "$2" '
+      paths(type == "string") as $p
+      | select($p | map(if type == "number" then "[]" else . end) | join(".") == $want)
+      | getpath($p)' 2>/dev/null
+    return
   fi
+  printf '%s' "$1" | LC_ALL=C awk -v want="$2" '
+    function hexval(h, i, c, v) {
+      v = 0
+      for (i = 1; i <= 4; i++) {
+        c = index("0123456789abcdef", tolower(substr(h, i, 1)))
+        if (c == 0) return -1
+        v = v * 16 + c - 1
+      }
+      return v
+    }
+    function here(p, j) {
+      p = ""
+      for (j = 1; j <= d; j++) p = p (j > 1 ? "." : "") k[j]
+      return p
+    }
+    { s = s $0 "\n" }
+    END {
+      n = length(s); i = 1; d = 0; iskey = 0
+      while (i <= n) {
+        c = substr(s, i, 1)
+        if (c == "{") { d++; t[d] = "o"; k[d] = ""; iskey = 1; i++; continue }
+        if (c == "[") { d++; t[d] = "a"; k[d] = "[]"; iskey = 0; i++; continue }
+        if (c == "}" || c == "]") { d--; iskey = 0; i++; continue }
+        if (c == ",") { iskey = (t[d] == "o"); i++; continue }
+        if (c != "\"") { i++; continue }
+        key = iskey; emit = !key && here() == want; str = ""; i++
+        while (i <= n) {
+          c = substr(s, i, 1)
+          if (c == "\"") { i++; break }
+          if (c == "\\") {
+            e = substr(s, i + 1, 1); i += 2
+            if (e == "n") c = "\n"; else if (e == "t") c = "\t"; else if (e == "r") c = "\r"
+            else if (e == "b") c = "\b"; else if (e == "f") c = "\f"
+            else if (e == "u") {
+              v = hexval(substr(s, i, 4))
+              if (v >= 32 && v < 127) { c = sprintf("%c", v); i += 4 }
+              else c = "\\u"
+            } else c = e
+          } else i++
+          if (key) str = str c; else if (emit) printf "%s", c
+        }
+        if (key) { k[d] = str; iskey = 0 } else if (emit) printf "\n"
+      }
+    }'
+}
+
+# json_quote <text>: <text> as a JSON string, control bytes other than tab and
+# newline dropped. Needs no jq, so a block reads the same on every machine.
+json_quote() {
+  printf '%s' "$1" | tr -d '\000-\010\013\014\016-\037' |
+    sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' -e 's/	/\\t/g' |
+    awk 'BEGIN { printf "\"" } NR > 1 { printf "\\n" } { printf "%s", $0 } END { printf "\"" }'
+}
+
+# hook_deny <reason>: the PreToolUse response that denies the tool call. The
+# agent sees <reason>; keep it free of the text that matched.
+hook_deny() {
+  printf '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":%s}}\n' \
+    "$(json_quote "$1")"
+}
+
+# hook_context <event> <text>: hand <text> to the agent as additional context.
+hook_context() {
+  printf '{"hookSpecificOutput":{"hookEventName":"%s","additionalContext":%s}}\n' \
+    "$1" "$(json_quote "$2")"
 }
 
 # The project root: $CLAUDE_PROJECT_DIR when Claude Code set it (it always does
@@ -84,7 +158,7 @@ with_timeout() {
 # elsewhere. Returns 1 when the payload has no usable session_id.
 session_file_list() {
   local id dir
-  id=$(printf '%s' "$1" | jq -r '.session_id // empty' 2>/dev/null) || return 1
+  id=$(hook_get "$1" session_id | head -n 1) || return 1
   id=$(printf '%s' "$id" | tr -cd 'A-Za-z0-9_-')
   [ -n "$id" ] || return 1
   dir="${TMPDIR:-/tmp}"
