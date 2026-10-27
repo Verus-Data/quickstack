@@ -91,6 +91,8 @@ export function installSignalPolicy(holder: ProcessHolder, interrupt: () => void
           return;
         case "ignore":
           return;
+        default:
+          next.action satisfies never;
       }
     };
     listeners.set(signal, listener);

@@ -228,7 +228,7 @@ export class Registry extends Context.Service<
             Effect.map((found) => [...found].sort()),
             Effect.catch((error) =>
               notFound(error)
-                ? Effect.succeed([] as string[])
+                ? Effect.succeed<Array<string>>([])
                 : Effect.fail(new PermissionDenied({ details: { reason: "read", path: dir } })),
             ),
           );
