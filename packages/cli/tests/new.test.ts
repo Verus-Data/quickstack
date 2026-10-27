@@ -117,9 +117,13 @@ describe("new writes a project", () => {
       warnings: [],
       git: "none",
       stateRecord: true,
+      // 1.4 widened the handoff: --json never launches.
       handoff: {
         kind: "print",
-        next: "Read .quickstacks/BRIEF.md and carry it out. It is your full task for this project; you're done when `quickstacks verify` passes.",
+        reason: "json",
+        untrusted: [],
+        prompt:
+          "Read .quickstacks/BRIEF.md and carry it out. It's your full task for this project; you're done when quickstacks verify passes.",
       },
     });
     expect(tree(app)).toEqual([
@@ -221,9 +225,11 @@ describe("new writes a project", () => {
     expect(stdout).toContain(
       "  qs-fragment-tool not found (needed by tooled; skip with --without tooled)\n",
     );
-    expect(stdout.trimEnd().split("\n").slice(-2)).toEqual([
-      "Next: cd app, then start your coding agent there with this prompt:",
-      "  Read .quickstacks/BRIEF.md and carry it out. It is your full task for this project; you're done when `quickstacks verify` passes.",
+    // 1.4: no terminal here, so the prompt is printed with an example command.
+    expect(stdout.trimEnd().split("\n").slice(-3)).toEqual([
+      "Next: open app in your coding agent and give it this prompt:",
+      "  Read .quickstacks/BRIEF.md and carry it out. It's your full task for this project; you're done when quickstacks verify passes.",
+      `For example: cd app && claude "Read .quickstacks/BRIEF.md and carry it out. It's your full task for this project; you're done when quickstacks verify passes."`,
     ]);
   });
 

@@ -2,11 +2,14 @@ import { Effect, Schema } from "effect";
 import { TEMPLATE_VARIABLES } from "./core/scaffold/template";
 import { printable } from "./core/text";
 import { Kind, Origin } from "./schemas/entry";
-/** An unknown subcommand: what was typed and up to three close known names (`core/suggest.ts`). */
-export const UsageDetails = Schema.Struct({
-  command: Schema.String,
-  suggestions: Schema.Array(Schema.String),
-});
+/**
+ * An unknown subcommand: what was typed and up to three close known names (`core/suggest.ts`).
+ * Or two flags that can't be used together, as typed (`new --launch` with `--no-launch`, 1.4).
+ */
+export const UsageDetails = Schema.Union([
+  Schema.Struct({ command: Schema.String, suggestions: Schema.Array(Schema.String) }),
+  Schema.Struct({ flags: Schema.Tuple([Schema.String, Schema.String]) }),
+]);
 export class Usage extends Schema.TaggedError<Usage>()("Usage", {
   details: Schema.optionalKey(UsageDetails),
 }) {
@@ -82,9 +85,10 @@ export class VerifyChanged extends Schema.TaggedError<VerifyChanged>()("VerifyCh
  * `reason` is a closed set later sub-phases extend; `path` is the file or directory involved.
  * `escape`: a write would land outside the project (its real path isn't under the project's).
  * `unwritable`: the project directory or a file in it couldn't be created or written.
+ * `launch`: the agent CLI `new` hands off to (`path`) was found but couldn't be executed (1.4).
  */
 export const PermissionDeniedDetails = Schema.Struct({
-  reason: Schema.Literals(["write", "read", "escape", "unwritable"]),
+  reason: Schema.Literals(["write", "read", "escape", "unwritable", "launch"]),
   path: Schema.optionalKey(Schema.String),
 });
 export class PermissionDenied extends Schema.TaggedError<PermissionDenied>()("PermissionDenied", {
@@ -279,10 +283,17 @@ export function knownError(value: unknown): AppError | undefined {
  */
 export function detailLines(error: AppError, invocation: string): string[] {
   switch (error._tag) {
-    case "Usage":
-      return error.details?.suggestions.length
-        ? [`Did you mean: ${error.details.suggestions.join(", ")}?`]
+    case "Usage": {
+      const details = error.details;
+      if (details && "flags" in details)
+        return [
+          `${details.flags[0]} and ${details.flags[1]} can't be used together.`,
+          "Next: drop one of them.",
+        ];
+      return details?.suggestions.length
+        ? [`Did you mean: ${details.suggestions.join(", ")}?`]
         : [];
+    }
     case "PermissionDenied": {
       const details = error.details;
       if (!details) return [];
@@ -297,7 +308,12 @@ export function detailLines(error: AppError, invocation: string): string[] {
                 "The project directory or a file in it can't be written. Nothing was left behind.",
                 "Next: pick a directory you can write to, or fix this one's permissions.",
               ]
-            : [];
+            : details.reason === "launch"
+              ? [
+                  "The agent CLI was found on PATH but can't be run by you. The project was written.",
+                  "Next: fix the binary's permissions, or start your agent in the project yourself.",
+                ]
+              : [];
       return [...(details.path ? [`Path: ${printable(details.path)}`] : []), ...why];
     }
     case "TargetNotEmpty": {

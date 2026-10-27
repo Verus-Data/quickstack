@@ -2,6 +2,7 @@ import { Cause, Clock, Console, Effect, Exit, Logger, References } from "effect"
 import { CliError, Command } from "effect/cli";
 import { cli } from "./cli";
 import { AppConfig } from "./config";
+import { helpFooter } from "./core/guide";
 import { closest } from "./core/suggest";
 import {
   type AppError,
@@ -15,6 +16,7 @@ import {
 } from "./errors";
 import { defectTrace, entry, Logging } from "./logging";
 import { Host } from "./services/host";
+import { Invocation } from "./services/invocation";
 import { Output } from "./services/output";
 import { VERSION } from "./version";
 /** Whether one of `flags` comes before any `--`; what follows `--` belongs to the command. */
@@ -31,6 +33,15 @@ function subcommandNames(root: Command.Command.Any, path: readonly string[]): st
     .flatMap((group) => group.commands)
     .filter((command) => !command.unlisted)
     .flatMap((command) => (command.alias ? [command.name, command.alias] : [command.name]));
+}
+/** Help was asked for the root itself: `--help` with no subcommand name before any `--`. */
+function rootHelp(args: readonly string[]): boolean {
+  const end = args.indexOf("--");
+  const names = subcommandNames(cli, [cli.name]);
+  return (
+    hasFlag(args, "--help", "-h") &&
+    !(end === -1 ? args : args.slice(0, end)).some((arg) => names.includes(arg))
+  );
 }
 /**
  * A parser failure is Usage; an unknown subcommand also names close known subcommands. The
@@ -94,9 +105,11 @@ export function main(
         trace: capture,
         warn: capture,
       };
+      const reported = Invocation.make();
       const exit = yield* Effect.exit(
         restore(
           program.pipe(
+            Effect.provide(reported.layer),
             Effect.provideService(Console.Console, captured),
             Effect.provide(Logger.layer([logging.logger])),
             Effect.provideService(References.MinimumLogLevel, settings.level),
@@ -128,15 +141,18 @@ export function main(
       }
       if (error instanceof BrokenPipe) return 0;
       if (!error && (help || framework.length)) {
-        const text = framework
+        const plain = framework
           .join("\n")
           .replace(new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*m`, "g"), "");
+        // The root's help ends with where an agent starts; a subcommand's help doesn't.
+        const text = rootHelp(args) ? `${plain}\n\n${helpFooter(invocation)}` : plain;
         yield* output.result(
           hasFlag(args, "--version", "-v") ? { version: VERSION } : { help: text },
           hasFlag(args, "--version", "-v") ? VERSION : text,
         );
       }
-      let status = error ? exitCode(error) : 0;
+      // A command's own status (a launched agent's) applies only when the command succeeded.
+      let status = error ? exitCode(error) : (reported.state.status ?? 0);
       // The tag of a write error that lost a kept result; the exit stays the failure's own.
       let unwritten: string | undefined;
       if (error) {
@@ -189,8 +205,9 @@ export function main(
             annotations: {
               invocationId,
               duration: finished - started,
-              outcome: status === 0 ? "success" : "failure",
+              outcome: error ? "failure" : "success",
               status,
+              ...reported.state.fields,
               ...(defect ? { defect } : {}),
               ...(unwritten ? { result: "unwritten", resultError: unwritten } : {}),
             },
