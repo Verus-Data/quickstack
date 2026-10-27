@@ -23,11 +23,9 @@ hook_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 # shellcheck source=_lib.sh
 source "$hook_dir/_lib.sh"
 
-hook_require_jq
-
 input=$(cat)
-file_path=$(printf '%s' "$input" | jq -r '.tool_input.file_path // empty' 2>/dev/null) || exit 0
-cwd=$(printf '%s' "$input" | jq -r '.cwd // empty' 2>/dev/null) || cwd=""
+file_path=$(hook_get "$input" tool_input.file_path | head -n 1) || exit 0
+cwd=$(hook_get "$input" cwd | head -n 1) || cwd=""
 [ -n "$file_path" ] && [ -f "$file_path" ] || exit 0
 
 # Compare physical paths: the project dir, the cwd, and the file path can reach
@@ -164,10 +162,5 @@ if [ "$(wc -l <<<"$out" | tr -d ' ')" -gt "$max_lines" ]; then
 fi
 
 rel_path=${file_path#"$root"/}
-jq -n --arg ctx "$tool found issues in $rel_path. Fix them before moving on:"$'\n'"$out" '{
-  hookSpecificOutput: {
-    hookEventName: "PostToolUse",
-    additionalContext: $ctx
-  }
-}'
+hook_context PostToolUse "$tool found issues in $rel_path. Fix them before moving on:"$'\n'"$out"
 exit 0

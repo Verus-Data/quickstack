@@ -1,0 +1,39 @@
+# Build output and React Router generated types
+build/
+.react-router/
+
+# Dependencies
+node_modules/
+
+# Test output
+coverage/
+test-results/
+playwright-report/
+*.tsbuildinfo
+
+# Local storage (if the SQLite decision is taken)
+*.sqlite
+*.sqlite-*
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Agent worktrees
+.claude/worktrees/
+
+# Logs (bun run dev writes logs/)
+logs/
+*.log
+
+# Editors and OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+*.swp
+.DS_Store
+Thumbs.db
+

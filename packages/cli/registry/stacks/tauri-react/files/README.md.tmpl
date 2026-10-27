@@ -1,0 +1,44 @@
+# {{project_name}}
+
+<!-- quickstacks:fill One or two sentences on what this app does and who it's for. -->
+
+A Tauri desktop app. Rust crates in `crates/` own the data and behavior, `src-tauri/` is the app shell, and the React frontend in `src/` talks to Rust through a typed transport generated from the Rust types.
+
+## Quickstart
+
+Requires [Rust](https://rustup.rs) (the toolchain in `rust-toolchain.toml` installs on first use), [bun](https://bun.sh), Node (`.node-version`), make, and jq, plus the [Tauri system prerequisites](https://tauri.app/start/prerequisites/) for your OS.
+
+```bash
+make install
+make dev        # the full app
+make dev-web    # the frontend alone in a browser, on mock data
+```
+
+## Commands
+
+| Command | What it does |
+|---|---|
+| `make dev` / `make dev-web` | Full app / frontend on the mock transport |
+| `make lint` / `make format` | Check / fix Biome, rustfmt, and clippy |
+| `make typecheck` | tsc and cargo check |
+| `make test` | Vitest and cargo test |
+| `make e2e` | Playwright against the frontend on the mock transport |
+| `make bindings` | Regenerate the TypeScript bindings after changing a Rust command or type |
+| `make check` | Everything CI runs |
+| `make build` | Production app bundle |
+
+Run `make help` for the full list.
+
+## Layout
+
+```
+crates/      Rust library crates (no Tauri)
+src-tauri/   app shell: commands, channels, windows, capabilities
+src/core/    framework-free TypeScript: transport, generated bindings, mock
+src/app/     React: routes, components, hooks, stores
+tests/       test helpers and Playwright specs
+```
+
+## License
+
+Copyright (c) {{year}} {{author}}

@@ -5,7 +5,7 @@ kind: fragment
 needs_own_repo: true
 category: ci
 name: GitHub Actions CI
-description: A GitHub Actions workflow that runs the project's own package scripts on every push and pull request, with SHA-pinned actions and least-privilege permissions.
+description: A GitHub Actions workflow that runs the project's own make targets or package scripts on every push and pull request, with SHA-pinned actions, least-privilege permissions, and path-filtered jobs for monorepos.
 tags: [ci, github]
 applies_to: []
 tools: [git]
@@ -22,7 +22,7 @@ Write `.github/workflows/ci.yml`. Check each action's latest major tag before wr
 ## What to add
 
 - **Triggers**: `push` to the default branch, `pull_request`, `workflow_dispatch`; never `pull_request_target`. **Permissions**: top-level `contents: read`, more only at job level.
-- **Jobs call the project's package scripts**, never re-implemented inline; a CI-only check gets a script first. Official setup actions, versions read from the project, frozen-lockfile installs.
+- **Jobs call the project's make targets (or package.json scripts, where the stack has no Makefile)**, never re-implemented inline; a CI-only check gets a target or script first. Official setup actions, versions read from the project, frozen-lockfile installs.
 - **Generated-code drift**: if generated code is committed, regenerate and fail on `git diff --exit-code`.
 <!-- quickstacks:when preset=default -->
 - **Concurrency**: group per workflow and ref, `cancel-in-progress: ${{ github.event_name == 'pull_request' }}` (cancelling on the default branch can let an untested commit reach deploy).
@@ -33,7 +33,15 @@ Write `.github/workflows/ci.yml`. Check each action's latest major tag before wr
 Sandbox: keep the workflow minimal, with `timeout-minutes` per job. Major-tag action refs are fine; list SHA pinning under Deferred.
 <!-- quickstacks:end -->
 
+<!-- quickstacks:when tag=monorepo -->
+**Monorepo.** A `changes` job (paths-filter action) outputs one boolean per area; each filter covers the area's directory, shared lockfiles and config, the Makefile, and `.github/workflows/**`, and the frontend's also covers the backend's API and schema paths. One job per area gated on its output. A final `ci-ok` job (`needs:` all, `if: always()`) fails if any needed job failed or was cancelled; make it the required check, or path-skipped jobs block merges forever.
+<!-- quickstacks:end -->
+<!-- quickstacks:when tag!=monorepo -->
 Use one sequential job named ci-ok for this project, unless the stack's CI notes split the work into jobs; then a final `ci-ok` job (`needs:` all, `if: always()`) is the required check.
+<!-- quickstacks:end -->
+<!-- quickstacks:when tag=make -->
+Call the project's Makefile targets, including its full check command and the selected coverage/build targets. Read runtime versions from the project. A tool-specific setup action may install/cache a required binary, but the project's targets remain the behavior contract.
+<!-- quickstacks:end -->
 <!-- quickstacks:when tag=scripts -->
 Call the project's package scripts: frozen install, lint, typecheck, coverage or test, and its remaining check/build steps. Use the declared commands instead of copying runner details into CI.
 <!-- quickstacks:end -->
@@ -42,6 +50,12 @@ Use Bun's setup action with the packageManager version from package.json.
 <!-- quickstacks:end -->
 <!-- quickstacks:when tag=node -->
 Set up Node from .node-version where present, or the project's documented runtime version.
+<!-- quickstacks:end -->
+<!-- quickstacks:when tag=go -->
+Set up Go from go.mod. Use golangci-lint's official action with the version declared by the project for installation/cache, then its documented checks.
+<!-- quickstacks:end -->
+<!-- quickstacks:when tag=python -->
+Set up uv with cache and the project's .python-version. Invoke the relevant install/check/coverage targets for each filtered part.
 <!-- quickstacks:end -->
 
 Before finishing, run `actionlint` if installed and make sure every command the workflow calls passes locally.

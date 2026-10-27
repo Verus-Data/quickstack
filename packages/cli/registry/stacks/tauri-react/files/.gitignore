@@ -1,0 +1,35 @@
+# Frontend build output (tauri::generate_context! needs dist/ to exist; make creates it)
+dist/
+
+# Rust
+target/
+
+# Dependencies
+node_modules/
+
+# Test output
+coverage/
+test-results/
+playwright-report/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.*
+!.env.example
+*.local
+
+# Agent worktrees
+.claude/worktrees/
+
+# Logs
+logs/
+*.log
+
+# Editors and OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.swp
+.DS_Store
+Thumbs.db

@@ -1,0 +1,45 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(make lint)",
+      "Bash(make format)",
+      "Bash(make typecheck)",
+      "Bash(make test)",
+      "Bash(make coverage)",
+      "Bash(make e2e)",
+      "Bash(make bindings)",
+      "Bash(make bindings-check)",
+      "Bash(make architecture-check)",
+      "Bash(make check)",
+      "Bash(bun run lint)",
+      "Bash(bun run format)",
+      "Bash(bun run typecheck)",
+      "Bash(bun run test)",
+      "Bash(bun run test *)",
+      "Bash(cargo fmt *)",
+      "Bash(cargo check *)",
+      "Bash(cargo clippy *)",
+      "Bash(cargo test *)"
+    ],
+    "deny": ["Read(./.env)", "Read(./.env.local)"]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bun \"${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-tauri-generated.ts\"",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bun \"${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-tauri-boundaries.ts\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

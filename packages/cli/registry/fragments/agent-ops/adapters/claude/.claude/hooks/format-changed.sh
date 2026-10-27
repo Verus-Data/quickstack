@@ -18,17 +18,17 @@
 # Silent by design: no output, always exit 0. A Stop hook that prints errors can
 # trap the session in a feedback loop.
 set -euo pipefail
+# Any failure the code below doesn't handle still ends the hook with 0.
+trap 'exit 0' ERR
 
 hook_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 # shellcheck source=_lib.sh
 source "$hook_dir/_lib.sh"
 
-hook_require_jq
-
 input=$(cat)
 list=$(session_file_list "$input") || exit 0
 [ -s "$list" ] || exit 0
-cwd=$(printf '%s' "$input" | jq -r '.cwd // empty' 2>/dev/null) || cwd=""
+cwd=$(hook_get "$input" cwd | head -n 1) || cwd=""
 if [ -n "$cwd" ]; then cwd=$(cd "$cwd" 2>/dev/null && pwd -P) || cwd=""; fi
 
 root=$(project_root)

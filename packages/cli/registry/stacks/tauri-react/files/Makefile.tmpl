@@ -1,0 +1,98 @@
+# {{project_name}} development commands.
+#
+# A starting point: adapt the recipes to the project, but keep the target
+# names. `quickstacks verify` calls install, lint, typecheck, test, bindings-check,
+# architecture-check, e2e, build and dev-web. CI calls the -web and -rust
+# halves per job; the combined targets are for local use.
+
+PORT_WEB ?= 1420
+export PORT_WEB
+
+# The Cargo package name of src-tauri/ (the app shell). Keep in sync with
+# src-tauri/Cargo.toml.
+APP_CRATE ?= {{project_slug}}
+BINDINGS := src/core/generated/bindings.ts
+
+.DEFAULT_GOAL := help
+.PHONY: help install dev dev-web build bindings bindings-check \
+	lint lint-web lint-rust format typecheck typecheck-web typecheck-rust \
+	test test-web test-rust coverage e2e architecture-check check clean stub-dist
+
+help: ## List targets
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-20s %s\n", $$1, $$2}'
+
+install: ## JS deps (frozen when CI is set), the pinned Rust toolchain and crates, Playwright's Chromium
+	bun install $(if $(CI),--frozen-lockfile)
+	rustup toolchain install
+	cargo fetch
+	bunx playwright install $(if $(CI),--with-deps) chromium
+
+dev: ## Full app: tauri dev (Vite on PORT_WEB plus the Rust shell)
+	bun run tauri dev
+
+dev-web: ## Frontend only, in a browser, on the mock transport
+	VITE_TRANSPORT=mock bun run dev:web --port $(PORT_WEB) --strictPort
+
+build: ## Production app bundle
+	bun run tauri build
+
+bindings: stub-dist ## Regenerate src/core/generated/ from Rust
+	@mkdir -p $(dir $(BINDINGS))
+	cargo run --quiet -p $(APP_CRATE) --example export_bindings -- $(BINDINGS)
+
+bindings-check: stub-dist ## Fail if the committed bindings differ from a fresh export
+	@tmp=$$(mktemp); trap 'rm -f "$$tmp"' EXIT; \
+	cargo run --quiet -p $(APP_CRATE) --example export_bindings -- "$$tmp" || exit 1; \
+	cmp -s "$$tmp" $(BINDINGS) || { \
+		diff -u $(BINDINGS) "$$tmp" | head -40; \
+		echo "bindings-check: $(BINDINGS) is stale. Run make bindings and commit the result."; \
+		exit 1; }
+
+lint: lint-web lint-rust ## Biome, cargo fmt --check, clippy with warnings denied
+
+lint-web: ## Biome
+	bun run lint
+
+lint-rust: stub-dist ## cargo fmt --check, clippy with warnings denied
+	cargo fmt --all --check
+	cargo clippy --workspace --all-targets -- -D warnings
+
+format: ## Biome format and safe fixes, cargo fmt
+	bun run format
+	cargo fmt --all
+
+typecheck: typecheck-web typecheck-rust ## tsc over every TypeScript project, cargo check
+
+typecheck-web: ## tsc over every TypeScript project
+	bun run typecheck
+
+typecheck-rust: stub-dist ## cargo check
+	cargo check --workspace --all-targets
+
+test: test-web test-rust ## Vitest and cargo test
+
+test-web: ## Vitest
+	bun run test
+
+test-rust: stub-dist ## cargo test
+	cargo test --workspace
+
+coverage: ## Vitest with coverage
+	bun run coverage
+
+e2e: ## Playwright against the Vite dev server on the mock transport (browser from make install)
+	bun run test:e2e
+
+architecture-check: ## Cargo dependency edges against scripts/architecture/crate-edges.json
+	bash -o pipefail -c 'cargo metadata --no-deps --format-version 1 | jq -e --slurpfile allowed scripts/architecture/crate-edges.json -f scripts/architecture/crate-edges.jq'
+
+check: lint typecheck test bindings-check architecture-check e2e ## The gate: everything above
+
+# tauri::generate_context! embeds the frontend dist at compile time, so any
+# cargo build of src-tauri needs the directory to exist, even empty.
+stub-dist:
+	@mkdir -p dist
+
+clean: ## Remove build, test, and coverage output
+	rm -rf dist coverage playwright-report test-results
+	cargo clean

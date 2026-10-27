@@ -1,0 +1,70 @@
+# Testing
+
+Testing Trophy: few unit tests, mostly integration tests against real dependencies, thin E2E. Never mock our own code. AGENTS.md has the commands; this file is what to run when, and the two harnesses tests are written against rather than around.
+
+## Postgres must be up
+
+The API suite talks to a real database. Run `bun run db:up` first. Without it, `test/setup.ts` fails with `DATABASE_URL is not set` or a connection error that reads like a code bug and isn't. The mobile suite needs no database.
+
+## Scoped runs first
+
+1. The file you're working on: `cd apps/api && bun run test test/health.test.ts` or `cd apps/mobile && bunx jest test/home-screen.test.tsx`.
+2. The workspace: `bun run test:api` or `bun run test:mobile`.
+3. Once, before committing: `bun run check`.
+
+Skip straight to 3 for changes to a harness (`apps/api/test/setup.ts`, `apps/mobile/test/render.tsx`, jest config, `bunfig.toml`), `packages/schemas`, or the lockfile: a scoped green proves nothing there.
+
+## Which runner where
+
+|  | `apps/api` | `apps/mobile` |
+| --- | --- | --- |
+| Runner | `bun test` | jest via jest-expo, on Node, never bun |
+| Imports | `describe`, `test`, `expect` from `bun:test` | jest globals |
+| Setup | `test/setup.ts`, imported per file | `test/setup.ts` via `setupFilesAfterEnv` |
+| Isolation | one Postgres database per test file | fresh `QueryClient` per render; mocks restored after each test |
+| May stub | nothing | `fetch`, and the process-boundary modules below |
+
+## The API harness (`apps/api/test/setup.ts`)
+
+One call is the preamble. Don't build a parallel setup.
+
+```ts
+const t = setupApiTest('health');
+
+test('reports ready when the database answers', async () => {
+  expect((await t.app.request('/health/ready')).status).toBe(200);
+});
+```
+
+`setupApiTest` registers its own `beforeAll` and `afterAll` and returns getters: `t.app` (the Hono app), `t.db` and `t.schema` (for seeding states no route leaves behind), `t.sql` (a raw client on this file's database), `t.database` (`{ url, drop }`). They're filled in `beforeAll`, so read them inside tests, never at module scope. A file needing more setup registers its own `beforeAll` after the call. `createTestDatabase(label)` is exported for files that want only the database.
+
+Why it's shaped this way:
+
+- The template database is migrated once per run, under a Postgres advisory lock (parallel runs serialize), from the real `drizzle/` migrations, so a newly generated migration is picked up with no extra step. Stale `<prefix>_test_*` databases from crashed runs are dropped first.
+- Each file gets `CREATE DATABASE ... TEMPLATE <template>`, which fails if anything is connected to the template, so the harness closes that connection before cloning. Each file's database is always dropped after.
+- `../src/app` is imported dynamically inside `beforeAll`, after `DATABASE_URL` is set. A static import captures the wrong environment. Get the type statically with `type App = (typeof import('../src/app'))['app']`, which is erased at compile time; the same trick works for any late import.
+- Requests go through `t.app.request(path, init)`: no supertest, no port, no server lifecycle.
+
+## The mobile harness (`apps/mobile/test/`)
+
+- `render.tsx`: `renderScreen(ui, options?)` mounts the providers the root layout mounts, in the same order, with a fresh `QueryClient` whose queries don't retry and whose `gcTime` is `Infinity` (a garbage-collection timer otherwise keeps jest alive after the run). Screen tests never hand-wrap providers. Also `mockJsonResponse(body, status?)` for one canned response and `mockApi([[urlFragment, method, handler], ...])` for screens that call several endpoints; unmatched requests answer 404. Both are `jest.spyOn(globalThis, 'fetch')` returning a real `Response`.
+- `router-mock.ts`: the shared `expo-router` stub. `jest.mock` factories are hoisted and can't close over the test file, so the line stays in the file and its body doesn't: `jest.mock('expo-router', () => require('./router-mock').routerMock())`, then `getMockRouter()` and `setMockParams(...)`. It runs `useFocusEffect` on mount, since a screen rendered alone never gets the navigator's focus call.
+- `setup.ts`: restores mocks and resets the router spies after each test, and holds global stubs for native modules that throw at import time outside a native binary.
+- Add response builders to a `fixtures.ts`, each typed with its real schema type and taking a `Partial`, rather than spelling bodies out in each test.
+
+Await everything Testing Library returns: `render`, `rerender`, `unmount`, and every `fireEvent`. A floating one lets the assertion run before React flushes, which makes the test pass whatever the component does. Before asserting that nothing happened, wait for a sign the code ran.
+
+## Never mock our own code
+
+Mock the process boundary and nothing inside it. In mobile, the hooks in `src/lib/queries/`, the `hc` client, TanStack Query, and components are always real; only `fetch` is stubbed. Module stubs are allowed only for modules that are themselves a process boundary a test run has no answer for, each in one shared place:
+
+| Module | Stub | Why |
+| --- | --- | --- |
+| `expo-router` | `test/router-mock.ts` | the navigator; a screen rendered alone has none |
+| native modules that throw at import outside a native binary | `test/setup.ts` (global), one row each when added | the module reaches for a native binding jest doesn't have |
+
+Adding a module stub is a change to this table first. Mocking a hook or the API client to make a screen test pass tests the mock; assert on what the user sees given a stubbed response.
+
+## Test-writing agents
+
+Tell a subagent writing tests to change test files only (`apps/*/test/**`), and check `git diff --stat` before committing its output: an agent changing a production constant while reading for context is a real failure mode, and only the diff catches it.

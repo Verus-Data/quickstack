@@ -2,7 +2,7 @@
 # SessionStart: a few lines of live state that AGENTS.md can't carry because it
 # is static: the branch, how dirty the tree is, whether .env exists, whether
 # dependencies are installed, whether the services declared in the compose file
-# are running, and whether jq (which the other hooks need) is installed.
+# are running, and whether a generated project still has its brief to follow.
 #
 # Plain-text stdout from a SessionStart hook is added to the agent's context, so
 # this hook needs no jq. Cheap: a few git calls and at most two `docker compose`
@@ -39,8 +39,9 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   fi
 fi
 
-if ! command -v jq >/dev/null 2>&1; then
-  say "jq is not installed, so the hooks in .claude/hooks that read their input (destructive-command guard, secret detection, lint-on-write, format-on-stop) are inactive. Tell the user; installing jq turns them on."
+# A project quickstacks generated and the agent hasn't finished: point at the brief.
+if [ -f .quickstacks/BRIEF.md ] && { [ ! -s AGENTS.md ] || grep -q 'quickstacks:fill' AGENTS.md 2>/dev/null; }; then
+  say "This project is still being built: read .quickstacks/BRIEF.md before starting. AGENTS.md is a skeleton until its quickstacks:fill markers are replaced."
 fi
 
 if [ -f .env.example ] && [ ! -f .env ]; then
@@ -118,5 +119,11 @@ if [ -n "$compose_file" ] && command -v docker >/dev/null 2>&1; then
 fi
 
 [ "${#lines[@]}" -eq 0 ] && exit 0
-printf '%s\n' "${lines[@]}"
+# At most 15 lines, whatever checks a project adds above.
+shown=0
+for line in "${lines[@]}"; do
+  [ "$shown" -ge 15 ] && break
+  printf '%s\n' "$line"
+  shown=$((shown + 1))
+done
 exit 0
