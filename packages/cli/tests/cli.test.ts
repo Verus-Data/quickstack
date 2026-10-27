@@ -5,7 +5,7 @@ import { Effect } from "effect";
 import { afterEach, expect, test } from "vitest";
 import { hasFlag } from "../src/main";
 import { VERSION } from "../src/version";
-import { quiet, runCli, tempDir } from "./helpers/cli";
+import { quiet, runCli, tempDir, terminal } from "./helpers/cli";
 
 const dirs: ReturnType<typeof tempDir>[] = [];
 afterEach(() => {
@@ -20,7 +20,7 @@ function configFile(content: string) {
   return dir.path;
 }
 test("doctor runs under Node and respects human/JSON result contracts", async () => {
-  const human = await runCli(["doctor"]);
+  const human = await runCli(["doctor"], { host: terminal });
   expect(human.status).toBe(0);
   expect(human.stdout).toContain(`quickstacks ${VERSION}`);
   expect(human.stderr).toBe("");
@@ -81,7 +81,7 @@ test("a mistyped subcommand with --json is one envelope naming the suggestions",
   });
 });
 test("an unknown subcommand with no close match gets no suggestion", async () => {
-  const human = await runCli(["zzzz"], { env: quiet });
+  const human = await runCli(["zzzz"], { env: quiet, host: terminal });
   expect(human.status).toBe(2);
   expect(human.stdout).toBe("");
   expect(human.stderr).toBe("Invalid command. Run --help for usage.\n");
@@ -147,6 +147,7 @@ test("a defect's class and stack frames are logged, but not its message", async 
   const result = await runCli([], {
     program: Effect.die(new TypeError("private detail")),
     env: { LOG_LEVEL: "error", QUICKSTACKS_LOG_FORMAT: "json" },
+    host: terminal,
   });
   const line = result.stderr.split("\n").find((l) => l.includes('"msg":"command"'));
   const record = JSON.parse(line ?? "") as { defect: string };
@@ -157,6 +158,7 @@ test("main maps a defect once and never leaks its object", async () => {
   const result = await runCli([], {
     program: Effect.die({ token: "secret-value", message: "private" }),
     env: { LOG_LEVEL: "info", QUICKSTACKS_LOG_FORMAT: "json" },
+    host: terminal,
   });
   expect(result.status).toBe(1);
   expect(result.stdout).toBe("");

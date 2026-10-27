@@ -4,7 +4,7 @@ import { expect, test } from "vitest";
 import { BadInput } from "../src/errors";
 import { Host } from "../src/services/host";
 import { Output } from "../src/services/output";
-import { quiet, runCli, writeError } from "./helpers/cli";
+import { quiet, runCli, terminal, writeError } from "./helpers/cli";
 
 /** Waits for the test to see a write; a buffered write would time out and fail the command. */
 const awaitWrite = (seen: Deferred.Deferred<void>) =>
@@ -21,7 +21,11 @@ test("in human mode a progress line reaches stderr before the program finishes",
     yield* awaitWrite(seen);
     yield* output.result({ ok: true }, "done");
   });
-  const result = await runCli([], { program, stderr: markSeen(seen, "Running step") });
+  const result = await runCli([], {
+    program,
+    host: terminal,
+    stderr: markSeen(seen, "Running step"),
+  });
   expect(result).toEqual({ status: 0, stdout: "done\n", stderr: "Running step: test\n" });
 });
 test("in JSON mode progress writes nothing, so stderr holds only the envelope", async () => {
@@ -47,6 +51,7 @@ test("progress swallows EPIPE then EACCES, stops writing, and leaves the exit co
   });
   const result = await runCli([], {
     program,
+    host: terminal,
     stderr: async () => {
       throw writeError(codes[attempts++] ?? "EACCES");
     },
@@ -64,6 +69,7 @@ test.each(["EPIPE", "EACCES"] as const)(
     });
     const result = await runCli([], {
       program,
+      host: terminal,
       stderr: async (text) => {
         if (text === "step\n") throw writeError(code);
       },
@@ -80,7 +86,11 @@ test("in human mode flushNow puts the result on stdout before the program finish
     yield* output.flushNow;
     yield* awaitWrite(seen);
   });
-  const result = await runCli([], { program, stdout: markSeen(seen, "handing off") });
+  const result = await runCli([], {
+    program,
+    host: terminal,
+    stdout: markSeen(seen, "handing off"),
+  });
   expect(result).toEqual({ status: 0, stdout: "handing off\n", stderr: "" });
 });
 test("flushNow then BadInput keeps the flushed text on stdout and writes the envelope", async () => {

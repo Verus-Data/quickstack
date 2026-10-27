@@ -3,6 +3,7 @@ import { Argument, Command } from "effect/cli";
 import { type Group, groups, listResult, renderList, toRow } from "../core/list";
 import { type Entry, isRejected } from "../core/registry/entry";
 import { defaultRoots, Registry } from "../core/registry/registry";
+import { shownPath } from "../core/shown-path";
 import { closest } from "../core/suggest";
 import { Usage } from "../errors";
 import { ListResult } from "../schemas/list";
@@ -36,14 +37,26 @@ export const listCommand = Command.make(
       );
       const result = listResult(items, typed);
       const all = items.filter((item): item is Entry => !isRejected(item)).map(toRow);
-      const width =
-        host.stdoutIsTTY && host.stdoutColumns
+      const output = yield* Output;
+      const agent = output.audience === "agent";
+      // A human's descriptions wrap to the terminal; an agent's stay on one line each.
+      const width = agent
+        ? Number.POSITIVE_INFINITY
+        : host.stdoutIsTTY && host.stdoutColumns
           ? Math.min(80, Math.max(20, host.stdoutColumns))
           : 80;
-      const output = yield* Output;
+      const rejected = agent
+        ? yield* Effect.forEach(result.rejected, (entry) =>
+            Effect.map(shownPath(host.cwd, entry.dir), (dir) => ({ ...entry, dir })),
+          )
+        : result.rejected;
       yield* output.result(
         Schema.encodeSync(ListResult)(result),
-        renderList(result, all, { group: typed, width, invocation: host.invocation }),
+        renderList({ ...result, rejected }, all, {
+          group: typed,
+          width,
+          invocation: host.invocation,
+        }),
       );
     }),
 ).pipe(

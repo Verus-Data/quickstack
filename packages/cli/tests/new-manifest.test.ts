@@ -14,7 +14,7 @@ import { digestStep, digestSteps, MANIFEST_PATH } from "../src/core/manifest";
 import { ProjectState } from "../src/core/project-state";
 import { Manifest } from "../src/schemas/manifest";
 import { NewResult } from "../src/schemas/new";
-import { quiet, runCli, tempDir } from "./helpers/cli";
+import { quiet, runCli, tempDir, terminal } from "./helpers/cli";
 import { gitShim, NOT_A_REPO } from "./helpers/git";
 import { minimal, newRegistry, writeEntry } from "./helpers/registry";
 
@@ -37,13 +37,19 @@ async function newCli(
     registry?: string;
     env?: Record<string, string>;
     signal?: AbortSignal;
+    /** A terminal and no agent: human output. Without it, the output is an agent's. */
+    human?: boolean;
   } = {},
 ) {
   const home = options.home ?? temp();
   const result = await runCli(["new", ...args], {
     home,
     env: { ...quiet, XDG_STATE_HOME: join(home, "state"), ...options.env },
-    host: { registry: options.registry ?? newRegistry, cwd: home },
+    host: {
+      registry: options.registry ?? newRegistry,
+      cwd: home,
+      ...(options.human ? terminal : {}),
+    },
     ...(options.signal ? { signal: options.signal } : {}),
   });
   return { ...result, home };
@@ -133,6 +139,7 @@ describe("new writes the manifest and the state record", () => {
     const human = await newCli(["fixture-stack", "human"], {
       home,
       env: { XDG_STATE_HOME: notDir },
+      human: true,
     });
     expect(human.status).toBe(0);
     expect(human.stdout).toContain(
@@ -271,7 +278,7 @@ describe("a target that already holds a scaffold", () => {
         },
       },
     });
-    const human = await newCli(["fixture-stack", "app"], { home });
+    const human = await newCli(["fixture-stack", "app"], { home, human: true });
     expect(human.status).toBe(2);
     expect(human.stdout).toBe("");
     expect(human.stderr).toBe(

@@ -345,10 +345,9 @@ export function detailLines(error: AppError, invocation: string): string[] {
             : `Next: ${invocation} list shows every stack and fragment.`,
       ];
     }
+    // The report on stdout ends with these counts already; `--json` keeps them in details.
     case "ValidationFailed":
-      return error.details
-        ? [`Errors: ${error.details.errors}, warnings: ${error.details.warnings}`]
-        : [];
+      return [];
     case "EntryInvalid": {
       const details = error.details;
       if (!details) return [];

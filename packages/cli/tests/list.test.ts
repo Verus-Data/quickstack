@@ -10,7 +10,7 @@ import { join } from "node:path";
 import { Schema } from "effect";
 import { afterEach, expect, test } from "vitest";
 import { ListResult } from "../src/schemas/list";
-import { ndjson, quiet, runCli, tempDir } from "./helpers/cli";
+import { ndjson, quiet, runCli, tempDir, terminal } from "./helpers/cli";
 import {
   brokenRegistry,
   copyEntry,
@@ -243,14 +243,16 @@ test("an unknown group is Usage with exit 2 and one envelope [1.0#12]", async ()
 });
 
 test("a mistyped group suggests the group in human mode", async () => {
-  const result = await list(["stack"]);
+  const result = await list(["stack"], { host: terminal });
   expect(result.status).toBe(2);
   expect(result.stdout).toBe("");
   expect(result.stderr).toBe("Invalid command. Run --help for usage.\n  Did you mean: stacks?\n");
 });
 
 test("human list shows Stacks, Fragments and Apps, then Next lines with the invocation [1.0#12a]", async () => {
-  const result = await list([], { host: { invocation: "npx -y quickstacks@9.9.9" } });
+  const result = await list([], {
+    host: { ...terminal, invocation: "npx -y quickstacks@9.9.9" },
+  });
   expect(result.status).toBe(0);
   expect(result.stderr).toBe("");
   expect(result.stdout).toBe(
@@ -311,10 +313,11 @@ test("a long description wraps at 80 columns, or a narrower terminal, without sp
     "long",
     minimal("stack", "long").replace("long description.", description),
   );
+  // Only a human's terminal wraps (an agent's output keeps each description on one line).
   for (const [host, width] of [
-    [{}, 80],
+    [{ stdoutIsTTY: true }, 80],
     [{ stdoutIsTTY: true, stdoutColumns: 50 }, 50],
-    [{ stdoutIsTTY: false, stdoutColumns: 50 }, 80],
+    [{ stdoutIsTTY: true, stdoutColumns: 200 }, 80],
   ] as const) {
     const result = await list(["stacks"], { home, host });
     const lines = result.stdout.split("\n");
@@ -377,7 +380,7 @@ test("a broken user copy of a bundled id is rejected, says what it hides, and th
       error: expect.stringMatching(/; hides bundled copy$/),
     }),
   ]);
-  const human = await list([], { home });
+  const human = await list([], { home, host: terminal });
   expect(human.stdout).toContain(
     "\nRejected\n  stack bun-web (user): unknown_key: unknown key; hides bundled copy\n",
   );
@@ -456,12 +459,12 @@ test("a relative QUICKSTACKS_REGISTRY_DIR resolves against the working directory
 test("a QUICKSTACKS_REGISTRY_DIR that doesn't exist is a warning on list and in doctor", async () => {
   const { home } = setup();
   const env = { QUICKSTACKS_REGISTRY_DIR: join(home, "nope"), LOG_LEVEL: "warn" };
-  const human = await list([], { home, env });
+  const human = await list([], { home, env, host: terminal });
   expect(human.status).toBe(0);
   expect(human.stderr).toContain(
     `QUICKSTACKS_REGISTRY_DIR is not a directory: ${join(home, "nope")}`,
   );
-  const doctor = await runCli(["doctor"], { home, env });
+  const doctor = await runCli(["doctor"], { home, env, host: terminal });
   expect(doctor.stdout).toContain(`Registry: ${join(home, "nope")} (not found)`);
   expect(doctor.stderr).toContain("QUICKSTACKS_REGISTRY_DIR is not a directory");
 });
@@ -552,7 +555,7 @@ test("a rejected entry's directory is printed whole on its own line", async () =
     "a registry with spaces in its path that is long enough to need wrapping",
   );
   writeEntry(registry, "stack", "broken", minimal("stack", "broken", "extra: 1"));
-  const result = await list([], { home, registry });
+  const result = await list([], { home, registry, host: terminal });
   expect(result.stdout).toContain(`\n    ${join(registry, "stacks", "broken")}\n`);
 });
 
