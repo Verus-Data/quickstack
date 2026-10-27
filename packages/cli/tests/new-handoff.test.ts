@@ -302,6 +302,26 @@ describe("launching an agent", () => {
       expect(manifestOf(app).handoff).toEqual({ kind: "print", at: manifestOf(app).createdAt });
     },
   );
+
+  test.runIf(process.platform === "linux")(
+    "an executable text agent without a shebang returns the fallback shell's status (Linux)",
+    async () => {
+      const home = temp();
+      mkdirSync(join(home, "bin"));
+      const bin = join(home, "bin", "claude");
+      writeFileSync(bin, "exit 127\n");
+      chmodSync(bin, 0o755);
+      const { status, stdout, stderr, app } = await newCli([], { home, host: terminal });
+      expect(status).toBe(127);
+      expect(stdout).toContain(`Launching ${bin} in app...`);
+      expect(stderr).toBe("");
+      expect(manifestOf(app).handoff).toEqual({
+        kind: "launch",
+        agent: "claude",
+        at: manifestOf(app).createdAt,
+      });
+    },
+  );
 });
 
 describe("printing the prompt", () => {

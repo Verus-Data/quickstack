@@ -649,6 +649,8 @@ export function encodeDetails(error: AppError): Effect.Effect<unknown, Schema.Sc
 
 function permissionReason(reason: (typeof PermissionDeniedDetails.Type)["reason"]): string[] {
   switch (reason) {
+    case "read":
+      return ["Next: check the path's read permissions, then run this command again."];
     case "escape":
       return [
         "The path resolves outside the project directory, through a symlink or `..`.",

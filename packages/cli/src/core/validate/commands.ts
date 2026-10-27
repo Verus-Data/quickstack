@@ -1,13 +1,16 @@
 import { Effect } from "effect";
 import type { Finding } from "../../schemas/validate";
 import type { Composition } from "../compose/compose";
-import { shellWords } from "../shell";
+import { shellTokens, shellWords } from "../shell";
 import { uniqueFindings } from "./composed";
 import { type Check, entryFile, finding } from "./view";
 
 /** A complete project-command token, with Claude's permission wildcard removed separately. */
 export function runnerTarget(command: string): string | undefined {
-  const words = shellWords(command);
+  return runnerWordTarget(shellWords(command));
+}
+
+function runnerWordTarget(words: readonly string[]): string | undefined {
   const [runner, second] = words;
   let target: string | undefined;
   if (runner === "make") target = second;
@@ -18,10 +21,19 @@ export function runnerTarget(command: string): string | undefined {
 }
 
 function runnerTargets(command: string): string[] {
-  return command.split(/&&|\|\||[;|]/).flatMap((part) => {
-    const target = runnerTarget(part);
-    return target ? [target] : [];
-  });
+  const targets: string[] = [];
+  let words: string[] = [];
+  const finish = () => {
+    const target = runnerWordTarget(words);
+    if (target) targets.push(target);
+    words = [];
+  };
+  for (const token of shellTokens(command)) {
+    if (token.operator && /[;&|()\n]/.test(token.word)) finish();
+    else words.push(token.word);
+  }
+  finish();
+  return targets;
 }
 
 export const commandChecks: Check = (view) =>

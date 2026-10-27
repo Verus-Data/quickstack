@@ -124,7 +124,7 @@ describe("new writes the manifest and the state record", () => {
     );
   });
 
-  test("with XDG_STATE_HOME unwritable, new still succeeds with stateRecord false and a manifest [1.2b#5]", async () => {
+  test("with XDG_STATE_HOME blocked by a file, new still succeeds with stateRecord false and a manifest [1.2b#5]", async () => {
     const home = temp();
     const notDir = join(home, "a-file");
     writeFileSync(notDir, "");
@@ -147,22 +147,28 @@ describe("new writes the manifest and the state record", () => {
     );
     const recorded = await newCli(["fixture-stack", "recorded"], { home });
     expect(recorded.stdout).not.toContain("State record:");
-    if (asRoot) return;
-    const locked = join(home, "locked");
-    mkdirSync(locked);
-    chmodSync(locked, 0o500);
-    try {
-      const again = await newCli(["fixture-stack", "app2", "--json"], {
-        home,
-        env: { XDG_STATE_HOME: locked },
-      });
-      expect(again.status).toBe(0);
-      expect(decode(again.stdout).stateRecord).toBe(false);
-      expect(readdirSync(locked)).toEqual([]);
-    } finally {
-      chmodSync(locked, 0o700);
-    }
   });
+
+  test.skipIf(asRoot)(
+    "with XDG_STATE_HOME unwritable, new leaves the state directory unchanged [1.2b#5]",
+    async () => {
+      const home = temp();
+      const locked = join(home, "locked");
+      mkdirSync(locked);
+      chmodSync(locked, 0o500);
+      try {
+        const again = await newCli(["fixture-stack", "app2", "--json"], {
+          home,
+          env: { XDG_STATE_HOME: locked },
+        });
+        expect(again.status).toBe(0);
+        expect(decode(again.stdout).stateRecord).toBe(false);
+        expect(readdirSync(locked)).toEqual([]);
+      } finally {
+        chmodSync(locked, 0o700);
+      }
+    },
+  );
 
   test("when git init fails and the brief is rewritten, the manifest's brief count follows it", async () => {
     const home = temp();
