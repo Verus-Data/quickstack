@@ -6,13 +6,49 @@ import { type Check, entryFile, finding } from "./view";
 
 /** Literal shell words for static references; expansions remain text and nothing is executed. */
 export function shellWords(command: string): string[] {
-  const words: string[] = [];
+  return shellTokens(command)
+    .filter((token) => !token.operator || token.word !== "\n")
+    .map((token) => token.word);
+}
+
+type Heredoc = { delimiter: string; stripTabs: boolean; quoted: boolean };
+
+function heredocEnd(command: string, start: number, heredoc: Heredoc): number {
+  let offset = start;
+  let line = "";
+  while (offset < command.length) {
+    const newline = command.indexOf("\n", offset);
+    const end = newline < 0 ? command.length : newline;
+    line += command.slice(offset, end);
+    const backslashes = /\\+$/.exec(line)?.[0].length ?? 0;
+    if (!heredoc.quoted && newline >= 0 && backslashes % 2 === 1) line = line.slice(0, -1);
+    else {
+      if ((heredoc.stripTabs ? line.replace(/^\t+/, "") : line) === heredoc.delimiter) return end;
+      line = "";
+    }
+    offset = end + 1;
+  }
+  return command.length;
+}
+
+function shellTokens(command: string) {
+  const words: { word: string; operator: boolean }[] = [];
+  const heredocs: Heredoc[] = [];
+  let delimiterTabs: boolean | undefined;
   let word = "";
   let quote: string | undefined;
+  let wordQuoted = false;
   let active = false;
   const finish = () => {
-    if (active) words.push(word);
+    if (active) {
+      words.push({ word, operator: false });
+      if (delimiterTabs !== undefined) {
+        heredocs.push({ delimiter: word, stripTabs: delimiterTabs, quoted: wordQuoted });
+        delimiterTabs = undefined;
+      }
+    }
     word = "";
+    wordQuoted = false;
     active = false;
   };
   for (let index = 0; index < command.length; index++) {
@@ -27,33 +63,58 @@ export function shellWords(command: string): string[] {
   function unquotedCharacter(index: number, char: string): number {
     if (/["']/.test(char)) {
       quote = char;
+      wordQuoted = true;
       active = true;
       return index;
     }
-    if (char === "\\") {
-      word += command[++index] ?? "";
-      active = true;
-      return index;
-    }
-    if (/\s/.test(char)) {
-      finish();
-      return index;
-    }
+    if (char === "\\") return escapedCharacter(index);
+    if (/\s/.test(char)) return whitespace(index, char);
     if (char === "#" && !active) {
       const newline = command.indexOf("\n", index);
-      return newline < 0 ? command.length : newline;
+      return newline < 0 ? command.length : newline - 1;
     }
-    if (/[;&|()<>]/.test(char)) {
-      finish();
-      words.push(char);
-      return index;
-    }
+    if (/[;&|()<>]/.test(char)) return operator(index, char);
     word += char;
     active = true;
     return index;
   }
 
+  function escapedCharacter(index: number): number {
+    if (command[index + 1] === "\n") return index + 1;
+    wordQuoted = true;
+    word += command[index + 1] ?? "";
+    active = true;
+    return index + 1;
+  }
+
+  function whitespace(index: number, char: string): number {
+    finish();
+    if (char !== "\n") return index;
+    words.push({ word: char, operator: true });
+    for (const heredoc of heredocs.splice(0)) index = heredocEnd(command, index + 1, heredoc);
+    return index;
+  }
+
+  function heredocRedirect(index: number): number {
+    finish();
+    if (command[index + 2] === "<") {
+      words.push({ word: "<<<", operator: true });
+      return index + 2;
+    }
+    delimiterTabs = command[index + 2] === "-";
+    words.push({ word: delimiterTabs ? "<<-" : "<<", operator: true });
+    return index + (delimiterTabs ? 2 : 1);
+  }
+
+  function operator(index: number, char: string): number {
+    if (char === "<" && command[index + 1] === "<") return heredocRedirect(index);
+    finish();
+    words.push({ word: char, operator: true });
+    return index;
+  }
+
   function quotedCharacter(index: number, char: string): number {
+    if (char === "\\" && quote === '"' && command[index + 1] === "\n") return index + 1;
     if (char === quote) quote = undefined;
     else if (char === "\\" && quote === '"' && /["\\$`]/.test(command[index + 1] ?? ""))
       word += command[++index] ?? "";
@@ -64,7 +125,10 @@ export function shellWords(command: string): string[] {
 
 /** A complete project-command token, with Claude's permission wildcard removed separately. */
 export function runnerTarget(command: string): string | undefined {
-  const words = shellWords(command);
+  return runnerWordTarget(shellWords(command));
+}
+
+function runnerWordTarget(words: readonly string[]): string | undefined {
   const [runner, second] = words;
   let target: string | undefined;
   if (runner === "make") target = second;
@@ -75,10 +139,19 @@ export function runnerTarget(command: string): string | undefined {
 }
 
 function runnerTargets(command: string): string[] {
-  return command.split(/&&|\|\||[;|]/).flatMap((part) => {
-    const target = runnerTarget(part);
-    return target ? [target] : [];
-  });
+  const targets: string[] = [];
+  let words: string[] = [];
+  const finish = () => {
+    const target = runnerWordTarget(words);
+    if (target) targets.push(target);
+    words = [];
+  };
+  for (const token of shellTokens(command)) {
+    if (token.operator && /[;&|()\n]/.test(token.word)) finish();
+    else words.push(token.word);
+  }
+  finish();
+  return targets;
 }
 
 export const commandChecks: Check = (view) =>

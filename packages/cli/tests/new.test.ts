@@ -656,25 +656,27 @@ describe("new and the filesystem", () => {
     },
   );
 
-  test("an unwritable parent is PermissionDenied unwritable and leaves nothing", async () => {
-    if (process.getuid?.() === 0) return;
-    const home = setup();
-    mkdirSync(join(home, "locked"));
-    chmodSync(join(home, "locked"), 0o555);
-    try {
-      const { status, stderr } = await newCli(["fixture-stack", "locked/app", "--json"], {
-        home,
-      });
-      expect(status).toBe(6);
-      expect(envelope(stderr).error).toMatchObject({
-        tag: "PermissionDenied",
-        details: { reason: "unwritable", path: join(home, "locked", "app") },
-      });
-      expect(readdirSync(join(home, "locked"))).toEqual([]);
-    } finally {
-      chmodSync(join(home, "locked"), 0o755);
-    }
-  });
+  test.skipIf(process.getuid?.() === 0)(
+    "an unwritable parent is PermissionDenied unwritable and leaves nothing",
+    async () => {
+      const home = setup();
+      mkdirSync(join(home, "locked"));
+      chmodSync(join(home, "locked"), 0o555);
+      try {
+        const { status, stderr } = await newCli(["fixture-stack", "locked/app", "--json"], {
+          home,
+        });
+        expect(status).toBe(6);
+        expect(envelope(stderr).error).toMatchObject({
+          tag: "PermissionDenied",
+          details: { reason: "unwritable", path: join(home, "locked", "app") },
+        });
+        expect(readdirSync(join(home, "locked"))).toEqual([]);
+      } finally {
+        chmodSync(join(home, "locked"), 0o755);
+      }
+    },
+  );
 });
 
 describe("template variables", () => {

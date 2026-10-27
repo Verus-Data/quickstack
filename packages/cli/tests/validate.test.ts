@@ -250,22 +250,25 @@ test("the bundled registry with only its README validates clean; with no directo
   expect(JSON.parse(missing.stderr).error.details.looked).toBe(join(home, "nothing"));
 });
 
-test("a root whose stacks/ can't be read is PermissionDenied, exit 6 [1.5#12]", async () => {
-  const root = temp();
-  stack(root, "fine");
-  chmodSync(join(root, "stacks"), 0o000);
-  try {
-    const result = await run([root, "--json"]);
-    expect(result.status).toBe(6);
-    expect(result.stdout).toBe("");
-    expect(JSON.parse(result.stderr).error.details).toEqual({
-      reason: "read",
-      path: join(root, "stacks"),
-    });
-  } finally {
-    chmodSync(join(root, "stacks"), 0o755);
-  }
-});
+test.skipIf(process.getuid?.() === 0)(
+  "a root whose stacks/ can't be read is PermissionDenied, exit 6 [1.5#12]",
+  async () => {
+    const root = temp();
+    stack(root, "fine");
+    chmodSync(join(root, "stacks"), 0o000);
+    try {
+      const result = await run([root, "--json"]);
+      expect(result.status).toBe(6);
+      expect(result.stdout).toBe("");
+      expect(JSON.parse(result.stderr).error.details).toEqual({
+        reason: "read",
+        path: join(root, "stacks"),
+      });
+    } finally {
+      chmodSync(join(root, "stacks"), 0o755);
+    }
+  },
+);
 
 test("budget-body: limits are inclusive, per kind: stack 2,000, fragment 1,000, app 3,000 [1.5#1] [1.5#2]", async () => {
   const root = temp();
