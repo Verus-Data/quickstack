@@ -331,7 +331,8 @@ the brief carries what verify will run. In order:
 
    "Runs" is the `run` command. Steps with `skipByDefault` say "skipped" and why. A
    step's `timeout` is shown only when it isn't the default, and an empty `layer` cell
-   means the step set none.
+   means the step set none. A `Layer` or `Expects` column that no step in the table fills
+   is left out (2026-10-26; see "What this plan may get wrong").
 2. **The commands table**: the merged `commands` with their purposes.
 3. **Environment**: each `env` key with its default, then: "If a port is busy, set the
    variable when you run verify (`PORT_WEB=5174 <cli> verify`). Don't change the defaults
@@ -676,3 +677,11 @@ directory.
     subdirectory is one line. Counting written files would collapse `.claude/` in this
     plan's own brief example, so the plan's rule and its example disagree; the tests pin
     the line rule.
+- 2026-10-26, from manual QA with an imported stack:
+  - The verify table's `Layer` and `Expects` columns were always present and empty for
+    every step of an entry that sets neither, which is noise for the agent. Each table (the
+    base one and the application's, decided separately) now leaves out a column no step in
+    it fills; `Step` and `Phase` always stay. `text.ts::done.tableHead` takes the columns.
+  - `NotFound` couldn't say whether the stack id or a `--with`/`--without` id was wrong.
+    `id` and `kind` came back as optional keys of `NotFound.details`, and human mode
+    prints `Stack: <id>` or `Fragment: <id>` (roadmap Error tags).
