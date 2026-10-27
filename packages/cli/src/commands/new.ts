@@ -1,4 +1,4 @@
-import { Effect, Option, Schema } from "effect";
+import { Effect, Option, Path, Schema } from "effect";
 import { Argument, CliError, Command, Flag } from "effect/cli";
 import { AppConfig } from "../config";
 import {
@@ -8,6 +8,7 @@ import {
   LAUNCH_ARGS,
   renderHandoff,
 } from "../core/handoff";
+import { MANIFEST_PATH, readManifest, writeManifest } from "../core/manifest";
 import { defaultRoots, Registry } from "../core/registry/registry";
 import { scaffold } from "../core/scaffold/new";
 import { renderNew } from "../core/scaffold/report";
@@ -34,6 +35,21 @@ const ids = (name: string, description: string) =>
   );
 
 const isAgent = Schema.is(AgentId);
+
+/**
+ * Rewrites the manifest's `handoff` record from `launch` to `print` (same `at`) after the agent
+ * couldn't be started. Best effort: the spawn failure is what the caller reports, so a manifest
+ * that can't be read or written back leaves the record as it was.
+ */
+const recordPrinted = (file: string) =>
+  readManifest(file).pipe(
+    Effect.flatMap((manifest) =>
+      manifest.handoff
+        ? writeManifest(file, { ...manifest, handoff: { kind: "print", at: manifest.handoff.at } })
+        : Effect.void,
+    ),
+    Effect.ignore,
+  );
 
 export const newCommand = Command.make(
   "new",
@@ -115,6 +131,7 @@ export const newCommand = Command.make(
   (flags) =>
     Effect.gen(function* () {
       const host = yield* Host;
+      const path = yield* Path.Path;
       const config = yield* AppConfig;
       const processes = yield* Processes;
       const invocation = yield* Invocation;
@@ -180,7 +197,7 @@ export const newCommand = Command.make(
             ...result,
             handoff: { ...decision, untrusted: [...decision.untrusted], prompt },
           }),
-          `${summary}\n\n${renderHandoff(decision, { project: result.project, shown, invocation: host.invocation })}`,
+          `${summary}\n\n${renderHandoff(decision, { shown, invocation: host.invocation, audience: output.audience })}`,
         );
         return;
       }
@@ -201,11 +218,15 @@ export const newCommand = Command.make(
         })
         .pipe(
           Effect.catchTag("SpawnFailed", (failure) =>
-            failure.errno === "EACCES"
-              ? Effect.fail(
-                  new PermissionDenied({ details: { reason: "launch", path: decision.bin } }),
-                )
-              : Effect.die(failure),
+            // Nothing was launched, so the manifest's record says the prompt was left to print.
+            Effect.andThen(
+              recordPrinted(path.join(result.project, MANIFEST_PATH)),
+              failure.errno === "EACCES"
+                ? Effect.fail(
+                    new PermissionDenied({ details: { reason: "launch", path: decision.bin } }),
+                  )
+                : Effect.die(failure),
+            ),
           ),
         );
       // The project was written; the agent's own status is the invocation's, with no envelope.

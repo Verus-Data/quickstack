@@ -161,12 +161,12 @@ test("the prompt names the invocation, so an npx project names the pinned versio
   );
   const text = renderHandoff(
     { kind: "print", reason: "no-launch", untrusted: [] },
-    { project: "/p/app", shown: "app", invocation: "npx -y quickstacks@1.2.3" },
+    { shown: "app", invocation: "npx -y quickstacks@1.2.3", audience: "human" },
   );
   expect(text).toContain("npx -y quickstacks@1.2.3 verify passes.");
   const inside = renderHandoff(
     { kind: "inside-agent", agent: "claude", untrusted: [] },
-    { project: "/p/app", shown: "app", invocation: "npx -y quickstacks@1.2.3" },
+    { shown: "app", invocation: "npx -y quickstacks@1.2.3", audience: "agent" },
   );
   expect(inside).toContain("Loop on npx -y quickstacks@1.2.3 verify until it passes.");
 });
@@ -174,14 +174,14 @@ test("the prompt names the invocation, so an npx project names the pinned versio
 test("the printed example quotes a directory with spaces and quotes so it pastes into a shell [1.4#19]", () => {
   const text = renderHandoff(
     { kind: "print", reason: "no-launch", agent: "opencode", untrusted: [] },
-    { project: "/p/my 'app'", shown: "my 'app'", invocation: "quickstacks" },
+    { shown: "my 'app'", invocation: "quickstacks", audience: "human" },
   );
   expect(text.split("\n").at(-1)).toBe(
     `For example: cd 'my '\\''app'\\''' && opencode --prompt "${prompt}"`,
   );
   const here = renderHandoff(
     { kind: "print", reason: "no-launch", untrusted: [] },
-    { project: "/p/app", shown: ".", invocation: "quickstacks" },
+    { shown: ".", invocation: "quickstacks", audience: "human" },
   );
   expect(here.split("\n").at(-1)).toBe(`For example: claude "${prompt}"`);
 });

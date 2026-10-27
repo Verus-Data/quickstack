@@ -76,12 +76,41 @@ describe("inside an agent", () => {
     expect(stderr).toBe("");
     expect(status).toBe(0);
     const tail = stdout.trimEnd().split("\n").at(-1);
+    // The project is under the working directory, so it is named relative to it.
     expect(tail).toBe(
-      `NEXT STEP FOR THE AGENT: read .quickstacks/BRIEF.md now and carry it out, working in ${app}. Loop on quickstacks verify until it passes. Don't stop here to report back; the brief says when to ask the user.`,
+      "NEXT STEP FOR THE AGENT: read .quickstacks/BRIEF.md now and carry it out, working in app. Loop on quickstacks verify until it passes. Don't stop here to report back; the brief says when to ask the user.",
     );
+    expect(stdout).not.toContain(app);
     const manifest = manifestOf(app);
     expect(manifest.handoff).toMatchObject({ kind: "inside-agent", agent: "claude" });
     expect(Number.isNaN(Date.parse(manifest.handoff?.at ?? ""))).toBe(false);
+  });
+
+  test("CLAUDECODE=1 for a project outside the working directory: named by its absolute path [1.4#3]", async () => {
+    const home = temp();
+    const elsewhere = join(temp(), "elsewhere");
+    const { status, stdout } = await runCli(["new", "fixture-stack", elsewhere, "--sandbox"], {
+      home,
+      env: { ...quiet, CLAUDECODE: "1", PATH: join(home, "bin") },
+      host: { registry: newRegistry, cwd: home },
+    });
+    expect(status).toBe(0);
+    expect(stdout.trimEnd().split("\n").at(-1)).toContain(`, working in ${elsewhere}. Loop on`);
+  });
+
+  test("CLAUDECODE=1 from inside the project: working in the current directory [1.4#3]", async () => {
+    const home = temp();
+    const app = join(home, "app");
+    mkdirSync(app);
+    const { status, stdout } = await runCli(["new", "fixture-stack", ".", "--sandbox"], {
+      home,
+      env: { ...quiet, CLAUDECODE: "1", PATH: join(home, "bin") },
+      host: { registry: newRegistry, cwd: app },
+    });
+    expect(status).toBe(0);
+    expect(stdout.trimEnd().split("\n").at(-1)).toContain(
+      ", working in the current directory. Loop on",
+    );
   });
 
   test("CLAUDECODE=1 --json: one result whose handoff is inside-agent with the prompt [1.4#3]", async () => {
@@ -248,8 +277,27 @@ describe("launching an agent", () => {
         `Permission denied.\n  Path: ${claude.bin}\n  The agent CLI was found on PATH but can't be run by you. The project was written.\n  Next: fix the binary's permissions, or start your agent in the project yourself.\n`,
       );
       expect(existsSync(join(app, MANIFEST_PATH))).toBe(true);
+      // Nothing was launched, so the record no longer says it was.
+      expect(manifestOf(app).handoff).toEqual({
+        kind: "print",
+        at: manifestOf(app).createdAt,
+      });
     },
   );
+
+  test("an agent binary the OS can't execute is a defect; the record says print, not launch", async () => {
+    const home = temp();
+    mkdirSync(join(home, "bin"));
+    // Executable bits, but no shebang and no valid binary format: exec fails with ENOEXEC.
+    const bin = join(home, "bin", "claude");
+    writeFileSync(bin, "\u007fELF not really\n");
+    chmodSync(bin, 0o755);
+    const { status, stdout, stderr, app } = await newCli([], { home, host: terminal });
+    expect(status).toBe(1);
+    expect(stdout).toContain(`Launching ${bin} in app...`);
+    expect(stderr).toBe("An unexpected error occurred.\n");
+    expect(manifestOf(app).handoff).toEqual({ kind: "print", at: manifestOf(app).createdAt });
+  });
 });
 
 describe("printing the prompt", () => {

@@ -7,7 +7,7 @@ import { type RecordFacts, recordRun } from "../core/verify/record";
 import { renderVerify } from "../core/verify/report";
 import { runVerify } from "../core/verify/run";
 import { acceptChanges, changedResult, checkTamper } from "../core/verify/tamper";
-import { changeLines, PermissionDenied, VerifyChanged, VerifyFailed } from "../errors";
+import { PermissionDenied, VerifyChanged, VerifyFailed } from "../errors";
 import { VerifyResult } from "../schemas/verify";
 import { Host } from "../services/host";
 import { Output } from "../services/output";
@@ -60,15 +60,9 @@ export const verifyCommand = Command.make(
       const options = { only: names(flags.only), skipTags: names(flags.skipTag), all: flags.all };
       const plan = yield* planVerify(manifest.verify, options);
       let tamper = yield* checkTamper(manifest, located.path);
-      if (flags.acceptChanges) {
-        if (tamper.changed)
-          yield* Effect.forEach(
-            ["Accepting the changed verify steps:", ...changeLines(tamper.changed)],
-            (line, index) => output.progress(index ? `  ${line}` : line),
-            { discard: true },
-          );
+      // The report names what was accepted (`result.changed`), in every audience.
+      if (flags.acceptChanges)
         ({ manifest, tamper } = yield* acceptChanges(manifest, located.path, tamper));
-      }
       const context = {
         root: located.root,
         manifest,
@@ -78,7 +72,7 @@ export const verifyCommand = Command.make(
       const write = (result: VerifyResult) =>
         output.result(
           Schema.encodeSync(VerifyResult)(result),
-          renderVerify(result, host.invocation),
+          renderVerify(result, { invocation: host.invocation, audience: output.audience }),
         );
 
       const { changed } = tamper;

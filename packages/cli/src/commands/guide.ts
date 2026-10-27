@@ -1,17 +1,21 @@
 import { Effect, Schema } from "effect";
 import { Command } from "effect/cli";
-import { guideCommands, guideText } from "../core/guide";
+import { guideCommands, guideText, humanLead } from "../core/guide";
 import { GuideResult } from "../schemas/guide";
 import { Host } from "../services/host";
 import { Output } from "../services/output";
 
-/** Prints the agent guide; the root with no subcommand runs the same handler. */
+/**
+ * Prints the agent guide; the root with no subcommand runs the same handler. A human first gets
+ * one line saying who the guide is for and how to start a project yourself.
+ */
 export const printGuide = Effect.gen(function* () {
   const { invocation } = yield* Host;
+  const output = yield* Output;
   const text = guideText(invocation);
-  yield* (yield* Output).result(
+  yield* output.result(
     Schema.encodeSync(GuideResult)({ guide: text, commands: guideCommands(invocation) }),
-    text,
+    output.audience === "human" ? `${humanLead(invocation)}\n\n${text}` : text,
   );
 });
 

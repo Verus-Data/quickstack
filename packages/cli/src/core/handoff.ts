@@ -1,4 +1,5 @@
 import type { AgentId, DetectedAgent } from "../schemas/entry";
+import type { Audience } from "../services/output";
 import { printable } from "./text";
 
 /** Why `new` printed the prompt instead of launching an agent. */
@@ -107,18 +108,20 @@ const quote = (text: string) =>
   /^[A-Za-z0-9._/+-]+$/.test(text) || !/^[^"$`\\!]*$/.test(text) ? shellArg(text) : `"${text}"`;
 
 /**
- * The human text after `new`'s summary for an outcome other than `launch`. `project` is the
- * absolute project path; `shown` is how the summary showed it (relative when under the cwd).
+ * The text after `new`'s summary for an outcome other than `launch`. `shown` is how the summary
+ * showed the project (`core/shown-path.ts::shownPath`: relative when under the cwd). A human also
+ * gets a ready-to-run example command; an agent has the prompt on the line above it already.
  */
 export function renderHandoff(
   decision: Exclude<HandoffDecision, { kind: "launch" }>,
-  context: { project: string; shown: string; invocation: string },
+  context: { shown: string; invocation: string; audience: Audience },
 ): string {
   const ids = decision.untrusted.map(printable).join(", ");
+  const where = context.shown === "." ? "the current directory" : printable(context.shown);
   if (decision.kind === "inside-agent")
     return decision.untrusted.length
       ? `STOP: this project uses entries this machine hasn't trusted: ${ids}. Don't start. Show the user the list and .quickstacks/BRIEF.md's first section, and continue only if they confirm.`
-      : `NEXT STEP FOR THE AGENT: read .quickstacks/BRIEF.md now and carry it out, working in ${printable(context.project)}. Loop on ${context.invocation} verify until it passes. Don't stop here to report back; the brief says when to ask the user.`;
+      : `NEXT STEP FOR THE AGENT: read .quickstacks/BRIEF.md now and carry it out, working in ${where}. Loop on ${context.invocation} verify until it passes. Don't stop here to report back; the brief says when to ask the user.`;
   const prompt = agentPrompt(context.invocation);
   const example = LAUNCH_ARGS[decision.agent ?? "claude"];
   const dir = printable(shellArg(context.shown));
@@ -132,10 +135,10 @@ export function renderHandoff(
     lines.push(
       `No agent CLI found on PATH (looked for ${LAUNCH_ORDER.map((id) => LAUNCH_ARGS[id].bin).join(", ")}).`,
     );
-  lines.push(
-    `Next: open ${dir} in your coding agent and give it this prompt:`,
-    `  ${prompt}`,
-    `For example: ${context.shown === "." ? "" : `cd ${dir} && `}${[example.bin, ...example.args(prompt).map(quote)].join(" ")}`,
-  );
+  lines.push(`Next: open ${dir} in your coding agent and give it this prompt:`, `  ${prompt}`);
+  if (context.audience === "human")
+    lines.push(
+      `For example: ${context.shown === "." ? "" : `cd ${dir} && `}${[example.bin, ...example.args(prompt).map(quote)].join(" ")}`,
+    );
   return lines.join("\n");
 }

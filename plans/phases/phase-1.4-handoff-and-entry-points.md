@@ -399,3 +399,21 @@ What execution found, 2026-10-26:
   is a subcommand skips `verify` until then.
 - The e2e test puts the fixture stack in the user directory, because entries under
   `QUICKSTACKS_REGISTRY_DIR` are untrusted and would give the `STOP` text.
+
+Review, 2026-10-26:
+
+- The manifest is written with `handoff.kind: "launch"` before the agent is spawned, so a
+  spawn that fails left a record of a launch that never happened (2.0b and 2.0c read it).
+  `commands/new.ts` now rewrites the record to `{ kind: "print", at }` (the same `at`) when
+  the spawn fails, both for `PermissionDenied` (`launch`) and for the defect from any other
+  spawn error, before reporting the failure. The record means what happened, not what was
+  attempted: the prompt is on stdout either way, and an `attempted` kind would be a manifest
+  schema change for no reader. The rewrite is best effort; a manifest that can't be read or
+  written back keeps `launch`, and the spawn failure is still what the caller sees.
+- D29 (agent output by default) landed on `main` after this plan executed. The handoff
+  decision is unchanged (a launch needs a terminal and no agent, which is the human
+  audience), but its text is rendered per audience: the `NEXT STEP FOR THE AGENT` line names
+  the project through `core/shown-path.ts::shownPath` (relative when it is under the
+  working directory, "the current directory" when it is the working directory), and agent
+  output drops the printed `For example:` command, which repeats the prompt on the line
+  above it.

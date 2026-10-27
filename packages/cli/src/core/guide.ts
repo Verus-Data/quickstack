@@ -23,6 +23,10 @@ export const guideText = (cli: string) =>
     "The user's own stacks and fragments go in $XDG_CONFIG_HOME/quickstacks/stacks/<id>/ and fragments/<id>/ (default ~/.config/quickstacks/).",
   ].join("\n");
 
+/** Before the guide for a person at a terminal (the human audience), who isn't its reader. */
+export const humanLead = (cli: string) =>
+  `This guide is written for coding agents. To start a project yourself, run ${cli} list, then ${cli} new <stack> <dir>; ${cli} --help lists every command.`;
+
 /** The commands the guide's loop uses, for `--json` callers. */
 export const guideCommands = (cli: string) => [
   { name: "list", run: `${cli} list --json`, purpose: "See the stacks and fragments you can use." },

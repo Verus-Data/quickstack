@@ -356,8 +356,10 @@ describe("--accept-changes", () => {
       host: tty,
     });
     expect(result.status).toBe(0);
-    expect(result.stderr).toContain("Edited: lint");
-    expect(result.stdout).toMatch(/^verify: green /);
+    // The accepted change is part of the report, so it reaches every text audience.
+    expect(result.stdout).toMatch(/^verify: green .*\nAccepted the changed verify steps:\n/);
+    expect(result.stdout).toContain("\n  Edited: lint\n");
+    expect(result.stderr).not.toContain("Edited: lint");
     expect(has(project.root, "linted-again")).toBe(true);
     const written = readManifestAt(project.root);
     expect(written.verifyDigest).toBe(digestSteps(written));

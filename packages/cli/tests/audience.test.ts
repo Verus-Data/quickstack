@@ -1,8 +1,9 @@
-import { cpSync, mkdirSync, readFileSync, realpathSync, symlinkSync } from "node:fs";
+import { cpSync, mkdirSync, readFileSync, realpathSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "vitest";
 import { ndjson, quiet, runCli, tempDir, terminal } from "./helpers/cli";
 import { minimal, newRegistry, smallRegistry, writeEntry } from "./helpers/registry";
+import { decodeResult, writeProject } from "./helpers/verify";
 
 // Who reads the output: a human only at a terminal with no agent detected; an agent everywhere
 // else (its shell, a pipe, CI); `--json` is the machine contract either way.
@@ -120,12 +121,13 @@ describe("new for an agent", () => {
       "",
       "Next: open app in your coding agent and give it this prompt:",
       "  Read .quickstacks/BRIEF.md and carry it out. It's your full task for this project; you're done when quickstacks verify passes.",
-      `For example: cd app && claude "Read .quickstacks/BRIEF.md and carry it out. It's your full task for this project; you're done when quickstacks verify passes."`,
       "",
     ]);
     const human = await newCli(home, ["app2", "--sandbox"], { human: true });
     expect(human.stdout).toContain(`Project: ${join(home, "app2")}\n`);
     expect(human.stdout).toMatch(/\nWrote \d+ files:\n/);
+    // A human also gets a command to paste; an agent has the prompt on the line above.
+    expect(human.stdout).toContain('\nFor example: cd app2 && claude "Read .quickstacks/');
     const json = await newCli(home, ["app3", "--json"]);
     expect(JSON.parse(json.stdout).project).toBe(join(home, "app3"));
   });
@@ -192,6 +194,107 @@ describe("new for an agent", () => {
     expect(agent.status).toBe(0);
     expect(agent.stdout).toContain("Created app from fixture-stack.\n");
     expect(readFileSync(join(parent, "app", ".quickstacks", "BRIEF.md"), "utf8")).toMatch(/^# /);
+  });
+});
+
+describe("verify for an agent", () => {
+  const steps = [
+    { name: "install", phase: "setup" as const, run: "echo installing" },
+    { name: "lint", run: "echo lint broke; exit 1" },
+    { name: "unit", run: "true" },
+  ];
+  const run = (root: string, args: string[], host = {}) =>
+    runCli(["verify", ...args], {
+      home: temp(),
+      env: { ...quiet, PATH: process.env.PATH ?? "" },
+      host: { cwd: root, ...host },
+    });
+
+  test("leaves out the passed rows and the progress lines; keeps failures, their output and Next", async () => {
+    const root = temp();
+    writeProject(root, steps);
+    const agent = await run(root, []);
+    expect(agent.status).toBe(5);
+    expect(agent.stdout.split("\n")).toEqual([
+      expect.stringMatching(
+        /^verify: failed \(full run; 2 passed, 1 failed, 0 skipped; \d+\.\ds\)$/,
+      ),
+      "Tamper check: manifest only (no state record for this project on this machine), so this run can't count for the MVP gate.",
+      "",
+      expect.stringMatching(/^ {2}failed {3}check {5}lint {5}\(exit 1, \d+\.\ds\) {2}exited/),
+      "      | lint broke",
+      "",
+      "Next: fix the code or config these steps exercise, not the steps, then run quickstacks verify again.",
+      "",
+    ]);
+    expect(agent.stderr).toBe("Verify failed.\n  Failed: lint (step, exit 1)\n");
+    const human = await run(root, [], terminal);
+    expect(human.status).toBe(5);
+    expect(human.stdout).toMatch(/\n {2}passed {3}setup {5}install/);
+    expect(human.stdout).toMatch(/\n {2}passed {3}check {5}unit/);
+    expect(human.stderr).toContain("> lint: echo lint broke; exit 1\n");
+    const json = await run(root, ["--json"]);
+    expect(decodeResult(json.stdout).steps.map((step) => step.status)).toEqual([
+      "passed",
+      "failed",
+      "passed",
+    ]);
+  });
+
+  test("a green run is its summary line alone", async () => {
+    const root = temp();
+    writeProject(root, [{ name: "unit", run: "true" }]);
+    const agent = await run(root, []);
+    expect(agent.status).toBe(0);
+    expect(agent.stderr).toBe("");
+    expect(agent.stdout).toMatch(
+      /^verify: green \(full run; 1 passed, 0 failed, 0 skipped; [^)]+\)\n/,
+    );
+    expect(agent.stdout).not.toContain("passed   check");
+  });
+
+  test("a skipped step keeps its row and reason", async () => {
+    const root = temp();
+    writeProject(root, steps);
+    const agent = await run(root, ["--only", "unit"]);
+    expect(agent.status).toBe(0);
+    expect(agent.stdout).toContain("\n  skipped  check     lint     not selected by --only\n");
+    expect(agent.stdout).not.toMatch(/\n {2}passed/);
+  });
+
+  test("changed steps: no per-step rows, the change named once on stderr", async () => {
+    const root = temp();
+    const file = writeProject(root, steps);
+    const manifest = JSON.parse(readFileSync(file, "utf8")) as { verify: { run: string }[] };
+    const lint = manifest.verify[1];
+    if (lint) lint.run = "true";
+    writeFileSync(file, JSON.stringify(manifest));
+    const agent = await run(root, []);
+    expect(agent.status).toBe(5);
+    expect(agent.stdout).toMatch(/^verify: changed \(full run; 0 passed, 0 failed, 3 skipped; /);
+    expect(agent.stdout).not.toContain("not run: the verify steps changed");
+    expect(agent.stdout).toContain("\nNext: the verify steps changed since they were recorded.");
+    expect(agent.stderr).toBe(
+      "Verify steps changed since they were recorded.\n  Against: the manifest's own verifyDigest\n  Which steps changed is not itemized: there are no per-step digests to compare with.\n",
+    );
+    const human = await run(root, [], terminal);
+    expect(human.stdout.match(/not run: the verify steps changed/g)).toHaveLength(3);
+  });
+});
+
+describe("the guide by audience", () => {
+  test("an agent gets the guide alone; a human first gets who it is for", async () => {
+    for (const args of [[], ["guide"]]) {
+      const agent = await runCli(args);
+      expect(agent.status).toBe(0);
+      expect(agent.stdout).toMatch(/^quickstacks starts projects for coding agents\./);
+      const human = await runCli(args, { host: terminal });
+      expect(human.stdout).toBe(
+        `This guide is written for coding agents. To start a project yourself, run quickstacks list, then quickstacks new <stack> <dir>; quickstacks --help lists every command.\n\n${agent.stdout}`,
+      );
+      const json = await runCli([...args, "--json"], { host: terminal });
+      expect(JSON.parse(json.stdout).guide).toBe(agent.stdout.trimEnd());
+    }
   });
 });
 

@@ -1,4 +1,6 @@
+import { changeLines } from "../../errors";
 import type { FailureKind, StepResult, VerifyResult } from "../../schemas/verify";
+import type { Audience } from "../../services/output";
 import { printable } from "../text";
 import { nextLine } from "./next";
 
@@ -21,10 +23,24 @@ function stepLines(step: StepResult, width: number): string[] {
 }
 
 /**
- * The human result: a summary line, one row per step (a failed step's output tail under it), and
- * for a run that isn't green the fixed `Next:` line last.
+ * The text result: a summary line, the changes an `--accept-changes` run accepted, one row per
+ * step (a failed step's output tail under it), and for a run that isn't green the fixed `Next:`
+ * line last. A human gets every row. An agent gets only the failed and skipped rows (the summary
+ * counts the passed ones), and no rows on a `changed` run, where every step is skipped for the
+ * same reason and the error's detail lines itemize the change.
  */
-export function renderVerify(result: VerifyResult, invocation: string): string {
+export function renderVerify(
+  result: VerifyResult,
+  context: { invocation: string; audience: Audience },
+): string {
+  const { invocation } = context;
+  const steps =
+    context.audience === "human"
+      ? result.steps
+      : result.outcome === "changed"
+        ? []
+        : result.steps.filter((step) => step.status !== "passed");
+  // Aligned over every step, so a row reads the same whichever rows are shown.
   const width = Math.max(0, ...result.steps.map((step) => printable(step.name).length));
   const { passed, failed, skipped } = result.totals;
   const header = `verify: ${result.outcome} (${result.scope} run; ${passed} passed, ${failed} failed, ${skipped} skipped; ${seconds(result.durationMs)})`;
@@ -39,7 +55,14 @@ export function renderVerify(result: VerifyResult, invocation: string): string {
           "Tamper check: manifest only (no state record for this project on this machine), so this run can't count for the MVP gate.",
         ]
       : []),
-    ...(result.steps.length ? ["", ...result.steps.flatMap((step) => stepLines(step, width))] : []),
+    // A `changed` field on any other outcome is a change `--accept-changes` recorded.
+    ...(result.changed && result.outcome !== "changed"
+      ? [
+          "Accepted the changed verify steps:",
+          ...changeLines(result.changed).map((line) => `  ${line}`),
+        ]
+      : []),
+    ...(steps.length ? ["", ...steps.flatMap((step) => stepLines(step, width))] : []),
     ...(next ? ["", next] : []),
   ].join("\n");
 }
