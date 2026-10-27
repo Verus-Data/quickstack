@@ -1,5 +1,6 @@
 import { Effect, FileSystem, Path, Schema } from "effect";
 import { appendRecord } from "../../src/core/ledger";
+import { within } from "../../src/core/scaffold/write";
 import { LedgerRecord } from "../../src/schemas/ledger";
 import { Output } from "../../src/services/output";
 import type { Prepared } from "./prepare";
@@ -123,12 +124,13 @@ const writeNote = ({
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
     const path = yield* Path.Path;
+    const previous = yield* previousNotePath(prepared);
     const markdown = yield* renderNote({ prepared, agent, verified, row, result });
     yield* fs.makeDirectory(path.join(prepared.repo, "plans/runs"), { recursive: true });
     yield* fs.writeFileString(path.join(prepared.repo, note), markdown, { flag: "wx" });
-    if (prepared.previousNote)
+    if (previous)
       yield* fs.writeFileString(
-        path.join(prepared.repo, prepared.previousNote),
+        previous,
         `\nContinued in [${path.basename(note)}](${path.basename(note)}).\n`,
         { flag: "a" },
       );
@@ -141,6 +143,20 @@ const writeNote = ({
         note,
       }),
     );
+  });
+
+const previousNotePath = (prepared: Prepared) =>
+  Effect.gen(function* () {
+    if (!prepared.previousNote) return undefined;
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const repo = yield* fs.realPath(prepared.repo);
+    const runs = path.join(repo, "plans/runs");
+    const previous = path.resolve(prepared.repo, prepared.previousNote);
+    const actual = yield* fs.realPath(previous);
+    if (!within(runs, actual, path.sep) || actual === runs)
+      return yield* Effect.fail(new Error("Previous bench note must be under plans/runs"));
+    return actual;
   });
 
 function continuationText(prepared: Prepared, path: Path.Path): string {

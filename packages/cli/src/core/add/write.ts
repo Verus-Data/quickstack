@@ -123,6 +123,15 @@ export const applyAdd = (input: {
     }),
   ).pipe(
     Effect.catchTag("TargetNotEmpty", (error) =>
-      Effect.fail(denied(error.details?.path ?? input.root)),
+      Effect.gen(function* () {
+        const path = yield* Path.Path;
+        const root = error.details?.path ?? input.root;
+        return yield* new PermissionDenied({
+          details: {
+            reason: "blocked",
+            path: path.resolve(root, error.details?.entries[0] ?? "."),
+          },
+        });
+      }),
     ),
   );

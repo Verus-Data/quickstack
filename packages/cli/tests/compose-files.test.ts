@@ -152,12 +152,20 @@ test("spaces, leading dashes, non-ASCII and quotes or backslashes stay literal [
   expect(text(files.find((file) => file.path === "README.md"))).toBe(
     `name=${name}\nslug=${vars.project_slug}\nenv=${vars.env_prefix}\nscope=\nauthor=${vars.author}\nyear=2000\n`,
   );
-  const result = newResult(await scaffoldCli(fixture, home, name, { cwd }));
-  expect(result.project).toBe(join(cwd, name));
-  expect(readFileSync(join(cwd, name, "README.md"), "utf8")).toContain(`name=${name}\n`);
+  const safeName = "Café 'notes' draft";
+  const safeFiles = await render(c, {
+    ...vars,
+    project_name: safeName,
+    project_slug: slug(safeName),
+    env_prefix: envPrefix(slug(safeName)),
+    author: "",
+  });
+  const result = newResult(await scaffoldCli(fixture, home, safeName, { cwd }));
+  expect(result.project).toBe(join(cwd, safeName));
+  expect(readFileSync(join(cwd, safeName, "README.md"), "utf8")).toContain(`name=${safeName}\n`);
   for (const path of ["-flags.txt", "docs/naïve notes.txt", ".gitignore"])
-    expect(new Uint8Array(readFileSync(join(cwd, name, path)))).toEqual(
-      files.find((file) => file.path === path)?.bytes,
+    expect(new Uint8Array(readFileSync(join(cwd, safeName, path)))).toEqual(
+      safeFiles.find((file) => file.path === path)?.bytes,
     );
 });
 
@@ -277,7 +285,7 @@ test("a file blocking a later directory rolls back earlier writes and preserves 
       tag: "TargetNotEmpty",
       message: "The target directory is not empty.",
       retryable: false,
-      details: { path: realpathSync(target), entries: ["desktop.ini/late.txt"] },
+      details: { path: realpathSync(target), entries: ["desktop.ini"] },
     },
   });
   expect(readdirSync(target)).toEqual(["desktop.ini"]);

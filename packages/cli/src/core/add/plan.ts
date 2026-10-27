@@ -63,6 +63,39 @@ const checkOwnRepo = (root: string, needsOwnRepo: ReadonlyArray<string>) =>
     }
   });
 
+const readLive = (root: string, rel: string) =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const checkLink = (at: string) =>
+      Effect.gen(function* () {
+        const real = yield* fs.realPath(at).pipe(Effect.mapError(() => denied(at)));
+        if (!within(root, real, path.sep)) return yield* denied(at);
+      });
+    const liveType = (at: string) =>
+      fs.lstat(at).pipe(
+        Effect.map((value) => value.type),
+        Effect.catch((error) =>
+          absent(error) || error.reason._tag === "BadResource"
+            ? Effect.succeed("Missing")
+            : Effect.fail(denied(at)),
+        ),
+      );
+    // Check every existing prefix before reading: a live ancestor must not escape the project.
+    let at = root;
+    for (const part of rel.split("/")) {
+      at = path.join(at, part);
+      const info = yield* liveType(at);
+      if (info === "Missing") return undefined;
+      if (at === path.join(root, rel) && info === "Directory")
+        return yield* new PermissionDenied({ details: { reason: "blocked", path: at } });
+      if (info === "SymbolicLink") yield* checkLink(at);
+    }
+    return yield* fs
+      .readFile(path.join(root, rel))
+      .pipe(Effect.mapError(() => denied(path.join(root, rel))));
+  });
+
 /** Read-only classification. The live tree is never a merge target (D4). */
 export const planAdd = (input: {
   readonly root: string;
@@ -95,39 +128,13 @@ export const planAdd = (input: {
         }
       });
     yield* walk(INCOMING);
-    const checkLink = (at: string) =>
-      Effect.gen(function* () {
-        const real = yield* fs.realPath(at).pipe(Effect.mapError(() => denied(at)));
-        if (!within(root, real, path.sep)) return yield* denied(at);
-      });
-    const read = (rel: string) =>
-      Effect.gen(function* () {
-        // Check every existing prefix before reading: a live ancestor must not escape the project.
-        let at = root;
-        for (const part of rel.split("/")) {
-          at = path.join(at, part);
-          const info = yield* fs.lstat(at).pipe(
-            Effect.map((value) => value.type),
-            Effect.catch((error) =>
-              absent(error) || error.reason._tag === "BadResource"
-                ? Effect.succeed("Missing")
-                : Effect.fail(denied(at)),
-            ),
-          );
-          if (info === "Missing") return undefined;
-          if (info === "SymbolicLink") yield* checkLink(at);
-        }
-        return yield* fs
-          .readFile(path.join(root, rel))
-          .pipe(Effect.mapError(() => denied(path.join(root, rel))));
-      });
     const same = (a: Uint8Array, b: Uint8Array) =>
       a.length === b.length && a.every((byte, i) => byte === b[i]);
     const write: Array<PlannedFile & { readonly bytes: Uint8Array }> = [];
     const park: Array<AddPlan["park"][number]> = [];
     const skipped: string[] = [];
     const candidates = yield* Effect.forEach(input.rendered, (item) =>
-      read(item.file.path).pipe(Effect.map((live) => ({ ...item, live }))),
+      readLive(root, item.file.path).pipe(Effect.map((live) => ({ ...item, live }))),
     );
     // A numbered copy must not claim another contribution's primary path or directory.
     const reserved = new Set<string>();
@@ -176,7 +183,7 @@ export const planAdd = (input: {
     const parkConflict = (file: PlannedFile, bytes: Uint8Array) =>
       Effect.gen(function* () {
         const destination = `${INCOMING}/${file.path}`;
-        const parked = yield* read(destination);
+        const parked = yield* readLive(root, destination);
         if (parked === undefined) {
           park.push({ file, bytes, incoming: destination, action: "new" });
           incoming.push(destination);

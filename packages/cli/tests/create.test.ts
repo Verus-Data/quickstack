@@ -65,6 +65,73 @@ function metadata(path: string) {
 }
 
 describe("create an entry", () => {
+  test.skipIf(process.getuid?.() === 0)(
+    "an unreadable registry refuses create without writing anything",
+    async () => {
+      const home = createWorkspace();
+      const fragments = join(userRoot(home), "fragments");
+      mkdirSync(fragments, { recursive: true });
+      const before = entrySnapshot(home);
+      chmodSync(fragments, 0);
+      try {
+        const error = createFailure(
+          await createCli(home, ["create", "stack", "fresh", "--json"], { host: { cwd: home } }),
+          6,
+          "PermissionDenied",
+        );
+        expect(error.details).toEqual({ reason: "read", path: fragments });
+        expect(existsSync(entryPath(home, "stack", "fresh"))).toBe(false);
+      } finally {
+        chmodSync(fragments, 0o755);
+      }
+      expect(entrySnapshot(home)).toEqual(before);
+    },
+  );
+
+  test.each([false, true])(
+    "a fresh skeleton refuses an existing id (project copy: %s)",
+    async (projectCopy) => {
+      const home = createWorkspace();
+      if (projectCopy) source(home, "stack", "go-cli");
+      const before = entrySnapshot(home);
+      const args = ["create", "stack", "go-cli"];
+      const error = createFailure(
+        await createCli(home, [...args, "--json"], { host: { cwd: home } }),
+        2,
+        "BadInput",
+      );
+      expect(error).toEqual({
+        tag: "BadInput",
+        message: "Invalid input.",
+        retryable: false,
+        details: {
+          id: "go-cli",
+          flag: "create_shadows",
+          origins: projectCopy ? ["project", "bundled"] : ["bundled"],
+        },
+      });
+      expect(entrySnapshot(home)).toEqual(before);
+      expect(existsSync(entryPath(home, "stack", "go-cli"))).toBe(false);
+      const text = await createCli(home, args, { host: { cwd: home } });
+      expect(text.status).toBe(2);
+      expect(text.stdout).toBe("");
+      expect(text.stderr).toContain(
+        `Next: use --from ${projectCopy ? "project" : "bundled"} to start from a copy, or pick another id.`,
+      );
+      if (!projectCopy) {
+        const preview = jsonResult(
+          await createCli(home, ["new", "go-cli", "demo", "--dry-run", "--json"], {
+            host: { cwd: home },
+          }),
+          NewResult,
+        );
+        expect(preview.fragments.length).toBeGreaterThan(0);
+        expect(preview.written).toContain("Makefile");
+        expect(existsSync(join(home, "demo"))).toBe(false);
+      }
+    },
+  );
+
   test("reference skeletons pin today's complete validate findings [3.1b#1]", async () => {
     const home = createWorkspace();
     cpSync(createFixture, userRoot(home), { recursive: true });

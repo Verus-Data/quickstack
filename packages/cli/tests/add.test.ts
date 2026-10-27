@@ -4,6 +4,7 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  realpathSync,
   rmSync,
   statSync,
   symlinkSync,
@@ -713,6 +714,37 @@ describe("add realistic existing-project cases", () => {
     refused(await addCli(project, ["add", "rollback", "--json"]), 6, "PermissionDenied");
     expect(snapshot(project.root)).toEqual(before);
     expect(readFileSync(file)).toEqual(state);
+    expect(
+      refused(await addCli(project, ["add", "rollback", "--json"]), 6, "PermissionDenied").details,
+    ).toEqual({ reason: "blocked", path: join(realpathSync(project.root), "z-blocked") });
+    const text = await addCli(project, ["add", "rollback"]);
+    expect(text.status).toBe(6);
+    expect(text.stdout).toBe("");
+    expect(text.stderr).toContain(
+      "A file or directory in the project is in the way of a planned path. Nothing was changed.",
+    );
+    expect(text.stderr).toContain("Next: move or rename the blocking item, then run add again.");
+  });
+
+  test("a directory occupying a planned file is refused unchanged", async () => {
+    const project = await scaffolded();
+    mkdirSync(join(project.root, "name.txt"));
+    const before = snapshot(project.root);
+    expect(
+      refused(await addCli(project, ["add", "named", "--json"]), 6, "PermissionDenied").details,
+    ).toEqual({ reason: "blocked", path: join(realpathSync(project.root), "name.txt") });
+    expect(snapshot(project.root)).toEqual(before);
+  });
+
+  test.each(['a"b', "a\\b"])("add refuses an unsafe manifest name: %s", async (name) => {
+    const project = await scaffolded();
+    const manifest = readManifestAt(project.root);
+    put(project.root, MANIFEST_PATH, encodeManifest({ ...manifest, name }));
+    const before = snapshot(project.root);
+    expect(
+      refused(await addCli(project, ["add", "named", "--json"]), 2, "BadInput").details,
+    ).toEqual({ id: name, flag: "name" });
+    expect(snapshot(project.root)).toEqual(before);
   });
 
   test("git-hook repository variables cannot make an own-repo fragment probe the wrong repository [3.0#25]", async () => {

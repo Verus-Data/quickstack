@@ -102,6 +102,7 @@ export const scaffold = (options: NewOptions) =>
     if (hasControl(basename))
       return yield* new BadInput({ details: { id: basename, flag: "dir" } });
     const name = options.name ?? basename;
+    yield* templateOverrides({ name });
 
     // Explicit flags (including --sandbox), then the setting, then default.
     const preset = scaffoldPreset(options, settings.preset);

@@ -343,10 +343,10 @@ describe("naming options", () => {
     if (name === "2048") expect(readme).toContain("- env: _2048_PORT\n");
   });
 
-  test("author sanitization also applies to the flag, while project punctuation is literal [3.1c#14]", async () => {
+  test("author sanitization also applies to the flag, while supported project punctuation is literal [3.1c#14]", async () => {
     const home = temp();
     settings(home, "Settings Author");
-    const name = 'My "App" \\ Tools';
+    const name = "My 'App' / Tools";
     const result = success(
       await invoke(home, [
         "app",

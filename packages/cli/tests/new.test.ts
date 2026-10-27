@@ -678,6 +678,58 @@ describe("new and the filesystem", () => {
 });
 
 describe("template variables", () => {
+  test.each(['a"b', "a\\b"])(
+    "an unsafe directory-derived name is refused before rendering: %s",
+    async (name) => {
+      const home = setup();
+      const result = await newCli(["fixture-stack", name, "--json"], { home });
+      expect(result.status).toBe(2);
+      expect(result.stdout).toBe("");
+      expect(result.stderr.trim().split("\n")).toHaveLength(1);
+      expect(JSON.parse(result.stderr)).toEqual({
+        error: {
+          tag: "BadInput",
+          message: "Invalid input.",
+          retryable: false,
+          details: { id: name, flag: "name" },
+        },
+      });
+      expect(existsSync(join(home, name))).toBe(false);
+    },
+  );
+
+  test.each(['a"b', "a\\b"])(
+    "a name containing a quote or backslash is refused before rendering: %s",
+    async (name) => {
+      const home = setup();
+      const registry = join(home, "registry");
+      const entry = writeEntry({
+        root: registry,
+        kind: "stack",
+        dir: "json-name",
+        frontmatter: minimal("stack", "json-name"),
+      });
+      mkdirSync(join(entry, "files"));
+      writeFileSync(join(entry, "files/package.json.tmpl"), '{"name":"{{project_name}}"}');
+      const result = await newCli(["json-name", "app", "--name", name, "--json"], {
+        home,
+        registry,
+      });
+      expect(result.status).toBe(2);
+      expect(result.stdout).toBe("");
+      expect(result.stderr.trim().split("\n")).toHaveLength(1);
+      expect(JSON.parse(result.stderr)).toEqual({
+        error: {
+          tag: "BadInput",
+          message: "Invalid input.",
+          retryable: false,
+          details: { id: name, flag: "name" },
+        },
+      });
+      expect(existsSync(join(home, "app"))).toBe(false);
+    },
+  );
+
   const readme = async (args: string[], options: Parameters<typeof newCli>[1] = {}) => {
     const run = await newCli(["fixture-stack", "app", ...args], options);
     expect(run.status).toBe(0);

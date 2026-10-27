@@ -9,7 +9,7 @@ import { composeFiles } from "../compose/files";
 import { missingToolsOnPath } from "../compose/tools";
 import { buildManifest } from "../manifest";
 import { gitInstalled } from "../scaffold/git";
-import { templateValues } from "../scaffold/values";
+import { templateOverrides, templateValues } from "../scaffold/values";
 import { printable } from "../text";
 import { inferName } from "./name";
 import { planAdd } from "./plan";
@@ -45,6 +45,7 @@ export const prepareAdd = (options: AddOptions, project: AddProject) =>
         : yield* inferName(options.root);
     warnings.push(...inferred.warnings);
     const name = inferred.name;
+    yield* templateOverrides({ name: name.value });
     const values = yield* templateValues({
       name: name.value,
       settings,

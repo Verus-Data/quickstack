@@ -50,6 +50,8 @@ export const createEntry = (options: CreateOptions) =>
     );
     if (Option.isSome(existing)) return yield* occupied;
 
+    if (!from) yield* refuseShadow(kind, id);
+
     const { directories, files } = from
       ? yield* copySnapshot(kind, id, from, yes)
       : skeletonSnapshot(kind, id, category);
@@ -67,6 +69,25 @@ export const createEntry = (options: CreateOptions) =>
       path: target,
       guide: host.authoring,
     } satisfies CreateResult;
+  });
+
+const refuseShadow = (kind: Kind, id: string) =>
+  Effect.gen(function* () {
+    const roots = yield* defaultRoots;
+    const existing = yield* Effect.gen(function* () {
+      return yield* (yield* Registry).get(kind, id).pipe(
+        Effect.map(Option.some),
+        Effect.catchTag("NotFound", () => Effect.succeed(Option.none())),
+      );
+    }).pipe(Effect.provide(Registry.layer(roots)));
+    if (Option.isSome(existing))
+      return yield* new BadInput({
+        details: {
+          id,
+          flag: "create_shadows",
+          origins: [existing.value.origin, ...existing.value.shadows],
+        },
+      });
   });
 
 type Snapshot = {

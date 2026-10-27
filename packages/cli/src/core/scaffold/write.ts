@@ -238,7 +238,9 @@ export function openProject(
           return;
         }
         if (info !== "Directory")
-          return yield* new TargetNotEmpty({ details: { path: root, entries: [rel] } });
+          return yield* new TargetNotEmpty({
+            details: { path: root, entries: [path.relative(root, at)] },
+          });
       });
 
     /**

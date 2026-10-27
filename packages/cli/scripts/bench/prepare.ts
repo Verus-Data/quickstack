@@ -16,7 +16,9 @@ const State = Schema.fromJsonString(
     with: Schema.Array(Schema.String),
     ports: Schema.Record(Schema.String, Schema.String),
     fixedWords: Schema.Number,
-    note: Schema.optionalKey(Schema.String),
+    note: Schema.optionalKey(
+      Schema.String.check(Schema.isPattern(/^plans\/runs\/[A-Za-z0-9._-]+\.md$/)),
+    ),
   }),
 );
 

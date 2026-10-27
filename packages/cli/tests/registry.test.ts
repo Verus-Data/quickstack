@@ -143,6 +143,18 @@ test("get on an entry holding a symlink fails EntryInvalid with the link's path"
   );
 });
 
+test.each(["..", "../stacks/go-api"])("registry lookup refuses a path as an id: %s", async (id) => {
+  const result = await run(
+    bundled,
+    Effect.gen(function* () {
+      return yield* (yield* Registry).get("stack", id);
+    }),
+  );
+  expect(result).toEqual(
+    Exit.fail(new NotFound({ details: { suggestions: [], id, kind: "stack" } })),
+  );
+});
+
 test("get on an unknown id, or the right id under the other kind, fails NotFound naming the id and kind", async () => {
   for (const [kind, id] of [
     ["stack", "nope"],
