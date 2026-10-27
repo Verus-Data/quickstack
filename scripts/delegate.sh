@@ -17,8 +17,10 @@
 # the network, `bun add`, git, process inspection and the whole gate. The worktree isolates the
 # work from other work; it doesn't contain Codex. Read-only mode uses Codex's read-only sandbox.
 #
-# Hooks: .codex/hooks.json runs the repo's command guard (.claude/hooks/guard-commands.ts) before
-# each shell command, as Claude Code's settings do. Codex trusts a project hook only by its
+# Hooks: .codex/hooks.json runs the repo's command guard (.claude/hooks/guard-commands.ts) and
+# destructive-command guard (.claude/hooks/block-destructive.sh) before each shell command, as
+# Claude Code's settings do. The Edit/Write guards (secrets, repo content, boundaries) don't run
+# on apply_patch, so the orchestrator's diff review covers them. Codex trusts a project hook only by its
 # absolute path, and every worktree is a new path, so the run passes
 # --dangerously-bypass-hook-trust: the hooks file is tracked, and the orchestrator reviews any
 # change to it in the delegate's diff.

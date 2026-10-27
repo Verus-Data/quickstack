@@ -10,10 +10,10 @@ type CodexHooks = {
 };
 
 /** Run Codex's Bash PreToolUse command as Codex does: no CLAUDE_PROJECT_DIR, cwd a checkout. */
-function codexPreToolUse(command: string, cwd = REPO) {
+function codexPreToolUse(command: string, cwd = REPO, index = 0) {
   const config = JSON.parse(readFileSync(join(REPO, ".codex/hooks.json"), "utf8")) as CodexHooks;
   const group = config.hooks.PreToolUse?.find((g) => new RegExp(g.matcher ?? "").test("Bash"));
-  const hook = group?.hooks[0]?.command;
+  const hook = group?.hooks[index]?.command;
   if (!hook) throw new Error("no Codex PreToolUse hook matches Bash");
   // Opted in to rr (git config quickstacks.rr), so a whole-suite run is a deny to look for.
   const env = withoutGitVars({
@@ -42,6 +42,16 @@ describe("Codex hook wiring", () => {
       "rr check",
     );
     expect(codexPreToolUse("bun run lint").stdout).toBe("");
+  });
+  it.skipIf(!inCheckout)("runs the destructive-command guard for Codex's Bash tool", () => {
+    const denied = codexPreToolUse("git reset --hard HEAD~1", REPO, 1);
+    expect(JSON.parse(denied.stdout).hookSpecificOutput.permissionDecision).toBe("deny");
+    expect(codexPreToolUse("git status", REPO, 1).stdout).toBe("");
+  });
+  it("refuses a command when the destructive guard can't be found", () => {
+    const outside = codexPreToolUse("echo hi", mkdtempSync(join(tmpdir(), "codex-hook-")), 1);
+    expect(outside.status).toBe(2);
+    expect(outside.stderr).toContain("block-destructive.sh not found");
   });
   it("refuses a command when the guard can't be found", () => {
     const outside = codexPreToolUse("echo hi", mkdtempSync(join(tmpdir(), "codex-hook-")));
