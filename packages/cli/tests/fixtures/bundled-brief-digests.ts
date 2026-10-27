@@ -7,10 +7,10 @@
  * Both presets use validate's canonical context, not new's machine-dependent brief.
  */
 export const briefDigests: Readonly<Record<string, string>> = {
-  "astro-blog:default": "sha256:0bfce9d1c4bd7de88fb444019082c9a1b1921c3aeebae6b8417ffc0ab500cad2",
-  "astro-blog:sandbox": "sha256:6ada5036252b2298ccd3444468a117cea23effa47dc533ec3ab9e0cb07b34907",
-  "go-cli:default": "sha256:662012713c98483d3a1a12a9a0977c48c87d8f182196cc8cd43f47c9a2ff89fc",
-  "go-cli:sandbox": "sha256:d4a7fc78546b57fceb8247f3211e1c7b12b2a3afdb2336d42a34d59482f90e8b",
-  "python-react:default": "sha256:4d5124c379ad43c162d28c6bf237f4d2ac96de5852656b72b7cce1bdc816b58a",
-  "python-react:sandbox": "sha256:1eb4a02c376cc6baac8c366109aa178e67e82231399b3300d541cbc2582111cd",
+  "astro-blog:default": "sha256:2309082b9b8a775eceb42f1e9ce8b4c0090b41f3b62e047b63a3b30690b629e4",
+  "astro-blog:sandbox": "sha256:bba3f1f429c0bf67af1c2a078858449b3366913e722f80eb507b38a9acde320d",
+  "go-cli:default": "sha256:7d83fde782a470bbb888ef9ce8d4abf9a485e5f9dc0dffa55e7fa16b4c171b18",
+  "go-cli:sandbox": "sha256:0b931317ca746a4c7186a5153ea296fdcb88046f3f2066f2226ecd02df085835",
+  "python-react:default": "sha256:bbe36c442941835d093d94f49c2d28f764a3260ffd02c2ada3f77630afc871c9",
+  "python-react:sandbox": "sha256:7041ef0995776a6222c633f1f421f13439c1e4d4cad902b01dfbdcfdc8700bf0",
 };
