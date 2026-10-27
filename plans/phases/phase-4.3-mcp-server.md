@@ -30,14 +30,33 @@ Verified against the checkout on 2026-10-27 before rewriting. Each row changed t
 
 ## Decisions this plan makes
 
-Recommended defaults; override any of them before Part 1 starts.
+Recommended defaults; override any of them before Part 1 starts. D-a, D-c and D-d were confirmed by Eric
+on 2026-10-27; D-b was already in force and is unchanged.
 
 | | Decision | Recommended | Why |
 |---|---|---|---|
-| D-a | Which tools ship in the MVP | Three: `quickstacks_list`, `quickstacks_new`, `quickstacks_verify`, plus the brief resource. `quickstacks_show` lands when 3.1a does | Every tool is a wrapper around a command that exists. A stub that always errors teaches an agent to stop trying |
+| D-a | Which tools ship in the MVP | Three: `quickstacks_list`, `quickstacks_new`, `quickstacks_verify`, plus the brief resource. `quickstacks_show` lands when 3.1a does. Interrogation beyond that (registry stats, package versions for a chosen stack) and the logging/telemetry conventions are follow-ups, not MVP | Every tool is a wrapper around a command that exists. A stub that always errors teaches an agent to stop trying. Confirmed by Eric 2026-10-27: "at least those items" |
 | D-b | Where the stack is dogfooded | In place: `packages/mcp` is scaffolded by `new typescript-mcp packages/mcp` (after `--without git-hooks`, see the trap below), and `quickstacks verify` inside `packages/mcp` is the package's own gate beside the root fan-out | The point of the exercise is to be the tool's user. A separate throwaway project proves less and drifts |
-| D-c | Whether the CLI package changes | Yes: `bin` and `exports` (with `"./package.json"`) in `packages/cli/package.json`, plus the resolver chain below. It is the smallest change that lets the server be built the way it will ship | Without it the resolver can only work in this checkout, and Part 2 would be rewritten by 0.2 |
-| D-d | How far this plan goes | Local and CI-green: `bun run check` at the root, `quickstacks verify` green in `packages/mcp`, one real client registered against the built server, run note in `plans/runs/` | 0.2 and 1.6c own publishing. Nothing here needs npm |
+| D-c | Whether the CLI package changes | **No** — no `bin` or `exports` entries for MCP in this phase. The resolver drops to two working steps: `QUICKSTACKS_MCP_CLI`, then the monorepo sibling `../cli/src/bin.ts`. The dependency-`bin` step waits for 1.6c | Confirmed by Eric 2026-10-27: no export touches for MCP-specific items. The server instantiates a stack from the template and hands off; it is not a consumer of a published package, so the distribution path can wait for the distribution |
+| D-d | How far this plan goes | Local and CI-green: `bun run check` at the root, `quickstacks verify` green in `packages/mcp`, one real client registered against the built server, run note in `plans/runs/` | 0.2 and 1.6c own publishing. Nothing here needs npm. Confirmed by Eric 2026-10-27: no publish, that is a release step |
+
+### Follow-ups beyond this phase
+
+Two directions raised by Eric (2026-10-27) that belong after the MVP, not in it:
+
+1. **Give agents the full manual, not just the brief.** Today the server serves one markdown resource
+   (the composed brief). The durable shape is *skills over MCP*: SEP-2640 is Final, the extension id is
+   `io.modelcontextprotocol/skills`, and a server implementing it declares the `resources` capability
+   plus the extension, then answers `skills/list` and `skills/get`, with skill files served through
+   `resources/read`. It requires protocol revision `2026-07-28` or later, which this server already
+   advertises, so the door is open without changing the transport. That is how the authoring manual,
+   the stack catalogue and the fragment rules could reach an agent as loadable skills rather than one
+   brief-shaped resource.
+2. **Align the server with the MCP build-server guidance.** The published best practices for stdio
+   servers are the ones this stack already enforces — never write stdout, and log to stderr through one
+   logger per module because stdout is the JSON-RPC channel. Worth re-reading the guide when the tool
+   surface grows, particularly the prompts capability, which this server does not use and which is the
+   natural home for the "few questions, then a stack" interrogation flow.
 
 ## Part 1: the `typescript-mcp` stack
 
@@ -193,18 +212,26 @@ Scaffolded by Part 1 (D-b), then filled in:
 
 ### Finding the CLI
 
-First match wins, resolved once at startup, in `resolve-cli.ts`:
+No `bin` or `exports` changes to `packages/cli/package.json` for this phase (D-c, confirmed
+2026-10-27). The server is not a consumer of a published package yet, so it resolves the CLI it is
+developed beside and says so plainly when it cannot. First match wins, resolved once at startup, in
+`resolve-cli.ts`:
 
-1. `QUICKSTACKS_MCP_CLI`, an absolute path to the CLI executable. For development and for the
-   tests, which point it at `packages/cli/dist/quickstacks`.
-2. `createRequire(import.meta.url).resolve("quickstacks/package.json")`, then that file's `bin`
-   entry, resolved against the package root. This is the shipping path once 1.6c publishes.
-3. `<packageRoot>/../cli/dist/quickstacks`, the monorepo's compiled binary, when it exists.
-4. Nothing: the server writes one line to stderr naming the package and the variable, and exits
+1. `QUICKSTACKS_MCP_CLI`, an absolute path to a CLI entry point. This is what the tests and a local
+   client set, and it is the only supported way to point the server at something else.
+2. The monorepo sibling: `<packageRoot>/../cli/src/bin.ts`, run through `bun` when `bun` is on `PATH`,
+   which is the checkout this phase is developed in.
+3. Nothing: the server writes one line to stderr naming the package and the variable, and exits
    non-zero before registering a tool.
 
-How the target is run depends on what it is, not on a flag: a path ending `.js`, `.mjs` or `.cjs`
-runs as `process.execPath <path>`, anything else is executed directly. Arguments always go as an
+Deliberately dropped from the earlier draft: the `createRequire(...).resolve("quickstacks/package.json")`
+step and the dependency-`bin` lookup. Both need the `exports`/`bin` surface that D-c excludes, and
+neither can work before 1.6c publishes. Adding them now builds the distribution path ahead of the
+distribution, and puts a resolution branch in the server that nothing in this phase executes.
+
+How the target is run depends on what it is, not on a flag: a path ending `.ts` runs as
+`bun <path>`, a path ending `.js`, `.mjs` or `.cjs` runs as `process.execPath <path>`, anything else is
+executed directly. Arguments always go as an
 argv array; no tool ever builds a shell string. This is the one place `node:module` and
 `process.execPath` are used, and it is the only file that may.
 
