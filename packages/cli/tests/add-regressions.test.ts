@@ -161,6 +161,9 @@ test("the add brief describes base then app stages in the same order verify runs
   expect(rest).toBe("");
   const verified = Schema.decodeUnknownSync(VerifyResult)(JSON.parse(run.stdout));
   const brief = read(project.root, ".stacks/BRIEF.md");
+  expect(brief).toContain(
+    "Both `.stacks/BRIEF.md` and `.stacks/NOTES.md` are git-ignored: read the brief and keep notes here, outside worktrees:",
+  );
   const order = [
     "base-setup",
     "base-check",

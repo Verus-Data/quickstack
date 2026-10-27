@@ -445,6 +445,44 @@ describe("selection", () => {
     ]);
   });
 
+  test.each(["agent", "human"])(
+    "a failed setup explains why it ran under --only in %s output",
+    async (audience) => {
+      const root = space.dir();
+      writeProject(root, [
+        { name: "install", phase: "setup", run: "exit 1" },
+        { name: "lint", run: "touch linted" },
+      ]);
+      const result = await verify(["--only", "lint"], {
+        cwd: root,
+        host: { stdoutIsTTY: audience === "human" },
+      });
+      expect(result.status).toBe(5);
+      expect(result.stdout).toMatch(/verify: failed \(partial run; 0 passed, 1 failed, 1 skipped;/);
+      expect(result.stdout).toMatch(
+        /failed\s+setup\s+install.*setup always runs, even in a partial run/,
+      );
+      expect(result.stdout).toMatch(/skipped\s+check\s+lint.*an earlier setup step failed/);
+      expect(result.stderr).toContain("Failed: install (step, exit 1)");
+      expect(lastLine(result.stdout)).toBe(NEXT_FIX);
+      expect(has(root, "linted")).toBe(false);
+    },
+  );
+
+  test("a failed setup in a full run doesn't mention partial runs", async () => {
+    const root = space.dir();
+    writeProject(root, [
+      { name: "install", phase: "setup", run: "exit 1" },
+      { name: "lint", run: "touch linted" },
+    ]);
+    const result = await verify([], { cwd: root });
+    expect(result.status).toBe(5);
+    expect(result.stdout).toMatch(/verify: failed \(full run;/);
+    expect(result.stdout).toMatch(/failed\s+setup\s+install/);
+    expect(result.stdout).not.toContain("partial run");
+    expect(result.stderr).toContain("Failed: install (step, exit 1)");
+  });
+
   test("--only takes a comma list and repeats", async () => {
     const root = space.dir();
     writeProject(root, [...steps, { name: "build", run: "touch built" }]);

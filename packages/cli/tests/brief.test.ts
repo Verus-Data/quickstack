@@ -47,6 +47,31 @@ const rows = (text: string) => text.split("\n").filter((line) => line.startsWith
 // biome-ignore lint/suspicious/noTemplateCurlyInString: a verify-env placeholder, shown as written
 const probe = "http://localhost:${PORT_WEB}/";
 
+test.each(["default", "sandbox"] as const)(
+  "every %s brief keeps its ignored task and notes in this checkout",
+  async (preset) => {
+    for (const without of [[], ["todo-app"]]) {
+      const brief = renderBrief(await composed({ preset, without }), context()).text;
+      expect(section(brief, "## Ground rules")).toContain(
+        "Both `.stacks/BRIEF.md` and `.stacks/NOTES.md` are git-ignored: read the brief and keep notes here, outside worktrees:",
+      );
+    }
+  },
+);
+
+test.each([{ withIds: [] }, { withIds: ["rr"] }])(
+  "astro-api explains fragment dependency placement with $withIds",
+  async ({ withIds }) => {
+    const composition = await composed(
+      { stack: "astro-api", with: withIds },
+      { roots: bundledAt(join(import.meta.dirname, "../registry")) },
+    );
+    expect(renderBrief(composition, context()).text).toContain(
+      "For fragment roles without workspaces, put test-only packages (`@effect/vitest`) in root devDependencies and `effect` wherever imported.",
+    );
+  },
+);
+
 test("with an app, the definition of done is split: the base with --skip-tag app, then the application [1.1#14a]", async () => {
   const brief = renderBrief(await composed({}), context()).text;
   expect(headings(brief)).toEqual([

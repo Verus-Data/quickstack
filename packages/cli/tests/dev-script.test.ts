@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import {
   copyFileSync,
   existsSync,
@@ -8,8 +8,61 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
+import { Schema } from "effect";
 import { expect, test, vi } from "vitest";
+import { DoctorReport } from "../src/schemas/doctor";
 import { tempDir } from "./helpers/cli";
+
+test.each([
+  { silent: true, outside: false },
+  { silent: false, outside: false },
+  { silent: true, outside: true },
+  { silent: false, outside: true },
+])(
+  "root dev echoes only its own script (silent=$silent, outside=$outside)",
+  ({ silent, outside }) => {
+    const dir = tempDir();
+    try {
+      const root = realpathSync(join(import.meta.dirname, "../../.."));
+      const cwd = outside ? realpathSync(dir.path) : root;
+      const result = spawnSync(
+        "bun",
+        [
+          "run",
+          ...(silent ? ["--silent"] : []),
+          ...(outside ? ["--cwd", root] : []),
+          "dev",
+          "doctor",
+          "--json",
+        ],
+        {
+          cwd,
+          encoding: "utf8",
+          env: {
+            PATH: process.env.PATH,
+            HOME: dir.path,
+            INIT_CWD: cwd,
+            LOG_LEVEL: "none",
+            STACKS_LOG_FILE: join(dir.path, "cli.jsonl"),
+            STACKS_DATA_DIR: join(dir.path, "data"),
+            STACKS_STATE_DIR: join(dir.path, "state"),
+          },
+        },
+      );
+      expect(result.status).toBe(0);
+      const report = Schema.decodeUnknownSync(DoctorReport)(JSON.parse(result.stdout));
+      expect(report.paths.cwd).toBe(cwd);
+      if (silent) expect(result.stderr).toBe("");
+      else {
+        expect(result.stderr.trim().split("\n")).toHaveLength(1);
+        expect(result.stderr).toMatch(/^\$ INIT_CWD=/);
+        expect(result.stderr).not.toContain("$ bun scripts/dev.ts");
+      }
+    } finally {
+      dir.cleanup();
+    }
+  },
+);
 
 test("dev wrapper forwards a directly delivered termination signal to its child", async () => {
   const dir = tempDir();
