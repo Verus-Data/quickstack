@@ -1,10 +1,10 @@
 # Configuration
 
-quickstacks works with no configuration. Everything here is optional.
+quickstack works with no configuration. Everything here is optional.
 
 ## config.json
 
-Optional configuration is `$XDG_CONFIG_HOME/quickstacks/config.json`, defaulting to `$HOME/.config/quickstacks/config.json`. Its closed schema accepts these optional keys and rejects any other. Environment values override file values; blank values count as absent. Configuration is read lazily and cached for one invocation, so `--help`, `--version` and `doctor` still work when the file is broken.
+Optional configuration is `$XDG_CONFIG_HOME/quickstack/config.json`, defaulting to `$HOME/.config/quickstack/config.json`. Its closed schema accepts these optional keys and rejects any other. Environment values override file values; blank values count as absent. Configuration is read lazily and cached for one invocation, so `--help`, `--version` and `doctor` still work when the file is broken.
 
 ```json
 {
@@ -18,7 +18,7 @@ Optional configuration is `$XDG_CONFIG_HOME/quickstacks/config.json`, defaulting
 
 | Key | Meaning |
 | --- | --- |
-| `dataDir` | Data path; `QUICKSTACKS_DATA_DIR` overrides it |
+| `dataDir` | Data path; `QUICKSTACK_DATA_DIR` overrides it |
 | `always` | Fragment ids added to every composition they fit; one that doesn't fit, or doesn't exist, is skipped with a warning. `--without` still removes one |
 | `agents` | Agents whose `adapters/<agent>/` files are written: any of `claude`, `codex`, `opencode`, `cursor`. `--agents` overrides it; the default is `["claude"]` |
 | `author` | Author name for templates |
@@ -31,14 +31,14 @@ Your own stacks and fragments live beside this file, in `stacks/<id>/` and `frag
 
 | Setting | Meaning |
 | --- | --- |
-| `QUICKSTACKS_DATA_DIR` | Data path; defaults to `$XDG_DATA_HOME/quickstacks` (`$HOME/.local/share/quickstacks`) |
-| `QUICKSTACKS_STATE_DIR` | Project state records; defaults to `$XDG_STATE_HOME/quickstacks` (`$HOME/.local/state/quickstacks`) |
-| `QUICKSTACKS_LOG_FORMAT` | `json` for JSON diagnostics, otherwise plain readable logs |
-| `QUICKSTACKS_LOG_FILE` | Optional JSONL file; the directory is recreated when needed |
+| `QUICKSTACK_DATA_DIR` | Data path; defaults to `$XDG_DATA_HOME/quickstack` (`$HOME/.local/share/quickstack`) |
+| `QUICKSTACK_STATE_DIR` | Project state records; defaults to `$XDG_STATE_HOME/quickstack` (`$HOME/.local/state/quickstack`) |
+| `QUICKSTACK_LOG_FORMAT` | `json` for JSON diagnostics, otherwise plain readable logs |
+| `QUICKSTACK_LOG_FILE` | Optional JSONL file; the directory is recreated when needed |
 | `LOG_LEVEL` | trace/debug/info/warn/error/fatal/none; default and invalid-value fallback warn |
-| `QUICKSTACKS_REGISTRY_DIR` | A directory used as the bundled registry instead of the one shipped with the CLI, relative to the working directory; its entries are untrusted |
+| `QUICKSTACK_REGISTRY_DIR` | A directory used as the bundled registry instead of the one shipped with the CLI, relative to the working directory; its entries are untrusted |
 | `NO_COLOR` | Keep output free of ANSI (the current formatter always uses plain text) |
-| `HOME`, `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`, `XDG_CACHE_HOME` | Path roots; an unset `HOME` means the user's home directory. The cache is `$XDG_CACHE_HOME/quickstacks` (`$HOME/.cache/quickstacks`) |
+| `HOME`, `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`, `XDG_CACHE_HOME` | Path roots; an unset `HOME` means the user's home directory. The cache is `$XDG_CACHE_HOME/quickstack` (`$HOME/.cache/quickstack`) |
 
 ## The development wrapper
 

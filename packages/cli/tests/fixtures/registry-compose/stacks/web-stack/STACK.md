@@ -47,24 +47,24 @@ The app lives in `src/`.
 bun install
 ```
 
-<!-- quickstacks:when stack=web-stack -->
+<!-- quickstack:when stack=web-stack -->
 STACK-BLOCK-KEPT
-<!-- quickstacks:end -->
-<!-- quickstacks:when stack=other-stack -->
+<!-- quickstack:end -->
+<!-- quickstack:when stack=other-stack -->
 STACK-BLOCK-DROPPED
-<!-- quickstacks:end -->
-<!-- quickstacks:when tag!=go -->
+<!-- quickstack:end -->
+<!-- quickstack:when tag!=go -->
 NOT-GO-KEPT
-<!-- quickstacks:end -->
-<!-- quickstacks:when tag!=web,go -->
+<!-- quickstack:end -->
+<!-- quickstack:when tag!=web,go -->
 NOT-WEB-DROPPED
-<!-- quickstacks:end -->
-<!-- quickstacks:when with=hooks-a -->
+<!-- quickstack:end -->
+<!-- quickstack:when with=hooks-a -->
 WITH-HOOKS-A
-<!-- quickstacks:end -->
-<!-- quickstacks:when preset=sandbox -->
+<!-- quickstack:end -->
+<!-- quickstack:when preset=sandbox -->
 SANDBOX-ONLY
-<!-- quickstacks:end -->
-<!-- quickstacks:when preset=default mode=new -->
+<!-- quickstack:end -->
+<!-- quickstack:when preset=default mode=new -->
 DEFAULT-PRESET-NEW
-<!-- quickstacks:end -->
+<!-- quickstack:end -->

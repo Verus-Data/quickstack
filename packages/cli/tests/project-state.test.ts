@@ -40,7 +40,7 @@ const asRoot = process.getuid?.() === 0;
 function project(manifest: Manifest) {
   const root = temp();
   const real = join(root, "real");
-  mkdirSync(join(real, ".quickstacks"), { recursive: true });
+  mkdirSync(join(real, ".quickstack"), { recursive: true });
   writeFileSync(join(real, MANIFEST_PATH), encodeManifest(manifest));
   symlinkSync(real, join(root, "link"));
   return { root, via: join(root, "link", MANIFEST_PATH) };
@@ -52,7 +52,7 @@ test("the record lands under XDG_STATE_HOME by project id, with the manifest's d
   const { via } = project(manifest);
   const state = temp();
   const write = await succeed(runWith(writeProjectState(manifest, via), stateEnv(state)));
-  const file = join(state, "quickstacks", "projects", `${manifest.projectId}.json`);
+  const file = join(state, "quickstack", "projects", `${manifest.projectId}.json`);
   expect(write).toEqual({ written: true, path: file });
   const record = Schema.decodeUnknownSync(ProjectState)(JSON.parse(readFileSync(file, "utf8")), {
     onExcessProperty: "error",
@@ -73,7 +73,7 @@ test("the record lands under XDG_STATE_HOME by project id, with the manifest's d
     manifest.verify.map((step) => step.name).sort(),
   );
   // Nothing but the record is left in the directory.
-  expect(readdirSync(join(state, "quickstacks", "projects"))).toEqual([
+  expect(readdirSync(join(state, "quickstack", "projects"))).toEqual([
     `${manifest.projectId}.json`,
   ]);
   expect(await succeed(runWith(readProjectState(manifest.projectId), stateEnv(state)))).toEqual(
@@ -81,22 +81,22 @@ test("the record lands under XDG_STATE_HOME by project id, with the manifest's d
   );
 });
 
-test("the state directory defaults to ~/.local/state/quickstacks", async () => {
+test("the state directory defaults to ~/.local/state/quickstack", async () => {
   const manifest = await manifestOf();
   const { via } = project(manifest);
   const home = temp();
   const write = await succeed(runWith(writeProjectState(manifest, via), { HOME: home }));
   expect(write).toEqual({
     written: true,
-    path: join(home, ".local", "state", "quickstacks", "projects", `${manifest.projectId}.json`),
+    path: join(home, ".local", "state", "quickstack", "projects", `${manifest.projectId}.json`),
   });
 });
 
-test("QUICKSTACKS_STATE_DIR replaces the state directory, quickstacks/ suffix included", async () => {
+test("QUICKSTACK_STATE_DIR replaces the state directory, quickstack/ suffix included", async () => {
   const manifest = await manifestOf();
   const { via } = project(manifest);
   const state = temp();
-  const env = { ...stateEnv(join(temp(), "xdg")), QUICKSTACKS_STATE_DIR: state };
+  const env = { ...stateEnv(join(temp(), "xdg")), QUICKSTACK_STATE_DIR: state };
   expect(await succeed(runWith(writeProjectState(manifest, via), env))).toEqual({
     written: true,
     path: join(state, "projects", `${manifest.projectId}.json`),
@@ -107,21 +107,21 @@ test("a project id that isn't a valid id is never turned into a path: no write, 
   const manifest = await manifestOf();
   const { via } = project(manifest);
   const state = temp();
-  const outside = join(state, "quickstacks", "escaped.json");
+  const outside = join(state, "quickstack", "escaped.json");
   for (const projectId of ["../escaped", "a/b", "", ".hidden", "a\nb"]) {
     expect(
       await succeed(runWith(writeProjectState({ ...manifest, projectId }, via), stateEnv(state))),
     ).toEqual({ written: false });
   }
   expect(existsSync(outside)).toBe(false);
-  expect(existsSync(join(state, "quickstacks"))).toBe(false);
+  expect(existsSync(join(state, "quickstack"))).toBe(false);
   // A record that does sit there under the escaping name is still not read.
-  mkdirSync(join(state, "quickstacks", "projects"), { recursive: true });
+  mkdirSync(join(state, "quickstack", "projects"), { recursive: true });
   const good = await succeed(runWith(writeProjectState(manifest, via), stateEnv(state)));
   expect(good.written).toBe(true);
   writeFileSync(
     outside,
-    readFileSync(join(state, "quickstacks", "projects", `${manifest.projectId}.json`)),
+    readFileSync(join(state, "quickstack", "projects", `${manifest.projectId}.json`)),
   );
   expect(await succeed(runWith(readProjectState("../escaped"), stateEnv(state)))).toBeUndefined();
 });
@@ -142,15 +142,15 @@ test.skipIf(asRoot)(
     const manifest = await manifestOf();
     const { via } = project(manifest);
     const locked = join(temp(), "projects-locked");
-    mkdirSync(join(locked, "quickstacks", "projects"), { recursive: true });
-    chmodSync(join(locked, "quickstacks", "projects"), 0o500);
+    mkdirSync(join(locked, "quickstack", "projects"), { recursive: true });
+    chmodSync(join(locked, "quickstack", "projects"), 0o500);
     try {
       expect(await succeed(runWith(writeProjectState(manifest, via), stateEnv(locked)))).toEqual({
         written: false,
       });
-      expect(readdirSync(join(locked, "quickstacks", "projects"))).toEqual([]);
+      expect(readdirSync(join(locked, "quickstack", "projects"))).toEqual([]);
     } finally {
-      chmodSync(join(locked, "quickstacks", "projects"), 0o700);
+      chmodSync(join(locked, "quickstack", "projects"), 0o700);
     }
   },
 );
@@ -161,7 +161,7 @@ test("a link planted at the record's path is replaced, never written through", a
   const state = temp();
   const outside = join(temp(), "outside.txt");
   writeFileSync(outside, "untouched");
-  const projects = join(state, "quickstacks", "projects");
+  const projects = join(state, "quickstack", "projects");
   mkdirSync(projects, { recursive: true });
   symlinkSync(outside, join(projects, `${manifest.projectId}.json`));
   const write = await succeed(runWith(writeProjectState(manifest, via), stateEnv(state)));
@@ -177,7 +177,7 @@ test("a manifest that isn't on disk is PermissionDenied read, and no record is w
   expect(await runWith(writeProjectState(manifest, missing), stateEnv(state))).toEqual(
     Exit.fail(new PermissionDenied({ details: { reason: "read", path: missing } })),
   );
-  expect(existsSync(join(state, "quickstacks"))).toBe(false);
+  expect(existsSync(join(state, "quickstack"))).toBe(false);
 });
 
 test("removeProjectState rolls a write back, and does nothing for a write that didn't happen", async () => {
@@ -197,7 +197,7 @@ test("removeProjectState rolls a write back, and does nothing for a write that d
 
 test("a record that doesn't decode reads as missing", async () => {
   const state = temp();
-  const projects = join(state, "quickstacks", "projects");
+  const projects = join(state, "quickstack", "projects");
   mkdirSync(projects, { recursive: true });
   writeFileSync(join(projects, "bad.json"), "{not json");
   writeFileSync(join(projects, "newer.json"), JSON.stringify({ schemaVersion: 2 }));

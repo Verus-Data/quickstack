@@ -208,8 +208,8 @@ test("replace rewrites only a file this writer created", async () => {
 
 test("an interrupt after rewriting a parked file restores its bytes and mode and removes new files [3.0#7]", async () => {
   const target = temp();
-  const parked = join(target, ".quickstacks/incoming/.claude/settings.json");
-  mkdirSync(join(target, ".quickstacks/incoming/.claude"), { recursive: true });
+  const parked = join(target, ".quickstack/incoming/.claude/settings.json");
+  mkdirSync(join(target, ".quickstack/incoming/.claude"), { recursive: true });
   writeFileSync(parked, '{"keep":true}\n', { mode: 0o640 });
   const controller = new AbortController();
   let rewritten: string | undefined;
@@ -218,7 +218,7 @@ test("an interrupt after rewriting a parked file restores its bytes and mode and
       Effect.gen(function* () {
         const writer = yield* openProject(target);
         yield* writer.write("a-created.txt", bytes("new"));
-        yield* writer.rewrite(".quickstacks/incoming/.claude/settings.json", bytes('{"merged":1}'));
+        yield* writer.rewrite(".quickstack/incoming/.claude/settings.json", bytes('{"merged":1}'));
         rewritten = readFileSync(parked, "utf8");
         controller.abort();
         yield* Effect.never;
@@ -231,5 +231,5 @@ test("an interrupt after rewriting a parked file restores its bytes and mode and
   expect(readFileSync(parked, "utf8")).toBe('{"keep":true}\n');
   expect(statSync(parked).mode & 0o777).toBe(0o640);
   expect(existsSync(join(target, "a-created.txt"))).toBe(false);
-  expect(readdirSync(join(target, ".quickstacks/incoming/.claude"))).toEqual(["settings.json"]);
+  expect(readdirSync(join(target, ".quickstack/incoming/.claude"))).toEqual(["settings.json"]);
 });

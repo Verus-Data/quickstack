@@ -20,7 +20,7 @@ proposal (D23).
 | A cloned repo ships project-local entries | An agent that picks a stack the repo shipped follows prose nobody reviewed | Every project-origin entry is untrusted until allowlisted (D19, [trust model](roadmap.md#trust-model) point 2); the agent never picks one unless the user names it |
 | Third-party stacks ship hooks or scripts the user's agent will run | A source is a supply-chain path into the user's machine | The CLI never runs entry commands (D2); untrusted origins are marked in `list --json`; git sources are pinned, fetched with hardened git calls, and confirmed after an allowlist trust report ([3.2a](phases/phase-3.2a-git-sources-and-untrusted-origin.md), [3.2b](phases/phase-3.2b-source-updates-and-trust-report.md), trust model point 6) |
 | The base stack ships a Bun binary, but users arrive through `npx` | Without a Node-runnable package, the problem statement's first command fails | Decide A1 in [0.2](phases/phase-0.2-npm-distribution-artifact.md) ([roadmap](roadmap.md#open-architecture-questions)); local e2e tests the packed tarball that's actually published |
-| The name is taken before it's published | An unreserved name can be taken by an unrelated package at any time, and a lookalike can follow | Reserve `quickstacks` on npm in [0.0](phases/phase-0.0-decisions-and-npm-name.md) |
+| The name is taken before it's published | An unreserved name can be taken by an unrelated package at any time, and a lookalike can follow | Reserve `quickstack` on npm in [0.0](phases/phase-0.0-decisions-and-npm-name.md) |
 | A manual publish ships something the gate didn't test (D23) | No release workflow checks the tarball before it reaches npm | [1.6c](phases/phase-1.6c-first-release.md) publishes the exact tarball 1.6b's gate ran, by file digest; [5.0](phases/phase-5.0-ci-release-and-checks.md) automates it |
 | Agents running inside sandboxes can't write the user's state directory | The second copy of the step digest and first-green times go missing, so tamper detection falls back to the manifest's own copy | Commands still work and report `stateRecord: false`; `manifest-only` never passes the gate (D20) ([1.2b](phases/phase-1.2b-manifest-state-and-detection.md), [1.3b](phases/phase-1.3b-tamper-detection-and-run-records.md)) |
 | Headless agent logins don't survive a throwaway HOME | Copied OAuth credentials rotate and invalidate the original; keychain logins can't be copied | Long-lived tokens passed by env (D24) |
@@ -43,8 +43,8 @@ proposal (D23).
    ("finishes without help" across real users, "people write their own") can't be
    collected without it. Proposal D17; blocks
    [4.1a](phases/phase-4.1a-telemetry-cli-client.md).
-6. Does `quickstack` (the repo name) need reserving on npm as well as `quickstacks`, to
-   stop a lookalike?
+6. Superseded 2026-10-27: the product was renamed to `quickstack`, the repository's name,
+   so there is no second name to reserve.
 7. Does D5's budget count the brief's fixed text (about 700 words of ground rules,
    versions and definition of done), or only what authors write? The plan's default is to
    count it, because that is what the agent reads, and 1.5 reports `fixedWords` beside
@@ -55,10 +55,10 @@ proposal (D23).
    only is a small change where `src/core/validate/compositions.ts` compares a size with
    its limit.
 8. Is the agent's own log of the questions it asked the user (`## Asked` in
-   `.quickstacks/NOTES.md`) good enough to count interventions in interactive runs, or do
+   `.quickstack/NOTES.md`) good enough to count interventions in interactive runs, or do
    interactive runs only count as anecdotes and headless bench runs carry the measure?
    Needed before the [1.6b](phases/phase-1.6b-mvp-gate-runs.md) gate.
-9. `verify --accept-changes`, `quickstacks trust` and confirming a source are refused
+9. `verify --accept-changes`, `quickstack trust` and confirming a source are refused
    when an agent is detected or stdin is not a TTY. Some agents' shell tools may allocate
    a TTY and not set a marker, and the state directory and trust store are files the
    user's account (and so the agent) can edit. Is "a determined agent can still accept
@@ -117,9 +117,9 @@ proposal (D23).
     statement's "time to first passing test" for the time-pressure user? The plan records
     both (`firstTestPassAt`) and targets the stricter one. Needed before
     [1.6b](phases/phase-1.6b-mvp-gate-runs.md) reports.
-23. Do the maintainers own, or want to reserve, the `@quickstacks` npm scope? The MCP
-    server ([4.3](phases/phase-4.3-mcp-server.md)) publishes as `@quickstacks/mcp`, with
-    `quickstacks-mcp` as the fallback name. Blocks 4.3's release.
+23. Do the maintainers own, or want to reserve, the `@quickstack` npm scope? The MCP
+    server ([4.3](phases/phase-4.3-mcp-server.md)) publishes as `@quickstack/mcp`, with
+    `quickstack-mcp` as the fallback name. Blocks 4.3's release.
 
 Questions 24-31 are behavior the plan chose on purpose where a gentler option exists. The
 plan keeps its choice in each case; the maintainers confirm or change it.

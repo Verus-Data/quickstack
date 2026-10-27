@@ -1,6 +1,6 @@
-# How quickstacks works
+# How quickstack works
 
-quickstacks is a compiler for project setups. Its input is a set of Markdown entries (stacks and fragments), and its output is a project directory with a brief and a manifest. A coding agent turns that into working code, and `verify` checks the result. This page covers the pipeline, the rules the design keeps, and how the source is organized. For the vocabulary, read [Concepts](concepts.md) first.
+quickstack is a compiler for project setups. Its input is a set of Markdown entries (stacks and fragments), and its output is a project directory with a brief and a manifest. A coding agent turns that into working code, and `verify` checks the result. This page covers the pipeline, the rules the design keeps, and how the source is organized. For the vocabulary, read [Concepts](concepts.md) first.
 
 ## The pipeline
 
@@ -11,7 +11,7 @@ flowchart LR
     U["user"]
     B["bundled"]
   end
-  subgraph CLI["quickstacks new: reads and writes, runs nothing it read"]
+  subgraph CLI["quickstack new: reads and writes, runs nothing it read"]
     C["Compose"]
     R["Render"]
     W["Write"]
@@ -35,23 +35,23 @@ flowchart LR
   class D done
 ```
 
-Blue stages are the CLI writing files; purple is the agent's loop, where the only command quickstacks runs is `verify`.
+Blue stages are the CLI writing files; purple is the agent's loop, where the only command quickstack runs is `verify`.
 
 Each stage is a separate module with one job, and the first four are pure in the sense that matters here: they read files and write files, and never run anything they read.
 
 Compose (`src/core/compose/`) resolves the stack id across the three roots, applies `required`, `default`, `--with` and `--without`, follows `requires` and checks `conflicts` and `applies_to`. Its output, a `Composition`, lists every entry with its decisions, dependencies, commands, environment defaults and verify steps, in a fixed order.
 
-Render turns a composition into bytes. One function, `composeFiles`, renders every planned file (copying, filling `.tmpl` templates, deep-merging JSON files that several entries ship), and `renderBrief` writes the brief. Because rendering is deterministic, quickstacks can fingerprint a composition: the same stack, fragments and preset always hash the same, which is how the bundled ledger knows whether a recorded run still describes the current stack.
+Render turns a composition into bytes. One function, `composeFiles`, renders every planned file (copying, filling `.tmpl` templates, deep-merging JSON files that several entries ship), and `renderBrief` writes the brief. Because rendering is deterministic, quickstack can fingerprint a composition: the same stack, fragments and preset always hash the same, which is how the bundled ledger knows whether a recorded run still describes the current stack.
 
 Write (`src/core/scaffold/write.ts`) is the only code that writes into a project. It refuses any path that resolves outside the project's real path, creates files exclusively so it never overwrites, and rolls back everything it wrote if a later step fails or you press Ctrl+C.
 
-Hand off decides what happens next, by the first rule that matches. Inside an agent session, quickstacks prints a "NEXT STEP FOR THE AGENT" line. With `--json`, `--dry-run`, `--no-launch`, a non-terminal or any untrusted entry, it prints the prompt. Otherwise it starts an agent CLI in the project, with the prompt as its first message: the one `--launch` names, or else the first one on your PATH from your `agents` setting, then `claude`, `codex`, `opencode` and `cursor-agent`. The [command reference](reference/commands.md) has the full rule order.
+Hand off decides what happens next, by the first rule that matches. Inside an agent session, quickstack prints a "NEXT STEP FOR THE AGENT" line. With `--json`, `--dry-run`, `--no-launch`, a non-terminal or any untrusted entry, it prints the prompt. Otherwise it starts an agent CLI in the project, with the prompt as its first message: the one `--launch` names, or else the first one on your PATH from your `agents` setting, then `claude`, `codex`, `opencode` and `cursor-agent`. The [command reference](reference/commands.md) has the full rule order.
 
 ## The rules the design keeps
 
 These come from the product plans, and most of the structure exists to enforce them.
 
-quickstacks executes nothing it reads. `list`, `show`, `new`, `add`, `validate` and `create` read, compose and write. Only `verify` runs commands, and only the steps in the project's own manifest. A stack can't run a generator, an install script or a hook at scaffold time, however convenient that would be. This is what makes it safe to try a stack: `new` on an entry you've never seen writes files and does nothing else.
+quickstack executes nothing it reads. `list`, `show`, `new`, `add`, `validate` and `create` read, compose and write. Only `verify` runs commands, and only the steps in the project's own manifest. A stack can't run a generator, an install script or a hook at scaffold time, however convenient that would be. This is what makes it safe to try a stack: `new` on an entry you've never seen writes files and does nothing else.
 
 People own what lasts and agents own what ages. Layout, enforcement and the definition of done live in stacks. Versions, generator flags and config formats belong to the agent, which looks them up when it builds. `validate` warns when an entry pins a version or ships a version-sensitive config file, because the CLI would otherwise drift into being a template engine whose templates go stale.
 

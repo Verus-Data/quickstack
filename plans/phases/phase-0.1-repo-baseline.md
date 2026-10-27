@@ -28,7 +28,7 @@ No product code. No change to `.github/workflows/` (D23: CI changes are phase 5)
 
 | Date | Work | Evidence |
 |---|---|---|
-| 2026-10-26 | Ported the base with its required and default pieces only, renamed to quickstacks (slug, `QUICKSTACKS_` env prefix, CI on `main`). Exit 5 is unassigned in the base | `bun run check` green after the port |
+| 2026-10-26 | Ported the base with its required and default pieces only, renamed to quickstack (slug, `QUICKSTACK_` env prefix, CI on `main`). Exit 5 is unassigned in the base | `bun run check` green after the port |
 | 2026-10-26 | Moved into a bun workspace: `packages/cli` is the package, the harness stays at the root, shared versions in the root catalog | Root scripts fan out with `bun run --filter '*'`; root `dev` uses `--cwd packages/cli` |
 | 2026-10-26 | Foundation review: workspace-move bugs and base gaps fixed (non-retryable defects with class and frames logged, `--json` after `--` left to the command, XDG data and cache paths, a cache path in `doctor`, `HOME` fallback, CI on Linux and macOS behind one `ci-ok`, path resolution in e2e and Grit probes) | `bun run check` green from the root |
 | 2026-10-26 | Three review findings were product design, not bugs; recorded as A2-A4 | [Roadmap, open architecture questions](../roadmap.md#open-architecture-questions) |

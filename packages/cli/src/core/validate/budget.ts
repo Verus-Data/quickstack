@@ -39,7 +39,7 @@ export function canonicalContext(composition: Composition): BriefContext {
     written: projectFiles(composition.files),
     missing: [],
     yes: composition.preset === "sandbox",
-    invocation: `npx -y quickstacks@${VERSION}`,
+    invocation: `npx -y quickstack@${VERSION}`,
   };
 }
 

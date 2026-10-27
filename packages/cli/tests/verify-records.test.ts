@@ -33,7 +33,7 @@ const space = workspace();
 afterEach(() => space.release());
 
 const asRoot = process.getuid?.() === 0;
-const runsFile = (root: string) => join(root, ".quickstacks", "state", "runs.jsonl");
+const runsFile = (root: string) => join(root, ".quickstack", "state", "runs.jsonl");
 
 function recorded(steps: StepInput[]) {
   const home = space.dir();
@@ -154,17 +154,17 @@ describe("run records", () => {
   });
 
   test.skipIf(asRoot)(
-    "with .quickstacks/state/ unwritable, the outcome and exit are unchanged and one warning is logged [1.3b#13]",
+    "with .quickstack/state/ unwritable, the outcome and exit are unchanged and one warning is logged [1.3b#13]",
     async () => {
       const { root, env } = recorded([{ name: "lint", run: "true" }]);
-      const state = join(root, ".quickstacks", "state");
+      const state = join(root, ".quickstack", "state");
       mkdirSync(state, { recursive: true });
       chmodSync(state, 0o500);
       const log = join(space.dir(), "cli.jsonl");
       try {
         const run = await verify(["--json"], {
           cwd: root,
-          env: { ...env, LOG_LEVEL: "warn", QUICKSTACKS_LOG_FILE: log },
+          env: { ...env, LOG_LEVEL: "warn", QUICKSTACK_LOG_FILE: log },
         });
         expect(run.stderr).toBe("");
         expect(run.status).toBe(0);
@@ -180,11 +180,11 @@ describe("run records", () => {
     },
   );
 
-  test("a .quickstacks/state that is a symlink out of the project is not written through", async () => {
+  test("a .quickstack/state that is a symlink out of the project is not written through", async () => {
     const { root, env } = recorded([{ name: "lint", run: "true" }]);
     const outside = join(space.dir(), "elsewhere");
     mkdirSync(outside);
-    symlinkSync(outside, join(root, ".quickstacks", "state"));
+    symlinkSync(outside, join(root, ".quickstack", "state"));
     const run = await verify(["--json"], { cwd: root, env });
     expect(run.status).toBe(0);
     expect(existsSync(join(outside, "runs.jsonl"))).toBe(false);
@@ -192,7 +192,7 @@ describe("run records", () => {
 
   test("a runs.jsonl that is a symlink or hard link to a file out of the project is not written through", async () => {
     const { root, env } = recorded([{ name: "lint", run: "true" }]);
-    mkdirSync(join(root, ".quickstacks", "state"));
+    mkdirSync(join(root, ".quickstack", "state"));
     const target = join(space.dir(), "rc");
     writeFileSync(target, "keep\n");
     symlinkSync(target, runsFile(root));
@@ -207,12 +207,12 @@ describe("run records", () => {
     expect(readFileSync(target, "utf8")).toBe("keep\n");
   });
 
-  test("a .quickstacks that is a symlink out of the project gets no state directory there", async () => {
+  test("a .quickstack that is a symlink out of the project gets no state directory there", async () => {
     const home = space.dir();
     const root = space.dir();
     const outside = join(space.dir(), "elsewhere");
     mkdirSync(outside);
-    symlinkSync(outside, join(root, ".quickstacks"));
+    symlinkSync(outside, join(root, ".quickstack"));
     writeRecordedProject(root, home, [{ name: "lint", run: "true" }]);
     const run = await verify(["--json"], { cwd: root, env: stateEnv(home) });
     expect(run.status).toBe(0);
@@ -318,7 +318,7 @@ describe("timing fields", () => {
     "an unwritable state record leaves the outcome alone and reports stateRecord false",
     async () => {
       const { root, env, home } = recorded([{ name: "lint", run: "true" }]);
-      const projects = join(home, "state", "quickstacks", "projects");
+      const projects = join(home, "state", "quickstack", "projects");
       chmodSync(projects, 0o500);
       try {
         const run = await verify(["--json"], { cwd: root, env });

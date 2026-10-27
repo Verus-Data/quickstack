@@ -21,22 +21,22 @@ PostHog in the web client, inert without a key. An empty key is the normal state
 
 ## What to add
 
-<!-- quickstacks:when stack=astro-blog -->
+<!-- quickstack:when stack=astro-blog -->
 **Env.** Append to `.env.example`, empty, under a comment saying analytics is off while the key is empty:
 ```
 PUBLIC_POSTHOG_KEY=
 PUBLIC_POSTHOG_HOST=
 ```
 **Module**: `src/lib/analytics.ts`, initialized once from a module script in `BaseLayout.astro`'s head. Full page loads mean the SDK's default pageview capture is enough. Islands import `track()` from the module, so its pre-init buffer covers calls made before the client loads.
-<!-- quickstacks:end -->
-<!-- quickstacks:when stack=python-react -->
+<!-- quickstack:end -->
+<!-- quickstack:when stack=python-react -->
 **Env.** Append to `.env.example`, empty, under a comment saying analytics is off while the key is empty:
 ```
 VITE_PUBLIC_POSTHOG_KEY=
 VITE_PUBLIC_POSTHOG_HOST=
 ```
 **Module**: `frontend/app/lib/analytics.ts`, `initAnalytics()` called once from the root component's effect. Route changes don't reload the page: use the SDK's history-change pageview mode if the installed version has one, otherwise disable automatic pageviews and capture `$pageview` from an effect keyed on the router location.
-<!-- quickstacks:end -->
+<!-- quickstack:end -->
 
 **One analytics module** owns the SDK and exports `initAnalytics()`, `track(event, props?)`, `identify(id, traits?)`, `reset()`. Nothing else imports `posthog-js`. Env vars are `<public prefix>POSTHOG_KEY`/`_HOST` in the framework's client-visible prefix, empty in `.env.example`.
 

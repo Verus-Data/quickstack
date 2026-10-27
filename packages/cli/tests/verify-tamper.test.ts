@@ -38,7 +38,7 @@ afterEach(() => space.release());
 const has = (root: string, file: string) => existsSync(join(root, file));
 const asRoot = process.getuid?.() === 0;
 const NEXT_CHANGED =
-  "Next: the verify steps changed since they were recorded. Don't edit them back; ask the user to run quickstacks verify --accept-changes from their own terminal, or to undo the change.";
+  "Next: the verify steps changed since they were recorded. Don't edit them back; ask the user to run quickstack verify --accept-changes from their own terminal, or to undo the change.";
 
 /** A recorded project (manifest plus state record), its home and the steps it was recorded with. */
 function recorded(steps: StepInput[], overrides: Partial<Manifest> = {}) {
@@ -454,7 +454,7 @@ describe("--accept-changes", () => {
         tag: "PermissionDenied",
         details: {
           reason: "state-unwritable",
-          path: join(notDir, "quickstacks", "projects", `${project.manifest.projectId}.json`),
+          path: join(notDir, "quickstack", "projects", `${project.manifest.projectId}.json`),
         },
       },
     });
@@ -471,7 +471,7 @@ describe("--accept-changes", () => {
       const before = readFileSync(project.file, "utf8");
       const manifestFile = join(project.root, MANIFEST_PATH);
       chmodSync(manifestFile, 0o400);
-      chmodSync(join(project.root, ".quickstacks"), 0o500);
+      chmodSync(join(project.root, ".quickstack"), 0o500);
       try {
         const result = await verify(["--accept-changes", "--json"], {
           cwd: project.root,
@@ -482,7 +482,7 @@ describe("--accept-changes", () => {
         expect(envelope(result.stderr)).toMatchObject({ error: { tag: "PermissionDenied" } });
         expect(readFileSync(project.file, "utf8")).toBe(before);
       } finally {
-        chmodSync(join(project.root, ".quickstacks"), 0o700);
+        chmodSync(join(project.root, ".quickstack"), 0o700);
         chmodSync(manifestFile, 0o600);
       }
     },

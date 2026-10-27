@@ -6,7 +6,7 @@ Acceptance tests: traced
 
 | Field | Value |
 |---|---|
-| Goal | `quickstacks new <stack> [dir]` writes the composed files (single ownership, JSON merge, `*.tmpl` templates, literal dotfiles) and the brief into a new project through one safe writer that rolls back on failure, initializes git, reports missing tools, and returns a result an agent can act on, without running any command from any entry |
+| Goal | `quickstack new <stack> [dir]` writes the composed files (single ownership, JSON merge, `*.tmpl` templates, literal dotfiles) and the brief into a new project through one safe writer that rolls back on failure, initializes git, reports missing tools, and returns a result an agent can act on, without running any command from any entry |
 | Traces to | "The CLI writes a few files and a brief, then hands off" (README product summary); job 1, "the same well-tested setup I'd build by hand, without spending the afternoon"; job 2, "a running dev environment with tests in a few minutes"; What this is not, "never runs a command from a stack" |
 | Depends on | [1.1](phase-1.1-composition-and-brief.md) (composition, the brief, `renderBrief`'s `briefWords` and `fixedWords`, `Host.invocation`), [0.3b](phase-0.3b-processes-and-signals.md) (`Processes.run` for git, `Processes.which` for missing tools), [0.3a](phase-0.3a-errors-and-output.md) (error table, `Host.stdinIsTTY` and `Host.stdoutIsTTY`) |
 | Blocks | [1.2b](phase-1.2b-manifest-state-and-detection.md) (adds the manifest and state record to this write order), [1.4](phase-1.4-handoff-and-entry-points.md) (hands off after `new`), [3.0](phase-3.0-add-fragments-to-repo.md) (reuses the writer and `slug`), [3.1c](phase-3.1c-new-dry-run-and-naming.md) (adds `--dry-run`, `--name`, `--author` and the Unicode slug rules) |
@@ -23,7 +23,7 @@ In:
 - Target directory checks; a writer that compares real paths so nothing escapes the
   project; `.tmpl` rendering; writing JSON merges; writing dotfiles, which entries store
   under their real names (1.0).
-- `.quickstacks/` layout (roadmap, Other shared facts: Project metadata): `BRIEF.md`,
+- `.quickstack/` layout (roadmap, Other shared facts: Project metadata): `BRIEF.md`,
   `NOTES.md`, `.gitignore` and `state/`. The manifest and the state record are 1.2b's,
   written at their place in this file's write order.
 - `git init` when the target is not inside a repository and git exists.
@@ -47,7 +47,7 @@ Out:
 ### CLI surface
 
 ```
-quickstacks new <stack> [dir]
+quickstack new <stack> [dir]
   --with a,b          add optional fragments
   --without a,b       remove default fragments
   --sandbox           every default, no deploy or release fragments, prod steps skipped
@@ -70,7 +70,7 @@ under the same rule). The same id in `--with` and `--without` is also `Usage`.
 | Exists and empty | Use it |
 | Exists, holds only `.git/` | Use it; git state is `fresh` if it has no commits, `parent` semantics otherwise |
 | Exists, holds only OS litter (`.DS_Store`, `Thumbs.db`, `desktop.ini`, `._*` AppleDouble files) | Treated as empty; the litter is left alone and never listed in `written` |
-| Exists with other files, including `.quickstacks/manifest.json` | `TargetNotEmpty`, exit 2. `add` (3.0) is the path for existing repos; 1.2b adds `details.scaffold` for the manifest case |
+| Exists with other files, including `.quickstack/manifest.json` | `TargetNotEmpty`, exit 2. `add` (3.0) is the path for existing repos; 1.2b adds `details.scaffold` for the manifest case |
 | Inside an enclosing git repository | Allowed; git state `parent`. If any composed fragment has `needsOwnRepo`, refuse with `ComposeConflict` (reason `needs_own_repo`) before writing anything. `details.ids` names those fragments and `details.fix` lists the `--without <id>` flags that would avoid it (only for fragments that aren't required); when a required fragment needs its own repo, `fix` is empty and the human hint says to pick a directory outside `<toplevel>` |
 
 ### Writing
@@ -90,7 +90,7 @@ swaps a directory for a symlink between the last check and the write can land on
 exclusively created file outside the project until the recheck removes it. Closing it
 needs `openat`-style calls, which Effect's FileSystem doesn't have.
 
-A path segment equal to `.git` or `.quickstacks` in any letter case (and the spellings git
+A path segment equal to `.git` or `.quickstack` in any letter case (and the spellings git
 itself treats as those on HFS+ and NTFS: ignorable code points, trailing dots or spaces,
 `:` streams, `git~1`) is refused at compose time as `ComposeConflict` `reserved_path`, so
 3.0's `add` gets the same check. So are two planned files whose paths differ only in case,
@@ -163,13 +163,13 @@ half-written project. There are no conditionals or loops in templates (D1); anyt
 conditional is prose. Files that don't end in `.tmpl` are copied byte for byte, so
 `${{ secrets.X }}` in a workflow file is safe.
 
-The write order is: entry files, then `.quickstacks/` (with 1.2b's manifest), then 1.2b's
+The write order is: entry files, then `.quickstack/` (with 1.2b's manifest), then 1.2b's
 state record, then `git init`. If anything fails after the first write, the handler
 removes the files it wrote (it tracks them), the state record if 1.2b wrote one, and the
 directory if it created it, so a failed `new` leaves no half project. That cleanup runs
 as an Effect finalizer, so it also runs on interrupt.
 
-### `.quickstacks/` layout
+### `.quickstack/` layout
 
 The layout and what is committed are the roadmap contract (Other shared facts: Project
 metadata), owned here. On top of it, `new` writes `NOTES.md` with empty `## Findings`
@@ -177,7 +177,7 @@ and `## Asked` sections (1.1, The NOTES.md rule) and creates an empty `state/`.
 
 The brief and notes are ignored so a public repo doesn't publish the task text, and so
 the agent's notes stay with the person who ran it. A user who wants them committed can
-edit the ignore file; quickstacks preserves an existing one.
+edit the ignore file; quickstack preserves an existing one.
 
 ### Git
 
@@ -210,7 +210,7 @@ never fail `new`: the agent may be able to install them. Each missing tool carri
 ### Invocation string
 
 The `next` prompt and the brief use `Host.invocation` (roadmap, Types and schemas:
-Invocation string). 1.1 stubs it as `quickstacks` until 0.2 lands; 0.2 fills in the
+Invocation string). 1.1 stubs it as `quickstack` until 0.2 lands; 0.2 fills in the
 `_npx` rule. Nothing here sets it.
 
 ### Result
@@ -222,7 +222,7 @@ const NewResult = Schema.Struct({
   fragments: Schema.Array(Schema.String),
   preset, agents,
   written: Schema.Array(Schema.String),   // relative output paths
-  brief: Schema.Literal(".quickstacks/BRIEF.md"),
+  brief: Schema.Literal(".quickstack/BRIEF.md"),
   briefWords: Schema.Number,              // renderBrief (1.1), countWords of the whole brief
   fixedWords: Schema.Number,              // renderBrief (1.1), countWords of the text.ts segments
   missingTools: Schema.Array(Schema.Struct({ tool: Schema.String, owners: Schema.Array(Schema.String), without: Schema.Array(Schema.String) })),
@@ -237,7 +237,7 @@ const NewResult = Schema.Struct({
 `briefWords` and `fixedWords` are numbers, as the roadmap's Word count contract defines
 them; 1.6b's run notes copy both from this result. 3.1c adds `dryRun`.
 
-`next` is the prompt the agent or user should act on: "Read .quickstacks/BRIEF.md and
+`next` is the prompt the agent or user should act on: "Read .quickstack/BRIEF.md and
 carry it out. It is your full task for this project; you're done when `<cli> verify`
 passes." 1.4 replaces the `print`-only handoff with its full union.
 
@@ -252,7 +252,7 @@ Human output lists the stack, fragments, the written files collapsed by 1.1's
 | Unknown `--agents` id; same id in `--with` and `--without` | `Usage` | 2 | The parser's usage error naming the flag |
 | `--scope` isn't a valid npm scope | `BadInput` | 2 | `details: { id, flag: "scope" }`; nothing written |
 | Project directory name has a control character | `BadInput` | 2 | `details: { id, flag: "dir" }`; nothing written |
-| An entry file under `.git/` or `.quickstacks/`, any case | `ComposeConflict` | 2 | `reason: "reserved_path"`, `path`; nothing written |
+| An entry file under `.git/` or `.quickstack/`, any case | `ComposeConflict` | 2 | `reason: "reserved_path"`, `path`; nothing written |
 | Two planned files differing only in case, or a file where another needs a directory | `ComposeConflict` | 2 | `reason: "file_owner"`, both owners, `path`; nothing written |
 | `Settings.package_scope` isn't a valid npm scope (and no `--scope`) | `InvalidConfig` | 3 | Nothing written |
 | Composition conflict, needs own repo | `ComposeConflict` | 2 | `details.reason`; for `needs_own_repo`, `ids` and `fix` |
@@ -342,7 +342,7 @@ that need it skip with a message when it is absent).
 
 - Tests pass; `bun run check` green from the repo root, including the new e2e case
   against the built artifact.
-- `AGENTS.md` documents `.quickstacks/` in its architecture map; `packages/cli/README.md`
+- `AGENTS.md` documents `.quickstack/` in its architecture map; `packages/cli/README.md`
   documents `new` and its flags.
 - What was built matches the roadmap contracts this file owns (Safe writer, Project
   metadata, `slug` in Shared helpers) and the Word count row's `new --json` fields.
@@ -377,7 +377,7 @@ that need it skip with a message when it is absent).
     `--without` flags only; when any of the fragments could only be dropped by changing a
     `--with`, or is required, `fix` is empty. The drop rule is `compose.ts::dropFlags`,
     shared with `missingTools`.
-  - An entry file planned under `.quickstacks/` or `.git/` is refused before writing as
+  - An entry file planned under `.quickstack/` or `.git/` is refused before writing as
     `ComposeConflict` `file_owner`: the CLI owns both.
   - `Registry` gained `bytes`, so copies are byte for byte (binary files included) and
     still never follow a symlink. Roadmap Registry view row updated.
@@ -407,12 +407,12 @@ that need it skip with a message when it is absent).
     `dev` script passes that on. Under `bun run --cwd <repo>` nothing carries the caller,
     so a run from outside the repository sets `INIT_CWD="$PWD"` itself.
   - Human `NotFound` for an entry id now ends with
-    `Next: quickstacks list shows every stack and fragment.`, with or without suggestions;
+    `Next: quickstack list shows every stack and fragment.`, with or without suggestions;
     a far-off id used to print a bare "Not found.".
   - Manual runs used the realistic fixture registry: its stack in sandbox mode wrote nine
     files, a fresh repository and a brief of about 4,000 words (about 6,000 with its app
     fragment). Those entries show as untrusted because a non-default
-    `QUICKSTACKS_REGISTRY_DIR` is untrusted, while human output labels them by origin
+    `QUICKSTACK_REGISTRY_DIR` is untrusted, while human output labels them by origin
     (`bundled`), which reads oddly next to "Untrusted".
 - 2026-10-26, from the code review on feat/phase-1:
   - **The reserved-path check moved into `compose`** (`compose.ts::reservedSegment`), so

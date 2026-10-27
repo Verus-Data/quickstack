@@ -94,7 +94,7 @@ const renderFiles = (sources: ReadonlyArray<SourceFile>, values: TemplateValues)
     return Effect.succeed({ ...file, bytes: new TextEncoder().encode(rendered.text) });
   });
 
-/** Render the entry files only; the CLI's own `.quickstacks/` files are separate. */
+/** Render the entry files only; the CLI's own `.quickstack/` files are separate. */
 export const composeFiles = (
   composition: Composition<Entry | null>,
   values: TemplateValues,

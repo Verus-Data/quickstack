@@ -82,7 +82,7 @@ The ancestor check stands in for `git branch -d`, which compares against the mai
 
 A unit you abandon (wrong approach, superseded, split) gets `git worktree remove --force` and `git branch -D`, but only after you've checked its diff for anything worth keeping. If removal fails because the directory is gone, `git worktree prune` clears the stale entry.
 
-At the end, after main is pushed, remove the integration worktree and `feat/<plan>` the same way. Then run `git worktree list` and `git branch --list 'delegate/*' 'feat/<plan>'`: nothing this run created should remain. The run logs under `$TMPDIR/quickstacks-delegate/` and the scratchpad contracts can stay.
+At the end, after main is pushed, remove the integration worktree and `feat/<plan>` the same way. Then run `git worktree list` and `git branch --list 'delegate/*' 'feat/<plan>'`: nothing this run created should remain. The run logs under `$TMPDIR/quickstack-delegate/` and the scratchpad contracts can stay.
 
 ## Finishing the plan
 

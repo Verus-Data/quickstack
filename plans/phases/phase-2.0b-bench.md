@@ -8,7 +8,7 @@ Acceptance tests: traced
 |---|---|
 | Goal | A maintainer reruns any bundled stack with one command on their own machine: a local script builds the CLI from the working tree, scaffolds the stack with `new --sandbox` (or, with `--preset default`, `new --yes`), drives the maintainer's own agent headlessly with token auth (D24), runs `verify` itself, and appends a `LedgerRecord` and a run note, with interventions counted from the agent's `## Asked` log |
 | Traces to | "The only quality signal the product has is manual and nobody has time to run it"; success rows "The agent finishes without help" and "It's faster than by hand"; assumption 1's test: "Run each bundled stack to green and count hesitations and skipped instructions" |
-| Depends on | [2.0c](phase-2.0c-run-ledger.md) (`LedgerRecord`, `appendRecord`, `quickstacks runs --json`, `countAsked`), [2.0a](phase-2.0a-composed-files-and-fingerprint.md) (`fingerprint` in `new --json`), [0.3b](phase-0.3b-processes-and-signals.md) (`Processes`), [1.4](phase-1.4-handoff-and-entry-points.md) (`agentPrompt`) |
+| Depends on | [2.0c](phase-2.0c-run-ledger.md) (`LedgerRecord`, `appendRecord`, `quickstack runs --json`, `countAsked`), [2.0a](phase-2.0a-composed-files-and-fingerprint.md) (`fingerprint` in `new --json`), [0.3b](phase-0.3b-processes-and-signals.md) (`Processes`), [1.4](phase-1.4-handoff-and-entry-points.md) (`agentPrompt`) |
 | Blocks | [5.1](phase-5.1-scheduled-canary.md) (schedules this script on an isolated machine); [3.3a](phase-3.3a-release-and-deploy-fragments.md) and [3.3c](phase-3.3c-service-vendor-and-effect-fragments.md) (bundled fragment expansion, which bench with `--preset default` as well), [3.3b](phase-3.3b-bundled-stack-expansion.md), [3.4a](phase-3.4a-agent-harness-fragment.md), [3.4b](phase-3.4b-native-agent-adapters.md), [3.5a](phase-3.5a-app-entry-kind.md) and [3.5b](phase-3.5b-two-phase-brief.md) (each new entry lands with a bench run); evidence for [4.3](phase-4.3-mcp-server.md) (bench notes, open question 15) |
 | Decisions needed | D24 (headless auth by long-lived token in the environment; if declined, the bench has no supported way to log in and only the fake-agent tests can be built). Open question 11 answered 2026-10-27: the maintainers approved building the bench and running it locally with full permissions. Open question 12 (whether a maintainer reads every bench run to relabel `partial`; blocks the exit, owner: the maintainers; if only failing and regression runs get a read, `partial` is under-counted and the run note says the run wasn't reviewed) |
 | Settles | The bench's command line and steps; the `BENCH.md` rules, including the `## Asked` log; how a run is classified into 2.0c's `result` values; the agent adapter table (`claude` and `codex`) and each agent's auth mechanism; continuing a kept run; hook detection; that bench runs send no telemetry; why the bench doesn't breach D2 |
@@ -20,7 +20,7 @@ In:
 - `packages/cli/scripts/bench.ts`, a development script (not a CLI command) that runs one
   stack end to end with one agent and records the result.
 - `packages/cli/scripts/bench/agents.ts`, the adapter table.
-- The bench brief `BENCH.md` the agent reads alongside `.quickstacks/BRIEF.md`.
+- The bench brief `BENCH.md` the agent reads alongside `.quickstack/BRIEF.md`.
 - Tests with scripted fake agents.
 
 Out:
@@ -28,7 +28,7 @@ Out:
 - Scheduling, unattended runs, isolation from the maintainer's account, GitHub tokens and
   reports, and classifying runs over time (canary infra, timeouts, flaky stacks): all
   [5.1](phase-5.1-scheduled-canary.md) and trust model point 8.
-- The fingerprint (2.0a); the ledger schema and `quickstacks runs` (2.0c). Rot checks
+- The fingerprint (2.0a); the ledger schema and `quickstack runs` (2.0c). Rot checks
   (2.2).
 - Judging whether the built project is good beyond verify. The bench copies the agent's
   notes into a run note for a maintainer to read; it doesn't grade them.
@@ -90,16 +90,16 @@ it in-process.
    the commit that ran. Any failure stops here with the agent's or git's own message,
    exit 1, nothing written.
 2. **Artifact.** Build the working tree with `bun run build` (producing
-   `packages/cli/dist/quickstacks`), or take the compiled binary from `--cli`. Copy the
-   binary to `<prefix>/bin/quickstacks` and the bundled `registry/` beside `bin/` in a fresh
+   `packages/cli/dist/quickstack`), or take the compiled binary from `--cli`. Copy the
+   binary to `<prefix>/bin/quickstack` and the bundled `registry/` beside `bin/` in a fresh
    temporary prefix, as the 1.6b gate runs did. Install no `scripts/` or `src/` files. Every
-   `quickstacks` call below is that installed binary, never source.
+   `quickstack` call below is that installed binary, never source.
 3. **Environment.** A throwaway root with `run/` (the project), `home/` (`HOME`, with fresh
    `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`, `XDG_CACHE_HOME` under it) and
    `bench/` (the bench's own files). The child environment is built from scratch:
    `PATH`, `HOME`, the XDG paths, `TMPDIR`, `LANG`, `PORT_*` from step 4, the
    adapter's one token variable, `DO_NOT_TRACK=1`, and the adapter's debug-log variable
-   when it has one (step 7). `DO_NOT_TRACK=1` means no `quickstacks` the agent runs, and
+   when it has one (step 7). `DO_NOT_TRACK=1` means no `quickstack` the agent runs, and
    none the bench runs itself, ever sends telemetry once a telemetry client exists (4.1a):
    bench installs would otherwise dominate small cells in later stats, and later release builds
    the bench installs would send. Nothing else is passed: no `GH_TOKEN`, no model API keys
@@ -108,7 +108,7 @@ it in-process.
    an agent session doesn't look nested.
 4. **Ports.** The bench picks free ports for every `PORT_*` variable the composition's
    `env` declares and passes them to `new` and to every later `verify`.
-5. **Scaffold.** `quickstacks new <stack> run --sandbox --agents <agent> --no-launch --json
+5. **Scaffold.** `quickstack new <stack> run --sandbox --agents <agent> --no-launch --json
    [--with ...]` (`--yes` in place of `--sandbox` under `--preset default`), reading `fingerprint` and `briefWords` from the result. Then the bench
    records a snapshot of every path and its sha256 under `run/`, for the infra rule in
    step 9.
@@ -127,8 +127,8 @@ it in-process.
    agent-ops guardrail fragment from 1.6a and 1.6d, the session-start, destructive-command and
    format hooks). This is how a bench run proves the guardrail fragment works, not only
    that it was written.
-8. **Independent check.** The bench runs `quickstacks verify --json` itself, then
-   `quickstacks runs --json`. `run` is the last `runs.jsonl` line, decoded with
+8. **Independent check.** The bench runs `quickstack verify --json` itself, then
+   `quickstack runs --json`. `run` is the last `runs.jsonl` line, decoded with
    `RunRecord`, which is the record of the bench's own verify. `verifyRuns`,
    `minutesToGreen`, `minutesToFirstTest` and `interventions` come from `runs --json`,
    so they mean exactly what 2.0c says. The bench's own verify is excluded from
@@ -154,7 +154,7 @@ it in-process.
 ### Continuing a kept run
 
 `--existing <dir>` takes the throwaway root of an earlier `--keep` run. It refuses unless
-`<dir>/run/.quickstacks/manifest.json` decodes, its stack and `with` match the command
+`<dir>/run/.quickstack/manifest.json` decodes, its stack and `with` match the command
 line, and its fingerprint equals the one the current commit's composition gives (so a
 continued run still measures the content the record will name). It skips steps 2 to 6
 (reusing the kept artifact, `HOME` and ports), takes a fresh snapshot for the infra rule,
@@ -172,11 +172,11 @@ already carries the build rules (1.1).
 
 - Nobody will answer you. Never ask the user a question. When you would have asked one,
   choose the default the brief gives (or the most conventional choice if it gives none),
-  carry on, and add one line under `## Asked` in `.quickstacks/NOTES.md`: the question,
+  carry on, and add one line under `## Asked` in `.quickstack/NOTES.md`: the question,
   then `default:` and what you chose.
-- Keep `.quickstacks/NOTES.md` as the brief describes, including `## Findings`.
+- Keep `.quickstack/NOTES.md` as the brief describes, including `## Findings`.
 - Run verify with `<absolute path>/bench/verify`.
-- Never edit `.quickstacks/manifest.json`. Never fake a credential or stub a service the
+- Never edit `.quickstack/manifest.json`. Never fake a credential or stub a service the
   brief says to use for real.
 - Stop when verify is green.
 
@@ -308,7 +308,7 @@ test. The tests use a fixture stack whose verify passes when two files exist.
 9. The `claude` adapter's `readResult` parses the recorded output sample, success and
    error.
 10. The bench's installed prefix holds the compiled binary and `registry/` and no `scripts/` or `src/` files.
-11. The fake's env dump contains `DO_NOT_TRACK=1`, and every `quickstacks` the bench
+11. The fake's env dump contains `DO_NOT_TRACK=1`, and every `quickstack` the bench
     runs itself is spawned with `DO_NOT_TRACK=1` in its environment.
 12. `--existing` on a kept root continues the run and appends one record with
     `continued: true` and `interventions` one higher than the `## Asked` count; a kept
@@ -328,7 +328,7 @@ test. The tests use a fixture stack whose verify passes when two files exist.
 
 17. A symlinked kept root with spaces, quotes, a leading dash and Unicode continues from another working directory.
 18. Inherited git repository variables and missing or relative XDG paths cannot redirect preflight or the fresh child environment.
-19. An existing partial root with a missing or undecodable manifest, or a file in place of `.quickstacks/`, is refused without changing it.
+19. An existing partial root with a missing or undecodable manifest, or a file in place of `.quickstack/`, is refused without changing it.
 20. Cancellation while the build is blocked kills that process, cleans the throwaway root and writes no record or note.
 21. Cancellation after the agent and its descendant are blocked kills both, removes the throwaway root and preserves unrelated files.
 22. An undecodable ledger remains unchanged; exit 3 still leaves the complete run note and prints a recoverable record to stderr.

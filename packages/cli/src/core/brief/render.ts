@@ -24,7 +24,7 @@ export type BriefContext = {
   };
   project: string;
   git: GitState;
-  /** Paths quickstacks wrote, relative to the project root. */
+  /** Paths quickstack wrote, relative to the project root. */
   written: ReadonlyArray<string>;
   missing: ReadonlyArray<MissingTool>;
   /** `--yes` or `--sandbox`: take every decision's default. */
@@ -109,7 +109,7 @@ export function renderBrief(composition: Composition<Entry | null>, context: Bri
       T.facts.root,
     );
     writtenPaths();
-    if (cli !== "quickstacks") fixed(T.facts.invocation(cli));
+    if (cli !== "quickstack") fixed(T.facts.invocation(cli));
   };
   facts();
 
@@ -401,7 +401,7 @@ function renderAddBrief(
     fixed(T.facts.written);
     data(...context.written.map((path) => `  - ${T.code(path)}`));
   }
-  if (cli !== "quickstacks") fixed(T.facts.invocation(cli));
+  if (cli !== "quickstack") fixed(T.facts.invocation(cli));
   fixed(
     "",
     T.job(cli)[0] ?? "",

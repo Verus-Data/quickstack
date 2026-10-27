@@ -82,7 +82,7 @@ const checkOwnRepo = (composition: Composition, git: GitProbe) =>
 
 /**
  * `new`: compose, check the target, render every file in memory, then write the entry files and
- * `.quickstacks/` through the safe writer and `git init` a fresh target. Runs nothing from any
+ * `.quickstack/` through the safe writer and `git init` a fresh target. Runs nothing from any
  * entry (D2). Any failure or interruption after the first write rolls every write back. A dry run
  * stops after rendering, before opening the writer.
  */

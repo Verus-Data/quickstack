@@ -10,7 +10,7 @@ const space = workspace();
 afterEach(() => space.release());
 const skill = join(import.meta.dirname, "fixtures/skill");
 const text = readFileSync(join(skill, "SKILL.md"), "utf8");
-const target = (root: string) => join(root, ".claude/skills/quickstacks/SKILL.md");
+const target = (root: string) => join(root, ".claude/skills/quickstack/SKILL.md");
 
 test.each(["no git", "broken git"])(
   "--project falls back to cwd with %s and no HOME",

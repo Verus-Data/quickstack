@@ -38,7 +38,7 @@ describe("the audience is picked once per invocation from the terminal and agent
     const result = await runCli(["doctor"], {
       home,
       host,
-      env: { LOG_LEVEL: "info", QUICKSTACKS_LOG_FILE: file, ...env },
+      env: { LOG_LEVEL: "info", QUICKSTACK_LOG_FILE: file, ...env },
     });
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("Configuration: ok\n");
@@ -55,7 +55,7 @@ describe("the audience is picked once per invocation from the terminal and agent
     const result = await runCli(["doctor", "--json"], {
       home,
       host,
-      env: { LOG_LEVEL: "info", QUICKSTACKS_LOG_FILE: file, ...env },
+      env: { LOG_LEVEL: "info", QUICKSTACK_LOG_FILE: file, ...env },
     });
     expect(result.status).toBe(0);
     expect(JSON.parse(result.stdout)).toMatchObject({ configErrors: [] });
@@ -79,14 +79,14 @@ describe("agent output carries no log lines", () => {
     const missing = join(home, "nope");
     const result = await runCli(["list"], {
       home,
-      env: { QUICKSTACKS_REGISTRY_DIR: missing, LOG_LEVEL: "warn", QUICKSTACKS_LOG_FILE: file },
+      env: { QUICKSTACK_REGISTRY_DIR: missing, LOG_LEVEL: "warn", QUICKSTACK_LOG_FILE: file },
     });
     expect(result.status).toBe(0);
     expect(result.stderr).toBe("");
     expect(ndjson(readFileSync(file, "utf8"))).toEqual([
       expect.objectContaining({
         level: "warn",
-        msg: `QUICKSTACKS_REGISTRY_DIR is not a directory: ${missing}`,
+        msg: `QUICKSTACK_REGISTRY_DIR is not a directory: ${missing}`,
       }),
     ]);
   });
@@ -114,20 +114,20 @@ describe("new for an agent", () => {
       "Fragments: base-req, hooked, own-repo, ran-check, tooled",
       "Agents: claude",
       "Git: git not found; no repository",
-      expect.stringMatching(/^Brief: \.quickstacks\/BRIEF\.md \(\d+ words\)$/),
+      expect.stringMatching(/^Brief: \.quickstack\/BRIEF\.md \(\d+ words\)$/),
       "Missing tools (the brief tells the agent):",
       "  qs-stack-tool not found (needed by fixture-stack)",
       "  qs-fragment-tool not found (needed by tooled; skip with --without tooled)",
       "",
       "Next: open app in your coding agent and give it this prompt:",
-      "  Read .quickstacks/BRIEF.md and carry it out. It's your full task for this project; you're done when quickstacks verify passes.",
+      "  Read .quickstack/BRIEF.md and carry it out. It's your full task for this project; you're done when quickstack verify passes.",
       "",
     ]);
     const human = await newCli(home, ["app2", "--sandbox"], { human: true });
     expect(human.stdout).toContain(`Project: ${join(home, "app2")}\n`);
     expect(human.stdout).toMatch(/\nWrote \d+ files:\n/);
     // A human also gets a command to paste; an agent has the prompt on the line above.
-    expect(human.stdout).toContain('\nFor example: cd app2 && claude "Read .quickstacks/');
+    expect(human.stdout).toContain('\nFor example: cd app2 && claude "Read .quickstack/');
     const json = await newCli(home, ["app3", "--json"]);
     expect(JSON.parse(json.stdout).project).toBe(join(home, "app3"));
   });
@@ -138,7 +138,7 @@ describe("new for an agent", () => {
     const run = (args: string[], host = {}) =>
       runCli(["new", "fixture-stack", ...args], {
         home,
-        env: { ...quiet, QUICKSTACKS_REGISTRY_DIR: join(home, "registry") },
+        env: { ...quiet, QUICKSTACK_REGISTRY_DIR: join(home, "registry") },
         host: { cwd: home, ...host },
       });
     const agent = await run(["app"]);
@@ -193,7 +193,7 @@ describe("new for an agent", () => {
     const agent = await newCli(parent, ["app"], { cwd: link });
     expect(agent.status).toBe(0);
     expect(agent.stdout).toContain("Created app from fixture-stack.\n");
-    expect(readFileSync(join(parent, "app", ".quickstacks", "BRIEF.md"), "utf8")).toMatch(/^# /);
+    expect(readFileSync(join(parent, "app", ".quickstack", "BRIEF.md"), "utf8")).toMatch(/^# /);
   });
 });
 
@@ -224,7 +224,7 @@ describe("verify for an agent", () => {
       expect.stringMatching(/^ {2}failed {3}check {5}lint {5}\(exit 1, \d+\.\ds\) {2}exited/),
       "      | lint broke",
       "",
-      "Next: fix the code or config these steps exercise, not the steps, then run quickstacks verify again.",
+      "Next: fix the code or config these steps exercise, not the steps, then run quickstack verify again.",
       "",
     ]);
     expect(agent.stderr).toBe("Verify failed.\n  Failed: lint (step, exit 1)\n");
@@ -287,10 +287,10 @@ describe("the guide by audience", () => {
     for (const args of [[], ["guide"]]) {
       const agent = await runCli(args);
       expect(agent.status).toBe(0);
-      expect(agent.stdout).toMatch(/^quickstacks starts projects for coding agents\./);
+      expect(agent.stdout).toMatch(/^quickstack starts projects for coding agents\./);
       const human = await runCli(args, { host: terminal });
       expect(human.stdout).toBe(
-        `This guide is written for coding agents. To start a project yourself, run quickstacks list, then quickstacks new <stack> <dir>; quickstacks --help lists every command.\n\n${agent.stdout}`,
+        `This guide is written for coding agents. To start a project yourself, run quickstack list, then quickstack new <stack> <dir>; quickstack --help lists every command.\n\n${agent.stdout}`,
       );
       const json = await runCli([...args, "--json"], { host: terminal });
       expect(JSON.parse(json.stdout).guide).toBe(agent.stdout.trimEnd());
@@ -301,7 +301,7 @@ describe("the guide by audience", () => {
 describe("list for an agent", () => {
   test("keeps each description whole on one line", async () => {
     const home = temp();
-    const user = join(home, "config", "quickstacks");
+    const user = join(home, "config", "quickstack");
     const description = Array.from({ length: 40 }, (_, i) => `word${i}`).join(" ");
     writeEntry({
       root: user,
@@ -322,7 +322,7 @@ describe("list for an agent", () => {
 
   test("names a rejected entry's directory relative to the working directory", async () => {
     const home = temp();
-    const user = join(home, "config", "quickstacks");
+    const user = join(home, "config", "quickstack");
     writeEntry({
       root: user,
       kind: "stack",
@@ -335,7 +335,7 @@ describe("list for an agent", () => {
       host: { registry: smallRegistry },
     });
     expect(agent.status).toBe(0);
-    expect(agent.stdout).toContain("\n    config/quickstacks/stacks/broken\n");
+    expect(agent.stdout).toContain("\n    config/quickstack/stacks/broken\n");
   });
 });
 

@@ -49,13 +49,13 @@ Out:
 | Output path | What it does |
 |---|---|
 | `.claude/hooks/lib.sh` | Shared shell library every hook sources: read one field from the hook's JSON input (with `jq` when it is on PATH, otherwise a small `sed`-based reader that handles the few flat string fields the hooks need), print a bounded message (at most 40 lines), emit the agent's block response, find the project root. Written for bash 3.2 (macOS's `/bin/bash`): no associative arrays, `mapfile`, `${var,,}`, `\|&` or `;&` |
-| `.claude/hooks/session-start.sh` | SessionStart: prints a short orientation (whether `AGENTS.md` is filled, which of the stack's tools are missing from PATH, whether `.quickstacks/BRIEF.md` exists and the project hasn't reached green yet), at most 15 lines |
+| `.claude/hooks/session-start.sh` | SessionStart: prints a short orientation (whether `AGENTS.md` is filled, which of the stack's tools are missing from PATH, whether `.quickstack/BRIEF.md` exists and the project hasn't reached green yet), at most 15 lines |
 | `.claude/hooks/guard-destructive.sh` | PreToolUse on the shell tool: blocks a command matching the pattern list below and tells the agent to ask the user instead of working around the block |
 | `.claude/hooks/guard-secrets.sh` | PreToolUse on file writes and edits: blocks content with a secret shape (below), and any write to `.env` or `.env.*` other than `.env.example` |
 | `.claude/hooks/lint-on-write.sh` | PostToolUse on file writes and edits: runs the project's lint for the written file through the project's task runner, found at run time (a `lint` target in the `Makefile`, else a `lint` script in `package.json`; templates have no conditionals, D1), and returns its diagnostics as context, bounded, never blocking. A missing lint command is silent: the agent may not have created it yet |
 | `.claude/hooks/format-on-stop.sh` | Stop: runs the project's `format` command (found the same way) over the files git reports changed, then exits 0 whatever happens |
-| `.claude/settings.json` | A `merge` path: wires each hook once, and holds `permissions.deny` rules for reading `.env` and `.env.*` (not `.env.example`), for `git push --force`, `git commit --no-verify` and `git push --no-verify`, and for editing `.quickstacks/manifest.json` (D14: the agent can't weaken the steps by accident even before verify catches it) |
-| `.claude/README.md` | Skeleton with `quickstacks:fill` markers: what each hook does, what a block means ("ask the user; never work around a deny"), how to turn one off for a session, and where the patterns live |
+| `.claude/settings.json` | A `merge` path: wires each hook once, and holds `permissions.deny` rules for reading `.env` and `.env.*` (not `.env.example`), for `git push --force`, `git commit --no-verify` and `git push --no-verify`, and for editing `.quickstack/manifest.json` (D14: the agent can't weaken the steps by accident even before verify catches it) |
+| `.claude/README.md` | Skeleton with `quickstack:fill` markers: what each hook does, what a block means ("ask the user; never work around a deny"), how to turn one off for a session, and where the patterns live |
 
 Destructive-command patterns, one list in `guard-destructive.sh`, matched against the
 command after collapsing whitespace (a regex list, not a shell parser;
@@ -173,12 +173,12 @@ no workflow change.
   - Settings deny rules. Added `--no-verify` on commit and push, reading `.env`,
     `.env.local`, `.env.*.local` and `.env.production` (a `.env.*` wildcard would also
     deny `.env.example`, and an allow can't override a deny), and
-    `Edit(./.quickstacks/manifest.json)` (Edit rules cover Write).
+    `Edit(./.quickstack/manifest.json)` (Edit rules cover Write).
   - Bounds. Lint diagnostics are capped at 60 lines (the shipped value), not 40; block
     messages are a few lines. `session-start.sh` now stops at 15 lines.
   - `session-start.sh` reports what it already did (branch, `main`, `.env`, dependencies,
-    compose services) and now points at `.quickstacks/BRIEF.md` while `AGENTS.md` still
-    has `quickstacks:fill` markers. It doesn't list missing tools (the manifest's tools
+    compose services) and now points at `.quickstack/BRIEF.md` while `AGENTS.md` still
+    has `quickstack:fill` markers. It doesn't list missing tools (the manifest's tools
     are nested JSON, out of reach of the jq-free reader) or detect "reached green"
     (verify doesn't exist yet).
   - `lint-on-write.sh` picks the linter by file extension from the project's own install

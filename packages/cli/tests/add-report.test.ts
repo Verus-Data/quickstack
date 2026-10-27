@@ -9,8 +9,8 @@ const result: Omit<AddResult, "handoff"> = {
   alreadyApplied: [],
   written: ["ci.yml"],
   skipped: ["same.txt"],
-  mergeNeeded: [{ path: "README.md", incoming: [".quickstacks/incoming/README.md"] }],
-  missingRequired: [{ id: "required", command: "quickstacks add required" }],
+  mergeNeeded: [{ path: "README.md", incoming: [".quickstack/incoming/README.md"] }],
+  missingRequired: [{ id: "required", command: "quickstack add required" }],
   commandsKept: [],
   warnings: [
     { code: "missing_tool", id: "tool" },
@@ -28,7 +28,7 @@ const result: Omit<AddResult, "handoff"> = {
   tamperCheck: null,
   stateRecord: true,
   digestRecorded: false,
-  brief: ".quickstacks/BRIEF.md",
+  brief: ".quickstack/BRIEF.md",
   briefWords: 123,
   untrusted: [{ id: "ci", kind: "fragment", origin: "project", dir: "local/ci" }],
 };
@@ -37,7 +37,7 @@ test("the add summary keeps the shown path, merge task and actionable confirmati
   const context: Parameters<typeof renderAdd>[1] = {
     shown: "app",
     audience: "agent",
-    invocation: "npx -y quickstacks@0.1.0",
+    invocation: "npx -y quickstack@0.1.0",
   };
   const text = renderAdd(result, context);
   expect(text).toBe(
@@ -49,18 +49,18 @@ test("the add summary keeps the shown path, merge task and actionable confirmati
       "Warning: the manifest's stack gone-stack is in no registry; composed without it",
       "",
       "Merge needed",
-      "  README.md: .quickstacks/incoming/README.md",
-      "Missing required: required. Next: quickstacks add required",
+      "  README.md: .quickstack/incoming/README.md",
+      "Missing required: required. Next: quickstack add required",
       "Untrusted: ci (project): local/ci",
-      "Stop: ask the user to review the new steps and run npx -y quickstacks@0.1.0 verify --accept-changes in their terminal.",
-      "Brief: .quickstacks/BRIEF.md",
+      "Stop: ask the user to review the new steps and run npx -y quickstack@0.1.0 verify --accept-changes in their terminal.",
+      "Brief: .quickstack/BRIEF.md",
     ].join("\n"),
   );
   expect(renderAdd(result, { ...context, audience: "human" })).toBe(text);
 });
 
 test("adding to the current directory doesn't name it as a dot", () => {
-  const text = renderAdd(result, { shown: ".", audience: "agent", invocation: "quickstacks" });
+  const text = renderAdd(result, { shown: ".", audience: "agent", invocation: "quickstack" });
   expect(text.split("\n")[0]).toBe("Added ci");
 });
 
@@ -74,7 +74,7 @@ test("entry and filesystem values cannot inject control characters into the add 
         { ...result.untrusted[0], id: "ci", kind: "fragment", origin: "project", dir: "bad\tpath" },
       ],
     },
-    { shown: "app\rpath", audience: "agent", invocation: "quickstacks" },
+    { shown: "app\rpath", audience: "agent", invocation: "quickstack" },
   );
   expect(text).toContain("Added ci\\u000aspoof to app\\u000dpath");
   expect(text).toContain("Written: bad\\u001b.txt");

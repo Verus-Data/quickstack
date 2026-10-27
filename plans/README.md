@@ -1,4 +1,4 @@
-# quickstacks plan
+# quickstack plan
 
 Status: DRAFT 2026-10-26. Planning; the CLI base is in place with no product code. The
 plan is written to the demo-first proposal (D23).
@@ -7,13 +7,13 @@ plan is written to the demo-first proposal (D23).
 
 ## Product to preserve
 
-quickstacks gives a developer who starts projects with a coding agent a consistent,
+quickstack gives a developer who starts projects with a coding agent a consistent,
 current, fully tested setup. A stack is a short, version-less description of what a
 project is made of, how it is laid out, what the tools must enforce, and what "working"
 means as a list of commands that must pass. The CLI writes a few files and a brief,
 then hands off to the agent the user already has. The agent installs current versions,
 runs the official generators, wires up tests, lint, CI and agent config, and loops until
-`quickstacks verify` is green.
+`quickstack verify` is green.
 
 The line the product draws: humans own what lasts (composition, layout, enforcement,
 the definition of done), agents own what ages (versions, generator flags, config
@@ -46,7 +46,7 @@ demo.
 
 | Phase | Goal | Sub-phases | Traces to | Status |
 |---|---|---|---|---|
-| 0 Foundation | Name held, hard-to-reverse decisions made, `npx quickstacks` installs the real CLI, and the base can run long and interactive commands | [0.0](phases/phase-0.0-decisions-and-npm-name.md) decisions and name, [0.1](phases/phase-0.1-repo-baseline.md) repo baseline, [0.2](phases/phase-0.2-npm-distribution-artifact.md) distribution, [0.3a](phases/phase-0.3a-errors-and-output.md) errors and output, [0.3b](phases/phase-0.3b-processes-and-signals.md) processes and signals | Open questions: npm name, brief budget, registry audience | In progress (0.1, 0.3a, 0.3b executed and merged; 0.2 and the npm reservation deferred to the final step before public release; 0.0 waits on the maintainers) |
+| 0 Foundation | Name held, hard-to-reverse decisions made, `npx quickstack` installs the real CLI, and the base can run long and interactive commands | [0.0](phases/phase-0.0-decisions-and-npm-name.md) decisions and name, [0.1](phases/phase-0.1-repo-baseline.md) repo baseline, [0.2](phases/phase-0.2-npm-distribution-artifact.md) distribution, [0.3a](phases/phase-0.3a-errors-and-output.md) errors and output, [0.3b](phases/phase-0.3b-processes-and-signals.md) processes and signals | Open questions: npm name, brief budget, registry audience | In progress (0.1, 0.3a, 0.3b executed and merged; 0.2 and the npm reservation deferred to the final step before public release; 0.0 waits on the maintainers) |
 | 1 Core loop (MVP) | `list --json`, `new --sandbox`, the brief, `verify` with tamper detection, handoff, `validate` with the brief budget, the bundled catalog with guardrail hooks, each gated stack taken to green by an agent; the manual npm release (1.6c) is the final step before public release | [1.0](phases/phase-1.0-entry-format-and-registry.md) to [1.6c](phases/phase-1.6c-first-release.md), including [1.6d](phases/phase-1.6d-guardrail-hook-fragments.md) | Jobs 1, 2 and 5; success rows 1-3; assumption 1 | In progress (round 1, 1.0-1.2b, on `feat/phase-1`) |
 | 2 Stacks that prove themselves | A composition fingerprint, a run ledger, a local bench, deterministic rot checks | [2.0a](phases/phase-2.0a-composed-files-and-fingerprint.md), [2.0c](phases/phase-2.0c-run-ledger.md), [2.0b](phases/phase-2.0b-bench.md), [2.2](phases/phase-2.2-deterministic-rot-checks.md) | "How does a stack prove it still works?"; success rows 1, 2 and 4 | Not started |
 | 3 Existing repos and authors | `add`, `show`, `new` naming and dry-run options, authoring tools, git sources with trust (gated on outside demand), more bundled fragments and stacks, an agent hook harness, native adapters for other agents, an agent skill, verify reporting an app's steps as their own stage | [3.0](phases/phase-3.0-add-fragments-to-repo.md) to [3.5b](phases/phase-3.5b-two-phase-brief.md) | Jobs 3 and 4; the stack author; success row 5 | Not started |
@@ -64,13 +64,13 @@ then it moves here with an ID that never changes.
 
 | ID | Date | Decision and why | Governing detail |
 |---|---|---|---|
-| D0 | 2026-10-26 | The product is named quickstacks. `stacks` on npm is an unrelated package; `quickstack` and `quickstacks` both returned 404 on `npm view` on 2026-10-26 (free, not yet reserved). | [0.0](phases/phase-0.0-decisions-and-npm-name.md) |
+| D0 | 2026-10-26, amended 2026-10-27 | The product is named quickstack. It was first named quickstacks; on 2026-10-27 the maintainers renamed it to quickstack, the repository's name. `stacks` on npm is an unrelated package; `quickstack` and `quickstacks` both returned 404 on `npm view` on 2026-10-26 and again on 2026-10-27. | [0.0](phases/phase-0.0-decisions-and-npm-name.md) |
 | D1 | 2026-10-26 | Not a template engine: `files/` holds only what is the same across versions; everything else is prose. Committed versions are what make templates age. | [PROBLEM_STATEMENT](../product/PROBLEM_STATEMENT.md#what-this-is-not) |
 | D2 | 2026-10-26 | Not an agent: the CLI never calls an LLM and never runs a command from an entry. The user's own agent does the work, and the trust story depends on the CLI executing nothing it reads. | [PROBLEM_STATEMENT](../product/PROBLEM_STATEMENT.md#what-this-is-not), [roadmap, Trust model](roadmap.md#trust-model) |
 | D3 | 2026-10-26 | Not a package manager or version resolver: versions are the agent's job on purpose. | [PROBLEM_STATEMENT](../product/PROBLEM_STATEMENT.md#what-this-is-not) |
 | D4 | 2026-10-26 | No retrofitting: `add` applies fragments to an existing project and never restructures what's there. | [PROBLEM_STATEMENT](../product/PROBLEM_STATEMENT.md#what-this-is-not) |
 | D10 | 2026-10-26 | The repo is a TypeScript CLI built on the `typescript-cli` base stack, with no product features yet: Effect commands, `doctor` and `--version`, lazy configuration, safe output and logs. It gives every later phase a tested command runtime to build on. How the package is distributed is still open (A1). | [roadmap, Repository and stack](roadmap.md#repository-and-stack) |
-| D11 | 2026-10-26 | The repo is a bun-workspace monorepo: `packages/cli` is the `quickstacks` package; `packages/api` and `packages/mcp` hold the API and MCP server; shared code gets its own package. Every package lives under `packages/`, so there is one place to look. The harness (`.claude/`, lefthook, CI, root Biome and tsconfig base, hook tests) belongs to the root. | [roadmap, Repository and stack](roadmap.md#repository-and-stack) |
+| D11 | 2026-10-26 | The repo is a bun-workspace monorepo: `packages/cli` is the `quickstack` package; `packages/api` and `packages/mcp` hold the API and MCP server; shared code gets its own package. Every package lives under `packages/`, so there is one place to look. The harness (`.claude/`, lefthook, CI, root Biome and tsconfig base, hook tests) belongs to the root. | [roadmap, Repository and stack](roadmap.md#repository-and-stack) |
 | D29 | 2026-10-26 | Agent output is the default. Without `--json`, output is for a human only when stdout is a terminal and no agent is detected (`Host.stdoutIsTTY` and `AppConfig.agent`); an agent's shell, a pipe, CI and any non-TTY get agent output. Agent output carries no log lines on stderr (they go to the log file, as in JSON mode), prints paths in command result text relative to the working directory when inside it (error detail paths, `Path:` and `Looked for:`, stay absolute for now), and leaves out what another line or file already says (`new`'s file listing, `validate`'s within-budget sizes, the counts repeated under `Validation failed.`, which human output drops too). `--json` is unchanged. The audiences never behave differently, only render differently. The CLI is agent-first; human output stays as the readable fallback for a person at a terminal. | [roadmap, Output audience](roadmap.md#types-and-schemas), `.claude/rules/cli/cli.md` "Three audiences" |
 | D30 | 2026-10-26 | `check` is a `VerifyStep.layer` value, for file and config checks (a README with no fill markers, a hooks file that defines hooks). It isn't a D7 required layer, so no stack needs one, and `step-layer` stays a warning for a step with no layer. Without it such a step had no honest layer, and `step-layer` warned on it. | [roadmap, Verify step `layer`](roadmap.md#other-shared-facts), [1.5](phases/phase-1.5-validate-and-brief-budget.md) |
 

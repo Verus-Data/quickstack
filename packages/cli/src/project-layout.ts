@@ -1,5 +1,5 @@
 /** Project metadata layout, shared by writers, readers and report schemas. */
-export const METADATA_DIR = ".quickstacks";
+export const METADATA_DIR = ".quickstack";
 export const BRIEF_PATH = `${METADATA_DIR}/BRIEF.md`;
 export const NOTES_PATH = `${METADATA_DIR}/NOTES.md`;
 export const IGNORE_PATH = `${METADATA_DIR}/.gitignore`;

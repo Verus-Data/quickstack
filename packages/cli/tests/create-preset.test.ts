@@ -39,7 +39,7 @@ function setup(settings?: unknown) {
     frontmatter: minimal("fragment", "shipping").replace("category: tooling", "category: deploy"),
   });
   if (settings !== undefined)
-    putCreate(home, "config/quickstacks/config.json", JSON.stringify(settings));
+    putCreate(home, "config/quickstack/config.json", JSON.stringify(settings));
   return { home, registry };
 }
 async function newProject(home: string, registry: string, dir: string, flags: string[] = []) {
@@ -50,7 +50,7 @@ async function newProject(home: string, registry: string, dir: string, flags: st
     NewResult,
   );
   const manifest = Schema.decodeUnknownSync(Manifest)(
-    JSON.parse(readFileSync(join(result.project, ".quickstacks/manifest.json"), "utf8")),
+    JSON.parse(readFileSync(join(result.project, ".quickstack/manifest.json"), "utf8")),
   );
   expect(manifest.preset).toBe(result.preset);
   return { result, manifest, brief: readFileSync(join(result.project, result.brief), "utf8") };
@@ -89,7 +89,7 @@ test("new uses the setting and records an explicit default override in its resul
   presetBehavior(configured, "sandbox");
   const overridden = await newProject(home, registry, "overridden", ["--preset", "default"]);
   presetBehavior(overridden, "default");
-  expect(JSON.parse(readFileSync(join(home, "config/quickstacks/config.json"), "utf8"))).toEqual({
+  expect(JSON.parse(readFileSync(join(home, "config/quickstack/config.json"), "utf8"))).toEqual({
     preset: "sandbox",
   });
 });

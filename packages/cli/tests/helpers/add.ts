@@ -80,7 +80,7 @@ export const read = (root: string, path: string) => readFileSync(join(root, path
 export function projectFragment(project: AddProject) {
   cpSync(
     join(fixtures, "add-project", "fragments"),
-    join(project.root, ".quickstacks", "fragments"),
+    join(project.root, ".quickstack", "fragments"),
     {
       recursive: true,
     },

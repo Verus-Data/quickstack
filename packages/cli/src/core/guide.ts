@@ -1,12 +1,12 @@
 import { BRIEF_PATH, MANIFEST_PATH } from "../project-layout";
 /**
- * The agent guide: what `quickstacks` with no arguments and `quickstacks guide` print, and the
+ * The agent guide: what `quickstack` with no arguments and `quickstack guide` print, and the
  * footer on the root's `--help`. One text, reached three ways; it reads neither a project nor a
  * registry, so it works anywhere. `cli` is `Host.invocation`.
  */
 export const guideText = (cli: string) =>
   [
-    `quickstacks starts projects for coding agents. It writes a stack's starter files and a brief, ${BRIEF_PATH}, and verify is the definition of done: the project's own checks, run from its manifest.`,
+    `quickstack starts projects for coding agents. It writes a stack's starter files and a brief, ${BRIEF_PATH}, and verify is the definition of done: the project's own checks, run from its manifest.`,
     "",
     "The loop:",
     `1. ${cli} list --json: pick a stack (${cli} show <id> --json reviews one) and tell the user why.`,
@@ -25,7 +25,7 @@ export const guideText = (cli: string) =>
     "",
     `${cli} <command> --help shows each command's flags, exit codes and examples.`,
     "",
-    "The user's own stacks and fragments go in $XDG_CONFIG_HOME/quickstacks/stacks/<id>/ and fragments/<id>/ (default ~/.config/quickstacks/).",
+    "The user's own stacks and fragments go in $XDG_CONFIG_HOME/quickstack/stacks/<id>/ and fragments/<id>/ (default ~/.config/quickstack/).",
   ].join("\n");
 
 /** Before the guide for a person at a terminal (the human audience), who isn't its reader. */

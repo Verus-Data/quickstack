@@ -72,7 +72,7 @@ export function fileFixture(home: string) {
   put(last, "files/.shared/settings.json", '{"nested":{"last":true},"order":["last"]}');
   put(first, "files/.githooks/pre-commit", "#!/bin/sh\nexit 0\n", 0o751);
   for (const agent of ["claude", "codex"])
-    put(stack, `adapters/${agent}/AGENTS.md`, "Read .quickstacks/BRIEF.md.\n");
+    put(stack, `adapters/${agent}/AGENTS.md`, "Read .quickstack/BRIEF.md.\n");
   return { root, stack, first, last, put };
 }
 export type FileFixture = ReturnType<typeof fileFixture>;

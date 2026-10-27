@@ -57,7 +57,7 @@ A route or metric with no reader in this table is not built.
 | Window | Trailing 7 and 28 finalized UTC days, ending at the last finalized day, counted as distinct projects, never as a sum of events |
 | Contributor | An install id, or a network hash (from the project's scaffold event in `events`) |
 
-Every response and page says the numbers describe "quickstacks projects", not the ecosystem.
+Every response and page says the numbers describe "quickstack projects", not the ecosystem.
 
 ### Windows
 
@@ -126,7 +126,7 @@ Registry-change markers come from 4.1c's `registry_snapshots`: for each stack, e
 ```
 GET /v1/stats/summary
 200 {
-  "generatedAt": "...", "through": "2026-10-25", "population": "quickstacks projects",
+  "generatedAt": "...", "through": "2026-10-25", "population": "quickstack projects",
   "window": 28, "published": true,
   "entryPoints": { "handoff": { "launch": 0.41, ... }, "source": { "skill": 0.22, ... } },
   "entries": [{

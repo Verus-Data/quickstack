@@ -1,6 +1,6 @@
 {
-  "name": "quickstacks",
+  "name": "quickstack",
   "version": "0.1.0",
-  "description": "Choose a quickstacks stack and follow its brief until verify is green.",
-  "skills": "./skills/quickstacks"
+  "description": "Choose a quickstack stack and follow its brief until verify is green.",
+  "skills": "./skills/quickstack"
 }

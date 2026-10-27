@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const binary = join(import.meta.dir, "../dist/quickstacks");
+const binary = join(import.meta.dir, "../dist/quickstack");
 
 function sample(args: readonly string[]) {
   const home = mkdtempSync(join(tmpdir(), "cli-binary-budget-"));

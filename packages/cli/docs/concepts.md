@@ -1,19 +1,19 @@
 # Concepts
 
-quickstacks has a small vocabulary: stacks, fragments, the brief and verify. Once those four click, every command makes sense. This page explains each one with a real example from the bundled registry, then covers how they combine and what ends up in your project.
+quickstack has a small vocabulary: stacks, fragments, the brief and verify. Once those four click, every command makes sense. This page explains each one with a real example from the bundled registry, then covers how they combine and what ends up in your project.
 
 ## The idea in one paragraph
 
-Starting a project well takes judgment that doesn't change much from year to year (how to lay it out, what to test, what "done" means) and details that change constantly (package versions, generator flags, config file formats). quickstacks splits the two. A person writes down the lasting part once, as a stack. A coding agent supplies the current details every time it builds one, by reading today's docs. The CLI's job is to hand the agent the lasting part as a brief, and then hold it to a definition of done it can't quietly lower.
+Starting a project well takes judgment that doesn't change much from year to year (how to lay it out, what to test, what "done" means) and details that change constantly (package versions, generator flags, config file formats). quickstack splits the two. A person writes down the lasting part once, as a stack. A coding agent supplies the current details every time it builds one, by reading today's docs. The CLI's job is to hand the agent the lasting part as a brief, and then hold it to a definition of done it can't quietly lower.
 
 ```mermaid
 flowchart LR
-  ST["Stack<br/>the recipe"] --> NEW["quickstacks new"]
+  ST["Stack<br/>the recipe"] --> NEW["quickstack new"]
   FR["Fragments<br/>shared add-ons"] --> NEW
   NEW --> BR["BRIEF.md<br/>the task"]
   NEW --> MF["manifest.json<br/>the verify steps"]
   BR --> AG(["Coding agent<br/>builds with current versions"])
-  AG --> VE{"quickstacks verify"}
+  AG --> VE{"quickstack verify"}
   MF --> VE
   VE -- "fix and rerun" --> AG
   VE ==>|green| DONE(("Done"))
@@ -36,7 +36,7 @@ A stack is a recipe for one kind of project. `typescript-cli` is a Bun-compiled 
 
 A recipe lists ingredients and steps, but it doesn't tell you which brand of flour to buy. A stack works the same way. It names the packages a project needs by role ("Effect for services, Vitest for tests") but never pins a version. It describes the layout and the rules ("stdout carries results only; every error maps to a fixed exit code") but leaves the config files for the agent to generate with current tools. Then it says how to prove the result works: a list of commands that must pass.
 
-`quickstacks list stacks` lists them and `quickstacks show <id>` shows one in full.
+`quickstack list stacks` lists them and `quickstack show <id>` shows one in full.
 
 ## Fragments
 
@@ -91,9 +91,9 @@ flowchart LR
 
 `--without ci-github` drops CI. `--with bun-release` adds release tooling. A required fragment can't be removed, because the stack depends on it.
 
-Fragments also describe how they fit with others. `requires` pulls in another fragment automatically: `claude-harness` requires `agent-ops` and `effect` requires `effect-schema`, so `quickstacks new typescript-cli my-cli` gets six fragments, `agent-ops`, `ci-github`, `claude-harness`, `effect-schema`, `effect` and `git-hooks`, though the stack names only four. `conflicts` names fragments it can't coexist with. `applies_to` says which stacks or tags it works with, so `postgres` (which says `applies_to: [python-react]`) doesn't get offered for an Astro blog.
+Fragments also describe how they fit with others. `requires` pulls in another fragment automatically: `claude-harness` requires `agent-ops` and `effect` requires `effect-schema`, so `quickstack new typescript-cli my-cli` gets six fragments, `agent-ops`, `ci-github`, `claude-harness`, `effect-schema`, `effect` and `git-hooks`, though the stack names only four. `conflicts` names fragments it can't coexist with. `applies_to` says which stacks or tags it works with, so `postgres` (which says `applies_to: [python-react]`) doesn't get offered for an Astro blog.
 
-Picking the fragments and putting the result together is called composition. Composition is the same every time for the same inputs, and `quickstacks validate` composes every stack with every fragment that fits it to catch combinations that don't work.
+Picking the fragments and putting the result together is called composition. Composition is the same every time for the same inputs, and `quickstack validate` composes every stack with every fragment that fits it to catch combinations that don't work.
 
 ### Presets
 
@@ -172,9 +172,9 @@ Everything after the frontmatter is Markdown prose for the agent: how to lay the
 Prose can vary by composition. A block between two markers is included only when its condition holds:
 
 ```md
-<!-- quickstacks:when with=ci-github -->
+<!-- quickstack:when with=ci-github -->
 CI uses Bun's packageManager and Node's .node-version ...
-<!-- quickstacks:end -->
+<!-- quickstack:end -->
 ```
 
 That paragraph appears in the brief only when `ci-github` is part of the project. The conditions are `with=<fragment>`, `preset=<preset>`, `stack=<id>`, `tag=<tag>`, `tag!=<tag>` and `mode=<new|add>`.
@@ -187,12 +187,12 @@ That paragraph appears in the brief only when `ci-github` is part of the project
 
 ## Where entries come from
 
-quickstacks reads entries from three places, called roots, and the first one that has an id wins:
+quickstack reads entries from three places, called roots, and the first one that has an id wins:
 
 | Origin | Where | Trusted |
 | --- | --- | --- |
-| `project` | `.quickstacks/stacks/` and `.quickstacks/fragments/` in the current directory | No |
-| `user` | `~/.config/quickstacks/` (or `$XDG_CONFIG_HOME/quickstacks/`) | Yes |
+| `project` | `.quickstack/stacks/` and `.quickstack/fragments/` in the current directory | No |
+| `user` | `~/.config/quickstack/` (or `$XDG_CONFIG_HOME/quickstack/`) | Yes |
 | `bundled` | The registry shipped with the CLI | Yes |
 
 ```mermaid
@@ -215,15 +215,15 @@ flowchart LR
 
 A higher root's copy hides the lower ones; `list --json` marks it with the origins it `shadows`. An entry that fails to load is listed as rejected and never silently replaced by a lower copy.
 
-Project entries are untrusted because a repository you just cloned can contain them, and you didn't write them. An untrusted entry still works, but quickstacks never launches an agent on one automatically, an agent is told to stop and ask you first, and copying one into your user registry needs you at a terminal to read the full report.
+Project entries are untrusted because a repository you just cloned can contain them, and you didn't write them. An untrusted entry still works, but quickstack never launches an agent on one automatically, an agent is told to stop and ask you first, and copying one into your user registry needs you at a terminal to read the full report.
 
-Your own stacks and fragments go in the user root. `quickstacks create stack my-api` starts one there; [the authoring guide](authoring.md) walks through writing it.
+Your own stacks and fragments go in the user root. `quickstack create stack my-api` starts one there; [the authoring guide](authoring.md) walks through writing it.
 
 ## The brief
 
-`new` and `add` write `.quickstacks/BRIEF.md`, the agent's entire task. It's assembled from fixed CLI text and the composed entries:
+`new` and `add` write `.quickstack/BRIEF.md`, the agent's entire task. It's assembled from fixed CLI text and the composed entries:
 
-1. A header: stack, fragments, preset, target agents, and the files quickstacks wrote.
+1. A header: stack, fragments, preset, target agents, and the files quickstack wrote.
 2. "Your job", "Versions" and "Ground rules": the same for every project. Use current versions, prefer official generators, never weaken verify.
 3. "Decisions": every entry's decisions, each with its default. With `--yes` or `--sandbox`, the agent takes the defaults without asking.
 4. "Dependencies and tools": packages by role, and any tools missing from PATH.
@@ -234,19 +234,19 @@ Briefs are long, often 4,000 words or more, and that's deliberate. The agent rea
 
 ## The project after `new`
 
-`new` leaves a normal project with a `.quickstacks/` directory:
+`new` leaves a normal project with a `.quickstack/` directory:
 
 | Path | What it holds | Committed |
 | --- | --- | --- |
-| `.quickstacks/manifest.json` | The stack, fragments, preset, agents, commands, environment defaults and verify steps, plus a digest of the steps | Yes |
-| `.quickstacks/BRIEF.md` | The agent's task | No |
-| `.quickstacks/NOTES.md` | The agent's notes: questions it asked under "Asked", problems with the brief under "Findings" | No |
-| `.quickstacks/state/runs.jsonl` | One line per verify run | No |
-| `.quickstacks/incoming/` | Files `add` couldn't write because the project already had them | No |
+| `.quickstack/manifest.json` | The stack, fragments, preset, agents, commands, environment defaults and verify steps, plus a digest of the steps | Yes |
+| `.quickstack/BRIEF.md` | The agent's task | No |
+| `.quickstack/NOTES.md` | The agent's notes: questions it asked under "Asked", problems with the brief under "Findings" | No |
+| `.quickstack/state/runs.jsonl` | One line per verify run | No |
+| `.quickstack/incoming/` | Files `add` couldn't write because the project already had them | No |
 
-The manifest is the part that lasts. It's committed with the project, so anyone who clones it can run `quickstacks verify` and get the same checks.
+The manifest is the part that lasts. It's committed with the project, so anyone who clones it can run `quickstack verify` and get the same checks.
 
-There is one more record, outside the project: a state record under `~/.local/state/quickstacks/projects/`. It holds a second copy of the steps' digest and the project's timings (when it first went green). The next section explains why it exists.
+There is one more record, outside the project: a state record under `~/.local/state/quickstack/projects/`. It holds a second copy of the steps' digest and the project's timings (when it first went green). The next section explains why it exists.
 
 ## Verify
 
@@ -301,10 +301,10 @@ When `new` writes the project, it records a digest (a fingerprint) of the verify
 
 ```mermaid
 sequenceDiagram
-  participant N as quickstacks new
+  participant N as quickstack new
   participant M as manifest.json<br/>(in the project)
   participant S as state record<br/>(outside the project)
-  participant V as quickstacks verify
+  participant V as quickstack verify
   N->>M: write steps + digest
   N->>S: write the same digest
   Note over M: an agent edits a step
@@ -317,6 +317,6 @@ sequenceDiagram
   end
 ```
 
-Because one copy lives outside the project, editing project files can't hide the change. The only way forward is `quickstacks verify --accept-changes`, which a person runs at their own terminal. It's refused when an agent is detected or stdin isn't a terminal.
+Because one copy lives outside the project, editing project files can't hide the change. The only way forward is `quickstack verify --accept-changes`, which a person runs at their own terminal. It's refused when an agent is detected or stdin isn't a terminal.
 
 A fresh clone has no state record on that machine, so verify checks the manifest's copy only and says so (`tamperCheck: "manifest-only"`).

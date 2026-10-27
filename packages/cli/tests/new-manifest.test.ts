@@ -62,7 +62,7 @@ const readManifestFile = (project: string) =>
       onExcessProperty: "error",
     },
   );
-const recordsDir = (home: string) => join(home, "state", "quickstacks", "projects");
+const recordsDir = (home: string) => join(home, "state", "quickstack", "projects");
 const recordFile = (home: string, projectId: string) => join(recordsDir(home), `${projectId}.json`);
 const readRecord = (file: string) =>
   Schema.decodeUnknownSync(ProjectState)(JSON.parse(readFileSync(file, "utf8")), {
@@ -276,7 +276,7 @@ describe("a target that already holds a scaffold", () => {
             ".githooks",
             ".github",
             ".gitignore",
-            ".quickstacks",
+            ".quickstack",
             "README.md",
             "plain.txt",
           ],
@@ -291,9 +291,9 @@ describe("a target that already holds a scaffold", () => {
       [
         "The target directory is not empty.",
         `  Path: ${app}`,
-        "  Contains: .claude, .githooks, .github, .gitignore, .quickstacks, README.md, plain.txt",
+        "  Contains: .claude, .githooks, .github, .gitignore, .quickstack, README.md, plain.txt",
         "  Scaffold: unfinished. An earlier `new` wrote this.",
-        "  Next: continue with .quickstacks/BRIEF.md, or remove the directory to start again.",
+        "  Next: continue with .quickstack/BRIEF.md, or remove the directory to start again.",
         "",
       ].join("\n"),
     );
@@ -337,9 +337,9 @@ describe("a target that already holds a scaffold", () => {
     expect(await scaffoldOf()).toBe("unfinished");
 
     const bare = join(home, "bare");
-    mkdirSync(join(bare, ".quickstacks"), { recursive: true });
+    mkdirSync(join(bare, ".quickstack"), { recursive: true });
     const run = await newCli(["fixture-stack", "bare", "--json"], { home });
     expect(run.status).toBe(2);
-    expect(envelope(run.stderr).error.details).toEqual({ path: bare, entries: [".quickstacks"] });
+    expect(envelope(run.stderr).error.details).toEqual({ path: bare, entries: [".quickstack"] });
   });
 });

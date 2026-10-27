@@ -64,7 +64,7 @@ test("every leaf command's help has examples whose flags that command declares",
     const flags = declaredFlags(text);
     for (const example of examples) {
       const argv = example.trim().split(/\s+/);
-      expect(argv.slice(0, path.length + 1), example).toEqual(["quickstacks", ...path]);
+      expect(argv.slice(0, path.length + 1), example).toEqual(["quickstack", ...path]);
       for (const flag of argv.filter((word) => word.startsWith("--")))
         expect(flags.has(flag), `${example}: ${flag}`).toBe(true);
     }

@@ -31,7 +31,7 @@ const context = (over: Partial<BriefContext> = {}): BriefContext => ({
   written: [],
   missing: [],
   yes: false,
-  invocation: "quickstacks",
+  invocation: "quickstack",
   ...over,
 });
 /** The brief's level-2 headings, in order. */
@@ -64,12 +64,12 @@ test("with an app, the definition of done is split: the base with --skip-tag app
     "## Then: the application",
   ]);
   const base = section(brief, "## Definition of done: base");
-  expect(base).toContain("`quickstacks verify --skip-tag app` runs these steps, in this order:");
+  expect(base).toContain("`quickstack verify --skip-tag app` runs these steps, in this order:");
   expect(base).toContain(
-    "- Run `quickstacks verify --skip-tag app` from the project root. The base is done when every step above passes and the outcome is `partial`",
+    "- Run `quickstack verify --skip-tag app` from the project root. The base is done when every step above passes and the outcome is `partial`",
   );
   // Green is the application section's closing, never the base's.
-  expect(base).not.toContain("`quickstacks verify` runs these steps");
+  expect(base).not.toContain("`quickstack verify` runs these steps");
   expect(base).not.toContain("Done is exit 0 with outcome `green`");
   // By phase, then stack before fragments within a phase; then the commands and env rows.
   expect(rows(base).map((row) => row.split(" | ")[0])).toEqual([
@@ -97,7 +97,7 @@ test("with an app, the definition of done is split: the base with --skip-tag app
     "| `PORT_TODO`",
   ]);
   expect(application).toContain("| `PORT_TODO` | `5180` |");
-  expect(application).toContain("Done is a full `quickstacks verify` (no `--skip-tag`)");
+  expect(application).toContain("Done is a full `quickstack verify` (no `--skip-tag`)");
   expect(brief.indexOf("APP-BODY")).toBeGreaterThan(brief.indexOf("## Then: the application"));
   // Without an app, neither heading appears.
   const plain = renderBrief(await composed({ without: ["todo-app"] }), context()).text;
@@ -109,7 +109,7 @@ test("with an app, the definition of done is split: the base with --skip-tag app
 
 test("the brief holds every section in order, every step, the env defaults, every rule and the commands, with the invocation in every command [1.1#15] [1.1#23]", async () => {
   const composition = await composed({ preset: "sandbox" });
-  const invocation = "npx -y quickstacks@1.2.3";
+  const invocation = "npx -y quickstack@1.2.3";
   const brief = renderBrief(composition, context({ invocation, yes: true })).text;
   expect(headings(brief)).toEqual([
     "## Your job",
@@ -156,7 +156,7 @@ test("the brief holds every section in order, every step, the env defaults, ever
     ].join("\n"),
   );
   expect(done).toContain(`\`PORT_WEB=<free port> ${invocation} verify\``);
-  expect(done).toContain("Don't change the defaults in `.quickstacks/manifest.json`");
+  expect(done).toContain("Don't change the defaults in `.quickstack/manifest.json`");
   for (const rule of [
     `- Run \`${invocation} verify\` from the project root.`,
     "- A command a step calls that doesn't exist yet is yours to create",
@@ -168,12 +168,12 @@ test("the brief holds every section in order, every step, the env defaults, ever
     "- If verify fails with `VerifyChanged`",
   ])
     expect(done).toContain(rule);
-  expect(brief).not.toMatch(/quickstacks:(when|end)/);
+  expect(brief).not.toMatch(/quickstack:(when|end)/);
   expect(brief).toContain(`\`${invocation} verify\``);
   expect(brief).toContain(`\`${invocation} verify --accept-changes\``);
   // Every verify command in the brief carries the invocation: none starts with the bare name.
-  expect(brief).not.toMatch(/`(quickstacks )?verify\b/);
-  expect(brief).not.toMatch(/=<free port> quickstacks verify/);
+  expect(brief).not.toMatch(/`(quickstack )?verify\b/);
+  expect(brief).not.toMatch(/=<free port> quickstack verify/);
 });
 
 test("a verify table leaves out Layer and Expects when no step in that table fills them", async () => {
@@ -258,7 +258,7 @@ test("decisions: asked once without --yes, defaults taken with it [1.1#16]", asy
 });
 
 test("an untrusted entry gets a stop section directly after the title, before any entry text, even under --yes [1.1#17]", async () => {
-  const project = join(temp(), ".quickstacks");
+  const project = join(temp(), ".quickstack");
   copyEntry(composeRegistry, project, "fragments", "hooks-a");
   const roots = [{ origin: "project", path: project } as const, ...bundledAt(composeRegistry)];
   const composition = await composed({ with: ["hooks-a"] }, { roots });
@@ -269,7 +269,7 @@ test("an untrusted entry gets a stop section directly after the title, before an
   expect(untrusted).toContain(
     `- fragment \`hooks-a\` (project): \`${join(project, "fragments", "hooks-a")}\``,
   );
-  expect(untrusted).toContain("the project's `.quickstacks/` directory");
+  expect(untrusted).toContain("the project's `.quickstack/` directory");
   expect(untrusted).toContain("This holds under `--yes` and `--sandbox` too.");
   // Nothing but the title comes before it: the facts carry the entries' own names.
   expect(brief.slice(0, brief.indexOf("## Untrusted entries"))).toBe("# Build demo: Web stack\n\n");
@@ -282,14 +282,14 @@ test("an untrusted entry gets a stop section directly after the title, before an
 test("countWords counts fenced text and skips conditional markers [1.1#18]", () => {
   const text = [
     "# Title here",
-    "<!-- quickstacks:when tag=go -->",
+    "<!-- quickstack:when tag=go -->",
     "Two words",
-    "<!-- quickstacks:end -->",
+    "<!-- quickstack:end -->",
     "```sh",
     "# a comment",
     "go test ./...",
     "```",
-    "<!-- quickstacks:fill one -->",
+    "<!-- quickstack:fill one -->",
   ].join("\n");
   // 3 + 2 + 1 + 3 + 3 + 1 + 4 (the fill marker is prose the agent replaces, so it counts).
   expect(countWords(text)).toBe(17);
@@ -392,9 +392,9 @@ test("after green: docs, then a commit message by git state, then the summary [1
 
 test("the command-name line appears only for another invocation; written paths collapse [1.1#24]", async () => {
   const composition = await composed({});
-  const npx = renderBrief(composition, context({ invocation: "npx -y quickstacks@1.2.3" })).text;
+  const npx = renderBrief(composition, context({ invocation: "npx -y quickstack@1.2.3" })).text;
   expect(npx).toContain(
-    "- Wherever this brief says `quickstacks <command>`, run `npx -y quickstacks@1.2.3 <command>`.",
+    "- Wherever this brief says `quickstack <command>`, run `npx -y quickstack@1.2.3 <command>`.",
   );
   expect(renderBrief(composition, context()).text).not.toContain("Wherever this brief says");
   const written = [1, 2, 3, 4, 5]
@@ -437,7 +437,7 @@ test("the realistic typescript-cli stack renders with and without its app, its c
     "## Fragment: Git hooks (lefthook) (`git-hooks`)",
     "## Definition of done",
   ]);
-  expect(brief).not.toMatch(/quickstacks:(when|end)/);
+  expect(brief).not.toMatch(/quickstack:(when|end)/);
   // with=git-hooks kept; tag=cli kept; tag=web and mode=add dropped.
   expect(brief).toContain("already runs `lefthook install`");
   expect(brief).toContain("Use src/schemas for arguments");
@@ -469,5 +469,5 @@ test("the realistic typescript-cli stack renders with and without its app, its c
   const application = section(app, "## Then: the application");
   expect(application).toContain("### Application steps");
   expect(rows(application).map((row) => row.split(" | ")[0])).toContain("| `app-stub`");
-  expect(app).not.toMatch(/quickstacks:(when|end)/);
+  expect(app).not.toMatch(/quickstack:(when|end)/);
 });

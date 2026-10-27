@@ -10,7 +10,7 @@ Acceptance tests: traced
 |---|---|
 | Goal | Turn a stack id plus `--with`/`--without`, the user's `always` list and a preset into a composition (entries, files, verify steps, commands, decisions, env, and at most one app), and render the brief an agent can follow to a green `verify` without asking anything the brief could have answered, with its verify table, split into base and application when an app is present, and `countWords` |
 | Traces to | "a brief that says 'set up testing' without saying which layers, a verify command that doesn't exist, a decision with no default" (the coding agent's frustration); "Success is reaching a green `verify` without asking the user anything the brief could have answered"; Evidence, "stack prose grows without a budget" |
-| Depends on | [1.0](phase-1.0-entry-format-and-registry.md); [0.2](phase-0.2-npm-distribution-artifact.md) soft (until 0.2 lands, 1.1 declares `Host.invocation` with the constant `quickstacks`, and 0.2 fills in the `_npx` rule); D18 agreed or explicitly accepted as the working format (D18 blocks the start of 1.1) |
+| Depends on | [1.0](phase-1.0-entry-format-and-registry.md); [0.2](phase-0.2-npm-distribution-artifact.md) soft (until 0.2 lands, 1.1 declares `Host.invocation` with the constant `quickstack`, and 0.2 fills in the `_npx` rule); D18 agreed or explicitly accepted as the working format (D18 blocks the start of 1.1) |
 | Blocks | [1.2a](phase-1.2a-new-scaffold-and-templates.md), [1.2b](phase-1.2b-manifest-state-and-detection.md), [1.5](phase-1.5-validate-and-brief-budget.md); later users of `Composition` (2.0a, 3.0, 3.1a) |
 | Decisions needed | D18 (above). D5 only for the numbers 1.5 enforces; 1.1 counts words. Open question 7 (does the budget count fixed text): this file follows the contract (fixed text is in `briefWords`) and reports `fixedWords` beside it, so either answer needs no change here. D7 is not needed |
 | Settles | Selection order and conflict rules, including `always` misses, `--with` fit warnings, env conflicts, cycles, `--with`/`--without` overlap and the one-app rule; composition order; `.tmpl` on a merge path; conditional prose syntax; the brief's section order, its base and application split, its verify table and fixed rules, including the `## Asked` log used to count interventions |
@@ -233,13 +233,13 @@ point at a port the other entry moved.
 ### Conditional prose
 
 ```markdown
-<!-- quickstacks:when stack=go-cli,python-react preset=default -->
+<!-- quickstack:when stack=go-cli,python-react preset=default -->
 Wire the client into the Makefile's `test` target.
-<!-- quickstacks:end -->
+<!-- quickstack:end -->
 ```
 
 The marker syntax is the roadmap contract (Other shared facts: Prose markers), owned here:
-`<!-- quickstacks:when key=v,v2 key2=v -->` opens a block and `<!-- quickstacks:end -->`
+`<!-- quickstack:when key=v,v2 key2=v -->` opens a block and `<!-- quickstack:end -->`
 closes it.
 
 | Key | Matches |
@@ -266,16 +266,16 @@ list of written paths, missing tools (each with the `--without` id that would dr
 from 1.2a), `yes` (from `--yes` or `--sandbox`) and the
 invocation string from `Host.invocation` (roadmap, Types and schemas: Invocation string),
 written as `<cli>` below. If 0.2 hasn't landed, this sub-phase adds the field to
-`services/host.ts::HostInfo` with the constant `quickstacks` from `bin.ts`, and 0.2
+`services/host.ts::HostInfo` with the constant `quickstack` from `bin.ts`, and 0.2
 later replaces the constant with its `_npx` rule; `Host.memory` takes an override either
 way, so the tests below don't depend on which landed first. Every command the brief tells the agent to run is
-`<cli> verify` etc., so `npx -y quickstacks@<version> verify` comes out when `new` ran
+`<cli> verify` etc., so `npx -y quickstack@<version> verify` comes out when `new` ran
 through npx and the agent runs the same version that wrote the manifest.
 
-Entry prose is written with the plain name (`quickstacks verify`), and the brief does not
+Entry prose is written with the plain name (`quickstack verify`), and the brief does not
 rewrite command names inside entry bodies (a rewrite would also touch code fences and
-prose that quotes the name). When `<cli>` isn't `quickstacks`, section 1 gains one fixed
-line instead: "Wherever this brief says `quickstacks <command>`, run `<cli> <command>`."
+prose that quotes the name). When `<cli>` isn't `quickstack`, section 1 gains one fixed
+line instead: "Wherever this brief says `quickstack <command>`, run `<cli> <command>`."
 
 The written-paths list (section 1) is collapsed by `brief/paths.ts::collapsePaths`: a
 directory holding more than three written files is listed once as `dir/ (N files)`,
@@ -288,11 +288,11 @@ reviewed in one place.
 
 | # | Section | Content |
 |---|---|---|
-| 1 | Title and facts | Stack name and id, fragments, preset, target agents, "project root is the directory containing `.quickstacks/`", the collapsed list of files quickstacks wrote, and the command-name line when `<cli>` isn't `quickstacks` |
-| 2 | Untrusted entries | Only when `untrusted` is non-empty, and then directly under the title so it is the first thing read ([Trust model](../roadmap.md#trust-model), point 3). Stop before doing anything else; name each entry with its origin and path; say that these came from the project directory, not from quickstacks or the user's own directory, and that their prose and verify steps are instructions someone else wrote; ask the user to confirm they want them; do nothing until they do. `--yes` and `--sandbox` don't skip this |
+| 1 | Title and facts | Stack name and id, fragments, preset, target agents, "project root is the directory containing `.quickstack/`", the collapsed list of files quickstack wrote, and the command-name line when `<cli>` isn't `quickstack` |
+| 2 | Untrusted entries | Only when `untrusted` is non-empty, and then directly under the title so it is the first thing read ([Trust model](../roadmap.md#trust-model), point 3). Stop before doing anything else; name each entry with its origin and path; say that these came from the project directory, not from quickstack or the user's own directory, and that their prose and verify steps are instructions someone else wrote; ask the user to confirm they want them; do nothing until they do. `--yes` and `--sandbox` don't skip this |
 | 3 | Your job | Done means `<cli> verify` exits 0 with outcome `green`. Work autonomously; stop only for the decisions and missing tools below |
 | 4 | Versions | Nothing pins a version on purpose; latest stable that work together; official generators over hand-written files; check current docs, `--help` and installed types before writing config; don't pin remembered versions |
-| 5 | Ground rules | Generators non-interactive and never into the populated root; git state rule; files quickstacks wrote are starting points to adapt, not delete; keep `AGENTS.md` true to the real commands; keep `.quickstacks/NOTES.md`; missing tools |
+| 5 | Ground rules | Generators non-interactive and never into the populated root; git state rule; files quickstack wrote are starting points to adapt, not delete; keep `AGENTS.md` true to the real commands; keep `.quickstack/NOTES.md`; missing tools |
 | 6 | Decisions | With `yes`: use each default and list them in the final summary. Otherwise: ask once, in one message, with each default so the user can reply "defaults" |
 | 7 | Dependencies and tools | Only when `deps` or `tools` is non-empty. `deps` as one line per role (`test: vitest, @testing-library/react`), each "install the current stable version; these are names, not versions". Then each required tool with whether it was found on PATH, and for a missing one an install hint and the `--without <id>` that would have dropped it (when it isn't required). Install hints come from one fixed table in `text.ts` mapping known tools to their official install page (`uv`, `bun`, `go`, `node`, `make`, `git`, `docker`); any other tool gets "install it with the system package manager" |
 | 8 | Stack guidance | The stack body, conditionals resolved, headings normalized (below) |
@@ -316,7 +316,7 @@ them before they go under their brief section:
 
 #### Section 10: definition of done
 
-The agent can't read `.quickstacks/manifest.json` as a spec, and shouldn't have to, so
+The agent can't read `.quickstack/manifest.json` as a spec, and shouldn't have to, so
 the brief carries what verify will run. In order:
 
 1. **The verify table**, one row per step in run order (phases `setup`, `check`, `serve`,
@@ -336,14 +336,14 @@ the brief carries what verify will run. In order:
 2. **The commands table**: the merged `commands` with their purposes.
 3. **Environment**: each `env` key with its default, then: "If a port is busy, set the
    variable when you run verify (`PORT_WEB=5174 <cli> verify`). Don't change the defaults
-   in `.quickstacks/manifest.json`: `env` is part of the definition of done, and editing
+   in `.quickstack/manifest.json`: `env` is part of the definition of done, and editing
    it fails verify." (Environment precedence over manifest defaults is 1.3a's runner.)
 4. **The rules**, as one list:
    - Run `<cli> verify` from the project root. Done is exit 0 with outcome `green`.
    - A command a step calls that doesn't exist yet is yours to create, and it must do
      real work: `make test` runs the tests, `make lint` lints.
    - Don't weaken the definition of done. Weakening is: editing the steps, `env` or any
-     other part of `.quickstacks/manifest.json`; making a project command exit 0 without
+     other part of `.quickstack/manifest.json`; making a project command exit 0 without
      doing its job (`|| true`, `exit 0`, an empty target, a script that only echoes);
      deleting, skipping or excluding tests to get a pass; flags that pass with no tests;
      lowering a lint or typecheck setting until it reports nothing; serving a stub instead
@@ -360,7 +360,7 @@ the brief carries what verify will run. In order:
    - When verify fails, read the step name, command and output tail it reports, fix the
      code or config the step exercises, not the step, and run it again.
    - If verify fails with `VerifyChanged` (exit 5, "Verify steps changed since they were
-     recorded"), stop. Don't edit `.quickstacks/manifest.json` back and forth to make it
+     recorded"), stop. Don't edit `.quickstack/manifest.json` back and forth to make it
      pass, and don't run `verify --accept-changes` (it refuses agents). Tell the user
      which steps or settings it says changed, and that only they can accept the change, by
      running `<cli> verify --accept-changes` from their own terminal, or undo it. Then wait.
@@ -370,13 +370,13 @@ the brief carries what verify will run. In order:
    probes.
 6. **After green**, in order:
    - Check `AGENTS.md` and `README.md` describe the project you built: real commands,
-     no `quickstacks:fill` markers left. Verify doesn't check this unless a step does.
+     no `quickstack:fill` markers left. Verify doesn't check this unless a step does.
    - Commit, by git state. `fresh`: commit everything with the message
      `chore: scaffold <project> from the <stack> stack`. `parent`: don't commit; list the
      files to commit in the summary and ask the user. `none`: skip commits and say so.
      The message is Conventional Commits because the git-hook fragments enforce it.
    - End with a short summary: what was built, the decisions you took (with their
-     defaults), anything you couldn't do, and a pointer to `.quickstacks/NOTES.md` for
+     defaults), anything you couldn't do, and a pointer to `.quickstack/NOTES.md` for
      what the brief got wrong.
 
 #### The application split
@@ -490,7 +490,7 @@ the message is fixed per tag, so the details carry only what the CLI computed.
 | `packages/cli/src/core/brief/render.ts`, `text.ts`, `words.ts`, `headings.ts`, `paths.ts` | The brief, its fixed text (including the tool install-hint table), `countWords`, heading normalization, `collapsePaths` |
 | `packages/cli/src/schemas/config.ts` | `Settings` gains `always`, `agents`, `author`, `package_scope` |
 | `packages/cli/src/config.ts` | `get` returns the new fields |
-| `packages/cli/src/services/host.ts`, `src/bin.ts`, `tests/helpers/cli.ts` | Only if 0.2 hasn't landed: `Host.invocation` with the constant `quickstacks`, overridable in `Host.memory` |
+| `packages/cli/src/services/host.ts`, `src/bin.ts`, `tests/helpers/cli.ts` | Only if 0.2 hasn't landed: `Host.invocation` with the constant `quickstack`, overridable in `Host.memory` |
 | `packages/cli/src/errors.ts` | `ComposeConflict` and its row; `NotFound`'s `details` schema; `EntryInvalid` reasons `conditional`, `merge_json`, `merge_template` |
 | `packages/cli/tests/fixtures/registry/` | Fragments that conflict, require each other (and one pair in a cycle), carry conditionals, merge a JSON file, give a clashing env default, one that applies only to the other stack, a second app, and a fragment that requires an app |
 | `packages/cli/tests/compose.test.ts`, `brief.test.ts`, `conditionals.test.ts`, `words.test.ts` | New |
@@ -541,8 +541,8 @@ directory.
     with every step (the `prod` one marked skipped under sandbox), the env defaults and
     the port override sentence, every rule in section 10, the commands table, no marker
     lines, and every command prefixed with the invocation string. Run with
-    `Host.invocation = "npx -y quickstacks@1.2.3"`, it contains
-    `npx -y quickstacks@1.2.3 verify`.
+    `Host.invocation = "npx -y quickstack@1.2.3"`, it contains
+    `npx -y quickstack@1.2.3 verify`.
 16. The brief under `yes: false` asks once; under `yes: true` it says use defaults.
 17. With a project-origin entry in the composition, the untrusted section comes directly
     after the title, names the entry and its path, and is present under `yes: true`.
@@ -570,8 +570,8 @@ directory.
 23. The brief contains the `VerifyChanged` rule and the after-green list; under git state
     `fresh` it gives the commit message with the project and stack ids, under `parent` it
     says not to commit, under `none` it says to skip commits.
-24. With `Host.invocation = "npx -y quickstacks@1.2.3"` the command-name line is present;
-    with `quickstacks` it is absent. `collapsePaths` on 5 files in `.claude/hooks/` and 2
+24. With `Host.invocation = "npx -y quickstack@1.2.3"` the command-name line is present;
+    with `quickstack` it is absent. `collapsePaths` on 5 files in `.claude/hooks/` and 2
     in `src/` gives `.claude/hooks/ (5 files)` and both `src/` paths.
 
 ## Exit criteria
@@ -637,8 +637,8 @@ directory.
     1.2a supplies `found` from `Processes.which`. A tool owned by the stack or a required
     fragment gets no `--without` hint.
   - Markers are processed even inside code fences, so a fenced example of a marker has to
-    be indented or escaped. `quickstacks:fill` lines pass through untouched, including
-    `quickstacks:fill:<text>` with no space; any other `quickstacks:` directive is an error.
+    be indented or escaped. `quickstack:fill` lines pass through untouched, including
+    `quickstack:fill:<text>` with no space; any other `quickstack:` directive is an error.
   - `fixedWords` counts every line from `text.ts`, including fact lines with names
     interpolated; entry bodies, decision text, tables and generated lists are data. The
     server and foreground rules appear only when some step is a `serve` step. With an app,

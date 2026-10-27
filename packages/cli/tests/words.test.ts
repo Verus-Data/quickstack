@@ -13,23 +13,23 @@ test("punctuation and non-ASCII text stay in their non-whitespace runs", () => {
 });
 
 test.each([
-  ["<!-- quickstacks:when stack=go-cli preset=default -->", "<!-- quickstacks:end -->"],
-  ["  \t<!-- quickstacks:when stack=go-cli --> \t", "\t <!-- quickstacks:end -->  "],
+  ["<!-- quickstack:when stack=go-cli preset=default -->", "<!-- quickstack:end -->"],
+  ["  \t<!-- quickstack:when stack=go-cli --> \t", "\t <!-- quickstack:end -->  "],
 ])("conditional marker lines %j and %j are excluded while their body counts", (start, end) => {
   expect(countWords(`${start}\r\ninside words\r\n${end}`)).toBe(2);
   expect(countWords(`${start}\n${end}`)).toBe(0);
 });
 
 test.each([
-  ["before <!-- quickstacks:when stack=go-cli -->", 5],
-  ["<!-- quickstacks:when stack=go-cli --> after", 5],
-  ["before <!-- quickstacks:end --> after", 5],
+  ["before <!-- quickstack:when stack=go-cli -->", 5],
+  ["<!-- quickstack:when stack=go-cli --> after", 5],
+  ["before <!-- quickstack:end --> after", 5],
 ])("marker-looking text within a line still counts: %j", (text, expected) => {
   expect(countWords(text)).toBe(expected);
 });
 
 test("fill markers and other comments count as ordinary text", () => {
-  expect(countWords("<!-- quickstacks:fill: project name -->\n<!-- ordinary comment -->")).toBe(9);
+  expect(countWords("<!-- quickstack:fill: project name -->\n<!-- ordinary comment -->")).toBe(9);
 });
 
 test.each(["```", "~~~"])("%s fences and their code content count", (fence) => {
@@ -39,7 +39,7 @@ test.each(["```", "~~~"])("%s fences and their code content count", (fence) => {
 test("conditional marker lines are excluded even inside a code fence", () => {
   expect(
     countWords(
-      "```\n<!-- quickstacks:when stack=go-cli -->\ncode here\n<!-- quickstacks:end -->\n```",
+      "```\n<!-- quickstack:when stack=go-cli -->\ncode here\n<!-- quickstack:end -->\n```",
     ),
   ).toBe(4);
 });

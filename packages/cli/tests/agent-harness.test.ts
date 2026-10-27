@@ -112,7 +112,7 @@ test("astro-blog composes one destructive hook and single-owner files with the h
     ]),
   );
   const manifest = Schema.decodeUnknownSync(Manifest)(
-    JSON.parse(readFileSync(join(project, ".quickstacks/manifest.json"), "utf8")),
+    JSON.parse(readFileSync(join(project, ".quickstack/manifest.json"), "utf8")),
   );
   expect(manifest.fragments.map((fragment) => fragment.id)).toEqual(decoded.fragments);
   const report = await validate(home);

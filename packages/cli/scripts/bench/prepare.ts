@@ -125,7 +125,7 @@ export const prepare = (options: Options, adapters: readonly AgentAdapter[]) =>
       if (options.existing) {
         root = yield* fs.realPath(path.resolve(host.cwd, options.existing));
         const kept = yield* Effect.gen(function* () {
-          const manifest = yield* readManifest(path.join(root, "run/.quickstacks/manifest.json"));
+          const manifest = yield* readManifest(path.join(root, "run/.quickstack/manifest.json"));
           const state = yield* fs
             .readFileString(path.join(root, "bench/state.json"))
             .pipe(Effect.flatMap(Schema.decodeUnknownEffect(State)));
@@ -146,7 +146,7 @@ export const prepare = (options: Options, adapters: readonly AgentAdapter[]) =>
         const created = yield* Effect.acquireRelease(
           fs.makeTempDirectory({
             ...(captured.TMPDIR ? { directory: captured.TMPDIR } : {}),
-            prefix: "quickstacks-bench-",
+            prefix: "quickstack-bench-",
           }),
           (directory) =>
             options.keep
@@ -168,7 +168,7 @@ export const prepare = (options: Options, adapters: readonly AgentAdapter[]) =>
       yield* Effect.addFinalizer(() => fs.remove(root, { recursive: true }).pipe(Effect.orDie));
     const home = path.join(root, "home");
     const prefix = path.join(root, "prefix");
-    const cli = path.join(prefix, "bin/quickstacks");
+    const cli = path.join(prefix, "bin/quickstack");
     const project = path.join(root, "run");
     const bench = path.join(root, "bench");
     const env = environment({
@@ -205,7 +205,7 @@ export const prepare = (options: Options, adapters: readonly AgentAdapter[]) =>
       yield* fs.copyFile(
         options.cli
           ? path.resolve(host.cwd, options.cli)
-          : path.join(packageRoot, "dist/quickstacks"),
+          : path.join(packageRoot, "dist/quickstack"),
         cli,
       );
       yield* fs.chmod(cli, 0o755);
@@ -254,16 +254,16 @@ export const prepare = (options: Options, adapters: readonly AgentAdapter[]) =>
         path.join(bench, "BENCH.md"),
         `# Bench run
 
-- Nobody will answer you. Never ask the user a question. Choose the brief's default or the most conventional choice and carry on. Add each question under ## Asked in .quickstacks/NOTES.md, followed by default: and your choice.
-- Keep .quickstacks/NOTES.md as the brief describes, including ## Findings.
+- Nobody will answer you. Never ask the user a question. Choose the brief's default or the most conventional choice and carry on. Add each question under ## Asked in .quickstack/NOTES.md, followed by default: and your choice.
+- Keep .quickstack/NOTES.md as the brief describes, including ## Findings.
 - Run verify with ${path.join(bench, "verify")}.
-- Never edit .quickstacks/manifest.json. Never fake a credential or stub a service the brief says to use for real.
+- Never edit .quickstack/manifest.json. Never fake a credential or stub a service the brief says to use for real.
 - Stop when verify is green.
 `,
       );
     });
     if (!options.existing) yield* scaffoldFresh;
-    const manifest = yield* readManifest(path.join(project, ".quickstacks/manifest.json"));
+    const manifest = yield* readManifest(path.join(project, ".quickstack/manifest.json"));
     const runEvidence = Effect.gen(function* () {
       return {
         // Fresh runs keep precisely what new returned; continuations retain that manifest.

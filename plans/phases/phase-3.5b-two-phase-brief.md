@@ -77,7 +77,7 @@ A project without app steps behaves exactly as in 1.3a, and its result has no `s
 steps; `app` is `null` when the app stage didn't run (base failed, or `--skip-tag app`).
 Human mode prints one line per stage before the usual summary. When the base is green and
 the app stage failed, the `Next:` line points at the application section of
-`.quickstacks/BRIEF.md` rather than the generic failure line.
+`.quickstack/BRIEF.md` rather than the generic failure line.
 
 ### Run records and the ledger
 

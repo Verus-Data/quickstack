@@ -43,8 +43,8 @@ const platform = Layer.mergeAll(
       : {}),
     // A stub until 0.2 resolves the bundled registry inside the npm package. A compiled binary's
     // `import.meta.dirname` is Bun's virtual `/$bunfs`, so it looks beside its own `bin/`
-    // directory instead: `dist/quickstacks` finds the package's `registry/`, and a copy installed
-    // as `<prefix>/bin/quickstacks` finds `<prefix>/registry`.
+    // directory instead: `dist/quickstack` finds the package's `registry/`, and a copy installed
+    // as `<prefix>/bin/quickstack` finds `<prefix>/registry`.
     registry: Bun.isStandaloneExecutable
       ? join(dirname(process.execPath), "..", "registry")
       : join(import.meta.dirname, "..", "registry"),
@@ -54,7 +54,7 @@ const platform = Layer.mergeAll(
     authoring: Bun.isStandaloneExecutable
       ? join(dirname(process.execPath), "..", "docs", "authoring.md")
       : join(import.meta.dirname, "..", "docs", "authoring.md"),
-    invocation: "quickstacks",
+    invocation: "quickstack",
   }),
 );
 const layer = Layer.provideMerge(AppLayer(output), platform);

@@ -35,19 +35,19 @@ A production image per deployable part and a workflow that publishes them, writt
 - Exec-form `CMD` so the app gets SIGTERM and shuts down gracefully.
 - `.dockerignore`: `.git`, `.env*`, `node_modules`, virtualenvs, caches, test and build output.
 
-<!-- quickstacks:when tag=python -->
+<!-- quickstack:when tag=python -->
 **Python API**: slim Python base matching `.python-version`; copy the uv binary from uv's official image; `uv sync --locked --no-dev --no-install-project`, copy source, sync again. Copy the venv to the runtime stage at the same path, put its `bin` on `PATH`, set `PYTHONUNBUFFERED=1` and `PYTHONDONTWRITEBYTECODE=1`, run uvicorn on `0.0.0.0` with proxy headers.
-<!-- quickstacks:end -->
-<!-- quickstacks:when stack=python-react -->
+<!-- quickstack:end -->
+<!-- quickstack:when stack=python-react -->
 **React SPA**: build with bun, serve `build/client` from an unprivileged nginx or Caddy image with the `index.html` fallback, immutable caching for hashed assets, `no-cache` for `index.html`, a `/healthz` location, and a `/api` proxy if the API shares the origin.
-<!-- quickstacks:end -->
-<!-- quickstacks:when tag=go -->
+<!-- quickstack:end -->
+<!-- quickstack:when tag=go -->
 **Go**: `CGO_ENABLED=0` with version ldflags in the official Go image, static binary copied into a distroless nonroot runtime.
-<!-- quickstacks:end -->
+<!-- quickstack:end -->
 
-<!-- quickstacks:when with=postgres -->
+<!-- quickstack:when with=postgres -->
 **Migrations** run as a one-shot `docker run <image> <migrate command>`, never on container start, so replicas can't race.
-<!-- quickstacks:end -->
+<!-- quickstack:end -->
 
 **Makefile**: `docker-build` builds every image as `<project-slug>-<part>:local` (verify calls it); `docker-run` runs them together with `.env` (a `compose.prod.yaml` for several images).
 

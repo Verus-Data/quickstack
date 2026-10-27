@@ -80,9 +80,9 @@ Documentation-only edits need a content and link review; do not describe that as
 
 ## 6. Measure before claiming a speedup
 
-Compare a bare coding-agent setup with quickstacks using the same task, agent/model, acceptance checks, credentials, and starting conditions.
+Compare a bare coding-agent setup with quickstack using the same task, agent/model, acceptance checks, credentials, and starting conditions.
 
-| Measure | Bare coding agent | With quickstacks |
+| Measure | Bare coding agent | With quickstack |
 | --- | --- | --- |
 | Time to first passing acceptance checks | Not measured | Not measured |
 | Time to verified remote result, if deployed | Not measured | Not measured |
@@ -94,7 +94,7 @@ Compare a bare coding-agent setup with quickstacks using the same task, agent/mo
 - [ ] Count brief-writing and stack-authoring effort separately; do not hide it.
 - [ ] Record failed runs and environment/cache differences.
 - [ ] Repeat runs before making general claims; identify a single run as a single run.
-- [ ] Use baseline time ÷ quickstacks time for a time speedup only when both reach the same result.
+- [ ] Use baseline time ÷ quickstack time for a time speedup only when both reach the same result.
 - [ ] Report incomplete runs as incomplete, not as arbitrary speedup estimates.
 
 ## 7. Record and package

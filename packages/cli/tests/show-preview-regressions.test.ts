@@ -40,8 +40,8 @@ test.each([
   const home = space.dir();
   const registry = space.dir();
   stack(registry);
-  mkdirSync(join(home, "config", "quickstacks"), { recursive: true });
-  writeFileSync(join(home, "config", "quickstacks", "config.json"), "{");
+  mkdirSync(join(home, "config", "quickstack"), { recursive: true });
+  writeFileSync(join(home, "config", "quickstack", "config.json"), "{");
   const run = await runCli([...args, "--json"], { home, env: quiet, host: { registry } });
   expect(run.status).toBe(3);
   expect(run.stdout).toBe("");

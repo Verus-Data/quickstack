@@ -21,7 +21,7 @@ export const verify = (prepared: Prepared) =>
               : Effect.fail(error),
           ),
         );
-    const historyFile = path.join(prepared.project, ".quickstacks/state/runs.jsonl");
+    const historyFile = path.join(prepared.project, ".quickstack/state/runs.jsonl");
     const before = (yield* readOptional(historyFile)) ?? "";
     const checked = yield* processes.exec({
       argv: [prepared.cli, "verify", "--json"],
@@ -39,7 +39,7 @@ export const verify = (prepared: Prepared) =>
     const history = (yield* readOptional(historyFile)) ?? "";
     const lines = history.trim().split(/\r?\n/).filter(Boolean);
     const run = yield* latestRun(history, before, lines);
-    const notes = yield* readOptional(path.join(prepared.project, ".quickstacks/NOTES.md"));
+    const notes = yield* readOptional(path.join(prepared.project, ".quickstack/NOTES.md"));
     const log = yield* readOptional(path.join(prepared.bench, "verify.log"));
     return {
       run,

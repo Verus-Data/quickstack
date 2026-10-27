@@ -28,7 +28,7 @@ function temp() {
 }
 const terminal = { stdinIsTTY: true, stdoutIsTTY: true } satisfies Partial<HostInfo>;
 const PROMPT =
-  "Read .quickstacks/BRIEF.md and carry it out. It's your full task for this project; you're done when quickstacks verify passes.";
+  "Read .quickstack/BRIEF.md and carry it out. It's your full task for this project; you're done when quickstack verify passes.";
 const asRoot = process.getuid?.() === 0;
 
 /** `new fixture-stack app --sandbox ...` in a fresh HOME (also its cwd) with `bin` as the whole PATH. */
@@ -59,10 +59,10 @@ const envelope = (stderr: string) =>
   JSON.parse(stderr.trim().split("\n").at(-1) ?? "") as {
     error: { tag: string; message: string; details?: unknown };
   };
-/** A project-origin fragment in `home`'s `.quickstacks/`, which is never trusted. */
+/** A project-origin fragment in `home`'s `.quickstack/`, which is never trusted. */
 function localFragment(home: string) {
   writeEntry({
-    root: join(home, ".quickstacks"),
+    root: join(home, ".quickstack"),
     kind: "fragment",
     dir: "local-extra",
     frontmatter: minimal("fragment", "local-extra"),
@@ -78,7 +78,7 @@ describe("inside an agent", () => {
     const tail = stdout.trimEnd().split("\n").at(-1);
     // The project is under the working directory, so it is named relative to it.
     expect(tail).toBe(
-      "NEXT STEP FOR THE AGENT: read .quickstacks/BRIEF.md now and carry it out, working in app. Loop on quickstacks verify until it passes. Don't stop here to report back; the brief says when to ask the user.",
+      "NEXT STEP FOR THE AGENT: read .quickstack/BRIEF.md now and carry it out, working in app. Loop on quickstack verify until it passes. Don't stop here to report back; the brief says when to ask the user.",
     );
     expect(stdout).not.toContain(app);
     const manifest = manifestOf(app);
@@ -147,7 +147,7 @@ describe("inside an agent", () => {
     expect(human.stderr).toBe("");
     expect(human.status).toBe(0);
     expect(human.stdout.trimEnd().split("\n").at(-1)).toBe(
-      "STOP: this project uses entries this machine hasn't trusted: local-extra. Don't start. Show the user the list and .quickstacks/BRIEF.md's first section, and continue only if they confirm.",
+      "STOP: this project uses entries this machine hasn't trusted: local-extra. Don't start. Show the user the list and .quickstack/BRIEF.md's first section, and continue only if they confirm.",
     );
     const other = temp();
     const json = await newCli([...localFragment(other), "--json"], {
@@ -239,8 +239,8 @@ describe("launching an agent", () => {
     const home = temp();
     const claude = fakeAgent(join(home, "bin"), "claude");
     const codex = fakeAgent(join(home, "bin"), "codex");
-    mkdirSync(join(home, "config", "quickstacks"), { recursive: true });
-    writeFileSync(join(home, "config", "quickstacks", "config.json"), '{"agents":["codex"]}');
+    mkdirSync(join(home, "config", "quickstack"), { recursive: true });
+    writeFileSync(join(home, "config", "quickstack", "config.json"), '{"agents":["codex"]}');
     expect((await newCli([], { home, host: terminal })).status).toBe(0);
     expect(codex.run().argv).toEqual([PROMPT]);
     expect(claude.ran()).toBe(false);
@@ -395,10 +395,10 @@ describe("printing the prompt", () => {
 
 test("an npx invocation is the one the prompt names [1.4#10]", async () => {
   const { status, stdout } = await newCli(["--json"], {
-    host: { invocation: "npx -y quickstacks@1.2.3" },
+    host: { invocation: "npx -y quickstack@1.2.3" },
   });
   expect(status).toBe(0);
-  expect(decode(stdout).handoff.prompt).toContain("npx -y quickstacks@1.2.3 verify passes.");
+  expect(decode(stdout).handoff.prompt).toContain("npx -y quickstack@1.2.3 verify passes.");
 });
 
 test("the command log record names the handoff and the agent, nothing else of it [1.4#7]", async () => {
@@ -407,7 +407,7 @@ test("the command log record names the handoff and the agent, nothing else of it
   const file = join(home, "cli.jsonl");
   const { stderr } = await newCli([], {
     home,
-    env: { CLAUDECODE: "1", LOG_LEVEL: "info", QUICKSTACKS_LOG_FILE: file },
+    env: { CLAUDECODE: "1", LOG_LEVEL: "info", QUICKSTACK_LOG_FILE: file },
   });
   expect(stderr).toBe("");
   const record = JSON.parse(

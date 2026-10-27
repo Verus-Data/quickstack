@@ -147,7 +147,7 @@ To drive the real CLI with no key and no spend, `bun run stub` starts the provid
 
 # Before calling work done
 
-Run `bun run check` (lint, typecheck, vitest, TUI tests, then base e2e and app:e2e, which build the binary) and read the output. app:e2e tests the application in a real PTY; base e2e retains doctor/version checks. CI also runs coverage. Only when bun-release is selected does it install all native targets and run build:all. `quickstacks verify` also runs `test:tui`, `tui:capture -- --smoke`, and `eval -- --dry-run` (no key, no spend), so each fails until its piece exists.
+Run `bun run check` (lint, typecheck, vitest, TUI tests, then base e2e and app:e2e, which build the binary) and read the output. app:e2e tests the application in a real PTY; base e2e retains doctor/version checks. CI also runs coverage. Only when bun-release is selected does it install all native targets and run build:all. `quickstack verify` also runs `test:tui`, `tui:capture -- --smoke`, and `eval -- --dry-run` (no key, no spend), so each fails until its piece exists.
 
 - A clean exit code isn't a pass. Read the counts from both runners: a `-t` filter that matches nothing exits 0 with every test skipped, and `bun run test` prints vitest's summary and then bun's.
 - Run the real CLI, not only the tests. With no key and no spend: `bun run stub`, export the env it prints, then `bun run dev -- ask "hi"`, `bun run dev -- ask "what time is it in Paris" --json`, `bun run dev -- models gpt`. Each run appends to `logs/cli.jsonl` (one `command` line, and an `llm call` line per turn) and tees stderr to `logs/cli.log`. `bun run stub:stop` when done, if you started it.

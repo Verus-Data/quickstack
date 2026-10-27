@@ -8,7 +8,7 @@ schema_version: 1
 id: ${JSON.stringify(id)}
 kind: stack
 name: ${JSON.stringify(id)}
-description: "quickstacks:fill: describe the stack"
+description: "quickstack:fill: describe the stack"
 tags: [make]
 deps: {}
 commands:
@@ -27,7 +27,7 @@ verify:
   - name: readme
     phase: check
     layer: docs
-    run: "test -s README.md && ! grep -n 'quickstacks:fill' README.md"
+    run: "test -s README.md && ! grep -n 'quickstack:fill' README.md"
 merge: []
 fragments: { required: [], default: [], optional: [] }
 ---
@@ -64,7 +64,7 @@ schema_version: 1
 id: ${JSON.stringify(id)}
 kind: fragment
 name: ${JSON.stringify(id)}
-description: "quickstacks:fill: describe the fragment"
+description: "quickstack:fill: describe the fragment"
 tags: []
 deps: {}
 commands: {}
@@ -114,10 +114,10 @@ Describe how to prove it works.
 `;
 
 export const starterFiles = [
-  { source: "files/.gitignore", text: ".quickstacks/state/\n" },
+  { source: "files/.gitignore", text: ".quickstack/state/\n" },
   {
     source: "files/README.md",
-    text: "<!-- quickstacks:fill: describe the project and its commands -->\n",
+    text: "<!-- quickstack:fill: describe the project and its commands -->\n",
   },
 ];
 export const trustQuestion = "Copy this entry into your trusted user registry? [y/N]";

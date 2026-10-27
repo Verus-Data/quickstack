@@ -129,7 +129,7 @@ const versionOf = (value: unknown) =>
 /**
  * Reads and decodes a manifest. A missing file is `NotFound`; one that can't be read is
  * `PermissionDenied` (`read`); one that isn't JSON or doesn't decode, excess keys included, is
- * `InvalidConfig` with its path; one a newer quickstacks wrote (`schemaVersion` above 1) is
+ * `InvalidConfig` with its path; one a newer quickstack wrote (`schemaVersion` above 1) is
  * `InvalidConfig` with that version too.
  */
 export const readManifest = (
@@ -164,7 +164,7 @@ export const readManifest = (
 
 /**
  * The nearest project at or above `start`: the first directory, walking up, holding
- * `.quickstacks/manifest.json` as a file. `root` and `path` keep `start`'s spelling (resolved, not
+ * `.quickstack/manifest.json` as a file. `root` and `path` keep `start`'s spelling (resolved, not
  * real-pathed). None is `NotFound` with `kind: "project"` and `looked: start`.
  */
 export const locateManifest = (

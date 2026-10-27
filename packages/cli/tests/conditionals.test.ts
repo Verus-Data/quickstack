@@ -25,7 +25,7 @@ const context: ConditionContext = {
   with: ["lint"],
 };
 const block = (when: string, text = "INSIDE") =>
-  `before\n<!-- quickstacks:when ${when} -->\n${text}\n<!-- quickstacks:end -->\nafter`;
+  `before\n<!-- quickstack:when ${when} -->\n${text}\n<!-- quickstack:end -->\nafter`;
 const resolved = (body: string, over: Partial<ConditionContext> = {}) =>
   resolveConditionals(body, { ...context, ...over });
 
@@ -52,39 +52,39 @@ test.each([
 });
 
 test("a removed block leaves no doubled blank line", () => {
-  const body = "one\n\n<!-- quickstacks:when tag=web -->\nWEB\n<!-- quickstacks:end -->\n\ntwo";
+  const body = "one\n\n<!-- quickstack:when tag=web -->\nWEB\n<!-- quickstack:end -->\n\ntwo";
   expect(resolved(body)).toEqual({ text: "one\n\ntwo" });
 });
 
 test("fill markers are not conditionals and stay as written, even inside a kept block", () => {
-  const body = block("tag=go", "<!-- quickstacks:fill describe the CLI -->");
+  const body = block("tag=go", "<!-- quickstack:fill describe the CLI -->");
   expect(resolved(body)).toEqual({
-    text: "before\n<!-- quickstacks:fill describe the CLI -->\nafter",
+    text: "before\n<!-- quickstack:fill describe the CLI -->\nafter",
   });
 });
 
 test.each([
   ["a nested block", block("tag=go", block("tag=cli")), 4, "nested"],
-  ["an unclosed block", "a\n<!-- quickstacks:when tag=go -->\nb", 2, "unclosed"],
-  ["a stray end", "a\n<!-- quickstacks:end -->", 2, "stray_end"],
-  ["an unknown key", "<!-- quickstacks:when os=linux -->", 1, "unknown_key"],
-  ["an unknown preset", "<!-- quickstacks:when preset=prod -->", 1, "bad_value"],
-  ["a key with no value", "<!-- quickstacks:when stack= -->", 1, "bad_value"],
-  ["an empty value between commas", "<!-- quickstacks:when stack=a,,b -->", 1, "bad_value"],
-  ["a trailing comma", "<!-- quickstacks:when tag=a, -->", 1, "bad_value"],
-  ["an empty condition", "<!-- quickstacks:when -->", 1, "empty"],
-  ["a repeated key", "<!-- quickstacks:when tag=a tag=b -->", 1, "repeated"],
-  ["an unknown directive", "<!-- quickstacks:unless tag=a -->", 1, "unknown_marker"],
-  ["a marker sharing its line", "text <!-- quickstacks:when tag=a -->", 1, "not_alone"],
+  ["an unclosed block", "a\n<!-- quickstack:when tag=go -->\nb", 2, "unclosed"],
+  ["a stray end", "a\n<!-- quickstack:end -->", 2, "stray_end"],
+  ["an unknown key", "<!-- quickstack:when os=linux -->", 1, "unknown_key"],
+  ["an unknown preset", "<!-- quickstack:when preset=prod -->", 1, "bad_value"],
+  ["a key with no value", "<!-- quickstack:when stack= -->", 1, "bad_value"],
+  ["an empty value between commas", "<!-- quickstack:when stack=a,,b -->", 1, "bad_value"],
+  ["a trailing comma", "<!-- quickstack:when tag=a, -->", 1, "bad_value"],
+  ["an empty condition", "<!-- quickstack:when -->", 1, "empty"],
+  ["a repeated key", "<!-- quickstack:when tag=a tag=b -->", 1, "repeated"],
+  ["an unknown directive", "<!-- quickstack:unless tag=a -->", 1, "unknown_marker"],
+  ["a marker sharing its line", "text <!-- quickstack:when tag=a -->", 1, "not_alone"],
 ] as const)("%s fails at its line", (_case, body, line, problem) => {
   expect(resolved(body)).toEqual({ line, problem });
 });
 
 test("every fill spelling passes through: bare, with a space, and with no space after the colon", () => {
   for (const marker of [
-    "<!-- quickstacks:fill -->",
-    "<!-- quickstacks:fill: the summary -->",
-    "<!-- quickstacks:fill:summary -->",
+    "<!-- quickstack:fill -->",
+    "<!-- quickstack:fill: the summary -->",
+    "<!-- quickstack:fill:summary -->",
   ])
     expect(resolved(`a\n${marker}\nb`)).toEqual({ text: `a\n${marker}\nb` });
 });
@@ -92,13 +92,13 @@ test("every fill spelling passes through: bare, with a space, and with no space 
 test("markers inside a code fence are processed like any other line", () => {
   const body = [
     "```md",
-    "<!-- quickstacks:when tag=web -->",
+    "<!-- quickstack:when tag=web -->",
     "WEB",
-    "<!-- quickstacks:end -->",
+    "<!-- quickstack:end -->",
     "```",
   ].join("\n");
   expect(resolved(body)).toEqual({ text: "```md\n```" });
-  expect(resolved("```\n<!-- quickstacks:end -->\n```")).toEqual({ line: 2, problem: "stray_end" });
+  expect(resolved("```\n<!-- quickstack:end -->\n```")).toEqual({ line: 2, problem: "stray_end" });
 });
 
 test("compose resolves the stack's blocks against the stack, its tags, the selection and the preset [1.1#13]", async () => {
@@ -112,15 +112,15 @@ test("compose resolves the stack's blocks against the stack, its tags, the selec
     expect(plain).toContain(kept);
   for (const dropped of ["STACK-BLOCK-DROPPED", "NOT-WEB-DROPPED", "WITH-HOOKS-A", "SANDBOX-ONLY"])
     expect(plain).not.toContain(dropped);
-  expect(plain).not.toContain("quickstacks:");
+  expect(plain).not.toContain("quickstack:");
   const other = await body({ with: ["hooks-a"], preset: "sandbox" });
   for (const kept of ["WITH-HOOKS-A", "SANDBOX-ONLY"]) expect(other).toContain(kept);
   expect(other).not.toContain("DEFAULT-PRESET-NEW");
 });
 
 test.each([
-  ["unclosed", "# Bad\n\n<!-- quickstacks:when tag=web -->\ntext\n", 11],
-  ["nested", "# Bad\n<!-- quickstacks:when tag=web -->\n<!-- quickstacks:when tag=bun -->\n", 11],
+  ["unclosed", "# Bad\n\n<!-- quickstack:when tag=web -->\ntext\n", 11],
+  ["nested", "# Bad\n<!-- quickstack:when tag=web -->\n<!-- quickstack:when tag=bun -->\n", 11],
 ] as const)(
   "an entry with an %s block fails EntryInvalid with the line in its file [1.1#13]",
   async (_case, text, line) => {

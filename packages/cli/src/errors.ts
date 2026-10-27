@@ -75,7 +75,7 @@ export class BadInput extends Schema.TaggedError<BadInput>()("BadInput", {
 /**
  * `id` and `kind`: the stack or fragment id that wasn't found, so a caller can tell a wrong stack
  * from a wrong `--with`/`--without` id. `kind: "project"` (1.3a, with no `id`): `verify` found no
- * `.quickstacks/manifest.json` walking up from `looked`.
+ * `.quickstack/manifest.json` walking up from `looked`.
  */
 export const NotFoundDetails = Schema.Struct({
   suggestions: Schema.Array(Schema.String),
@@ -95,8 +95,8 @@ export class NotConfigured extends Schema.TaggedError<NotConfigured>()("NotConfi
   override readonly message = "Configuration is required.";
 }
 /**
- * `path`: the file that didn't decode, such as `.quickstacks/manifest.json` (1.2b).
- * `schemaVersion`: the version a newer quickstacks wrote, when that is why it didn't decode.
+ * `path`: the file that didn't decode, such as `.quickstack/manifest.json` (1.2b).
+ * `schemaVersion`: the version a newer quickstack wrote, when that is why it didn't decode.
  */
 export const InvalidConfigDetails = Schema.Struct({
   path: Schema.String,
@@ -215,7 +215,7 @@ export class EntryInvalid extends Schema.TaggedError<EntryInvalid>()("EntryInval
  * `fix` lists the `--without` flags that would leave every such fragment out (empty when no
  * `--without` can). `file_owner` is also two planned paths that differ only in letter case, or a
  * file at a path another planned file needs as a directory. `reserved_path` is an entry file under
- * `.git` or `.quickstacks` (any segment, any case), which the CLI owns.
+ * `.git` or `.quickstack` (any segment, any case), which the CLI owns.
  */
 export const ComposeConflictDetails = Schema.Struct({
   reason: Schema.Literals([
@@ -247,7 +247,7 @@ export class ComposeConflict extends Schema.TaggedError<ComposeConflict>()("Comp
 /**
  * `new` refuses a directory holding anything besides `.git` and OS litter. `path` is the target;
  * `entries` names up to ten of what is in it, sorted, litter excluded. `scaffold` is set when the
- * target already holds `.quickstacks/manifest.json`: `green` once its state record has
+ * target already holds `.quickstack/manifest.json`: `green` once its state record has
  * `firstGreenAt`, else `unfinished`.
  */
 export const TargetNotEmptyDetails = Schema.Struct({
@@ -438,7 +438,7 @@ function notFoundLines(error: NotFound, invocation: string): string[] {
   if (details.path)
     return [
       `Path: ${printable(details.path)}`,
-      "Next: restore the bundled skill directory or reinstall quickstacks, then run doctor.",
+      "Next: restore the bundled skill directory or reinstall quickstack, then run doctor.",
     ];
   if (details.kind === "project")
     return [
@@ -499,7 +499,7 @@ function configLines(error: InvalidConfig): string[] {
     ...(details.schemaVersion === undefined
       ? []
       : [
-          `Schema version: ${details.schemaVersion}, from a newer quickstacks. Upgrade quickstacks to read it.`,
+          `Schema version: ${details.schemaVersion}, from a newer quickstack. Upgrade quickstack to read it.`,
         ]),
   ];
 }
@@ -548,9 +548,9 @@ function badInputLines(details: typeof BadInputDetails.Type): string[] {
       return details.alreadyApplied?.length
         ? [
             `Already applied: ${details.alreadyApplied.map(printable).join(", ")}`,
-            "Next: choose unapplied fragments with quickstacks list.",
+            "Next: choose unapplied fragments with quickstack list.",
           ]
-        : [`Id: ${id}`, "Next: add takes fragments; use quickstacks new for a stack."];
+        : [`Id: ${id}`, "Next: add takes fragments; use quickstack new for a stack."];
     case "agents":
     case "sandbox":
       return [
@@ -590,7 +590,7 @@ function badInputLines(details: typeof BadInputDetails.Type): string[] {
         "Next: select --kind stack or --kind fragment.",
       ];
     case "brief_stack":
-      return [`Id: ${id}`, "Next: --brief takes a stack; choose one with quickstacks list stacks."];
+      return [`Id: ${id}`, "Next: --brief takes a stack; choose one with quickstack list stacks."];
     case "brief":
       return [
         `Flag: ${id}`,
@@ -679,7 +679,7 @@ function permissionReason(reason: (typeof PermissionDeniedDetails.Type)["reason"
     case "state-unwritable":
       return [
         "The state record outside the project can't be written, so nothing was confirmed or changed.",
-        "Next: make that directory writable (or set QUICKSTACKS_STATE_DIR to one that is), then run this command again.",
+        "Next: make that directory writable (or set QUICKSTACK_STATE_DIR to one that is), then run this command again.",
       ];
     case "launch":
       return [
@@ -700,7 +700,7 @@ function targetNext(details: typeof TargetNotEmptyDetails.Type, invocation: stri
   if (
     details.entries.length === 1 &&
     details.entries[0] === "SKILL.md" &&
-    /[/\\]\.claude[/\\]skills[/\\]quickstacks$/.test(details.path)
+    /[/\\]\.claude[/\\]skills[/\\]quickstack$/.test(details.path)
   )
     return [
       `Next: rerun ${invocation} skill install with --force to replace it, or --print to copy it elsewhere.`,
@@ -740,7 +740,7 @@ function composeNext(details: typeof ComposeConflictDetails.Type): string[] {
     ];
   if (details.reason === "reserved_path")
     return [
-      "The CLI owns .git/ and .quickstacks/ in a project; no entry may write under them, in any letter case.",
+      "The CLI owns .git/ and .quickstack/ in a project; no entry may write under them, in any letter case.",
       "Next: remove or rename that file in the entry.",
     ];
   return [];

@@ -41,11 +41,11 @@ describe("list's project view", () => {
         .filter((id) => id !== undefined && registryIds.has(id));
       expect(rows).toEqual(addable);
       expect(
-        [...run.stdout.matchAll(/Next: quickstacks add ([a-z-]+)/g)].map((match) => match[1]),
+        [...run.stdout.matchAll(/Next: quickstack add ([a-z-]+)/g)].map((match) => match[1]),
       ).toEqual(addable);
-      expect(run.stdout).not.toMatch(/Next: quickstacks add (?:other-only|fixture-required)\b/);
+      expect(run.stdout).not.toMatch(/Next: quickstack add (?:other-only|fixture-required)\b/);
       expect(run.stdout).toContain("list stacks");
-      expect(run.stdout).not.toContain("Next: quickstacks new");
+      expect(run.stdout).not.toContain("Next: quickstack new");
     },
   );
 
@@ -84,7 +84,7 @@ describe("list's project view", () => {
     expect(run.stderr).toBe("");
     expect(run.stdout.indexOf("Stacks")).toBeGreaterThanOrEqual(0);
     expect(run.stdout.indexOf("Stacks")).toBeLessThan(run.stdout.indexOf("Fragments"));
-    expect(run.stdout).toContain("Next: quickstacks new fixture-stack");
+    expect(run.stdout).toContain("Next: quickstack new fixture-stack");
     expect(run.stdout).not.toContain("Fragments you can add");
   });
 
@@ -92,12 +92,12 @@ describe("list's project view", () => {
     "a corrupt or newer manifest falls back with a path and decode warning: %s [3.0#19]",
     async (bytes) => {
       const project = addProject();
-      put(project.root, ".quickstacks/manifest.json", bytes);
+      put(project.root, ".quickstack/manifest.json", bytes);
       const run = await addCli(project, ["list"]);
       expect(run.status).toBe(0);
-      expect(run.stderr).toContain(".quickstacks/manifest.json");
+      expect(run.stderr).toContain(".quickstack/manifest.json");
       expect(run.stderr).toMatch(/warn|decode|invalid|version/i);
-      expect(run.stdout).toContain("Next: quickstacks new fixture-stack");
+      expect(run.stdout).toContain("Next: quickstack new fixture-stack");
       expect(run.stdout).not.toContain("Fragments you can add");
     },
   );

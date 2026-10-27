@@ -12,7 +12,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const binary = join(import.meta.dir, "../dist/quickstacks");
+const binary = join(import.meta.dir, "../dist/quickstack");
 const source = join(import.meta.dir, "../skill/SKILL.md");
 async function print(executable: string, home: string) {
   const child = Bun.spawn([executable, "skill", "install", "--print"], {
@@ -37,7 +37,7 @@ async function print(executable: string, home: string) {
 }
 
 test("the dev binary finds skill/ beside dist/, including after relocation [3.4c#10]", async () => {
-  const root = mkdtempSync(join(tmpdir(), "quickstacks-skill-binary-"));
+  const root = mkdtempSync(join(tmpdir(), "quickstack-skill-binary-"));
   try {
     const home = join(root, "unrelated cwd");
     mkdirSync(home);
@@ -51,7 +51,7 @@ test("the dev binary finds skill/ beside dist/, including after relocation [3.4c
     const prefix = join(root, "relocated package");
     mkdirSync(join(prefix, "dist"), { recursive: true });
     mkdirSync(join(prefix, "skill"));
-    const relocated = join(prefix, "dist", "quickstacks");
+    const relocated = join(prefix, "dist", "quickstack");
     copyFileSync(binary, relocated);
     chmodSync(relocated, 0o755);
     const text = `${readFileSync(source, "utf8")}\nRelocated asset marker.\n`;

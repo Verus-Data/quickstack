@@ -18,10 +18,10 @@ export type HostInfo = {
   skill: string;
   /** The authoring guide, resolved by bin.ts beside the registry and skill. */
   authoring: string;
-  /** How a person runs this CLI, for copy-paste `Next:` lines. A fixed `quickstacks` until 0.2. */
+  /** How a person runs this CLI, for copy-paste `Next:` lines. A fixed `quickstack` until 0.2. */
   invocation: string;
 };
-export class Host extends Context.Service<Host, HostInfo>()("quickstacks/Host") {
+export class Host extends Context.Service<Host, HostInfo>()("quickstack/Host") {
   static layer = (value: HostInfo) => Layer.succeed(Host, value);
   static memory = (overrides: Partial<HostInfo> = {}) =>
     Host.layer({
@@ -34,7 +34,7 @@ export class Host extends Context.Service<Host, HostInfo>()("quickstacks/Host") 
       registry: "/test/registry",
       skill: "/test/skill",
       authoring: "/test/docs/authoring.md",
-      invocation: "quickstacks",
+      invocation: "quickstack",
       ...overrides,
     });
 }

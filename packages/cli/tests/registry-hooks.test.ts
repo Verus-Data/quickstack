@@ -544,7 +544,7 @@ describe("the hooks decide the same with and without jq [1.6d#3]", () => {
         .additionalContext,
     ).toContain("biome check found issues in src.ts");
     expect(stop).toEqual(ALLOW);
-    expect(start?.stdout).toContain("read .quickstacks/BRIEF.md");
+    expect(start?.stdout).toContain("read .quickstack/BRIEF.md");
   }, 30_000);
 
   test("the awk reader handles escapes, nesting and a key named like the one it wants inside a value [1.6d#3]", () => {

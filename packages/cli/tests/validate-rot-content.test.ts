@@ -56,7 +56,7 @@ test("dead stack branches warn, --with-only branches note, listed branches are r
   const root = space.temp();
   stack(root, "go-stack", "fragments:\n  optional: [listed]");
   stack(root, "python");
-  const branch = "<!-- quickstacks:when stack=go-stack -->\nUse Go.\n<!-- quickstacks:end -->\n";
+  const branch = "<!-- quickstack:when stack=go-stack -->\nUse Go.\n<!-- quickstack:end -->\n";
   fragment(root, "dead", "applies_to: [python]", branch);
   fragment(root, "manual", "applies_to: [cli]", branch);
   fragment(root, "listed", "", branch);
@@ -69,7 +69,7 @@ test("dead stack branches warn, --with-only branches note, listed branches are r
         kind: "fragment",
         entry: "dead",
         file: "fragments/dead/FRAGMENT.md",
-        line: lineOf(join(root, "fragments/dead/FRAGMENT.md"), "<!-- quickstacks:when"),
+        line: lineOf(join(root, "fragments/dead/FRAGMENT.md"), "<!-- quickstack:when"),
         text: ["go-stack"],
       },
     ],
@@ -80,7 +80,7 @@ test("dead stack branches warn, --with-only branches note, listed branches are r
         kind: "fragment",
         entry: "manual",
         file: "fragments/manual/FRAGMENT.md",
-        line: lineOf(join(root, "fragments/manual/FRAGMENT.md"), "<!-- quickstacks:when"),
+        line: lineOf(join(root, "fragments/manual/FRAGMENT.md"), "<!-- quickstack:when"),
         text: ["go-stack"],
       },
     ],

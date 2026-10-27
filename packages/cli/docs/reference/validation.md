@@ -1,13 +1,13 @@
 # Validation
 
-`quickstacks validate` checks stacks and fragments before an agent builds from them. It reads files only and runs nothing from an entry. This page lists what it checks, the word budgets, and the `--brief` preview. For how to write an entry that passes, see the [authoring guide](../authoring.md).
+`quickstack validate` checks stacks and fragments before an agent builds from them. It reads files only and runs nothing from an entry. This page lists what it checks, the word budgets, and the `--brief` preview. For how to write an entry that passes, see the [authoring guide](../authoring.md).
 
 ```sh
-quickstacks validate                                   # the bundled registry
-quickstacks validate ~/my-registry                     # a registry root (holds stacks/ or fragments/)
-quickstacks validate ~/my-registry/stacks/web          # one entry
-quickstacks validate --json                            # the ValidateReport
-quickstacks validate --brief web --with docs --sandbox # the brief a composition renders to
+quickstack validate                                   # the bundled registry
+quickstack validate ~/my-registry                     # a registry root (holds stacks/ or fragments/)
+quickstack validate ~/my-registry/stacks/web          # one entry
+quickstack validate --json                            # the ValidateReport
+quickstack validate --brief web --with docs --sandbox # the brief a composition renders to
 ```
 
 ## What it checks

@@ -17,7 +17,7 @@ const workspace = () => {
 afterEach(() => {
   for (const dir of dirs.splice(0)) dir.cleanup();
 });
-const target = (root: string) => join(root, ".claude", "skills", "quickstacks", "SKILL.md");
+const target = (root: string) => join(root, ".claude", "skills", "quickstack", "SKILL.md");
 
 test("project install ignores Git tracing on stderr", async () => {
   const home = workspace();

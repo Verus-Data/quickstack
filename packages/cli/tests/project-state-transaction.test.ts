@@ -22,7 +22,7 @@ test.each([false, true])(
       const original = '{ "previous": true }\n';
       if (existing) writeFileSync(target, original);
       const controller = new AbortController();
-      const state = projectStateFor(manifest([]), "/project/.quickstacks/manifest.json");
+      const state = projectStateFor(manifest([]), "/project/.quickstack/manifest.json");
       const exit = await Effect.runPromiseExit(
         Effect.scoped(
           Effect.gen(function* () {

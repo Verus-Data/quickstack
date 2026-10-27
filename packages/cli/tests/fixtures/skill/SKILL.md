@@ -1,8 +1,8 @@
 ---
-name: quickstacks
-description: Start a new project with quickstacks.
+name: quickstack
+description: Start a new project with quickstack.
 ---
 
 Fixture skill: preserve these bytes, including café and `quotes`.
 
-Read .quickstacks/BRIEF.md, then run quickstacks verify.
+Read .quickstack/BRIEF.md, then run quickstack verify.

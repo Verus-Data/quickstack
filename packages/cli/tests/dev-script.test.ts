@@ -50,7 +50,7 @@ test("dev wrapper forwards a directly delivered termination signal to its child"
   }
 }, 10000);
 
-test("dev wrapper resolves a relative QUICKSTACKS_REGISTRY_DIR against the caller's directory", async () => {
+test("dev wrapper resolves a relative QUICKSTACK_REGISTRY_DIR against the caller's directory", async () => {
   const dir = tempDir();
   try {
     mkdirSync(join(dir.path, "scripts"));
@@ -59,7 +59,7 @@ test("dev wrapper resolves a relative QUICKSTACKS_REGISTRY_DIR against the calle
     writeFileSync(
       join(dir.path, "src/bin.ts"),
       // HOME, not the cwd: the CLI runs in the caller's directory.
-      `import { writeFileSync } from "node:fs"; writeFileSync(process.env.HOME + "/registry", process.env.QUICKSTACKS_REGISTRY_DIR ?? "unset");`,
+      `import { writeFileSync } from "node:fs"; writeFileSync(process.env.HOME + "/registry", process.env.QUICKSTACK_REGISTRY_DIR ?? "unset");`,
     );
     const caller = join(dir.path, "caller");
     mkdirSync(caller);
@@ -75,7 +75,7 @@ test("dev wrapper resolves a relative QUICKSTACKS_REGISTRY_DIR against the calle
           PATH: process.env.PATH,
           HOME: dir.path,
           INIT_CWD: caller,
-          QUICKSTACKS_REGISTRY_DIR: value,
+          QUICKSTACK_REGISTRY_DIR: value,
         },
       });
       const status = await new Promise<number | null>((resolve, reject) => {
@@ -98,7 +98,7 @@ test("dev wrapper keeps data and state under .dev unless the caller set its own"
     copyFileSync(join(import.meta.dirname, "../scripts/dev.ts"), join(dir.path, "scripts/dev.ts"));
     writeFileSync(
       join(dir.path, "src/bin.ts"),
-      `import { writeFileSync } from "node:fs"; writeFileSync(process.env.HOME + "/dirs", JSON.stringify({ data: process.env.QUICKSTACKS_DATA_DIR, state: process.env.QUICKSTACKS_STATE_DIR }));`,
+      `import { writeFileSync } from "node:fs"; writeFileSync(process.env.HOME + "/dirs", JSON.stringify({ data: process.env.QUICKSTACK_DATA_DIR, state: process.env.QUICKSTACK_STATE_DIR }));`,
     );
     const run = async (extra: Record<string, string>) => {
       const child = spawn("bun", ["scripts/dev.ts"], {
@@ -117,7 +117,7 @@ test("dev wrapper keeps data and state under .dev unless the caller set its own"
       data: join(realpathSync(dir.path), ".dev", "data"),
       state: join(realpathSync(dir.path), ".dev", "state"),
     });
-    expect(await run({ QUICKSTACKS_DATA_DIR: "/d", QUICKSTACKS_STATE_DIR: "/s" })).toEqual({
+    expect(await run({ QUICKSTACK_DATA_DIR: "/d", QUICKSTACK_STATE_DIR: "/s" })).toEqual({
       data: "/d",
       state: "/s",
     });

@@ -74,7 +74,7 @@ export const loadChecks: Check = (view) =>
           check: "schema",
           severity: "error",
           file: view.file(skipped, markdownFile(skipped.kind)),
-          message: "schema_version is newer than this CLI reads; update quickstacks",
+          message: "schema_version is newer than this CLI reads; update quickstack",
         }),
       );
     };

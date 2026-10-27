@@ -70,7 +70,7 @@ partly an observation.
 
 1. Set `packages/cli/package.json` `version` to the version 1.6c will publish (0.0's
    reservation decides it; `0.1.0` unless it says otherwise). Check
-   `npm view quickstacks versions` first: a version already on npm can't be published,
+   `npm view quickstack versions` first: a version already on npm can't be published,
    and changing it later changes the tarball.
 2. Commit. Pack from a clean checkout of that commit the way 0.2 packs (`bun pm pack`).
 3. Record the tarball's sha256 and the commit. Keep the file outside the repo (so
@@ -82,8 +82,8 @@ partly an observation.
    prefix's `bin` first on PATH.
 6. Check the invocation the brief will tell the agent to use: run
    `new astro-blog <tmp> --sandbox --no-launch --json` and read the verify command in the
-   brief. It must be the installed `quickstacks`, which the contract gives for any install outside
-   npm's npx cache. If it is `npx -y quickstacks@<version>` (see roadmap, Contracts: Invocation string), the
+   brief. It must be the installed `quickstack`, which the contract gives for any install outside
+   npm's npx cache. If it is `npx -y quickstack@<version>` (see roadmap, Contracts: Invocation string), the
    agent would fetch from npm, where this version doesn't exist yet: stop and raise it
    against the `Host.invocation` contract (0.2, 1.1) rather than working around it.
 
@@ -96,26 +96,26 @@ default ports.
    `XDG_*` directories. The agent gets no personal instruction or memory files and no
    copied credential files (D24): either a maintainer logs in fresh inside that HOME, or
    the run uses a token passed through the environment. Record which.
-2. `quickstacks new <stack> run --sandbox` and let the handoff launch the agent (this also
+2. `quickstack new <stack> run --sandbox` and let the handoff launch the agent (this also
    tests 1.4).
 3. Nobody types after the prompt. If the agent asks a question, the answer is "use the
    default", and the run no longer counts toward D20 (it is still recorded).
 4. Cap the run at 60 minutes of agent time. A run still going at the cap is stopped and
    recorded `failed`.
-5. When the agent stops, run `quickstacks verify --json` from the project yourself. The
+5. When the agent stops, run `quickstack verify --json` from the project yourself. The
    agent's claim of green doesn't count.
 6. Check the deliverables by hand, because verify only checks exit codes and probes, so a
    run can pass verify with deliverables missing: the proving slice named in the stack's Setup exists and works
    (open the page and the RSS route; run the command and `--version`; load the page that
    calls the API route); project commands verify calls do real work (no `exit 0` or `echo`
-   targets, no skipped or deleted tests); AGENTS.md has no `quickstacks:fill` left and
+   targets, no skipped or deleted tests); AGENTS.md has no `quickstack:fill` left and
    matches the real commands. Anything missing makes the run `partial`, whatever verify
    said.
 7. Write the run note (below).
 
 A run passes the gate when all of these hold: the independent verify is `green` with
 `tamperCheck: "full"` (see roadmap, Trust model point 5; `manifest-only` never passes),
-`## Asked` in `.quickstacks/NOTES.md` is empty and the maintainer typed nothing, and the
+`## Asked` in `.quickstack/NOTES.md` is empty and the maintainer typed nothing, and the
 deliverables check found nothing missing.
 
 ### Run notes
@@ -128,7 +128,7 @@ every field in [runs/README.md](../runs/README.md). Where each comes from:
 | Repo commit, CLI | The release candidate's commit and tarball sha256 |
 | Brief size | `briefWords` from the `new --json` result; `fixedWords` from the same result (see roadmap, Contracts: Word count) |
 | Times | `firstTestPassAt - createdAt` and `firstGreenAt - createdAt` from the project state record (see roadmap, Contracts: Project state record), in minutes. Report both against the 20-minute target (open question 22) |
-| Verify count | Lines in `.quickstacks/state/runs.jsonl` (see roadmap, Contracts: Run record) |
+| Verify count | Lines in `.quickstack/state/runs.jsonl` (see roadmap, Contracts: Run record) |
 | Interventions | `## Asked` lines, plus anything the maintainer typed |
 | Outcome | `green`, `partial`, `failed` or `infra`, with `tamperCheck` |
 | Findings | The `## Findings` lines worth acting on, each with the fix it led to; `NOTES.md` copied in full at the end; the deliverables check result |

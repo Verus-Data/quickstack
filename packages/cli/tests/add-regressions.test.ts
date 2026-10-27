@@ -21,13 +21,13 @@ afterEach(releaseAdd);
 
 test("numbered incoming copies above nine stay grouped with their live destination", async () => {
   const project = addProject();
-  put(project.root, ".quickstacks/incoming/README.md", "first\n");
-  put(project.root, ".quickstacks/incoming/README.md.10", "tenth\n");
+  put(project.root, ".quickstack/incoming/README.md", "first\n");
+  put(project.root, ".quickstack/incoming/README.md.10", "tenth\n");
   const result = await added(await addCli(project, ["add", "named", "--json"]));
   expect(result.mergeNeeded).toEqual([
     {
       path: "README.md",
-      incoming: [".quickstacks/incoming/README.md", ".quickstacks/incoming/README.md.10"],
+      incoming: [".quickstack/incoming/README.md", ".quickstack/incoming/README.md.10"],
     },
   ]);
 });
@@ -100,8 +100,8 @@ test("list follow-ups keep an explicitly selected project directory with shell q
   });
   expect(run.status).toBe(0);
   expect(run.stderr).toBe("");
-  expect(run.stdout).toContain("Next: quickstacks add ci-github --dir 'app space'");
-  expect(run.stdout).toContain("Next: quickstacks list stacks --dir 'app space'");
+  expect(run.stdout).toContain("Next: quickstack add ci-github --dir 'app space'");
+  expect(run.stdout).toContain("Next: quickstack list stacks --dir 'app space'");
 });
 
 test("numbered parking copies cannot claim another planned fragment destination", async () => {
@@ -116,12 +116,12 @@ test("numbered parking copies cannot claim another planned fragment destination"
   put(entry, "files/README.md.2", "second new contribution\n");
   put(project.root, "README.md", "live first\n");
   put(project.root, "README.md.2", "live second\n");
-  put(project.root, ".quickstacks/incoming/README.md", "old incoming\n");
+  put(project.root, ".quickstack/incoming/README.md", "old incoming\n");
   await added(await addCli(project, ["add", "collision", "--json"]));
   expect(read(project.root, "README.md")).toBe("live first\n");
   expect(read(project.root, "README.md.2")).toBe("live second\n");
-  expect(read(project.root, ".quickstacks/incoming/README.md.2")).toBe("second new contribution\n");
-  expect(read(project.root, ".quickstacks/incoming/README.md.3")).toBe("first new contribution\n");
+  expect(read(project.root, ".quickstack/incoming/README.md.2")).toBe("second new contribution\n");
+  expect(read(project.root, ".quickstack/incoming/README.md.3")).toBe("first new contribution\n");
 });
 
 test.skipIf(process.getuid?.() === 0)(
@@ -158,7 +158,7 @@ test("the add brief describes base then app stages in the same order verify runs
   expect(run.status).toBe(0);
   expect(run.stderr).toBe("");
   const verified = Schema.decodeUnknownSync(VerifyResult)(JSON.parse(run.stdout));
-  const brief = read(project.root, ".quickstacks/BRIEF.md");
+  const brief = read(project.root, ".quickstack/BRIEF.md");
   const order = [
     "base-setup",
     "base-check",
@@ -186,10 +186,10 @@ test.each([false, true])(
     put(entry, "files/.claude/settings.json", '{"new":true}\n');
     put(project.root, ".claude/settings.json", '{ "mine": true }\n');
     chmodSync(join(project.root, ".claude/settings.json"), 0o640);
-    mkdirSync(join(project.root, ".quickstacks/incoming/.claude"), { recursive: true });
+    mkdirSync(join(project.root, ".quickstack/incoming/.claude"), { recursive: true });
     linkSync(
       join(project.root, ".claude/settings.json"),
-      join(project.root, ".quickstacks/incoming/.claude/settings.json"),
+      join(project.root, ".quickstack/incoming/.claude/settings.json"),
     );
     if (rollback) {
       put(entry, "files/z-blocked/child.txt", "new\n");
@@ -202,13 +202,14 @@ test.each([false, true])(
       expect(snapshot(project.root)).toEqual(before);
     } else {
       await added(run);
-      expect(JSON.parse(read(project.root, ".quickstacks/incoming/.claude/settings.json"))).toEqual(
-        { mine: true, new: true },
-      );
+      expect(JSON.parse(read(project.root, ".quickstack/incoming/.claude/settings.json"))).toEqual({
+        mine: true,
+        new: true,
+      });
     }
     expect(read(project.root, ".claude/settings.json")).toBe('{ "mine": true }\n');
     expect(
-      statSync(join(project.root, ".quickstacks/incoming/.claude/settings.json")).mode & 0o777,
+      statSync(join(project.root, ".quickstack/incoming/.claude/settings.json")).mode & 0o777,
     ).toBe(0o640);
   },
 );
@@ -224,9 +225,9 @@ test("a live file written without parking does not consume a numbered incoming s
   put(entry, "files/README.md", "new incoming\n");
   put(entry, "files/README.md.2", "new live\n");
   put(project.root, "README.md", "existing live\n");
-  put(project.root, ".quickstacks/incoming/README.md", "old incoming\n");
+  put(project.root, ".quickstack/incoming/README.md", "old incoming\n");
   const result = await added(await addCli(project, ["add", "first-free", "--json"]));
   expect(result.written).toEqual(["README.md.2"]);
   expect(read(project.root, "README.md.2")).toBe("new live\n");
-  expect(read(project.root, ".quickstacks/incoming/README.md.2")).toBe("new incoming\n");
+  expect(read(project.root, ".quickstack/incoming/README.md.2")).toBe("new incoming\n");
 });

@@ -176,7 +176,7 @@ describe("verify with an app", () => {
       expect(run.stdout).toContain("verify: failed");
       const next = lastLine(run.stdout);
       expect(next).toMatch(/^Next: .*application/i);
-      expect(next).toContain(".quickstacks/BRIEF.md");
+      expect(next).toContain(".quickstack/BRIEF.md");
       if (audience === "human") {
         const lines = run.stdout.split("\n");
         const summary = lines.findIndex((line) => line.startsWith("verify:"));
@@ -465,7 +465,7 @@ describe("stage boundaries on real projects", () => {
     );
     expect(readFileSync(join(root, "base.txt"), "utf8")).toBe("base\n");
     expect(readFileSync(join(root, "app.txt"), "utf8")).toBe("app\n");
-    expect(existsSync(join(root, "nested", ".quickstacks"))).toBe(false);
+    expect(existsSync(join(root, "nested", ".quickstack"))).toBe(false);
     expect(result).toMatchObject({ stages: { base: "green", app: "green" }, tamperCheck: "full" });
     expect(runRecords(root)).toMatchObject([{ stages: { base: "green", app: "green" } }]);
     expect(readRecord(recordPath(home, written.projectId)).firstGreenAt).not.toBeNull();

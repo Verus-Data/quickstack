@@ -225,7 +225,7 @@ test("project names, scope, author and the brief's fixed wording are outside the
   const c = await composition(fixture);
   const expected = await hash(c);
   const first = newResult(await scaffoldCli(fixture, home, "first", { scope: "one" }));
-  const config = join(home, "config/quickstacks");
+  const config = join(home, "config/quickstack");
   mkdirSync(config, { recursive: true });
   writeFileSync(join(config, "config.json"), JSON.stringify({ author: "Another Author" }));
   const second = newResult(await scaffoldCli(fixture, home, "second", { scope: "two" }));
@@ -240,7 +240,7 @@ test("project names, scope, author and the brief's fixed wording are outside the
     written: first.written,
     missing: missingTools(c, () => true),
     yes: true,
-    invocation: "quickstacks",
+    invocation: "quickstack",
   };
   const before = renderBrief(c, context).text;
   // Simulate a CLI prose-only release using the real fixed text, restoring it for other tests.
@@ -277,7 +277,7 @@ test("new JSON and manifest carry the composition fingerprint without a schema b
   );
   expect(result).toMatchObject({ fingerprint: expected });
   const manifest = Schema.decodeUnknownSync(Manifest, { onExcessProperty: "error" })(
-    JSON.parse(readFileSync(join(home, "app/.quickstacks/manifest.json"), "utf8")),
+    JSON.parse(readFileSync(join(home, "app/.quickstack/manifest.json"), "utf8")),
   );
   expect(manifest.schemaVersion).toBe(1);
   expect(manifest.fingerprint).toBe(expected);

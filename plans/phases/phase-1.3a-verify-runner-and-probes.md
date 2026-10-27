@@ -7,7 +7,7 @@ Acceptance tests: traced
 
 | Field | Value |
 |---|---|
-| Goal | `quickstacks verify` finds the project's manifest, runs its steps in phases with per-step timeouts, probes dev servers and catches ones that background themselves, always runs teardown, and returns one result an agent can act on, with `VerifyFailed` (exit 5) when a step fails |
+| Goal | `quickstack verify` finds the project's manifest, runs its steps in phases with per-step timeouts, probes dev servers and catches ones that background themselves, always runs teardown, and returns one result an agent can act on, with `VerifyFailed` (exit 5) when a step fails |
 | Traces to | "When I'm an agent asked to set up a project, I want a target I can verify against, so I know when I'm done" (job 5); success rows "The agent finishes without help", "It's faster than by hand", "The result is complete"; assumption "`verify` is enough of a definition of done to keep an agent honest" |
 | Depends on | [1.2b](phase-1.2b-manifest-state-and-detection.md) (the manifest, `Manifest`, `ManifestStep`, `AgentMarkers` and `childEnv`'s marker list), [0.3b](phase-0.3b-processes-and-signals.md) (`Processes`, `TAIL_BYTES`/`TAIL_LINES`, `childEnv`, the signal policy, `src/platform/`), [0.3a](phase-0.3a-errors-and-output.md) (error table, `VerifyFailed` on exit 5, keeps-result failures, `Output.progress`) |
 | Blocks | [1.3b](phase-1.3b-tamper-detection-and-run-records.md) (tamper check and run records wrap this runner); through 1.3b, [1.6b](phase-1.6b-mvp-gate-runs.md) |
@@ -30,7 +30,7 @@ record is written after interrupted runs too. Until 1.3b lands, `onFinished` is 
 In:
 
 - `verify [--only a,b] [--skip-tag t] [--all] [--json]`, run from the project root or any
-  directory below it (walks up to the nearest `.quickstacks/manifest.json`).
+  directory below it (walks up to the nearest `.quickstack/manifest.json`).
 - Phases `setup`, `check`, `serve`, `teardown`; `VerifyStep.timeout`; `expect.http`
   probes with the local-host rule, port-in-use detection, early-exit and left-running
   detection.
@@ -44,7 +44,7 @@ Out:
   `firstTestPassAt` (all 1.3b).
 - Parallel steps. Steps run one at a time; parallelism changes failure output and port use
   and there is no evidence it's needed.
-- Sending anything anywhere (4.1a). Aggregating runs (`quickstacks runs`, 2.0c).
+- Sending anything anywhere (4.1a). Aggregating runs (`quickstack runs`, 2.0c).
 - Any CI change. The new tests run in the existing `check` job with no workflow change;
   extra CI jobs are [5.0](phase-5.0-ci-release-and-checks.md).
 
@@ -83,7 +83,7 @@ stop in teardown.
 Every `run` step gets an environment built by `childEnv` ([roadmap, Contracts: Child
 environment](../roadmap.md#types-and-schemas)): the environment `config.ts` captured, with
 every agent session marker in `AgentMarkers` removed, overlaid by the manifest's `env` for
-keys not already set, so a user can move a port with `PORT_WEB=5187 quickstacks verify`.
+keys not already set, so a user can move a port with `PORT_WEB=5187 quickstack verify`.
 Nothing is inherited implicitly.
 
 Why markers are stripped, all of them, with none kept: a step must behave the same whether
@@ -236,8 +236,8 @@ On failure the result stays on stdout and the error envelope is the last stderr 
 | `partial`, every selected step passed | 0 | none; the brief says done means `green` |
 | `failed` (including every failure being `env`) | 5 | `VerifyFailed`, `details: { failed: [{ name, failureKind, exitCode? }] }` |
 | `interrupted` | 130 | `Interrupted` |
-| No manifest found walking up | 2 | `NotFound`, `details: { suggestions: [], looked: <start dir> }`, reusing the optional string `looked` 1.5 added to the closed `NotFound` details struct (the resolved directory the walk started from, not a list); the fixed message names `quickstacks new` |
-| Manifest fails to decode | 3 | `InvalidConfig`, `details: { path, field }`; a higher `schemaVersion` gets the fixed "upgrade quickstacks" message ([roadmap, Schema versions](../roadmap.md#schema-versions)) |
+| No manifest found walking up | 2 | `NotFound`, `details: { suggestions: [], looked: <start dir> }`, reusing the optional string `looked` 1.5 added to the closed `NotFound` details struct (the resolved directory the walk started from, not a list); the fixed message names `quickstack new` |
+| Manifest fails to decode | 3 | `InvalidConfig`, `details: { path, field }`; a higher `schemaVersion` gets the fixed "upgrade quickstack" message ([roadmap, Schema versions](../roadmap.md#schema-versions)) |
 
 `VerifyFailed`'s `details` is a closed `Schema.Struct` holding only step names, kinds and
 exit codes; no output. `env` stays in the failure kind so the agent and 2.0c's ledger can tell "the
@@ -409,7 +409,7 @@ stripped by `tests/helpers/cli.ts`, and the marker test sets them on purpose.
 - 2026-10-26: the missing-manifest `NotFound` sets `kind: "project"` (the details' `kind`
   widened from the entry kinds) so `detailLines` can tell it from validate's missing path,
   whose `Next:` line is about registry roots. `NotFound`'s message stays fixed ("Not found.");
-  `quickstacks new` is named in the human `Next:` line, not the message.
+  `quickstack new` is named in the human `Next:` line, not the message.
 - 2026-10-26: decided while executing. A skipped step carries a fixed `reason` (`not selected
   by --only`, `tagged <t>; --skip-tag leaves it out`, `skipped by default in this preset;
   --all runs it`, `an earlier setup step failed`, `the run was interrupted`). A

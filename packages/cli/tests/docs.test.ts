@@ -46,7 +46,7 @@ test("every relative link in the CLI docs resolves to a file and, with an anchor
 type Command = (typeof cli.subcommands)[number]["commands"][number];
 const children = (command: Command) => command.subcommands.flatMap((group) => group.commands);
 
-/** The command path a `quickstacks ...` invocation names: as many words as match subcommands. */
+/** The command path a `quickstack ...` invocation names: as many words as match subcommands. */
 function commandPath(words: ReadonlyArray<string>): string[] {
   const path: string[] = [];
   let command: Command = cli;
@@ -59,13 +59,13 @@ function commandPath(words: ReadonlyArray<string>): string[] {
   return path;
 }
 
-/** Each `quickstacks ...` line in a docs code block, joined with its `\` continuation lines. */
+/** Each `quickstack ...` line in a docs code block, joined with its `\` continuation lines. */
 const invocations = (block: string) =>
-  [...block.replace(/\\\n\s*/g, " ").matchAll(/^\s*quickstacks ([^\n#]*)/gm)].map((m) =>
+  [...block.replace(/\\\n\s*/g, " ").matchAll(/^\s*quickstack ([^\n#]*)/gm)].map((m) =>
     (m[1] ?? "").trim().split(/\s+/),
   );
 
-test("every quickstacks command in a docs code block is a real subcommand with real flags", async () => {
+test("every quickstack command in a docs code block is a real subcommand with real flags", async () => {
   const helps = new Map<string, Set<string>>();
   const flagsOf = async (path: ReadonlyArray<string>) => {
     const key = path.join(" ");
@@ -79,7 +79,7 @@ test("every quickstacks command in a docs code block is a real subcommand with r
     ),
   );
   for (const { file, words } of shown.filter(({ words }) => !words[0]?.startsWith("-"))) {
-    const where = `${relative(pkg, file)}: quickstacks ${words.join(" ")}`;
+    const where = `${relative(pkg, file)}: quickstack ${words.join(" ")}`;
     const path = commandPath(words);
     expect(path.length, where).toBeGreaterThan(0);
     const flags = await flagsOf(path);

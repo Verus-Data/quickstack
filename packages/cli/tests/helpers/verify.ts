@@ -50,7 +50,7 @@ export function manifest(steps: StepInput[], overrides: Partial<Manifest> = {}):
 export const stateEnv = (home: string) => ({ XDG_STATE_HOME: join(home, "state") });
 /** Where the state record for `projectId` lives under `stateEnv(home)`. */
 export const recordPath = (home: string, projectId: string) =>
-  join(home, "state", "quickstacks", "projects", `${projectId}.json`);
+  join(home, "state", "quickstack", "projects", `${projectId}.json`);
 
 /**
  * Writes a project as `new` leaves it: the manifest under `root` and its state record under
@@ -89,9 +89,9 @@ export const readManifestAt = (root: string): Manifest =>
     onExcessProperty: "error",
   });
 
-/** `.quickstacks/state/runs.jsonl` under `root`, each line decoded as a `RunRecord`. */
+/** `.quickstack/state/runs.jsonl` under `root`, each line decoded as a `RunRecord`. */
 export function runRecords(root: string): RunRecord[] {
-  const file = join(root, ".quickstacks", "state", "runs.jsonl");
+  const file = join(root, ".quickstack", "state", "runs.jsonl");
   if (!existsSync(file)) return [];
   return readFileSync(file, "utf8")
     .split("\n")
@@ -101,13 +101,13 @@ export function runRecords(root: string): RunRecord[] {
     );
 }
 
-/** Writes `.quickstacks/manifest.json` under `root` and returns its path. */
+/** Writes `.quickstack/manifest.json` under `root` and returns its path. */
 export function writeProject(
   root: string,
   steps: StepInput[],
   overrides: Partial<Manifest> = {},
 ): string {
-  mkdirSync(join(root, ".quickstacks"), { recursive: true });
+  mkdirSync(join(root, ".quickstack"), { recursive: true });
   const path = join(root, MANIFEST_PATH);
   writeFileSync(path, encodeManifest(manifest(steps, overrides)));
   return path;
@@ -159,7 +159,7 @@ export type VerifyOptions = {
   host?: Partial<HostInfo>;
 };
 
-/** `quickstacks verify <args>` from `cwd`, with this machine's PATH so steps find node and sleep. */
+/** `quickstack verify <args>` from `cwd`, with this machine's PATH so steps find node and sleep. */
 export async function verify(args: string[], options: VerifyOptions) {
   const own = options.home ? undefined : tempDir();
   try {

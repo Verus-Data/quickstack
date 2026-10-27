@@ -9,12 +9,12 @@ step" section (3.0 and 4.0a no longer wait for it)
 
 | Field | Value |
 |---|---|
-| Goal | With A2-A4 and D20 recorded in the README decisions log, a maintainer publishes to npm by hand the exact tarball 1.6b's gate ran, checked by file digest before and after, and `npx quickstacks@latest list --json` works on a clean machine with only Node. The MVP cutline in the roadmap is then true |
-| Traces to | The README's first command, `npx quickstacks new`; D9's entry point "ask your agent to run quickstacks", which only works if the agent can `npx` it; success row "The agent finishes without help" (the gate this release rests on) |
+| Goal | With A2-A4 and D20 recorded in the README decisions log, a maintainer publishes to npm by hand the exact tarball 1.6b's gate ran, checked by file digest before and after, and `npx quickstack@latest list --json` works on a clean machine with only Node. The MVP cutline in the roadmap is then true |
+| Traces to | The README's first command, `npx quickstack new`; D9's entry point "ask your agent to run quickstack", which only works if the agent can `npx` it; success row "The agent finishes without help" (the gate this release rests on) |
 | Depends on | 1.6b (the release tarball, its digest and the passing runs), 0.0 (the reserved name, D20, A2-A4) |
 | Blocks | 2.0b, 3.0, 3.3a, 3.4c, 4.0a, 4.1e, 4.3, 5.0 |
 | Decisions needed | A2, A3, A4 and D20 in the [README decisions log](../README.md#decisions-log) before publishing (exit criterion, not a soft dependency): exit 5, the `details` envelope and the signal policy are permanent once agents depend on them. [Open question 20](../risks-and-open-questions.md#open-questions-for-the-maintainers): a manual publish without provenance; if the answer is no, this sub-phase waits for 5.0 and publishes through its workflow instead. D12 and D22 (supported Node and platforms) define "clean machine" |
-| Settles | That `quickstacks` is installable with `npx`; the first published version |
+| Settles | That `quickstack` is installable with `npx`; the first published version |
 
 ## Where this fits
 
@@ -59,7 +59,7 @@ Out:
    digest; otherwise the gate reruns.
 4. `npm publish --dry-run <tarball>` lists the same files as `tar -tzf <tarball>` and the
    expected name and version.
-5. `npm view quickstacks versions` doesn't contain the version.
+5. `npm view quickstack versions` doesn't contain the version.
 
 ### Publishing
 
@@ -71,7 +71,7 @@ npm credentials.
 
 1. Digest: compute the sha512 integrity of the local tarball in npm's
    `sha512-<base64>` form and compare it with
-   `npm view quickstacks@<version> dist.integrity`:
+   `npm view quickstack@<version> dist.integrity`:
 
    ```sh
    echo "sha512-$(openssl dgst -sha512 -binary <tarball> | openssl base64 -A)"
@@ -80,10 +80,10 @@ npm credentials.
    The two strings must be equal; that proves npm serves the gated file.
 2. Clean machine: a macOS machine or a Linux container with only Node at the lowest
    version D12 allows, no Bun, an empty npm cache, and a fresh HOME:
-   - `npx quickstacks@latest list --json` exits 0 and lists the three bundled stacks.
-   - `npx quickstacks@latest new astro-blog <tmp> --sandbox --no-launch --json` writes
-     `.quickstacks/BRIEF.md`, `.quickstacks/manifest.json` and `.gitignore`, and the
-     brief's verify command is the `npx -y quickstacks@<version>` form (see roadmap,
+   - `npx quickstack@latest list --json` exits 0 and lists the three bundled stacks.
+   - `npx quickstack@latest new astro-blog <tmp> --sandbox --no-launch --json` writes
+     `.quickstack/BRIEF.md`, `.quickstack/manifest.json` and `.gitignore`, and the
+     brief's verify command is the `npx -y quickstack@<version>` form (see roadmap,
      Contracts: Invocation string), which now resolves.
    - Repeat both on the `.node-version` Node.
    Record the results, platform and Node versions in the HANDOFF entry.
@@ -115,16 +115,16 @@ No code changes. A code change here means the release goes back through 1.6b.
 
 - The local sha256 equals 1.6b's recorded digest, and the local sha512 integrity equals
   npm's `dist.integrity` for the published version.
-- `npx quickstacks@latest list --json` on the clean machine lists every bundled stack, on
+- `npx quickstack@latest list --json` on the clean machine lists every bundled stack, on
   the lowest D12 Node and the `.node-version` Node.
-- `npx quickstacks@latest new astro-blog <tmp> --sandbox --no-launch --json` writes the
+- `npx quickstack@latest new astro-blog <tmp> --sandbox --no-launch --json` writes the
   brief, the manifest and `.gitignore`.
 
 ## Exit criteria
 
 - `bun run check` green from the repo root at the release commit.
 - A2, A3, A4 and D20 are in the decisions log, and were before the publish.
-- `quickstacks@<version>` is on npm with an integrity matching the gated tarball.
+- `quickstack@<version>` is on npm with an integrity matching the gated tarball.
 - Every item in the roadmap's [MVP cutline](../roadmap.md#mvp-cutline) is true.
 - HANDOFF.md says the MVP shipped and links the run notes.
 

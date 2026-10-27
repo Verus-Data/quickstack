@@ -40,7 +40,7 @@ export const ProjectId = Schema.String.check(
 );
 
 /**
- * `.quickstacks/manifest.json`, schema version 1. `handoff` (1.4), `fingerprint` (2.0a),
+ * `.quickstack/manifest.json`, schema version 1. `handoff` (1.4), `fingerprint` (2.0a),
  * `mode: "add"` and `stack: null` (3.0) are declared now so filling them needs no version bump.
  * Any other key is excess and fails decode.
  */
@@ -49,7 +49,7 @@ export const Manifest = Schema.Struct({
   projectId: ProjectId,
   /** ISO time, from Clock. */
   createdAt: Schema.String,
-  /** The quickstacks version that wrote it. */
+  /** The quickstack version that wrote it. */
   cli: Schema.String,
   mode: Schema.Literals(["new", "add"]),
   /** Project template name; older manifests fall back to inference. */

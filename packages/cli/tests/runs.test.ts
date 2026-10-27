@@ -41,9 +41,9 @@ async function project() {
       }),
     ),
   );
-  const state = join(root, ".quickstacks", "state");
+  const state = join(root, ".quickstack", "state");
   mkdirSync(state);
-  const notes = join(root, ".quickstacks", "NOTES.md");
+  const notes = join(root, ".quickstack", "NOTES.md");
   writeFileSync(
     notes,
     "# Notes\n\n## Asked\n\n- Which module?\n- Which port?\n\n## Findings\n- A finding, not a question.\n",

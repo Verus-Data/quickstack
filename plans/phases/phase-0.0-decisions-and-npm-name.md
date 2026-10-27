@@ -30,8 +30,8 @@ Out: any code. The repo baseline is [0.1](phase-0.1-repo-baseline.md); distribut
 
 | Task | Owner | Done when |
 |---|---|---|
-| Reserve `quickstacks` on npm with a placeholder package. Decide whether to hold `quickstack` too (open question 6) | maintainers | `npm view quickstacks` shows the placeholder |
-| Check `quickstacks` on GitHub and as a domain; record what's taken in the name check below | an agent | The table below filled in, with the date checked |
+| Reserve `quickstack` on npm with a placeholder package | maintainers | `npm view quickstack` shows the placeholder |
+| Check `quickstack` on GitHub and as a domain; record what's taken in the name check below | an agent | The table below filled in, with the date checked |
 | Review [requirements.md](../requirements.md) and mark it AGREED or list the changes | maintainers | Its `Status:` line says AGREED with a date |
 | Decide the MVP-gating proposals (table below) | maintainers | Each is in the decisions log or under Deferred below with a reason |
 | Review A2-A4 as answered in [0.3a](phase-0.3a-errors-and-output.md) (A2, A4) and [0.3b](phase-0.3b-processes-and-signals.md) (A3) | maintainers | A2-A4 are in the decisions log before [1.6c](phase-1.6c-first-release.md) publishes. Exit 5, the `details` envelope and the signal policy are permanent once agents depend on them ([roadmap, MVP cutline](../roadmap.md#mvp-cutline)) |
@@ -94,7 +94,8 @@ tests, and the review can still change details because nothing is published unti
 `quickstacks` is the clearer name: free on npm, as a GitHub account, and on `.dev`, `.io`
 and `.sh`. `quickstack` collides with two established GitHub projects and has its `.com`,
 `.dev` and `.io` taken, so holding it on npm (open question 6) would only guard against
-typo-squatting.
+typo-squatting. Superseded 2026-10-27: the maintainers renamed the product to
+`quickstack`, the repository's name, which was still free on npm (D0, amended).
 
 ### Deferred
 
@@ -109,8 +110,8 @@ item is asked again by the sub-phase it blocks, and none of them blocks
 
 | Item | Deferred to | Reason |
 |---|---|---|
-| Reserving `quickstacks` on npm (and `quickstack`, open question 6) | The final step before public release, together with [0.2](phase-0.2-npm-distribution-artifact.md) and [1.6c](phase-1.6c-first-release.md), not before 1.6b; sooner only if someone else takes the name | Distribution is not needed for the prototype. The name was free on 2026-10-26; the risk of waiting is that someone registers it |
-| A1, D12, D22 and open question 19 | Before [0.2](phase-0.2-npm-distribution-artifact.md), which now runs as part of the final step before public release, after the roadmap's feature gaps and not before [1.6b](phase-1.6b-mvp-gate-runs.md) | They only shape the npm package. Until 0.2 lands, phase 1 uses the stubs its files already describe (a stub registry path, `Host.invocation` fixed to `quickstacks`) |
+| Reserving `quickstack` on npm | The final step before public release, together with [0.2](phase-0.2-npm-distribution-artifact.md) and [1.6c](phase-1.6c-first-release.md), not before 1.6b; sooner only if someone else takes the name | Distribution is not needed for the prototype. The name was free on 2026-10-26; the risk of waiting is that someone registers it |
+| A1, D12, D22 and open question 19 | Before [0.2](phase-0.2-npm-distribution-artifact.md), which now runs as part of the final step before public release, after the roadmap's feature gaps and not before [1.6b](phase-1.6b-mvp-gate-runs.md) | They only shape the npm package. Until 0.2 lands, phase 1 uses the stubs its files already describe (a stub registry path, `Host.invocation` fixed to `quickstack`) |
 | D23 | Before [1.6c](phase-1.6c-first-release.md) | The roadmap is already written to it; nothing before 1.6c changes if it is agreed later |
 | requirements.md review and the remaining MVP-gating proposals (D5-D7, D9, D13, D14, D18-D20) | Each before the sub-phase the gating table names | None of them blocks phase 0's code; each phase-1 sub-phase asks for its own decision before work starts |
 | Review of A2-A4 | After 0.3a and 0.3b land, before 1.6c | The review is of the built code, as planned |
@@ -131,7 +132,7 @@ None in code. The checks are on the documents:
 
 ## Exit criteria
 
-- `npm view quickstacks` shows the maintainers' package.
+- `npm view quickstack` shows the maintainers' package.
 - requirements.md is AGREED.
 - A1, D5, D6, D7, D9, D12, D13, D14 and D18-D20, D22 and D23 are each in the decisions
   log or deferred with a reason. Anything deferred that gates an MVP sub-phase blocks
@@ -143,6 +144,8 @@ None in code. The checks are on the documents:
   is the same check [0.1](phase-0.1-repo-baseline.md) ends with).
 
 ## What this plan may get wrong
+
+- 2026-10-27: the maintainers renamed the product to `quickstack`, which is also free on npm.
 
 - Reserving a name with a placeholder package can trip npm's policy on squatting if
   nothing is published for a long time. If phase 1 slips, publish a real 0.0.x with

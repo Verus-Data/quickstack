@@ -118,7 +118,7 @@ test("human mode groups findings by entry, prints sizes and a total, and suggest
   expect(result.stdout).toMatch(/Sizes \(words\)\n {2}clean body +\d+ \/ 2,000\n/);
   expect(result.stdout).toMatch(/clean \(sandbox\) +[\d,]+ \/ 6,000 {3}fixed [\d,]+\n/);
   expect(result.stdout).toContain("1 stack, 0 fragments: 0 errors, 0 warnings, 0 notes");
-  expect(result.stdout).toContain(`Next: quickstacks validate ${root} --brief clean --sandbox`);
+  expect(result.stdout).toContain(`Next: quickstack validate ${root} --brief clean --sandbox`);
 });
 
 test("errors keep the report on stdout, end stderr with the ValidationFailed envelope, and exit 2 [1.5#1] [1.5#11]", async () => {
@@ -143,7 +143,7 @@ test("errors keep the report on stdout, end stderr with the ValidationFailed env
     "stack broken\n  error    decision-default  stacks/broken/STACK.md: decisions[0] names no",
   );
   expect(human.stdout).toContain(
-    `Next: fix the errors above, then run quickstacks validate ${root}`,
+    `Next: fix the errors above, then run quickstack validate ${root}`,
   );
   // The report's last lines already give the counts; the envelope's details keep them for --json.
   expect(human.stderr).toBe("Validation failed.\n");
@@ -295,7 +295,7 @@ test("budget-body: limits are inclusive, per kind: stack 2,000, fragment 1,000, 
 
 test("budget-body counts every conditional branch, but no marker line", async () => {
   const root = temp();
-  const body = `${SETUP}<!-- quickstacks:when preset=sandbox -->\none two\n<!-- quickstacks:end -->\n<!-- quickstacks:when preset=default -->\nthree\n<!-- quickstacks:end -->\n`;
+  const body = `${SETUP}<!-- quickstack:when preset=sandbox -->\none two\n<!-- quickstack:end -->\n<!-- quickstack:when preset=default -->\nthree\n<!-- quickstack:end -->\n`;
   stack(root, "branches", "", { body });
   const { report: got } = await report([root]);
   expect(got.sizes.find((row) => row.kind === "body")?.words).toBe(countWords(SETUP) + 3);
@@ -308,7 +308,7 @@ test("budget-body counts every conditional branch, but no marker line", async ()
 async function composedSizes(root: string, pad: number, sandboxOnly = 0) {
   for (const id of ["f1", "f2", "f3", "f4"]) fragment(root, id, "", words(990, id));
   const sandboxBlock = sandboxOnly
-    ? `<!-- quickstacks:when preset=sandbox -->\n${words(sandboxOnly, "s")}\n<!-- quickstacks:end -->\n`
+    ? `<!-- quickstack:when preset=sandbox -->\n${words(sandboxOnly, "s")}\n<!-- quickstack:end -->\n`
     : "";
   stack(root, "big", "fragments:\n  default: [f1, f2, f3, f4]", {
     body: `${SETUP}\n${words(pad, "b")}\n${sandboxBlock}`,
@@ -367,9 +367,9 @@ test("sizes are rendered with the canonical context: tools, git, invocation and 
   fragment(root, "always-on", "", words(30));
   const baseline = (await report([root])).report.sizes;
   const home = temp();
-  mkdirSync(join(home, "config", "quickstacks"), { recursive: true });
+  mkdirSync(join(home, "config", "quickstack"), { recursive: true });
   writeFileSync(
-    join(home, "config", "quickstacks", "config.json"),
+    join(home, "config", "quickstack", "config.json"),
     JSON.stringify({ always: ["always-on"], agents: ["codex", "claude"] }),
   );
   const parent = temp();
@@ -380,7 +380,7 @@ test("sizes are rendered with the canonical context: tools, git, invocation and 
   fragment(nested, "always-on", "", words(30));
   const variants = [
     await report([root], { home, env: { PATH: process.env.PATH ?? "" } }),
-    await report([root], { host: { invocation: "npx -y quickstacks@9.9.9" } }),
+    await report([root], { host: { invocation: "npx -y quickstack@9.9.9" } }),
     await report([nested], { env: { PATH: process.env.PATH ?? "" } }),
   ];
   for (const variant of variants) expect(variant.report.sizes).toEqual(baseline);
@@ -421,9 +421,9 @@ it.prop(
     const body = lines.join("\n");
     const marked = [
       ...lines.slice(0, at),
-      "<!-- quickstacks:when preset=sandbox -->",
+      "<!-- quickstack:when preset=sandbox -->",
       ...lines.slice(at),
-      "<!-- quickstacks:end -->",
+      "<!-- quickstack:end -->",
     ].join("\n");
     expect(countWords(marked)).toBe(countWords(body));
     expect(countWords(`${body}\nextra`)).toBe(countWords(body) + 1);
@@ -744,19 +744,19 @@ test("merge-path-missing and merge-json, checked per entry even when no composit
 test("conditional prose: syntax with its file line and 1.1's problem code, unknown ids, unknown tags [1.5#1]", async () => {
   const root = temp();
   stack(root, "prose", "", {
-    body: `${SETUP}<!-- quickstacks:when tag=web -->\nweb\n<!-- quickstacks:end -->\n`,
+    body: `${SETUP}<!-- quickstack:when tag=web -->\nweb\n<!-- quickstack:end -->\n`,
   });
   fragment(
     root,
     "ids",
     "",
-    "# G\n<!-- quickstacks:when stack=nope with=missing -->\nx\n<!-- quickstacks:end -->\n",
+    "# G\n<!-- quickstack:when stack=nope with=missing -->\nx\n<!-- quickstack:end -->\n",
   );
   fragment(
     root,
     "broken",
     "",
-    "# G\n\n<!-- quickstacks:when preset=prod -->\nx\n<!-- quickstacks:end -->\n",
+    "# G\n\n<!-- quickstack:when preset=prod -->\nx\n<!-- quickstack:end -->\n",
   );
   const { report: got } = await report([root]);
   const conditional = got.findings.filter((finding) => finding.check.startsWith("conditional"));
@@ -799,7 +799,7 @@ test("a with= or stack= id that resolves only in another origin is a resolved-ou
   stack(bundled, "far-stack");
   const user = join(home, "authoring");
   stack(user, "mine", "", {
-    body: `${SETUP}<!-- quickstacks:when with=shared stack=far-stack -->\nx\n<!-- quickstacks:end -->\n`,
+    body: `${SETUP}<!-- quickstack:when with=shared stack=far-stack -->\nx\n<!-- quickstack:end -->\n`,
   });
   const { status, report: got } = await report([user], { home, registry: bundled });
   expect(status).toBe(0);
@@ -842,7 +842,7 @@ test("a stacks/ the project registry skips as a symlink is one registry finding,
   const home = temp();
   const elsewhere = join(home, "elsewhere");
   stack(elsewhere, "linked");
-  const project = join(home, ".quickstacks");
+  const project = join(home, ".quickstack");
   mkdirSync(project);
   symlinkSync(join(elsewhere, "stacks"), join(project, "stacks"));
   writeEntry({
@@ -866,7 +866,7 @@ test("a stacks/ the project registry skips as a symlink is one registry finding,
       "fragment",
       "newer",
       "fragments/newer/FRAGMENT.md",
-      "schema_version is newer than this CLI reads; update quickstacks",
+      "schema_version is newer than this CLI reads; update quickstack",
     ],
   ]);
 });
@@ -875,18 +875,18 @@ test("the Next line uses the invocation and escapes control characters in the ec
   const home = temp();
   const root = join(home, "odd\u001bname");
   stack(root, "clean");
-  const clean = await run([root], { home, host: { invocation: "npx -y quickstacks@9.9.9" } });
+  const clean = await run([root], { home, host: { invocation: "npx -y quickstack@9.9.9" } });
   expect(clean.status).toBe(0);
   expect(clean.stdout).not.toContain("\u001b");
   expect(clean.stdout).toContain(
-    `Next: npx -y quickstacks@9.9.9 validate '${home}/odd\\u001bname' --brief clean --sandbox`,
+    `Next: npx -y quickstack@9.9.9 validate '${home}/odd\\u001bname' --brief clean --sandbox`,
   );
   stack(root, "broken", "decisions: [Pick a database]");
-  const failed = await run([root], { home, host: { invocation: "npx -y quickstacks@9.9.9" } });
+  const failed = await run([root], { home, host: { invocation: "npx -y quickstack@9.9.9" } });
   expect(failed.status).toBe(2);
   expect(failed.stdout).not.toContain("\u001b");
   expect(failed.stdout).toContain(
-    `Next: fix the errors above, then run npx -y quickstacks@9.9.9 validate '${home}/odd\\u001bname'`,
+    `Next: fix the errors above, then run npx -y quickstack@9.9.9 validate '${home}/odd\\u001bname'`,
   );
 });
 
@@ -940,7 +940,7 @@ test("--brief takes --with as a comma list and --without, like new", async () =>
 test("control characters from an entry are escaped in human output [1.5#10]", async () => {
   const root = temp();
   stack(root, "sneaky", "", {
-    body: `${SETUP}<!-- quickstacks:when tag=\u001b[31m -->\nx\n<!-- quickstacks:end -->\n`,
+    body: `${SETUP}<!-- quickstack:when tag=\u001b[31m -->\nx\n<!-- quickstack:end -->\n`,
   });
   const result = await run([root], { host: terminal });
   expect(result.stdout).toContain("tag=\\u001b[31m is a tag no stack declares");
@@ -1189,12 +1189,12 @@ test("an unknown --brief id under a root list doesn't read points at validate fo
   });
   const human = await run([root, "--brief", "typscript-cli"], { home });
   expect(human.stderr).toBe(
-    `Not found.\n  Stack: typscript-cli\n  Did you mean: typescript-cli?\n  Next: quickstacks validate ${root} lists the ids under that root.\n`,
+    `Not found.\n  Stack: typscript-cli\n  Did you mean: typescript-cli?\n  Next: quickstack validate ${root} lists the ids under that root.\n`,
   );
   // The bundled registry is what `list` shows, so its hint stays `list`.
   const bundled = await run(["--brief", "typscript-cli"], { registry: realRegistry });
   expect(bundled.stderr).toBe(
-    "Not found.\n  Stack: typscript-cli\n  Did you mean: typescript-cli?\n  Next: quickstacks list shows every stack and fragment.\n",
+    "Not found.\n  Stack: typscript-cli\n  Did you mean: typescript-cli?\n  Next: quickstack list shows every stack and fragment.\n",
   );
 });
 
@@ -1218,7 +1218,7 @@ test("for an agent, no size table when every size is within budget; JSON keeps e
       "Validated .: 1 stack, 0 fragments",
       "",
       "1 stack, 0 fragments: 0 errors, 0 warnings, 0 notes",
-      "Next: quickstacks validate . --brief clean --sandbox",
+      "Next: quickstack validate . --brief clean --sandbox",
       "",
     ].join("\n"),
   );

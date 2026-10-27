@@ -30,9 +30,9 @@ if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   dirty=$(git status --porcelain 2>/dev/null | wc -l | tr -d ' ') || dirty="?"
   say "Repo state: branch \`$branch\`, $dirty changed file(s)."
   # No nag before the first commit: a new project's initial commit goes on main. Repos that
-  # work on main by design opt out with `git config quickstacks.allowMain true`.
+  # work on main by design opt out with `git config quickstack.allowMain true`.
   if git rev-parse -q --verify HEAD >/dev/null 2>&1 &&
-    [ "$(git config --bool quickstacks.allowMain 2>/dev/null || true)" != "true" ]; then
+    [ "$(git config --bool quickstack.allowMain 2>/dev/null || true)" != "true" ]; then
     case "$branch" in
     main | master) say "You're on \`$branch\`: create a branch before committing non-trivial work." ;;
     esac
@@ -121,7 +121,7 @@ fi
 # session inherits. macOS's own agent is reachable, so an opted-in clone exports its socket for
 # every Bash command (Claude Code runs CLAUDE_ENV_FILE before each one).
 if [ -n "${CLAUDE_ENV_FILE:-}" ] &&
-  [ "$(git config --type=bool --get quickstacks.rr 2>/dev/null || true)" = true ] &&
+  [ "$(git config --type=bool --get quickstack.rr 2>/dev/null || true)" = true ] &&
   command -v launchctl >/dev/null 2>&1; then
   agent_sock=$(launchctl print "gui/$(id -u)/com.openssh.ssh-agent" 2>/dev/null |
     awk '/SSH_AUTH_SOCK =>/ { print $3 }') || agent_sock=""

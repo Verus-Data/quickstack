@@ -158,7 +158,7 @@ test("run drains for 2s after the shell exits, then kills a group still holding 
   expect(finished).toMatchObject({ exitCode: 0, pipesHeld: true, timedOut: false });
   expect(finished.tail.split("\n")).toEqual([
     "hi",
-    "quickstacks: output was still open 2s after the command exited; its process group was killed.",
+    "quickstack: output was still open 2s after the command exited; its process group was killed.",
   ]);
   expect(alive(pidIn("bg"))).toBe(false);
 });

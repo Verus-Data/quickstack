@@ -30,8 +30,8 @@ function setup() {
   dirs.push(dir);
   return {
     home: dir.path,
-    user: join(dir.path, "config", "quickstacks"),
-    project: join(dir.path, ".quickstacks"),
+    user: join(dir.path, "config", "quickstack"),
+    project: join(dir.path, ".quickstack"),
   };
 }
 async function list(
@@ -223,7 +223,7 @@ test("schema_version 2 in the user directory falls through to the bundled copy w
   const file = join(home, "cli.jsonl");
   const result = await list(["--json"], {
     home,
-    env: { LOG_LEVEL: "warn", QUICKSTACKS_LOG_FILE: file },
+    env: { LOG_LEVEL: "warn", QUICKSTACK_LOG_FILE: file },
   });
   expect(result.status).toBe(0);
   expect(result.stderr).toBe("");
@@ -290,7 +290,7 @@ test("a mistyped group suggests the group in human mode", async () => {
 
 test("human list shows Stacks, Fragments and Apps, then Next lines with the invocation [1.0#12a]", async () => {
   const result = await list([], {
-    host: { ...terminal, invocation: "npx -y quickstacks@9.9.9" },
+    host: { ...terminal, invocation: "npx -y quickstack@9.9.9" },
   });
   expect(result.status).toBe(0);
   expect(result.stderr).toBe("");
@@ -314,8 +314,8 @@ test("human list shows Stacks, Fragments and Apps, then Next lines with the invo
       "  todo-app  on bun-web",
       "    A small todo app built on the web stack.",
       "",
-      "Next: npx -y quickstacks@9.9.9 new bun-web my-project --sandbox",
-      "Next: npx -y quickstacks@9.9.9 list --json",
+      "Next: npx -y quickstack@9.9.9 new bun-web my-project --sandbox",
+      "Next: npx -y quickstack@9.9.9 list --json",
       "",
     ].join("\n"),
   );
@@ -383,7 +383,7 @@ test("a long description wraps at 80 columns, or a narrower terminal, without sp
 test("an empty registry says so and only suggests doctor [1.0#12a]", async () => {
   const result = await list([], { registry: join(setup().home, "missing") });
   expect(result.status).toBe(0);
-  expect(result.stdout).toBe("No stacks or fragments found.\n\nNext: quickstacks doctor\n");
+  expect(result.stdout).toBe("No stacks or fragments found.\n\nNext: quickstack doctor\n");
 });
 
 test("when every stack is rejected, Next points at the rejected entries rather than doctor", async () => {
@@ -397,7 +397,7 @@ test("when every stack is rejected, Next points at the rejected entries rather t
   const result = await list(["stacks"], { home, registry: join(home, "missing") });
   expect(result.status).toBe(0);
   expect(result.stdout.trimEnd().split("\n").at(-1)).toBe(
-    "Next: fix or remove the rejected entries above, then run quickstacks list",
+    "Next: fix or remove the rejected entries above, then run quickstack list",
   );
 });
 
@@ -418,7 +418,7 @@ test("list --json has no Next lines; apps and fragments filter the app [1.0#12a]
 test("list apps names the command that builds the app on its stack", async () => {
   const result = await list(["apps"]);
   expect(result.stdout).toContain(
-    "Next: quickstacks new bun-web my-project --with todo-app --sandbox\n",
+    "Next: quickstack new bun-web my-project --with todo-app --sandbox\n",
   );
 });
 
@@ -485,8 +485,8 @@ test("a stack and a fragment with the same id both load [1.0#13a]", async () => 
   ]);
 });
 
-test("QUICKSTACKS_REGISTRY_DIR replaces the bundled root, and doctor reports it", async () => {
-  const env = { QUICKSTACKS_REGISTRY_DIR: realRegistry };
+test("QUICKSTACK_REGISTRY_DIR replaces the bundled root, and doctor reports it", async () => {
+  const env = { QUICKSTACK_REGISTRY_DIR: realRegistry };
   const listed = decode((await list(["--json"], { env })).stdout);
   expect(listed.entries[0]?.id).toBe("typescript-cli");
   // A bundled root other than the one shipped with the CLI is not trusted.
@@ -498,7 +498,7 @@ test("QUICKSTACKS_REGISTRY_DIR replaces the bundled root, and doctor reports it"
   expect(JSON.parse(missing.stdout).registry).toEqual({ path: "/elsewhere", found: false });
 });
 
-test("a relative QUICKSTACKS_REGISTRY_DIR resolves against the working directory", async () => {
+test("a relative QUICKSTACK_REGISTRY_DIR resolves against the working directory", async () => {
   const { home } = setup();
   const project = join(home, "work");
   copyEntry(smallRegistry, join(project, "reg"), "stacks", "go-api");
@@ -506,7 +506,7 @@ test("a relative QUICKSTACKS_REGISTRY_DIR resolves against the working directory
     (
       await list(["--json"], {
         home,
-        env: { QUICKSTACKS_REGISTRY_DIR: "reg" },
+        env: { QUICKSTACK_REGISTRY_DIR: "reg" },
         host: { cwd: project, registry: "/elsewhere" },
       })
     ).stdout,
@@ -514,23 +514,23 @@ test("a relative QUICKSTACKS_REGISTRY_DIR resolves against the working directory
   expect(ids(listed)).toEqual(["stack:go-api"]);
   const doctor = await runCli(["doctor", "--json"], {
     home,
-    env: { QUICKSTACKS_REGISTRY_DIR: "reg" },
+    env: { QUICKSTACK_REGISTRY_DIR: "reg" },
     host: { cwd: project, registry: "/elsewhere" },
   });
   expect(JSON.parse(doctor.stdout).registry).toEqual({ path: join(project, "reg"), found: true });
 });
 
-test("a QUICKSTACKS_REGISTRY_DIR that doesn't exist is a warning on list and in doctor", async () => {
+test("a QUICKSTACK_REGISTRY_DIR that doesn't exist is a warning on list and in doctor", async () => {
   const { home } = setup();
-  const env = { QUICKSTACKS_REGISTRY_DIR: join(home, "nope"), LOG_LEVEL: "warn" };
+  const env = { QUICKSTACK_REGISTRY_DIR: join(home, "nope"), LOG_LEVEL: "warn" };
   const human = await list([], { home, env, host: terminal });
   expect(human.status).toBe(0);
   expect(human.stderr).toContain(
-    `QUICKSTACKS_REGISTRY_DIR is not a directory: ${join(home, "nope")}`,
+    `QUICKSTACK_REGISTRY_DIR is not a directory: ${join(home, "nope")}`,
   );
   const doctor = await runCli(["doctor"], { home, env, host: terminal });
   expect(doctor.stdout).toContain(`Registry: ${join(home, "nope")} (not found)`);
-  expect(doctor.stderr).toContain("QUICKSTACKS_REGISTRY_DIR is not a directory");
+  expect(doctor.stderr).toContain("QUICKSTACK_REGISTRY_DIR is not a directory");
 });
 
 test("doctor reports a registry path that is a file as not found", async () => {
@@ -573,8 +573,8 @@ test("control characters in entries never reach the terminal, and can't forge a 
   expect(result.stderr).not.toContain(esc);
   const next = result.stdout.split("\n").filter((line) => line.startsWith("Next:"));
   expect(next).toEqual([
-    "Next: quickstacks new bun-web my-project --sandbox",
-    "Next: quickstacks list --json",
+    "Next: quickstack new bun-web my-project --sandbox",
+    "Next: quickstack list --json",
   ]);
   expect(result.stdout).toContain('kind: "x\\nNext: forged" does not match STACK.md');
 });
@@ -588,10 +588,10 @@ test("a symlinked project root is not read, with a warning", async () => {
     dir: "outside",
     frontmatter: minimal("stack", "outside"),
   });
-  symlinkSync(elsewhere, join(home, ".quickstacks"));
+  symlinkSync(elsewhere, join(home, ".quickstack"));
   const result = await list(["--json"], {
     home,
-    env: { LOG_LEVEL: "warn", QUICKSTACKS_LOG_FILE: join(home, "log.jsonl") },
+    env: { LOG_LEVEL: "warn", QUICKSTACK_LOG_FILE: join(home, "log.jsonl") },
   });
   expect(result.status).toBe(0);
   const listed = decode(result.stdout);
@@ -616,7 +616,7 @@ test("a symlinked stacks directory in the project root is not read either", asyn
 
 test("a symlinked user root is followed: the user owns it", async () => {
   const { home, user } = setup();
-  const real = join(home, "dotfiles", "quickstacks");
+  const real = join(home, "dotfiles", "quickstack");
   writeEntry({ root: real, kind: "stack", dir: "mine", frontmatter: minimal("stack", "mine") });
   mkdirSync(join(user, ".."), { recursive: true });
   symlinkSync(real, user);
@@ -668,7 +668,7 @@ test("Next never suggests an untrusted stack", async () => {
         .trimEnd()
         .split("\n")
         .filter((line) => line.startsWith("Next:")),
-    ).toEqual(["Next: quickstacks list --json"]);
+    ).toEqual(["Next: quickstack list --json"]);
   }
 });
 

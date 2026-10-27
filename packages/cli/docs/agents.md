@@ -1,32 +1,32 @@
-# Using quickstacks with a coding agent
+# Using quickstack with a coding agent
 
-This page is for the person setting up an agent to use quickstacks. The agent itself never reads it: everything an agent needs is in the CLI's own output (`quickstacks` with no arguments, and `<command> --help`) and in the skill. This page explains how to give your agent that, and what it will do with it.
+This page is for the person setting up an agent to use quickstack. The agent itself never reads it: everything an agent needs is in the CLI's own output (`quickstack` with no arguments, and `<command> --help`) and in the skill. This page explains how to give your agent that, and what it will do with it.
 
 ## Two ways in
 
 You can start the project and hand it over, or let the agent start it.
 
-If you run `quickstacks new <stack> <dir>` yourself, quickstacks writes the project and starts your agent in it with one instruction: read `.quickstacks/BRIEF.md` and carry it out. The [quick start](quickstart.md) covers this path. The agent needs no setup; the brief is the whole task.
+If you run `quickstack new <stack> <dir>` yourself, quickstack writes the project and starts your agent in it with one instruction: read `.quickstack/BRIEF.md` and carry it out. The [quick start](quickstart.md) covers this path. The agent needs no setup; the brief is the whole task.
 
-If you want to say "start me a Go CLI with tests" in a chat with your agent, the agent needs to know quickstacks exists. That's what the skill is for.
+If you want to say "start me a Go CLI with tests" in a chat with your agent, the agent needs to know quickstack exists. That's what the skill is for.
 
 ## Install the skill
 
-The skill is one Markdown file, under 600 words, that tells an agent when to reach for quickstacks and how to run it: pick a stack, write the project, follow the brief, loop on verify, never weaken verify. Claude Code loads it automatically when a request matches its description.
+The skill is one Markdown file, under 600 words, that tells an agent when to reach for quickstack and how to run it: pick a stack, write the project, follow the brief, loop on verify, never weaken verify. Claude Code loads it automatically when a request matches its description.
 
 ```sh
-quickstacks skill install            # ~/.claude/skills/quickstacks/SKILL.md, for every project
-quickstacks skill install --project  # .claude/skills/ in the current repository only
+quickstack skill install            # ~/.claude/skills/quickstack/SKILL.md, for every project
+quickstack skill install --project  # .claude/skills/ in the current repository only
 ```
 
 Running it again is safe: an identical file is left alone, and a file you've edited is kept unless you pass `--force`.
 
-For Claude Code there's also a plugin that carries the same skill; it will be listed in the quickstacks marketplace once that's published.
+For Claude Code there's also a plugin that carries the same skill; it will be listed in the quickstack marketplace once that's published.
 
 Other agents (Codex, OpenCode, Cursor) have their own places for instructions. Print the skill and put it where your agent reads skills or rules:
 
 ```sh
-quickstacks skill install --print > SKILL.md
+quickstack skill install --print > SKILL.md
 ```
 
 ## What the agent does
@@ -37,7 +37,7 @@ With the skill loaded, a request like "set up a TypeScript CLI properly" goes li
 sequenceDiagram
   actor You
   participant A as Agent
-  participant Q as quickstacks
+  participant Q as quickstack
   You->>A: "set up a TypeScript CLI properly"
   A->>Q: list --json
   Q-->>A: stacks and fragments
@@ -54,19 +54,19 @@ sequenceDiagram
   A->>You: summary: stack, decisions, what's left
 ```
 
-1. The agent runs `quickstacks list --json`, picks a stack, and tells you which one and why, naming a close second if there is one. It won't pick an untrusted entry unless you named it.
-2. It runs `quickstacks new <stack> <dir> --json`, or adds `--sandbox` if you asked for the quickest local setup.
-3. It reads `.quickstacks/BRIEF.md` and follows it. It asks you only the decisions the brief tells it to ask; with `--sandbox` or `--yes` there are none.
-4. It runs `quickstacks verify`, fixes what fails, and runs it again until the outcome is `green`.
-5. It works through the brief's after-green list (manual QA, checking the docs) and summarizes for you: the stack, the decisions it took, anything left undone, and where it noted problems with the brief (`.quickstacks/NOTES.md`).
+1. The agent runs `quickstack list --json`, picks a stack, and tells you which one and why, naming a close second if there is one. It won't pick an untrusted entry unless you named it.
+2. It runs `quickstack new <stack> <dir> --json`, or adds `--sandbox` if you asked for the quickest local setup.
+3. It reads `.quickstack/BRIEF.md` and follows it. It asks you only the decisions the brief tells it to ask; with `--sandbox` or `--yes` there are none.
+4. It runs `quickstack verify`, fixes what fails, and runs it again until the outcome is `green`.
+5. It works through the brief's after-green list (manual QA, checking the docs) and summarizes for you: the stack, the decisions it took, anything left undone, and where it noted problems with the brief (`.quickstack/NOTES.md`).
 
-For an existing repository, step 2 is `quickstacks add <fragment...> --json` instead, and the agent also merges the files `add` parked under `.quickstacks/incoming/`.
+For an existing repository, step 2 is `quickstack add <fragment...> --json` instead, and the agent also merges the files `add` parked under `.quickstack/incoming/`.
 
-The rules the agent follows are in [the skill](../skill/SKILL.md) and in the guide `quickstacks` prints with no arguments. The two that matter to you: the agent may never edit the verify steps or the manifest, and if verify reports `VerifyChanged`, it stops and asks you. Only you can accept changed steps, by running `quickstacks verify --accept-changes` at your own terminal.
+The rules the agent follows are in [the skill](../skill/SKILL.md) and in the guide `quickstack` prints with no arguments. The two that matter to you: the agent may never edit the verify steps or the manifest, and if verify reports `VerifyChanged`, it stops and asks you. Only you can accept changed steps, by running `quickstack verify --accept-changes` at your own terminal.
 
 ## What the agent sees
 
-quickstacks detects that it's running under an agent (from markers such as `CLAUDECODE` or `AI_AGENT`, or simply because stdout isn't a terminal) and prints agent output: the same result as the human text, with the noise cut. With `--json` it gets one JSON object per command instead, decoded against a published schema.
+quickstack detects that it's running under an agent (from markers such as `CLAUDECODE` or `AI_AGENT`, or simply because stdout isn't a terminal) and prints agent output: the same result as the human text, with the noise cut. With `--json` it gets one JSON object per command instead, decoded against a published schema.
 
 When a command fails, the agent gets an exit code that tells it what to do next:
 
@@ -86,7 +86,7 @@ The full table, the JSON error envelope and the signal rules are in [Output and 
 Separately from who drives, `--agents` chooses which agents' config files a project gets: Claude Code settings and hooks, Codex config, OpenCode permissions, Cursor rules. It doesn't change which agent `new` launches (`--launch` does). The default is `claude`. Every target gets `AGENTS.md`, guard scripts are shared under `.claude/hooks/`, and only the selected agents get their own config.
 
 ```sh
-quickstacks new typescript-cli my-cli --agents claude,codex
+quickstack new typescript-cli my-cli --agents claude,codex
 ```
 
 The adapters install guardrails, such as hooks that block destructive commands and secret writes, and lint-on-write where the agent supports it. How strongly each agent enforces them varies:

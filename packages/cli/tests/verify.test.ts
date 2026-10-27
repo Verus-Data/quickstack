@@ -29,11 +29,11 @@ afterEach(() => space.release());
 const has = (root: string, file: string) => existsSync(join(root, file));
 const NOTE_PIPES = "the step left a process holding its output; it was stopped after 2 s";
 const NEXT_FIX =
-  "Next: fix the code or config these steps exercise, not the steps, then run quickstacks verify again.";
+  "Next: fix the code or config these steps exercise, not the steps, then run quickstack verify again.";
 const NEXT_ENV =
-  "Next: the machine is missing something these steps need (see each reason); install or start it, then run quickstacks verify again.";
+  "Next: the machine is missing something these steps need (see each reason); install or start it, then run quickstack verify again.";
 const NEXT_PARTIAL =
-  "Next: this was a partial run; done means a full quickstacks verify with outcome green.";
+  "Next: this was a partial run; done means a full quickstack verify with outcome green.";
 
 describe("phases", () => {
   test("passing setup, check and teardown steps are green with one result on stdout [1.3a#1]", async () => {
@@ -555,9 +555,9 @@ describe("finding the project", () => {
     expect(human.stderr).toContain("Not found.");
   });
 
-  test("a manifest a newer quickstacks wrote exits 3 InvalidConfig with its schema version [1.3a#17]", async () => {
+  test("a manifest a newer quickstack wrote exits 3 InvalidConfig with its schema version [1.3a#17]", async () => {
     const root = space.dir();
-    mkdirSync(join(root, ".quickstacks"));
+    mkdirSync(join(root, ".quickstack"));
     const v1 = JSON.parse(encodeManifest(manifest([{ name: "lint", run: "touch ran" }])));
     writeFileSync(join(root, MANIFEST_PATH), JSON.stringify({ ...v1, schemaVersion: 2 }));
     const result = await verify(["--json"], { cwd: root });
@@ -566,7 +566,7 @@ describe("finding the project", () => {
     const error = (envelope(result.stderr) as { error: Record<string, unknown> }).error;
     expect(error).toMatchObject({ tag: "InvalidConfig", retryable: false });
     expect(error.details).toEqual({
-      path: expect.stringMatching(/\.quickstacks\/manifest\.json$/),
+      path: expect.stringMatching(/\.quickstack\/manifest\.json$/),
       schemaVersion: 2,
     });
     expect([join(root, MANIFEST_PATH), join(realpathSync(root), MANIFEST_PATH)]).toContain(
@@ -577,7 +577,7 @@ describe("finding the project", () => {
 
   test("a manifest that isn't JSON exits 3 InvalidConfig and runs nothing", async () => {
     const root = space.dir();
-    mkdirSync(join(root, ".quickstacks"));
+    mkdirSync(join(root, ".quickstack"));
     writeFileSync(join(root, MANIFEST_PATH), "{ not json");
     const result = await verify(["--json"], { cwd: root });
     expect(result.status).toBe(3);

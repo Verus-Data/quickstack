@@ -240,7 +240,7 @@ test("preview is canonical under agent markers, git variables, a parent repo and
         GIT_WORK_TREE: parent,
         XDG_STATE_HOME: "relative-state",
       },
-      host: { registry, cwd, invocation: "quickstacks-custom" },
+      host: { registry, cwd, invocation: "quickstack-custom" },
     }),
   );
   expect(changed).toEqual(baseline);
@@ -306,7 +306,7 @@ test("an explicitly added app gets a split brief, the 9000-word cap and a finger
   expect(base).not.toContain("entry-command --application");
   expect(application).toContain("application-check");
   expect(application).toContain("entry-command --application");
-  expect(application).toContain(T.application.done(`npx -y quickstacks@${VERSION}`));
+  expect(application).toContain(T.application.done(`npx -y quickstack@${VERSION}`));
   expect(report.brief.indexOf("Build the small public interface.")).toBeLessThan(
     report.brief.indexOf("APPLICATION BODY"),
   );
@@ -365,8 +365,8 @@ test.each([
   ["validate", "--brief", "unknown"],
 ])("%s %s preserves existing files and state [3.1a#19]", async (...args) => {
   const { home, registry, entry } = fixture();
-  mkdirSync(join(home, ".quickstacks", "state"), { recursive: true });
-  writeFileSync(join(home, ".quickstacks", "state", "runs.jsonl"), "partial prior run\n");
+  mkdirSync(join(home, ".quickstack", "state"), { recursive: true });
+  writeFileSync(join(home, ".quickstack", "state", "runs.jsonl"), "partial prior run\n");
   mkdirSync(join(home, ".git"));
   writeFileSync(join(home, ".git", "HEAD"), "broken git state\n");
   shipped(entry, "files/README.md.tmpl", "# {{ project_name }}\n");

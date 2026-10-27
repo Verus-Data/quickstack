@@ -4,7 +4,7 @@ Status: DRAFT 2026-10-26 — product positioning and proposed demo; not a releas
 
 ## One sentence
 
-**quickstacks gives your coding agent a reusable project blueprint and a verifiable definition of done, so every new project starts with your standards already written down.**
+**quickstack gives your coding agent a reusable project blueprint and a verifiable definition of done, so every new project starts with your standards already written down.**
 
 ## Elevator pitch — 30 seconds
 
@@ -12,7 +12,7 @@ Every new project starts with the same tax: dependencies, tests, lint, CI, and e
 
 Templates freeze yesterday's setup. A bare prompt leaves the agent guessing what complete means.
 
-quickstacks separates the durable decisions from the details that change. You describe the stack and the checks that must pass; your coding agent handles current versions and configuration.
+quickstack separates the durable decisions from the details that change. You describe the stack and the checks that must pass; your coding agent handles current versions and configuration.
 
 Write your setup once. Reuse it. Start on the actual product sooner.
 
@@ -26,11 +26,11 @@ Suppose you want an agent that reviews Rho sandbox transactions and flags charge
 
 Before you can test that idea, you need a project foundation: structure, dependencies, tests, lint, and clear instructions for your coding agent.
 
-quickstacks captures that foundation in a reusable stack. It prepares a build brief and a definition of done. Your existing coding agent implements the project, resolves current tooling, and works toward passing verification.
+quickstack captures that foundation in a reusable stack. It prepares a build brief and a definition of done. Your existing coding agent implements the project, resolves current tooling, and works toward passing verification.
 
 Then we test the actual use case: a transaction is flagged with an explanation. We change the requirements to detect possible duplicates within seven days, update the tests, and demonstrate the result again.
 
-The product is quickstacks. The Rho agent is the example it helps us build.
+The product is quickstack. The Rho agent is the example it helps us build.
 
 ## What makes it different
 
@@ -38,7 +38,7 @@ The product is quickstacks. The Rho agent is the example it helps us build.
 | --- | --- | --- |
 | Static template | A snapshot of project files | Updating dependencies and configuration |
 | Bare agent prompt | Flexibility to generate current code | Consistent decisions and a complete definition of done |
-| quickstacks design | Reusable intent, stable files, and verification requirements | The coding agent implements and verifies current tooling |
+| quickstack design | Reusable intent, stable files, and verification requirements | The coding agent implements and verifies current tooling |
 
 The core design choice: **humans own the standards; agents handle the details that age.**
 

@@ -52,7 +52,7 @@ const NOT_ITEMIZED = { removed: [], added: [], edited: [], settings: false };
  * compared with its own `verifyDigest`, then with the state record for its `projectId`; with no
  * record for that id, a record holding this manifest's real path is looked for, and finding one is
  * a change (`reason: "project-id"`). No record at all is `manifest-only`. A record a newer
- * quickstacks wrote fails `InvalidConfig`. What changed is named from the record's per-step
+ * quickstack wrote fails `InvalidConfig`. What changed is named from the record's per-step
  * digests whenever there is a record, whichever copy disagreed.
  */
 export const checkTamper = (

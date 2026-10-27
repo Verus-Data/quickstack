@@ -17,7 +17,7 @@ In:
 
 - A `RemoteIndex` service with a disk cache, a bounded refresh, failure backoff, signature verification and bundle digest checks.
 - The `"index"` origin in the 1.0 registry loader.
-- `--offline` on every command and `QUICKSTACKS_OFFLINE=1`; `QUICKSTACKS_INDEX_URL` to read another index.
+- `--offline` on every command and `QUICKSTACK_OFFLINE=1`; `QUICKSTACK_INDEX_URL` to read another index.
 - Index-provided `lastRun` in `list --json` and `show --json`.
 - `doctor` reporting cache age and last outcome.
 
@@ -61,7 +61,7 @@ An index stack's default fragments come from its `composition` map: fragment id 
 
 `Origin` gains `"index"`, which the roadmap's [Entry and its listing](../roadmap.md#types-and-schemas) contract already lists as added here; if this sub-phase changes that contract in any other way, it updates the roadmap row in the same change. Order, highest first: project, user, source, index, bundled. When the index and bundled copies of an id have the same `bundleDigest` (both computed with `canonicalBundle` from `packages/format`, roadmap Contracts: Canonical bundle), the entry reports `origin: "bundled"`.
 
-Trust model point 2: entries from the default URL with a verified signature are `trusted: true`. When `QUICKSTACKS_INDEX_URL` is set to anything else, the signature step is skipped and every entry from it is `trusted: false`, so a test or self-hosted index never becomes trusted silently; point 3 then applies (no auto-launch, stop-and-confirm brief). `QUICKSTACKS_INDEX_URL` must be `https:`, or `http:` on `127.0.0.1` or `localhost` (for tests).
+Trust model point 2: entries from the default URL with a verified signature are `trusted: true`. When `QUICKSTACK_INDEX_URL` is set to anything else, the signature step is skipped and every entry from it is `trusted: false`, so a test or self-hosted index never becomes trusted silently; point 3 then applies (no auto-launch, stop-and-confirm brief). `QUICKSTACK_INDEX_URL` must be `https:`, or `http:` on `127.0.0.1` or `localhost` (for tests).
 
 The remote origin adds and updates entries; it never removes a bundled one. Withdrawing a stack is a CLI release.
 
@@ -73,7 +73,7 @@ export class RemoteIndex extends Context.Service<RemoteIndex, {
   readonly current: Effect.Effect<Option.Option<VerifiedIndex>>;                    // never fails
   readonly bundle: (entry: IndexEntry) => Effect.Effect<Option.Option<string>>;     // extracted dir; never fails
   readonly status: Effect.Effect<RemoteStatus>;                                    // for doctor
-}>()("quickstacks/RemoteIndex") {
+}>()("quickstack/RemoteIndex") {
   static layer: (keys: typeof INDEX_PUBLIC_KEYS) =>
     Layer.Layer<RemoteIndex, never, FileSystem.FileSystem | Path.Path | HttpClient.HttpClient | AppConfig>;
   static disabled: Layer.Layer<RemoteIndex>;   // --offline
@@ -89,7 +89,7 @@ export type RemoteStatus = {
 
 `bin.ts` passes `INDEX_PUBLIC_KEYS`; the test helper passes the test key from 4.0c's fixtures. No env variable can supply a key. `HttpClient` comes from `effect/http`; its Node layer is the one 1.3a's HTTP probe already uses, provided by `bin.ts` from an adapter in `src/platform/` (the directory and its Grit boundary are 0.3b's). This sub-phase adds no new platform import. `AppConfig` gains `indexUrl` and `offline`, read only in `config.ts`.
 
-Cache under `$XDG_CACHE_HOME/quickstacks/index/`:
+Cache under `$XDG_CACHE_HOME/quickstack/index/`:
 
 | Path | Holds |
 |---|---|
@@ -127,7 +127,7 @@ A cache written for a different URL is ignored.
 |---|---|
 | `packages/cli/src/core/remote-index.ts` | New service |
 | `packages/cli/src/core/registry/` | `"index"` origin, same-digest rule, composition-pinned defaults |
-| `packages/cli/src/config.ts` | `QUICKSTACKS_INDEX_URL`, `QUICKSTACKS_OFFLINE`, `--offline` |
+| `packages/cli/src/config.ts` | `QUICKSTACK_INDEX_URL`, `QUICKSTACK_OFFLINE`, `--offline` |
 | `packages/cli/src/bin.ts` | Pass the key list; provide `RemoteIndex` with the existing `HttpClient` layer from `src/platform/` |
 | `packages/cli/src/commands/list.ts`, `show.ts`, `doctor.ts`, `src/schemas/doctor.ts` | `lastRun` source, `remoteIndex` |
 | `packages/cli/tests/remote-index.test.ts`, `e2e/` | New |
@@ -147,14 +147,14 @@ Every network test runs a real local HTTP server serving fixtures built by 4.0c'
 - An index entry with id `Bad_Id` or digest `%2e%2e`: no request made for it, entry skipped.
 - A bundle with a `../` path fails decoding and is not extracted.
 - `new` with an index stack composes the fragment digests from `composition`, not newer fragment entries in the same index; with one composition bundle missing, the whole stack is the bundled one.
-- `QUICKSTACKS_INDEX_URL` to the local server: entries `trusted: false`; `new` with a fake agent on PATH prints instead of launching.
+- `QUICKSTACK_INDEX_URL` to the local server: entries `trusted: false`; `new` with a fake agent on PATH prints instead of launching.
 - `--offline`: zero requests. `verify` with a stale cache: zero requests.
 - e2e: the packed tarball under Node lists an index-only stack from the local server.
 
 ## Exit criteria
 
 - Acceptance tests pass; `bun run check` green from the repo root.
-- Against the live index deployed in 4.0c and 4.0e, `npx quickstacks@latest list --json` shows `lastRun` for every indexed stack and `doctor --json` shows `lastOutcome: "ok"`.
+- Against the live index deployed in 4.0c and 4.0e, `npx quickstack@latest list --json` shows `lastRun` for every indexed stack and `doctor --json` shows `lastOutcome: "ok"`.
 - The CLI README documents the remote origin, `--offline`, the cache and the trust rule.
 
 ## What this plan may get wrong

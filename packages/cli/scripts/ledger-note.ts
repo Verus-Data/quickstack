@@ -48,9 +48,9 @@ export function parseLedgerNote(markdown: string) {
     {},
   );
   const cliText = required("CLI");
-  const cli = cliText.match(/quickstacks@([^`\s,]+)/)?.[1] ?? run?.cli;
+  const cli = cliText.match(/quickstack@([^`\s,]+)/)?.[1] ?? run?.cli;
   if (!cli)
-    throw new Error("CLI version is missing (include quickstacks@<version> or a final Run record)");
+    throw new Error("CLI version is missing (include quickstack@<version> or a final Run record)");
   const agentMinutesText = fields.get("Agent minutes");
   const result = ledgerResult(outcome, tamperCheck, agentEnded);
   return {

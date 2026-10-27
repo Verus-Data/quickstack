@@ -40,7 +40,7 @@ export const NewResult = Schema.Struct({
       ),
     }),
   ),
-  /** Entries quickstacks doesn't trust; the brief makes the agent ask before using them. */
+  /** Entries quickstack doesn't trust; the brief makes the agent ask before using them. */
   untrusted: Schema.Array(
     Schema.Struct({ id: Schema.String, kind: Kind, origin: Origin, dir: Schema.String }),
   ),
@@ -71,7 +71,7 @@ export const NewResult = Schema.Struct({
    */
   stateRecord: Schema.Boolean,
   /**
-   * What happens next. `inside-agent`: quickstacks runs inside an agent (`agent`), which should
+   * What happens next. `inside-agent`: quickstack runs inside an agent (`agent`), which should
    * act on `prompt` now, unless `untrusted` (entry ids) is non-empty: then it stops and asks the
    * user first. `print`: no agent was launched, for `reason`; give `prompt` to an agent in the
    * project. `--json` never launches one.
@@ -101,6 +101,6 @@ export const NewResult = Schema.Struct({
   ]),
 }).annotate({
   title: "New result",
-  description: "A project quickstacks wrote or planned, with its brief and the next step",
+  description: "A project quickstack wrote or planned, with its brief and the next step",
 });
 export type NewResult = typeof NewResult.Type;

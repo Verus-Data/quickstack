@@ -35,7 +35,7 @@ verify:
     expect: { http: "http://localhost:${PORT_WEB}/", within: 60s }
   - name: readme-filled
     layer: check
-    run: "test -s README.md && ! grep -n 'quickstacks:fill' README.md"
+    run: "test -s README.md && ! grep -n 'quickstack:fill' README.md"
 commands:
   install: Install dependencies (frozen lockfile when CI is set)
   dev: Astro dev server on PORT_WEB
@@ -78,8 +78,8 @@ src/styles/global.css        Tailwind entry, typography plugin, theme tokens
 2. `bun install`, then `astro add` mdx, react, sitemap non-interactively. Add Tailwind the way `astro add` currently does (its Vite plugin) and enable the typography plugin the way the installed Tailwind expects.
 3. Add `@astrojs/rss`, `@astrojs/check`, and the test deps. Set `packageManager` in `package.json` to the installed bun version.
 4. Write the config, schema, `lib/posts.ts`, layout, pages, components, and two sample posts (one `published`, one `draft`).
-5. Write `scripts/new-article.mjs`, `vitest.config.ts`, and the tests; fill the README's `quickstacks:fill` markers.
-6. Run `quickstacks verify` until it passes.
+5. Write `scripts/new-article.mjs`, `vitest.config.ts`, and the tests; fill the README's `quickstack:fill` markers.
+6. Run `quickstack verify` until it passes.
 
 ## Conventions
 
@@ -98,7 +98,7 @@ src/styles/global.css        Tailwind entry, typography plugin, theme tokens
 - **astro.config.mjs**: `output: "static"`, `site`, `trailingSlash` and `build.format` per the decision, integrations mdx, react, sitemap (filtered), Tailwind in `vite.plugins`, Shiki with light and dark themes.
 - **tsconfig.json**: Astro's strict preset, `jsx: "react-jsx"`, `jsxImportSource: "react"`, `@/*` -> `src/*`, and `types` with `vitest/globals` and `@testing-library/jest-dom` so `astro check` accepts the tests.
 - **vitest.config.ts**: built with Astro's `getViteConfig()` (with `/// <reference types="vitest/config" />`); `happy-dom`, `globals: true`, a setup file importing jest-dom's vitest matchers, include `src/**/*.test.{ts,tsx}`, v8 coverage, and every vendor key (`PUBLIC_POSTHOG_KEY`) set to `""` in `test.env`.
-- **Prettier** with the Astro plugin: `make format` writes, `make lint` checks. `.prettierignore` covers build output, `.quickstacks/` and `.claude/`.
+- **Prettier** with the Astro plugin: `make format` writes, `make lint` checks. `.prettierignore` covers build output, `.quickstack/` and `.claude/`.
 
 ## Testing
 
@@ -110,10 +110,10 @@ src/styles/global.css        Tailwind entry, typography plugin, theme tokens
 ## Commands
 
 The shipped Makefile (`make help`): install, dev, lint, check, test, coverage (vitest with coverage), build, preview, new-article, format, clean. Adapt recipes, keep names, mirror in AGENTS.md.
-<!-- quickstacks:when with=ci-github -->
+<!-- quickstack:when with=ci-github -->
 
 **CI.** Bun's setup action reads the `packageManager` field in `package.json`; set it to the bun version you installed. Then `make install` (frozen when `CI` is set), `make lint`, `make check`, `make coverage` (or `make test` if the coverage decision is no), and `make build`.
-<!-- quickstacks:end -->
+<!-- quickstack:end -->
 
 ## Gotchas
 

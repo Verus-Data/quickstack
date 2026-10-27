@@ -3,7 +3,7 @@ schema_version: 1
 id: my-api
 kind: stack
 name: My API
-description: "quickstacks:fill: describe the stack"
+description: "quickstack:fill: describe the stack"
 tags: [make]
 deps: {}
 commands:
@@ -22,7 +22,7 @@ verify:
   - name: readme
     phase: check
     layer: docs
-    run: "test -s README.md && ! grep -n 'quickstacks:fill' README.md"
+    run: "test -s README.md && ! grep -n 'quickstack:fill' README.md"
 merge: []
 fragments: { required: [], default: [], optional: [] }
 ---

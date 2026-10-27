@@ -162,7 +162,7 @@ session_file_list() {
   id=$(printf '%s' "$id" | tr -cd 'A-Za-z0-9_-')
   [ -n "$id" ] || return 1
   dir="${TMPDIR:-/tmp}"
-  dir="${dir%/}/quickstacks-hooks"
+  dir="${dir%/}/quickstack-hooks"
   mkdir -p "$dir" 2>/dev/null || return 1
   printf '%s/%s.files\n' "$dir" "$id"
 }

@@ -31,9 +31,9 @@ function skillFiles(directory: string) {
 
 test("the recorded marketplace schema accepts skills directories and rejects malformed metadata [3.4b#4]", () => {
   const decode = Schema.decodeUnknownSync(marketplaceSchema);
-  expect(() => decode({ name: "quickstacks", skills: ["./skills/quickstacks"] })).not.toThrow();
+  expect(() => decode({ name: "quickstack", skills: ["./skills/quickstack"] })).not.toThrow();
   expect(() => decode({ name: "Bad Name", skills: ["skill"] })).toThrow();
-  expect(() => decode({ name: "quickstacks", skills: 1 })).toThrow();
+  expect(() => decode({ name: "quickstack", skills: 1 })).toThrow();
 });
 
 test("the Claude marketplace manifest decodes and names a contained shipped copy of the CLI skill [3.4b#4]", () => {
@@ -45,7 +45,7 @@ test("the Claude marketplace manifest decodes and names a contained shipped copy
   const pkg = Schema.decodeUnknownSync(Schema.Struct({ version: Schema.String }))(
     JSON.parse(readFileSync(join(cli, "package.json"), "utf8")),
   );
-  expect(manifest.name).toBe("quickstacks");
+  expect(manifest.name).toBe("quickstack");
   expect(manifest.version).toBe(pkg.version);
   const paths = typeof manifest.skills === "string" ? [manifest.skills] : manifest.skills;
   expect(paths.length).toBeGreaterThan(0);

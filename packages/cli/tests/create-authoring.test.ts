@@ -11,7 +11,7 @@ function examples(body: string) {
     .join("\n");
   return [
     ...code.matchAll(
-      /\bquickstacks(?:@[^\s`]+)?[ \t]+([a-z][a-z-]*)(.*?)(?=\bquickstacks[ \t]|&&|\|\||[;|\n]|$)/g,
+      /\bquickstack(?:@[^\s`]+)?[ \t]+([a-z][a-z-]*)(.*?)(?=\bquickstack[ \t]|&&|\|\||[;|\n]|$)/g,
     ),
   ].map((match) => {
     const name = match[1] ?? "";
@@ -79,6 +79,6 @@ test.each([
   expect(run.status).toBe(0);
   expect(run.stderr).toBe("");
   // Agent rendering may use a cwd-relative path.
-  expect(run.stdout).toContain("config/quickstacks/fragments/my-ci");
+  expect(run.stdout).toContain("config/quickstack/fragments/my-ci");
   expect(run.stdout).toContain(authoringGuide);
 });

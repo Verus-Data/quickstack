@@ -15,10 +15,10 @@ Status: DRAFT 2026-10-26 (not agreed)
 
 In:
 
-- A new private workspace package `packages/format` (`@quickstacks/format`, `"private": true`), never published.
+- A new private workspace package `packages/format` (`@quickstack/format`, `"private": true`), never published.
 - Moving the contracts the roadmap marks "moves in 4.0a" (see roadmap, [Contracts: Types and schemas](../roadmap.md#types-and-schemas)): `AgentId` and `DetectedAgent`; Entry format v1 (`StackMeta`, `FragmentMeta`, `VerifyStep`, `Probe`, `Check`); `Manifest`, `ManifestStep`, `EntryRef`; `RunRecord`. Same names, same behavior. `RunRecord` moves carrying 3.5b's optional `stages` field.
 - New: `EntryBundle` schema, `canonicalBundle` and `bundleDigest` (roadmap, Contracts: Canonical bundle).
-- Rewriting every CLI import of the moved code to `@quickstacks/format` in this one change, and deleting the old files.
+- Rewriting every CLI import of the moved code to `@quickstack/format` in this one change, and deleting the old files.
 - A Grit boundary in the format package banning platform imports.
 
 Out:
@@ -31,13 +31,13 @@ Out:
 
 ### Where this fits
 
-This is the first of five 4.0 sub-phases. 4.0a is a pure refactor plus two small new functions. 4.0b creates `packages/api` and imports `@quickstacks/format` inside the Workers runtime to prove it runs there. 4.0c uses `canonicalBundle` and `bundleDigest` to publish bundles, 4.0e uses the signed envelope 4.0c adds for the official-names file, and 4.0d uses the same two functions to compare remote and bundled copies. Once this lands, `packages/format` changes only by adding files (4.0c, 4.0e, 4.1a, 4.2a), never by changing what it exports.
+This is the first of five 4.0 sub-phases. 4.0a is a pure refactor plus two small new functions. 4.0b creates `packages/api` and imports `@quickstack/format` inside the Workers runtime to prove it runs there. 4.0c uses `canonicalBundle` and `bundleDigest` to publish bundles, 4.0e uses the signed envelope 4.0c adds for the official-names file, and 4.0d uses the same two functions to compare remote and bundled copies. Once this lands, `packages/format` changes only by adding files (4.0c, 4.0e, 4.1a, 4.2a), never by changing what it exports.
 
 ### Package shape
 
 ```
 packages/format/
-  package.json     name @quickstacks/format, private, type module,
+  package.json     name @quickstack/format, private, type module,
                    exports { ".": "./src/index.ts" }, scripts typecheck/test/coverage/check/clean
   tsconfig.json    extends ../../tsconfig.base.json; types: [] (no Node, no Bun)
   biome.json       { "root": false, "extends": "//", "plugins": [...] }
@@ -52,7 +52,7 @@ The package needs `typecheck`, `test` and `coverage` scripts so the root fan-out
 
 ### How the CLI depends on it
 
-`packages/cli/package.json` lists `"@quickstacks/format": "workspace:*"` in `devDependencies`, next to the other packages 0.2's build inlines. The published tarball's `package.json` then names no runtime dependency on a package that doesn't exist on npm. There are no re-exports left in `packages/cli/src/schemas/`: every import moves in this change, so there is one name for each symbol from the day the package exists (the roadmap contracts table already says "moves in 4.0a"). A stale import is a compile error, not a silent second copy.
+`packages/cli/package.json` lists `"@quickstack/format": "workspace:*"` in `devDependencies`, next to the other packages 0.2's build inlines. The published tarball's `package.json` then names no runtime dependency on a package that doesn't exist on npm. There are no re-exports left in `packages/cli/src/schemas/`: every import moves in this change, so there is one name for each symbol from the day the package exists (the roadmap contracts table already says "moves in 4.0a"). A stale import is a compile error, not a silent second copy.
 
 ### Canonical bundle
 
@@ -86,8 +86,8 @@ Rules (roadmap, Contracts: Canonical bundle): files sorted by path using byte or
 |---|---|
 | `packages/format/` | New package as above |
 | `packages/cli/src/schemas/entry.ts`, `manifest.ts`, `verify.ts` (the `RunRecord` part) | Moved into `packages/format/src/`; removed from the CLI. `src/core/fingerprint.ts` and `src/core/compose/` stay |
-| `packages/cli/src/**`, `tests/**` | Imports rewritten to `@quickstacks/format` |
-| `packages/cli/package.json` | `@quickstacks/format: workspace:*` in `devDependencies` |
+| `packages/cli/src/**`, `tests/**` | Imports rewritten to `@quickstack/format` |
+| `packages/cli/package.json` | `@quickstack/format: workspace:*` in `devDependencies` |
 | Root `package.json` catalog | Nothing new; the package uses `effect` and Vitest through `catalog:` |
 | `.claude/rules/format/` | New rule file scoped to `packages/format/` (no platform imports, additive changes only after this sub-phase) |
 | `AGENTS.md` | Architecture map gains `packages/format`; Overview no longer says only `packages/cli` has code |
@@ -97,7 +97,7 @@ Rules (roadmap, Contracts: Canonical bundle): files sorted by path using byte or
 - The CLI suite passes with no test file changed except import lines: `bun run test`, `bun run coverage` and `bun run e2e` in `packages/cli`. A diff of `packages/cli/tests/` and `e2e/` shows only import changes.
 - The schema tests that belonged to the moved code move with it and pass in `packages/format`; the fingerprint tests stay in the CLI unchanged.
 - `packages/format` typechecks with `types: []`; adding `import "node:fs"` to a probe file fails lint (Grit probe on a real temporary file, as the CLI's boundary tests do).
-- The packed tarball from 0.2's build has no `@quickstacks/format` in its `package.json`, and `npx` of the tarball in a temp directory runs `list --json` (0.2's existing packed-tarball e2e, unchanged, is the check).
+- The packed tarball from 0.2's build has no `@quickstack/format` in its `package.json`, and `npx` of the tarball in a temp directory runs `list --json` (0.2's existing packed-tarball e2e, unchanged, is the check).
 - `canonicalBundle`: the same files in a different order give identical bytes; a CRLF file and its LF copy give different digests; a binary file round-trips through `base64`; property test over random file sets that decode-then-canonicalize is stable.
 - `BundlePath` rejects `../x`, `/x`, `a/../../x`, `a\\b` and an empty string.
 

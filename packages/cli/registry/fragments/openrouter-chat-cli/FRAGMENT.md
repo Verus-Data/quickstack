@@ -79,12 +79,12 @@ TypeScript compiles TUI files with `jsx: react-jsx` and `jsxImportSource: "@open
 
 `app:e2e` builds the host artifact then runs Bun tests in app-e2e/ against local provider stubs and a scratch environment. Test ask output and JSON errors, tool/extract responses, persistence/export, MCP frames, and a PTY chat turn with usage, stop, and clean exit. A real PTY checks the embedded native package, dynamic loading, signal behavior, and no terminal corruption. Base e2e remains independently runnable. Add app-e2e and test:tui to check, include scripts/evals in typecheck, and update command docs, app rules, and environment tables.
 
-<!-- quickstacks:when with=bun-release -->
+<!-- quickstack:when with=bun-release -->
 Extend the stub process with startStubReleases on the next port, backed by the built binary (a harmless placeholder before a build). Add its port to the pid record and release exports under .dev/bin. Test install/update independently of the provider. Cross-builds install all optional native packages and select exactly the target's OpenTUI package; release smoke includes doctor --tui on each platform. Add TUI availability to release validation without making the app depend on release support.
-<!-- quickstacks:end -->
-<!-- quickstacks:when with=ci-github -->
+<!-- quickstack:end -->
+<!-- quickstack:when with=ci-github -->
 CI adds test:tui and app:e2e with local stubs, installs native packages for the needed targets, and uploads logs on failure. When bun-release is selected, install all platforms and run build:all. Never provide a live API key.
-<!-- quickstacks:end -->
+<!-- quickstack:end -->
 
 ## Installed-library gotchas
 

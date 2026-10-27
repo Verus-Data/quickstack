@@ -74,7 +74,7 @@ function answering(args: string[], answer: string) {
 test.each(["yes", "n", ""])("a person answers %j after the full trust report", async (answer) => {
   const home = createWorkspace();
   const source = writeEntry({
-    root: join(home, ".quickstacks"),
+    root: join(home, ".quickstack"),
     kind: "fragment",
     dir: "x",
     frontmatter: minimal("fragment", "x"),
@@ -122,7 +122,7 @@ test("the guide's preview commands render the personal stack they just created",
   writeFileSync(markdown, `${readFileSync(markdown, "utf8")}\nPERSONAL STACK PREVIEW\n`);
   const commands = readFileSync(authoringGuide, "utf8")
     .split("\n")
-    .filter((line) => /^quickstacks validate .*--brief my-api/.test(line));
+    .filter((line) => /^quickstack validate .*--brief my-api/.test(line));
   expect(commands).toHaveLength(2);
   for (const command of commands) {
     const args = command
@@ -145,7 +145,7 @@ test("relative XDG configuration returns an absolute path rooted at the invocati
     }),
     CreateResult,
   );
-  expect(result.path).toBe(join(config, "quickstacks/fragments/x"));
+  expect(result.path).toBe(join(config, "quickstack/fragments/x"));
   expect(existsSync(join(result.path, "FRAGMENT.md"))).toBe(true);
 });
 
@@ -166,7 +166,7 @@ test("a missing source id suggests only usable entries of the same kind in that 
   });
   putCreate(registry, "stacks/go-clj/STACK.md", "invalid entry\n");
   writeEntry({
-    root: join(home, ".quickstacks"),
+    root: join(home, ".quickstack"),
     kind: "stack",
     dir: "go-clp",
     frontmatter: minimal("stack", "go-clp"),
@@ -191,7 +191,7 @@ test("the printed validate command preserves shell characters in the registry pa
   expect(run.status).toBe(0);
   expect(run.stderr).toBe("");
   const next = run.stdout.split("\n").find((line) => line.startsWith("Next:"));
-  const argument = /then run quickstacks validate (.+)\.$/.exec(next ?? "")?.[1];
+  const argument = /then run quickstack validate (.+)\.$/.exec(next ?? "")?.[1];
   expect(argument).toBeDefined();
   const parsed = spawnSync("/bin/sh", ["-c", `set -- ${argument}; printf '%s' "$1"`], {
     cwd: home,
@@ -200,5 +200,5 @@ test("the printed validate command preserves shell characters in the registry pa
   });
   expect(parsed.status).toBe(0);
   expect(parsed.stderr).toBe("");
-  expect(parsed.stdout).toBe(relative(home, join(config, "quickstacks/fragments/x")));
+  expect(parsed.stdout).toBe(relative(home, join(config, "quickstack/fragments/x")));
 });

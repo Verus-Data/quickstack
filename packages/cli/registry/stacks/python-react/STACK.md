@@ -44,7 +44,7 @@ verify:
     expect: { http: "http://localhost:${PORT_WEB}/", within: 90s }
   - name: readme-filled
     layer: check
-    run: "test -s README.md && ! grep -n 'quickstacks:fill' README.md"
+    run: "test -s README.md && ! grep -n 'quickstack:fill' README.md"
 commands:
   install: Install backend and frontend dependencies
   lint: Lint and format-check both halves
@@ -113,8 +113,8 @@ Every generator runs in its subdirectory, never the populated root.
 4. **shadcn/ui.** Run its init non-interactively in `frontend/` (check `--help`: current versions also need a style/preset and base-library flag to skip every prompt), and let it add its own utility deps; it infers aliases from tsconfig. Check that `components.json` points at `~/components`, `~/components/ui`, `~/lib`, `~/lib/utils`, `~/hooks` (`~` is `app/`) and fix only what's wrong, rather than writing it by hand. Make sure `button` exists (init may add it).
 5. **Data layer.** One `QueryClient` in `app/lib/query-client.ts`, provided in `root.tsx`; the Vite dev proxy.
 6. **Typed client.** `make generate-api`. The home route calls `/health` through a generated hook and renders it: one real UI-to-API round trip.
-7. **Frontend tooling** per Tool configuration, a component test for the home route (against MSW), one Playwright smoke spec. Fill the README's `quickstacks:fill` markers.
-8. Run `quickstacks verify` until it passes.
+7. **Frontend tooling** per Tool configuration, a component test for the home route (against MSW), one Playwright smoke spec. Fill the README's `quickstack:fill` markers.
+8. Run `quickstack verify` until it passes.
 
 ## Conventions
 
@@ -142,7 +142,7 @@ Every generator runs in its subdirectory, never the populated root.
 - **pytest**: asyncio auto mode, function-scoped loops, `testpaths = ["tests"]`, `--strict-markers --strict-config -ra`, markers `slow` and `integration`, `filterwarnings = ["error"]` with commented targeted ignores.
 - **coverage**: source `app`, branch, parallel, `fail_under = 80`, exclude `if TYPE_CHECKING:`.
 - **ESLint** flat config: `@eslint/js`, typescript-eslint, react-hooks, jsx-a11y recommended (browser globals from `globals`); unused vars error except `^_`. Ignore `build/`, `.react-router/`, generated dirs, `playwright-report/`, `test-results/`.
-- **Prettier**: defaults. `.prettierignore` covers build output, `.quickstacks/`, `.claude/` and `openapi.json` (written by `dump_openapi.py`, not Prettier) but not the orval output dirs, which orval's Prettier hook formats. `lint` runs ESLint + `prettier --check`; `format` writes.
+- **Prettier**: defaults. `.prettierignore` covers build output, `.quickstack/`, `.claude/` and `openapi.json` (written by `dump_openapi.py`, not Prettier) but not the orval output dirs, which orval's Prettier hook formats. `lint` runs ESLint + `prettier --check`; `format` writes.
 - **TypeScript**: strict; `~/*` -> `app/*`; include React Router's generated route types.
 - **Vitest**: own `vitest.config.ts` with `@vitejs/plugin-react` (not the React Router plugin), `happy-dom`, `globals`, `setupFiles: ["./tests/setup.ts"]`, include `app/**/*.test.{ts,tsx}`, exclude `tests/e2e/**`, tsconfig's aliases, and vendor keys (`VITE_PUBLIC_POSTHOG_KEY`) set to `""` in `test.env`. v8 coverage (text + lcov) over `app/**` minus generated code and route entries; thresholds 80 lines/statements, 70 branches, 75 functions.
 - **tests/setup.ts**: jest-dom matchers, MSW server set to fail on any unhandled request (find the installed MSW's option for it; reset per test), Testing Library cleanup.
@@ -159,10 +159,10 @@ Every generator runs in its subdirectory, never the populated root.
 ## Commands
 
 The shipped root Makefile (`make help`) has `backend-*` and `frontend-*` sub-targets (install, lint, format, typecheck, test, coverage; plus `frontend-build`) that the combined targets call: install, lint, format, typecheck, test, coverage, build, dev, dev-api, dev-web, generate-api, check-api (a verify step: fails when `openapi.json` no longer matches the spec the backend dumps, compared as parsed JSON so formatting doesn't matter; it checks the spec only, not the generated client, which `generate-api` rebuilds from it and `typecheck` catches drifting), e2e, clean. `frontend/package.json` scripts back the frontend half: `dev`, `build`, `typecheck` (`react-router typegen && tsc`), `lint`, `format`, `test` (`vitest run`), `test:e2e`, `generate:api`. Mirror both in AGENTS.md.
-<!-- quickstacks:when with=ci-github -->
+<!-- quickstack:when with=ci-github -->
 
 **CI.** Two jobs behind the `changes` filter. Backend: uv's setup action (cache on, `.python-version`), then `make backend-install backend-lint backend-typecheck backend-coverage`. Frontend: bun's setup action, which reads `packageManager` from `frontend/package.json`, then `make frontend-install frontend-lint frontend-typecheck frontend-coverage frontend-build check-api`; `check-api` dumps the backend's spec, so this job also sets up uv and runs `make backend-install` first. Use the `-test` targets instead of `-coverage` if the coverage decision is no. Playwright (`make e2e`), if wanted, is its own job.
-<!-- quickstacks:end -->
+<!-- quickstack:end -->
 
 ## Gotchas
 

@@ -3,7 +3,7 @@ schema_version: 1
 id: my-ci
 kind: fragment
 name: My CI
-description: "quickstacks:fill: describe the fragment"
+description: "quickstack:fill: describe the fragment"
 tags: []
 deps: {}
 commands: {}

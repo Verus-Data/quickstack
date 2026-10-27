@@ -15,12 +15,12 @@ function codexPreToolUse(command: string, cwd = REPO, index = 0) {
   const group = config.hooks.PreToolUse?.find((g) => new RegExp(g.matcher ?? "").test("Bash"));
   const hook = group?.hooks[index]?.command;
   if (!hook) throw new Error("no Codex PreToolUse hook matches Bash");
-  // Opted in to rr (git config quickstacks.rr), so a whole-suite run is a deny to look for.
+  // Opted in to rr (git config quickstack.rr), so a whole-suite run is a deny to look for.
   const env = withoutGitVars({
     ...process.env,
     CLAUDE_PROJECT_DIR: undefined,
     GIT_CONFIG_COUNT: "1",
-    GIT_CONFIG_KEY_0: "quickstacks.rr",
+    GIT_CONFIG_KEY_0: "quickstack.rr",
     GIT_CONFIG_VALUE_0: "true",
   });
   return spawnSync("sh", ["-c", hook], {

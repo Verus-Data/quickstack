@@ -135,8 +135,8 @@ test("an agent replacing the metadata directory still records a failed run [2.0b
     binary,
     readFileSync(binary, "utf8").replace(
       "  const error =",
-      '  rmSync(".quickstacks", { recursive: true, force: true });\n' +
-        '  writeFileSync(".quickstacks", "broken metadata\\n");\n  const error =',
+      '  rmSync(".quickstack", { recursive: true, force: true });\n' +
+        '  writeFileSync(".quickstack", "broken metadata\\n");\n  const error =',
     ),
   );
   passed(await f.invoke());

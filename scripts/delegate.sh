@@ -26,7 +26,7 @@
 # change to it in the delegate's diff.
 #
 # Logs go outside the worktree so they survive its removal:
-#   ${DELEGATE_LOG_ROOT:-$TMPDIR/quickstacks-delegate}/<worktree>-<timestamp>/
+#   ${DELEGATE_LOG_ROOT:-$TMPDIR/quickstack-delegate}/<worktree>-<timestamp>/
 
 set -uo pipefail
 
@@ -35,7 +35,7 @@ PREAMBLE="You are working in a git worktree for an orchestrator that reviews, re
 MODEL="${DELEGATE_MODEL:-gpt-6.1-sol}"
 EFFORT="${DELEGATE_EFFORT:-high}"
 TIMEOUT_SECS="${DELEGATE_TIMEOUT_SECS:-3600}"
-LOG_ROOT="${DELEGATE_LOG_ROOT:-${TMPDIR:-/tmp}/quickstacks-delegate}"
+LOG_ROOT="${DELEGATE_LOG_ROOT:-${TMPDIR:-/tmp}/quickstack-delegate}"
 LAST_MESSAGE_LINES=60
 
 usage() {

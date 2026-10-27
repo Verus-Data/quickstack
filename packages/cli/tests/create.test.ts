@@ -44,7 +44,7 @@ async function validate(home: string, target: string) {
 }
 function source(home: string, kind: "stack" | "fragment" = "stack", id = "x") {
   return writeEntry({
-    root: join(home, ".quickstacks"),
+    root: join(home, ".quickstack"),
     kind,
     dir: id,
     frontmatter: minimal(kind, id),
@@ -195,7 +195,7 @@ describe("create an entry", () => {
     ];
     expect(Object.keys(parts.frontmatter).sort()).toEqual([...shared, "fragments"].sort());
     expect(meta).toMatchObject({ id: "my-api", kind: "stack" });
-    expect(meta.description).toContain("quickstacks:fill");
+    expect(meta.description).toContain("quickstack:fill");
     expect(meta.decisions.length).toBeGreaterThan(0);
     expect(meta.decisions.every((decision) => /\(default\b/i.test(decision))).toBe(true);
     for (const [layer, command] of [
@@ -213,7 +213,7 @@ describe("create an entry", () => {
       ]),
     );
     expect(lstatSync(join(stack, "files/.gitignore")).isFile()).toBe(true);
-    expect(read(join(stack, "files/README.md"))).toContain("quickstacks:fill");
+    expect(read(join(stack, "files/README.md"))).toContain("quickstack:fill");
     for (const heading of [
       "Layout",
       "Setup",
@@ -260,7 +260,7 @@ describe("create an entry", () => {
     );
     for (const [text, status, outcome] of [
       ["", 5, "failed"],
-      ["<!-- quickstacks:fill: write this -->\n", 5, "failed"],
+      ["<!-- quickstack:fill: write this -->\n", 5, "failed"],
       ["# A filled project\n\nRun make test.\n", 0, "green"],
     ] as const) {
       writeFileSync(readme, text);
@@ -349,7 +349,7 @@ describe("create an entry", () => {
     async ({ env, stdinIsTTY, reason }) => {
       const home = createWorkspace();
       source(home);
-      const before = entrySnapshot(join(home, ".quickstacks"));
+      const before = entrySnapshot(join(home, ".quickstack"));
       const error = createFailure(
         await createCli(home, ["create", "stack", "x", "--from", "project", "--yes", "--json"], {
           env,
@@ -360,7 +360,7 @@ describe("create an entry", () => {
       );
       expect(error.details).toMatchObject({ reason });
       expect(existsSync(userRoot(home))).toBe(false);
-      expect(entrySnapshot(join(home, ".quickstacks"))).toEqual(before);
+      expect(entrySnapshot(join(home, ".quickstack"))).toEqual(before);
     },
   );
 
@@ -379,7 +379,7 @@ describe("create an entry", () => {
       host: { stdinIsTTY: true, stdoutIsTTY: true },
     });
     expect(run.status).toBe(0);
-    expect(run.stdout).toContain("config/quickstacks/stacks/x");
+    expect(run.stdout).toContain("config/quickstack/stacks/x");
     expect(run.stdout).toContain(authoringGuide);
     for (const text of [
       "PROJECT GUIDANCE",

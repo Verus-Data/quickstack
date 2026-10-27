@@ -42,10 +42,10 @@ const text = (file: RenderedFile | undefined) => {
   return new TextDecoder().decode(file?.bytes);
 };
 const cliFiles = [
-  ".quickstacks/.gitignore",
-  ".quickstacks/BRIEF.md",
-  ".quickstacks/NOTES.md",
-  ".quickstacks/manifest.json",
+  ".quickstack/.gitignore",
+  ".quickstack/BRIEF.md",
+  ".quickstack/NOTES.md",
+  ".quickstack/manifest.json",
 ];
 
 it.effect.prop(
@@ -73,8 +73,8 @@ it.effect.prop(
         year: String(new Date().getUTCFullYear()),
       };
       const xdg = join(home, "config");
-      mkdirSync(join(xdg, "quickstacks"), { recursive: true });
-      writeFileSync(join(xdg, "quickstacks/config.json"), JSON.stringify({ author: vars.author }));
+      mkdirSync(join(xdg, "quickstack"), { recursive: true });
+      writeFileSync(join(xdg, "quickstack/config.json"), JSON.stringify({ author: vars.author }));
       const files = await render(c, vars);
       const result = newResult(
         await scaffoldCli(fixture, home, name, { agents: agent, sandbox, scope }),
@@ -85,7 +85,7 @@ it.effect.prop(
       const paths = files.map((file) => file.path);
       expect(paths).toEqual([...paths].sort());
       expect(new Set(paths).size).toBe(paths.length);
-      expect(paths.some((path) => path.startsWith(".quickstacks/"))).toBe(false);
+      expect(paths.some((path) => path.startsWith(".quickstack/"))).toBe(false);
       expect(projectFiles(target)).toEqual([...paths, ...cliFiles].sort());
       expect(result.written).toEqual([...paths, ...cliFiles].sort());
       for (const file of files) {

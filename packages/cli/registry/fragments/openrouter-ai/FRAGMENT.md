@@ -24,15 +24,15 @@ The application must start, build, and test without a key. Return a clear not-co
 
 Keep bounded retries and timeouts at one layer; disable duplicate client-library retries. Capture actual request bodies in tests and assert fallback models, routing settings, and usage accounting are sent correctly. Map upstream status and reason to a safe error without exposing request bodies or secrets. A rejected key, unavailable model endpoint, context overflow, or other rejected request is not retryable; credit exhaustion, throttling, server failures, timeouts, and unknown transient failures are retryable, with actionable messages. Credits exhausted must say to add credits or raise the key limit.
 
-<!-- quickstacks:when tag=web -->
+<!-- quickstack:when tag=web -->
 Over HTTP, the not-configured state is `LlmNotConfigured` (503, not retryable), an invalid model selection is `UnknownModel` (400), an upstream failure is `UpstreamUnavailable` (502, carrying its own `retryable` and a log-only `detail` with the upstream status and reason), and structured output that fails its schema is `InvalidModelOutput` (502, not retryable). The raw upstream cause is logged, never sent to the client.
-<!-- quickstacks:end -->
+<!-- quickstack:end -->
 
 Before paid recorder or eval use, tell the user to set a credit limit on the API key. Those commands remain opt-in and outside verification; never include a key in CI.
 
-<!-- quickstacks:when with=effect -->
+<!-- quickstack:when with=effect -->
 Use Effect Config and typed upstream errors. For Effect AI, map `AiError` reasons once at the provider boundary into the application's tagged errors. Preserve status and reason in log-only detail; keep retryability explicit and exhaustively mapped. Drive retry and timeout tests with TestClock.
-<!-- quickstacks:end -->
+<!-- quickstack:end -->
 
 ## Local test server
 

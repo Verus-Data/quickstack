@@ -326,7 +326,7 @@ test.for(["stack", "fingerprint"])(
     const f = benchFixture(space, compiled);
     passed(await f.invoke(["--no-record", "--keep"]));
     const root = kept(f);
-    const file = join(root, "run/.quickstacks/manifest.json");
+    const file = join(root, "run/.quickstack/manifest.json");
     const manifest = readManifestAt(join(root, "run"));
     const changed: Manifest =
       field === "stack"
@@ -506,10 +506,10 @@ test.for(["missing", "invalid", "file"])(
     const run = join(root, "run");
     mkdirSync(run, { recursive: true });
     writeFileSync(join(run, "keep.txt"), "previous work\n");
-    if (kind === "file") writeFileSync(join(run, ".quickstacks"), "not a directory\n");
+    if (kind === "file") writeFileSync(join(run, ".quickstack"), "not a directory\n");
     else {
-      mkdirSync(join(run, ".quickstacks"));
-      if (kind === "invalid") writeFileSync(join(run, ".quickstacks/manifest.json"), "{unfinished");
+      mkdirSync(join(run, ".quickstack"));
+      if (kind === "invalid") writeFileSync(join(run, ".quickstack/manifest.json"), "{unfinished");
     }
     const before = digests(root);
     const result = await f.invoke(["--existing", root]);
@@ -764,8 +764,8 @@ describe("build paths", () => {
     expect(prompt).toContain(join(root, "bench/BENCH.md"));
     const benchBrief = readFileSync(join(root, "bench/BENCH.md"), "utf8");
     expect(benchBrief).toContain("## Asked");
-    expect(benchBrief).toContain(".quickstacks/NOTES.md");
-    expect(benchBrief).toContain(".quickstacks/manifest.json");
+    expect(benchBrief).toContain(".quickstack/NOTES.md");
+    expect(benchBrief).toContain(".quickstack/manifest.json");
     expect(benchBrief).toContain(join(root, "bench/verify"));
     expect(
       projectFiles(join(root, "run")).some((path) => /BENCH\.md|bench\/verify/.test(path)),
@@ -789,10 +789,10 @@ describe("build paths", () => {
     const installed = executables[0];
     if (!installed) throw new Error("no installed binary was invoked");
     const prefix = dirname(dirname(installed));
-    expect(installed).toBe(join(prefix, "bin/quickstacks"));
+    expect(installed).toBe(join(prefix, "bin/quickstack"));
     expect(prefix).not.toBe(f.packageRoot);
     const hash = (file: string) => createHash("sha256").update(readFileSync(file)).digest("hex");
-    expect(hash(installed)).toBe(hash(join(f.packageRoot, "dist/quickstacks")));
+    expect(hash(installed)).toBe(hash(join(f.packageRoot, "dist/quickstack")));
     expect(readFileSync(join(prefix, "registry/stacks/sample/STACK.md"), "utf8")).toBe(
       readFileSync(join(f.registry, "stacks/sample/STACK.md"), "utf8"),
     );

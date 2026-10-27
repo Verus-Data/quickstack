@@ -5,15 +5,15 @@ its structure and definition of done. A fragment adds a reusable capability; pre
 over a near-copy when only CI, deployment or a tool differs.
 
 ```sh
-quickstacks create stack my-api --json
-quickstacks create fragment my-ci --category ci
-quickstacks create fragment my-app --category app
-quickstacks create stack go-cli --from bundled
-quickstacks create stack team-api --from project --yes
+quickstack create stack my-api --json
+quickstack create fragment my-ci --category ci
+quickstack create fragment my-app --category app
+quickstack create stack go-cli --from bundled
+quickstack create stack team-api --from project --yes
 ```
 
 The result names the entry directory and this guide. Entries go under
-`$XDG_CONFIG_HOME/quickstacks/` (default `~/.config/quickstacks/`). Existing targets are
+`$XDG_CONFIG_HOME/quickstack/` (default `~/.config/quickstack/`). Existing targets are
 preserved. Copies keep the same id and every byte, including `files/` and `adapters/`.
 The user copy shadows the bundled entry. Project entries and overridden bundled roots
 are untrusted: a person must review the full stderr report at a terminal. The yes flag
@@ -54,7 +54,7 @@ verify:
 ```
 
 File checks are short shell commands in v1: the skeleton's README check requires a
-nonempty file without `quickstacks:fill`. Replace every fill marker yourself; validation
+nonempty file without `quickstack:fill`. Replace every fill marker yourself; validation
 currently does not flag them.
 
 A `.tmpl` file can use only `{{project_name}}`, `{{project_slug}}`, `{{env_prefix}}`,
@@ -62,9 +62,9 @@ A `.tmpl` file can use only `{{project_name}}`, `{{project_slug}}`, `{{env_prefi
 package names. Conditional prose uses standalone markers, without nesting:
 
 ```md
-<!-- quickstacks:when preset=sandbox -->
+<!-- quickstack:when preset=sandbox -->
 Describe the local-only setup.
-<!-- quickstacks:end -->
+<!-- quickstack:end -->
 ```
 
 Other condition keys are `stack`, `tag`, `tag!=`, `mode` and `with`.
@@ -72,10 +72,10 @@ Other condition keys are `stack`, `tag`, `tag!=`, `mode` and `with`.
 ## Preview and remove rot
 
 ```sh
-quickstacks validate ~/.config/quickstacks/stacks/my-api --json
-quickstacks show my-api --kind stack
-quickstacks validate ~/.config/quickstacks --brief my-api --sandbox
-quickstacks validate ~/.config/quickstacks --brief my-api --with my-ci
+quickstack validate ~/.config/quickstack/stacks/my-api --json
+quickstack show my-api --kind stack
+quickstack validate ~/.config/quickstack --brief my-api --sandbox
+quickstack validate ~/.config/quickstack --brief my-api --with my-ci
 ```
 
 Use your XDG path when customized. Show includes every guidance branch and shipped
@@ -97,14 +97,14 @@ the agent would do anyway. Preview reports the resulting budget.
 ## Prove it with a local bench run
 
 ```sh
-quickstacks new my-api /tmp/my-api-bench --preset sandbox --json
+quickstack new my-api /tmp/my-api-bench --preset sandbox --json
 cd /tmp/my-api-bench
-quickstacks verify --json
-quickstacks runs --json
+quickstack verify --json
+quickstack runs --json
 ```
 
-Choose an unused directory. Have an agent follow `.quickstacks/BRIEF.md`, then fix the
-project until verify is green without weakening its steps. Read `.quickstacks/NOTES.md`,
+Choose an unused directory. Have an agent follow `.quickstack/BRIEF.md`, then fix the
+project until verify is green without weakening its steps. Read `.quickstack/NOTES.md`,
 including Asked and Findings, and improve the entry from what the run exposed. Record
 the composition, agent/version, brief size, timings, verify count, interventions,
 outcome and final run record in a run note. This uses existing CLI commands; there is
@@ -112,6 +112,6 @@ no shipped bench subcommand yet.
 
 For future projects, set `"preset": "sandbox"` in `config.json` beside your user entries.
 An explicit preset flag wins over that setting, then the fallback is `default`.
-Use `quickstacks new my-api /tmp/my-api-default --preset default --json` to override it.
+Use `quickstack new my-api /tmp/my-api-default --preset default --json` to override it.
 The sandbox alias is compatible with an explicit sandbox preset, but conflicts with an
 explicit default preset. Add always uses the project's recorded preset.

@@ -94,10 +94,10 @@ test("user shadows and project entries never inherit a bundled run [3.1a#3]", as
   const { home, registry, show } = fixture();
   const record = await ledgerRecord(registry);
   writeLedger(registry, [record, { ...record, stack: "local" }]);
-  const user = join(home, "config", "quickstacks");
+  const user = join(home, "config", "quickstack");
   const userEntry = stack(user);
   writeLedger(user, [record]);
-  const projectEntry = stack(join(home, ".quickstacks"), "local");
+  const projectEntry = stack(join(home, ".quickstack"), "local");
   expect(await showReport(await show(["sample"]))).toMatchObject({
     origin: "user",
     trusted: true,
@@ -257,7 +257,7 @@ test("unknown show ids suggest nearby entries [3.1a#11]", async () => {
 test("wrong-case YAML metadata is EntryInvalid instead of falling back to a hidden copy [3.1a#12]", async () => {
   const { home, show } = fixture();
   writeEntry({
-    root: join(home, "config", "quickstacks"),
+    root: join(home, "config", "quickstack"),
     kind: "stack",
     dir: "sample",
     frontmatter: minimal("stack", "sample", "Tools: [node]"),
@@ -331,7 +331,7 @@ test("JSON keeps entry text and unusual file names losslessly [3.1a#15]", async 
 test("text audiences expose all guidance branches, commands, verify runs and shipped files for review [3.1a#18]", async () => {
   const { home, registry } = fixture();
   const body =
-    "## Setup\n\n<!-- quickstacks:when preset=default -->\nDefault-only guidance.\n<!-- quickstacks:end -->\n<!-- quickstacks:when preset=sandbox -->\nSandbox-only guidance.\n<!-- quickstacks:end -->\n";
+    "## Setup\n\n<!-- quickstack:when preset=default -->\nDefault-only guidance.\n<!-- quickstack:end -->\n<!-- quickstack:when preset=sandbox -->\nSandbox-only guidance.\n<!-- quickstack:end -->\n";
   const entry = writeEntry({
     root: registry,
     kind: "stack",

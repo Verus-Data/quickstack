@@ -15,7 +15,7 @@ import {
 } from "./entry";
 
 /**
- * One registry root. `overridden` marks a bundled root set by QUICKSTACKS_REGISTRY_DIR instead of
+ * One registry root. `overridden` marks a bundled root set by QUICKSTACK_REGISTRY_DIR instead of
  * the one shipped with the CLI, whose entries are untrusted.
  */
 export type RegistryRoot = { origin: Origin; path: string; overridden?: boolean };
@@ -125,7 +125,7 @@ const kinds = [
 
 /**
  * Whether an entry is trusted. By origin and root in 1.0: project entries never are, nor are
- * entries from a bundled root set by QUICKSTACKS_REGISTRY_DIR; user entries and the shipped
+ * entries from a bundled root set by QUICKSTACK_REGISTRY_DIR; user entries and the shipped
  * bundled ones are (Trust model, point 2; D19). 3.2a adds the trust store's digests.
  */
 export function trustOf(entry: Omit<Entry, "trusted">, root: RegistryRoot): boolean {
@@ -136,7 +136,7 @@ const notFound = (error: PlatformError.PlatformError) =>
   error.reason._tag === "NotFound" || error.reason._tag === "BadResource";
 
 /**
- * The bundled root: QUICKSTACKS_REGISTRY_DIR resolved against the cwd when set, else
+ * The bundled root: QUICKSTACK_REGISTRY_DIR resolved against the cwd when set, else
  * `Host.registry`. `found` when it is a directory; a variable naming no directory is a warning.
  */
 export const bundledRoot = Effect.gen(function* () {
@@ -151,11 +151,11 @@ export const bundledRoot = Effect.gen(function* () {
     Effect.orElseSucceed(() => false),
   );
   if (overridden && !found)
-    yield* Effect.logWarning(`QUICKSTACKS_REGISTRY_DIR is not a directory: ${printable(at)}`);
+    yield* Effect.logWarning(`QUICKSTACK_REGISTRY_DIR is not a directory: ${printable(at)}`);
   return { path: at, overridden, found };
 });
 
-/** `project`, `user`, `bundled`: `./.quickstacks/` in the cwd, the user directory, `bundledRoot`. */
+/** `project`, `user`, `bundled`: `./.quickstack/` in the cwd, the user directory, `bundledRoot`. */
 export const defaultRoots = Effect.gen(function* () {
   const host = yield* Host;
   const path = yield* Path.Path;
@@ -207,7 +207,7 @@ export class Registry extends Context.Service<
       source: string,
     ) => Effect.Effect<Uint8Array, EntryInvalid | PermissionDenied>;
   }
->()("quickstacks/Registry") {
+>()("quickstack/Registry") {
   /**
    * Symlinks: an entry directory or anything inside one is never followed, in any root. The
    * project root and its `stacks/` and `fragments/` must be real directories too (a warning, and

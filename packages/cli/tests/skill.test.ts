@@ -34,7 +34,7 @@ function workspace() {
   dirs.push(dir);
   return realpathSync(dir.path);
 }
-const target = (root: string) => join(root, ".claude", "skills", "quickstacks", "SKILL.md");
+const target = (root: string) => join(root, ".claude", "skills", "quickstack", "SKILL.md");
 const withGit = { PATH: process.env.PATH ?? "", GIT_CONFIG_NOSYSTEM: "1" };
 function init(root: string) {
   const git = spawnGit(["init", "--quiet", root]);
@@ -105,7 +105,7 @@ function commands(body: string) {
     .join("\n");
   return [
     ...code.matchAll(
-      /(?:\bquickstacks(?:@[^\s`]+)?|<cli>)[ \t]+([a-z][a-z-]*)(.*?)(?=(?:\bquickstacks(?:@[^\s`]+)?|<cli>)[ \t]+[a-z]|&&|\|\||[;|\n]|$)/g,
+      /(?:\bquickstack(?:@[^\s`]+)?|<cli>)[ \t]+([a-z][a-z-]*)(.*?)(?=(?:\bquickstack(?:@[^\s`]+)?|<cli>)[ \t]+[a-z]|&&|\|\||[;|\n]|$)/g,
     ),
   ].map((match) => ({
     name: match[1] ?? "",
@@ -114,12 +114,12 @@ function commands(body: string) {
 }
 
 describe("shipped agent skill", () => {
-  test("frontmatter is closed and describes when to use quickstacks [3.4c#1]", () => {
+  test("frontmatter is closed and describes when to use quickstack [3.4c#1]", () => {
     const doc = parseDocument(skill().frontmatter, { logLevel: "silent" });
     expect(doc.errors).toEqual([]);
     expect(doc.warnings).toEqual([]);
     const meta = Schema.decodeUnknownSync(
-      Schema.Struct({ name: Schema.Literal("quickstacks"), description: Schema.String }),
+      Schema.Struct({ name: Schema.Literal("quickstack"), description: Schema.String }),
       { onExcessProperty: "error" },
     )(doc.toJS());
     expect(meta.description.trim().length).toBeGreaterThan(0);
@@ -171,11 +171,11 @@ describe("shipped agent skill", () => {
     expect(body).toMatch(/(?:untrusted|trusted:\s*false)[^.]*unless[^.]*user[^.]*nam/i);
     expect(body).toMatch(/confirm/i);
     expect(body).toMatch(/brief[^.\n]*(?:whole|full|entire)[^.\n]*task/i);
-    expect(body).toContain(".quickstacks/BRIEF.md");
+    expect(body).toContain(".quickstack/BRIEF.md");
     expect(body).toMatch(
-      /(?:don.t|never|do not) (?:edit|change)\s+[`*]*\.quickstacks\/manifest\.json/i,
+      /(?:don.t|never|do not) (?:edit|change)\s+[`*]*\.quickstack\/manifest\.json/i,
     );
-    expect(body).toContain(".quickstacks/NOTES.md");
+    expect(body).toContain(".quickstack/NOTES.md");
     expect(body).toMatch(/after.green/i);
     expect(body).toMatch(/summari[sz]e/i);
     expect(body).toMatch(/stack[^.\n]*why/i);
@@ -249,7 +249,7 @@ describe("skill install", () => {
   });
 
   test.each([false, true])(
-    "an escaping quickstacks symlink is refused (force=%s) [3.4c#8]",
+    "an escaping quickstack symlink is refused (force=%s) [3.4c#8]",
     async (force) => {
       const home = workspace();
       const outside = workspace();
@@ -359,7 +359,7 @@ describe("skill install", () => {
     const installed = result(await install(home, ["--json"]));
     expect(installed.action).toBe("written");
     expect(realpathSync(installed.path ?? "")).toBe(
-      join(dotfiles, "skills", "quickstacks", "SKILL.md"),
+      join(dotfiles, "skills", "quickstack", "SKILL.md"),
     );
     expect(readFileSync(target(home), "utf8")).toBe(fixtureText);
   });

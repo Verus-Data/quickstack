@@ -14,7 +14,7 @@ const PROBLEMS: Record<ConditionalProblem, string> = {
   bad_value: "a when marker has an empty value, or a mode or preset value that doesn't exist",
   empty: "a when marker has no condition",
   repeated: "a when marker repeats a key; use commas for alternatives",
-  unknown_marker: "an unknown quickstacks: directive (when, end and fill exist)",
+  unknown_marker: "an unknown quickstack: directive (when, end and fill exist)",
   not_alone: "a marker shares its line with other text",
 };
 

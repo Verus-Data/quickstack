@@ -80,7 +80,7 @@ const renderNote = ({ prepared, agent, verified, row, result }: NoteContext) =>
 |---|---|
 | Stack and fragments | \`${row.stack}\`, ${fragments}, preset \`${row.preset}\` |
 | Repo commit | \`${row.repoCommit}\` |
-| CLI | Compiled dev binary quickstacks@${row.cli}, installed with the working registry |
+| CLI | Compiled dev binary quickstack@${row.cli}, installed with the working registry |
 | Agent | ${row.agent === "claude" ? "Claude Code" : row.agent} ${row.agentVersion}, headless; ${prepared.agentChoice} |
 | Target agents | \`${row.agent}\` |
 | Brief size | \`briefWords\` ${row.briefWords}, \`fixedWords\` ${prepared.fixedWords} |

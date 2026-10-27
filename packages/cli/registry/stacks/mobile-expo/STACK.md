@@ -42,7 +42,7 @@ verify:
   - { name: db-down, phase: teardown, layer: install, run: bun run db:down }
   - name: readme-filled
     layer: check
-    run: "test -s README.md && ! grep -n 'quickstacks:fill' README.md"
+    run: "test -s README.md && ! grep -n 'quickstack:fill' README.md"
 commands:
   setup: Install dependencies, create .env from .env.example, link apps/mobile/.env (idempotent)
   prepare: Install git hooks outside CI (runs after every bun install)
@@ -106,7 +106,7 @@ apps/mobile/
 5. `apps/mobile`: the official Expo app generator non-interactively into a temp directory, merged into `apps/mobile` keeping only the app itself: discard its git, lint, README, LICENSE, agent instruction files (`AGENTS.md`, `CLAUDE.md`, `.claude/`, `.cursor/`), reset script, and demo screens and assets. Move routes under `src/app`. Install with Expo's own install command (`expo` itself first, then the rest) so versions come from the SDK's ranges, never `latest`; when a peer demands something else, pin it and record the pin and its removal condition under Build workarounds. Depend on `@<scope>/api` and `@<scope>/schemas` as `workspace:*`. Add NativeWind on the release line that supports Tailwind's CSS-first theme, from its prerelease channel if that line isn't stable yet, with Tailwind through PostCSS and the NativeWind Metro wrapper, per that line's docs (docs describing a `tailwind.config.js` and a Babel preset are for the older line).
 6. The proving slice: `useHealth` in `src/lib/queries/` calls `api.health.$get()`, and the home screen renders the API's status, or an error state when it can't reach it. One real app-to-API round trip, typed end to end from `packages/schemas`.
 7. Tests from Testing, `scripts/` wired to Commands, `.env.example` adapted, README and AGENTS.md filled.
-8. `quickstacks verify` until green.
+8. `quickstack verify` until green.
 
 ## Conventions
 
@@ -138,14 +138,14 @@ Read `docs/testing.md` before writing a test. Testing Trophy: mostly integration
 ## Commands
 
 Root scripts call workspace scripts with `bun run --filter`. `setup` is idempotent: install, copy `.env.example` to `.env` if missing, symlink `apps/mobile/.env` to the root one (Expo only reads env from its project directory; skip the link while `apps/mobile` doesn't exist yet). `dev`, `dev:logs`, `sim:shot` run the shipped `scripts/*.sh`; `dev.sh` calls the API workspace's `dev` script and the mobile workspace's `dev` (`expo start`) or `ios` (`expo run:ios`) scripts by package name, so keep those names. `prepare` runs `scripts/prepare.ts`; `bundle` writes `dist/`. `typecheck` in mobile generates Expo's route types first, with the headless command from the installed Expo CLI's help (it must not start Metro). Mirror the table in AGENTS.md with single-file test commands for both runners (`cd apps/api && bun run test test/health.test.ts`, `cd apps/mobile && bunx jest test/home-screen.test.tsx`). Note there that `PORT_DB` and `DATABASE_URL`'s port move together, and that `verify`'s teardown stops the dev Postgres.
-<!-- quickstacks:when with=git-hooks -->
+<!-- quickstack:when with=git-hooks -->
 
 pre-push runs `bun run db:up` before the tests, since the API suite needs Postgres; say so in the Git hooks section.
-<!-- quickstacks:end -->
+<!-- quickstack:end -->
 
-<!-- quickstacks:when with=ci-github -->
+<!-- quickstack:when with=ci-github -->
 **CI.** Jobs for lint, typecheck, mobile tests, API tests, and the bundle. The stack declares no coverage command, so CI runs `test:api` and `test:mobile`; take the coverage decision as no. Mobile tests and the bundle also set up Node from `.node-version`. API tests run against a Postgres service container with `DATABASE_URL` set, and run `db:check` first. The bundle job runs `bundle` and Expo's doctor in `apps/mobile`.
-<!-- quickstacks:end -->
+<!-- quickstack:end -->
 
 ## Gotchas
 

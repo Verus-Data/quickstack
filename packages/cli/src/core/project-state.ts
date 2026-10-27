@@ -7,13 +7,13 @@ import { printable } from "./text";
 
 /**
  * The second copy of a project's verify digest, outside the project, at
- * `$XDG_STATE_HOME/quickstacks/projects/<projectId>.json`. `stepDigests` and `settingsDigest`
+ * `$XDG_STATE_HOME/quickstack/projects/<projectId>.json`. `stepDigests` and `settingsDigest`
  * only explain a changed `verifyDigest` (1.3b's `VerifyChanged`); the whole-set digest decides.
  */
 export const ProjectState = Schema.Struct({
   schemaVersion: Schema.Literal(1),
   projectId: Schema.String,
-  /** Real path of `.quickstacks/manifest.json`, so a lookup by path matches however it was reached. */
+  /** Real path of `.quickstack/manifest.json`, so a lookup by path matches however it was reached. */
   manifestPath: Schema.String,
   verifyDigest: Schema.String,
   /** Step name to `digestStep` of that step. */
@@ -159,7 +159,7 @@ const versionOf = (value: unknown) =>
 
 /**
  * Reads one record file: `undefined` when it is missing, unreadable, not JSON or doesn't decode
- * (treated as missing), and `{ newer }` when a newer quickstacks wrote it.
+ * (treated as missing), and `{ newer }` when a newer quickstack wrote it.
  */
 const readStateFile = (file: string) =>
   Effect.gen(function* () {
@@ -184,7 +184,7 @@ const readStateFile = (file: string) =>
 
 /**
  * The tamper check's lookup by id (1.3b): the record for `projectId` and its path, or `undefined`
- * when there is none or it is unreadable. A record a newer quickstacks wrote is `InvalidConfig`
+ * when there is none or it is unreadable. A record a newer quickstack wrote is `InvalidConfig`
  * with its path and version (Schema versions), never a silent fall back to manifest-only.
  */
 export const findProjectState = (

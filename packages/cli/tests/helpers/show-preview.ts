@@ -50,7 +50,7 @@ export function shipped(entry: string, source: string, text = "fixture\n") {
   writeFileSync(path, text);
 }
 export function settings(home: string, value: unknown) {
-  const dir = join(home, "config", "quickstacks");
+  const dir = join(home, "config", "quickstack");
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, "config.json"), JSON.stringify(value));
 }

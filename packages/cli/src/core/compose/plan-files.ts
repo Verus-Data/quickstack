@@ -14,7 +14,7 @@ const HFS_IGNORABLE = /[\u{200c}-\u{200f}\u{202a}-\u{202e}\u{206a}-\u{206f}\u{fe
 const fold = (name: string) => name.normalize("NFC").toLowerCase();
 
 /**
- * Whether a path segment names `.git` or `.quickstacks` on some filesystem: the directories the
+ * Whether a path segment names `.git` or `.quickstack` on some filesystem: the directories the
  * CLI owns in a project. After git's `is_hfs_dotgit` and `is_ntfs_dotgit`: case folded, HFS+
  * ignorable code points dropped, anything from a `:` (an NTFS stream) on and trailing dots and
  * spaces cut, and the NTFS short names `git~1` and `quicks~1` included.

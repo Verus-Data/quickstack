@@ -90,7 +90,7 @@ export class IntegrityStore extends Context.Service<IntegrityStore, {
   readonly takeBatch: (size: number) => Effect.Effect<ReadonlyArray<ProjectKey>, StoreUnavailable>;
   readonly writeMetrics: (day: string, rows: ReadonlyArray<DailyMetric>) => Effect.Effect<void, StoreUnavailable>;
   readonly writeFlags: (day: string, flags: ReadonlyArray<AnomalyFlag>) => Effect.Effect<void, StoreUnavailable>;
-}>()("quickstacks/api/IntegrityStore") {
+}>()("quickstack/api/IntegrityStore") {
   static memory: () => Layer.Layer<IntegrityStore>;
   static d1: Layer.Layer<IntegrityStore, never, SqlClient.SqlClient>;
 }

@@ -6,7 +6,7 @@ Acceptance tests: traced
 
 | Field | Value |
 |---|---|
-| Goal | `quickstacks show <id>` prints one stack or fragment's metadata, origin, trust, full guidance, shipped files and last recorded run; `quickstacks validate --brief <stack>` prints the exact brief an agent would get, with word counts against the D5 caps and the composition's fingerprint, without scaffolding anything |
+| Goal | `quickstack show <id>` prints one stack or fragment's metadata, origin, trust, full guidance, shipped files and last recorded run; `quickstack validate --brief <stack>` prints the exact brief an agent would get, with word counts against the D5 caps and the composition's fingerprint, without scaffolding anything |
 | Traces to | Job 3: "When I've settled on a stack I rebuild often, I want to write it down once, including the agent tooling, so every new project starts where the last one ended." The stack author: "the only proof a stack works is an end-to-end agent run, and nothing tells them when their prose has gone stale." |
 | Depends on | 1.5 (`validate`, its canonical render and the D5 checks), 2.0a (`fingerprint`, `composeFiles`), 2.0c (the file-backed ledger) |
 | Blocks | 3.1b (`create --from` shows `show`'s report before copying an untrusted entry), 3.1c (`new --dry-run` reuses the in-memory composition path). 3.2a uses `show`'s report as its interim trust report (soft) |
@@ -17,8 +17,8 @@ Acceptance tests: traced
 
 In:
 
-- `quickstacks show <id> [--kind stack|fragment] [--json]`.
-- `quickstacks validate [path] --brief <stack> [--with a,b] [--without c] [--sandbox] [--json]`.
+- `quickstack show <id> [--kind stack|fragment] [--json]`.
+- `quickstack validate [path] --brief <stack> [--with a,b] [--without c] [--sandbox] [--json]`.
 - `ShowReport` and `PreviewResult` schemas.
 
 Out:
@@ -32,7 +32,7 @@ Out:
 
 ### Where this fits
 
-This sub-phase gives authors and reviewers a way to read an entry and its composed brief without running `new`. 3.1b then adds the commands that write entries (`create`) and the guide that tells authors how; it uses `show`'s report when copying an untrusted entry. 3.2a reuses the same report for `quickstacks trust` until 3.2b's allowlist report replaces it. Both commands here are read-only: they compose in memory and start no process ([Trust model](../roadmap.md#trust-model) point 1).
+This sub-phase gives authors and reviewers a way to read an entry and its composed brief without running `new`. 3.1b then adds the commands that write entries (`create`) and the guide that tells authors how; it uses `show`'s report when copying an untrusted entry. 3.2a reuses the same report for `quickstack trust` until 3.2b's allowlist report replaces it. Both commands here are read-only: they compose in memory and start no process ([Trust model](../roadmap.md#trust-model) point 1).
 
 ### `show`
 

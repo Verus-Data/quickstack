@@ -37,8 +37,8 @@ const runStep = (step: Finished["steps"][number]): RunStep => ({
 const reasonOf = (error: PlatformError.PlatformError) => error.reason._tag;
 
 /**
- * Appends one encoded `RunRecord` line to `.quickstacks/state/runs.jsonl` with a single write.
- * `.quickstacks/` must resolve inside the project before `state/` is created in it, `state/` must
+ * Appends one encoded `RunRecord` line to `.quickstack/state/runs.jsonl` with a single write.
+ * `.quickstack/` must resolve inside the project before `state/` is created in it, `state/` must
  * resolve inside too, and `runs.jsonl`, when it exists, must be a regular file with one link, so
  * neither a link to a directory nor one to a file can send the write elsewhere. Any failure or
  * refusal is one logged warning; the run's outcome and exit don't change.

@@ -15,7 +15,7 @@ test("human output removes every agent marker and undefined values, keeping othe
     KEEP: "1",
     UNSET: undefined,
   };
-  const plan = humanPlan({ args: ["guide"], command: ["quickstacks"], platform: "darwin", env });
+  const plan = humanPlan({ args: ["guide"], command: ["quickstack"], platform: "darwin", env });
   if ("error" in plan) throw new Error(plan.error);
   expect(plan.env).toEqual({ KEEP: "1" });
   for (const name of AGENT_MARKER_NAMES) expect(env[name]).toBe("1");
@@ -28,7 +28,7 @@ const launching = [
 ];
 
 test.each(launching)("refuses an unintended agent launch: %j", (...args) => {
-  expect(humanPlan({ args, command: ["quickstacks"], platform: "darwin", env: {} })).toEqual({
+  expect(humanPlan({ args, command: ["quickstack"], platform: "darwin", env: {} })).toEqual({
     error: launchError,
   });
 });
@@ -46,8 +46,8 @@ const safeFlags = [
 test.each(launching.flatMap((args) => safeFlags.map((flags) => [[...args, ...flags]])))(
   "allows a guarded or deliberate agent launch: %j",
   (args) => {
-    expect(humanPlan({ args, command: ["quickstacks"], platform: "darwin", env: {} })).toEqual({
-      argv: ["script", "-q", "/dev/null", "quickstacks", ...args],
+    expect(humanPlan({ args, command: ["quickstack"], platform: "darwin", env: {} })).toEqual({
+      argv: ["script", "-q", "/dev/null", "quickstack", ...args],
       env: {},
     });
   },
@@ -56,8 +56,8 @@ test.each(launching.flatMap((args) => safeFlags.map((flags) => [[...args, ...fla
 test.each([["list"], ["guide"], ["show", "typescript-cli"], ["--json", "new", "x"]])(
   "allows read commands and flag-first JSON output: %j",
   (...args) => {
-    expect(humanPlan({ args, command: ["quickstacks"], platform: "darwin", env: {} })).toEqual({
-      argv: ["script", "-q", "/dev/null", "quickstacks", ...args],
+    expect(humanPlan({ args, command: ["quickstack"], platform: "darwin", env: {} })).toEqual({
+      argv: ["script", "-q", "/dev/null", "quickstack", ...args],
       env: {},
     });
   },
@@ -82,7 +82,7 @@ test("Linux shell-quotes every command and argument for script", () => {
 
 test("unsupported platforms explain the script requirement", () => {
   expect(
-    humanPlan({ args: ["guide"], command: ["quickstacks"], platform: "win32", env: {} }),
+    humanPlan({ args: ["guide"], command: ["quickstack"], platform: "win32", env: {} }),
   ).toEqual({ error: "human: needs script(1) on macOS or Linux." });
 });
 
@@ -135,9 +135,9 @@ test.skipIf(!hasScript)(
         expect(result.stderr).toBe("");
         const stdout = result.stdout.replaceAll("\r\n", "\n").replace(/^\^D/, "");
         const lead =
-          "This guide is written for coding agents. To start a project yourself, run quickstacks list, then quickstacks new <stack> <dir>; quickstacks --help lists every command.";
+          "This guide is written for coding agents. To start a project yourself, run quickstack list, then quickstack new <stack> <dir>; quickstack --help lists every command.";
         expect(stdout.includes(lead)).toBe(human);
-        expect(stdout).toContain("quickstacks starts projects for coding agents.");
+        expect(stdout).toContain("quickstack starts projects for coding agents.");
       }
     } finally {
       closeSync(stdin);

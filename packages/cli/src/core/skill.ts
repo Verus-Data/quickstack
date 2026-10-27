@@ -53,7 +53,7 @@ export const installSkill = (options: { project: boolean; force: boolean; print:
       return yield* new PermissionDenied({ details: { reason: "unwritable", path: "$HOME" } });
     const base = options.project ? yield* projectRoot : path.resolve(host.cwd, home ?? "");
     const skills = path.join(base, ".claude", "skills");
-    const target = path.join(skills, "quickstacks", "SKILL.md");
+    const target = path.join(skills, "quickstack", "SKILL.md");
     const occupied = (blocker?: "non-file") =>
       new TargetNotEmpty({
         details: {
@@ -68,8 +68,8 @@ export const installSkill = (options: { project: boolean; force: boolean; print:
     return yield* Effect.scoped(
       Effect.gen(function* () {
         const writer = yield* openProject(skills);
-        yield* writer.directory("quickstacks");
-        const file = path.join(writer.root, "quickstacks", "SKILL.md");
+        yield* writer.directory("quickstack");
+        const file = path.join(writer.root, "quickstack", "SKILL.md");
         const parentInside = fs.realPath(path.dirname(file)).pipe(
           Effect.map((real) => within(writer.root, real, path.sep)),
           Effect.mapError(denied),
@@ -78,7 +78,7 @@ export const installSkill = (options: { project: boolean; force: boolean; print:
           Effect.gen(function* () {
             // Stage through the safe writer, then rename: a failed write keeps the user's copy.
             const suffix = (yield* Random.nextIntBetween(0, 0xffffff)).toString(16);
-            const temporary = `quickstacks/.SKILL.${suffix}.tmp`;
+            const temporary = `quickstack/.SKILL.${suffix}.tmp`;
             yield* writer.write(temporary, bytes);
             if (!(yield* parentInside)) return yield* escaped();
             const latest = yield* fs.lstat(file).pipe(Effect.mapError(denied));
@@ -110,7 +110,7 @@ export const installSkill = (options: { project: boolean; force: boolean; print:
 
           yield* replaceSkill(bytes);
         } else {
-          yield* writer.write("quickstacks/SKILL.md", bytes);
+          yield* writer.write("quickstack/SKILL.md", bytes);
         }
         return { path: target, action: "written" } satisfies SkillResult;
       }),

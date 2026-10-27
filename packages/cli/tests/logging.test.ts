@@ -27,7 +27,7 @@ test("logging has stable UTC shape and safe annotations", () => {
 });
 test("command logs include duration, outcome and shared invocation id", async () => {
   const result = await runCli(["doctor"], {
-    env: { LOG_LEVEL: "info", QUICKSTACKS_LOG_FORMAT: "json" },
+    env: { LOG_LEVEL: "info", QUICKSTACK_LOG_FORMAT: "json" },
     program: Effect.logInfo("child"),
     host: terminal,
   });
@@ -44,7 +44,7 @@ test("JSON mode preserves its error envelope and sends command logs to the optio
   try {
     const file = join(dir.path, "cli.jsonl");
     const result = await runCli(["unknown", "--json"], {
-      env: { LOG_LEVEL: "info", QUICKSTACKS_LOG_FILE: file },
+      env: { LOG_LEVEL: "info", QUICKSTACK_LOG_FILE: file },
     });
     expect(JSON.parse(result.stderr).error.tag).toBe("Usage");
     expect(ndjson(readFileSync(file, "utf8"))).toHaveLength(1);

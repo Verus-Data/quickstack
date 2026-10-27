@@ -58,7 +58,7 @@ The lease is taken with one conditional upsert (`INSERT ... ON CONFLICT (name) D
 | Verify and prune | For each day older than 90 days: read the archive object's metadata; delete that day's rows only if the object exists and its `rows` and `excludedRows` equal the current counts for that day in `events`. From [4.2d](phase-4.2d-dependency-telemetry-client-and-ingest.md) on, the same D1 batch also deletes the `event_deps` rows of the pruned events, in `packages/api/src/maintenance/maintain.ts`. Otherwise leave the rows and log `archive_mismatch` |
 | Expire hashes | `UPDATE events SET network_hash = NULL WHERE received_day < now - 30 days`; delete `rate_counts` older than one day |
 | Official names | Read `v1/names.json` from the Worker's own static assets binding and verify it with `INDEX_PUBLIC_KEYS` (4.0c). Write `names_last_outcome` (`invalid` for a bad signature, `missing` for no file, `unchanged` when the digest equals `names_digest`, else `ok`). If its digest differs from `names_digest`, insert a `registry_snapshots` row and upsert every stack and fragment id, and every step name with the stack it belongs to, setting `first_seen` on insert and `last_seen` to now for every name still present. Names are never removed, so a withdrawn stack's history keeps counting as official |
-| Released versions | Fetch the npm registry document for `quickstacks` and upsert every published version; then, for rows with `excluded = 'unreleased_version'` whose `cli_version` is now listed, re-run 4.1b's `classify` without the version candidate (the only reason this step may clear) and call 4.1b's `rebuildProject` for each affected (install, project) pair. 4.1d changes this step to add the pairs to its `recheck_queue` instead of rebuilding them here. If npm is unreachable, keep the table and retry tomorrow |
+| Released versions | Fetch the npm registry document for `quickstack` and upsert every published version; then, for rows with `excluded = 'unreleased_version'` whose `cli_version` is now listed, re-run 4.1b's `classify` without the version candidate (the only reason this step may clear) and call 4.1b's `rebuildProject` for each affected (install, project) pair. 4.1d changes this step to add the pairs to its `recheck_queue` instead of rebuilding them here. If npm is unreachable, keep the table and retry tomorrow |
 
 ### Registry snapshots
 
@@ -74,7 +74,7 @@ The 90-day cutoff stays: raw rows are deleted after 90 days, and `projects` and 
 export class Archive extends Context.Service<Archive, {
   readonly put: (key: string, body: Uint8Array, meta: ArchiveMeta) => Effect.Effect<void, ArchiveFailed>;
   readonly head: (key: string) => Effect.Effect<Option.Option<ArchiveMeta>, ArchiveFailed>;
-}>()("quickstacks/api/Archive") {
+}>()("quickstack/api/Archive") {
   static memory: () => Layer.Layer<Archive>;
 }
 
@@ -87,7 +87,7 @@ export class MaintenanceStore extends Context.Service<MaintenanceStore, {
   readonly dayRows: (day: string) => Stream.Stream<ArchivedRow, StoreUnavailable>;
   readonly pruneDay: (day: string) => Effect.Effect<number, StoreUnavailable>;
   readonly expireHashes: (before: string) => Effect.Effect<number, StoreUnavailable>;
-}>()("quickstacks/api/MaintenanceStore") {
+}>()("quickstack/api/MaintenanceStore") {
   static memory: () => Layer.Layer<MaintenanceStore>;
   static d1: Layer.Layer<MaintenanceStore, never, SqlClient.SqlClient>;
 }

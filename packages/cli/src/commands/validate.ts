@@ -129,7 +129,7 @@ export const validateCommand = Command.make(
   Command.withExamples(({ commandPath }) => [
     { command: commandPath.join(" "), description: "Check the bundled registry" },
     {
-      command: `${commandPath.join(" ")} ~/.config/quickstacks/stacks/my-api --json`,
+      command: `${commandPath.join(" ")} ~/.config/quickstack/stacks/my-api --json`,
       description: "Check one entry and get the ValidateReport",
     },
     {

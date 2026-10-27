@@ -54,7 +54,7 @@ beforeEach(async () => {
     FAKE_SSH_ADD_EXIT: "0",
   };
   git("init", "--quiet");
-  git("config", "quickstacks.rr", "true");
+  git("config", "quickstack.rr", "true");
 });
 
 afterEach(async () => {
@@ -104,13 +104,13 @@ test("an opted-in clone exports a usable agent socket without changing the advis
 });
 
 test("a clone without rr opt-in leaves the env file empty and the advisory unchanged", async () => {
-  git("config", "--unset", "quickstacks.rr");
+  git("config", "--unset", "quickstack.rr");
   await unchangedAdvisory();
   expect(readFileSync(envFile, "utf8")).toBe("");
 });
 
 test("an explicit false rr setting leaves the env file empty", async () => {
-  git("config", "quickstacks.rr", "false");
+  git("config", "quickstack.rr", "false");
   await hook();
   expect(readFileSync(envFile, "utf8")).toBe("");
 });

@@ -34,7 +34,7 @@ test("list attaches only the latest default-composition bundled proof and preser
     dir: "shadowed",
     frontmatter: minimal("stack", "shadowed"),
   });
-  const user = join(home, "config", "quickstacks");
+  const user = join(home, "config", "quickstack");
   writeEntry({
     root: user,
     kind: "stack",

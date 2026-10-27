@@ -1,14 +1,14 @@
-# quickstacks
+# quickstack
 
-quickstacks starts projects for coding agents. To use it, follow the [quick start](packages/cli/docs/quickstart.md); the [docs index](packages/cli/docs/README.md) has everything else.
+quickstack starts projects for coding agents. To use it, follow the [quick start](packages/cli/docs/quickstart.md); the [docs index](packages/cli/docs/README.md) has everything else.
 
 This repository is a bun workspace. Product planning is in [plans/](plans/README.md) and [product/](product/PROBLEM_STATEMENT.md).
 
 | Path | What it is |
 | --- | --- |
-| [packages/cli](packages/cli/README.md) | `quickstacks`, the CLI: Effect 4, Bun-compiled binary. `new <stack>` writes a project and the brief your coding agent builds it from; the bundled stacks are listed in its README |
-| [packages/api](packages/api/README.md) | `@quickstacks/api`, the HTTP API (placeholder, no code yet) |
-| [packages/mcp](packages/mcp/README.md) | `@quickstacks/mcp`, the MCP server (placeholder, no code yet) |
+| [packages/cli](packages/cli/README.md) | `quickstack`, the CLI: Effect 4, Bun-compiled binary. `new <stack>` writes a project and the brief your coding agent builds it from; the bundled stacks are listed in its README |
+| [packages/api](packages/api/README.md) | `@quickstack/api`, the HTTP API (placeholder, no code yet) |
+| [packages/mcp](packages/mcp/README.md) | `@quickstack/mcp`, the MCP server (placeholder, no code yet) |
 | `.claude/`, `docs/harness.md` | The agent harness: hooks, rules, skills and their tests in `tests/hooks/`, and the acceptance trace in `tests/acceptance/` |
 
 ## Development quick start
@@ -21,9 +21,9 @@ bun run dev doctor --json   # the CLI from source
 bun run check               # lint, typecheck, root tests, every package's tests and e2e
 ```
 
-Choose a destination outside this checkout. Start a project yourself with `bun run dev new astro-blog "$HOME/quickstacks-projects/my-blog"`, or run `bun run dev skill install` once and ask your coding agent to start one. The skill guides it through choosing a stack, reading the brief and building until verify passes. Use `--project` to install it only for the current repo, or `--print` to copy it elsewhere.
+Choose a destination outside this checkout. Start a project yourself with `bun run dev new astro-blog "$HOME/quickstack-projects/my-blog"`, or run `bun run dev skill install` once and ask your coding agent to start one. The skill guides it through choosing a stack, reading the brief and building until verify passes. Use `--project` to install it only for the current repo, or `--print` to copy it elsewhere.
 
-The skill ships in the next release. Once npm publication lands, the two entry points are `npx quickstacks new astro-blog my-blog` and `npx quickstacks skill install`.
+The skill ships in the next release. Once npm publication lands, the two entry points are `npx quickstack new astro-blog my-blog` and `npx quickstack skill install`.
 
 See [AGENTS.md](AGENTS.md) for the full command list.
 
@@ -39,7 +39,7 @@ Dependency versions live once, in `workspaces.catalog` in the root `package.json
 
 To add a package:
 
-1. Create `packages/<name>/package.json` with a scoped name (`@quickstacks/<name>`), `"private": true` and `"type": "module"`, then run `bun install`.
+1. Create `packages/<name>/package.json` with a scoped name (`@quickstack/<name>`), `"private": true` and `"type": "module"`, then run `bun install`.
 2. Add `tsconfig.json` extending `../../tsconfig.base.json`, which has Node types only; add `"types": ["bun", "node"]` only if the package uses Bun APIs.
 3. Define the standard scripts the package supports so the root gate runs them.
 4. If it needs lint rules of its own, add a nested `biome.json` with `"root": false, "extends": "//"`.

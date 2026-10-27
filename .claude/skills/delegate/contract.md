@@ -61,7 +61,7 @@ rr check        # the gate, queued on the test hosts; `bun run check` in a clone
 ```
 
 Then QA it as its first user, before the review. Build (`bun run build`) and run each command
-you changed on `packages/cli/dist/quickstacks`, in all three audiences (`--json`, a plain run,
+you changed on `packages/cli/dist/quickstack`, in all three audiences (`--json`, a plain run,
 and human mode as `.claude/rules/cli/cli.md` "Verifying UX" shows), on success and on the
 realistic failures. Judge it as the agent that will depend on it: could you take the next step
 from the output alone, is any line noise, is anything slow, surprising or missing? Fix the

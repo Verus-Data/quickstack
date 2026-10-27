@@ -17,7 +17,7 @@ Acceptance tests: traced
 
 In:
 
-- `quickstacks create stack <id> [--from <origin>] [--yes] [--json]` and `create fragment <id> [--category <c>] [--from <origin>] [--yes] [--json]`.
+- `quickstack create stack <id> [--from <origin>] [--yes] [--json]` and `create fragment <id> [--category <c>] [--from <origin>] [--yes] [--json]`.
 - `Settings.preset` and a `--preset <default|sandbox>` flag on `new`.
 - `packages/cli/docs/authoring.md`, shipped in the package and printed by `create`.
 
@@ -37,16 +37,16 @@ Out:
 
 ### `create`
 
-Writes to the user origin, `$XDG_CONFIG_HOME/quickstacks/{stacks,fragments}/<id>/` (1.0's `Paths.user`), then prints the entry's path and the guide's path. Refuses when the target directory exists (`BadInput`). Executes nothing and makes no network call (point 1).
+Writes to the user origin, `$XDG_CONFIG_HOME/quickstack/{stacks,fragments}/<id>/` (1.0's `Paths.user`), then prints the entry's path and the guide's path. Refuses when the target directory exists (`BadInput`). Executes nothing and makes no network call (point 1).
 
 A stack skeleton:
 
-- `STACK.md` with every v1 frontmatter field present, `id` and `kind` filled in, a `quickstacks:fill` placeholder for the description, one decision in the "(default: ...)" form, verify steps covering the D7 layers that call project commands (`make install`, `make lint`, `make typecheck`, `make test`) plus a `readme` step (`phase: check`, `layer: docs`) whose `run` fails while `README.md` is empty or still holds a `quickstacks:fill` marker (v1 has no built-in checks, so it is a short command), and body headings Layout, Setup, Conventions, Tool configuration, Testing, Commands, Gotchas, each with one line saying what goes there.
-- `files/.gitignore` (dotfiles are stored literally; [Other shared facts: Entry directories](../roadmap.md#other-shared-facts)) and `files/README.md` containing `quickstacks:fill`.
+- `STACK.md` with every v1 frontmatter field present, `id` and `kind` filled in, a `quickstack:fill` placeholder for the description, one decision in the "(default: ...)" form, verify steps covering the D7 layers that call project commands (`make install`, `make lint`, `make typecheck`, `make test`) plus a `readme` step (`phase: check`, `layer: docs`) whose `run` fails while `README.md` is empty or still holds a `quickstack:fill` marker (v1 has no built-in checks, so it is a short command), and body headings Layout, Setup, Conventions, Tool configuration, Testing, Commands, Gotchas, each with one line saying what goes there.
+- `files/.gitignore` (dotfiles are stored literally; [Other shared facts: Entry directories](../roadmap.md#other-shared-facts)) and `files/README.md` containing `quickstack:fill`.
 
 Frontmatter keys are written snake_case, as authors write them. A fragment skeleton has the fragment fields (`category`, `applies_to`, `requires`, `conflicts`, `requires_tools`, `needs_own_repo`, `merge`) and headings What to add, Tool configuration, Verify, AGENTS.md. `--category app` writes an app: a fragment with `category: app`, whose body headings follow the application half of 1.1's split brief. An app's `applies_to` must name a stack, which `create` can't guess, so a fresh app skeleton has that one error until the author fills it.
 
-`validate` on a fresh skeleton reports zero errors and only `quickstacks:fill` findings; a test enforces it so the skeleton can't drift from the format.
+`validate` on a fresh skeleton reports zero errors and only `quickstack:fill` findings; a test enforces it so the skeleton can't drift from the format.
 
 ### `--from <origin>`
 
@@ -77,11 +77,11 @@ The copy is byte for byte, `files/` and `adapters/` included. A copied entry is 
 - Sorting a project into frontmatter, prose and `files/`, and the rule that anything that would be wrong after the next major release goes in prose, with the three forms a stale fact can take instead: the durable rule, a discovery step, or a verify step that asks the tool.
 - Setup as numbered steps that run generators non-interactively into a subdirectory.
 - Verify steps that call project commands and cover the D7 layers; a `serve` step with `expect: { http, within }` for a dev server; a short command for a file check, since v1 has no built-in check kinds.
-- The format details authors trip on: snake_case frontmatter keys, literal dotfiles under `files/`, `{{package_scope}}` and the other fixed template variables in `.tmpl` files, and `quickstacks:when` / `quickstacks:end` markers for conditional prose.
+- The format details authors trip on: snake_case frontmatter keys, literal dotfiles under `files/`, `{{package_scope}}` and the other fixed template variables in `.tmpl` files, and `quickstack:when` / `quickstack:end` markers for conditional prose.
 - Every decision stating its default; when something is a fragment.
 - Staying within the D5 budget with `validate --brief`: move shared material to an optional fragment, reference material into a shipped doc the body points to, and cut what the agent would do anyway.
 - What 2.2's rot checks flag and how to fix each.
-- Running one sandbox build and reading `.quickstacks/NOTES.md`.
+- Running one sandbox build and reading `.quickstack/NOTES.md`.
 - `--from` and when a fragment is the better answer than a near-copy.
 
 It is the companion to 1.0's format reference, not a copy of it.

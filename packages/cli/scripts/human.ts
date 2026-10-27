@@ -44,9 +44,9 @@ export function humanPlan(options: {
 }
 
 if (import.meta.main) {
-  const binary = join(import.meta.dirname, "..", "dist", "quickstacks");
+  const binary = join(import.meta.dirname, "..", "dist", "quickstack");
   if (!existsSync(binary)) {
-    console.error("human: dist/quickstacks is missing; run bun run build first.");
+    console.error("human: dist/quickstack is missing; run bun run build first.");
     process.exit(2);
   }
   const plan = humanPlan({

@@ -320,7 +320,7 @@ test("a shared fragment branch for another stack leaves gate briefs and fingerpr
   const fragment = join(registry, "fragments/ci-github/FRAGMENT.md");
   writeFileSync(
     fragment,
-    `${readFileSync(fragment, "utf8")}\n<!-- quickstacks:when stack=cloudflare-react-router -->\nKeep the Worker configuration local.\n<!-- quickstacks:end -->\n`,
+    `${readFileSync(fragment, "utf8")}\n<!-- quickstack:when stack=cloudflare-react-router -->\nKeep the Worker configuration local.\n<!-- quickstack:end -->\n`,
   );
   const after = await previews();
   for (const [index, original] of before.entries()) {

@@ -15,11 +15,11 @@ import { Schema } from "effect";
 import type { LedgerRecord } from "../src/schemas/ledger";
 import { ListResult } from "../src/schemas/list";
 
-const binary = join(import.meta.dir, "../dist/quickstacks");
+const binary = join(import.meta.dir, "../dist/quickstack");
 const registry = join(import.meta.dir, "../registry");
 
 test("the compiled binary reads its shipped ledger, including after relocation [2.0c#6]", async () => {
-  const root = mkdtempSync(join(tmpdir(), "quickstacks-ledger-binary-"));
+  const root = mkdtempSync(join(tmpdir(), "quickstack-ledger-binary-"));
   try {
     const home = join(root, "unrelated cwd");
     mkdirSync(home);
@@ -77,7 +77,7 @@ test("the compiled binary reads its shipped ledger, including after relocation [
 
     const prefix = join(root, "relocated package");
     mkdirSync(join(prefix, "dist"), { recursive: true });
-    const relocated = join(prefix, "dist/quickstacks");
+    const relocated = join(prefix, "dist/quickstack");
     copyFileSync(binary, relocated);
     chmodSync(relocated, 0o755);
     cpSync(registry, join(prefix, "registry"), { recursive: true });

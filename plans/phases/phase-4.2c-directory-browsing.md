@@ -97,7 +97,7 @@ computed over the capped projects of the 28-day window. A pair is shown only whe
 
 ### Fragment and tag pages
 
-A fragment page has the fragment's name, description, the stacks it applies to (from its frontmatter), whether each stack includes it by default, the files it ships (paths only), the verify steps it adds (name, phase, layer, command), its last ledger run through a stack that included it (the same rule as 3.1a's `lastRun`), a link to its source, and the copy command `npx quickstacks new <stack> --with <id>` for each stack it applies to. With telemetry, the Worker fills its stats marker from `/v1/stats/fragments/:id`'s numbers and the "often used with" list.
+A fragment page has the fragment's name, description, the stacks it applies to (from its frontmatter), whether each stack includes it by default, the files it ships (paths only), the verify steps it adds (name, phase, layer, command), its last ledger run through a stack that included it (the same rule as 3.1a's `lastRun`), a link to its source, and the copy command `npx quickstack new <stack> --with <id>` for each stack it applies to. With telemetry, the Worker fills its stats marker from `/v1/stats/fragments/:id`'s numbers and the "often used with" list.
 
 A tag page lists every current stack and fragment carrying that tag, by name, with the same cells as `/`. Tags come from entry frontmatter. A tag becomes a path segment, so the build fails on a tag that isn't `^[a-z0-9-]+$` and names the entry; `validate` has no such rule today, and adding one is a format change for 1.5's owner to consider, not this sub-phase's.
 
@@ -119,7 +119,7 @@ A tag page lists every current stack and fragment carrying that tag, by name, wi
 ## Acceptance tests
 
 - The build over a fixture registry writes `/browse/newest/` ordered by the fixture repo's commit dates, a tag page per tag, and a fragment page per fragment, each with no `<script>` and the expected copy commands.
-- A fixture where `OfficialNames` holds `old-stack` and the registry doesn't: the build fails naming it; with a `removed.json` row it succeeds, `/stacks/old-stack/` carries the notice and the replacement's copy command, and no page contains `npx quickstacks new old-stack`. A `replacedBy` naming a missing id fails the build.
+- A fixture where `OfficialNames` holds `old-stack` and the registry doesn't: the build fails naming it; with a `removed.json` row it succeeds, `/stacks/old-stack/` carries the notice and the replacement's copy command, and no page contains `npx quickstack new old-stack`. A `replacedBy` naming a missing id fails the build.
 - Seeded `window_metrics`: `/` orders stacks by Wilson lower bound with suppressed ones after by name; `/browse/most-used/`, `/browse/highest-success/` match hand-sorted fixtures; ties break by id.
 - Trending: `last7 = 12`, `prior28 = 8` gives score `17 / 7`, about 2.43, listed; `last7 = 9` not listed and `trending.suppressed: true`; 12 projects from one install count 3 and don't qualify.
 - Lift over a seeded window matches a hand computation; a pair with an effective sample of 4 is not shown.

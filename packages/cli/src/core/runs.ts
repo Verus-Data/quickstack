@@ -39,7 +39,7 @@ export const projectRuns = (cwd: string) =>
     const manifest = yield* readManifest(located.path);
     const state = (yield* findProjectState(manifest.projectId))?.state;
     const history = yield* fs
-      .readFileString(path.join(located.root, ".quickstacks/state/runs.jsonl"))
+      .readFileString(path.join(located.root, ".quickstack/state/runs.jsonl"))
       .pipe(Effect.orElseSucceed(() => ""));
     let verifyRuns = 0;
     let lastOutcome: string | null = null;
@@ -57,7 +57,7 @@ export const projectRuns = (cwd: string) =>
       } else skippedLines++;
     }
     const notes = yield* Effect.option(
-      fs.readFileString(path.join(located.root, ".quickstacks/NOTES.md")),
+      fs.readFileString(path.join(located.root, ".quickstack/NOTES.md")),
     );
     const minutes = (at: string | null | undefined) => {
       if (!state || !at) return null;

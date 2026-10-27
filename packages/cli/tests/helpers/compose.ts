@@ -24,8 +24,8 @@ export function composeExit(
   const dir = tempDir();
   const xdg = join(dir.path, "config");
   if (setup.config !== undefined) {
-    mkdirSync(join(xdg, "quickstacks"), { recursive: true });
-    writeFileSync(join(xdg, "quickstacks", "config.json"), JSON.stringify(setup.config));
+    mkdirSync(join(xdg, "quickstack"), { recursive: true });
+    writeFileSync(join(xdg, "quickstack", "config.json"), JSON.stringify(setup.config));
   }
   const program = Effect.gen(function* () {
     const settings = yield* (yield* AppConfig).get;

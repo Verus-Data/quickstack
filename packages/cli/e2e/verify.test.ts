@@ -7,7 +7,7 @@ import { digestSteps, encodeManifest, MANIFEST_PATH } from "../src/core/manifest
 import type { Manifest } from "../src/schemas/manifest";
 import { VerifyResult } from "../src/schemas/verify";
 
-const binary = join(import.meta.dir, "../dist/quickstacks");
+const binary = join(import.meta.dir, "../dist/quickstack");
 
 const unsigned: Manifest = {
   schemaVersion: 1,
@@ -55,7 +55,7 @@ describe("verify from the real binary", () => {
     const dir = mkdtempSync(join(tmpdir(), "cli-binary-verify-"));
     try {
       const root = join(dir, "app");
-      mkdirSync(join(root, ".quickstacks"), { recursive: true });
+      mkdirSync(join(root, ".quickstack"), { recursive: true });
       mkdirSync(join(root, "src"));
       writeFileSync(join(root, MANIFEST_PATH), encodeManifest(project));
       const child = Bun.spawn([binary, "verify", "--json"], {
@@ -105,7 +105,7 @@ describe("verify from the real binary", () => {
     const dir = mkdtempSync(join(tmpdir(), "cli-binary-verify-"));
     try {
       const root = join(dir, "app");
-      mkdirSync(join(root, ".quickstacks"), { recursive: true });
+      mkdirSync(join(root, ".quickstack"), { recursive: true });
       const edited = {
         ...project,
         verify: project.verify.map((step) =>
@@ -141,7 +141,7 @@ describe("verify from the real binary", () => {
       expect(JSON.parse(stderr.trim().split("\n").at(-1) ?? "")).toMatchObject({
         error: { tag: "VerifyChanged", details: { against: "manifest", reason: "digest" } },
       });
-      expect(existsSync(join(root, ".quickstacks", "state", "runs.jsonl"))).toBe(true);
+      expect(existsSync(join(root, ".quickstack", "state", "runs.jsonl"))).toBe(true);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }

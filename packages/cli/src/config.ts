@@ -10,14 +10,14 @@ export type Paths = {
   data: string;
   cache: string;
   /**
-   * Out-of-project state, such as project state records: QUICKSTACKS_STATE_DIR, else
-   * `$XDG_STATE_HOME/quickstacks/`.
+   * Out-of-project state, such as project state records: QUICKSTACK_STATE_DIR, else
+   * `$XDG_STATE_HOME/quickstack/`.
    */
   state: string;
-  /** The user registry root, beside config.json: `$XDG_CONFIG_HOME/quickstacks/`. */
+  /** The user registry root, beside config.json: `$XDG_CONFIG_HOME/quickstack/`. */
   user: string;
   /**
-   * QUICKSTACKS_REGISTRY_DIR as given: replaces `Host.registry` as the bundled root when set.
+   * QUICKSTACK_REGISTRY_DIR as given: replaces `Host.registry` as the bundled root when set.
    * `registry.ts::bundledRoot` resolves it against `Host.cwd`.
    */
   registry?: string;
@@ -126,18 +126,18 @@ export function configLayer(env: Environment = process.env) {
         const config = yield* xdg("XDG_CONFIG_HOME", ".config");
         const data = yield* read(
           text(
-            "QUICKSTACKS_DATA_DIR",
+            "QUICKSTACK_DATA_DIR",
             path.join(yield* xdg("XDG_DATA_HOME", ".local", "share"), SLUG),
           ),
         );
         const cache = path.join(yield* xdg("XDG_CACHE_HOME", ".cache"), SLUG);
         const state = yield* read(
           text(
-            "QUICKSTACKS_STATE_DIR",
+            "QUICKSTACK_STATE_DIR",
             path.join(yield* xdg("XDG_STATE_HOME", ".local", "state"), SLUG),
           ),
         );
-        const registry = yield* read(text("QUICKSTACKS_REGISTRY_DIR"));
+        const registry = yield* read(text("QUICKSTACK_REGISTRY_DIR"));
         return {
           config: path.join(config, SLUG, "config.json"),
           data,
@@ -160,7 +160,7 @@ export function configLayer(env: Environment = process.env) {
           const file = yield* Schema.decodeUnknownEffect(Settings, { onExcessProperty: "error" })(
             unknown,
           );
-          const override = yield* read(text("QUICKSTACKS_DATA_DIR"));
+          const override = yield* read(text("QUICKSTACK_DATA_DIR"));
           return { ...file, dataDir: override || file.dataDir || locations.data };
         }).pipe(Effect.mapError(() => new InvalidConfig())),
       );
@@ -177,11 +177,11 @@ export function configLayer(env: Environment = process.env) {
         };
         // Own keys only: `constructor` or `__proto__` would otherwise read Object.prototype.
         const level = (Object.hasOwn(levels, raw) ? levels[raw] : undefined) ?? "Warn";
-        const format = yield* read(text("QUICKSTACKS_LOG_FORMAT"));
+        const format = yield* read(text("QUICKSTACK_LOG_FORMAT"));
         return {
           level,
           format: format === "json" ? ("json" as const) : ("human" as const),
-          file: yield* read(text("QUICKSTACKS_LOG_FILE")),
+          file: yield* read(text("QUICKSTACK_LOG_FILE")),
           noColor: Boolean(yield* read(text("NO_COLOR"))),
         };
       });
@@ -212,7 +212,7 @@ export class AppConfig extends Context.Service<
     /** The agent this invocation runs under, from `AgentMarkers`; `"none"` when no marker is set. */
     agent: Effect.Effect<DetectedAgent>;
   }
->()("quickstacks/AppConfig") {
+>()("quickstack/AppConfig") {
   static layer = () => configLayer();
   static memory = (env: Environment = {}) => configLayer(env);
 }

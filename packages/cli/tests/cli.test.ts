@@ -14,7 +14,7 @@ afterEach(() => {
 function configFile(content: string) {
   const dir = tempDir();
   dirs.push(dir);
-  const parent = join(dir.path, "config", "quickstacks");
+  const parent = join(dir.path, "config", "quickstack");
   mkdirSync(parent, { recursive: true });
   writeFileSync(join(parent, "config.json"), content);
   return dir.path;
@@ -22,7 +22,7 @@ function configFile(content: string) {
 test("doctor runs under Node and respects human/JSON result contracts", async () => {
   const human = await runCli(["doctor"], { host: terminal });
   expect(human.status).toBe(0);
-  expect(human.stdout).toContain(`quickstacks ${VERSION}`);
+  expect(human.stdout).toContain(`quickstack ${VERSION}`);
   expect(human.stderr).toBe("");
   const json = await runCli(["doctor", "--json"]);
   expect(json.status).toBe(0);
@@ -124,7 +124,7 @@ test("closed config rejects unknown fields and env overrides valid file values",
       (
         await runCli(["doctor", "--json"], {
           home,
-          env: { QUICKSTACKS_DATA_DIR: "/env-data" },
+          env: { QUICKSTACK_DATA_DIR: "/env-data" },
         })
       ).stdout,
     ).paths.data,
@@ -132,25 +132,25 @@ test("closed config rejects unknown fields and env overrides valid file values",
 });
 test("empty env values mean absent and invalid log level falls back safely", async () => {
   const result = await runCli(["doctor", "--json"], {
-    env: { LOG_LEVEL: "bogus", QUICKSTACKS_DATA_DIR: "" },
+    env: { LOG_LEVEL: "bogus", QUICKSTACK_DATA_DIR: "" },
   });
   expect(result.status).toBe(0);
-  expect(JSON.parse(result.stdout).paths.data).toContain(".local/share/quickstacks");
+  expect(JSON.parse(result.stdout).paths.data).toContain(".local/share/quickstack");
   expect(result.stderr).toBe("");
 });
 test("paths follow the XDG base directories, and an unset HOME means the user's home", async () => {
   const paths = async (env: Record<string, string>) =>
     JSON.parse((await runCli(["doctor", "--json"], { env })).stdout).paths;
   expect(await paths({ XDG_DATA_HOME: "/xdg/data", XDG_CACHE_HOME: "/xdg/cache" })).toMatchObject({
-    data: "/xdg/data/quickstacks",
-    cache: "/xdg/cache/quickstacks",
+    data: "/xdg/data/quickstack",
+    cache: "/xdg/cache/quickstack",
   });
   expect(await paths({ HOME: "", XDG_CONFIG_HOME: "" })).toMatchObject({
-    config: join(homedir(), ".config", "quickstacks", "config.json"),
-    cache: join(homedir(), ".cache", "quickstacks"),
+    config: join(homedir(), ".config", "quickstack", "config.json"),
+    cache: join(homedir(), ".cache", "quickstack"),
   });
 });
-test("--json after -- belongs to the command, not quickstacks", async () => {
+test("--json after -- belongs to the command, not quickstack", async () => {
   expect(hasFlag(["doctor", "--json"], "--json")).toBe(true);
   expect(hasFlag(["doctor", "--", "--json"], "--json")).toBe(false);
   const result = await runCli(["doctor", "--", "--json"]);
@@ -160,7 +160,7 @@ test("--json after -- belongs to the command, not quickstacks", async () => {
 test("a defect's class and stack frames are logged, but not its message", async () => {
   const result = await runCli([], {
     program: Effect.die(new TypeError("private detail")),
-    env: { LOG_LEVEL: "error", QUICKSTACKS_LOG_FORMAT: "json" },
+    env: { LOG_LEVEL: "error", QUICKSTACK_LOG_FORMAT: "json" },
     host: terminal,
   });
   const line = result.stderr.split("\n").find((l) => l.includes('"msg":"command"'));
@@ -171,7 +171,7 @@ test("a defect's class and stack frames are logged, but not its message", async 
 test("main maps a defect once and never leaks its object", async () => {
   const result = await runCli([], {
     program: Effect.die({ token: "secret-value", message: "private" }),
-    env: { LOG_LEVEL: "info", QUICKSTACKS_LOG_FORMAT: "json" },
+    env: { LOG_LEVEL: "info", QUICKSTACK_LOG_FORMAT: "json" },
     host: terminal,
   });
   expect(result.status).toBe(1);

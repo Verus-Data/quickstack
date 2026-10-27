@@ -124,12 +124,12 @@ test("a Next line names the CLI the way it was invoked", async () => {
   const human = await runCli([], {
     program: Effect.fail(new NotFound({ details: { suggestions: [] } })),
     env: quiet,
-    host: { ...terminal, invocation: "npx quickstacks" },
+    host: { ...terminal, invocation: "npx quickstack" },
   });
   expect(human.status).toBe(2);
   expect(human.stdout).toBe("");
   expect(human.stderr).toBe(
-    "Not found.\n  Next: npx quickstacks list shows every stack and fragment.\n",
+    "Not found.\n  Next: npx quickstack list shows every stack and fragment.\n",
   );
 });
 test("a details object mutated to carry an extra property is a defect, not a leak", async () => {
@@ -140,7 +140,7 @@ test("a details object mutated to carry an extra property is a defect, not a lea
     Object.assign(error.details ?? {}, { extra: "leaked" });
     const result = await runCli(["--json"], {
       program: Effect.fail(error),
-      env: { LOG_LEVEL: "info", QUICKSTACKS_LOG_FILE: file },
+      env: { LOG_LEVEL: "info", QUICKSTACK_LOG_FILE: file },
     });
     expect(result.status).toBe(1);
     expect(result.stdout).toBe("");
@@ -215,12 +215,12 @@ test.each([
   [
     "NotFound for an id in a registry root list doesn't read",
     new NotFound({ details: { suggestions: ["web"], root: "/work/my registry" } }),
-    "Not found.\n  Did you mean: web?\n  Next: quickstacks validate '/work/my registry' lists the ids under that root.\n",
+    "Not found.\n  Did you mean: web?\n  Next: quickstack validate '/work/my registry' lists the ids under that root.\n",
   ],
   [
     "NotFound naming the fragment id it didn't find",
     new NotFound({ details: { suggestions: ["lint"], id: "lnt\u001b", kind: "fragment" } }),
-    "Not found.\n  Fragment: lnt\\u001b\n  Did you mean: lint?\n  Next: quickstacks list shows every stack and fragment.\n",
+    "Not found.\n  Fragment: lnt\\u001b\n  Did you mean: lint?\n  Next: quickstack list shows every stack and fragment.\n",
   ],
   [
     "EntryInvalid for an unknown template variable",
@@ -302,7 +302,7 @@ test("the JSONL log record of a failure contains no detail value", async () => {
     const file = join(dir.path, "cli.jsonl");
     const result = await runCli(["--json"], {
       program: Effect.fail(denied()),
-      env: { LOG_LEVEL: "info", QUICKSTACKS_LOG_FILE: file },
+      env: { LOG_LEVEL: "info", QUICKSTACK_LOG_FILE: file },
     });
     expect(result.stderr).toContain("/private/target");
     const records = ndjson(readFileSync(file, "utf8"));
@@ -404,7 +404,7 @@ test("a kept result that can't be written still exits 5 and is noted in the log"
     const file = join(dir.path, "cli.jsonl");
     const result = await runCli(["--json"], {
       program: report(new VerifyFailed()),
-      env: { LOG_LEVEL: "info", QUICKSTACKS_LOG_FILE: file },
+      env: { LOG_LEVEL: "info", QUICKSTACK_LOG_FILE: file },
       stdout: async () => {
         throw writeError("EACCES");
       },
@@ -430,7 +430,7 @@ test("a kept result that was written carries no unwritten note", async () => {
     const file = join(dir.path, "cli.jsonl");
     await runCli(["--json"], {
       program: report(new VerifyFailed()),
-      env: { LOG_LEVEL: "info", QUICKSTACKS_LOG_FILE: file },
+      env: { LOG_LEVEL: "info", QUICKSTACK_LOG_FILE: file },
     });
     const [record] = ndjson(readFileSync(file, "utf8"));
     expect(record).not.toHaveProperty("result");

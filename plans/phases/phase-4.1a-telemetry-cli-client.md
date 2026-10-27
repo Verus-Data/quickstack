@@ -6,7 +6,7 @@ Status: DRAFT 2026-10-26 (not agreed)
 |---|---|
 | Goal | If the maintainers agree to collect usage (D17), the CLI records anonymous `new`, `add`, `verify`, `show` and `error` events, each field tied to the metric that reads it, tells the user before anything is sent, checks consent again before every send, honors every standard off switch, deletes what it queued when the user turns it off, and has no visible effect on any command's stdout, `--json` output, exit code or timing beyond a bounded flush |
 | Traces to | "None of these are collected today. Opt-in telemetry would cover the first two." Success rows 1, 2 and 5. Assumption 5 ("Watch whether people use `new` from a terminal or ask their agent to run it"), which is D9's instrumentation. The trust job: "the user wants to start work in a project they don't have to audit first" |
-| Depends on | 4.0a (`packages/format`, where the event schema lives), D17 (consent model, proposed), open question 5. Soft: [3.0](phase-3.0-add-fragments-to-repo.md) (`add.ts`), [3.1a](phase-3.1a-show-and-preview.md) (`show.ts`), [3.1b](phase-3.1b-create-and-authoring-guide.md) (the `preset` value), [4.0d](phase-4.0d-cli-remote-origin.md) (origin `index`, `--offline` and `QUICKSTACKS_OFFLINE`). Each hook or field that comes from one of these is added here only if its owner has landed; otherwise the owner adds it, against this sub-phase's schema, when it lands |
+| Depends on | 4.0a (`packages/format`, where the event schema lives), D17 (consent model, proposed), open question 5. Soft: [3.0](phase-3.0-add-fragments-to-repo.md) (`add.ts`), [3.1a](phase-3.1a-show-and-preview.md) (`show.ts`), [3.1b](phase-3.1b-create-and-authoring-guide.md) (the `preset` value), [4.0d](phase-4.0d-cli-remote-origin.md) (origin `index`, `--offline` and `QUICKSTACK_OFFLINE`). Each hook or field that comes from one of these is added here only if its owner has landed; otherwise the owner adds it, against this sub-phase's schema, when it lands |
 | Blocks | 4.1b, which starts after this sub-phase fixes the `TelemetryEvent` schema; 4.1c-4.1e and 4.2a-4.2d through it |
 | Decisions needed | D17. If declined, 4.1a to 4.1e, 4.2d and 4.2e are dropped; 4.2a and 4.2b shrink to publishing ledger results; 4.2c ships only its telemetry-free views. If opt-in, the consent table keeps every row and `enabled` additionally requires `"telemetry": true` |
 | Settles | Event contents, the consumer of each field, and the never-sent list; identity; consent order and when it is checked; the spool; purge on disable and reset; the release-build seam; failure isolation; how a released schema version is frozen |
@@ -16,7 +16,7 @@ Status: DRAFT 2026-10-26 (not agreed)
 In:
 
 - A `Telemetry` service with non-failing entry points used by `new`, `add`, `verify` and `show`, and by the error path of `new` and `add`.
-- `quickstacks telemetry status|enable|disable|reset|flush [--json]`.
+- `quickstack telemetry status|enable|disable|reset|flush [--json]`.
 - A `--source <web|docs|skill|cli|other>` flag on `new` and `add`: how the user came to run it (D9's instrumentation).
 - A first-run notice; nothing queued on the run that shows it.
 - Random install and per-project ids, stored outside the project.
@@ -51,9 +51,9 @@ Consent is resolved in this order, first match wins. `telemetry status --json` r
 | Reason | Cause | Spool at flush |
 |---|---|---|
 | `flag` | `--no-telemetry` on this command | Kept |
-| `offline` | `--offline` or `QUICKSTACKS_OFFLINE=1` | Kept |
+| `offline` | `--offline` or `QUICKSTACK_OFFLINE=1` | Kept |
 | `do_not_track` | `DO_NOT_TRACK` set to anything but empty, `0` or `false` | Deleted |
-| `environment` | `QUICKSTACKS_TELEMETRY_DISABLED`, same rule | Deleted |
+| `environment` | `QUICKSTACK_TELEMETRY_DISABLED`, same rule | Deleted |
 | `config` | `"telemetry": false` in `config.json` | Deleted |
 | `config_invalid` | `config.json` fails to decode | Kept (the user may be mid-edit), nothing sent |
 | `ci` | `CI` set to any value | Deleted |
@@ -72,11 +72,11 @@ All env reads happen in `config.ts`. `Settings` gains `telemetry: Schema.optiona
 
 ### Notice
 
-On the first run where consent would be `enabled`, the CLI writes the notice to stderr (human mode) or as an additive `notice` field in the result (JSON mode) and creates `notice.json` with an exclusive create, so two concurrent first runs can't both count as notified. That run queues nothing. The notice names what's collected, links the `/telemetry` privacy page (4.1b), which lists what is and isn't collected and links the schema, and gives the off switch in one command. The brief (1.1) gains one ground rule: "If quickstacks printed a telemetry notice, tell the user once, in one sentence, including how to turn it off."
+On the first run where consent would be `enabled`, the CLI writes the notice to stderr (human mode) or as an additive `notice` field in the result (JSON mode) and creates `notice.json` with an exclusive create, so two concurrent first runs can't both count as notified. That run queues nothing. The notice names what's collected, links the `/telemetry` privacy page (4.1b), which lists what is and isn't collected and links the schema, and gives the off switch in one command. The brief (1.1) gains one ground rule: "If quickstack printed a telemetry notice, tell the user once, in one sentence, including how to turn it off."
 
 ### Identity
 
-| File (under `$XDG_STATE_HOME/quickstacks/telemetry/`) | Holds |
+| File (under `$XDG_STATE_HOME/quickstack/telemetry/`) | Holds |
 |---|---|
 | `install.json` | `{ installId }`, a random UUID |
 | `notice.json` | When the notice was shown |
@@ -147,7 +147,7 @@ Never sent: paths, directory or project names, git remotes, usernames, hostnames
 
 Each event is one JSON file in `spool/`, written by temp file and rename. Caps: 500 files and 7 days, oldest dropped first. At the end of `new`, `add` and `verify` (for `new` and `add`, after the scaffold is written and before handoff, since a launched agent can run for hours), the CLI re-checks consent, claims up to 50 events by renaming them into a per-process directory, posts them with an 800 ms deadline, and deletes them only on a `202` whose `rejected` ids are a subset of those sent. Anything else returns them to the spool and records backoff (10 minutes, or the server's `Retry-After`). A claimed directory older than 10 minutes is returned by the next flush.
 
-`QUICKSTACKS_TELEMETRY_DEBUG=1` prints each event as JSON to stderr instead of queuing it. `QUICKSTACKS_TELEMETRY_URL` points sending at another server; the default is the API host chosen under D16.
+`QUICKSTACK_TELEMETRY_DEBUG=1` prints each event as JSON to stderr instead of queuing it. `QUICKSTACK_TELEMETRY_URL` points sending at another server; the default is the API host chosen under D16.
 
 ### Interfaces
 
@@ -160,7 +160,7 @@ export class Telemetry extends Context.Service<Telemetry, {
   readonly recordShow: (entry: ShowFacts) => Effect.Effect<void>;        // never fails
   readonly recordError: (input: ErrorFacts) => Effect.Effect<void>;      // never fails; called by new and add before the error is rendered
   readonly flush: Effect.Effect<void>;                                    // never fails, bounded, re-checks consent
-}>()("quickstacks/Telemetry") {
+}>()("quickstack/Telemetry") {
   static layer: Layer.Layer<Telemetry, never, FileSystem.FileSystem | Path.Path | HttpClient.HttpClient | AppConfig>;
   static recording: () => { events: TelemetryEvent[]; layer: Layer.Layer<Telemetry> }; // tests
 }

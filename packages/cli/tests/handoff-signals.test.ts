@@ -9,7 +9,7 @@ import { newRegistry } from "./helpers/registry";
 
 const fixture = join(import.meta.dirname, "fixtures/handoff-bin.ts");
 
-test("SIGTERM to quickstacks while the agent runs reaches the agent; quickstacks then stops with 130 [1.4#8]", async () => {
+test("SIGTERM to quickstack while the agent runs reaches the agent; quickstack then stops with 130 [1.4#8]", async () => {
   const dir = tempDir();
   const bin = join(dir.path, "bin");
   const claude = fakeAgent(bin, "claude", "wait-for-sigterm");

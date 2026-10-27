@@ -21,7 +21,7 @@ verify:
 
 # rr remote runner
 
-rr syncs the working tree to a remote machine with rsync and runs a command there, with host failover, per-host locking, and structured results (pass/fail counts and failing tests with file and line) that an agent can read without scrolling. It turns a slow local test suite into a remote one without changing the suite. It's an accelerator, not a dependency: every command must still work locally, and `quickstacks verify` runs locally.
+rr syncs the working tree to a remote machine with rsync and runs a command there, with host failover, per-host locking, and structured results (pass/fail counts and failing tests with file and line) that an agent can read without scrolling. It turns a slow local test suite into a remote one without changing the suite. It's an accelerator, not a dependency: every command must still work locally, and `quickstack verify` runs locally.
 
 rr has two config files. `~/.rr/config.yaml` is personal (SSH hosts, remote directories) and is never written by you without the user. `.rr.yaml` in the project is shared and committed (tasks, requirements, sync rules). You write `.rr.yaml`.
 

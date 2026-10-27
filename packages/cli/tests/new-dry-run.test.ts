@@ -40,10 +40,10 @@ const expectedFiles = [
   ".githooks/pre-commit",
   ".github/workflows/ci.yml",
   ".gitignore",
-  ".quickstacks/.gitignore",
-  ".quickstacks/BRIEF.md",
-  ".quickstacks/NOTES.md",
-  ".quickstacks/manifest.json",
+  ".quickstack/.gitignore",
+  ".quickstack/BRIEF.md",
+  ".quickstack/NOTES.md",
+  ".quickstack/manifest.json",
   "README.md",
   "plain.txt",
 ];
@@ -114,7 +114,7 @@ function git(home: string, cwd: string, args: string[]) {
   return result.stdout.toString().trim();
 }
 function settings(home: string, author: string) {
-  const dir = join(home, "config", "quickstacks");
+  const dir = join(home, "config", "quickstack");
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, "config.json"), JSON.stringify({ author }));
 }
@@ -134,7 +134,7 @@ describe("new --dry-run", () => {
       stateRecord: false,
       git: "none",
       written: expectedFiles,
-      brief: ".quickstacks/BRIEF.md",
+      brief: ".quickstack/BRIEF.md",
       missingTools: [
         { tool: "qs-stack-tool", owners: [{ kind: "stack", id: "fixture-stack" }], drop: [] },
         {
@@ -165,7 +165,7 @@ describe("new --dry-run", () => {
     for (const file of planned.written)
       expect(lstatSync(join(home, "app", file)).isFile()).toBe(true);
     const manifest = Schema.decodeUnknownSync(Manifest)(
-      JSON.parse(readFileSync(join(home, "app", ".quickstacks/manifest.json"), "utf8")),
+      JSON.parse(readFileSync(join(home, "app", ".quickstack/manifest.json"), "utf8")),
     );
     expect(manifest.fingerprint).toBe(planned.fingerprint);
   });
@@ -224,7 +224,7 @@ describe("new --dry-run", () => {
     expect(run.status).toBe(0);
     expect(run.stderr).toBe("");
     expect(run.stdout).toContain("README.md");
-    expect(run.stdout).toContain(".quickstacks/");
+    expect(run.stdout).toContain(".quickstack/");
     expect(run.stdout.trimEnd().split("\n").at(-1)).toBe("Dry run: nothing was written.");
     expect(claude.ran()).toBe(false);
     expect(snapshot(home)).toEqual(before);
@@ -457,16 +457,16 @@ describe("dry-run with existing files and environment", () => {
       const home = temp();
       const app = join(home, "app");
       if (kind === "partial") {
-        mkdirSync(join(app, ".quickstacks"), { recursive: true });
-        writeFileSync(join(app, ".quickstacks/BRIEF.md"), "partial scaffold");
-        writeFileSync(join(app, ".quickstacks/manifest.json"), "{");
+        mkdirSync(join(app, ".quickstack"), { recursive: true });
+        writeFileSync(join(app, ".quickstack/BRIEF.md"), "partial scaffold");
+        writeFileSync(join(app, ".quickstack/manifest.json"), "{");
       } else if (kind === "file") writeFileSync(app, "a file, not a directory");
       else symlinkSync(join(home, "missing"), app);
       const before = snapshot(home);
       for (const flags of [[], ["--dry-run"]]) {
         failure(await invoke(home, ["app", ...flags, "--json"]), "TargetNotEmpty", {
           path: app,
-          entries: kind === "partial" ? [".quickstacks"] : [],
+          entries: kind === "partial" ? [".quickstack"] : [],
           ...(kind === "partial" ? { scaffold: "unfinished" } : {}),
         });
         expect(snapshot(home)).toEqual(before);
@@ -542,7 +542,7 @@ describe("dry-run with existing files and environment", () => {
     const home = temp();
     const earlier = success(await invoke(home, ["earlier", "--json"]));
     expect(earlier.stateRecord).toBe(true);
-    expect(readdirSync(join(home, "state/quickstacks/projects"))).toHaveLength(1);
+    expect(readdirSync(join(home, "state/quickstack/projects"))).toHaveLength(1);
     const before = snapshot(home);
     const result = success(await invoke(home, ["later", "--dry-run", "--json"]));
     expect(result).toMatchObject({ dryRun: true, stateRecord: false });

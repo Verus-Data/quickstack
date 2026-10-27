@@ -34,7 +34,7 @@ Out:
 
 ### CLI
 
-The fetch follows 4.0d's rules exactly (cite, don't copy: 24-hour TTL, 1,500 ms deadline, 10-minute failure backoff, 24-hour backoff on 404, nothing under `--offline`, nothing during `verify`). Each cached resource has its own body file and its own state file, under `$XDG_CACHE_HOME/quickstacks/stats/`: the summary is `summary.json` with `summary.state.json`, and each detail is `<kind>-<id>.json` with `<kind>-<id>.state.json`. A state file has 4.0d's `state.json` shape (`{ url, cachedAt, lastAttempt, lastOutcome, backoffUntil }`), so backoff after a failed detail fetch applies to that entry only. The response is decoded with `StatsSummary` from `packages/format`; a decode failure is treated like a network failure.
+The fetch follows 4.0d's rules exactly (cite, don't copy: 24-hour TTL, 1,500 ms deadline, 10-minute failure backoff, 24-hour backoff on 404, nothing under `--offline`, nothing during `verify`). Each cached resource has its own body file and its own state file, under `$XDG_CACHE_HOME/quickstack/stats/`: the summary is `summary.json` with `summary.state.json`, and each detail is `<kind>-<id>.json` with `<kind>-<id>.state.json`. A state file has 4.0d's `state.json` shape (`{ url, cachedAt, lastAttempt, lastOutcome, backoffUntil }`), so backoff after a failed detail fetch applies to that entry only. The response is decoded with `StatsSummary` from `packages/format`; a decode failure is treated like a network failure.
 
 When `published` is true and the summary has the id, each `list --json` item gains:
 
@@ -43,7 +43,7 @@ When `published` is true and the summary has the id, each `list --json` item gai
            "noVerifyShare": 0.12, "medianMinutesToGreen": 14 }
 ```
 
-with suppressed values as `null`. When the summary is unavailable or unpublished, the field is absent, never an error or a warning. Stats are fetched only from `AppConfig.apiUrl`, which `config.ts` takes from a constant `DEFAULT_API_URL` that `bin.ts` passes in, the same way it passes `INDEX_PUBLIC_KEYS` (4.0d). No env variable or setting can change it; only the test helper passes a different value, pointing at a local server. With a non-default `QUICKSTACKS_INDEX_URL`, no stats are fetched, since they would describe a different set of entries. 4.2d sends dependency reports to the same `apiUrl`. Human `list` adds `green 91% (n=180)` when unsuppressed.
+with suppressed values as `null`. When the summary is unavailable or unpublished, the field is absent, never an error or a warning. Stats are fetched only from `AppConfig.apiUrl`, which `config.ts` takes from a constant `DEFAULT_API_URL` that `bin.ts` passes in, the same way it passes `INDEX_PUBLIC_KEYS` (4.0d). No env variable or setting can change it; only the test helper passes a different value, pointing at a local server. With a non-default `QUICKSTACK_INDEX_URL`, no stats are fetched, since they would describe a different set of entries. 4.2d sends dependency reports to the same `apiUrl`. Human `list` adds `green 91% (n=180)` when unsuppressed.
 
 ### `show`
 
@@ -59,7 +59,7 @@ The pages stay static files built by 4.0e. The Worker serves `/stacks/<id>/` its
 
 1. Read the static page from the assets binding.
 2. Read that stack's rows from `window_metrics` and apply 4.2a's suppression and gate.
-3. Replace the `<!-- quickstacks:stats -->` marker with a server-rendered HTML section (projects, green rate with interval, median time to green, no-verify share, the per-step failure shares before first green, the population label, and "computed <generatedAt>, through <through>"), escaping every value. Unpublished, or every value suppressed: the marker is replaced with one fixed sentence, "Not enough runs yet to publish numbers for this stack.", followed by the last ledger run line the static page already has, so a page with no numbers doesn't look broken.
+3. Replace the `<!-- quickstack:stats -->` marker with a server-rendered HTML section (projects, green rate with interval, median time to green, no-verify share, the per-step failure shares before first green, the population label, and "computed <generatedAt>, through <through>"), escaping every value. Unpublished, or every value suppressed: the marker is replaced with one fixed sentence, "Not enough runs yet to publish numbers for this stack.", followed by the last ledger run line the static page already has, so a page with no numbers doesn't look broken.
 4. Respond with `Cache-Control: public, max-age=3600`.
 
 The replacement is a plain string operation on the marker, not a Workers-specific HTML rewriter, so the code stays platform-free and testable on the Node harness. If the stats query fails, the static page is served unchanged with the same cache header shortened to five minutes. The index page `/` gets the same treatment with one cell per stack, using the same fixed sentence (shortened to "not enough runs yet") for a stack with nothing to show.
@@ -82,8 +82,8 @@ The replacement is a plain string operation on the marker, not a Workers-specifi
 - CLI against a real local stats server: `list --json` items gain `stats`; with the server down, hanging, returning bad JSON, or under `--offline`, stdout equals the output without the feature except the absent field, and the command finishes within 1.5 s of the offline run.
 - `published: false`: no `stats` field.
 - A second `list` within 10 minutes of a failure makes no request. A failed detail fetch for one entry backs off only that entry's state file.
-- No env variable changes the stats host: with only `QUICKSTACKS_API_URL` or similar set, requests still go to `AppConfig.apiUrl`.
-- With `QUICKSTACKS_INDEX_URL` set to a non-default host: no stats request.
+- No env variable changes the stats host: with only `QUICKSTACK_API_URL` or similar set, requests still go to `AppConfig.apiUrl`.
+- With `QUICKSTACK_INDEX_URL` set to a non-default host: no stats request.
 - `verify` makes no stats request.
 - `show go-cli --json` against the local server has `stats` that decodes with `StatsDetail`, including `byAgent` and the series with a seeded change marker; with the server down, `show --json` equals the output without the feature minus the field. A user-directory copy of `go-cli` makes no detail request and has no `stats`.
 - Human `show` prints the three most-failing steps and `content changed <date>` for a seeded marker inside the window.

@@ -9,7 +9,7 @@ import type { Socket } from "effect/socket";
 export class Tcp extends Context.Service<
   Tcp,
   { connect: (host: string, port: number) => Effect.Effect<Socket.Socket> }
->()("quickstacks/Tcp") {
+>()("quickstack/Tcp") {
   static layer = (connect: (host: string, port: number) => Effect.Effect<Socket.Socket>) =>
     Layer.succeed(Tcp, { connect });
 }

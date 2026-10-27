@@ -8,7 +8,7 @@ import { Manifest } from "../src/schemas/manifest";
 import { NewResult } from "../src/schemas/new";
 import { VerifyResult } from "../src/schemas/verify";
 
-const binary = join(import.meta.dir, "../dist/quickstacks");
+const binary = join(import.meta.dir, "../dist/quickstack");
 const modules = join(import.meta.dir, "../node_modules");
 const vitest = join(
   dirname(fileURLToPath(import.meta.resolve("vitest/package.json"))),
@@ -29,7 +29,7 @@ const SuiteReport = Schema.Struct({
 });
 
 test("the compiled binary ships a runnable hook suite and a harness-owned test step [3.4a#2]", async () => {
-  const root = mkdtempSync(join(tmpdir(), "quickstacks-harness-"));
+  const root = mkdtempSync(join(tmpdir(), "quickstack-harness-"));
   try {
     const home = join(root, "home");
     mkdirSync(home);
@@ -122,7 +122,7 @@ test("the compiled binary ships a runnable hook suite and a harness-owned test s
       expect(file.status).toBe("passed");
     }
     const manifest = Schema.decodeUnknownSync(Manifest)(
-      JSON.parse(readFileSync(join(project, ".quickstacks/manifest.json"), "utf8")),
+      JSON.parse(readFileSync(join(project, ".quickstack/manifest.json"), "utf8")),
     );
     const steps = manifest.verify.filter(
       (step) => step.owner === "claude-harness" && step.layer === "test",
