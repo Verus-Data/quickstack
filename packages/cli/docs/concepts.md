@@ -8,12 +8,12 @@ Starting a project well takes judgment that doesn't change much from year to yea
 
 ```mermaid
 flowchart LR
-  ST["Stack<br/>the recipe"] --> NEW["quickstack new"]
+  ST["Stack<br/>the recipe"] --> NEW["stacks new"]
   FR["Fragments<br/>shared add-ons"] --> NEW
   NEW --> BR["BRIEF.md<br/>the task"]
   NEW --> MF["manifest.json<br/>the verify steps"]
   BR --> AG(["Coding agent<br/>builds with current versions"])
-  AG --> VE{"quickstack verify"}
+  AG --> VE{"stacks verify"}
   MF --> VE
   VE -- "fix and rerun" --> AG
   VE ==>|green| DONE(("Done"))
@@ -36,7 +36,7 @@ A stack is a recipe for one kind of project. `typescript-cli` is a Bun-compiled 
 
 A recipe lists ingredients and steps, but it doesn't tell you which brand of flour to buy. A stack works the same way. It names the packages a project needs by role ("Effect for services, Vitest for tests") but never pins a version. It describes the layout and the rules ("stdout carries results only; every error maps to a fixed exit code") but leaves the config files for the agent to generate with current tools. Then it says how to prove the result works: a list of commands that must pass.
 
-`quickstack list stacks` lists them and `quickstack show <id>` shows one in full.
+`stacks list stacks` lists them and `stacks show <id>` shows one in full.
 
 ## Fragments
 
@@ -91,9 +91,9 @@ flowchart LR
 
 `--without ci-github` drops CI. `--with bun-release` adds release tooling. A required fragment can't be removed, because the stack depends on it.
 
-Fragments also describe how they fit with others. `requires` pulls in another fragment automatically: `claude-harness` requires `agent-ops` and `effect` requires `effect-schema`, so `quickstack new typescript-cli my-cli` gets six fragments, `agent-ops`, `ci-github`, `claude-harness`, `effect-schema`, `effect` and `git-hooks`, though the stack names only four. `conflicts` names fragments it can't coexist with. `applies_to` says which stacks or tags it works with, so `postgres` (which says `applies_to: [python-react]`) doesn't get offered for an Astro blog.
+Fragments also describe how they fit with others. `requires` pulls in another fragment automatically: `claude-harness` requires `agent-ops` and `effect` requires `effect-schema`, so `stacks new typescript-cli my-cli` gets six fragments, `agent-ops`, `ci-github`, `claude-harness`, `effect-schema`, `effect` and `git-hooks`, though the stack names only four. `conflicts` names fragments it can't coexist with. `applies_to` says which stacks or tags it works with, so `postgres` (which says `applies_to: [python-react]`) doesn't get offered for an Astro blog.
 
-Picking the fragments and putting the result together is called composition. Composition is the same every time for the same inputs, and `quickstack validate` composes every stack with every fragment that fits it to catch combinations that don't work.
+Picking the fragments and putting the result together is called composition. Composition is the same every time for the same inputs, and `stacks validate` composes every stack with every fragment that fits it to catch combinations that don't work.
 
 ### Presets
 
@@ -217,7 +217,7 @@ A higher root's copy hides the lower ones; `list --json` marks it with the origi
 
 Project entries are untrusted because a repository you just cloned can contain them, and you didn't write them. An untrusted entry still works, but quickstack never launches an agent on one automatically, an agent is told to stop and ask you first, and copying one into your user registry needs you at a terminal to read the full report.
 
-Your own stacks and fragments go in the user root. `quickstack create stack my-api` starts one there; [the authoring guide](authoring.md) walks through writing it.
+Your own stacks and fragments go in the user root. `stacks create stack my-api` starts one there; [the authoring guide](authoring.md) walks through writing it.
 
 ## The brief
 
@@ -244,7 +244,7 @@ Briefs are long, often 4,000 words or more, and that's deliberate. The agent rea
 | `.quickstack/state/runs.jsonl` | One line per verify run | No |
 | `.quickstack/incoming/` | Files `add` couldn't write because the project already had them | No |
 
-The manifest is the part that lasts. It's committed with the project, so anyone who clones it can run `quickstack verify` and get the same checks.
+The manifest is the part that lasts. It's committed with the project, so anyone who clones it can run `stacks verify` and get the same checks.
 
 There is one more record, outside the project: a state record under `~/.local/state/quickstack/projects/`. It holds a second copy of the steps' digest and the project's timings (when it first went green). The next section explains why it exists.
 
@@ -301,10 +301,10 @@ When `new` writes the project, it records a digest (a fingerprint) of the verify
 
 ```mermaid
 sequenceDiagram
-  participant N as quickstack new
+  participant N as stacks new
   participant M as manifest.json<br/>(in the project)
   participant S as state record<br/>(outside the project)
-  participant V as quickstack verify
+  participant V as stacks verify
   N->>M: write steps + digest
   N->>S: write the same digest
   Note over M: an agent edits a step
@@ -317,6 +317,6 @@ sequenceDiagram
   end
 ```
 
-Because one copy lives outside the project, editing project files can't hide the change. The only way forward is `quickstack verify --accept-changes`, which a person runs at their own terminal. It's refused when an agent is detected or stdin isn't a terminal.
+Because one copy lives outside the project, editing project files can't hide the change. The only way forward is `stacks verify --accept-changes`, which a person runs at their own terminal. It's refused when an agent is detected or stdin isn't a terminal.
 
 A fresh clone has no state record on that machine, so verify checks the manifest's copy only and says so (`tamperCheck: "manifest-only"`).

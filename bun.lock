@@ -17,10 +17,10 @@
       "version": "0.0.0",
     },
     "packages/cli": {
-      "name": "@quickstack/cli",
+      "name": "@steamfield/stacks",
       "version": "0.1.0",
       "bin": {
-        "quickstack": "dist/quickstack.mjs",
+        "stacks": "dist/stacks.mjs",
       },
       "devDependencies": {
         "@biomejs/biome": "catalog:",
@@ -107,8 +107,6 @@
 
     "@quickstack/api": ["@quickstack/api@workspace:packages/api"],
 
-    "@quickstack/cli": ["@quickstack/cli@workspace:packages/cli"],
-
     "@quickstack/mcp": ["@quickstack/mcp@workspace:packages/mcp"],
 
     "@redis/bloom": ["@redis/bloom@6.3.0", "", { "peerDependencies": { "@redis/client": "^6.3.0" } }, "sha512-NQ5poYpZr0jv6zazN1cy6JY5kIipKFZ3R9GTL4kOUTX3a9YAfY29U8bsE4lWhVQEM+G4V0BXVC57mubIdDijeA=="],
@@ -152,6 +150,8 @@
     "@rolldown/binding-win32-x64-msvc": ["@rolldown/binding-win32-x64-msvc@1.2.14", "", { "os": "win32", "cpu": "x64" }, "sha512-9mE94bf2GZUaR/fUSXCMpBoWkctu421Mi0ORpm4zqfbkjKep7RxzPFa5etcGs5h+2KApoWBOA/hAJa/7saGgEQ=="],
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.1", "", {}, "sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw=="],
+
+    "@steamfield/stacks": ["@steamfield/stacks@workspace:packages/cli"],
 
     "@types/bun": ["@types/bun@1.4.3", "", { "dependencies": { "bun-types": "1.4.3" } }, "sha512-N67Pqy8JXbAY/j0tNraS3V5mubGvc6rrrNDmDCtZLlFzccbUJPDb0tvgUBC5q4m8ybkP93Jcn1QB+RYQ6PvBhw=="],
 

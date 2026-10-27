@@ -15,4 +15,4 @@ New here? Start with the [quick start](quickstart.md). It gets a project running
 | [Validation](reference/validation.md) | Learn what `validate` checks and the word budgets |
 | [Maintaining the bundled registry](maintaining.md) | Run the bench, update the ledger, publish the plugin |
 
-The CLI documents itself too: `quickstack` with no arguments prints the guide for coding agents, and `quickstack <command> --help` prints any command's flags, exit codes and examples.
+The CLI documents itself too: `stacks` with no arguments prints the guide for coding agents, and `stacks <command> --help` prints any command's flags, exit codes and examples.

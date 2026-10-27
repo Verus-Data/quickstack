@@ -1,5 +1,5 @@
 {
-  "name": "@quickstack/cli",
+  "name": "@steamfield/stacks",
   "version": "0.1.0",
   "type": "module",
   "engines": {
@@ -40,10 +40,10 @@
   },
   "description": "Compose project guidance and verify agent-built projects.",
   "bin": {
-    "quickstack": "dist/quickstack.mjs"
+    "stacks": "dist/stacks.mjs"
   },
   "files": [
-    "dist/quickstack.mjs",
+    "dist/stacks.mjs",
     "dist/cli.mjs",
     "registry",
     "skill",

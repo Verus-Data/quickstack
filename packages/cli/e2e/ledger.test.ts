@@ -78,7 +78,7 @@ test("the installed package reads its shipped ledger, including after relocation
 
     const prefix = join(root, "relocated package");
     mkdirSync(join(prefix, "dist"), { recursive: true });
-    const relocated = join(prefix, "dist/quickstack.mjs");
+    const relocated = join(prefix, "dist/stacks.mjs");
     copyFileSync(binary, relocated);
     copyFileSync(join(packageRoot, "dist/cli.mjs"), join(prefix, "dist/cli.mjs"));
     chmodSync(relocated, 0o755);

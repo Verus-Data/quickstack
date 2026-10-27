@@ -10,7 +10,7 @@ const result: Omit<AddResult, "handoff"> = {
   written: ["ci.yml"],
   skipped: ["same.txt"],
   mergeNeeded: [{ path: "README.md", incoming: [".quickstack/incoming/README.md"] }],
-  missingRequired: [{ id: "required", command: "quickstack add required" }],
+  missingRequired: [{ id: "required", command: "stacks add required" }],
   commandsKept: [],
   warnings: [
     { code: "missing_tool", id: "tool" },
@@ -50,7 +50,7 @@ test("the add summary keeps the shown path, merge task and actionable confirmati
       "",
       "Merge needed",
       "  README.md: .quickstack/incoming/README.md",
-      "Missing required: required. Next: quickstack add required",
+      "Missing required: required. Next: stacks add required",
       "Untrusted: ci (project): local/ci",
       "Stop: ask the user to review the new steps and run npx -y quickstack@0.1.0 verify --accept-changes in their terminal.",
       "Brief: .quickstack/BRIEF.md",

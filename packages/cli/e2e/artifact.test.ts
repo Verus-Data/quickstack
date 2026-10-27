@@ -58,7 +58,7 @@ test("the tarball contains exactly the allowlisted files, preserving every asset
     "package.json",
     "README.md",
     "LICENSE",
-    "dist/quickstack.mjs",
+    "dist/stacks.mjs",
     "dist/cli.mjs",
     "docs/authoring.md",
     ...assets,
@@ -70,19 +70,13 @@ test("the tarball contains exactly the allowlisted files, preserving every asset
     .map((file) => file.replace(/^package\//, ""))
     .sort();
   expect(actual).toEqual(expected.map(packedPath).sort());
-  for (const file of [
-    ...assets,
-    "LICENSE",
-    "docs/authoring.md",
-    "dist/quickstack.mjs",
-    "dist/cli.mjs",
-  ])
+  for (const file of [...assets, "LICENSE", "docs/authoring.md", "dist/stacks.mjs", "dist/cli.mjs"])
     expect(digest(join(packageRoot, packedPath(file)))).toBe(digest(join(source, file)));
   expect(digest(join(source, "LICENSE"))).toBe(digest(join(source, "../../LICENSE")));
   const packed = readFileSync(join(packageRoot, "package.json"), "utf8");
   expect(packed).not.toMatch(/(?:catalog|workspace):/);
   expect(JSON.parse(packed)).toMatchObject({
-    name: "@quickstack/cli",
+    name: "@steamfield/stacks",
     version: "0.1.0",
     bin: metadata.bin,
     files: metadata.files,
@@ -93,7 +87,7 @@ test("the tarball contains exactly the allowlisted files, preserving every asset
   });
   expect(JSON.parse(packed).dependencies).toBeUndefined();
   expect(readFileSync(`${tarball}.sha256`, "utf8")).toBe(
-    `${digest(tarball)}  quickstack-cli-${metadata.version}.tgz\n`,
+    `${digest(tarball)}  steamfield-stacks-${metadata.version}.tgz\n`,
   );
 });
 
@@ -244,7 +238,7 @@ test("hostile cwd files change nothing for the installed bin or bunx with Node o
       root,
     );
     expect(install.status).toBe(0);
-    for (const argv of [[binary], [process.execPath, "x", "--no-install", "quickstack"]]) {
+    for (const argv of [[binary], [process.execPath, "x", "--no-install", "stacks"]]) {
       const clean = run([...argv, "doctor", "--json"], root);
       expect(clean.status).toBe(0);
       expect(clean.stderr).toBe("");

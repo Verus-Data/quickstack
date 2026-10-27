@@ -1,11 +1,11 @@
 # quickstack
 
-`quickstack` starts projects for coding agents. You pick a stack, it writes a few starter files and a brief, your coding agent builds the project from the brief, and `quickstack verify` says when it's done. To try it, follow the [quick start](docs/quickstart.md).
+`stacks` starts projects for coding agents. You pick a stack, it writes a few starter files and a brief, your coding agent builds the project from the brief, and `stacks verify` says when it's done. To try it, follow the [quick start](docs/quickstart.md).
 
 ```sh
-npx @quickstack/cli list stacks                 # Node 22+, macOS or Linux
-npx @quickstack/cli new typescript-cli my-cli
-npm install -g @quickstack/cli                  # optional: then the command is `quickstack`
+npx @steamfield/stacks list stacks                 # Node 22+, macOS or Linux
+npx @steamfield/stacks new typescript-cli my-cli
+npm install -g @steamfield/stacks                  # optional: then the command is `stacks`
 ```
 
 The CLI is TypeScript on Effect, compiled to one binary by Bun. It executes nothing it reads: only `verify` runs commands, and only the steps in a project's own manifest. [How quickstack works](docs/architecture.md) explains the design, and the [docs index](docs/README.md) lists everything else: concepts, agents, authoring, and the command, output, configuration and validation references.
@@ -23,7 +23,7 @@ The CLI is TypeScript on Effect, compiled to one binary by Bun. It executes noth
 | `tauri-react` | Tauri desktop app: Rust crates behind a thin shell, typed IPC, a React frontend with a mock transport | |
 | `typescript-cli` | Bun-compiled TypeScript CLI on Effect with typed errors, safe output and logs | `openrouter-chat-cli` |
 
-`quickstack list` shows each stack's fragments; `validate` reports every stack's composed brief size in both presets.
+`stacks list` shows each stack's fragments; `validate` reports every stack's composed brief size in both presets.
 
 ## Development
 
@@ -32,8 +32,8 @@ Use Bun 1.4.2 and Node 24 LTS. Install lefthook (`brew install lefthook` on macO
 ```sh
 bun install
 bun run dev doctor            # the CLI from source
-bun run build                 # compile dist/quickstack.mjs
-node dist/quickstack.mjs --version
+bun run build                 # compile dist/stacks.mjs
+node dist/stacks.mjs --version
 bun run check                 # this package's gate
 ```
 

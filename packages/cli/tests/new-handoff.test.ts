@@ -28,7 +28,7 @@ function temp() {
 }
 const terminal = { stdinIsTTY: true, stdoutIsTTY: true } satisfies Partial<HostInfo>;
 const PROMPT =
-  "Read .quickstack/BRIEF.md and carry it out. It's your full task for this project; you're done when quickstack verify passes.";
+  "Read .quickstack/BRIEF.md and carry it out. It's your full task for this project; you're done when stacks verify passes.";
 const asRoot = process.getuid?.() === 0;
 
 /** `new fixture-stack app --sandbox ...` in a fresh HOME (also its cwd) with `bin` as the whole PATH. */
@@ -78,7 +78,7 @@ describe("inside an agent", () => {
     const tail = stdout.trimEnd().split("\n").at(-1);
     // The project is under the working directory, so it is named relative to it.
     expect(tail).toBe(
-      "NEXT STEP FOR THE AGENT: read .quickstack/BRIEF.md now and carry it out, working in app. Loop on quickstack verify until it passes. Don't stop here to report back; the brief says when to ask the user.",
+      "NEXT STEP FOR THE AGENT: read .quickstack/BRIEF.md now and carry it out, working in app. Loop on stacks verify until it passes. Don't stop here to report back; the brief says when to ask the user.",
     );
     expect(stdout).not.toContain(app);
     const manifest = manifestOf(app);

@@ -89,7 +89,7 @@ test("one SIGINT through npm exec records interruption and runs teardown", async
       "--package",
       tarball,
       "--",
-      "quickstack",
+      "stacks",
       "verify",
       "--json",
     ],
@@ -186,7 +186,7 @@ describe("verify from the real binary", () => {
           tag: "VerifyFailed",
           message: "Verify failed.",
           retryable: false,
-          next: "fix the code or config these steps exercise, not the steps, then run quickstack verify again.",
+          next: "fix the code or config these steps exercise, not the steps, then run stacks verify again.",
           details: { failed: [{ name: "test", failureKind: "step", exitCode: 1 }] },
         },
       });

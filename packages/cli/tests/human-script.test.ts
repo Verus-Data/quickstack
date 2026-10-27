@@ -135,7 +135,7 @@ test.skipIf(!hasScript)(
         expect(result.stderr).toBe("");
         const stdout = result.stdout.replaceAll("\r\n", "\n").replace(/^\^D/, "");
         const lead =
-          "This guide is written for coding agents. To start a project yourself, run quickstack list, then quickstack new <stack> <dir>; quickstack --help lists every command.";
+          "This guide is written for coding agents. To start a project yourself, run stacks list, then stacks new <stack> <dir>; stacks --help lists every command.";
         expect(stdout.includes(lead)).toBe(human);
         expect(stdout).toContain("quickstack starts projects for coding agents.");
       }

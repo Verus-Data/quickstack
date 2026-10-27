@@ -1,6 +1,6 @@
 import { Schema } from "effect";
 
-/** What `quickstack --json` with no subcommand, and `quickstack guide --json`, print. */
+/** What `stacks --json` with no subcommand, and `stacks guide --json`, print. */
 export const GuideResult = Schema.Struct({
   /** The guide's text, as human mode prints it. */
   guide: Schema.String,

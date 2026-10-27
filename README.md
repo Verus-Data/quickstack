@@ -4,26 +4,26 @@ quickstack starts projects for coding agents. To use it, follow the [quick start
 
 ## Install
 
-quickstack needs Node 22 or newer, on macOS or Linux. The npm package is `@quickstack/cli`; run it with `npx`, no install step:
+quickstack needs Node 22 or newer, on macOS or Linux. The npm package is `@steamfield/stacks`; run it with `npx`, no install step:
 
 ```sh
-npx @quickstack/cli list stacks                  # see what you can build
-npx @quickstack/cli new typescript-cli my-cli    # write a project and hand it to your coding agent
-npx @quickstack/cli skill install                # or let your agent drive: install the Claude Code skill
+npx @steamfield/stacks list stacks                  # see what you can build
+npx @steamfield/stacks new typescript-cli my-cli    # write a project and hand it to your coding agent
+npx @steamfield/stacks skill install                # or let your agent drive: install the Claude Code skill
 ```
 
-Or install it globally, and the command is `quickstack`:
+Or install it globally, and the command is `stacks`:
 
 ```sh
-npm install -g @quickstack/cli
-quickstack --version
+npm install -g @steamfield/stacks
+stacks --version
 ```
 
 This repository is a bun workspace. Product planning is in [plans/](plans/README.md) and [product/](product/PROBLEM_STATEMENT.md).
 
 | Path | What it is |
 | --- | --- |
-| [packages/cli](packages/cli/README.md) | `quickstack`, the CLI: Effect 4, Bun-compiled binary. `new <stack>` writes a project and the brief your coding agent builds it from; the bundled stacks are listed in its README |
+| [packages/cli](packages/cli/README.md) | `stacks`, the CLI: Effect 4, Bun-compiled binary. `new <stack>` writes a project and the brief your coding agent builds it from; the bundled stacks are listed in its README |
 | [packages/api](packages/api/README.md) | `@quickstack/api`, the HTTP API (placeholder, no code yet) |
 | [packages/mcp](packages/mcp/README.md) | `@quickstack/mcp`, the MCP server (placeholder, no code yet) |
 | `.claude/`, `docs/harness.md` | The agent harness: hooks, rules, skills and their tests in `tests/hooks/`, and the acceptance trace in `tests/acceptance/` |

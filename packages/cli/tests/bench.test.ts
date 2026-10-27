@@ -805,10 +805,10 @@ describe("build paths", () => {
     const installed = executables[0];
     if (!installed) throw new Error("no installed binary was invoked");
     const prefix = dirname(dirname(installed));
-    expect(installed).toBe(join(prefix, "dist/quickstack.mjs"));
+    expect(installed).toBe(join(prefix, "dist/stacks.mjs"));
     expect(prefix).not.toBe(f.packageRoot);
     const hash = (file: string) => createHash("sha256").update(readFileSync(file)).digest("hex");
-    expect(hash(installed)).toBe(hash(join(f.packageRoot, "dist/quickstack.mjs")));
+    expect(hash(installed)).toBe(hash(join(f.packageRoot, "dist/stacks.mjs")));
     expect(hash(join(prefix, "dist/cli.mjs"))).toBe(hash(join(f.packageRoot, "dist/cli.mjs")));
     expect(readFileSync(join(prefix, "registry/stacks/sample/STACK.md"), "utf8")).toBe(
       readFileSync(join(f.registry, "stacks/sample/STACK.md"), "utf8"),

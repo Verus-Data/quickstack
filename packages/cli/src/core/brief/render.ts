@@ -109,7 +109,7 @@ export function renderBrief(composition: Composition<Entry | null>, context: Bri
       T.facts.root,
     );
     writtenPaths();
-    if (cli !== "quickstack") fixed(T.facts.invocation(cli));
+    if (cli !== "stacks") fixed(T.facts.invocation(cli));
   };
   facts();
 
@@ -401,7 +401,7 @@ function renderAddBrief(
     fixed(T.facts.written);
     data(...context.written.map((path) => `  - ${T.code(path)}`));
   }
-  if (cli !== "quickstack") fixed(T.facts.invocation(cli));
+  if (cli !== "stacks") fixed(T.facts.invocation(cli));
   fixed(
     "",
     T.job(cli)[0] ?? "",

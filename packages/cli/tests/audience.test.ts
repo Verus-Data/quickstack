@@ -70,7 +70,7 @@ describe("agent output carries no log lines", () => {
     expect(result.status).toBe(2);
     expect(result.stdout).toBe("");
     expect(result.stderr).toBe(
-      "Invalid command.\n  Command: doctr\n  Did you mean: doctor?\n  Next: run quickstack --help to list the commands, or quickstack <command> --help for one.\n",
+      "Invalid command.\n  Command: doctr\n  Did you mean: doctor?\n  Next: run stacks --help to list the commands, or stacks <command> --help for one.\n",
     );
     // A person sees the same lines: the failure's log record goes to the file, so Next ends stderr.
     const human = await runCli(["doctr"], { host: terminal });
@@ -123,7 +123,7 @@ describe("new for an agent", () => {
       "  qs-fragment-tool not found (needed by tooled; skip with --without tooled)",
       "",
       "Next: open app in your coding agent and give it this prompt:",
-      "  Read .quickstack/BRIEF.md and carry it out. It's your full task for this project; you're done when quickstack verify passes.",
+      "  Read .quickstack/BRIEF.md and carry it out. It's your full task for this project; you're done when stacks verify passes.",
       "",
     ]);
     const human = await newCli(home, ["app2", "--sandbox"], { human: true });
@@ -227,7 +227,7 @@ describe("verify for an agent", () => {
       expect.stringMatching(/^ {2}failed {3}check {5}lint {5}\(exit 1, \d+\.\ds\) {2}exited/),
       "      | lint broke",
       "",
-      "Next: fix the code or config these steps exercise, not the steps, then run quickstack verify again.",
+      "Next: fix the code or config these steps exercise, not the steps, then run stacks verify again.",
       "",
     ]);
     // One `> name` event line per started step, then the failure; the report carries Next.
@@ -296,7 +296,7 @@ describe("the guide by audience", () => {
       expect(agent.stdout).toMatch(/^quickstack starts projects for coding agents\./);
       const human = await runCli(args, { host: terminal });
       expect(human.stdout).toBe(
-        `This guide is written for coding agents. To start a project yourself, run quickstack list, then quickstack new <stack> <dir>; quickstack --help lists every command.\n\n${agent.stdout}`,
+        `This guide is written for coding agents. To start a project yourself, run stacks list, then stacks new <stack> <dir>; stacks --help lists every command.\n\n${agent.stdout}`,
       );
       const json = await runCli([...args, "--json"], { host: terminal });
       expect(JSON.parse(json.stdout).guide).toBe(agent.stdout.trimEnd());

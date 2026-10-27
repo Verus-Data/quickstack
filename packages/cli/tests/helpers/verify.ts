@@ -159,7 +159,7 @@ export type VerifyOptions = {
   host?: Partial<HostInfo>;
 };
 
-/** `quickstack verify <args>` from `cwd`, with this machine's PATH so steps find node and sleep. */
+/** `stacks verify <args>` from `cwd`, with this machine's PATH so steps find node and sleep. */
 export async function verify(args: string[], options: VerifyOptions) {
   const own = options.home ? undefined : tempDir();
   try {

@@ -15,12 +15,12 @@ function findNode(): string {
 }
 
 export const node = findNode();
-export const tarball = join(import.meta.dirname, `../dist/pack/quickstack-cli-${version}.tgz`);
+export const tarball = join(import.meta.dirname, `../dist/pack/steamfield-stacks-${version}.tgz`);
 const root = realpathSync(mkdtempSync(join(tmpdir(), "quickstack-package-")));
 process.once("exit", () => rmSync(root, { recursive: true, force: true }));
 export const prefix = join(root, "prefix");
-export const packageRoot = join(prefix, "lib/node_modules/@quickstack/cli");
-export const binary = join(prefix, "bin/quickstack");
+export const packageRoot = join(prefix, "lib/node_modules/@steamfield/stacks");
+export const binary = join(prefix, "bin/stacks");
 const runtime = join(root, "runtime");
 mkdirSync(runtime);
 symlinkSync(node, join(runtime, "node"));

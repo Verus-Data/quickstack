@@ -31,13 +31,13 @@ afterEach(() => space.release());
 const has = (root: string, file: string) => existsSync(join(root, file));
 const NOTE_PIPES = "the step left a process holding its output; it was stopped after 2 s";
 const FIX =
-  "fix the code or config these steps exercise, not the steps, then run quickstack verify again.";
+  "fix the code or config these steps exercise, not the steps, then run stacks verify again.";
 const ENV =
-  "the machine is missing something these steps need (see each reason); install or start it, then run quickstack verify again.";
+  "the machine is missing something these steps need (see each reason); install or start it, then run stacks verify again.";
 const NEXT_FIX = `Next: ${FIX}`;
 const NEXT_ENV = `Next: ${ENV}`;
 const NEXT_PARTIAL =
-  "Next: this was a partial run; done means a full quickstack verify with outcome green.";
+  "Next: this was a partial run; done means a full stacks verify with outcome green.";
 
 describe("phases", () => {
   test("passing setup, check and teardown steps are green with one result on stdout [1.3a#1]", async () => {

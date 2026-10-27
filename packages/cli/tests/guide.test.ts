@@ -8,7 +8,7 @@ import { runCli } from "./helpers/cli";
 
 const decode = (stdout: string) => Schema.decodeUnknownSync(GuideResult)(JSON.parse(stdout));
 const FOOTER =
-  "Start here (agents): quickstack list --json, pick a stack and tell the user why,\nthen quickstack new <stack> <dir> --sandbox --json, then follow .quickstack/BRIEF.md\nuntil quickstack verify is green. Run quickstack with no arguments for the full guide.";
+  "Start here (agents): stacks list --json, pick a stack and tell the user why,\nthen stacks new <stack> <dir> --sandbox --json, then follow .quickstack/BRIEF.md\nuntil stacks verify is green. Run stacks with no arguments for the full guide.";
 
 test("quickstack with no arguments prints the agent guide, under 250 words, with the trust and VerifyChanged rules [1.4#11]", async () => {
   const { status, stdout, stderr } = await runCli([]);
@@ -22,7 +22,7 @@ test("quickstack with no arguments prints the agent guide, under 250 words, with
   expect(stdout).toContain(
     "- If verify reports VerifyChanged, stop and ask the user: only they can accept the change.\n",
   );
-  expect(stdout).toContain("quickstack new <stack> <dir> --sandbox --json");
+  expect(stdout).toContain("stacks new <stack> <dir> --sandbox --json");
   expect(stdout).not.toContain("SUBCOMMANDS");
 });
 
@@ -34,7 +34,7 @@ test("--help still shows the framework help [1.4#11]", async () => {
   expect(stdout).toContain("GLOBAL FLAGS");
 });
 
-test("quickstack --json with no subcommand returns the guide and its commands [1.4#11]", async () => {
+test("stacks --json with no subcommand returns the guide and its commands [1.4#11]", async () => {
   const { status, stdout, stderr } = await runCli(["--json"]);
   expect(stderr).toBe("");
   expect(status).toBe(0);

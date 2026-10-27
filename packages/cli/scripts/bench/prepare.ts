@@ -179,7 +179,7 @@ export const prepare = (options: Options, adapters: readonly AgentAdapter[]) =>
       yield* Effect.addFinalizer(() => fs.remove(root, { recursive: true }).pipe(Effect.orDie));
     const home = path.join(root, "home");
     const prefix = path.join(root, "prefix");
-    const cli = path.join(prefix, "bin/quickstack");
+    const cli = path.join(prefix, "bin/stacks");
     const project = path.join(root, "run");
     const bench = path.join(root, "bench");
     const env = environment({
@@ -215,8 +215,8 @@ export const prepare = (options: Options, adapters: readonly AgentAdapter[]) =>
       if (!options.cli) yield* exec(["bun", "run", "build"], repo);
       const entry = options.cli
         ? path.resolve(host.cwd, options.cli)
-        : path.join(packageRoot, "dist/quickstack.mjs");
-      const installed = path.join(prefix, "dist/quickstack.mjs");
+        : path.join(packageRoot, "dist/stacks.mjs");
+      const installed = path.join(prefix, "dist/stacks.mjs");
       yield* fs.makeDirectory(path.dirname(installed), { recursive: true });
       yield* fs.copyFile(entry, installed);
       yield* fs.copyFile(

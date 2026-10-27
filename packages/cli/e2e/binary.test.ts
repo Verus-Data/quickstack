@@ -26,7 +26,7 @@ import { binary, packageRoot, scratchPath } from "./package";
 function install(registry?: string): { bin: string; prefix: string } {
   const prefix = mkdtempSync(join(tmpdir(), "cli-binary-prefix-"));
   mkdirSync(join(prefix, "dist"));
-  const bin = join(prefix, "dist", "quickstack.mjs");
+  const bin = join(prefix, "dist", "stacks.mjs");
   copyFileSync(binary, bin);
   copyFileSync(join(packageRoot, "dist/cli.mjs"), join(prefix, "dist/cli.mjs"));
   chmodSync(bin, 0o755);
@@ -84,7 +84,7 @@ describe("installed Node package", () => {
   test("a symlinked binary finds the registry beside its real path", async () => {
     const prefix = mkdtempSync(join(tmpdir(), "cli-binary-link-"));
     try {
-      const link = join(prefix, "quickstack");
+      const link = join(prefix, "stacks");
       symlinkSync(binary, link);
       const result = await invoke(["doctor", "--json"], undefined, {}, link);
       expect(result.status).toBe(0);
@@ -154,7 +154,7 @@ describe("installed Node package", () => {
       env,
     );
     expect(brief.status).toBe(0);
-    expect(brief.stdout).toContain(`npx -y @quickstack/cli@${version}`);
+    expect(brief.stdout).toContain(`npx -y @steamfield/stacks@${version}`);
     // Size counts go to a human's stderr only (3.1a); a non-terminal gets the brief alone.
     expect(brief.stderr).toBe("");
     const sizes = await invoke(
@@ -170,7 +170,7 @@ describe("installed Node package", () => {
     try {
       const result = await invoke(["list"], undefined, {}, bin);
       expect(result).toEqual({
-        stdout: "No stacks or fragments found.\n\nNext: quickstack doctor\n",
+        stdout: "No stacks or fragments found.\n\nNext: stacks doctor\n",
         stderr: "",
         status: 0,
       });
@@ -257,7 +257,7 @@ describe("installed Node package", () => {
       const result = await invoke(["--completions", shell]);
       expect(result.status).toBe(0);
       expect(result.stderr).toBe("");
-      expect(result.stdout).toContain("quickstack");
+      expect(result.stdout).toContain("stacks");
       for (const name of names) expect(result.stdout).toMatch(new RegExp(`\\b${name}\\b`));
     }
   });

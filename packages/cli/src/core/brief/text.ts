@@ -22,7 +22,7 @@ export const facts = {
   root: `- Project root: the directory containing \`${METADATA_DIR}/\`. Run every command from there.`,
   written: "- Files quickstack wrote:",
   invocation: (cli: string) =>
-    `- Wherever this brief says ${code("quickstack <command>")}, run ${code(`${cli} <command>`)}.`,
+    `- Wherever this brief says ${code("stacks <command>")}, run ${code(`${cli} <command>`)}.`,
 };
 
 export const untrusted = {

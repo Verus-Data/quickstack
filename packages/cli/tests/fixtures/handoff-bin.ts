@@ -33,7 +33,7 @@ const platform = Layer.mergeAll(
     registry,
     skill: "",
     authoring: "",
-    invocation: "quickstack",
+    invocation: "stacks",
   }),
 );
 const controller = new AbortController();

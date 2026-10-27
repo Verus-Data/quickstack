@@ -31,7 +31,7 @@ export class Host extends Context.Service<Host, HostInfo>()("quickstack/Host") {
       registry: "/test/registry",
       skill: "/test/skill",
       authoring: "/test/docs/authoring.md",
-      invocation: "quickstack",
+      invocation: "stacks",
       ...overrides,
     });
 }

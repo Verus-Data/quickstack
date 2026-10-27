@@ -7,10 +7,10 @@ the roadmap is outside this contract's edit scope. Publishing remains 1.6c.
 
 | Field | Value |
 |---|---|
-| Goal | `npx quickstack <command>` runs the real CLI under Node on macOS or Linux, from one tarball packed with `bun pm pack` that the local e2e suite installs and tests byte for byte |
-| Traces to | Open question "Is the npm name available? ... `npx quickstack new ...`, the README's first line, only works if `quickstack` is free on npm"; D9's entry point "ask your agent to run quickstack", which only works if the agent can `npx` it |
+| Goal | `npx @steamfield/stacks <command>` runs the real CLI under Node on macOS or Linux, from one tarball packed with `bun pm pack` that the local e2e suite installs and tests byte for byte |
+| Traces to | Open question "Is the npm name available? ... `npx @steamfield/stacks new ...`, the README's first line, only works if `stacks` is free on npm"; D9's entry point "ask your agent to run quickstack", which only works if the agent can `npx` it |
 | Depends on | [0.0](phase-0.0-decisions-and-npm-name.md) (A1, D12, D22, D23, the name reserved), [0.1](phase-0.1-repo-baseline.md) |
-| Blocks | [1.0](phase-1.0-entry-format-and-registry.md) soft (the registry path; a stub path works until then), [1.1](phase-1.1-composition-and-brief.md) soft (the `_npx` rule for `Host.invocation`; 1.1 stubs the constant `quickstack` until then), [1.6b](phase-1.6b-mvp-gate-runs.md) soft (gate runs use the packed tarball if this has landed, else the compiled binary), [1.6c](phase-1.6c-first-release.md) (publishes the tarball this file's pack script makes), [5.0](phase-5.0-ci-release-and-checks.md) (its release workflow and `e2e-node22` job reuse the pack script and e2e) |
+| Blocks | [1.0](phase-1.0-entry-format-and-registry.md) soft (the registry path; a stub path works until then), [1.1](phase-1.1-composition-and-brief.md) soft (the `_npx` rule for `Host.invocation`; 1.1 stubs the constant `stacks` until then), [1.6b](phase-1.6b-mvp-gate-runs.md) soft (gate runs use the packed tarball if this has landed, else the compiled binary), [1.6c](phase-1.6c-first-release.md) (publishes the tarball this file's pack script makes), [5.0](phase-5.0-ci-release-and-checks.md) (its release workflow and `e2e-node22` job reuse the pack script and e2e) |
 | Decisions needed | A1 (recommendation (a), a Node ESM bundle on npm; if (b) or (c), this file is rewritten before work starts). D12 (Node `>=22`; a different floor changes the floor constant, `engines` and the `@types/node` pin, nothing else). D22 (macOS and Linux on Node only; if Bun must be supported, the refusal goes and this file needs a way to stop Bun loading `.env` before `config.ts` captures the environment, which Bun doesn't offer for a script run by `bun`). D23 (if CI stays in scope, the release workflow and the Node 22 job come back here from 5.0). Open question 19 (is refusing Bun acceptable). The maintainers record A1, D12 and D22 in the README decisions log before this file's work starts; that is their step, not part of this file's exit criteria |
 | Settles | What the package ships and how it is packed; how the CLI finds its bundled registry; the Node floor and Bun refusal checks; `Host.invocation`; what replaces the compiled binary in e2e |
 
@@ -46,7 +46,7 @@ Two files in `packages/cli/dist/`:
 | File | What it is |
 |---|---|
 | `cli.mjs` | `bun build src/bin.ts` with `target: "node"`, `format: "esm"`, minified, every dependency bundled, no sourcemap. Bundling Effect means `npx` downloads one small tarball and resolves no dependency tree, which matters most on a first run inside an agent's sandbox |
-| `quickstack.mjs` | The package's `bin`. A few lines copied verbatim by the build from `scripts/node-entry.mjs`, with a `#!/usr/bin/env node` first line |
+| `stacks.mjs` | The package's `bin`. A few lines copied verbatim by the build from `scripts/node-entry.mjs`, with a `#!/usr/bin/env node` first line |
 
 The entry exists because in a single ESM bundle, Effect's module bodies evaluate before
 any code in `bin.ts` runs, so a floor check inside `bin.ts` can be pre-empted by a syntax
@@ -78,8 +78,8 @@ The package:
 {
   "name": "quickstack",
   "type": "module",
-  "bin": { "quickstack": "dist/quickstack.mjs" },
-  "files": ["dist/quickstack.mjs", "dist/cli.mjs", "registry"],
+  "bin": { "stacks": "dist/stacks.mjs" },
+  "files": ["dist/stacks.mjs", "dist/cli.mjs", "registry"],
   "engines": { "node": ">=22" },
   "os": ["darwin", "linux"]
 }
@@ -120,7 +120,7 @@ doesn't change: it already uses Effect `FileSystem` and `Path`.
 - `invocation`: see roadmap, Contracts: Invocation string. `bin.ts` tests its own script
   path (`fileURLToPath(import.meta.url)`) for an `_npx` path segment, which only npm's npx
   cache has; a global or project install, and the tarball installed for the gate, get
-  `quickstack`.
+  `stacks`.
 
 `Host.memory` takes the registry path (and optionally `invocation`) so tests point it at a
 temporary directory; `tests/helpers/cli.ts` passes one in. `packages/cli/registry/`
@@ -183,7 +183,7 @@ setup (one helper in `e2e/`, run once before the tests):
    `/usr/bin:/bin`. Without step 1, `#!/usr/bin/env node` fails wherever Node isn't in
    `/usr/bin` (setup-node's toolcache on CI, Homebrew on macOS).
 
-Tests spawn `<tmp>/prefix/bin/quickstack`, the symlink npm created, so the shebang and
+Tests spawn `<tmp>/prefix/bin/stacks`, the symlink npm created, so the shebang and
 the entry run exactly as they do under `npx`, with an environment built from scratch. The
 tarball's file list is asserted, so a missing `registry/` or a stray source file fails
 the gate. A later sub-phase that ships another directory adds it to `files` and to this
@@ -222,23 +222,23 @@ Not `.github/workflows/`.
 
 ## Acceptance tests
 
-- e2e: the installed `quickstack --version` prints the package version; `doctor --json`
+- e2e: the installed `stacks --version` prints the package version; `doctor --json`
   reports a `registry.path` inside the install prefix with `found: true`.
 - e2e: with a hostile `.env` (`QUICKSTACK_DATA_DIR=/should-not-load`, `LOG_LEVEL=trace`)
   and `bunfig.toml` with a throwing preload in the cwd, output equals a clean cwd's, under
   the installed bin and under `bunx quickstack` run from a scratch project that has the
   tarball installed, with Node on the scratch PATH.
-- e2e: `bun <prefix>/lib/node_modules/quickstack/dist/quickstack.mjs --version` exits 1
+- e2e: `bun <prefix>/lib/node_modules/quickstack/dist/stacks.mjs --version` exits 1
   with the Bun line and empty stdout.
 - e2e: the floor check, by running the installed entry under the found Node with a
   `--import` preload that redefines `process.versions` with `node: "20.0.0"`: exit 1, the
   fixed line, empty stdout.
-- e2e: the tarball contains exactly `package.json`, `README.md`, `dist/quickstack.mjs`,
+- e2e: the tarball contains exactly `package.json`, `README.md`, `dist/stacks.mjs`,
   `dist/cli.mjs` and `registry/**`, and its `package.json` has no `catalog:` or
   `workspace:` spec.
 - e2e: the `.sha256` file matches the tarball.
-- Unit: `Host.invocation` is `npx -y quickstack@<VERSION>` for a script path with an `_npx`
-  segment and `quickstack` for any other, including a global install under `node_modules` (the path test is a pure function in
+- Unit: `Host.invocation` is `npx -y @steamfield/stacks@<VERSION>` for a script path with an `_npx`
+  segment and `stacks` for any other, including a global install under `node_modules` (the path test is a pure function in
   `bin.ts`'s module or a small helper it calls).
 - Unit: the existing suites pass with `Host.memory` taking a registry path.
 - Signals through `npm exec` of the packed tarball (the case [0.3b](phase-0.3b-processes-and-signals.md)
@@ -257,12 +257,12 @@ Not `.github/workflows/`.
 ## What this plan may get wrong
 
 - Recorded 2026-10-27, scoped-package follow-up: npm refused the unscoped name.
-  The npm package is `@quickstack/cli` with public access; the command, storage paths
-  and environment variables stay `quickstack`. Tarballs use `quickstack-cli-<version>.tgz`,
-  and npx briefs use `npx -y @quickstack/cli@<version> verify`. The command/storage slug
+  The npm package is `@steamfield/stacks` with public access; the command, storage paths
+  and environment variables stay `stacks`. Tarballs use `steamfield-stacks-<version>.tgz`,
+  and npx briefs use `npx -y @steamfield/stacks@<version> verify`. The command/storage slug
   is independent of package metadata. The root and package licenses remain Apache-2.0,
   with the package license copied byte for byte from the root license on main.
-  An offline npx run confirmed `_npx/<cache>/node_modules/@quickstack/cli/` and the
+  An offline npx run confirmed `_npx/<cache>/node_modules/@steamfield/stacks/` and the
   scoped verify line in the generated brief. The six frozen canonical brief digests
   changed only by the package spelling, verified by reversing that substitution.
 
@@ -277,7 +277,7 @@ Not `.github/workflows/`.
 - Recorded 2026-10-27: npm's `npx --yes /absolute/path/package.tgz` shortcut tries to
   execute the local tarball (exit 126) before loading package metadata. The explicit
   `file:/absolute/path/package.tgz` spec installs and runs through npx correctly;
-  its generated brief contains `npx -y @quickstack/cli@0.1.0 verify`. The package-name
+  its generated brief contains `npx -y @steamfield/stacks@0.1.0 verify`. The package-name
   invocation after publication remains the goal; no npm behavior is patched here.
 - Recorded 2026-10-27 after the independent review: the e2e scratch PATH pins the
   selected Node with a `node` symlink, including an override named `node22`. The bench
@@ -329,7 +329,7 @@ Not `.github/workflows/`.
   behavior; the e2e case is the proof. If it runs the bundle under Bun anyway, the entry
   refuses, and the README says to use `npx`.
 - `Host.invocation` keys on npm's `_npx` cache directory name. If npm renames it, npx
-  users get `quickstack` in the brief, which fails when nothing is installed; a unit
+  users get `stacks` in the brief, which fails when nothing is installed; a unit
   test pins the expected path shape, and 1.6c checks the brief from a real `npx` run.
 - A fully bundled Effect may be larger than expected. Measure the tarball; anything over
   a couple of megabytes is worth a look at tree-shaking before 1.6c.
@@ -347,6 +347,6 @@ Not `.github/workflows/`.
 - 2026-10-26: the registry stub in `bin.ts` used `import.meta.dirname`, which inside a Bun
   standalone binary is the virtual `/$bunfs`, so the compiled binary found no bundled
   registry at all. Ahead of 0.2, a compiled binary now looks for `registry/` beside its own
-  `bin/` directory (`dist/quickstack` finds the package's, `<prefix>/bin/quickstack` finds
+  `bin/` directory (`dist/quickstack` finds the package's, `<prefix>/bin/stacks` finds
   `<prefix>/registry`), so 1.6b's gate runs can use an installed copy of the binary. 0.2
   still decides where the npm package's registry lives and replaces the stub.
