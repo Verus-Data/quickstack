@@ -71,6 +71,15 @@ const INHERITED_GIT_VARS = [
   "GIT_COMMON_DIR",
 ];
 
+/** `env` without the git variables a surrounding git hook exports. */
+export function withoutGitVars(
+  env: Record<string, string | undefined>,
+): Record<string, string | undefined> {
+  const out = { ...env };
+  for (const key of INHERITED_GIT_VARS) delete out[key];
+  return out;
+}
+
 /** Run a hook with a payload (an object is sent as JSON, a string as is). */
 export function runHook(
   event: string,
@@ -83,12 +92,11 @@ export function runHook(
       ? String(payload.tool_name)
       : options.tool;
   const command = hookCommand(event, script, tool);
-  const merged: Record<string, string | undefined> = {
+  const merged = withoutGitVars({
     ...process.env,
     CLAUDE_PROJECT_DIR: REPO,
     ...options.env,
-  };
-  for (const key of INHERITED_GIT_VARS) delete merged[key];
+  });
   const env = Object.fromEntries(
     Object.entries(merged).filter((entry): entry is [string, string] => entry[1] !== undefined),
   );

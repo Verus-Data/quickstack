@@ -2,7 +2,15 @@ import { spawnSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { denyReason, edit, type Fixture, makeFixture, runHook, write } from "../helpers/hooks";
+import {
+  denyReason,
+  edit,
+  type Fixture,
+  makeFixture,
+  runHook,
+  withoutGitVars,
+  write,
+} from "../helpers/hooks";
 
 // Built from pieces so this file never carries the shapes the guard denies.
 const home = (user: string, rest: string) => ["", "Users", user, rest].join("/");
@@ -76,7 +84,7 @@ describe("repo content guard", () => {
         ),
       ),
     ).toBeUndefined();
-    spawnSync("git", ["init", "-q"], { cwd: project.dir });
+    spawnSync("git", ["init", "-q"], { cwd: project.dir, env: withoutGitVars(process.env) });
     writeFileSync(file(".gitignore"), "logs/\n");
     mkdirSync(file("logs"));
     expect(
