@@ -1,5 +1,5 @@
 import { Duration, Effect, FileSystem, Option, Path, Result } from "effect";
-import { AppConfig } from "../../config";
+import { AppConfig, GIT_REPOSITORY_VARIABLES } from "../../config";
 import type { Finding } from "../../schemas/validate";
 import { Processes } from "../../services/processes";
 import { type Entry, markdownFile } from "../registry/entry";
@@ -45,9 +45,9 @@ export const gitChecks: Check = (view) =>
     const path = yield* Path.Path;
     const fs = yield* FileSystem.FileSystem;
     const config = yield* AppConfig;
-    const env = Object.fromEntries(
-      Object.entries(config.childEnv([])).filter(([key]) => !key.startsWith("GIT_")),
-    );
+    // As for new's git calls: git finds the checkout from the root alone, and a discovery limit
+    // such as GIT_CEILING_DIRECTORIES still holds.
+    const env = config.childEnv(GIT_REPOSITORY_VARIABLES, { LC_ALL: "C" });
     const owners = new Map<string, Entry>();
     for (const entry of view.entries) {
       const files = yield* Effect.result(registry.files(entry));

@@ -1,4 +1,4 @@
-import { chmodSync, cpSync, mkdirSync, symlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, mkdirSync, realpathSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { it } from "@effect/vitest";
 import { Effect, Schema } from "effect";
@@ -948,6 +948,36 @@ test.skipIf(git.status !== 0)(
         "git ignores my notes.tmpl here (rule my notes.tmpl in stacks/odd/files/.gitignore), so it never reaches a commit",
       ],
     ]);
+  },
+);
+
+test.skipIf(git.status !== 0)(
+  "git-ignored drops only the repository-selecting GIT_ variables: GIT_DIR selects nothing, GIT_CEILING_DIRECTORIES holds",
+  async () => {
+    const repo = temp();
+    spawnGit(["init", "-q", repo]);
+    const root = join(repo, "registry");
+    const entry = stack(root, "hides");
+    mkdirSync(join(entry, "files"));
+    writeFileSync(join(entry, "files", ".gitignore"), ".env.*\n");
+    writeFileSync(join(entry, "files", ".env.example.tmpl"), "KEY=\n");
+    const elsewhere = temp();
+    spawnGit(["init", "-q", elsewhere]);
+    const PATH = process.env.PATH ?? "";
+    // A git hook exports GIT_DIR and GIT_WORK_TREE; git still finds the root's own checkout.
+    const hooked = await report([root], {
+      env: { PATH, GIT_DIR: join(elsewhere, ".git"), GIT_WORK_TREE: elsewhere },
+    });
+    expect(hooked.status).toBe(0);
+    expect(only(hooked.report.findings, "git-ignored").map((f) => f.file)).toEqual([
+      "stacks/hides/files/.env.example.tmpl",
+    ]);
+    // A ceiling at the checkout's top keeps git from finding it, so there is nothing to check.
+    const ceiled = await report([root], {
+      env: { PATH, GIT_CEILING_DIRECTORIES: realpathSync(repo) },
+    });
+    expect(ceiled.status).toBe(0);
+    expect(only(ceiled.report.findings, "git-ignored")).toEqual([]);
   },
 );
 
