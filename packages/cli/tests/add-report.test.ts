@@ -16,7 +16,13 @@ const result: Omit<AddResult, "handoff"> = {
     { code: "missing_tool", id: "tool" },
     { code: "stack_unknown", id: "gone-stack" },
   ],
-  missingTools: [{ tool: "tool", owners: [{ kind: "fragment", id: "ci" }], drop: [] }],
+  missingTools: [
+    {
+      tool: "tool",
+      owners: [{ kind: "fragment", id: "ci" }],
+      drop: [{ id: "ci", flag: "with" }],
+    },
+  ],
   name: { value: "app", source: "directory" },
   createdManifest: true,
   tamperCheck: null,

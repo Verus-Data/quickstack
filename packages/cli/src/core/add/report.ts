@@ -12,7 +12,8 @@ export function renderAdd(
     `Added ${result.added.map(printable).join(", ")}${context.shown === "." ? "" : ` to ${printable(context.shown)}`}`,
     ...(result.written.length ? [`Written: ${result.written.map(printable).join(", ")}`] : []),
     ...(result.skipped.length ? [`Skipped: ${result.skipped.map(printable).join(", ")}`] : []),
-    ...result.missingTools.map((item) => `Missing tool: ${missingLine(item)}`),
+    // `drop` names new's flags, which don't exist for add.
+    ...result.missingTools.map((item) => `Missing tool: ${missingLine({ ...item, drop: [] })}`),
     // missingTools above says the same as each missing_tool warning, with its owners.
     ...result.warnings
       .filter((warning) => warning.code !== "missing_tool")
