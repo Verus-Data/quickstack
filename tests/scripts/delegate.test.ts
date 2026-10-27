@@ -23,6 +23,9 @@ echo '{"type":"thread.started","thread_id":"thread-1"}'
 echo '{"type":"item.completed","item":{"type":"command_execution","command":"bun run test","exit_code":0}}'
 if [ "$FAKE_MODE" = fail ]; then
   echo '{"type":"turn.failed","error":{"message":"boom"}}'
+elif [ "$FAKE_MODE" = capacity ]; then
+  echo '{"type":"turn.failed","error":{"message":"Selected model is at capacity. Please try a different model."}}'
+  exit 1
 else
   echo '{"type":"turn.completed"}'
   echo "Changed src.txt" > "$last"
@@ -129,5 +132,13 @@ describe("delegate.sh", () => {
     const result = run([contract, "--worktree", worktree, "--write"], { FAKE_MODE: "fail" });
     expect(result.status).toBe(1);
     expect(result.stdout).toContain("result:    failure - turn failed");
+  });
+
+  it("names a turn's failure when codex exits nonzero, and says a capacity failure can resume", () => {
+    const result = run([contract, "--worktree", worktree, "--write"], { FAKE_MODE: "capacity" });
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain("result:    failure - turn failed");
+    expect(result.stdout).toContain("at capacity");
+    expect(result.stdout).toContain("transient: resume thread-1 with a short 'continue' follow-up");
   });
 });
