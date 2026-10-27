@@ -1,0 +1,52 @@
+# One `{{project_slug}} ask` turn
+
+How a model call moves through the CLI, and which harness layers catch the mistakes specific to the chat commands and the TUI. With the Claude adapter installed, the general layer table is in [`harness.md`](harness.md).
+
+`main` owns the process: it parses argv, runs one handler, and turns the outcome into stderr output and an exit code. The handler streams `TurnEvent`s from `core/chat.ts` and renders them through `Output`.
+
+```mermaid
+sequenceDiagram
+    participant U as Shell / pipe
+    participant M as main.ts
+    participant H as commands/ask.ts
+    participant C as core/chat.ts runTurn
+    participant O as OpenRouter
+
+    U->>M: {{project_slug}} ask --json "time in Tokyo?"
+    M->>H: Command.runWith(cli)(argv)
+    Note over H: key check (exit 3), stdin (if piped),<br/>decode Prompt (exit 2), resolveModel (exit 2)
+    H->>C: sendMessage(chat, text, model)
+    C->>O: POST /chat/completions (stream)
+    O-->>C: deltas, tool call, usage + cost
+    C-->>H: text, tool-call events
+    H-->>U: NDJSON on stdout
+    opt the model called currentTime
+        C->>C: run the tool (Effect AI toolkit)
+        C->>O: next step with the tool result
+        O-->>C: answer
+    end
+    C-->>H: finish (text, tools, tokens, cost summed over steps)
+    H-->>U: done event on stdout (usage line on stderr in text mode)
+    Note over C: onExit: log "llm call", save the chat<br/>(partial and marked interrupted on failure or Ctrl+C)
+    M-->>U: exit code (0, or 4 with an error event and stderr JSON)
+    Note over M: logs one "command" line with runId, exitCode, durationMs
+```
+
+The retry happens inside a step only while nothing has been emitted: once a delta reached stdout, repeating the request would print it twice.
+
+## Layers for chat and TUI mistakes
+
+| Mistake | Prevention | Blocked or flagged | Backstop |
+| --- | --- | --- | --- |
+| Importing `@opentui/*` outside `src/tui/`, or `effect` in a TUI component | `tui.md` rule | `guard-chat-boundaries.ts` denies the write; `chat-boundaries.grit` flags it | vitest fails to load the module on Node, then CI |
+| `{{project_slug}} mcp` writing anything but JSON-RPC to stdout | `cli.md`, `effect-ai.md` rules | the Grit plugin and guard flag `console.*` and raw stdout writes | `tests/mcp.test.ts` checks every stdout line is JSON-RPC |
+| The TUI and the programs disagree (event shapes, errors) | `tui.md` rule | `tests/tui/closed-loop.test.tsx` renders `App` over the real bridge against the stub | the PTY e2e drives the binary's TUI |
+| OpenTUI taking over signals or Ctrl+C | `tui.md` rule | `tests/tui/launch.test.ts` pins the renderer options | the PTY e2e checks Ctrl+C exits 0 and leaves the alternate screen |
+| A binary that builds but can't load its native library | `tui.md` rule | `doctor --tui` in the app e2e | the release workflow runs it on each OS and CPU when bun-release is selected |
+| Stub drift: OpenRouter's real stream format moves away from the hand-written stub | `openrouter.md` rule | `tests/openrouter-replay.test.ts` replays recorded OpenRouter bodies through the real provider, whole and in 7-byte pieces, and checks text, tokens, and cost against the recordings | `bun run record:openrouter` re-records them (manual, needs a key) |
+| A model regression: a model stops calling the tool, or extracts the wrong fields | none | `bun run eval --models a,b` through {{project_slug}}'s own programs | manual only: needs a key and costs money |
+
+## Try it
+
+1. Drive the CLI with no key (1 minute): `eval "$(bun run --silent stub)"`, then `bun run dev -- ask "hi"`, `bun run dev -- ask --bogus --json; echo $?` (stdout empty, exit 2), and `jq -c 'select(.msg=="command")' logs/cli.jsonl`. `bun run stub:stop` when done.
+2. See the TUI as an agent does (30 seconds): `bun run tui:capture -- chat --keys "hi<enter>" --wait-for "in /"`.

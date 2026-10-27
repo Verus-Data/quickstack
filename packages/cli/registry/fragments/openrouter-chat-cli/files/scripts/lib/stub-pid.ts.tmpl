@@ -1,0 +1,50 @@
+// logs/stub.pid holds "<pid> <openrouter port>" while scripts/stub-server.ts runs. Only when the
+// bun-release fragment is selected does the server add a third field, its stub releases port; without
+// it the release fields below are never read. Paths are relative to the repo root, which the scripts
+// chdir to.
+import { spawnSync } from "node:child_process";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+export const STUB_PID_FILE = "logs/stub.pid";
+export const STUB_REPO = "stub/{{project_slug}}";
+
+export interface RunningStub {
+  readonly pid: number;
+  readonly openRouterPort: number;
+  readonly releasesPort?: number;
+}
+
+/** The running stub, if the pid file names a live scripts/stub-server.ts (not a reused pid). */
+export const runningStub = (): RunningStub | undefined => {
+  let text: string;
+  try {
+    text = readFileSync(STUB_PID_FILE, "utf8");
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined;
+    throw error;
+  }
+  const [pid, openRouterPort, releasesPort] = text.trim().split(/\s+/).map(Number);
+  if (!pid || !openRouterPort) return undefined;
+  const ps = spawnSync("ps", ["-o", "command=", "-p", String(pid)], { encoding: "utf8" });
+  return ps.stdout.includes("scripts/stub-server.ts")
+    ? { pid, openRouterPort, releasesPort }
+    : undefined;
+};
+
+/**
+ * The env that points {{project_slug}} at the stub (no real key, no spend). The data dir stays inside this
+ * checkout (.dev/), so `./dist/{{project_slug}}` driven through the stub never touches the user's real
+ * chats. With a releases port (bun-release only), the install dir and releases URL stay local too.
+ */
+export const stubEnv = (stub: RunningStub) => ({
+  {{env_prefix}}_DATA_DIR: resolve(".dev/data"),
+  OPENROUTER_API_KEY: "sk-or-stub",
+  OPENROUTER_BASE_URL: `http://127.0.0.1:${stub.openRouterPort}/api/v1`,
+  OPENROUTER_MODEL: "openai/gpt-test",
+  ...(stub.releasesPort ? {
+    {{env_prefix}}_INSTALL_DIR: resolve(".dev/bin"),
+    {{env_prefix}}_RELEASES_URL: `http://127.0.0.1:${stub.releasesPort}`,
+    {{env_prefix}}_RELEASES_REPO: STUB_REPO,
+  } : {}),
+});
