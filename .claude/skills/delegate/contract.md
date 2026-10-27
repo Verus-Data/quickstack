@@ -43,6 +43,8 @@ roadmap's "Contracts every sub-phase shares" table; never rename or redefine one
 - May change: {files or directories}.
 - Must not change: {files, public contracts, anything else}. Edit no file outside the scope; if
   the task can't be done inside it, stop and say why.
+- Locked: {test files another delegate wrote, or none}. Make them pass without editing them. If
+  one looks wrong, leave it and say why in the hand-off.
 
 ## Acceptance
 
@@ -91,7 +93,7 @@ codex exec --ephemeral --sandbox read-only -m gpt-6.1-sol -c 'model_reasoning_ef
 ```
 
 Fix every finding in `review.md` (its list has no optional tier), or say in the hand-off why a
-finding is wrong. Then rerun the acceptance checks. One review pass only: don't review again
+finding is wrong. A finding about a locked file is a note for the orchestrator, not an edit. Then rerun the acceptance checks. One review pass only: don't review again
 after the fixes.
 
 ## Hand-off

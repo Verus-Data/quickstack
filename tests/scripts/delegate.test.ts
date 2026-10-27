@@ -9,17 +9,17 @@ import { REPO } from "../helpers/hooks";
 
 const SCRIPT = join(REPO, "scripts/delegate.sh");
 
-// Records its argv, writes one file into --cd and reports a completed (or failed) turn.
+// Records its argv, writes one file into its cwd and reports a completed (or failed) turn.
 const FAKE_CODEX = `#!/usr/bin/env bash
 printf '%s\\n' "$@" > "$FAKE_ARGS"
 while [ $# -gt 0 ]; do
   case "$1" in
-    --cd) cd "$2" || exit 9; shift ;;
     --output-last-message) last="$2"; shift ;;
   esac
   shift
 done
 echo written > src.txt
+echo '{"type":"thread.started","thread_id":"thread-1"}'
 echo '{"type":"item.completed","item":{"type":"command_execution","command":"bun run test","exit_code":0}}'
 if [ "$FAKE_MODE" = fail ]; then
   echo '{"type":"turn.failed","error":{"message":"boom"}}'
@@ -94,14 +94,16 @@ describe("delegate.sh", () => {
     const args = readFileSync(join(root, "args.txt"), "utf8").split("\n");
     expect(args).toEqual(
       expect.arrayContaining([
-        "danger-full-access",
+        'sandbox_mode="danger-full-access"',
         "gpt-6.1-sol",
         'model_reasoning_effort="high"',
         'approval_policy="never"',
       ]),
     );
+    expect(args).not.toContain("--ephemeral");
     expect(args.join("\n")).toContain("Do the thing.");
     expect(result.stdout).toContain("result:    success - turn completed");
+    expect(result.stdout).toContain("session:   thread-1");
     expect(result.stdout).toContain("  [0] bun run test");
     expect(result.stdout).toContain("  ?? src.txt");
     expect(result.stdout).toContain("  Changed src.txt");
@@ -110,7 +112,17 @@ describe("delegate.sh", () => {
   it("is read-only without --write and takes the model from the environment", () => {
     run([contract, "--worktree", worktree], { DELEGATE_MODEL: "gpt-6-sol" });
     const args = readFileSync(join(root, "args.txt"), "utf8").split("\n");
-    expect(args).toEqual(expect.arrayContaining(["read-only", "gpt-6-sol"]));
+    expect(args).toEqual(expect.arrayContaining(['sandbox_mode="read-only"', "gpt-6-sol"]));
+  });
+
+  it("resumes a session with the contract as the follow-up and no second preamble", () => {
+    const result = run([contract, "--worktree", worktree, "--write", "--resume", "thread-1"]);
+    expect(result.status, result.stderr).toBe(0);
+    const args = readFileSync(join(root, "args.txt"), "utf8").split("\n");
+    expect(args.slice(0, 2)).toEqual(["exec", "resume"]);
+    expect(args).toContain("thread-1");
+    expect(args.join("\n")).toContain("Do the thing.");
+    expect(args.join("\n")).not.toContain("orchestrator");
   });
 
   it("fails on a failed turn even when codex exits 0", () => {

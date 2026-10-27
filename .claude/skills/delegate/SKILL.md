@@ -29,12 +29,16 @@ faster than you could write the contract, or when you can't yet say what done lo
 ## Workflow
 
 1. Worktree. One per delegate, under the main checkout's `.claude/worktrees/`, with
-   dependencies installed (the script refuses a worktree without `node_modules`):
+   dependencies installed (the script refuses a worktree without `node_modules`). Always name
+   the branch to start from; without it you get whatever is checked out where you run it:
 
    ```bash
-   git worktree add .claude/worktrees/<name> -b delegate/<name>
+   git worktree add .claude/worktrees/<name> -b delegate/<name> <base branch>
    (cd .claude/worktrees/<name> && bun install --frozen-lockfile)
    ```
+
+   Run everything from the main checkout, addressing worktrees by path. A session isolated in
+   one worktree (`EnterWorktree`) may not be able to run git in another.
 
 2. Contract. Copy `contract.md` beside this file into the scratchpad and fill it in. Codex
    reads `AGENTS.md` on its own but never sees `.claude/rules/` or this conversation, so the
@@ -57,9 +61,11 @@ faster than you could write the contract, or when you can't yet say what done lo
    `rules/agent-ops.md`, so don't dispatch another. Read the hand-off report
    (`last-message.md` in the run's log directory) first, then the diff and new files, spending
    your attention on its "look closer at" items, its decisions and any finding it disputed.
-   Check every changed path is in scope. A report without a review section, or a diff that
-   took the wrong shape, goes back as a follow-up contract in the same worktree rather than a
-   rewrite.
+   Check every changed path is in scope. A report without a review section, or work that
+   needs more than a refactor, goes back to the same session: a short follow-up contract run
+   with `--resume <session>` (the digest prints the id), which keeps everything Codex already
+   read and decided. Start fresh with a narrower contract only when the first run went the
+   wrong way.
 
 5. Refactor pass. Bring the code to the standard you would have written it to, with the Edit
    tool so the lint, typecheck and boundary hooks see every change (none of them ran for
@@ -71,8 +77,19 @@ faster than you could write the contract, or when you can't yet say what done lo
    touched outside the task gets reverted.
 
 6. Gate and commit. Run `bun run check` in the worktree, commit there with a Conventional
-   Commits message, and land it the way the task calls for. Remove the worktree and branch once
-   landed. `/execute:codex <plan>` runs this loop over a whole plan.
+   Commits message, and land it the way the task calls for.
 
-A session that is itself isolated in a worktree may not be able to run git in another one: copy
-the reviewed files (the digest lists them) into your own worktree and commit there.
+7. Clean up. Cleanup is yours; Codex never removes anything. Once the work is merged:
+
+   ```bash
+   git worktree remove .claude/worktrees/<name>
+   git merge-base --is-ancestor delegate/<name> <branch it merged into> && git branch -D delegate/<name>
+   ```
+
+   The ancestor check confirms the work landed; `git branch -d` only compares against the
+   current HEAD, which from the main checkout is `main`. A unit you abandon gets
+   `git worktree remove --force` and `git branch -D` once you've confirmed nothing in it is
+   worth keeping. Remove only worktrees you created; other sessions keep theirs under the same
+   directory. The run logs under `$TMPDIR/quickstacks-delegate/` can stay.
+
+`/execute:codex <plan>` runs this loop over a whole plan.

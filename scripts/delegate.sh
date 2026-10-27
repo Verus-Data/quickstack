@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
 # Run a Codex delegate on a contract file inside its own linked worktree and print a digest.
 #
-#   scripts/delegate.sh <contract.md> --worktree <path> [--write]
+#   scripts/delegate.sh <contract.md> --worktree <path> [--write] [--resume <session>]
 #
-# Read-only by default; --write lets Codex edit files in the worktree. The script never commits:
-# the orchestrator (Claude) reviews the diff, refactors, runs the gate and owns the commit.
-# .claude/skills/delegate/SKILL.md is the workflow.
+# Read-only by default; --write lets Codex edit files in the worktree. --resume continues the
+# session an earlier run's digest printed, with <contract.md> as the follow-up, so Codex keeps
+# what it learned. The script never commits: the orchestrator (Claude) reviews the diff,
+# refactors, runs the gate and owns the commit. .claude/skills/delegate/SKILL.md is the workflow.
 #
 # Model and effort: DELEGATE_MODEL (default gpt-6.1-sol), DELEGATE_EFFORT (default high).
 # Wall clock: DELEGATE_TIMEOUT_SECS (default 3600). Run it in the background from Claude; a
@@ -30,7 +31,7 @@ LOG_ROOT="${DELEGATE_LOG_ROOT:-${TMPDIR:-/tmp}/quickstacks-delegate}"
 LAST_MESSAGE_LINES=60
 
 usage() {
-    sed -n '4,7p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '4,9p' "$0" | sed 's/^# \{0,1\}//'
     exit 2
 }
 
@@ -45,9 +46,15 @@ CONTRACT="$1"
 shift
 WRITE=0
 WT=""
+RESUME=""
 while [ $# -gt 0 ]; do
     case "$1" in
         --write) WRITE=1 ;;
+        --resume)
+            [ $# -ge 2 ] || die "--resume needs a session id"
+            RESUME="$2"
+            shift
+            ;;
         --worktree)
             [ $# -ge 2 ] || die "--worktree needs a path"
             WT="$2"
@@ -76,9 +83,11 @@ GIT_COMMON_ABS="$(cd "$WT" && cd "$(git rev-parse --git-common-dir)" && pwd -P)"
 CODEX="${CODEX_BIN:-$(command -v codex)}"
 [ -n "$CODEX" ] && [ -x "$CODEX" ] || die "codex not found on PATH (or set CODEX_BIN)"
 
-PROMPT="$PREAMBLE
+# A resumed session already has the preamble.
+PROMPT="$(cat "$CONTRACT")"
+[ -n "$RESUME" ] || PROMPT="$PREAMBLE
 
-$(cat "$CONTRACT")"
+$PROMPT"
 
 mkdir -p "$LOG_ROOT" || die "cannot create log root $LOG_ROOT"
 # mktemp keeps two runs started in the same second from sharing a directory.
@@ -139,17 +148,25 @@ sleep 1 # mtime granularity: anything written from here on is -newer the mark
 SANDBOX="read-only"
 [ "$WRITE" = 1 ] && SANDBOX="danger-full-access"
 
+# `exec resume` takes neither --cd nor --sandbox, so both modes run from the worktree and set the
+# sandbox through config. Sessions persist (no --ephemeral) so a follow-up can resume them.
+if [ -n "$RESUME" ]; then
+    SUBCOMMAND=(exec resume)
+    TARGET=("$RESUME" "$PROMPT")
+else
+    SUBCOMMAND=(exec)
+    TARGET=("$PROMPT")
+fi
+cd "$WT" || die "cannot enter $WT"
 START=$(date +%s)
-run_capped "$TIMEOUT_SECS" "$CODEX" exec \
-    --ephemeral \
-    --cd "$WT" \
-    --sandbox "$SANDBOX" \
+run_capped "$TIMEOUT_SECS" "$CODEX" "${SUBCOMMAND[@]}" \
     --model "$MODEL" \
+    -c "sandbox_mode=\"$SANDBOX\"" \
     -c "model_reasoning_effort=\"$EFFORT\"" \
     -c 'approval_policy="never"' \
     --json \
     --output-last-message "$LAST_FILE" \
-    "$PROMPT" \
+    "${TARGET[@]}" \
     </dev/null >"$EVENTS" 2>"$RUN_DIR/stderr.txt"
 RC=$?
 ELAPSED=$(($(date +%s) - START))
@@ -176,6 +193,8 @@ echo "worktree:  $WT"
 echo "exit:      $RC  (${ELAPSED}s)"
 echo "result:    $STATUS - $REASON"
 echo "logs:      $RUN_DIR"
+SESSION="$(jq -r 'select(.type == "thread.started") | .thread_id' "$EVENTS" 2>/dev/null | head -1)"
+echo "session:   ${SESSION:-${RESUME:-(none)}}  (follow up with --resume <session>)"
 
 COMMANDS="$(jq -r 'select(.type == "item.completed" and .item.type == "command_execution")
     | "  [\(.item.exit_code)] \(.item.command | .[0:160])"' "$EVENTS" 2>/dev/null)"
