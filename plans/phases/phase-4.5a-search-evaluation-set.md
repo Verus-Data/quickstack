@@ -1,6 +1,7 @@
 # Phase 4.5a: Search evaluation set
 
 Status: DRAFT 2026-10-27 (not agreed)
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|

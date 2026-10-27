@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "gate": { "mrr": 0, "recallAt3": 0, "fragmentRecallAt5": 0 },
+  "queries": [
+    {
+      "id": "unknown-stack-request",
+      "pool": "product",
+      "split": "tune",
+      "query": "a tool that is not in this registry",
+      "first": { "kind": "stack", "id": "no-such-stack" },
+      "relevant": [{ "kind": "stack", "id": "no-such-stack", "grade": 2 }]
+    }
+  ]
+}
