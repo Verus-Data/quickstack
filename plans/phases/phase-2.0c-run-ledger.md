@@ -1,6 +1,8 @@
 # Phase 2.0c: Run ledger
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: EXECUTED 2026-10-27 (ledger schema and store, `runs`, `list`'s last-run column, the
+import script; `registry/runs.json` seeded from the three 1.6b gate notes; reviewed once and
+fixed). Item 6 checks the compiled binary's shipped ledger; the tarball form waits for 0.2
 Acceptance tests: traced
 
 | Field | Value |
