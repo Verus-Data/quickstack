@@ -72,8 +72,9 @@ describe("agent output carries no log lines", () => {
     expect(result.stderr).toBe(
       "Invalid command.\n  Command: doctr\n  Did you mean: doctor?\n  Next: run quickstacks --help to list the commands, or quickstacks <command> --help for one.\n",
     );
+    // A person sees the same lines: the failure's log record goes to the file, so Next ends stderr.
     const human = await runCli(["doctr"], { host: terminal });
-    expect(human.stderr).toMatch(/\n\S+ ERROR command failure\s*\n$/);
+    expect(human.stderr).toBe(result.stderr);
   });
   test("a warning goes to the log file, not stderr", async () => {
     const home = temp();

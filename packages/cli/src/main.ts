@@ -114,6 +114,10 @@ export function main(
       if (observed.error instanceof BrokenPipe) return 0;
       if (hasFrameworkOutput(observed, framework))
         yield* writeFramework({ framework, args, invocation });
+      // Log lines reach stderr only for a human; an agent or JSON reader gets them in the file only.
+      // The command's own records go first, so a failure's `Next:` line ends human stderr.
+      const quiet = output.audience !== "human";
+      yield* logging.flush(settings, quiet);
       const written = yield* settleOutput(observed.error, invocation);
       if (written.closed) return 0;
       const { error, unwritten } = written;
@@ -133,8 +137,7 @@ export function main(
         status,
         fields: reported.state.fields,
       });
-      // Log lines reach stderr only for a human; an agent or JSON reader gets them in the file only.
-      yield* logging.flush(settings, output.audience !== "human");
+      yield* logging.flush(settings, quiet || expectedFailure(error, defect));
       return status;
     }),
   );
@@ -266,6 +269,13 @@ const flushSuccess = (invocation: string): Effect.Effect<WriteOutcome, never, Ou
 
 const settleOutput = (error: AppError | undefined, invocation: string) =>
   error ? writeFailure(error, invocation) : flushSuccess(invocation);
+
+/**
+ * Whether the summary record is an expected failure's, which goes to the log file only: stderr
+ * already reports it. A defect's stays on human stderr, where its stack frames say why.
+ */
+const expectedFailure = (error: AppError | undefined, defect: string | undefined) =>
+  error !== undefined && defect === undefined;
 
 type CommandLog = {
   settings: LogSettings;

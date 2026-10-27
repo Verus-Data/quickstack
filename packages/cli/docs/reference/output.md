@@ -47,7 +47,7 @@ Stdout contains results only. `--json` emits one result object; JSON version is 
 
 Two exceptions keep stdout. A failure that carries a report (`VerifyFailed`, `VerifyChanged`, `ValidationFailed`) writes that report to stdout before the error. A command that hands the terminal to another program writes its output so far before doing so, which stays on stdout if it later fails.
 
-In JSON and agent output, ancillary logs go only to the optional log file, so stderr stays parseable and short; set `QUICKSTACKS_LOG_FILE`, or rerun at a terminal, to see why a `Defect` happened. A `--json` after `--` belongs to the command, not to quickstacks. Human output emits logs to stderr and optionally to the same JSONL file.
+In JSON and agent output, ancillary logs go only to the optional log file, so stderr stays parseable and short; set `QUICKSTACKS_LOG_FILE`, or rerun at a terminal, to see why a `Defect` happened. A `--json` after `--` belongs to the command, not to quickstacks. Human output emits logs to stderr, before any error, and optionally to the same JSONL file; the summary record of an expected failure goes to the file only, so `Next:` ends stderr (a `Defect`'s stays, with its stack frames).
 
 ## JSON Schemas
 

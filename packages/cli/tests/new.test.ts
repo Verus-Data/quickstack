@@ -449,7 +449,7 @@ describe("new refuses before writing", () => {
     expect(far.status).toBe(2);
     expect(far.stdout).toBe("");
     expect(far.stderr).toBe(
-      "Not found.\n  Stack: nope\n  Next: run quickstacks list --json to see every stack and fragment id.\n",
+      "Not found.\n  Stack: nope\n  Next: run quickstacks list to see every stack and fragment id.\n",
     );
   });
 
@@ -463,7 +463,7 @@ describe("new refuses before writing", () => {
         tag: "NotFound",
         message: "Not found.",
         retryable: false,
-        next: "run quickstacks list --json to see every stack and fragment id.",
+        next: "run quickstacks list to see every stack and fragment id.",
         details: { suggestions: [], id: "bogus", kind: "fragment" },
       });
       expect(existsSync(join(json.home, "app"))).toBe(false);
@@ -471,7 +471,7 @@ describe("new refuses before writing", () => {
       expect(human.status).toBe(2);
       expect(human.stdout).toBe("");
       expect(human.stderr).toBe(
-        "Not found.\n  Fragment: bogus\n  Next: run quickstacks list --json to see every stack and fragment id.\n",
+        "Not found.\n  Fragment: bogus\n  Next: run quickstacks list to see every stack and fragment id.\n",
       );
     }
   });

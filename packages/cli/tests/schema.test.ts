@@ -97,18 +97,18 @@ describe("schema", () => {
     expectShape(error, inner);
   });
 
-  test("an unknown name is Usage with the names expected and a did-you-mean", async () => {
+  test("an unknown name is Usage labelled as an argument, with the names expected and a did-you-mean", async () => {
     const result = await runCli(["schema", "verfy"]);
     expect(result.status).toBe(2);
     expect(result.stdout).toBe("");
     expect(result.stderr).toBe(
       [
         "Invalid command.",
-        "  Flag: name",
+        "  Argument: name",
         "  Value: verfy",
         `  Expected: ${RESULT_NAMES.join(" | ")}`,
         "  Did you mean: verify?",
-        "  Next: pass a value from Expected; quickstacks <command> --help lists every flag.",
+        "  Next: pass a value from Expected; quickstacks <command> --help lists every argument.",
         "",
       ].join("\n"),
     );
@@ -123,7 +123,7 @@ describe("schema", () => {
         tag: "Usage",
         message: "Invalid command.",
         retryable: false,
-        next: "pass a value from Expected; quickstacks <command> --help lists every flag.",
+        next: "pass a value from Expected; quickstacks <command> --help lists every argument.",
         details: {
           flag: "name",
           value: "verfy",

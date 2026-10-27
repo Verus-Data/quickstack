@@ -454,7 +454,7 @@ test("the NotFound envelope carries its suggestions and the id and kind it didn'
       tag: "NotFound",
       message: "Not found.",
       retryable: false,
-      next: "run quickstacks list --json to see every stack and fragment id.",
+      next: "run quickstacks list to see every stack and fragment id.",
       details: { suggestions: [], id: "fixtrue-stack", kind: "stack" },
     },
   });

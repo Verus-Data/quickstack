@@ -159,7 +159,7 @@ test("a Next line names the CLI the way it was invoked", async () => {
   expect(human.status).toBe(2);
   expect(human.stdout).toBe("");
   expect(human.stderr).toBe(
-    "Not found.\n  Next: run npx quickstacks list --json to see every stack and fragment id.\n",
+    "Not found.\n  Next: run npx quickstacks list to see every stack and fragment id.\n",
   );
 });
 test("a details object mutated to carry an extra property is a defect, not a leak", async () => {

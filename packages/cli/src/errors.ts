@@ -434,18 +434,21 @@ function usageGuide(error: Usage, invocation: string): FailureGuide {
       [`${details.flags[0]} and ${details.flags[1]} can't be used together.`],
       "drop one of them.",
     );
-  if (details && "flag" in details)
+  if (details && "flag" in details) {
+    // A flag arrives with its dashes (`--agents`); a positional argument by its bare name.
+    const positional = !details.flag.startsWith("-");
     return guide(
       [
-        `Flag: ${printable(details.flag)}`,
+        `${positional ? "Argument" : "Flag"}: ${printable(details.flag)}`,
         `Value: ${printable(details.value)}`,
         `Expected: ${printable(details.expected)}`,
         ...(details.suggestions?.length
           ? [`Did you mean: ${details.suggestions.map(printable).join(", ")}?`]
           : []),
       ],
-      `pass a value from Expected; ${invocation} <command> --help lists every flag.`,
+      `pass a value from Expected; ${invocation} <command> --help lists every ${positional ? "argument" : "flag"}.`,
     );
+  }
   return guide(
     [
       ...(details?.command === undefined ? [] : [`Command: ${printable(details.command)}`]),
@@ -861,7 +864,7 @@ function notFoundNext(details: typeof NotFoundDetails.Type, invocation: string):
   if (details.root)
     return `${invocation} validate ${shellArg(printable(details.root))} lists the ids under that root.`;
   if (details.suggestions.length) return "use one of the ids above.";
-  return `run ${invocation} list --json to see every stack and fragment id.`;
+  return `run ${invocation} list to see every stack and fragment id.`;
 }
 
 function composeNext(
