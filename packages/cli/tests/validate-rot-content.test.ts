@@ -17,28 +17,39 @@ const space = rotWorkspace();
 afterEach(() => space.cleanup());
 const validate = (root: string) => validateRot(root, { home: space.temp() });
 
-test("an optional fragment is checked alongside each matching stack's defaults [2.2#1]", async () => {
+test("a listed fragment's undeclared collision uses the existing composition check [2.2#1]", async () => {
   const root = space.temp();
   stack(root, "conflicting", "fragments:\n  default: [base]\n  optional: [extra]");
   stack(root, "compatible", "fragments:\n  optional: [extra]");
-  fragment(root, "base");
-  fragment(root, "extra", "conflicts: [base]");
+  const base = fragment(root, "base");
+  const extra = fragment(root, "extra");
+  ship(base, "files/shared.txt", "Base file.\n");
+  ship(extra, "files/shared.txt", "Extra file.\n");
   const { report, status } = await validate(root);
-  findingsAre(report.findings, [["compose-each", "error", { text: ["extra", "base"] }]]);
+  findingsAre(report.findings, [
+    ["compose", "error", { entry: "conflicting", text: ["extra", "base"] }],
+  ]);
   expect(status).toBe(2);
   expect(report.findings[0]?.message).toContain("conflicting");
-  expect(report.findings[0]?.message).toContain("extra");
-  expect(report.findings[0]?.message).toContain("base");
 });
 
-test("compose-each checks a tag-applicable fragment even when no stack lists it [2.2#1]", async () => {
+test("compose-each checks an undeclared collision for an unlisted tag-applicable fragment [2.2#1]", async () => {
+  const root = space.temp();
+  stack(root, "sample", "fragments:\n  default: [base]");
+  const base = fragment(root, "base");
+  const extra = fragment(root, "extra", "applies_to: [cli]");
+  ship(base, "files/shared.txt", "Base file.\n");
+  ship(extra, "files/shared.txt", "Extra file.\n");
+  const { report } = await validate(root);
+  findingsAre(report.findings, [["compose-each", "error", { text: ["extra", "base", "sample"] }]]);
+});
+
+test("a tag-applicable fragment replaces a default it declares a conflict with [2.2#1]", async () => {
   const root = space.temp();
   stack(root, "sample", "fragments:\n  default: [base]");
   fragment(root, "base");
   fragment(root, "extra", "applies_to: [cli]\nconflicts: [base]");
-  const { report } = await validate(root);
-  findingsAre(report.findings, [["compose-each", "error", { text: ["extra", "base"] }]]);
-  expect(report.findings[0]?.message).toContain("extra");
+  findingsAre((await validate(root)).report.findings, []);
 });
 
 test("dead stack branches warn, --with-only branches note, listed branches are reachable [2.2#1]", async () => {
@@ -170,7 +181,7 @@ test.each([
     const root = space.temp();
     const entry = stack(root);
     ship(entry, `files/${name}`, "\n");
-    ship(entry, `adapters/codex/${name}.tmpl`, "\n");
+    ship(entry, `adapters/codex/nested/${name}.tmpl`, "\n");
     ship(entry, "files/README.md", "# Project\n");
     const { report } = await validate(root);
     findingsAre(report.findings, [
@@ -182,11 +193,11 @@ test.each([
       [
         "version-sensitive-file",
         "warning",
-        { entry: "sample", file: `stacks/sample/adapters/codex/${name}.tmpl` },
+        { entry: "sample", file: `stacks/sample/adapters/codex/nested/${name}.tmpl` },
       ],
     ]);
     expect(report.findings.map((f) => f.file).sort()).toEqual(
-      [`stacks/sample/adapters/codex/${name}.tmpl`, `stacks/sample/files/${name}`].sort(),
+      [`stacks/sample/adapters/codex/nested/${name}.tmpl`, `stacks/sample/files/${name}`].sort(),
     );
   },
 );

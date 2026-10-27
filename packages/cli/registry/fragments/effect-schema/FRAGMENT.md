@@ -16,48 +16,40 @@ decisions:
 
 # Effect Schema
 
-One schema per shape of data that crosses a trust boundary, used to decode on the way in and encode on the way out. The schema is the source of the TypeScript type, never the other way round.
+One schema owns each boundary shape and its TypeScript type. Decode incoming data and encode outgoing data through it.
 
 ## What to add
 
-Install `effect` (Schema is part of it). Never install the standalone `@effect/schema` package: it was folded into `effect`, and older examples that import from it are out of date.
-
-**Where schemas live.** One file per domain in the schema directory from Decisions, re-exported from an `index.ts`. Schemas import only `effect`, so both client and server code can use them.
+Install `effect`; Schema belongs to it, never the standalone `@effect/schema` package from older examples. Follow the schema-location decision: one dependency-free file per domain, importing only `effect`, re-exported from `index.ts` for client/server reuse.
 
 <!-- quickstacks:when tag=web -->
-Put shared request/response schemas where browser and server can import them without platform dependencies. Loaders/actions decode params and input at their boundaries.
+Shared request/response schemas must be platform-free. Loaders/actions decode params and input at their boundaries.
 <!-- quickstacks:end -->
 <!-- quickstacks:when tag=cli -->
-Use src/schemas for arguments, flags, stdin, config, storage, and machine-readable output as those capabilities are added. The optional config file uses a closed schema.
+Use src/schemas for arguments, flags, stdin, config, storage, and machine output as added. Optional config uses a closed schema.
 <!-- quickstacks:end -->
 
 **Conventions.**
-- A schema and its type share a name: `export const User = Schema.Struct({...})` and `export type User = typeof User.Type`. Use the encoded type (`typeof User.Encoded`) where the wire form differs.
-- `Schema.Class` for entities with identity or behavior, `Schema.Struct` for plain DTOs and request/response bodies.
-- Brand ids (`UserId`, `ChatId`) so they can't be swapped with each other or with plain strings.
-- Decode at every trust boundary: request input, env and config, rows read from storage, third-party API responses, and structured output from an LLM. Code past the boundary works with decoded types and doesn't re-validate. Encode when writing to the wire or to storage.
-- Filters check a value (`.check(Schema.makeFilter(...))`, the built-in length/pattern checks), and transformations change its representation (a date string to a `Date`). Don't hide conversion inside a filter.
-- Annotate schemas that leave the process (`title`, `description`, examples). `Schema.toJsonSchemaDocument` turns them into JSON Schema, which is how a schema reaches a library that needs JSON Schema, such as LLM tool definitions or structured output. Decode the library's result with the same schema afterwards. Don't put an `identifier` on a schema meant for an LLM: identified schemas become a `$ref` into `definitions`, which tool and structured-output APIs handle poorly.
-- Libraries that only validate and accept Standard Schema get the schema through Effect's Standard Schema adapter.
-- Domain errors are `Schema.TaggedError` classes, so they are typed, serializable, and matchable by tag.
-- Zod only where a library accepts nothing else, kept at that library's edge. A dependency pulling in zod as its own peer is fine.
-- Validators owned by a framework or code generator stay as they are (Astro content collections use `astro/zod`, orval generates zod). Effect Schema covers the boundaries the project owns.
+- Share the schema/type name: `export const User = Schema.Struct({...})`, `export type User = typeof User.Type`. Wire types use `typeof User.Encoded`.
+- Use `Schema.Class` for entities with identity/behavior; `Schema.Struct` for DTOs and request/response bodies. Brand ids so domains cannot be swapped.
+- Decode requests, env/config, storage rows, third-party responses, and structured LLM output at their boundaries. Inside, use decoded types without re-validation. Encode for storage/wire output.
+- Filters (`.check(Schema.makeFilter(...))` or built-in checks) validate; transformations change representation, such as date strings into `Date`. Never hide conversions in filters.
+- Annotate exported schemas with titles, descriptions, and examples. `Schema.toJsonSchemaDocument` supplies JSON Schema to tools/structured-output libraries; decode their results with the same schema. Avoid LLM-facing `identifier` annotations: generated `$ref`/`definitions` support is unreliable.
+- For validation-only libraries accepting Standard Schema, use Effect's adapter. Domain errors are typed, serializable `Schema.TaggedError` classes.
+- Keep framework/codegen validators (Astro's `astro/zod`, orval-generated zod). Effect Schema covers owned boundaries; use zod otherwise only at a library edge requiring it. Transitive peer dependencies are fine.
 
 <!-- quickstacks:when mode=add -->
-**Adding to an existing project.** Leave existing validators in place. Use Effect Schema for new boundaries, and convert an old one only when you're already changing it, with its tests passing before and after.
+**Existing projects.** Keep validators. Use Effect Schema at new boundaries; migrate touched ones with tests passing before and after.
 <!-- quickstacks:end -->
 
 ## Testing
 
-- A decode/encode round trip for each schema with a transformation: `encode(decode(x))` equals `x` for valid input.
-- Invalid input fails with a readable message: test the cases that matter (missing field, wrong brand, out-of-range value), not every field.
-- Property tests for non-trivial schemas: generate values with Effect's `Arbitrary` from the schema and check the round trip holds for all of them.
+Test transformation round trips: `encode(decode(x))` equals valid input. Check readable failures for meaningful missing fields, wrong brands, and out-of-range values, not every field. Use Effect's `Arbitrary` for non-trivial round-trip properties.
 
 ## Gotchas
 
-- Schema's API names shift between Effect majors (filters, class constructors, the Standard Schema and JSON Schema helpers). Check the installed version's docs or type definitions for the current names rather than relying on memory.
-- JSON Schema objects are open unless you close them: `Schema.toJsonSchemaDocument(S, { onExcessProperty: "error" })` emits `additionalProperties: false`. A custom filter without a `toJsonSchema` annotation is dropped from the output; the annotation is merged into the base type's schema, and annotations placed after a check attach to the filter and drop out of the JSON Schema. Check the installed types (or the project's Effect skill) before converting schemas.
+Check installed types/docs for current filters, constructors, annotations, adapters, and JSON Schema APIs. Close external objects with `Schema.toJsonSchemaDocument(S, { onExcessProperty: "error" })`. Custom filters need `toJsonSchema` annotations, merged into the base schema. Annotations added after a check can be lost; confirm placement against installed types.
 
 ## AGENTS.md
 
-A **Schemas** section: where schemas live, decode-at-the-boundary, the name-sharing rule, branded ids, tagged errors, how a schema becomes JSON Schema for tools, and that framework- or generator-owned validators are left alone.
+Document schema location, boundary decoding, shared names, branded ids, tagged errors, JSON Schema conversion, and retained framework/codegen validators.

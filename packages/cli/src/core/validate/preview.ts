@@ -8,9 +8,11 @@ import { fingerprint } from "../fingerprint";
 import { type Entry, isRejected } from "../registry/entry";
 import { Registry } from "../registry/registry";
 import { canonicalBrief, composedLimit } from "./budget";
+import { composedFiles } from "./composed";
 import { loadChecks } from "./format";
 import { gitChecks } from "./git";
 import { checks, compareFindings, validationRoots } from "./index";
+import { readSources } from "./sources";
 import type { Target } from "./target";
 import type { View } from "./view";
 
@@ -55,13 +57,14 @@ export const previewBrief = (target: Target, options: PreviewOptions) =>
       const selected = [composition.stack, ...composition.fragments];
       const wanted = (item: { kind: string; id: string }) =>
         selected.some((entry) => entry.kind === item.kind && entry.id === item.id);
-      const view: View = {
+      const sourceView: Omit<View, "composed"> = {
         root: target.root,
         bundled: target.bundled,
         // Checks count the original body, including every conditional branch.
         entries: all.filter((entry): entry is Entry => !isRejected(entry) && wanted(entry)),
         rejected: [],
         all,
+        sources: yield* readSources(all.filter((item): item is Entry => !isRejected(item))),
         wanted,
         inRoot: (entry) => path.dirname(path.dirname(entry.dir)) === target.root,
         file: (entry, inside) =>
@@ -69,6 +72,10 @@ export const previewBrief = (target: Target, options: PreviewOptions) =>
             .filter(Boolean)
             .join("/"),
         composition,
+      };
+      const view: View = {
+        ...sourceView,
+        composed: yield* Effect.cached(composedFiles(sourceView)),
       };
       // Loading already succeeded. Git checks depend on the checkout and start a process, so
       // they belong to registry validation, not the canonical, process-free preview.

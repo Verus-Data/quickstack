@@ -16,26 +16,25 @@ decisions:
 
 # Effect testing and development
 
-The stack owns its runtime, services, errors, and logging. This fragment adds optional testing patterns and development guidance; removing it must not remove the stack's architecture.
+The stack owns runtime, services, errors, and logging. This fragment adds removable testing and development guidance, not architecture.
 
 ## Testing
 
-Use `@effect/vitest` with fresh real service layers. Fake only third-party boundaries. A test layer factory must allocate new state on each build; test isolation explicitly. Layers are memoized, so two layer builds share a static memory layer's state unless it is wrapped in `Layer.fresh`. Avoid shared `it.layer` state unless intentional. Inject configuration with `Effect.provideService(ConfigProvider.ConfigProvider, ConfigProvider.fromEnv({ env }))` or `ConfigProvider.layer`; `Effect.withConfigProvider` is gone, and Config constructors are capitalized (`Config.String`). Tests through separate route or CLI runtimes use the live clock; test time-dependent programs directly with provided layers.
+Use `@effect/vitest` with fresh real service layers; fake only third-party boundaries. Factories allocate state per build; test isolation. Memoization shares static memory layers unless wrapped in `Layer.fresh`; share `it.layer` state only deliberately. Inject a fresh ConfigProvider. Separate route/CLI runtimes use the live clock, so test time-dependent programs directly with provided layers.
 
-`it.effect` supplies the TestClock, TestConsole, and a scope. For timers, fork the program, advance the TestClock, then join. When real local I/O occurs between clock steps, yield the event loop and wait on a condition. Never sleep to guess when a test is ready. Assert both typed failures and defect behavior without swallowing causes.
+`it.effect` supplies TestClock, TestConsole, and scope. Fork timers, advance TestClock, then join. For intervening real I/O, yield and wait for a condition; never guess with sleeps. Assert typed failures and defects without swallowing causes.
 
 ## Installed API guidance
 
-Write `.claude/skills/effect/SKILL.md` after the core compiles, checking every claim against installed `.d.ts` files. Describe when to load it, where the current-major docs live, and that local types are authoritative. Resolve module import paths through the installed package exports before checking the corresponding declarations; do not infer directories from older releases. Cover:
+After core compilation, write `.claude/skills/effect/SKILL.md`, checking claims against installed declarations. Include loading triggers, current-major docs, and local types as authority. Resolve imports through package exports, not older directory layouts. Cover:
 
-- Service classes and namespaced identifiers, static layers, named Effect functions, typed failures versus defects, scope and cancellation, callbacks and captured runtime context.
-- Migration traps for Context services, catch helpers, Result/Either, schema annotations and checks, fork helpers, scoped layers, log levels, and TestClock imports. Use the installed release's names.
-- Config, custom logger inputs and annotations, clock-driven time, promise cancellation, layer memoization and boundary-only runtime execution.
-- Schema decoding at trust boundaries, closed JSON schemas, annotations, references, and Standard Schema adapters.
-- `@effect/vitest` virtual time, test scope, failure assertions, property tests, and state sharing.
+- Namespaced services, static layers, named functions, typed failures/defects, scope, cancellation, callbacks, and captured runtime context.
+- Current migration traps: Context, catch helpers, Result/Either, schema annotations/checks, forks, scoped layers, Config constructors/providers, log levels, and TestClock imports.
+- Configuration, custom logger inputs/annotations, clocks, promise cancellation, layer memoization, and boundary-only runtime execution.
+- Boundary decoding, closed JSON schemas, references, Standard Schema, virtual time, properties, and failure/state-sharing tests.
 
-Extend it for the CLI, platform, or AI modules only when the project uses them. Link it from AGENTS.md and the shipped `.claude/rules/effect.md` rule. Do not ship a frozen library API reference.
+Extend for CLI/platform/AI modules only when used. Link from AGENTS.md and the shipped Effect rule; don't freeze an API reference.
 
 ## Gotchas
 
-Effect APIs can change during prereleases. Bump all Effect packages together, rerun the project's check command, and update the generated skill. Never install `@effect/schema`; Schema belongs to `effect`. Empty config strings count as absent. The default ConfigProvider may snapshot `process.env`; scripts invoked repeatedly must build a fresh provider each run. Forked fibers can fail silently: observe or log their cause at the owning boundary. Catch typed failures deliberately; defects remain defects.
+Upgrade Effect packages together; rerun checks and update the skill. Never install `@effect/schema`. Treat empty config strings as absent. Scripts invoked repeatedly need fresh ConfigProviders, not environment snapshots. Observe every fork at its owner. Catch typed failures deliberately; defects remain defects.
