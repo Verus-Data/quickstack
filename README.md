@@ -2,6 +2,23 @@
 
 quickstack starts projects for coding agents. To use it, follow the [quick start](packages/cli/docs/quickstart.md); the [docs index](packages/cli/docs/README.md) has everything else.
 
+## Install
+
+quickstack needs Node 22 or newer, on macOS or Linux. The npm package is `@quickstack/cli`; run it with `npx`, no install step:
+
+```sh
+npx @quickstack/cli list stacks                  # see what you can build
+npx @quickstack/cli new typescript-cli my-cli    # write a project and hand it to your coding agent
+npx @quickstack/cli skill install                # or let your agent drive: install the Claude Code skill
+```
+
+Or install it globally, and the command is `quickstack`:
+
+```sh
+npm install -g @quickstack/cli
+quickstack --version
+```
+
 This repository is a bun workspace. Product planning is in [plans/](plans/README.md) and [product/](product/PROBLEM_STATEMENT.md).
 
 | Path | What it is |
@@ -22,9 +39,6 @@ bun run check               # lint, typecheck, root tests, every package's tests
 ```
 
 Choose a destination outside this checkout. Start a project yourself with `bun run dev new astro-blog "$HOME/quickstack-projects/my-blog"`, or run `bun run dev skill install` once and ask your coding agent to start one. The skill guides it through choosing a stack, reading the brief and building until verify passes. Use `--project` to install it only for the current repo, or `--print` to copy it elsewhere.
-
-The skill ships in the next release. Once npm publication lands, the two entry points are `npx quickstack new astro-blog my-blog` and `npx quickstack skill install`.
-
 See [AGENTS.md](AGENTS.md) for the full command list.
 
 ## Monorepo

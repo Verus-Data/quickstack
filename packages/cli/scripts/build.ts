@@ -27,6 +27,7 @@ function dependencyNotices(metafile: Bun.BuildMetafile): string {
     .join("\n\n");
 }
 
+const startedAt = performance.now();
 mkdirSync("dist", { recursive: true });
 // Remove the retired standalone artifact when rebuilding an existing checkout.
 rmSync("dist/quickstack", { force: true });
@@ -56,3 +57,8 @@ appendFileSync(
 );
 copyFileSync("scripts/node-entry.mjs", "dist/quickstack.mjs");
 chmodSync("dist/quickstack.mjs", 0o755);
+console.log(
+  `Built dist/quickstack.mjs in ${((performance.now() - startedAt) / 1_000).toFixed(2)}s.`,
+);
+console.log("Run `./dist/quickstack.mjs` from packages/cli to demo the build.");
+console.log("From the repo root, run `./packages/cli/dist/quickstack.mjs`.");

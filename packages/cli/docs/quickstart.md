@@ -25,33 +25,32 @@ The blue steps are yours, and this guide walks through each one. The purple loop
 
 ## What you need
 
-- [Bun](https://bun.sh) 1.4.2 or newer, to build the CLI.
+- [Node](https://nodejs.org) 22 or newer, on macOS or Linux. `npx` comes with it.
 - git.
 - A coding agent CLI on your PATH, if you want quickstack to hand the project over for you. `claude`, `codex`, `opencode` and `cursor-agent` are recognized.
 - Whatever the stack builds with. A Go stack needs Go, a Python stack needs uv, and so on. quickstack tells you if something is missing; it never fails because of it.
 
 ## Get the CLI
 
-quickstack isn't on npm yet, so you build it from [its repository](https://github.com/tryopendata/quickstack):
+quickstack is on npm as `@quickstack/cli`, so there's nothing to clone or build. The quickest way in is `npx`, which downloads the package on first use and runs it:
 
 ```sh
-git clone https://github.com/tryopendata/quickstack.git
-cd quickstack
-bun install
-bun run build
+npx @quickstack/cli --version
+npx @quickstack/cli list stacks
 ```
 
-The binary is `packages/cli/dist/quickstack.mjs`. Put it on your PATH with a symlink, not a copy. The binary finds its bundled stacks in `packages/cli/registry/` next to its real location, and a copy elsewhere can't see them:
+If you'll use it more than once, install it globally. The command it installs is `quickstack`:
 
 ```sh
-mkdir -p ~/.local/bin
-ln -s "$PWD/packages/cli/dist/quickstack.mjs" ~/.local/bin/quickstack
+npm install -g @quickstack/cli
 quickstack --version
 ```
 
 If `--version` prints a version, you're set. `quickstack doctor` shows where it looks for everything, if you ever need to check.
 
-Once quickstack is published, `npx quickstack <command>` will do the same thing with no clone. Every command below works either way.
+The rest of this guide writes `quickstack <command>`. With `npx`, use `npx @quickstack/cli` in its place: `npx @quickstack/cli new typescript-cli my-cli`. Every command works the same either way, and the brief records the exact command your agent should use for `verify`.
+
+Want to run it from source instead, to try a change or write a stack against an unreleased version? Clone [the repository](https://github.com/tryopendata/quickstack) and follow its development quick start.
 
 ## Pick a stack
 
@@ -214,7 +213,7 @@ New files are written. When a file already exists, quickstack leaves it alone an
 Everything above also works the other way round: you ask your agent for a project and it runs quickstack. Install the skill once:
 
 ```sh
-quickstack skill install
+quickstack skill install        # or: npx @quickstack/cli skill install
 ```
 
 That puts a short skill file where Claude Code finds it (`~/.claude/skills/quickstack/SKILL.md`). Then, in any Claude Code session, ask for something like "start me a Go CLI with tests and CI". The agent picks a stack, tells you which and why, writes the project and builds it until verify passes. [Using quickstack with an agent](agents.md) covers other agents and what the agent sees.

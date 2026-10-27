@@ -2,6 +2,12 @@
 
 `quickstack` starts projects for coding agents. You pick a stack, it writes a few starter files and a brief, your coding agent builds the project from the brief, and `quickstack verify` says when it's done. To try it, follow the [quick start](docs/quickstart.md).
 
+```sh
+npx @quickstack/cli list stacks                 # Node 22+, macOS or Linux
+npx @quickstack/cli new typescript-cli my-cli
+npm install -g @quickstack/cli                  # optional: then the command is `quickstack`
+```
+
 The CLI is TypeScript on Effect, compiled to one binary by Bun. It executes nothing it reads: only `verify` runs commands, and only the steps in a project's own manifest. [How quickstack works](docs/architecture.md) explains the design, and the [docs index](docs/README.md) lists everything else: concepts, agents, authoring, and the command, output, configuration and validation references.
 
 ## Bundled stacks

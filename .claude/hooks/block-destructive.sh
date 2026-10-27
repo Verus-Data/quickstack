@@ -4,7 +4,9 @@
 # The patterns live in _destructive-patterns.sh.
 #
 # A deny is returned as JSON with exit 0, which the hooks contract honors, and
-# the reason is shown to the agent so it can ask the user instead. Commands that
+# the reason is shown to the agent so it can ask the user instead. A pattern
+# marked "ask" (publishing) returns "ask" instead, so the user approves or
+# rejects that one command at the permission prompt. Commands that
 # don't match produce no output, and the normal permission flow applies.
 #
 # The worst of these are also listed under permissions.deny in settings.json, so
@@ -26,12 +28,16 @@ command=$(printf '%s' "$input" | jq -r '.tool_input.command // empty' 2>/dev/nul
 found=$(is_destructive "$command") || exit 0
 
 reason=${found%%$'\t'*}
-suggestion=${found#*$'\t'}
+rest=${found#*$'\t'}
+suggestion=${rest%%$'\t'*}
+decision=${rest##*$'\t'}
+label=BLOCKED
+[ "$decision" = ask ] && label=CONFIRM
 
-jq -n --arg reason "BLOCKED: $reason"$'\n\n'"$suggestion" '{
+jq -n --arg reason "$label: $reason"$'\n\n'"$suggestion" --arg decision "$decision" '{
   hookSpecificOutput: {
     hookEventName: "PreToolUse",
-    permissionDecision: "deny",
+    permissionDecision: $decision,
     permissionDecisionReason: $reason
   }
 }'

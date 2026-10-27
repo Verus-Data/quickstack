@@ -8,8 +8,9 @@
 #   source "$(dirname "${BASH_SOURCE[0]}")/_destructive-patterns.sh"
 #   if found=$(is_destructive "$command"); then ...; fi
 #
-# is_destructive prints "<reason><TAB><suggestion>" and returns 0 when the
-# command matches, returns 1 otherwise. Patterns use POSIX classes only, so BSD
+# is_destructive prints "<reason><TAB><suggestion><TAB><decision>" and returns 0
+# when the command matches, returns 1 otherwise. The decision is "deny", or
+# "ask" for an action the user may approve at the permission prompt (a publish). Patterns use POSIX classes only, so BSD
 # grep (macOS) and GNU grep agree. Matching uses here-strings, not pipes, so it
 # stays correct under `set -o pipefail`.
 #
@@ -35,7 +36,7 @@ is_destructive() {
   m() { grep -qE -e "$1" <<<"$command"; }
   mi() { grep -qiE -e "$1" <<<"$command"; }
   hit() {
-    printf '%s\t%s' "$1" "$2"
+    printf '%s\t%s\t%s' "$1" "$2" "${3:-deny}"
   }
 
   # A separator or end of command, used after a dangerous argument.
@@ -182,7 +183,7 @@ is_destructive() {
     m "${word}twine[[:space:]]+upload" ||
     m "${word}goreleaser[[:space:]]+release"; } &&
     ! m "(--dry-run|--snapshot)"; then
-    hit "Publishing a release is irreversible." "Releases are user-initiated. Ask the user first."
+    hit "Publishing a release is irreversible." "Releases are user-initiated: approve it only if you asked for this publish." ask
     return 0
   fi
 
