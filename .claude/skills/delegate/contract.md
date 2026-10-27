@@ -63,7 +63,9 @@ bun run check   # the full gate, before finishing a feature
 ## Do not
 
 - commit or push (leave the changes for review)
-- disable a lint rule, weaken a test or add a cast to get green
+- disable a lint rule, weaken a test or add a cast to get green; a function over Biome's
+  complexity limit gets split into named steps, and no file joins the warning override list
+  (AGENTS.md "Conventions")
 - add features, options or abstractions the goal doesn't need
 - mention any repository outside this one in a tracked file; a reference repo named in "Read
   first" is for you only
@@ -85,7 +87,9 @@ review="$(mktemp -d)"
   awk 'NR==1&&/^---$/{f=1;next} f&&/^---$/{f=0;next} !f' "${ce}agents/code-reviewer.md"
   echo
   echo "Load these skills first: <paths from its skills: line>."
-  echo "Review the uncommitted work in $PWD against {BASE BRANCH}: git diff {BASE BRANCH}, plus"
+  # The merge base, not the branch tip: work merged into the base since this branch started
+  # would otherwise read as reverted by this diff.
+  echo "Review the uncommitted work in $PWD: git diff $(git merge-base HEAD {BASE BRANCH}), plus"
   echo "every untracked file. Repo standards: AGENTS.md and .claude/rules/. Your sandbox is"
   echo "read-only, so don't run Vitest; the author already ran the checks. The task's contract:"
   cat "{THIS CONTRACT'S PATH}"
