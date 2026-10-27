@@ -5,6 +5,7 @@ import { expect, test } from "vitest";
 import {
   BadInput,
   BrokenPipe,
+  EntryInvalid,
   errorClasses,
   errorTable,
   exitCode,
@@ -29,6 +30,7 @@ test("the published error table, written out row by row", () => {
     VerifyFailed: { exit: 5, retryable: false, keepsResult: true },
     VerifyChanged: { exit: 5, retryable: false, keepsResult: true },
     PermissionDenied: { exit: 6, retryable: false, keepsResult: false },
+    EntryInvalid: { exit: 2, retryable: false, keepsResult: false },
     Interrupted: { exit: 130, retryable: false, keepsResult: false },
     Defect: { exit: 1, retryable: false, keepsResult: false },
     BrokenPipe: { exit: 0, retryable: false, keepsResult: false },
@@ -112,6 +114,25 @@ test("a details object mutated to carry an extra property is a defect, not a lea
   } finally {
     dir.cleanup();
   }
+});
+test("EntryInvalid details name the entry in the envelope and in human mode", async () => {
+  const error = new EntryInvalid({
+    details: { id: "bun-web", origin: "user", reason: "symlink", path: "files/link" },
+  });
+  const json = await runCli(["--json"], { program: Effect.fail(error) });
+  expect(json.status).toBe(2);
+  expect(JSON.parse(json.stderr)).toEqual({
+    error: {
+      tag: "EntryInvalid",
+      message: "Entry is invalid.",
+      retryable: false,
+      details: { id: "bun-web", origin: "user", reason: "symlink", path: "files/link" },
+    },
+  });
+  const human = await runCli([], { program: Effect.fail(error), env: quiet });
+  expect(human.stderr).toBe(
+    "Entry is invalid.\n  Entry: bun-web (user, symlink)\n  Path: files/link\n",
+  );
 });
 test("construction drops keys the details schema doesn't name", () => {
   const error = new PermissionDenied({ details: { reason: "write", extra: 1 } as never });

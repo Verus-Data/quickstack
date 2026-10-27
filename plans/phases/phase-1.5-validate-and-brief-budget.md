@@ -326,3 +326,11 @@ problem in one run.
 - Leaving `compose-each` and the staleness warnings to 2.2 means the MVP's bundled
   entries ship without them. With three stacks and a handful of fragments, a maintainer
   reading the composed briefs in the gate runs (1.6b) is the check until 2.2 lands.
+- An entry's literal `files/.gitignore` applies to this repo's git as well: one that lists
+  `.env.*` makes git ignore the same entry's `files/.env.example.tmpl`, which then never
+  reaches a commit while every local test passes (found executing 1.0). `validate` should
+  flag an entry whose shipped `.gitignore` matches one of the entry's own files, or a repo
+  check must catch untracked entry files. 1.0 added the repo-level half for this repo
+  (`tests/registry.test.ts` fails when git ignores a file in a fixture registry or in
+  `packages/cli/registry/`); an author's own registry repo gets nothing from it, so
+  `validate` is where that author learns of it.

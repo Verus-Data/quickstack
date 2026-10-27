@@ -4,7 +4,18 @@ import { InvalidConfig } from "./errors";
 import { Settings } from "./schemas";
 import { SLUG } from "./version";
 export type Environment = Record<string, string | undefined>;
-export type Paths = { config: string; data: string; cache: string };
+export type Paths = {
+  config: string;
+  data: string;
+  cache: string;
+  /** The user registry root, beside config.json: `$XDG_CONFIG_HOME/quickstacks/`. */
+  user: string;
+  /**
+   * QUICKSTACKS_REGISTRY_DIR as given: replaces `Host.registry` as the bundled root when set.
+   * `registry.ts::bundledRoot` resolves it against `Host.cwd`.
+   */
+  registry?: string;
+};
 export type LogSettings = {
   level: "Trace" | "Debug" | "Info" | "Warn" | "Error" | "Fatal" | "None";
   format: "human" | "json";
@@ -40,7 +51,14 @@ export function configLayer(env: Environment = process.env) {
           ),
         );
         const cache = path.join(yield* xdg("XDG_CACHE_HOME", ".cache"), SLUG);
-        return { config: path.join(config, SLUG, "config.json"), data, cache };
+        const registry = yield* read(text("QUICKSTACKS_REGISTRY_DIR"));
+        return {
+          config: path.join(config, SLUG, "config.json"),
+          data,
+          cache,
+          user: path.join(config, SLUG),
+          ...(registry ? { registry } : {}),
+        };
       });
       const get = yield* Effect.cached(
         Effect.gen(function* () {

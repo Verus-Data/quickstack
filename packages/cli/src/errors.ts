@@ -1,4 +1,5 @@
 import { Effect, Schema } from "effect";
+import { Origin } from "./schemas/entry";
 /** An unknown subcommand: what was typed and up to three close known names (`core/suggest.ts`). */
 export const UsageDetails = Schema.Struct({
   command: Schema.String,
@@ -37,13 +38,28 @@ export class VerifyChanged extends Schema.TaggedError<VerifyChanged>()("VerifyCh
 }
 /** `reason` is a closed set later sub-phases extend; `path` is the file or directory involved. */
 export const PermissionDeniedDetails = Schema.Struct({
-  reason: Schema.Literals(["write"]),
+  reason: Schema.Literals(["write", "read"]),
   path: Schema.optionalKey(Schema.String),
 });
 export class PermissionDenied extends Schema.TaggedError<PermissionDenied>()("PermissionDenied", {
   details: Schema.optionalKey(PermissionDeniedDetails),
 }) {
   override readonly message = "Permission denied.";
+}
+/**
+ * An entry that can't be used: its frontmatter didn't decode, it contains a symlink, or its `id`
+ * differs from its directory name. `path` is the file or link involved, relative to the entry.
+ */
+export const EntryInvalidDetails = Schema.Struct({
+  id: Schema.String,
+  origin: Origin,
+  reason: Schema.Literals(["decode", "symlink", "id_mismatch", "missing"]),
+  path: Schema.optionalKey(Schema.String),
+});
+export class EntryInvalid extends Schema.TaggedError<EntryInvalid>()("EntryInvalid", {
+  details: Schema.optionalKey(EntryInvalidDetails),
+}) {
+  override readonly message = "Entry is invalid.";
 }
 export class Interrupted extends Schema.TaggedError<Interrupted>()("Interrupted", {}) {
   override readonly message = "Command interrupted.";
@@ -78,6 +94,7 @@ export const errorClasses = [
   VerifyFailed,
   VerifyChanged,
   PermissionDenied,
+  EntryInvalid,
   Interrupted,
   Defect,
   BrokenPipe,
@@ -95,6 +112,7 @@ export const errorTable = {
   VerifyFailed: { exit: 5, retryable: false, keepsResult: true },
   VerifyChanged: { exit: 5, retryable: false, keepsResult: true },
   PermissionDenied: { exit: 6, retryable: false, keepsResult: false },
+  EntryInvalid: { exit: 2, retryable: false, keepsResult: false },
   Interrupted: { exit: 130, retryable: false, keepsResult: false },
   Defect: { exit: 1, retryable: false, keepsResult: false },
   BrokenPipe: { exit: 0, retryable: false, keepsResult: false },
@@ -120,6 +138,13 @@ export function detailLines(error: AppError): string[] {
         : [];
     case "PermissionDenied":
       return error.details?.path ? [`Path: ${error.details.path}`] : [];
+    case "EntryInvalid":
+      return error.details
+        ? [
+            `Entry: ${error.details.id} (${error.details.origin}, ${error.details.reason})`,
+            ...(error.details.path ? [`Path: ${error.details.path}`] : []),
+          ]
+        : [];
     case "BadInput":
     case "NotFound":
     case "NotConfigured":
@@ -147,6 +172,8 @@ export function encodeDetails(error: AppError): Effect.Effect<unknown, Schema.Sc
       return encodeClosed(UsageDetails, error.details);
     case "PermissionDenied":
       return encodeClosed(PermissionDeniedDetails, error.details);
+    case "EntryInvalid":
+      return encodeClosed(EntryInvalidDetails, error.details);
     case "BadInput":
     case "NotFound":
     case "NotConfigured":

@@ -15,7 +15,29 @@ bun run build
 ./dist/quickstacks doctor --json
 ```
 
-`doctor` reports version, platform, compiled status, executable/config/data/working paths, and safe configuration errors. A missing configuration file is fine. A malformed optional file is reported in `configErrors` while doctor exits successfully; help and version do not open that file.
+`doctor` reports version, platform, compiled status, executable/config/data/working paths, the user entry directory, the bundled registry path (and whether it exists), and safe configuration errors. A missing configuration file is fine. A malformed optional file is reported in `configErrors` while doctor exits successfully; help and version do not open that file.
+
+## Listing stacks and fragments
+
+```sh
+quickstacks list                 # Stacks, Fragments and Apps, then Next: lines
+quickstacks list stacks          # one group: stacks, fragments (apps excluded) or apps
+quickstacks list --json          # { entries, rejected } for an agent choosing a stack
+```
+
+Entries come from three roots, highest precedence first:
+
+| Origin | Root | Trusted |
+| --- | --- | --- |
+| `project` | `./.quickstacks/` in the working directory | no: a cloned repository can ship these |
+| `user` | `$XDG_CONFIG_HOME/quickstacks/` (`~/.config/quickstacks/`), beside `config.json` | yes |
+| `bundled` | the registry shipped with the CLI (`packages/cli/registry/` in this repo, empty until the bundled catalog lands; `QUICKSTACKS_REGISTRY_DIR` replaces it) | yes, unless `QUICKSTACKS_REGISTRY_DIR` set it |
+
+Each root holds `stacks/<id>/STACK.md` and `fragments/<id>/FRAGMENT.md`, each with optional `files/` (copied into every project) and `adapters/<agent>/` (copied when that agent is a target; agents are `claude`, `codex`, `opencode`, `cursor`). An app is a fragment with `category: app`. Files are stored under their real names, dotfiles included: `files/.gitignore` is written as `.gitignore`. An entry directory may not be or contain a symlink, and nothing past one is read. The project root and its `stacks/` and `fragments/` must be real directories (a symlinked one is skipped with a warning); the user and bundled roots may be symlinks.
+
+The markdown file starts with YAML frontmatter between two `---` lines, then guidance prose for the building agent. Frontmatter keys are snake_case (`schema_version`, `applies_to`, `needs_own_repo`, `requires_tools`); unknown keys, including camelCase spellings, are errors. Output from the CLI spells the same fields in camelCase (`appliesTo`).
+
+The same id in a higher root wins; `list --json` marks the winner's `shadows` with the origins it hides. An entry that fails to load is listed under `rejected` with a one-line error and is never silently replaced by a lower copy. An entry with a newer `schema_version` than this CLI reads is skipped with a warning, and the next root's copy is used.
 
 ## Configuration
 
@@ -27,6 +49,7 @@ Optional configuration is `$XDG_CONFIG_HOME/quickstacks/config.json`, defaulting
 | `QUICKSTACKS_LOG_FORMAT` | `json` for JSON diagnostics, otherwise plain readable logs |
 | `QUICKSTACKS_LOG_FILE` | Optional JSONL file; directory recreated when needed |
 | `LOG_LEVEL` | trace/debug/info/warn/error/fatal/none; default and invalid-value fallback warn |
+| `QUICKSTACKS_REGISTRY_DIR` | A directory used as the bundled registry instead of the one shipped with the CLI, relative to the working directory; its entries are untrusted |
 | `NO_COLOR` | Keep output free of ANSI (current formatter always uses plain text) |
 | `HOME`, `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_CACHE_HOME` | Path roots; an unset `HOME` means the user's home directory. The cache is `$XDG_CACHE_HOME/quickstacks` (`$HOME/.cache/quickstacks`) |
 

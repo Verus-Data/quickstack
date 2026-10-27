@@ -5,7 +5,11 @@ import { join } from "node:path";
 import { version } from "../package.json";
 
 const binary = join(import.meta.dir, "../dist/quickstacks");
-async function invoke(args: readonly string[], prepare?: (dir: string) => void) {
+async function invoke(
+  args: readonly string[],
+  prepare?: (dir: string) => void,
+  extra: Record<string, string> = {},
+) {
   const dir = mkdtempSync(join(tmpdir(), "cli-binary-"));
   try {
     prepare?.(dir);
@@ -17,6 +21,7 @@ async function invoke(args: readonly string[], prepare?: (dir: string) => void) 
         LOG_LEVEL: "none",
         NO_COLOR: "1",
         PATH: "/usr/bin:/bin",
+        ...extra,
       },
       stdout: "pipe",
       stderr: "pipe",
@@ -67,6 +72,31 @@ describe("real standalone binary", () => {
     });
     expect(result.status).toBe(0);
     expect(JSON.parse(result.stdout).configErrors).toEqual(["Configuration is invalid."]);
+  });
+  test("list --json reads the registry QUICKSTACKS_REGISTRY_DIR names", async () => {
+    const registry = join(import.meta.dir, "../tests/fixtures/registry-real");
+    const result = await invoke(["list", "--json"], undefined, {
+      QUICKSTACKS_REGISTRY_DIR: registry,
+    });
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe("");
+    const listed = JSON.parse(result.stdout);
+    expect(listed.rejected).toEqual([]);
+    expect(listed.entries.map((row: { id: string }) => row.id)).toEqual([
+      "typescript-cli",
+      "effect",
+      "effect-schema",
+      "git-hooks",
+      "openrouter-chat-cli",
+    ]);
+  });
+  test("list with no registry suggests doctor", async () => {
+    const result = await invoke(["list"]);
+    expect(result).toEqual({
+      stdout: "No stacks or fragments found.\n\nNext: quickstacks doctor\n",
+      stderr: "",
+      status: 0,
+    });
   });
   test("does not autoload dotenv or bunfig from working directory", async () => {
     const result = await invoke(["doctor", "--json"], (dir) => {

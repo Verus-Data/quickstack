@@ -8,9 +8,13 @@
 //   - Development data is saved in .dev/data (QUICKSTACKS_DATA_DIR), not your real ~/.local/share/quickstacks.
 // Everything else (stdin, stdout, the exit code, Ctrl+C) passes straight through.
 import { appendFileSync, existsSync, mkdirSync, renameSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 const root = join(import.meta.dirname, "..");
+// The directory `bun run dev` was run from: Bun runs this from packages/cli and sets PWD to it,
+// so the root script passes its own directory as INIT_CWD (npm sets INIT_CWD itself).
+const caller = process.env.INIT_CWD || process.env.PWD || process.cwd();
+const registry = process.env.QUICKSTACKS_REGISTRY_DIR;
 const logs = join(root, "logs");
 mkdirSync(logs, { recursive: true });
 
@@ -30,6 +34,7 @@ const child = Bun.spawn([process.execPath, join(root, "src/bin.ts"), ...args], {
     LOG_LEVEL: process.env.LOG_LEVEL || "info",
     QUICKSTACKS_LOG_FILE: process.env.QUICKSTACKS_LOG_FILE ?? join(logs, "cli.jsonl"),
     QUICKSTACKS_DATA_DIR: process.env.QUICKSTACKS_DATA_DIR || join(root, ".dev", "data"),
+    ...(registry ? { QUICKSTACKS_REGISTRY_DIR: resolve(caller, registry) } : {}),
     // Colors survive the pipe when the real stderr is a terminal.
     ...(process.stderr.isTTY && !process.env.NO_COLOR ? { FORCE_COLOR: "1" } : {}),
   },

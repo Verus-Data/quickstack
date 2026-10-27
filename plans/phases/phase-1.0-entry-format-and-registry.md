@@ -1,8 +1,9 @@
 # Phase 1.0: Entry format and registry
 
-Status: DRAFT 2026-10-26 (not agreed). Format sections rewritten 2026-10-26 to the amended
-D18 (snake_case keys, literal dotfiles, apps as fragments, `expect` steps); see "What this
-plan may get wrong"
+Status: EXECUTED 2026-10-26 on feat/phase-1 (reviewed once; fixes applied). Format sections rewritten
+2026-10-26 to the amended D18 (snake_case keys, literal dotfiles, apps as fragments,
+`expect` steps), which the maintainers have not yet agreed; see "What this plan may get
+wrong"
 
 | Field | Value |
 |---|---|
@@ -500,3 +501,91 @@ option is needed).
   open; 1.3a records it.
 - The `submodule` reason was listed for 1.0 in the roadmap's Error tags row but never
   used here. It belongs to 3.2a, which inspects a git tree; the roadmap now says so.
+- 2026-10-26, from executing it:
+  - **Pointing the CLI at a registry.** Nothing in the plan let the dev CLI or the binary
+    read a registry other than the stub path, so 1.0 adds `QUICKSTACKS_REGISTRY_DIR`,
+    read by `config.ts` as `Paths.registry`; when set it replaces `Host.registry` as the
+    bundled root (`registry.ts::defaultRoots`). `Host.registry` is still never computed
+    by core code. 1.5 and 1.6b can use the same variable to validate or gate a catalog
+    outside the package.
+  - **Doctor.** `doctor` now reports `paths.user` and `registry: { path, found }` (the
+    roadmap's Bundled registry row), so the `Next: quickstacks doctor` line leads
+    somewhere useful.
+  - **`Host` fields.** 1.0 declares `Host.invocation` (the constant `quickstacks` from
+    `bin.ts`), because its `Next:` lines use it; the roadmap's Invocation string row now
+    says so. It also adds `Host.stdoutColumns` (the terminal width when stdout is a TTY),
+    which the 80-column wrap needs and `Host.stdoutIsTTY` alone can't give.
+  - **The group argument.** `list [stacks|fragments|apps]` is a plain optional string
+    argument checked in the handler, not `Argument.Literals` or subcommands, so an
+    unknown group fails `Usage` with `details: { command, suggestions }` from `closest`
+    (`list stack` suggests `stacks`). `Argument.Literals` gives effect/cli's
+    `InvalidValue`, which carries no choices to suggest from.
+  - **`get` can fail `PermissionDenied`.** It reads through `all`, which fails
+    `PermissionDenied` on an unreadable root, so `get`'s error type includes it.
+  - **The small fixture is split.** Acceptance test 1 needs an empty `rejected` for the
+    bundled fixture, so the invalid entry and the `schema_version: 2` entry live in
+    `tests/fixtures/registry-broken/`, and tests copy them into a user or project root.
+    `tests/fixtures/registry/` holds only the two stacks and four fragments.
+  - **`list` walks entry directories.** Rejecting an entry that contains a symlink means
+    `list` lists every file in each entry (with `lstat`, never following a link), not
+    only the frontmatter. It still reads only the markdown file's contents.
+  - **The realistic fixture's `requires`.** In `registry-real/`, `effect` requires
+    `effect-schema` (the testing fragment pulls in the schema fragment), the reverse of
+    the Files table's description. References to fragments the fixture doesn't hold were
+    trimmed rather than stubbed: the stack's required harness fragment, its CI and
+    release fragments, and the app's provider and harness requirements. The stack now
+    requires `effect-schema`, defaults to `git-hooks` and `effect`, and offers the app.
+  - **A literal `.gitignore` ignores its own entry's files.** Git applies
+    `files/.gitignore` to the `files/` tree it sits in, so an entry whose `.gitignore`
+    lists `.env.*` can't commit its own `files/.env.example.tmpl`: it is silently missing
+    from the repository while tests pass locally. The realistic fixture dropped that
+    template for this reason. 1.5 should flag an entry whose shipped `.gitignore`
+    matches one of its own files, and 1.6a should check for ignored files after porting;
+    this is the in-repo counterpart of npm's packing gap that 0.2 owns.
+  - **Extra human-output detail.** A row that hides lower copies says `shadows bundled`
+    (or the origins it hides); a rejected entry's line is followed by its directory; an
+    unknown key reads `unknown key`, with `(frontmatter keys are snake_case)` when it has
+    a capital letter; and when no stack loaded but some entry was rejected, the `Next:`
+    line points at the rejected entries instead of `doctor`.
+  - **`EntryInvalid.details`** is `{ id, origin, reason, path? }` in 1.0; `line` is left
+    for 1.1, which first has a line to report.
+- 2026-10-26, from code review:
+  - **`QUICKSTACKS_REGISTRY_DIR` is untrusted.** A bundled root other than the shipped one
+    gives `trusted: false`. Roots carry `overridden`, and `registry.ts::trustOf` takes the
+    entry (without `trusted`) and its root, so 3.2a adds the digest lookup without a
+    signature change. Config returns the variable as given; `registry.ts::bundledRoot`
+    resolves it against `Host.cwd` for both `list` and `doctor`, and `scripts/dev.ts`
+    resolves a relative value against the caller's directory (`INIT_CWD`, else `PWD`),
+    since `bun run dev` runs from `packages/cli`. Set to anything but a directory, it is a
+    warning on `list` and in `doctor`. `doctor`'s `found` now means "is a directory".
+    The Trust model (point 2) and the Bundled registry row say so.
+  - **Symlinks.** The entry walk is non-recursive `readDirectory` plus `lstat` per name: it
+    descends only into real directories and stops at the first symlink, so a link to `/`
+    or a `..` loop is rejected as `symlink` without reading anything behind it. `files`
+    uses the same walk. Root rule: the project root and its `stacks/` and `fragments/`
+    must be real directories (a symlinked one is skipped with a warning), because a
+    checkout controls them; the user and bundled roots, and their `stacks/` and
+    `fragments/`, may be symlinks (a dotfiles manager or a package install puts them
+    there). An entry directory, and anything inside one, never may.
+  - **Missing and unreadable are different.** A markdown file that doesn't exist is
+    `EntryInvalid` with the new reason `missing` (roadmap Error tags row); one that exists
+    but can't be read (or an unreadable entry directory) is listed as `<file> is
+    unreadable` and `get` fails `PermissionDenied` with reason `read` and the path, since
+    the next step is the human's (exit 6), not an edit to the entry.
+  - **Control characters.** Every entry-derived field in human output and log messages
+    goes through `core/text.ts::printable`, which escapes C0, C1 and DEL as `\u001b`;
+    interpolated values in rejection messages (`kind`, ids) are JSON-quoted. JSON output
+    is unchanged, since JSON escapes them already.
+  - **YAML.** Frontmatter goes through `parseDocument` with `logLevel: "silent"`; any
+    error or warning (an unknown `!tag`, a duplicate key) rejects the entry with its first
+    line, and the library prints nothing to stderr.
+  - **`Next:` lines suggest only trusted entries.** The plan said the first stack; `list`
+    names the first trusted stack, and in the apps group `--with <app>` names the first
+    trusted app that applies to a trusted stack. When stacks exist but none is trusted,
+    the only line is `Next: quickstacks list --json`.
+  - **Non-blank strings.** `name`, `description` and a step's `run` must hold a
+    non-whitespace character (`id` and a step's `name` are kebab-case already).
+  - **A rejected entry's directory** is printed whole on its own line, never wrapped.
+  - **`Origin` and `Kind`** are declared once in `schemas/entry.ts`.
+  - **Fixture guard.** `tests/registry.test.ts` fails when git ignores any file under the
+    fixture registries or in `packages/cli/registry/` (the `.gitignore` finding above).

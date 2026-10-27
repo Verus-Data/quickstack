@@ -1,0 +1,134 @@
+import { Effect, Result, Schema, SchemaIssue } from "effect";
+import { parseDocument } from "yaml";
+import { FragmentMeta, type Kind, type Origin, StackMeta } from "../../schemas/entry";
+
+export type { Kind, Origin } from "../../schemas/entry";
+
+export type Entry = {
+  id: string;
+  kind: Kind;
+  origin: Origin;
+  /** Absolute. */
+  dir: string;
+  trusted: boolean;
+  /** Lower origins that hold an entry of the same kind and id. */
+  shadows: ReadonlyArray<Origin>;
+  meta: StackMeta | FragmentMeta;
+  body: string;
+};
+export type RejectedEntry = {
+  /** The directory name. */
+  id: string;
+  kind: Kind;
+  origin: Origin;
+  dir: string;
+  /** One line naming the field or rule. */
+  error: string;
+};
+/**
+ * A file an entry ships. `source` is the entry-relative path on disk; `path` is where it goes in
+ * the project: `source` without its `files/` or `adapters/<agent>/` prefix. Names are literal.
+ */
+export type EntryFile = { source: string; path: string; mode: number };
+
+export function isRejected(value: Entry | RejectedEntry): value is RejectedEntry {
+  return "error" in value;
+}
+export const markdownFile = (kind: Kind) => (kind === "stack" ? "STACK.md" : "FRAGMENT.md");
+
+/**
+ * The frontmatter between a first line of exactly `---` and the next line of exactly `---`, and
+ * the body after it. No other markdown is parsed.
+ */
+export function splitFrontmatter(text: string): { frontmatter: string; body: string } | undefined {
+  const lines = text.split("\n");
+  const plain = (line: string | undefined) => line?.replace(/\r$/, "");
+  if (plain(lines[0]) !== "---") return undefined;
+  const end = lines.findIndex((line, i) => i > 0 && plain(line) === "---");
+  if (end === -1) return undefined;
+  return {
+    frontmatter: lines.slice(1, end).join("\n"),
+    body: lines
+      .slice(end + 1)
+      .join("\n")
+      .replace(/^\r?\n/, ""),
+  };
+}
+
+export type Decoded =
+  | { _tag: "Meta"; meta: StackMeta | FragmentMeta; body: string }
+  /** `schema_version` above 1: the caller skips this copy and uses the next origin's. */
+  | { _tag: "Newer"; version: number }
+  | { _tag: "Invalid"; error: string };
+
+const formatter = SchemaIssue.makeFormatterStandardSchemaV1();
+/** The first schema issue as one line, with its path in YAML spelling: `applies_to[0]: Expected string`. */
+function issueLine(error: Schema.SchemaError): string {
+  const [first] = formatter(error.issue).issues;
+  if (!first) return "frontmatter: invalid";
+  const path = (first.path ?? [])
+    .map((segment) => (typeof segment === "object" ? segment.key : segment))
+    .reduce<string>(
+      (acc, key) =>
+        typeof key === "number" ? `${acc}[${key}]` : acc ? `${acc}.${String(key)}` : String(key),
+      "",
+    );
+  const message = first.message.split("\n")[0] ?? "";
+  if (message === "Expected no excess property") {
+    const last = String(first.path?.at(-1) ?? "");
+    return `${path}: unknown key${/[A-Z]/.test(last) ? " (frontmatter keys are snake_case)" : ""}`;
+  }
+  return `${path || "frontmatter"}: ${message}`;
+}
+
+/** Splits, parses and decodes one entry's markdown file. Never fails: problems are values. */
+export function decodeEntry(kind: Kind, text: string): Effect.Effect<Decoded> {
+  return Effect.gen(function* () {
+    const parts = splitFrontmatter(text);
+    if (!parts)
+      return {
+        _tag: "Invalid",
+        error: "frontmatter: the file must start with a --- line and close it with another",
+      } as const;
+    // Silent: the library would otherwise print warnings (an unknown `!tag`) to stderr itself.
+    const doc = parseDocument(parts.frontmatter, { logLevel: "silent" });
+    const problem = doc.errors[0] ?? doc.warnings[0];
+    const yaml = problem
+      ? Result.fail(problem)
+      : Result.try(() => doc.toJS({ maxAliasCount: 100 }) as unknown);
+    if (Result.isFailure(yaml))
+      return {
+        _tag: "Invalid",
+        error: `frontmatter: not valid YAML (${String(yaml.failure instanceof Error ? yaml.failure.message : yaml.failure).split("\n")[0]})`,
+      } as const;
+    const value = yaml.success;
+    if (
+      typeof value === "object" &&
+      value !== null &&
+      "schema_version" in value &&
+      typeof value.schema_version === "number" &&
+      value.schema_version > 1
+    )
+      return { _tag: "Newer", version: value.schema_version } as const;
+    // Checked first so a FRAGMENT.md's frontmatter in a STACK.md names the real mistake.
+    if (
+      typeof value === "object" &&
+      value !== null &&
+      "kind" in value &&
+      typeof value.kind === "string" &&
+      value.kind !== kind
+    )
+      return {
+        _tag: "Invalid",
+        error: `kind: ${JSON.stringify(value.kind)} does not match ${markdownFile(kind)}`,
+      } as const;
+    const decode: Effect.Effect<StackMeta | FragmentMeta, Schema.SchemaError> =
+      kind === "stack"
+        ? Schema.decodeUnknownEffect(StackMeta, { onExcessProperty: "error" })(value)
+        : Schema.decodeUnknownEffect(FragmentMeta, { onExcessProperty: "error" })(value);
+    const decoded = yield* Effect.result(decode);
+    return Result.isFailure(decoded)
+      ? ({ _tag: "Invalid", error: issueLine(decoded.failure) } as const)
+      : ({ _tag: "Meta", meta: decoded.success, body: parts.body } as const);
+  });
+}

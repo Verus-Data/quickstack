@@ -72,7 +72,7 @@ amended D18); the roadmap's decision table says which sub-phase each one blocks.
 | Review requirements.md and roadmap.md; decide A1, D12, D22 and D23 first, then D5-D7, D9, D13, D14, D18-D20 | Maintainers | The gating table in [0.0](phases/phase-0.0-decisions-and-npm-name.md) says which can wait |
 | Review A2-A4 as answered in 0.3a and 0.3b | Maintainers | Must be in the decisions log before [1.6c](phases/phase-1.6c-first-release.md) publishes |
 | Answer the open questions in [risks-and-open-questions.md](risks-and-open-questions.md) | Maintainers | Question 1 (registry audience) decides which stacks ship bundled |
-| Execute phase 1 round 1 (1.0, 1.1, 1.2a, 1.2b) | Agent | In progress on `feat/phase-1` |
+| Execute phase 1 round 1 (1.0, 1.1, 1.2a, 1.2b) | Agent | In progress on `feat/phase-1`: 1.0 done (registry, `list`, reviewed once). A non-default `QUICKSTACKS_REGISTRY_DIR` is untrusted. Under `bun run dev` the project origin is looked up from `packages/cli`, not the caller's directory |
 | Decide D19 (project-origin entries untrusted by default) | Maintainers | The only decision [1.0](phases/phase-1.0-entry-format-and-registry.md) blocks on besides D18; 1.0 is being built to the proposal |
 | Execute 0.2 (distribution) | Agent, after A1, D12 and D22 | Deferred 2026-10-26 to the final step before public release, with the npm reservation and 1.6c. Changes `bin.ts` |
 | Decide open questions 24-28 (behavior kept on purpose in phases 0-1) | Maintainers | Before 1.0, 1.1, 1.3b and 1.6c, as each question says. Question 26 changed: 1.1 now proposes a warning, not an error, for a `--with` fragment that doesn't fit. The rest (D25, D27, questions 29-31) can wait for phases 3-4 |

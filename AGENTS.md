@@ -49,13 +49,14 @@ Paths below are relative to `packages/cli/`.
 
 - `src/bin.ts`: Bun/platform/Host/writer boundary, the per-invocation `Foreground` holder, signal policy wiring and exit status.
 - `src/main.ts`: one invocation, framework Console capture, safe outcome and logging.
-- `src/cli.ts`, `commands/doctor.ts`: real Effect command tree and thin handler.
+- `src/cli.ts`, `commands/doctor.ts`, `commands/list.ts`: real Effect command tree and thin handlers.
 - `src/core/doctor.ts`: platform-free diagnostic program.
+- `src/core/registry/`: `entry.ts` (frontmatter split and decode, `Entry`, `RejectedEntry`, `EntryFile`) and `registry.ts` (the `Registry` service over ordered `RegistryRoots`, `trustOf`, `defaultRoots`); `core/list.ts` builds and renders the `list` result.
 - `src/services/`: Output buffers success output; Host supplies process facts; `processes.ts::Processes` runs child processes (`run`, `start`, `exec`, `interactive`, `which`) and `Foreground` holds this invocation's live process groups and interactive child.
 - `src/platform/`: the only Node process code. `process.ts` spawns on `node:child_process` and signals/probes process groups; `signals.ts` is the A3 signal policy (`decide`, `installSignalPolicy`).
 - `src/config.ts`: lazy per-invocation AppConfig; independent paths/log settings.
 - `src/errors.ts`, `logging.ts`, `runtime.ts`, `version.ts`: stable boundaries.
-- `src/schemas/`: config/report schemas and their types.
+- `src/schemas/`: config/report schemas and their types; `entry.ts` is entry format v1 (`StackMeta`, `FragmentMeta`, `VerifyStep`, `AgentId`, `DetectedAgent`, `withStepDefaults`) and `list.ts` the `list --json` result.
 - `tests/`, `e2e/`: Node programs/hook tests and Bun standalone binary tests.
 - `scripts/`, `biome-plugins/`: lifecycle/build and enforced boundaries.
 - Repo root: `.claude/`, `.github/`, `docs/`, `tests/hooks/`: adapter, CI, harness guide and hook tests.
@@ -70,7 +71,7 @@ Strict TypeScript 7: unchecked indices, verbatim modules, erasable syntax, expli
 
 ## Schemas
 
-`src/schemas/` contains Settings and DoctorReport, each sharing its schema/type name. Decode unknown input at boundaries; encode reports for output. Config rejects excess properties. Use branded ids when adding domain ids, Schema.TaggedError for errors, and Schema.toJsonSchemaDocument with onExcessProperty:error for closed external JSON schemas. Keep framework validators; do not add @effect/schema or competing validators.
+`src/schemas/` contains Settings, DoctorReport, the entry frontmatter schemas and ListResult, each sharing its schema/type name. Decode unknown input at boundaries; encode reports for output. Config rejects excess properties. Use branded ids when adding domain ids, Schema.TaggedError for errors, and Schema.toJsonSchemaDocument with onExcessProperty:error for closed external JSON schemas. Keep framework validators; do not add @effect/schema or competing validators.
 
 ## Testing
 

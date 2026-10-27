@@ -42,3 +42,42 @@ test("dev wrapper forwards a directly delivered termination signal to its child"
     dir.cleanup();
   }
 }, 10000);
+
+test("dev wrapper resolves a relative QUICKSTACKS_REGISTRY_DIR against the caller's directory", async () => {
+  const dir = tempDir();
+  try {
+    mkdirSync(join(dir.path, "scripts"));
+    mkdirSync(join(dir.path, "src"));
+    copyFileSync(join(import.meta.dirname, "../scripts/dev.ts"), join(dir.path, "scripts/dev.ts"));
+    writeFileSync(
+      join(dir.path, "src/bin.ts"),
+      `import { writeFileSync } from "node:fs"; writeFileSync("registry", process.env.QUICKSTACKS_REGISTRY_DIR ?? "unset");`,
+    );
+    const caller = join(dir.path, "caller");
+    mkdirSync(caller);
+    for (const [value, expected] of [
+      ["reg", join(caller, "reg")],
+      ["/abs/reg", "/abs/reg"],
+    ] as const) {
+      const child = spawn("bun", ["scripts/dev.ts"], {
+        cwd: dir.path,
+        stdio: "ignore",
+        // The root `bun run dev` script passes the directory it ran from as INIT_CWD.
+        env: {
+          PATH: process.env.PATH,
+          HOME: dir.path,
+          INIT_CWD: caller,
+          QUICKSTACKS_REGISTRY_DIR: value,
+        },
+      });
+      const status = await new Promise<number | null>((resolve, reject) => {
+        child.on("error", reject);
+        child.on("close", resolve);
+      });
+      expect(status).toBe(0);
+      expect(readFileSync(join(dir.path, "registry"), "utf8")).toBe(expected);
+    }
+  } finally {
+    dir.cleanup();
+  }
+}, 10000);

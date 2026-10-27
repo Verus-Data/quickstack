@@ -234,3 +234,9 @@ the escape round-trips through npm.
   `appliesTo` has to hold.
 - The escaped-name rule depends on npm's current dotfile handling; the tarball test, not
   the rule, is what keeps it honest.
+- A ported entry's `files/.gitignore` can make git ignore that entry's own files in this
+  repo (an `.env.*` pattern hides `files/.env.example.tmpl`), so the file is silently
+  missing from the commit (found executing 1.0). The guard in `tests/registry.test.ts`
+  already fails when git ignores any file under `packages/cli/registry/` (it skips the
+  directory while it doesn't exist); keep it passing after porting, and check that its
+  file count grew, so the guard is known to have run over the ported entries.
