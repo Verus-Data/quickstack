@@ -1,7 +1,7 @@
 # Handoff for the next quickstacks session
 
-Status: DRAFT 2026-10-26 (phase 0 merged; phase 1 round 1 executed and batch-reviewed, fixes
-being applied; plan awaiting the maintainers' review)
+Status: DRAFT 2026-10-27 (phases 0 and 1 merged; the doable plans of phases 2 and 3 executed
+and production-reviewed, 3.2a/3.2b deferred; plan awaiting the maintainers' review)
 
 Start here, then read repo `AGENTS.md`, the README's
 [product summary](README.md#product-to-preserve), and
