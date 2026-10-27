@@ -18,6 +18,8 @@ git worktree add .claude/worktrees/<plan> -b feat/<plan> main
 (cd .claude/worktrees/<plan> && bun install --frozen-lockfile)
 ```
 
+A change to `.codex/hooks.json` or a hook it runs reaches delegates only from `main` (AGENTS.md "Delegates"): land harness changes a run depends on before dispatching the delegates that need them.
+
 ## Units and contracts
 
 Split the plan into units per `ce:executing-plans` (one subsystem each, 3-4 tasks at most). For a sub-phase with numbered acceptance tests, rules/cli/testing.md "Process and gate" applies: the first unit is a test-author delegate that writes the plan's acceptance tests and realistic edge cases as tagged, failing tests, from `.claude/skills/delegate/contract-tests.md`. Review its tests and plan edits, commit them on its branch, and branch the implementer's worktree from that branch (`git worktree add .claude/worktrees/i-<unit> -b delegate/i-<unit> delegate/t-<unit>`), so the implementer starts with the tests and the integration branch never holds red tests that would fail every other unit's gate. The implementer's branch, tests included, merges as one. Every implementer contract lists those test files under "Locked", so Codex makes them pass without touching their assertions, and its reviewer's findings about them come back as notes rather than edits. A test-author hand-off that lists plan claims the code contradicts is yours to settle before the implementer starts: correct the plan (a dated line in "What this plan may get wrong") and the test, or the implementer inherits the conflict.

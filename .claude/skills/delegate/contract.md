@@ -73,7 +73,8 @@ command to run (a refactor, the harness), say so and QA what does run.
 - commit or push (leave the changes for review)
 - disable a lint rule, weaken a test or add a cast to get green; a function over Biome's
   complexity limit gets split into named steps (AGENTS.md "Code structure")
-- add features, options or abstractions the goal doesn't need
+- add features, options, abstractions or mechanisms the goal and acceptance tests don't need: no
+  cache, re-parse, second code path or new module where the existing one can carry the change
 - mention any repository outside this one in a tracked file; a reference repo named in "Read
   first" is for you only
 
@@ -121,7 +122,9 @@ the orchestrator works from it, so be specific and name files and symbols.
 1. Summary: what you built, in two or three sentences.
 2. Files: each file created or changed, with one line on why.
 3. Decisions: choices the contract left open and why you made them; any deviation from the
-   plan or contract and the reason; where the skills changed your approach.
+   plan or contract and the reason; where the skills changed your approach. Name every new
+   mechanism you added (a cache, a parser, a module, a fallback path) and the acceptance test or
+   contract line that needed it.
 4. Checks: each command you ran and its result (test counts, not just "passed"), and the QA:
    the commands you ran, what you judged and what you changed.
 5. Review: the review file's path, each finding in a line, and how you resolved it (fixed,

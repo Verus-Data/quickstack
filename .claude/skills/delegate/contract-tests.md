@@ -151,7 +151,9 @@ Leave everything uncommitted and end with this report as your final message:
 2. Files: each file created or changed, with one line on why.
 3. Interface the tests assume: every new export, its module path and signature, every new
    field and flag, so the implementer's contract can name them.
-4. Decisions: choices the plan left open, plan claims that didn't match the code.
+4. Decisions: choices the plan left open, plan claims that didn't match the code. Name every new
+   mechanism you added (a cache, a parser, a module, a fallback path) and the acceptance test or
+   contract line that needed it.
 5. Checks: each command you ran and its result, with each new test's failure reason.
 6. Review: the review file's path, each finding in a line, and how you resolved it.
 7. Look closer at: the tests you're least sure of.

@@ -63,6 +63,7 @@ In `packages/cli/` (run there):
 | `bun run test:unit tests/cli.test.ts` | Single test file |
 | `bun run test:watch` | Watch Vitest tests |
 | `bun run e2e` | Compile, then bun test ./e2e |
+| `bun run human -- <args>` | The compiled binary in human mode (pseudo-terminal, agent markers removed); `new` and `add` need `--no-launch` |
 | `./dist/quickstacks --version` | Bundled version |
 | `./dist/quickstacks doctor --json` | Compiled local diagnostics |
 | `bun run check` | This package's gate only |
