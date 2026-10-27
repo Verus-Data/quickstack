@@ -74,7 +74,7 @@ export function configLayer(env: Environment = process.env) {
             unknown,
           );
           const override = yield* read(text("QUICKSTACKS_DATA_DIR"));
-          return { dataDir: override || file.dataDir || locations.data };
+          return { ...file, dataDir: override || file.dataDir || locations.data };
         }).pipe(Effect.mapError(() => new InvalidConfig())),
       );
       const logging = Effect.gen(function* () {

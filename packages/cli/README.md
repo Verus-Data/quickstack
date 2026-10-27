@@ -41,7 +41,17 @@ The same id in a higher root wins; `list --json` marks the winner's `shadows` wi
 
 ## Configuration
 
-Optional configuration is `$XDG_CONFIG_HOME/quickstacks/config.json`, defaulting to `$HOME/.config/quickstacks/config.json`. Its closed schema accepts only an optional string `dataDir`. Environment values override file values; blank values count as absent. Configuration is read lazily and cached for one invocation.
+Optional configuration is `$XDG_CONFIG_HOME/quickstacks/config.json`, defaulting to `$HOME/.config/quickstacks/config.json`. Its closed schema accepts these optional keys, and rejects any other. Environment values override file values; blank values count as absent. Configuration is read lazily and cached for one invocation.
+
+| Key | Meaning |
+| --- | --- |
+| `dataDir` | Data path; `QUICKSTACKS_DATA_DIR` overrides it |
+| `always` | Fragment ids added to every composition that they fit; one that doesn't fit, or doesn't exist, is skipped with a warning. `--without` still removes one |
+| `agents` | Agents whose `adapters/<agent>/` files are written: any of `claude`, `codex`, `opencode`, `cursor`. `--agents` overrides it; the default is `["claude"]` |
+| `author` | Author name for templates |
+| `package_scope` | npm scope for templates, such as `@acme` |
+
+Environment settings:
 
 | Setting | Meaning |
 | --- | --- |

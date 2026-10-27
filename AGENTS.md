@@ -52,6 +52,8 @@ Paths below are relative to `packages/cli/`.
 - `src/cli.ts`, `commands/doctor.ts`, `commands/list.ts`: real Effect command tree and thin handlers.
 - `src/core/doctor.ts`: platform-free diagnostic program.
 - `src/core/registry/`: `entry.ts` (frontmatter split and decode, `Entry`, `RejectedEntry`, `EntryFile`) and `registry.ts` (the `Registry` service over ordered `RegistryRoots`, `trustOf`, `defaultRoots`); `core/list.ts` builds and renders the `list` result.
+- `src/core/compose/`: `compose.ts` (`compose`: selection, order, planned files with JSON `merge`, steps, env, decisions; `missingTools`), `conditionals.ts` (`quickstacks:when` blocks), `merge.ts` (`deepMerge`), `agents.ts` (`targetAgents`).
+- `src/core/brief/`: `render.ts` (`renderBrief`, pure over a `Composition`), `text.ts` (every fixed sentence of the brief), `words.ts` (`countWords`), `headings.ts` (`nest`), `paths.ts` (`collapsePaths`).
 - `src/services/`: Output buffers success output; Host supplies process facts; `processes.ts::Processes` runs child processes (`run`, `start`, `exec`, `interactive`, `which`) and `Foreground` holds this invocation's live process groups and interactive child.
 - `src/platform/`: the only Node process code. `process.ts` spawns on `node:child_process` and signals/probes process groups; `signals.ts` is the A3 signal policy (`decide`, `installSignalPolicy`).
 - `src/config.ts`: lazy per-invocation AppConfig; independent paths/log settings.

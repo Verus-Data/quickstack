@@ -8,6 +8,12 @@ export const smallRegistry = join(fixtures, "registry");
 export const realRegistry = join(fixtures, "registry-real");
 /** Entries that don't load as they are: an unknown key, and `schema_version: 2`. */
 export const brokenRegistry = join(fixtures, "registry-broken");
+/**
+ * Composition cases around the `web-stack` stack: requirements, a cycle, conflicts both ways,
+ * merged settings, env and step clashes, two apps, a release fragment another one requires, and
+ * stacks with a misfit default and a required app.
+ */
+export const composeRegistry = join(fixtures, "registry-compose");
 
 /** Writes `<root>/<stacks|fragments>/<dir>/<STACK|FRAGMENT>.md` and returns the entry directory. */
 export function writeEntry(

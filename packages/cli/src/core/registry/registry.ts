@@ -94,6 +94,15 @@ export class Registry extends Context.Service<
     readonly files: (
       entry: Entry,
     ) => Effect.Effect<ReadonlyArray<EntryFile>, EntryInvalid | PermissionDenied>;
+    /**
+     * The text of one file in an entry, by its entry-relative `source`. Every path segment is
+     * lstat'ed first, so a symlink anywhere under the entry is `EntryInvalid` (`symlink`) and
+     * nothing behind it is read; a missing file is `EntryInvalid` (`missing`).
+     */
+    readonly read: (
+      entry: Entry,
+      source: string,
+    ) => Effect.Effect<string, EntryInvalid | PermissionDenied>;
   }
 >()("quickstacks/Registry") {
   /**
@@ -298,6 +307,39 @@ export class Registry extends Context.Service<
                   return match?.[1] ? [{ source: rel, path: match[1], mode }] : [];
                 })
                 .sort((a, b) => (a.source < b.source ? -1 : 1));
+            }),
+          read: (entry, source) =>
+            Effect.gen(function* () {
+              const invalid = (reason: "symlink" | "missing", at: string) =>
+                new EntryInvalid({
+                  details: { id: entry.id, origin: entry.origin, reason, path: at },
+                });
+              const denied = (at: string) =>
+                new PermissionDenied({ details: { reason: "read", path: at } });
+              const segments = source.split("/");
+              if (segments.some((segment) => segment === "" || segment === "." || segment === ".."))
+                return yield* invalid("missing", source);
+              // The entry directory itself, then each prefix of `source` down to the file.
+              for (let depth = 0; depth <= segments.length; depth++) {
+                const rel = segments.slice(0, depth).join("/") || ".";
+                const at = path.join(entry.dir, rel);
+                const info = yield* fs
+                  .lstat(at)
+                  .pipe(
+                    Effect.mapError((error) =>
+                      notFound(error) ? invalid("missing", source) : denied(at),
+                    ),
+                  );
+                if (info.type === "SymbolicLink") return yield* invalid("symlink", rel);
+              }
+              const file = path.join(entry.dir, source);
+              return yield* fs
+                .readFileString(file)
+                .pipe(
+                  Effect.mapError((error) =>
+                    notFound(error) ? invalid("missing", source) : denied(file),
+                  ),
+                );
             }),
         };
       }),

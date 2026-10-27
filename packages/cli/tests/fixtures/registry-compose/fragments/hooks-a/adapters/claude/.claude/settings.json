@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Bash", "command": "guard" },
+      { "matcher": "Write", "command": "format" }
+    ],
+    "Stop": [{ "command": "check" }]
+  },
+  "permissions": { "allow": ["Bash(bun run lint)"] }
+}

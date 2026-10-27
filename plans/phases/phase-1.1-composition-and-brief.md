@@ -1,8 +1,8 @@
 # Phase 1.1: Composition and the brief
 
-Status: DRAFT 2026-10-26 (not agreed). Selection order, apps, the split brief, decision
-prefixes, `--with` fit warnings and `NotFound` details revised 2026-10-26 for the amended
-D18
+Status: EXECUTED 2026-10-26 on feat/phase-1 (reviewed once, fixes applied). Selection order, apps, the
+split brief, decision prefixes, `--with` fit warnings and `NotFound` details revised
+2026-10-26 for the amended D18
 
 | Field | Value |
 |---|---|
@@ -615,3 +615,62 @@ directory.
 - Treating every env clash as a conflict may be too strict if two fragments both default
   a shared variable such as `NODE_ENV` differently on purpose. If 1.6a hits it, the stack
   should own the key, and the rule can become "the stack's value wins over a fragment's".
+- 2026-10-26, from execution:
+  - `Registry` gained `read(entry, source)`, which reads one entry-relative file after
+    `lstat`ing every path prefix, so a symlink fails `EntryInvalid` `symlink` and any
+    other read error is `PermissionDenied` `read`. Compose needs it for merged JSON sources
+    and to turn a body line into a file line for `conditional` errors.
+  - `Composition` carries `preset` and `agents` beyond the type above, and each
+    `untrusted` item is `{ id, kind, origin, dir }` (the brief names the kind). Entry bodies
+    in a `Composition` are already resolved, so `renderBrief` is pure and 1.2a and 1.5
+    read the same text. The roadmap's contracts table records both.
+  - `compose`'s error channel includes `PermissionDenied` (an unreadable merge source or
+    entry file). A stack-listed or required id that names no fragment is `ComposeConflict`
+    `requires` with `[requirer, id]`, since the caller's flags didn't name it.
+  - `BadInput` gained a closed `details: { id }` for the `--with`/`--without` overlap
+    (roadmap Error tags updated). `EntryInvalid` gained an optional `line` (the file line
+    of a bad conditional marker), and its detail lines are escaped like the others.
+  - `missingTools(composition, found)` lives in `compose.ts` beside the data it reads;
+    1.2a supplies `found` from `Processes.which`. A tool owned by the stack or a required
+    fragment gets no `--without` hint.
+  - Markers are processed even inside code fences, so a fenced example of a marker has to
+    be indented or escaped. `quickstacks:fill` lines pass through untouched, including
+    `quickstacks:fill:<text>` with no space; any other `quickstacks:` directive is an error.
+  - `fixedWords` counts every line from `text.ts`, including fact lines with names
+    interpolated; entry bodies, decision text, tables and generated lists are data. The
+    server and foreground rules appear only when some step is a `serve` step. With an app,
+    Manual QA and After green come after the application section, since they apply to the
+    full green.
+  - Composition-test fixtures are a new `tests/fixtures/registry-compose/` rather than
+    additions to `registry/`, whose `list` tests assert exact listings.
+  - Measured on the realistic `typescript-cli` fixture with `openrouter-chat-cli`:
+    briefWords 6,027 and fixedWords 1,031 under `--sandbox` (5,990 and 994 without); base
+    only, 3,994 and 811 (3,957 and 774), after the review fixes below. With the app the brief is over D5's 5,000, almost
+    all of it entry prose; 1.5's budget will flag it.
+  - 1.2a owns the `--with`, `--without`, `--sandbox` and `--agents` flags' help text and
+    README lines; 1.1 adds no command.
+- 2026-10-26, from the review:
+  - A stack and a fragment may share an id, so owners in `Composition` (files, steps,
+    decisions, tools, deps) are `EntryRef` `{ kind, id }`, and app steps are found by
+    entry identity. `ComposeConflict.details` gained an optional `stack`; `ids` holds
+    fragment ids only (the plan had every party in `ids`). Human mode prints `Stack:` and
+    `Fragments:`.
+  - `Composition.selection` records how each fragment was selected, and
+    `MissingTool.drop` lists only flags that would leave the tool out: a fragment another
+    selected fragment requires is removed together with its dependents, a `--with` owner
+    (or the app) gets "dropping `--with <id>`", and a required fragment in that set means
+    no hint.
+  - Step commands left the verify table: escaping `|` inside a cell changed the command an
+    agent copies. The table keeps step, phase, layer and expectations, and a fenced block
+    under it lists each command verbatim under a `# name` comment.
+  - With an app, the base table names `verify --skip-tag app`, the base rule says the base
+    is done at `partial` with every base step passing, and "green" appears only in the
+    application section's closing line. The untrusted section now follows the title
+    directly, before the facts, which print untrusted entries' names.
+  - `EntryInvalid` `conditional` carries `details.problem` (the roadmap Error tags row
+    lists the set). Empty comma values (`stack=a,,b`, `stack=`) are `bad_value`.
+  - A file whose basename is exactly `.tmpl` is copied, not treated as a template.
+  - `collapsePaths` still counts listed lines, not written files: a collapsed
+    subdirectory is one line. Counting written files would collapse `.claude/` in this
+    plan's own brief example, so the plan's rule and its example disagree; the tests pin
+    the line rule.

@@ -5,6 +5,7 @@ import { expect, test } from "vitest";
 import {
   BadInput,
   BrokenPipe,
+  ComposeConflict,
   EntryInvalid,
   errorClasses,
   errorTable,
@@ -31,6 +32,7 @@ test("the published error table, written out row by row", () => {
     VerifyChanged: { exit: 5, retryable: false, keepsResult: true },
     PermissionDenied: { exit: 6, retryable: false, keepsResult: false },
     EntryInvalid: { exit: 2, retryable: false, keepsResult: false },
+    ComposeConflict: { exit: 2, retryable: false, keepsResult: false },
     Interrupted: { exit: 130, retryable: false, keepsResult: false },
     Defect: { exit: 1, retryable: false, keepsResult: false },
     BrokenPipe: { exit: 0, retryable: false, keepsResult: false },
@@ -134,6 +136,71 @@ test("EntryInvalid details name the entry in the envelope and in human mode", as
     "Entry is invalid.\n  Entry: bun-web (user, symlink)\n  Path: files/link\n",
   );
 });
+test.each([
+  [
+    "ComposeConflict with every key",
+    new ComposeConflict({
+      details: {
+        reason: "env",
+        stack: "web-stack",
+        ids: ["port-clash"],
+        path: "a.json",
+        step: "web",
+        key: "PORT_WEB",
+      },
+    }),
+    "These entries can't be composed.\n  Reason: env\n  Stack: web-stack\n  Fragments: port-clash\n  Path: a.json\n  Step: web\n  Key: PORT_WEB\n",
+  ],
+  [
+    "ComposeConflict between fragments",
+    new ComposeConflict({ details: { reason: "cycle", ids: ["cycle-a", "cycle-b"] } }),
+    "These entries can't be composed.\n  Reason: cycle\n  Fragments: cycle-a, cycle-b\n",
+  ],
+  ["BadInput", new BadInput({ details: { id: "ci" } }), "Invalid input.\n  Id: ci\n"],
+  [
+    "EntryInvalid with a line and a problem",
+    new EntryInvalid({
+      details: {
+        id: "bad-when",
+        origin: "user",
+        reason: "conditional",
+        path: "FRAGMENT.md",
+        line: 11,
+        problem: "unclosed",
+      },
+    }),
+    "Entry is invalid.\n  Entry: bad-when (user, conditional)\n  Path: FRAGMENT.md:11\n  Problem: unclosed\n",
+  ],
+] as const)(
+  "%s: details in the envelope, detail lines in human mode",
+  async (_case, error, human) => {
+    const json = await runCli(["--json"], { program: Effect.fail(error), env: quiet });
+    expect(json.status).toBe(2);
+    expect(json.stdout).toBe("");
+    expect(JSON.parse(json.stderr)).toEqual({
+      error: { tag: error._tag, message: error.message, retryable: false, details: error.details },
+    });
+    const text = await runCli([], { program: Effect.fail(error), env: quiet });
+    expect(text.status).toBe(2);
+    expect(text.stdout).toBe("");
+    expect(text.stderr).toBe(human);
+  },
+);
+test.each([
+  ["ComposeConflict", () => new ComposeConflict({ details: { reason: "cycle", ids: ["a"] } })],
+  ["BadInput", () => new BadInput({ details: { id: "ci" } })],
+] as const)(
+  "%s details mutated to carry an extra key are a defect, not a leak",
+  async (_tag, make) => {
+    const error = make();
+    Object.assign(error.details ?? {}, { extra: "leaked" });
+    const result = await runCli(["--json"], { program: Effect.fail(error), env: quiet });
+    expect(result.status).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(JSON.parse(result.stderr).error.tag).toBe("Defect");
+    expect(result.stderr).not.toContain("leaked");
+  },
+);
 test("construction drops keys the details schema doesn't name", () => {
   const error = new PermissionDenied({ details: { reason: "write", extra: 1 } as never });
   expect(error.details).toEqual({ reason: "write" });

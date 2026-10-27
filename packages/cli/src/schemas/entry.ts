@@ -85,13 +85,15 @@ export type ResolvedStep = Omit<VerifyStep, "phase" | "tags" | "timeout" | "expe
   timeout: string;
   expect?: { http: string; within: string };
 };
+/** A step's `timeout` when it sets none; the brief shows a step's timeout only when it differs. */
+export const DEFAULT_STEP_TIMEOUT = "10m";
 export function withStepDefaults(step: VerifyStep): ResolvedStep {
   const { expect, ...rest } = step;
   return {
     ...rest,
     phase: step.phase ?? "check",
     tags: step.tags ?? [],
-    timeout: step.timeout ?? "10m",
+    timeout: step.timeout ?? DEFAULT_STEP_TIMEOUT,
     ...(expect ? { expect: { http: expect.http, within: expect.within ?? "60s" } } : {}),
   };
 }
