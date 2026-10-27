@@ -65,6 +65,8 @@ bun run check   # the full gate, before finishing a feature
 - commit or push (leave the changes for review)
 - disable a lint rule, weaken a test or add a cast to get green
 - add features, options or abstractions the goal doesn't need
+- mention any repository outside this one in a tracked file; a reference repo named in "Read
+  first" is for you only
 
 ## Review before hand-off
 

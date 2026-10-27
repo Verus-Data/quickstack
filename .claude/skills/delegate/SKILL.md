@@ -40,7 +40,8 @@ faster than you could write the contract, or when you can't yet say what done lo
    Run everything from the main checkout, addressing worktrees by path. A session isolated in
    one worktree (`EnterWorktree`) may not be able to run git in another.
 
-2. Contract. Copy `contract.md` beside this file into the scratchpad and fill it in. Codex
+2. Contract. Copy `contract.md` beside this file into the scratchpad and fill it in
+   (`contract-tests.md` for a test-first sub-phase's test author). Codex
    reads `AGENTS.md` on its own but never sees `.claude/rules/` or this conversation, so the
    contract names the rule and skill files that apply and carries every constraint itself.
 
