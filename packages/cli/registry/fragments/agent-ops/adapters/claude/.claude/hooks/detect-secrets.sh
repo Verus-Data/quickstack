@@ -55,6 +55,12 @@ has_real() {
   lines=$(grep -E -e "$1" <<<"$text" || true)
   [ -n "$lines" ] && grep -qviE -e "$placeholder" <<<"$lines"
 }
+# has_real_i <ere>: has_real, ignoring case (apiKey, API_KEY and api_key alike).
+has_real_i() {
+  local lines
+  lines=$(grep -iE -e "$1" <<<"$text" || true)
+  [ -n "$lines" ] && grep -qviE -e "$placeholder" <<<"$lines"
+}
 placeholder='(your[-_]|changeme|replace|example|placeholder|xxxx|fake|dummy|redacted|TODO|FIXME|<[^>]*>)'
 
 findings=""
@@ -78,7 +84,7 @@ has '(postgres|postgresql|mysql|mongodb(\+srv)?|redis|amqp)://[^:/[:space:]]+:[^
 has 'eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}' && add "JWT"
 
 # Generic: a long high-entropy literal assigned to a secret-looking name.
-if has_real '(api[_-]?key|api[_-]?secret|secret[_-]?key|client[_-]?secret|access[_-]?token|auth[_-]?token|private[_-]?key)["'\'']?[[:space:]]*[:=][[:space:]]*["'\''][A-Za-z0-9/+=_-]{32,}["'\'']'; then
+if has_real_i '(api[_-]?key|api[_-]?secret|secret[_-]?key|client[_-]?secret|access[_-]?token|auth[_-]?token|private[_-]?key)["'\'']?[[:space:]]*[:=][[:space:]]*["'\''][A-Za-z0-9/+=_-]{32,}["'\'']'; then
   add "Long literal assigned to a secret-looking name"
 fi
 

@@ -23,12 +23,26 @@ is_destructive() {
   # A shell's -c payload is a command line of its own: check it the same way.
   # (bash -c "rm -rf /", sh -c 'cd /tmp; rm -rf ~'). The leading space lets the
   # pattern require a non-word character before the shell name (not ssh -c).
-  local payload q
-  for q in "'" '"'; do
-    payload=$(sed -nE "s/.*[^[:alnum:]_.-](ba|z|da|k)?sh[[:space:]]+(-[[:alpha:]]+[[:space:]]+)*-[[:alpha:]]*c[[:space:]]+${q}([^${q}]*)${q}.*/\3/p" <<<" $command")
-    if [ -n "$payload" ] && [ "$payload" != "$command" ] && is_destructive "$payload"; then
-      return 0
-    fi
+  # Every payload on the line is checked: the greedy prefix finds the last one,
+  # which is then cut off and the search repeated. A single-quoted payload may
+  # hold '\'' and a double-quoted one \" and \\; both are unescaped before the
+  # check.
+  local shell_c='[^[:alnum:]_.-](ba|z|da|k)?sh[[:space:]]+(-[[:alpha:]]+[[:space:]]+)*-[[:alpha:]]*c[[:space:]]+'
+  local re rest payload sq="'" sq_escaped="'\\''"
+  for re in "${shell_c}'(([^']|'\\\\'')*)'" "${shell_c}\"(([^\"\\\\]|\\\\.)*)\""; do
+    rest=" $command"
+    # The x marks a match, so an empty payload ('') doesn't end the search.
+    while payload=$(sed -nE "s/^(.*)${re}.*/x\\4/p" <<<"$rest") && [ -n "$payload" ]; do
+      payload=${payload#x}
+      case $re in
+      *\') payload=${payload//"$sq_escaped"/$sq} ;;
+      *) payload=$(sed -E 's/\\([\\"$`])/\1/g' <<<"$payload") ;;
+      esac
+      if [ "$payload" != "$command" ] && is_destructive "$payload"; then
+        return 0
+      fi
+      rest=$(sed -E "s/^(.*)${re}.*/\\1/" <<<"$rest")
+    done
   done
 
   # m <ere>: case-sensitive match. mi <ere>: case-insensitive.
@@ -42,6 +56,9 @@ is_destructive() {
   local end='([[:space:]]|;|&|\||\)|$)'
   # Start of a command word: start of string, a separator, or whitespace.
   local word='(^|[;&|(`]|[[:space:]])'
+  # git and its global options, up to the subcommand: git -C dir, -c k=v,
+  # --no-pager, --git-dir=.git or --git-dir .git all reach the same rules.
+  local git_='git([[:space:]]+(-[Cc][[:space:]]+[^[:space:]]+|--(git-dir|work-tree|namespace|config-env)[[:space:]]+[^[:space:]]+|-[[:alpha:]]+|--[[:alnum:]-]+(=[^[:space:]]*)?))*[[:space:]]+'
 
   # --- Filesystem ------------------------------------------------------------
   # rm rules look at one simple command at a time, split on ; && || | & and
@@ -58,9 +75,9 @@ is_destructive() {
   while IFS= read -r seg; do
     grep -qE -e "$rm_start" <<<"$seg" || continue
     # rm against /, ~, ., .., $HOME, $PWD or their / and /* forms, quoted or
-    # not. Matching on the target rather than the flag cluster closes the
-    # split-flag bypass (rm -r -f /).
-    if grep -qE -e "[[:space:]=][\"']?(/\*?|(~|\\\$HOME|\\\$\{HOME\}|\\\$PWD|\\\$\{PWD\}|\.\.?)(/\*?)?)[\"']?${end}" <<<"$seg"; then
+    # not, the quote anywhere ("$HOME"/, "$HOME/"*). Matching on the target
+    # rather than the flag cluster closes the split-flag bypass (rm -r -f /).
+    if grep -qE -e "[[:space:]=][\"']?(/[\"']?\*?|(~|\\\$HOME|\\\$\{HOME\}|\\\$PWD|\\\$\{PWD\}|\.\.?)[\"']?(/[\"']?\*?)?)[\"']?${end}" <<<"$seg"; then
       hit "rm targeting the filesystem root, home, or the working directory." \
         "Name the exact paths to remove. Ask the user first."
       return 0
@@ -128,42 +145,56 @@ is_destructive() {
   fi
 
   # --- Git: discarding uncommitted work --------------------------------------
-  if m "git[[:space:]]+checkout[[:space:]]+(--[[:space:]]+)?\.${end}"; then
+  # Every path at once (. or :/), with or without a ref or options before it
+  # (git checkout HEAD -- ., git restore --source=HEAD .), in one command.
+  local all_paths="[[:space:]]+([^;&|]*[[:space:]])?(\.|:/)${end}"
+  if m "${git_}checkout${all_paths}"; then
     hit "git checkout . discards every unstaged change." "Revert specific files: git checkout -- <file>"
     return 0
   fi
-  if m "git[[:space:]]+restore[[:space:]]+\.${end}"; then
-    hit "git restore . discards every unstaged change." "Revert specific files: git restore <file>"
-    return 0
-  fi
-  if m "git[[:space:]]+clean[[:space:]]+(.*[[:space:]])?(-[a-zA-Z]*f|--force)"; then
+  # restore touches the worktree unless only --staged/-S is given, which just
+  # unstages. Checked per command, so one restore's --staged can't cover another.
+  local restore
+  while IFS= read -r restore; do
+    grep -qE -e "${git_}restore${all_paths}" <<<"$restore" || continue
+    if ! grep -qE -e "[[:space:]](--staged|-[[:alpha:]]*S[[:alpha:]]*)([[:space:]]|$)" <<<"$restore" ||
+      grep -qE -e "[[:space:]](--worktree|-[[:alpha:]]*W[[:alpha:]]*)([[:space:]]|$)" <<<"$restore"; then
+      hit "git restore . discards every unstaged change." "Revert specific files: git restore <file>"
+      return 0
+    fi
+  done < <(tr ';&|' '\n' <<<"$command")
+  if m "${git_}clean[[:space:]]+(.*[[:space:]])?(-[a-zA-Z]*f|--force)"; then
     hit "git clean -f deletes untracked files permanently." "Preview with git clean -n. Ask the user first."
     return 0
   fi
-  if m "git[[:space:]]+reset[[:space:]]+(.*[[:space:]])?--hard"; then
+  if m "${git_}reset[[:space:]]+(.*[[:space:]])?--hard"; then
     hit "git reset --hard discards all uncommitted changes, staged and unstaged." \
       "Use git stash or a soft reset to keep the work. Ask the user first."
     return 0
   fi
-  if m "git[[:space:]]+stash[[:space:]]+(drop|clear)"; then
+  if m "${git_}stash[[:space:]]+(drop|clear)"; then
     hit "git stash drop/clear destroys stashed work." "Other sessions may have work in the stash. Ask the user first."
     return 0
   fi
-  if m "git[[:space:]]+branch[[:space:]](.*[[:space:]])?-[a-zA-Z]*D"; then
+  if m "${git_}branch[[:space:]](.*[[:space:]])?-[a-zA-Z]*D"; then
     hit "git branch -D deletes a branch even when its commits are merged nowhere." \
       "Use git branch -d, which refuses unmerged work. Ask the user first."
     return 0
   fi
 
   # --- Git: skipping the project's hooks ---------------------------------------
-  if m "git[[:space:]]+(commit|push)[[:space:]](.*[[:space:]])?--no-verify"; then
+  # commit's -n is --no-verify, alone or in a cluster (-nm, -anm), but not as
+  # the argument of -m, -c, -C, -F or -t (-mn is the message "n"). push -n is
+  # --dry-run.
+  if m "${git_}(commit|push)[[:space:]](.*[[:space:]])?--no-verify" ||
+    m "${git_}commit[[:space:]]([^;&|]*[[:space:]])?-[abd-lo-su-zABDEG-Z]*n[[:alpha:]]*([[:space:]]|$)"; then
     hit "--no-verify skips the project's git hooks." "Fix what the hook reports instead. Ask the user first."
     return 0
   fi
 
   # --- Git: rewriting shared history (--force-with-lease is allowed) ----------
-  if m "git[[:space:]]+push[[:space:]](.*[[:space:]])?(-f|--force|-[a-zA-Z]*f[a-zA-Z]*)([[:space:]]|$)" ||
-    m "git[[:space:]]+push[[:space:]](.*[[:space:]])?\+[^[:space:]]+"; then
+  if m "${git_}push[[:space:]](.*[[:space:]])?(-f|--force|-[a-zA-Z]*f[a-zA-Z]*)([[:space:]]|$)" ||
+    m "${git_}push[[:space:]](.*[[:space:]])?\+[^[:space:]]+"; then
     hit "Force push rewrites remote history." "Ask the user first. If it is needed, use --force-with-lease."
     return 0
   fi

@@ -537,6 +537,23 @@ describe("composed settings wire each hook once [1.6d#4] [1.6d#5]", () => {
     ]);
   });
 
+  test("agent-ops denies reading each real .env file and leaves the templates readable [1.6d#4]", () => {
+    const reads = (agentOpsSettings.permissions.deny ?? []).filter((rule) =>
+      rule.startsWith("Read("),
+    );
+    expect(reads.sort()).toEqual(
+      [
+        "Read(./.env)",
+        "Read(./.env.local)",
+        "Read(./.env.*.local)",
+        "Read(./.env.development)",
+        "Read(./.env.test)",
+        "Read(./.env.staging)",
+        "Read(./.env.production)",
+      ].sort(),
+    );
+  });
+
   test.each(stacks)(
     "new $id with every optional fragment: each hook command and deny rule appears once, and every hook script is executable [1.6d#4] [1.6d#5]",
     async ({ id, optional }) => {
