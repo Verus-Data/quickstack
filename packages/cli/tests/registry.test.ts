@@ -385,6 +385,8 @@ async function newFromCatalog(stack: string, preset: (typeof PRESETS)[number], a
 }
 
 describe("every bundled stack scaffolds through new", () => {
+  // Each matrix row renders and writes a shipped composition, fingerprints its files and runs
+  // git through the shim; concurrent gates can push that work past the default 5 s budget.
   // 1.4 adds the agent handoff; once it lands these runs pass --no-launch.
   test.each(catalogStacks.flatMap((stack) => PRESETS.map((preset) => [stack.id, preset] as const)))(
     "new %s (%s) writes a project under the budget whose manifest covers D7 [1.6a#2]",
@@ -422,6 +424,7 @@ describe("every bundled stack scaffolds through new", () => {
           token: false,
         });
     },
+    30_000,
   );
 
   test.each(
@@ -448,6 +451,7 @@ describe("every bundled stack scaffolds through new", () => {
       for (const path of entry ? templateOutputs(entry) : [])
         expect(readFileSync(join(project, path), "utf8")).not.toContain("{{");
     },
+    30_000,
   );
 
   test("the catalog has apps to test", () => {

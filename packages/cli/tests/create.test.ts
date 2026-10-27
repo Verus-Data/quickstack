@@ -90,7 +90,8 @@ describe("create an entry", () => {
         details: { errors: 1, warnings: 0 },
       },
     });
-  });
+    // Three real validations load the registry and run its reference checks under concurrent gates.
+  }, 30_000);
 
   test("fresh stack and fragment skeletons have exactly the measured empty finding set [3.1b#1]", async () => {
     const home = createWorkspace();
@@ -168,7 +169,8 @@ describe("create an entry", () => {
     });
     for (const heading of ["What to add", "Tool configuration", "Verify", "AGENTS.md"])
       expect(fragmentParts.body).toContain(`## ${heading}`);
-  });
+    // Two creates and two real validations traverse the registry; this is heavier than one command.
+  }, 30_000);
 
   test("the skeleton's readme step rejects empty and fill-marker files and accepts filled prose [3.1b#1]", async () => {
     const home = createWorkspace();
@@ -239,7 +241,8 @@ describe("create an entry", () => {
     writeFileSync(path, before.replace(/^applies_to:\s*\[\]/m, "applies_to: [my-api]"));
     expect((await validate(home, dirname(path))).findings).toEqual([]);
     expect(Schema.decodeUnknownSync(FragmentMeta)(metadata(path).frontmatter).category).toBe("app");
-  });
+    // Two creates and two validations cover the invalid-to-valid transition against the registry.
+  }, 30_000);
 
   test("a bundled working copy shadows its origin and new reads the edited body [3.1b#2]", async () => {
     const home = createWorkspace();

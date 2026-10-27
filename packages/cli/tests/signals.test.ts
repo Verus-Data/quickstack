@@ -125,13 +125,15 @@ describe("signals reaching a real CLI process", () => {
 
   test("a wrapper's late copy of the child's Ctrl+C, arriving after the child exits, is ignored", async () => {
     const dir = tempDir();
-    const cli = launch([fixture, "interactive", dir.path], pkg, dir.path);
+    const cli = launch([fixture, "late-copy", dir.path], pkg, dir.path);
     try {
       await waitFor(dir.path, "child-ready");
-      process.kill(-cli.pid, "SIGINT");
-      await waitFor(dir.path, "parent-done");
       process.kill(cli.pid, "SIGINT");
-      writeFileSync(join(dir.path, "release"), "");
+      await cli.closed;
+      const elapsed = Number(readFileSync(join(dir.path, "late-copy-ms"), "utf8"));
+      expect(elapsed, "late SIGINT missed the child's one-second Ctrl+C window").toBeLessThan(
+        SECOND_SIGNAL_MS,
+      );
       expect((await cli.closed).status).toBe(7);
     } finally {
       cleanup(cli.child, dir);

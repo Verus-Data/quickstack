@@ -710,7 +710,8 @@ describe("advisory hooks never get in the way [1.6d#6]", () => {
 
   test("lint-on-write.sh caps the diagnostics it returns at 60 lines [1.6d#6]", async () => {
     const project = await scaffold("astro-blog");
-    fakeBiome(project, 200);
+    // One line over the cap exercises truncation without encoding 200 lines in bash 3.2.
+    fakeBiome(project, 61);
     writeFileSync(join(project, "src.ts"), "export const a = 1;\n");
     const run = runHook(project, "lint-on-write.sh", postWritePayload(project, "src.ts"));
     expect({ status: run.status, stderr: run.stderr }).toEqual({ status: 0, stderr: "" });

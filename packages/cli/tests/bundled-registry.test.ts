@@ -18,4 +18,5 @@ test("the bundled registry validates with zero errors and zero warnings [1.5#14]
   expect(report.bundled).toBe(true);
   expect(report.findings.filter((finding) => finding.severity !== "note")).toEqual([]);
   expect(result.status).toBe(0);
-});
+  // This walks every shipped entry and composition; concurrent gates can exceed Vitest's 5 s.
+}, 30_000);

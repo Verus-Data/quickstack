@@ -9,6 +9,8 @@ import { ledgerRegistry, registryFingerprint, stackBody } from "./helpers/ledger
 import { minimal, writeEntry } from "./helpers/registry";
 import { workspace } from "./helpers/verify";
 
+// Each scenario builds two git commits, fingerprints both registries and starts real importer
+// processes. Keep a local 30 s budget for that work when another gate competes for the machine.
 const space = workspace();
 afterEach(() => space.release());
 const script = join(import.meta.dirname, "../scripts/ledger-import.ts");
@@ -154,7 +156,8 @@ test("import fingerprints the note's commit and rerunning appends nothing [2.0c#
   expect(repeated.stderr).toBe("");
   expect(repeated.stdout).not.toContain("Module not found");
   expect(readFileSync(file, "utf8")).toBe(twoRecords);
-});
+  // Four importer processes each read historical registry files through git, beyond a single command.
+}, 30_000);
 
 test("a valid relative leading-dash note is imported after the option terminator [2.0c#10]", async () => {
   const f = await repository();
@@ -179,7 +182,7 @@ test("a valid relative leading-dash note is imported after the option terminator
     repoCommit: f.commit,
     fingerprint: f.original,
   });
-});
+}, 30_000);
 
 test("a note missing Repo commit is reported, skipped and exits 1 [2.0c#5]", async () => {
   const f = await repository();
@@ -190,7 +193,7 @@ test("a note missing Repo commit is reported, skipped and exits 1 [2.0c#5]", asy
   expect(`${result.stdout}${result.stderr}`).toContain("2026-10-27-sample.md");
   expect(result.stderr).not.toContain("Defect");
   expect(existsSync(join(f.registry, "runs.json"))).toBe(false);
-});
+}, 30_000);
 
 test.each(["unknown commit", "old invalid registry"])(
   "%s skips only that note and continues with a valid one [2.0c#10]",
@@ -219,6 +222,7 @@ test.each(["unknown commit", "old invalid registry"])(
       fingerprint: f.original,
     });
   },
+  30_000,
 );
 
 test("dry-run prints records and leaves the ledger and working tree unchanged [2.0c#10]", async () => {
@@ -243,7 +247,7 @@ test("dry-run prints records and leaves the ledger and working tree unchanged [2
   expect(projectFiles(f.root).map((path) => [path, readFileSync(join(f.root, path))])).toEqual(
     contents,
   );
-});
+}, 30_000);
 
 test.each([
   { outcome: "green", tamperCheck: "manifest-only", expected: "fail" },
@@ -279,4 +283,5 @@ test.each([
       fingerprint: f.original,
     });
   },
+  30_000,
 );
