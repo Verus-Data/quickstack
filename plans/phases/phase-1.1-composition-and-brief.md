@@ -643,7 +643,7 @@ directory.
     full green.
   - Composition-test fixtures are a new `tests/fixtures/registry-compose/` rather than
     additions to `registry/`, whose `list` tests assert exact listings.
-  - Measured on the realistic `typescript-cli` fixture with `openrouter-chat-cli`:
+  - Measured on the realistic fixture stack (`tests/fixtures/registry-real/`) with its app:
     briefWords 6,027 and fixedWords 1,031 under `--sandbox` (5,990 and 994 without); base
     only, 3,994 and 811 (3,957 and 774), after the review fixes below. With the app the brief is over D5's 5,000, almost
     all of it entry prose; 1.5's budget will flag it.

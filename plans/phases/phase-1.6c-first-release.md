@@ -115,7 +115,7 @@ No code changes. A code change here means the release goes back through 1.6b.
 
 - The local sha256 equals 1.6b's recorded digest, and the local sha512 integrity equals
   npm's `dist.integrity` for the published version.
-- `npx quickstacks@latest list --json` on the clean machine lists the three stacks, on
+- `npx quickstacks@latest list --json` on the clean machine lists every bundled stack, on
   the lowest D12 Node and the `.node-version` Node.
 - `npx quickstacks@latest new astro-blog <tmp> --sandbox --no-launch --json` writes the
   brief, the manifest and `.gitignore`.

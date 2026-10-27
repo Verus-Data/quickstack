@@ -6,7 +6,7 @@ Status: DRAFT 2026-10-26 (not agreed)
 |---|---|
 | Goal | The Claude Code guardrails that ship in the `agent-ops` fragment: five bash-3.2 hook scripts and their shared library, the `.claude/settings.json` merge with its deny rules, and the `.claude/README.md` skeleton, each with behavior tests that run inside `bun run test`, so a generated project is safe to hand to an agent |
 | Traces to | Job 1 ("agent config"); the brief "refuses to let the agent weaken a step" (D14); success row "The result is complete" |
-| Depends on | [1.6a](phase-1.6a-bundled-stack-content.md) (the `agent-ops` fragment and the three stacks whose generated projects the tests run on), 1.5 (`validate`) |
+| Depends on | [1.6a](phase-1.6a-bundled-stack-content.md) (the `agent-ops` fragment and the bundled stacks whose generated projects the tests run on), 1.5 (`validate`) |
 | Blocks | [1.6b](phase-1.6b-mvp-gate-runs.md) (the gate runs ship these hooks) |
 | Decisions needed | D18 (entry format; adapters live under `adapters/claude/`). D14 (changed steps fail verify) shapes the manifest deny rule |
 | Settles | The hook set, the destructive-command and secret-shape lists, and the deny rules the bundled `agent-ops` ships for Claude Code |
@@ -18,8 +18,10 @@ verify steps. This sub-phase adds the files that make a generated project safe t
 an agent, and the demo shows them, so their contents are fixed here rather than left to
 whoever writes them. Every file ships under `agent-ops`'s `adapters/claude/` (Claude
 Code's format; other agents' native adapters are
-[3.4b](phase-3.4b-native-agent-adapters.md)). Paths are output paths; dotfiles are stored
-escaped (1.6a, Dotfiles and packing). [3.4a](phase-3.4a-agent-harness-fragment.md) later
+[3.4b](phase-3.4b-native-agent-adapters.md)). Paths are output paths, and dotfiles are stored
+literally (D18 as amended), so `adapters/claude/.claude/settings.json` is written as
+`.claude/settings.json`. `agent-ops` lists `.claude/settings.json` in its `merge`, so
+other fragments' hook entries deep-merge into it (1.1). [3.4a](phase-3.4a-agent-harness-fragment.md) later
 offers a TypeScript harness that replaces the regex guard with a lexer.
 
 ## Scope
@@ -88,7 +90,7 @@ scripts aren't prose and don't count.
 
 | Path | Change |
 |---|---|
-| `packages/cli/registry/fragments/agent-ops/adapters/claude/` | `_dot_claude/hooks/*.sh`, `_dot_claude/settings.json`, `_dot_claude/README.md` (escaped names, 1.0) |
+| `packages/cli/registry/fragments/agent-ops/adapters/claude/` | `.claude/hooks/*.sh`, `.claude/settings.json`, `.claude/README.md` (literal names, 1.0) |
 | `packages/cli/registry/fragments/agent-ops/FRAGMENT.md` | The hooks paragraph |
 | `packages/cli/tests/registry-hooks.test.ts`, `tests/fixtures/hook-input/` | Behavior tests for the shipped hooks, with recorded hook-input JSON per tool |
 
@@ -106,7 +108,7 @@ temp dir:
   (`declare -A`, `mapfile`, `readarray`, `${x,,}`, `${x^^}`, `|&`, `;&`) in a shipped
   script.
 - Every hook gives the same decision with `jq` on PATH and with a PATH built without it.
-- Composing each of the three stacks, `.claude/settings.json` wires each hook command
+- Composing each bundled stack, `.claude/settings.json` wires each hook command
   exactly once, even though several fragments merge into it, and each deny rule appears
   once.
 - Every shipped script is executable.
@@ -134,3 +136,9 @@ no workflow change.
   that never fire (2.0b records whether they fired).
 - A `sed`-based JSON reader handles only flat string fields. A hook that needs nested
   input needs `jq` or the 3.4a harness.
+- 2026-10-26: the shipped files were planned under a `_dot_` escape (`_dot_claude/`) and
+  tested against three stacks. The amended D18 stores dotfiles literally, and 1.6a now
+  brings the whole catalog into v1, so the settings merge test runs over every bundled
+  stack. 1.1's merge concatenates arrays, so "each hook command exactly once" depends on
+  no two fragments shipping the same hook entry; if one does, the test fails and the
+  duplicate moves to one owner.

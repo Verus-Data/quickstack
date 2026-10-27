@@ -47,8 +47,8 @@ returns every file `new` would write for that composition, rendered in memory:
 ```ts
 // src/core/compose/files.ts
 export type RenderedFile = {
-  readonly path: string;        // project-relative, dotfile names unescaped
-  readonly owner: string;       // entry id, or the merged-file marker below
+  readonly path: string;        // project-relative; dotfile names are literal
+  readonly owner: string;       // "<kind>:<id>", or the merged-file marker below
   readonly bytes: Uint8Array;
   readonly executable: boolean; // the only mode bit new copies (1.2a)
 };
@@ -57,9 +57,13 @@ export const composeFiles: (c: Composition, vars: TemplateVars) =>
 ```
 
 It does, in memory, everything 1.2a's scaffold did between composing and writing: reads
-each `PlannedFile`'s source, unescapes dotfile names (`_dot_gitignore`), renders `.tmpl`
-files with `vars`, and deep-merges files listed in `merge` by 1.1's rules (a merged file's
-`owner` is the ids of its writers joined with `+`, in composition order). Adapter files
+each copy and template `PlannedFile`'s source through `Registry.read` (dotfile names are
+already literal, so a path needs no rewriting), renders template files with `vars`, and
+takes a merge file's bytes from the `PlannedFile` itself, since `compose` already
+deep-merged it by 1.1's rules. `PlannedFile.owner` is an `EntryRef` (`{ kind, id }`),
+because a stack and a fragment may share an id; `RenderedFile.owner` spells it
+`<kind>:<id>`, and a merged file's owner is its writers spelled that way and joined with
+`+`, in composition order. Adapter files
 are included for the agents in the composition's options, so a composition is already
 agent-specific. The output is sorted by `path`.
 
@@ -73,7 +77,7 @@ property test below mean something: there is one renderer, not two that agree.
 
 `TemplateVars` is 1.2a's variable set. `NEUTRAL_VARS` (exported from the same module) is a
 fixed value for each variable (`project_name: "example"`, `project_slug: "example"`,
-`env_prefix: "EXAMPLE"`, `author: ""`, `year: "2000"`), used by the fingerprint and by
+`env_prefix: "EXAMPLE"`, `package_scope: ""`, `author: ""`, `year: "2000"`), used by the fingerprint and by
 2.2 so neither depends on the project's name, the user's config or the clock.
 
 ### Fingerprint
@@ -88,7 +92,7 @@ export const fingerprint: (c: Composition) =>
 
 The hash input, in this order and length-prefixed so no two inputs can run together:
 
-1. For each composed entry in composition order: its id, the canonical JSON of its
+1. For each composed entry in composition order: its kind and id, the canonical JSON of its
    decoded frontmatter (keys sorted), and its body bytes. The body is what the brief is
    built from, so a prose edit changes the fingerprint.
 2. The preset name.
@@ -179,3 +183,12 @@ code moved.
   backstop.
 - `owner` for merged files joins ids with `+`. That string is part of the hash input, so
   changing its shape later marks every ledger record stale.
+- 2026-10-26: this plan unescaped `_dot_` dotfile names, deep-merged `merge` files itself
+  and spelled owners as bare ids. The amended D18 stores dotfiles literally, and 1.1 as
+  built merges JSON in `compose` (a `PlannedFile` of kind `merge` carries the final
+  bytes) and makes every owner an `EntryRef`, since a stack and a fragment may share an
+  id. `composeFiles` now only reads, renders and orders; owners are `<kind>:<id>` and
+  the fingerprint hashes each entry's kind with its id. `package_scope` is in v1's
+  variable set, so `NEUTRAL_VARS` holds it (empty), which keeps a fingerprint independent
+  of the user's scope. Check the merge marker and the
+  owner spelling against the shipped `compose.ts` before building on them.

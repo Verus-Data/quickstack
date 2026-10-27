@@ -160,5 +160,5 @@ Every network test runs a real local HTTP server serving fixtures built by 4.0c'
 ## What this plan may get wrong
 
 - 1.5 seconds once a day may still show up in agents running `list` in a loop on a slow network. The backoff caps it; if run notes show it, let only `new` refresh.
-- Same-digest detection depends on 4.0c and the CLI computing `bundleDigest` from the same escaped file names. If the bundled registry is ever packed differently (0.2), every entry will report `origin: "index"`; the "same digest" test catches it.
+- Same-digest detection depends on 4.0c and the CLI computing `bundleDigest` from the same file names (dotfiles are literal in both). If the bundled registry is ever packed differently (0.2), every entry will report `origin: "index"`; the "same digest" test catches it.
 - A compiled-in key means a lost key needs a CLI release before the index can change again (4.0c).
