@@ -12,15 +12,15 @@ import { fingerprint } from "./fingerprint";
 import { lastDefaultRecord, latestMatchingRecord, readLedger } from "./ledger";
 import { toRow } from "./list";
 import { isRejected, outputPath } from "./registry/entry";
-import { defaultRoots, Registry } from "./registry/registry";
+import { defaultRoots, Registry, type RegistryRoots } from "./registry/registry";
 import { closest } from "./suggest";
 import { printable } from "./text";
 import { BUDGET, bodyLimit, canonicalBrief, composedLimit } from "./validate/budget";
 
 /** Full review data; neither entries nor tools are executed. */
-export const showReport = (id: string, kind: Kind | undefined) =>
+export const showReport = (id: string, kind: Kind | undefined, reviewRoots?: RegistryRoots) =>
   Effect.gen(function* () {
-    const roots = yield* defaultRoots;
+    const roots = reviewRoots ?? (yield* defaultRoots);
     const settings = yield* (yield* AppConfig).get;
     const output = yield* Output;
     const bundled = roots.find((root) => root.origin === "bundled");

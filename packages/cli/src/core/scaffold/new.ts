@@ -39,6 +39,7 @@ export type NewOptions = {
   with: ReadonlyArray<string>;
   without: ReadonlyArray<string>;
   sandbox: boolean;
+  preset?: "default" | "sandbox";
   yes: boolean;
   agents: ReadonlyArray<AgentId> | undefined;
   /** `--scope`, as given. */
@@ -78,7 +79,8 @@ export const scaffold = (options: NewOptions) =>
       return yield* new BadInput({ details: { id: basename, flag: "dir" } });
     const name = options.name ?? basename;
 
-    const preset = options.sandbox ? "sandbox" : "default";
+    // Explicit flags (including --sandbox), then the setting, then default.
+    const preset = options.preset ?? (options.sandbox ? "sandbox" : (settings.preset ?? "default"));
     const composition = yield* compose({
       stack: options.stack,
       with: options.with,
@@ -121,7 +123,7 @@ export const scaffold = (options: NewOptions) =>
     const contentFingerprint = fingerprintFromFiles(composition, neutralFiles);
 
     const written = projectFiles(files);
-    const yes = options.yes || options.sandbox;
+    const yes = options.yes || preset === "sandbox";
     const brief = (state: GitState) =>
       renderBrief(composition, {
         project: name,

@@ -51,6 +51,9 @@ const platform = Layer.mergeAll(
     skill: Bun.isStandaloneExecutable
       ? join(dirname(process.execPath), "..", "skill")
       : join(import.meta.dirname, "..", "skill"),
+    authoring: Bun.isStandaloneExecutable
+      ? join(dirname(process.execPath), "..", "docs", "authoring.md")
+      : join(import.meta.dirname, "..", "docs", "authoring.md"),
     invocation: "quickstacks",
   }),
 );
