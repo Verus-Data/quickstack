@@ -73,7 +73,7 @@ No generator; write the code by hand at the root.
 3. Add one real command (for example `config show`) that exercises config, output modes, and errors end to end.
 4. Write `.golangci.yml` for the installed golangci-lint and its version to `.golangci-lint-version`.
 5. Tests per Testing; short docs skeletons; fill the README's `quickstack:fill` markers (`readme-filled` checks).
-6. Run `quickstack verify` until it passes.
+6. Run `stacks verify` until it passes.
 
 ## Conventions
 

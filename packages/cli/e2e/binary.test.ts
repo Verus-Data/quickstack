@@ -20,13 +20,15 @@ import { version } from "../package.json";
 import { cli } from "../src/cli";
 import { Manifest } from "../src/schemas/manifest";
 
-const binary = join(import.meta.dir, "../dist/quickstack");
+import { binary, packageRoot, scratchPath } from "./package";
+
 /** A copy of the binary in `<prefix>/bin/`, with `registry` (if given) copied to `<prefix>/registry`. */
 function install(registry?: string): { bin: string; prefix: string } {
   const prefix = mkdtempSync(join(tmpdir(), "cli-binary-prefix-"));
-  mkdirSync(join(prefix, "bin"));
-  const bin = join(prefix, "bin", "quickstack");
+  mkdirSync(join(prefix, "dist"));
+  const bin = join(prefix, "dist", "stacks.mjs");
   copyFileSync(binary, bin);
+  copyFileSync(join(packageRoot, "dist/cli.mjs"), join(prefix, "dist/cli.mjs"));
   chmodSync(bin, 0o755);
   if (registry) cpSync(registry, join(prefix, "registry"), { recursive: true });
   return { bin, prefix };
@@ -47,7 +49,7 @@ async function invoke(
         XDG_CONFIG_HOME: join(dir, "config"),
         LOG_LEVEL: "none",
         NO_COLOR: "1",
-        PATH: "/usr/bin:/bin",
+        PATH: scratchPath,
         ...extra,
       },
       stdout: "pipe",
@@ -63,26 +65,31 @@ async function invoke(
     rmSync(dir, { recursive: true, force: true });
   }
 }
-describe("real standalone binary", () => {
+describe("installed Node package", () => {
   test("reports bundled version and machine version", async () => {
     expect(await invoke(["--version"])).toEqual({ stdout: `${version}\n`, stderr: "", status: 0 });
     expect(JSON.parse((await invoke(["-v", "--json"])).stdout)).toEqual({ version });
   });
-  test("doctor confirms compiled execution with no user configuration", async () => {
+  test("doctor finds the installed registry and skill with no user configuration", async () => {
     const result = await invoke(["doctor", "--json"]);
     expect(result.status).toBe(0);
-    expect(JSON.parse(result.stdout)).toMatchObject({ version, compiled: true, configErrors: [] });
+    expect(JSON.parse(result.stdout)).toMatchObject({
+      version,
+      configErrors: [],
+      registry: { path: `${packageRoot}/registry/`, found: true },
+      skill: { path: `${packageRoot}/skill/`, found: true },
+    });
     expect(result.stderr).toBe("");
   });
   test("a symlinked binary finds the registry beside its real path", async () => {
     const prefix = mkdtempSync(join(tmpdir(), "cli-binary-link-"));
     try {
-      const link = join(prefix, "quickstack");
+      const link = join(prefix, "stacks");
       symlinkSync(binary, link);
       const result = await invoke(["doctor", "--json"], undefined, {}, link);
       expect(result.status).toBe(0);
       expect(JSON.parse(result.stdout).registry).toEqual({
-        path: join(realpathSync(join(import.meta.dir, "..")), "registry"),
+        path: `${realpathSync(packageRoot)}/registry/`,
         found: true,
       });
     } finally {
@@ -90,7 +97,7 @@ describe("real standalone binary", () => {
     }
   });
   test("human doctor and help are readable", async () => {
-    expect((await invoke(["doctor"])).stdout).toContain("Compiled: true");
+    expect((await invoke(["doctor"])).stdout).toContain("Registry:");
     const help = await invoke(["--help"]);
     expect(help.status).toBe(0);
     expect(help.stdout).toContain("doctor");
@@ -147,7 +154,7 @@ describe("real standalone binary", () => {
       env,
     );
     expect(brief.status).toBe(0);
-    expect(brief.stdout).toContain(`npx -y quickstack@${version}`);
+    expect(brief.stdout).toContain(`npx -y @steamfield/stacks@${version}`);
     // Size counts go to a human's stderr only (3.1a); a non-terminal gets the brief alone.
     expect(brief.stderr).toBe("");
     const sizes = await invoke(
@@ -163,7 +170,7 @@ describe("real standalone binary", () => {
     try {
       const result = await invoke(["list"], undefined, {}, bin);
       expect(result).toEqual({
-        stdout: "No stacks or fragments found.\n\nNext: quickstack doctor\n",
+        stdout: "No stacks or fragments found.\n\nNext: stacks doctor\n",
         stderr: "",
         status: 0,
       });
@@ -171,7 +178,7 @@ describe("real standalone binary", () => {
       rmSync(prefix, { recursive: true, force: true });
     }
   });
-  test("a compiled binary reads the registry installed beside its bin directory, as trusted", async () => {
+  test("a relocated bundle reads its registry as trusted", async () => {
     const { bin, prefix } = install(join(import.meta.dir, "../tests/fixtures/registry-real"));
     try {
       const result = await invoke(["list", "--json"], undefined, {}, bin);
@@ -181,6 +188,27 @@ describe("real standalone binary", () => {
       expect(listed.rejected).toEqual([]);
       expect(listed.entries.length).toBeGreaterThan(0);
       for (const row of listed.entries) expect(row).toMatchObject({ trusted: true });
+    } finally {
+      rmSync(prefix, { recursive: true, force: true });
+    }
+  });
+  test("the packaging escape leaves an authored literal suffix unchanged", async () => {
+    const { bin, prefix } = install(join(import.meta.dir, "../tests/fixtures/registry-new"));
+    try {
+      writeFileSync(
+        join(prefix, "registry/stacks/fixture-stack/files/.gitignore.quickstack"),
+        "literal file\n",
+      );
+      const project = join(prefix, "project");
+      const result = await invoke(
+        ["new", "fixture-stack", project, "--sandbox", "--no-launch", "--json"],
+        undefined,
+        {},
+        bin,
+      );
+      expect(result.status).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(readFileSync(join(project, ".gitignore.quickstack"), "utf8")).toBe("literal file\n");
     } finally {
       rmSync(prefix, { recursive: true, force: true });
     }
@@ -229,7 +257,7 @@ describe("real standalone binary", () => {
       const result = await invoke(["--completions", shell]);
       expect(result.status).toBe(0);
       expect(result.stderr).toBe("");
-      expect(result.stdout).toContain("quickstack");
+      expect(result.stdout).toContain("stacks");
       for (const name of names) expect(result.stdout).toMatch(new RegExp(`\\b${name}\\b`));
     }
   });

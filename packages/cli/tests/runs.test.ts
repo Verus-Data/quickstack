@@ -152,7 +152,7 @@ test("outside a project, runs returns NotFound with one envelope and empty stdou
       tag: "NotFound",
       message: "Not found.",
       retryable: false,
-      next: "run this command again from inside a project quickstack new created, or create one with quickstack new <stack> <dir>.",
+      next: "run this command again from inside a project stacks new created, or create one with stacks new <stack> <dir>.",
       details: { kind: "project", looked: home, suggestions: [] },
     },
   });

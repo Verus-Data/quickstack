@@ -106,7 +106,7 @@ apps/mobile/
 5. `apps/mobile`: the official Expo app generator non-interactively into a temp directory, merged into `apps/mobile` keeping only the app itself: discard its git, lint, README, LICENSE, agent instruction files (`AGENTS.md`, `CLAUDE.md`, `.claude/`, `.cursor/`), reset script, and demo screens and assets. Move routes under `src/app`. Install with Expo's own install command (`expo` itself first, then the rest) so versions come from the SDK's ranges, never `latest`; when a peer demands something else, pin it and record the pin and its removal condition under Build workarounds. Depend on `@<scope>/api` and `@<scope>/schemas` as `workspace:*`. Add NativeWind on the release line that supports Tailwind's CSS-first theme, from its prerelease channel if that line isn't stable yet, with Tailwind through PostCSS and the NativeWind Metro wrapper, per that line's docs (docs describing a `tailwind.config.js` and a Babel preset are for the older line).
 6. The proving slice: `useHealth` in `src/lib/queries/` calls `api.health.$get()`, and the home screen renders the API's status, or an error state when it can't reach it. One real app-to-API round trip, typed end to end from `packages/schemas`.
 7. Tests from Testing, `scripts/` wired to Commands, `.env.example` adapted, README and AGENTS.md filled.
-8. `quickstack verify` until green.
+8. `stacks verify` until green.
 
 ## Conventions
 

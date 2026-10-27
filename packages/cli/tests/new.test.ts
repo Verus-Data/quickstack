@@ -131,7 +131,7 @@ describe("new writes a project", () => {
         reason: "json",
         untrusted: [],
         prompt:
-          "Read .quickstack/BRIEF.md and carry it out. It's your full task for this project; you're done when quickstack verify passes.",
+          "Read .quickstack/BRIEF.md and carry it out. It's your full task for this project; you're done when stacks verify passes.",
       },
     });
     expect(tree(app)).toEqual([
@@ -239,8 +239,8 @@ describe("new writes a project", () => {
     // 1.4: no terminal here, so the prompt is printed with an example command.
     expect(stdout.trimEnd().split("\n").slice(-3)).toEqual([
       "Next: open app in your coding agent and give it this prompt:",
-      "  Read .quickstack/BRIEF.md and carry it out. It's your full task for this project; you're done when quickstack verify passes.",
-      `For example: cd app && claude "Read .quickstack/BRIEF.md and carry it out. It's your full task for this project; you're done when quickstack verify passes."`,
+      "  Read .quickstack/BRIEF.md and carry it out. It's your full task for this project; you're done when stacks verify passes.",
+      `For example: cd app && claude "Read .quickstack/BRIEF.md and carry it out. It's your full task for this project; you're done when stacks verify passes."`,
     ]);
   });
 
@@ -449,7 +449,7 @@ describe("new refuses before writing", () => {
     expect(far.status).toBe(2);
     expect(far.stdout).toBe("");
     expect(far.stderr).toBe(
-      "Not found.\n  Stack: nope\n  Next: run quickstack list to see every stack and fragment id.\n",
+      "Not found.\n  Stack: nope\n  Next: run stacks list to see every stack and fragment id.\n",
     );
   });
 
@@ -463,7 +463,7 @@ describe("new refuses before writing", () => {
         tag: "NotFound",
         message: "Not found.",
         retryable: false,
-        next: "run quickstack list to see every stack and fragment id.",
+        next: "run stacks list to see every stack and fragment id.",
         details: { suggestions: [], id: "bogus", kind: "fragment" },
       });
       expect(existsSync(join(json.home, "app"))).toBe(false);
@@ -471,7 +471,7 @@ describe("new refuses before writing", () => {
       expect(human.status).toBe(2);
       expect(human.stdout).toBe("");
       expect(human.stderr).toBe(
-        "Not found.\n  Fragment: bogus\n  Next: run quickstack list to see every stack and fragment id.\n",
+        "Not found.\n  Fragment: bogus\n  Next: run stacks list to see every stack and fragment id.\n",
       );
     }
   });

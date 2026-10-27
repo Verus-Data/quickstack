@@ -3,7 +3,6 @@ export const DoctorReport = Schema.Struct({
   version: Schema.String,
   platform: Schema.String,
   executable: Schema.String,
-  compiled: Schema.Boolean,
   paths: Schema.Struct({
     config: Schema.String,
     data: Schema.String,

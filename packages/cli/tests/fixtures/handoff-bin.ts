@@ -1,8 +1,8 @@
 // A stand-in for bin.ts in tests/handoff-signals.test.ts: the real command tree, signal policy,
-// Bun platform and live Processes, with the TTY flags set as a terminal would set them (a test
+// Node platform and live Processes, with the TTY flags set as a terminal would set them (a test
 // can't give the process a terminal) and the registry root from the first argument.
 // Usage: bun tests/fixtures/handoff-bin.ts <registry> <cli args...>
-import { BunServices } from "@effect/platform-bun";
+import { NodeServices } from "@effect/platform-node";
 import { Effect, Layer } from "effect";
 import { hasFlag, main } from "../../src/main";
 import { NetLayer } from "../../src/platform/net";
@@ -21,20 +21,19 @@ const writer =
     });
 const holder = Foreground.make();
 const platform = Layer.mergeAll(
-  BunServices.layer,
+  NodeServices.layer,
   Foreground.layer(holder),
   NetLayer,
   Host.layer({
     platform: process.platform,
     executable: process.execPath,
-    compiled: false,
     cwd: process.cwd(),
     stdinIsTTY: true,
     stdoutIsTTY: true,
     registry,
     skill: "",
     authoring: "",
-    invocation: "quickstack",
+    invocation: "stacks",
   }),
 );
 const controller = new AbortController();

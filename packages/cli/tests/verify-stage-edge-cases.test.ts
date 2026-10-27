@@ -73,8 +73,8 @@ test.each(["base", "app"])(
         retryable: false,
         next:
           stage === "base"
-            ? "fix the code or config these steps exercise, not the steps, then run quickstack verify again."
-            : 'follow the application section ("Then: the application") of .quickstack/BRIEF.md, fix the code or config these steps exercise, then run quickstack verify again.',
+            ? "fix the code or config these steps exercise, not the steps, then run stacks verify again."
+            : 'follow the application section ("Then: the application") of .quickstack/BRIEF.md, fix the code or config these steps exercise, then run stacks verify again.',
         details: {
           failed: [{ name, failureKind: "step", exitCode: stage === "base" ? 7 : 8 }],
           stages: report.stages,

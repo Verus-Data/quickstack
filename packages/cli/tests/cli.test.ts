@@ -29,8 +29,25 @@ test("doctor runs under Node and respects human/JSON result contracts", async ()
   expect(JSON.parse(json.stdout)).toMatchObject({
     version: VERSION,
     platform: "test-node",
-    compiled: false,
     configErrors: [],
+  });
+});
+test("the scoped npm package keeps the stacks command and config paths", async () => {
+  const dir = tempDir();
+  dirs.push(dir);
+  const help = await runCli(["--help"], { home: dir.path });
+  expect(help.status).toBe(0);
+  expect(help.stderr).toBe("");
+  expect(help.stdout).toContain("stacks <subcommand>");
+  expect(help.stdout).not.toContain("@steamfield/stacks");
+  const doctor = await runCli(["doctor", "--json"], { home: dir.path });
+  expect(doctor.status).toBe(0);
+  expect(doctor.stderr).toBe("");
+  expect(JSON.parse(doctor.stdout).paths).toMatchObject({
+    config: join(dir.path, "config/quickstack/config.json"),
+    data: join(dir.path, ".local/share/quickstack"),
+    cache: join(dir.path, ".cache/quickstack"),
+    user: join(dir.path, "config/quickstack"),
   });
 });
 test.each([
@@ -60,7 +77,7 @@ test.each([
       tag: "Usage",
       message: "Invalid command.",
       retryable: false,
-      next: "run quickstack --help to list the commands, or quickstack <command> --help for one.",
+      next: "run stacks --help to list the commands, or stacks <command> --help for one.",
     },
   });
 });
@@ -76,7 +93,7 @@ test.each([
       tag: "Usage",
       message: "Invalid command.",
       retryable: false,
-      next: "pass a value from Expected; quickstack <command> --help lists every flag.",
+      next: "pass a value from Expected; stacks <command> --help lists every flag.",
       details: { flag, value: "", expected },
     },
   });
@@ -86,7 +103,7 @@ test("a mistyped subcommand is Usage with the close match under the message", as
   expect(result.status).toBe(2);
   expect(result.stdout).toBe("");
   expect(result.stderr).toBe(
-    "Invalid command.\n  Command: doctr\n  Did you mean: doctor?\n  Next: run quickstack --help to list the commands, or quickstack <command> --help for one.\n",
+    "Invalid command.\n  Command: doctr\n  Did you mean: doctor?\n  Next: run stacks --help to list the commands, or stacks <command> --help for one.\n",
   );
 });
 test("a mistyped subcommand with --json is one envelope naming the suggestions", async () => {
@@ -98,7 +115,7 @@ test("a mistyped subcommand with --json is one envelope naming the suggestions",
       tag: "Usage",
       message: "Invalid command.",
       retryable: false,
-      next: "run quickstack --help to list the commands, or quickstack <command> --help for one.",
+      next: "run stacks --help to list the commands, or stacks <command> --help for one.",
       details: { command: "doctr", suggestions: ["doctor"] },
     },
   });
@@ -108,7 +125,7 @@ test("an unknown subcommand with no close match gets no suggestion", async () =>
   expect(human.status).toBe(2);
   expect(human.stdout).toBe("");
   expect(human.stderr).toBe(
-    "Invalid command.\n  Command: zzzz\n  Next: run quickstack --help to list the commands, or quickstack <command> --help for one.\n",
+    "Invalid command.\n  Command: zzzz\n  Next: run stacks --help to list the commands, or stacks <command> --help for one.\n",
   );
   const json = await runCli(["zzzz", "--json"]);
   expect(json.status).toBe(2);
@@ -211,7 +228,7 @@ test.each([
         tag: "Usage",
         message: "Invalid command.",
         retryable: false,
-        next: "pass a value from Expected; quickstack <command> --help lists every flag.",
+        next: "pass a value from Expected; stacks <command> --help lists every flag.",
         details,
       },
     });
@@ -226,7 +243,7 @@ test.each([
           `  Value: ${value}`,
           `  Expected: ${expected}`,
           ...(suggestions?.length ? [`  Did you mean: ${suggestions.join(", ")}?`] : []),
-          "  Next: pass a value from Expected; quickstack <command> --help lists every flag.",
+          "  Next: pass a value from Expected; stacks <command> --help lists every flag.",
           "",
         ].join("\n"),
       );

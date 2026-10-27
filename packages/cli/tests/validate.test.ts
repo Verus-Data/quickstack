@@ -118,7 +118,7 @@ test("human mode groups findings by entry, prints sizes and a total, and suggest
   expect(result.stdout).toMatch(/Sizes \(words\)\n {2}clean body +\d+ \/ 2,000\n/);
   expect(result.stdout).toMatch(/clean \(sandbox\) +[\d,]+ \/ 6,000 {3}fixed [\d,]+\n/);
   expect(result.stdout).toContain("1 stack, 0 fragments: 0 errors, 0 warnings, 0 notes");
-  expect(result.stdout).toContain(`Next: quickstack validate ${root} --brief clean --sandbox`);
+  expect(result.stdout).toContain(`Next: stacks validate ${root} --brief clean --sandbox`);
 });
 
 test("errors keep the report on stdout, end stderr with the ValidationFailed envelope, and exit 2 [1.5#1] [1.5#11]", async () => {
@@ -134,7 +134,7 @@ test("errors keep the report on stdout, end stderr with the ValidationFailed env
       tag: "ValidationFailed",
       message: "Validation failed.",
       retryable: false,
-      next: "fix the error findings in the report on stdout, then run quickstack validate again.",
+      next: "fix the error findings in the report on stdout, then run stacks validate again.",
       details: { errors: 1, warnings: 0 },
     },
   });
@@ -143,9 +143,7 @@ test("errors keep the report on stdout, end stderr with the ValidationFailed env
   expect(human.stdout).toContain(
     "stack broken\n  error    decision-default  stacks/broken/STACK.md: decisions[0] names no",
   );
-  expect(human.stdout).toContain(
-    `Next: fix the errors above, then run quickstack validate ${root}`,
-  );
+  expect(human.stdout).toContain(`Next: fix the errors above, then run stacks validate ${root}`);
   // The report's last lines already give the counts; the envelope's details keep them for --json.
   expect(human.stderr).toBe("Validation failed.\n");
 });
@@ -1191,7 +1189,7 @@ test("an unknown --brief id under a root list doesn't read points at validate fo
   });
   const human = await run([root, "--brief", "typscript-cli"], { home });
   expect(human.stderr).toBe(
-    `Not found.\n  Stack: typscript-cli\n  Did you mean: typescript-cli?\n  Next: quickstack validate ${root} lists the ids under that root.\n`,
+    `Not found.\n  Stack: typscript-cli\n  Did you mean: typescript-cli?\n  Next: stacks validate ${root} lists the ids under that root.\n`,
   );
   // The bundled registry is what `list` shows, so a close match is the next step rather than `list`.
   const bundled = await run(["--brief", "typscript-cli"], { registry: realRegistry });
@@ -1220,7 +1218,7 @@ test("for an agent, no size table when every size is within budget; JSON keeps e
       "Validated .: 1 stack, 0 fragments",
       "",
       "1 stack, 0 fragments: 0 errors, 0 warnings, 0 notes",
-      "Next: quickstack validate . --brief clean --sandbox",
+      "Next: stacks validate . --brief clean --sandbox",
       "",
     ].join("\n"),
   );

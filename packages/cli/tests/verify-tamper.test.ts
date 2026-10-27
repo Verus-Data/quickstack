@@ -40,7 +40,7 @@ afterEach(() => space.release());
 const has = (root: string, file: string) => existsSync(join(root, file));
 const asRoot = process.getuid?.() === 0;
 const CHANGED =
-  "the verify steps changed since they were recorded. Don't edit them back; ask the user to run quickstack verify --accept-changes from their own terminal, or to undo the change.";
+  "the verify steps changed since they were recorded. Don't edit them back; ask the user to run stacks verify --accept-changes from their own terminal, or to undo the change.";
 const NEXT_CHANGED = `Next: ${CHANGED}`;
 
 /** A recorded project (manifest plus state record), its home and the steps it was recorded with. */

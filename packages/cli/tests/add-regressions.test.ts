@@ -100,8 +100,8 @@ test("list follow-ups keep an explicitly selected project directory with shell q
   });
   expect(run.status).toBe(0);
   expect(run.stderr).toBe("");
-  expect(run.stdout).toContain("Next: quickstack add ci-github --dir 'app space'");
-  expect(run.stdout).toContain("Next: quickstack list stacks --dir 'app space'");
+  expect(run.stdout).toContain("Next: stacks add ci-github --dir 'app space'");
+  expect(run.stdout).toContain("Next: stacks list stacks --dir 'app space'");
 });
 
 test("numbered parking copies cannot claim another planned fragment destination", async () => {

@@ -1,6 +1,6 @@
 import { BRIEF_PATH, MANIFEST_PATH } from "../project-layout";
 /**
- * The agent guide: what `quickstack` with no arguments and `quickstack guide` print, and the
+ * The agent guide: what `stacks` with no arguments and `stacks guide` print, and the
  * footer on the root's `--help`. One text, reached three ways; it reads neither a project nor a
  * registry, so it works anywhere. `cli` is `Host.invocation`.
  */

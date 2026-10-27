@@ -11,7 +11,7 @@ flowchart LR
     U["user"]
     B["bundled"]
   end
-  subgraph CLI["quickstack new: reads and writes, runs nothing it read"]
+  subgraph CLI["stacks new: reads and writes, runs nothing it read"]
     C["Compose"]
     R["Render"]
     W["Write"]

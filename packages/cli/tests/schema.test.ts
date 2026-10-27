@@ -108,7 +108,7 @@ describe("schema", () => {
         "  Value: verfy",
         `  Expected: ${RESULT_NAMES.join(" | ")}`,
         "  Did you mean: verify?",
-        "  Next: pass a value from Expected; quickstack <command> --help lists every argument.",
+        "  Next: pass a value from Expected; stacks <command> --help lists every argument.",
         "",
       ].join("\n"),
     );
@@ -123,7 +123,7 @@ describe("schema", () => {
         tag: "Usage",
         message: "Invalid command.",
         retryable: false,
-        next: "pass a value from Expected; quickstack <command> --help lists every argument.",
+        next: "pass a value from Expected; stacks <command> --help lists every argument.",
         details: {
           flag: "name",
           value: "verfy",

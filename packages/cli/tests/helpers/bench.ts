@@ -91,7 +91,7 @@ export function benchCli(space: ReturnType<typeof workspace>) {
       env: fixture.env,
       timeout: 60_000,
     });
-    binary = join(fixture.packageRoot, "dist/quickstack");
+    binary = join(fixture.packageRoot, "dist/stacks.mjs");
     return binary;
   };
 }
@@ -134,8 +134,16 @@ export function benchFixture(space: ReturnType<typeof workspace>, compiled?: () 
   if (!compiled) cpSync(join(cli, "src"), join(packageRoot, "src"), { recursive: true });
   for (const file of ["package.json", "tsconfig.base.json"])
     cpSync(resolve(cli, "../..", file), join(root, file));
-  for (const file of ["package.json", "tsconfig.json", "scripts/build.ts"])
+  for (const file of [
+    "package.json",
+    "tsconfig.json",
+    "scripts/build.ts",
+    "scripts/node-entry.mjs",
+  ])
     cpSync(join(cli, file), join(packageRoot, file));
+  cpSync(join(cli, "skill"), join(packageRoot, "skill"), { recursive: true });
+  mkdirSync(join(packageRoot, "docs"));
+  cpSync(join(cli, "docs/authoring.md"), join(packageRoot, "docs/authoring.md"));
   symlinkSync(join(cli, "node_modules"), join(packageRoot, "node_modules"), "dir");
   symlinkSync(resolve(cli, "../../node_modules"), join(root, "node_modules"), "dir");
   writeFileSync(join(root, ".gitignore"), "node_modules\ndist/\n");
@@ -149,7 +157,7 @@ export function benchFixture(space: ReturnType<typeof workspace>, compiled?: () 
     writeFileSync(
       sourceBin,
       `${shebang}import { appendFileSync as observeBenchChild } from "node:fs";\n` +
-        `if (process.env.QUICKSTACK_BENCH_OBSERVE) observeBenchChild(process.env.QUICKSTACK_BENCH_OBSERVE, JSON.stringify({ args: process.argv.slice(2), cwd: process.cwd(), executable: process.execPath, env: process.env }) + "\\n");\n${body}`,
+        `if (process.env.QUICKSTACK_BENCH_OBSERVE) observeBenchChild(process.env.QUICKSTACK_BENCH_OBSERVE, JSON.stringify({ args: process.argv.slice(2), cwd: process.cwd(), executable: process.argv[1], env: process.env }) + "\\n");\n${body}`,
     );
   }
   const registry = join(packageRoot, "registry");

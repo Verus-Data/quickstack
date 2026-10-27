@@ -1,10 +1,9 @@
 {
-  "name": "quickstack",
+  "name": "@steamfield/stacks",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
   "engines": {
-    "node": ">=24 <25"
+    "node": ">=22"
   },
   "scripts": {
     "dev": "bun scripts/dev.ts",
@@ -18,26 +17,50 @@
     "test:watch": "vitest --watch",
     "test:macos": "vitest run -t '\\(macOS\\)'",
     "coverage": "vitest run --coverage",
-    "e2e": "bun run build && bun test ./e2e",
+    "e2e": "bun run pack && bun test ./e2e",
     "check": "bun run lint && bun run typecheck && bun run test && bun run e2e",
     "clean": "bun scripts/clean.ts",
     "ledger:import": "bun scripts/ledger-import.ts",
-    "bench": "bun scripts/bench.ts"
-  },
-  "dependencies": {
-    "@effect/platform-bun": "catalog:",
-    "effect": "catalog:",
-    "smol-toml": "catalog:",
-    "yaml": "catalog:"
+    "bench": "bun scripts/bench.ts",
+    "pack": "bun run build && bun scripts/pack.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
+    "@effect/platform-bun": "catalog:",
     "@effect/platform-node": "catalog:",
     "@effect/vitest": "catalog:",
     "@types/bun": "catalog:",
     "@types/node": "catalog:",
     "@vitest/coverage-v8": "catalog:",
     "typescript": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "effect": "catalog:",
+    "smol-toml": "catalog:",
+    "yaml": "catalog:"
+  },
+  "description": "Compose project guidance and verify agent-built projects.",
+  "bin": {
+    "stacks": "dist/stacks.mjs"
+  },
+  "files": [
+    "dist/stacks.mjs",
+    "dist/cli.mjs",
+    "registry",
+    "skill",
+    "docs/authoring.md",
+    "LICENSE"
+  ],
+  "os": [
+    "darwin",
+    "linux"
+  ],
+  "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tryopendata/quickstack.git",
+    "directory": "packages/cli"
   }
 }

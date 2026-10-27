@@ -21,7 +21,7 @@ export const RESULT_SCHEMAS = {
   create: { schema: CreateResult, describes: "create --json" },
   doctor: { schema: DoctorReport, describes: "doctor --json" },
   error: { schema: ErrorEnvelope, describes: "the last stderr line of any failed --json command" },
-  guide: { schema: GuideResult, describes: "guide --json, and quickstack --json alone" },
+  guide: { schema: GuideResult, describes: "guide --json, and stacks --json alone" },
   list: { schema: ListResult, describes: "list --json" },
   new: { schema: NewResult, describes: "new --json" },
   runs: { schema: ProjectRuns, describes: "runs --json" },

@@ -114,7 +114,7 @@ Every generator runs in its subdirectory, never the populated root.
 5. **Data layer.** One `QueryClient` in `app/lib/query-client.ts`, provided in `root.tsx`; the Vite dev proxy.
 6. **Typed client.** `make generate-api`. The home route calls `/health` through a generated hook and renders it: one real UI-to-API round trip.
 7. **Frontend tooling** per Tool configuration, a component test for the home route (against MSW), one Playwright smoke spec. Fill the README's `quickstack:fill` markers.
-8. Run `quickstack verify` until it passes.
+8. Run `stacks verify` until it passes.
 
 ## Conventions
 

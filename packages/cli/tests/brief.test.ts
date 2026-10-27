@@ -64,12 +64,12 @@ test("with an app, the definition of done is split: the base with --skip-tag app
     "## Then: the application",
   ]);
   const base = section(brief, "## Definition of done: base");
-  expect(base).toContain("`quickstack verify --skip-tag app` runs these steps, in this order:");
+  expect(base).toContain("`stacks verify --skip-tag app` runs these steps, in this order:");
   expect(base).toContain(
-    "- Run `quickstack verify --skip-tag app` from the project root. The base is done when every step above passes and the outcome is `partial`",
+    "- Run `stacks verify --skip-tag app` from the project root. The base is done when every step above passes and the outcome is `partial`",
   );
   // Green is the application section's closing, never the base's.
-  expect(base).not.toContain("`quickstack verify` runs these steps");
+  expect(base).not.toContain("`stacks verify` runs these steps");
   expect(base).not.toContain("Done is exit 0 with outcome `green`");
   // By phase, then stack before fragments within a phase; then the commands and env rows.
   expect(rows(base).map((row) => row.split(" | ")[0])).toEqual([
@@ -97,7 +97,7 @@ test("with an app, the definition of done is split: the base with --skip-tag app
     "| `PORT_TODO`",
   ]);
   expect(application).toContain("| `PORT_TODO` | `5180` |");
-  expect(application).toContain("Done is a full `quickstack verify` (no `--skip-tag`)");
+  expect(application).toContain("Done is a full `stacks verify` (no `--skip-tag`)");
   expect(brief.indexOf("APP-BODY")).toBeGreaterThan(brief.indexOf("## Then: the application"));
   // Without an app, neither heading appears.
   const plain = renderBrief(await composed({ without: ["todo-app"] }), context()).text;
@@ -173,7 +173,7 @@ test("the brief holds every section in order, every step, the env defaults, ever
   expect(brief).toContain(`\`${invocation} verify --accept-changes\``);
   // Every verify command in the brief carries the invocation: none starts with the bare name.
   expect(brief).not.toMatch(/`(quickstack )?verify\b/);
-  expect(brief).not.toMatch(/=<free port> quickstack verify/);
+  expect(brief).not.toMatch(/=<free port> stacks verify/);
 });
 
 test("a verify table leaves out Layer and Expects when no step in that table fills them", async () => {
@@ -394,7 +394,7 @@ test("the command-name line appears only for another invocation; written paths c
   const composition = await composed({});
   const npx = renderBrief(composition, context({ invocation: "npx -y quickstack@1.2.3" })).text;
   expect(npx).toContain(
-    "- Wherever this brief says `quickstack <command>`, run `npx -y quickstack@1.2.3 <command>`.",
+    "- Wherever this brief says `stacks <command>`, run `npx -y quickstack@1.2.3 <command>`.",
   );
   expect(renderBrief(composition, context()).text).not.toContain("Wherever this brief says");
   const written = [1, 2, 3, 4, 5]

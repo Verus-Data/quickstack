@@ -32,23 +32,23 @@ The blue steps are yours, and this guide walks through each one. The purple loop
 
 ## Get the CLI
 
-quickstack is on npm as `@quickstack/cli`, so there's nothing to clone or build. The quickest way in is `npx`, which downloads the package on first use and runs it:
+quickstack is on npm as `@steamfield/stacks`, so there's nothing to clone or build. The quickest way in is `npx`, which downloads the package on first use and runs it:
 
 ```sh
-npx @quickstack/cli --version
-npx @quickstack/cli list stacks
+npx @steamfield/stacks --version
+npx @steamfield/stacks list stacks
 ```
 
-If you'll use it more than once, install it globally. The command it installs is `quickstack`:
+If you'll use it more than once, install it globally. The command it installs is `stacks`:
 
 ```sh
-npm install -g @quickstack/cli
-quickstack --version
+npm install -g @steamfield/stacks
+stacks --version
 ```
 
-If `--version` prints a version, you're set. `quickstack doctor` shows where it looks for everything, if you ever need to check.
+If `--version` prints a version, you're set. `stacks doctor` shows where it looks for everything, if you ever need to check.
 
-The rest of this guide writes `quickstack <command>`. With `npx`, use `npx @quickstack/cli` in its place: `npx @quickstack/cli new typescript-cli my-cli`. Every command works the same either way, and the brief records the exact command your agent should use for `verify`.
+The rest of this guide writes `stacks <command>`. With `npx`, use `npx @steamfield/stacks` in its place: `npx @steamfield/stacks new typescript-cli my-cli`. Every command works the same either way, and the brief records the exact command your agent should use for `verify`.
 
 Want to run it from source instead, to try a change or write a stack against an unreleased version? Clone [the repository](https://github.com/tryopendata/quickstack) and follow its development quick start.
 
@@ -57,7 +57,7 @@ Want to run it from source instead, to try a change or write a stack against an 
 A stack is a recipe for one kind of project: a Go CLI, an Astro blog, a FastAPI backend with a React frontend. List them:
 
 ```sh
-quickstack list stacks
+stacks list stacks
 ```
 
 ```text
@@ -75,7 +75,7 @@ Stacks
 Read one before you commit to it:
 
 ```sh
-quickstack show typescript-cli
+stacks show typescript-cli
 ```
 
 `show` prints everything the stack would tell your agent: the layout it wants, the decisions it will ask about, the checks that define done, and the files it ships. It only reads; nothing runs.
@@ -87,7 +87,7 @@ This guide uses `typescript-cli`. Swap in any stack id.
 Ask for a dry run first. It does everything except write:
 
 ```sh
-quickstack new typescript-cli my-cli --sandbox --dry-run
+stacks new typescript-cli my-cli --sandbox --dry-run
 ```
 
 ```text
@@ -112,7 +112,7 @@ The `Fragments:` line lists the add-ons this stack pulls in. A fragment is one c
 Run the same command without `--dry-run`:
 
 ```sh
-quickstack new typescript-cli my-cli --sandbox
+stacks new typescript-cli my-cli --sandbox
 ```
 
 quickstack writes the starter files, creates a git repository, and then starts your coding agent in `my-cli/` with one instruction: read the brief and carry it out. You'll be talking to the agent from here on.
@@ -121,7 +121,7 @@ If you'd rather start the agent yourself, add `--no-launch`. quickstack then pri
 
 ```text
 Next: open /path/to/my-cli in your coding agent and give it this prompt:
-  Read .quickstack/BRIEF.md and carry it out. It's your full task for this project; you're done when quickstack verify passes.
+  Read .quickstack/BRIEF.md and carry it out. It's your full task for this project; you're done when stacks verify passes.
 ```
 
 ## What landed in your project
@@ -143,7 +143,7 @@ The brief is long (thousands of words) because it's written for the agent, which
 
 ```sh
 cd my-cli
-quickstack verify
+stacks verify
 ```
 
 Run it straight after `new`, before the agent has built anything, and it fails at the first step, which is expected:
@@ -156,7 +156,7 @@ verify: failed (full run; 0 passed, 1 failed, 12 skipped; 0.0s)
   skipped  check     lint                  an earlier setup step failed
   ...
 
-Next: fix the code or config these steps exercise, not the steps, then run quickstack verify again.
+Next: fix the code or config these steps exercise, not the steps, then run stacks verify again.
 ```
 
 The agent runs this same command in a loop: fix what failed, run again. When every step passes, verify prints `verify: green` and exits 0, and the project is done.
@@ -164,7 +164,7 @@ The agent runs this same command in a loop: fix what failed, run again. When eve
 Two rules keep that honest. The agent may not edit the steps, and verify checks this itself: before running anything, it compares the steps against a copy recorded when the project was made, and refuses to run if they differ. If you change a step on purpose, accept the change from your own terminal:
 
 ```sh
-quickstack verify --accept-changes
+stacks verify --accept-changes
 ```
 
 An agent can't run that command; it's refused whenever an agent is detected.
@@ -172,7 +172,7 @@ An agent can't run that command; it's refused whenever an agent is detected.
 ## Check the history
 
 ```sh
-quickstack runs
+stacks runs
 ```
 
 `runs` summarizes every verify run for this project: how many there were, the last outcome, how long it took to reach the first green run, and how many questions the agent had to ask you.
@@ -183,7 +183,7 @@ quickstack works on existing repositories too. `add` applies fragments without o
 
 ```sh
 cd my-existing-repo
-quickstack add ci-github git-hooks
+stacks add ci-github git-hooks
 ```
 
 ```mermaid
@@ -206,14 +206,14 @@ flowchart LR
 
 New files are written. When a file already exists, quickstack leaves it alone and parks its own version under `.quickstack/incoming/`, and the brief asks your agent to merge the two. Then `verify` checks the whole project, the same as for a new one.
 
-`quickstack list fragments` shows what you can add. Inside a project quickstack made, plain `quickstack list` shows only the fragments that fit it.
+`stacks list fragments` shows what you can add. Inside a project quickstack made, plain `stacks list` shows only the fragments that fit it.
 
 ## Let your agent drive instead
 
 Everything above also works the other way round: you ask your agent for a project and it runs quickstack. Install the skill once:
 
 ```sh
-quickstack skill install        # or: npx @quickstack/cli skill install
+stacks skill install        # or: npx @steamfield/stacks skill install
 ```
 
 That puts a short skill file where Claude Code finds it (`~/.claude/skills/quickstack/SKILL.md`). Then, in any Claude Code session, ask for something like "start me a Go CLI with tests and CI". The agent picks a stack, tells you which and why, writes the project and builds it until verify passes. [Using quickstack with an agent](agents.md) covers other agents and what the agent sees.
@@ -223,4 +223,4 @@ That puts a short skill file where Claude Code finds it (`~/.claude/skills/quick
 - [Concepts](concepts.md) explains stacks, fragments, the brief and verify properly.
 - [Command reference](reference/commands.md) lists every flag.
 - [Authoring](authoring.md) shows how to write your own stack or fragment.
-- `quickstack <command> --help` gives any command's flags, exit codes and examples.
+- `stacks <command> --help` gives any command's flags, exit codes and examples.

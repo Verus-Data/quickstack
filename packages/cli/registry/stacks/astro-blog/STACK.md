@@ -79,7 +79,7 @@ src/styles/global.css        Tailwind entry, typography plugin, theme tokens
 3. Add `@astrojs/rss`, `@astrojs/check`, and the test deps. Set `packageManager` in `package.json` to the installed bun version.
 4. Write the config, schema, `lib/posts.ts`, layout, pages, components, and two sample posts (one `published`, one `draft`).
 5. Write `scripts/new-article.mjs`, `vitest.config.ts`, and the tests; fill the README's `quickstack:fill` markers.
-6. Run `quickstack verify` until it passes.
+6. Run `stacks verify` until it passes.
 
 ## Conventions
 

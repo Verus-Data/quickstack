@@ -161,7 +161,7 @@ describe("serve probes", () => {
         tag: "VerifyFailed",
         message: "Verify failed.",
         retryable: false,
-        next: "the machine is missing something these steps need (see each reason); install or start it, then run quickstack verify again.",
+        next: "the machine is missing something these steps need (see each reason); install or start it, then run stacks verify again.",
         details: { failed: [{ name: "web", failureKind: "env" }] },
       },
     });

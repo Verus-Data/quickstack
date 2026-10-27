@@ -229,7 +229,7 @@ test("a source vanished during new's post-composition git probe leaves no projec
       tag: "EntryInvalid",
       message: "Entry is invalid.",
       retryable: false,
-      next: "fix that entry or leave it out; quickstack validate lists every problem in a registry.",
+      next: "fix that entry or leave it out; stacks validate lists every problem in a registry.",
       details: { id: "sample", origin: "bundled", reason: "missing", path: "files/payload.bin" },
     },
   });

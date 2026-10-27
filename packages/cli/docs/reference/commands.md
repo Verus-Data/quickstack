@@ -1,6 +1,6 @@
 # Command reference
 
-Every command, its flags and what it does. `quickstack <command> --help` prints the same flags with examples and exit codes, and every command takes `--json` for one machine-readable result. Exit codes and the error envelope are in [Output and errors](output.md).
+Every command, its flags and what it does. `stacks <command> --help` prints the same flags with examples and exit codes, and every command takes `--json` for one machine-readable result. Exit codes and the error envelope are in [Output and errors](output.md).
 
 | Command | Does |
 | --- | --- |
@@ -20,10 +20,10 @@ Every command, its flags and what it does. `quickstack <command> --help` prints 
 ## list
 
 ```sh
-quickstack list                 # addable fragments in a project; otherwise all groups
-quickstack list stacks          # one group: stacks, fragments (apps excluded) or apps
-quickstack list --json          # full registry, plus project context when a manifest decodes
-quickstack list --dir ../app    # list from another project directory
+stacks list                 # addable fragments in a project; otherwise all groups
+stacks list stacks          # one group: stacks, fragments (apps excluded) or apps
+stacks list --json          # full registry, plus project context when a manifest decodes
+stacks list --dir ../app    # list from another project directory
 ```
 
 `list` reads the manifest in the current directory (or `--dir`). Its default text view inside a project shows fitting, unapplied fragments with their add commands; explicit groups keep their usual view. JSON keeps the full registry and adds optional `project: { stack, applied, addable }`. A corrupt, newer or unreadable manifest warns and falls back to the full view.
@@ -47,9 +47,9 @@ The same id in a higher root wins; `list --json` marks the winner's `shadows` wi
 ## show
 
 ```sh
-quickstack show typescript-cli          # metadata, guidance, commands, steps, shipped files
-quickstack show postgres --json         # ShowReport
-quickstack show effect --kind fragment  # look among fragments only, for an id a stack also uses
+stacks show typescript-cli          # metadata, guidance, commands, steps, shipped files
+stacks show postgres --json         # ShowReport
+stacks show effect --kind fragment  # look among fragments only, for an id a stack also uses
 ```
 
 `show <id>` reviews a stack or fragment without starting a process: metadata, every guidance branch, commands, verify steps and shipped output paths, including adapters for every agent. `--json` returns `ShowReport`. Only bundled entries receive ledger evidence; `sameContent` compares the current composition fingerprint with the recorded run. Non-bundled entries get `lastRun: null`.
@@ -57,7 +57,7 @@ quickstack show effect --kind fragment  # look among fragments only, for an id a
 ## new
 
 ```sh
-quickstack new <stack> [dir]    # dir defaults to the slug of --name, else <stack>; `.` is the current directory
+stacks new <stack> [dir]    # dir defaults to the slug of --name, else <stack>; `.` is the current directory
   --with a --with b              # add optional fragments (repeatable, or comma-separated)
   --without a                    # remove default fragments
   --sandbox                      # every default, nothing deployed or released; implies --yes
@@ -110,9 +110,9 @@ The handoff for a real run, first match wins (the manifest's `handoff` records w
 ## add
 
 ```sh
-quickstack add ci-github                    # current repository
-quickstack add ci-github --dir ../my-project --no-launch
-quickstack add agent-ops --agents claude,codex --json
+stacks add ci-github                    # current repository
+stacks add ci-github --dir ../my-project --no-launch
+stacks add agent-ops --agents claude,codex --json
 ```
 
 `add` applies only the requested fragments and their requirements. Existing live files keep their bytes: conflicting contributions are parked whole under `.quickstack/incoming/<path>` for the agent to merge. Identical contributions are skipped; later parked JSON contributions deep-merge with the parked copy, and other contributions get numbered copies. The result and add brief list every pending incoming file, including earlier runs.
@@ -121,12 +121,12 @@ An existing manifest keeps its stack, preset, agents, accepted verify steps, and
 
 Before planning, `add` performs the same tamper check as `verify`. Changed steps refuse with `VerifyChanged` (5). A manifest-only project stays manifest-only. An untrusted addition under an agent or without terminal stdin writes the new steps while keeping the previous digest baseline (`digestRecorded: false`); a person must review them and run `verify --accept-changes`. Failed or interrupted writes restore parked copies, metadata and state records and remove new files.
 
-`add --json` returns `AddResult`: `added`, `alreadyApplied`, newly `written` fragment files, `skipped`, `mergeNeeded` with incoming paths, `missingRequired` with exact add commands, `commandsKept`, `warnings`, `missingTools`, inferred `name`, manifest and digest status, and the brief and handoff. Read `.quickstack/BRIEF.md`, merge the parked contributions while preserving project choices, then run `quickstack verify` over the whole project.
+`add --json` returns `AddResult`: `added`, `alreadyApplied`, newly `written` fragment files, `skipped`, `mergeNeeded` with incoming paths, `missingRequired` with exact add commands, `commandsKept`, `warnings`, `missingTools`, inferred `name`, manifest and digest status, and the brief and handoff. Read `.quickstack/BRIEF.md`, merge the parked contributions while preserving project choices, then run `stacks verify` over the whole project.
 
 ## verify
 
 ```sh
-quickstack verify                 # every step, from the project root or any directory below it
+stacks verify                 # every step, from the project root or any directory below it
   --only lint,test                 # only these check and serve steps (repeatable); setup and teardown still run
   --skip-tag slow                  # leave out steps with this tag (repeatable)
   --all                            # also run steps skipped by default (prod steps in a --sandbox project)
@@ -138,7 +138,7 @@ quickstack verify                 # every step, from the project root or any dir
 
 - Phases run in order. `setup` stops at its first failure and skips the check and serve steps; every `check` step runs, so one run reports every failing check; each `serve` step is started, probed and stopped; `teardown` always runs, after a failure or a Ctrl+C too.
 - With `app`-tagged steps, all base phases finish, including teardown, before the app phases start. A failed or interrupted base skips every app step, including app teardown, with reason `base-failed`. An incomplete base also skips app steps, with a reason explaining that the app stage waits for a full verify. A stage interrupted by Ctrl+C still tears down; a base interruption never starts the app. Results and run records include `stages: { base, app }` only for these projects, and both text audiences print their outcomes before the summary. `app` is `null` when it did not run, including `--skip-tag app`. Each stage reports `green` when its selected steps pass, or `partial` when selection left out its steps; default skips still allow green. The whole run stays partial with `--only` or `--skip-tag`. After a green base and a failed app, `Next:` points at the application section of `.quickstack/BRIEF.md`.
-- Steps run through `/bin/sh -c` in the project root (or the step's `cwd`, which must resolve inside the project) with stdin closed, in their own process group. Their environment is the caller's, minus every agent session marker (`CLAUDECODE` and the rest), with the manifest's `env` filling keys the caller doesn't set: `PORT_WEB=5187 quickstack verify` moves a port.
+- Steps run through `/bin/sh -c` in the project root (or the step's `cwd`, which must resolve inside the project) with stdin closed, in their own process group. Their environment is the caller's, minus every agent session marker (`CLAUDECODE` and the rest), with the manifest's `env` filling keys the caller doesn't set: `PORT_WEB=5187 stacks verify` moves a port.
 - Each setup, check and teardown step has its `timeout` (default 10m). A step that leaves a process holding its output is stopped 2 s after its shell exits and gets a note; its own exit status still decides it. Exit 127 is reported as a missing command (`failureKind: "env"`).
 - A serve step's `expect.http` (with `${VAR}` expanded from the step environment) must be an `http` URL on `localhost`, `127.0.0.1` or `::1`. Verify fails the step without starting it when that port already answers, then polls the URL every 500 ms until any status below 500, for up to `within` (default 60s). Serve commands must stay in the foreground: one that exits before its probe passes fails, and so does a server still answering on the port after its process group was stopped.
 - Outcomes: `green` (exit 0) is a full run with every step that ran passing. A passing `--only` or `--skip-tag` run is `partial` (exit 0), which never counts as done. A failed step is `failed`: exit 5 (`VerifyFailed`) with the full result still on stdout, each failed step's `failureKind` (`step`, `env`, `timeout`) and output tail in it, and the error envelope naming the failed steps as the last stderr line. Ctrl+C is exit 130 after teardown. Outside a project is `NotFound` (2); a manifest that doesn't decode is `InvalidConfig` (3).
@@ -157,8 +157,8 @@ Before running anything, `verify` checks the steps against the copies recorded b
 ## runs
 
 ```sh
-quickstack runs          # summary for the nearest project
-quickstack runs --json   # ProjectRuns
+stacks runs          # summary for the nearest project
+stacks runs --json   # ProjectRuns
 ```
 
 `runs` finds the nearest project and reports its stack, fingerprint, creation time, handoff kind, brief words, verify count, last outcome, timings, interventions (the nonempty items under `## Asked` in `NOTES.md`), state-record availability and skipped history lines. It reads the project's `.quickstack/state/runs.jsonl` and `NOTES.md`. Timings come only from the out-of-project state record; unavailable timings or notes stay unknown. Invalid or newer history lines are counted and skipped. Outside a project it exits 2 with `NotFound`. A manifest that doesn't decode, or a manifest or state record from a newer quickstack, exits 3 with `InvalidConfig`; an unreadable manifest exits 6. Moving a project keeps its timings through its project id.
@@ -166,11 +166,11 @@ quickstack runs --json   # ProjectRuns
 ## validate
 
 ```sh
-quickstack validate                                   # the bundled registry
-quickstack validate ~/my-registry                     # a registry root (holds stacks/ or fragments/)
-quickstack validate ~/my-registry/stacks/web          # one entry
-quickstack validate --json                            # the ValidateReport
-quickstack validate --brief web --with docs --sandbox # the brief a composition renders to
+stacks validate                                   # the bundled registry
+stacks validate ~/my-registry                     # a registry root (holds stacks/ or fragments/)
+stacks validate ~/my-registry/stacks/web          # one entry
+stacks validate --json                            # the ValidateReport
+stacks validate --brief web --with docs --sandbox # the brief a composition renders to
 ```
 
 `validate` reads files only; it runs nothing from an entry. A relative path resolves against the directory you ran it from. Exit 0 when there are no errors; exit 2 (`ValidationFailed`) with the full report still on stdout. [Validation](validation.md) lists every check, the word budgets and `--brief`.
@@ -178,11 +178,11 @@ quickstack validate --brief web --with docs --sandbox # the brief a composition 
 ## create
 
 ```sh
-quickstack create stack my-api --json
-quickstack create fragment my-ci --category ci
-quickstack create fragment my-app --category app
-quickstack create stack go-cli --from bundled
-quickstack create stack team-api --from project --yes
+stacks create stack my-api --json
+stacks create fragment my-ci --category ci
+stacks create fragment my-app --category app
+stacks create stack go-cli --from bundled
+stacks create stack team-api --from project --yes
 ```
 
 `create` writes a personal skeleton or a working copy into the user registry; existing targets are preserved. `--from bundled` copies an entry under the same id for editing, including all files and adapters; the user copy then shadows the bundled one. `--from project` requires a person at a terminal to review the full trust report; `--yes` skips only the question. Agents and non-terminal stdin can't confer trust. `--from user` is refused. `--json` returns `{ kind, id, path, guide }` with absolute paths. Follow the shipped [authoring guide](../authoring.md) to preview, validate and prove the entry.
@@ -190,25 +190,25 @@ quickstack create stack team-api --from project --yes
 ## skill install
 
 ```sh
-quickstack skill install                   # $HOME/.claude/skills/quickstack/SKILL.md
-quickstack skill install --project         # git toplevel, or cwd outside a repo
-quickstack skill install --force           # replace an edited copy
-quickstack skill install --print           # copy the skill to another location yourself
-quickstack skill install --json            # { path, action: "written" | "unchanged" }
-quickstack skill install --print --json    # { path: null, action: "printed", text }
+stacks skill install                   # $HOME/.claude/skills/quickstack/SKILL.md
+stacks skill install --project         # git toplevel, or cwd outside a repo
+stacks skill install --force           # replace an edited copy
+stacks skill install --print           # copy the skill to another location yourself
+stacks skill install --json            # { path, action: "written" | "unchanged" }
+stacks skill install --print --json    # { path: null, action: "printed", text }
 ```
 
 An identical installed file is unchanged. A differing file is preserved with `TargetNotEmpty` (exit 2) unless `--force` is set; a directory occupying `SKILL.md` is always preserved. Writes refuse symlinks escaping the skills root and final `SKILL.md` symlinks; a dotfiles symlink above the skills root is supported. Installation is allowed under an agent. A missing `HOME` or an unwritable target exits 6; `--print` skips all target lookup and writes nothing. A missing bundled skill exits 2 and appears as `skill.found: false` in `doctor --json`.
 
 ## guide
 
-`quickstack` with no arguments, or `quickstack guide` (proposed; not yet agreed by the maintainers), prints a short guide written for agents: the `list`, `new`, `verify` loop and its rules. `--json` returns `{ guide, commands }`. `quickstack --help` keeps the full help and ends with a "Start here (agents)" footer.
+`stacks` with no arguments, or `stacks guide` (proposed; not yet agreed by the maintainers), prints a short guide written for agents: the `list`, `new`, `verify` loop and its rules. `--json` returns `{ guide, commands }`. `stacks --help` keeps the full help and ends with a "Start here (agents)" footer.
 
 ## doctor
 
 ```sh
-quickstack doctor
-quickstack doctor --json
+stacks doctor
+stacks doctor --json
 ```
 
 `doctor` reports version, platform, compiled status, executable, config, data and working paths, the user entry directory, the bundled registry and skill paths (and whether each exists), and safe configuration errors. A missing configuration file is fine. A malformed optional file is reported in `configErrors` while doctor exits successfully; help and version don't open that file.
@@ -216,8 +216,8 @@ quickstack doctor --json
 ## schema
 
 ```sh
-quickstack schema                 # list the names and what each describes
-quickstack schema verify          # one JSON Schema
+stacks schema                 # list the names and what each describes
+stacks schema verify          # one JSON Schema
 ```
 
 Prints the JSON Schema (draft 2020-12, objects closed) of a command's `--json` result, of the error envelope (`error`) or of verify's live events (`verify-event`), so a caller can validate what it parses. `--json` with no name returns `{ schemas: [{ name, describes }] }`. An unknown name is `Usage` (exit 2) with a did-you-mean.
@@ -227,7 +227,7 @@ Prints the JSON Schema (draft 2020-12, objects closed) of a command's `--json` r
 `--completions <shell>` prints a static completion script for `bash`, `zsh`, `fish` or `powershell`, covering every command and flag. Regenerate it after upgrading quickstack.
 
 ```sh
-quickstack --completions bash >> ~/.bashrc
-quickstack --completions zsh > "${fpath[1]}/_quickstack"
-quickstack --completions fish > ~/.config/fish/completions/quickstack.fish
+stacks --completions bash >> ~/.bashrc
+stacks --completions zsh > "${fpath[1]}/_stacks"
+stacks --completions fish > ~/.config/fish/completions/stacks.fish
 ```

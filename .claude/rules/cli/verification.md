@@ -10,7 +10,7 @@ paths:
 
 ## A clean exit is not a pass
 
-A run that did nothing and a run that succeeded both exit 0. After the gate (`bun run check`, or `rr check`, whose partition logs are under its result's `log_dir`), read the output: confirm the Vitest file and test counts are what you expect for the change (a new test file shows up in the count) and that the e2e section actually compiled the binary and ran its tests. When work is done by a subprocess, check what the subprocess printed, not the wrapper's status.
+A run that did nothing and a run that succeeded both exit 0. After the gate (`bun run check`, or `rr check`, whose partition logs are under its result's `log_dir`), read the output: confirm the Vitest file and test counts are what you expect for the change (a new test file shows up in the count) and that the e2e section actually packed and installed the Node package and ran its tests. When work is done by a subprocess, check what the subprocess printed, not the wrapper's status.
 
 ## Revert-verify every new regression test
 
@@ -22,6 +22,6 @@ Lefthook's pre-commit formats and restages safe fixes, which can leave part of t
 
 ## Run the real command
 
-For any CLI change, run the changed command in human and `--json` modes as `rules/cli/cli.md` "Verifying UX" describes. Tests through `runCli` don't cover the compiled binary's startup or the dev wrapper. Running it is half the job: `rules/cli/testing.md` "Manual QA as the user" covers judging the output as the agent that will use it, and the QA note that goes in the report.
+For any CLI change, run the changed command in human and `--json` modes as `rules/cli/cli.md` "Verifying UX" describes. Tests through `runCli` don't cover the installed Node package's startup or the dev wrapper. Running it is half the job: `rules/cli/testing.md` "Manual QA as the user" covers judging the output as the agent that will use it, and the QA note that goes in the report.
 
 When something fails, read the logs AGENTS.md "Debugging" names before guessing.

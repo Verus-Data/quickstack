@@ -70,6 +70,17 @@ export const prepare = (options: Options, adapters: readonly AgentAdapter[]) =>
       processes
         .exec({ argv, cwd, env: preflightEnv, timeout: Duration.seconds(60) })
         .pipe(Effect.flatMap((result) => requireSuccess(result, argv[0])));
+    const resolveNode = Effect.gen(function* () {
+      const node = yield* processes.which("node");
+      if (Option.isNone(node))
+        return yield* Effect.fail(new Error("Node 22 or newer is required on PATH"));
+      const executable = yield* exec([node.value, "-p", "process.execPath"]);
+      const version = yield* exec([executable, "--version"]);
+      if (Number(version.match(/^v(\d+)\./)?.[1] ?? 0) < 22)
+        return yield* Effect.fail(new Error("Node 22 or newer is required on PATH"));
+      return executable;
+    });
+    const nodeExecutable = yield* resolveNode;
     const version = yield* exec([found.value, ...adapter.versionArgs]);
     const agentVersion = version.match(/\d+\.\d+[^\s)]*/)?.[0] ?? version;
     if (!agentVersion) return yield* Effect.fail(new Error("Agent version is empty"));
@@ -168,11 +179,11 @@ export const prepare = (options: Options, adapters: readonly AgentAdapter[]) =>
       yield* Effect.addFinalizer(() => fs.remove(root, { recursive: true }).pipe(Effect.orDie));
     const home = path.join(root, "home");
     const prefix = path.join(root, "prefix");
-    const cli = path.join(prefix, "bin/quickstack");
+    const cli = path.join(prefix, "bin/stacks");
     const project = path.join(root, "run");
     const bench = path.join(root, "bench");
     const env = environment({
-      PATH: `${path.join(prefix, "bin")}:${captured.PATH ?? "/usr/bin:/bin"}`,
+      PATH: `${path.join(prefix, "bin")}:${path.dirname(nodeExecutable)}:${captured.PATH ?? "/usr/bin:/bin"}`,
       HOME: home,
       XDG_CONFIG_HOME: path.join(home, "config"),
       XDG_DATA_HOME: path.join(home, "data"),
@@ -202,14 +213,28 @@ export const prepare = (options: Options, adapters: readonly AgentAdapter[]) =>
         yield* fs.makeDirectory(directory, { recursive: true });
       yield* allocatePorts;
       if (!options.cli) yield* exec(["bun", "run", "build"], repo);
+      const entry = options.cli
+        ? path.resolve(host.cwd, options.cli)
+        : path.join(packageRoot, "dist/stacks.mjs");
+      const installed = path.join(prefix, "dist/stacks.mjs");
+      yield* fs.makeDirectory(path.dirname(installed), { recursive: true });
+      yield* fs.copyFile(entry, installed);
       yield* fs.copyFile(
-        options.cli
-          ? path.resolve(host.cwd, options.cli)
-          : path.join(packageRoot, "dist/quickstack"),
+        path.join(path.dirname(entry), "cli.mjs"),
+        path.join(prefix, "dist/cli.mjs"),
+      );
+      yield* fs.writeFileString(
         cli,
+        `#!/bin/sh\nexec ${shellArg(nodeExecutable)} ${shellArg(installed)} "$@"\n`,
       );
       yield* fs.chmod(cli, 0o755);
       yield* fs.copy(registry, path.join(prefix, "registry"));
+      yield* fs.copy(path.join(packageRoot, "skill"), path.join(prefix, "skill"));
+      yield* fs.makeDirectory(path.join(prefix, "docs"), { recursive: true });
+      yield* fs.copyFile(
+        path.join(packageRoot, "docs/authoring.md"),
+        path.join(prefix, "docs/authoring.md"),
+      );
       scaffold = yield* processes
         .exec({
           argv: [

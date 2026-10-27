@@ -38,7 +38,7 @@ The two text renderings carry the same result with the same exit code and files;
 Stdout contains results only. `--json` emits one result object; JSON version is `{ "version": "0.1.0" }` and JSON help is `{ "help": "..." }`. Failures leave stdout empty, and stderr holds a safe diagnostic, or with `--json` exactly one envelope as the last stderr line:
 
 ```json
-{ "error": { "tag": "NotFound", "message": "Not found.", "retryable": false, "next": "run this command again from inside a project quickstack new created, or create one with quickstack new <stack> <dir>.", "details": { "kind": "project", "looked": "/path", "suggestions": [] } } }
+{ "error": { "tag": "NotFound", "message": "Not found.", "retryable": false, "next": "run this command again from inside a project stacks new created, or create one with stacks new <stack> <dir>.", "details": { "kind": "project", "looked": "/path", "suggestions": [] } } }
 ```
 
 `message` is fixed per tag, so it's safe to match on. `next` says what to do about the failure; every tag but `BrokenPipe` has one. `details`, when present, is a closed per-tag object holding only values the CLI produced or arguments you passed (for example `{ "command", "suggestions" }` for an unknown subcommand). Text modes print the message, the detail lines indented under it, then `Next:` with the same text as `next` (a failure that keeps its report on stdout prints its `Next:` line there instead).
@@ -51,7 +51,7 @@ In JSON and agent output, ancillary logs go only to the optional log file, so st
 
 ## JSON Schemas
 
-`quickstack schema` lists every JSON shape the CLI prints, and `quickstack schema <name>` prints one as a JSON Schema (draft 2020-12, objects closed): each command's `--json` result, `error` for the envelope and `verify-event` for verify's events.
+`stacks schema` lists every JSON shape the CLI prints, and `stacks schema <name>` prints one as a JSON Schema (draft 2020-12, objects closed): each command's `--json` result, `error` for the envelope and `verify-event` for verify's events.
 
 ## Exit codes
 

@@ -311,7 +311,7 @@ describe("a target that already holds a scaffold", () => {
     expect(envelope(green.stderr).error.details).toMatchObject({ scaffold: "green" });
     const greenHuman = await newCli(["fixture-stack", "app"], { home });
     expect(greenHuman.stderr).toContain(
-      "  Scaffold: green. This is a finished project.\n  Next: pick another directory for a new project, or extend this one with quickstack add.\n",
+      "  Scaffold: green. This is a finished project.\n  Next: pick another directory for a new project, or extend this one with stacks add.\n",
     );
   });
 

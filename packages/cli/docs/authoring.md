@@ -5,11 +5,11 @@ its structure and definition of done. A fragment adds a reusable capability; pre
 over a near-copy when only CI, deployment or a tool differs.
 
 ```sh
-quickstack create stack my-api --json
-quickstack create fragment my-ci --category ci
-quickstack create fragment my-app --category app
-quickstack create stack go-cli --from bundled
-quickstack create stack team-api --from project --yes
+stacks create stack my-api --json
+stacks create fragment my-ci --category ci
+stacks create fragment my-app --category app
+stacks create stack go-cli --from bundled
+stacks create stack team-api --from project --yes
 ```
 
 The result names the entry directory and this guide. Entries go under
@@ -72,10 +72,10 @@ Other condition keys are `stack`, `tag`, `tag!=`, `mode` and `with`.
 ## Preview and remove rot
 
 ```sh
-quickstack validate ~/.config/quickstack/stacks/my-api --json
-quickstack show my-api --kind stack
-quickstack validate ~/.config/quickstack --brief my-api --sandbox
-quickstack validate ~/.config/quickstack --brief my-api --with my-ci
+stacks validate ~/.config/quickstack/stacks/my-api --json
+stacks show my-api --kind stack
+stacks validate ~/.config/quickstack --brief my-api --sandbox
+stacks validate ~/.config/quickstack --brief my-api --with my-ci
 ```
 
 Use your XDG path when customized. Show includes every guidance branch and shipped
@@ -97,10 +97,10 @@ the agent would do anyway. Preview reports the resulting budget.
 ## Prove it with a local bench run
 
 ```sh
-quickstack new my-api /tmp/my-api-bench --preset sandbox --json
+stacks new my-api /tmp/my-api-bench --preset sandbox --json
 cd /tmp/my-api-bench
-quickstack verify --json
-quickstack runs --json
+stacks verify --json
+stacks runs --json
 ```
 
 Choose an unused directory. Have an agent follow `.quickstack/BRIEF.md`, then fix the
@@ -112,6 +112,6 @@ no shipped bench subcommand yet.
 
 For future projects, set `"preset": "sandbox"` in `config.json` beside your user entries.
 An explicit preset flag wins over that setting, then the fallback is `default`.
-Use `quickstack new my-api /tmp/my-api-default --preset default --json` to override it.
+Use `stacks new my-api /tmp/my-api-default --preset default --json` to override it.
 The sandbox alias is compatible with an explicit sandbox preset, but conflicts with an
 explicit default preset. Add always uses the project's recorded preset.

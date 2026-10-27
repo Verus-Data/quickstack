@@ -64,9 +64,9 @@ async function composed() {
 }
 
 const FIX =
-  "fix the code or config these steps exercise, not the steps, then run quickstack verify again.";
+  "fix the code or config these steps exercise, not the steps, then run stacks verify again.";
 const APP_FIX =
-  'follow the application section ("Then: the application") of .quickstack/BRIEF.md, fix the code or config these steps exercise, then run quickstack verify again.';
+  'follow the application section ("Then: the application") of .quickstack/BRIEF.md, fix the code or config these steps exercise, then run stacks verify again.';
 
 /** The steps that ran, in run order: each one, and only those, has a `step-started` event. */
 const ran = (result: VerifyResult) =>
@@ -313,7 +313,7 @@ describe("verify with an app", () => {
           tag: "VerifyChanged",
           message: "Verify steps changed since they were recorded.",
           retryable: false,
-          next: "the verify steps changed since they were recorded. Don't edit them back; ask the user to run quickstack verify --accept-changes from their own terminal, or to undo the change.",
+          next: "the verify steps changed since they were recorded. Don't edit them back; ask the user to run stacks verify --accept-changes from their own terminal, or to undo the change.",
           details: expected,
         },
       });

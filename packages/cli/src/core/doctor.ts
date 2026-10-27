@@ -22,7 +22,6 @@ export const doctor = Effect.gen(function* () {
     version: VERSION,
     platform: host.platform,
     executable: host.executable,
-    compiled: host.compiled,
     paths: { config: paths.config, data, cache: paths.cache, cwd: host.cwd, user: paths.user },
     registry: { path: registry.path, found: registry.found },
     skill: { path: host.skill, found: skillFound },

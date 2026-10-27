@@ -122,7 +122,7 @@ test("the guide's preview commands render the personal stack they just created",
   writeFileSync(markdown, `${readFileSync(markdown, "utf8")}\nPERSONAL STACK PREVIEW\n`);
   const commands = readFileSync(authoringGuide, "utf8")
     .split("\n")
-    .filter((line) => /^quickstack validate .*--brief my-api/.test(line));
+    .filter((line) => /^stacks validate .*--brief my-api/.test(line));
   expect(commands).toHaveLength(2);
   for (const command of commands) {
     const args = command
@@ -191,7 +191,7 @@ test("the printed validate command preserves shell characters in the registry pa
   expect(run.status).toBe(0);
   expect(run.stderr).toBe("");
   const next = run.stdout.split("\n").find((line) => line.startsWith("Next:"));
-  const argument = /then run quickstack validate (.+)\.$/.exec(next ?? "")?.[1];
+  const argument = /then run stacks validate (.+)\.$/.exec(next ?? "")?.[1];
   expect(argument).toBeDefined();
   const parsed = spawnSync("/bin/sh", ["-c", `set -- ${argument}; printf '%s' "$1"`], {
     cwd: home,

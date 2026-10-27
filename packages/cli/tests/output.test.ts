@@ -42,7 +42,7 @@ test("in JSON mode progress writes nothing, so stderr holds only the envelope", 
       tag: "BadInput",
       message: "Invalid input.",
       retryable: false,
-      next: "run quickstack --help for the command's flags.",
+      next: "run stacks --help for the command's flags.",
     },
   });
 });
@@ -62,7 +62,7 @@ test("in JSON mode an event is one JSON line on stderr, before the envelope", as
         tag: "BadInput",
         message: "Invalid input.",
         retryable: false,
-        next: "run quickstack --help for the command's flags.",
+        next: "run stacks --help for the command's flags.",
       },
     },
     "",
@@ -173,7 +173,7 @@ test("flushNow then BadInput keeps the flushed text on stdout and writes the env
   expect(result).toEqual({
     status: 2,
     stdout: "handing off\n",
-    stderr: "Invalid input.\n  Next: run quickstack --help for the command's flags.\n",
+    stderr: "Invalid input.\n  Next: run stacks --help for the command's flags.\n",
   });
 });
 test("in JSON mode flushNow writes nothing until the command ends", async () => {

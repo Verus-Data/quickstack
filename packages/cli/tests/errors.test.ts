@@ -26,7 +26,7 @@ import { ndjson, quiet, runCli, tempDir, terminal, writeError } from "./helpers/
 
 const reported = errorClasses.map((Class) => new Class()).filter((e) => !(e instanceof BrokenPipe));
 const COMPOSE_NEXT =
-  "change --with or --without so these entries fit, or pick another stack; quickstack show <id> lists what each entry requires and conflicts with.";
+  "change --with or --without so these entries fit, or pick another stack; stacks show <id> lists what each entry requires and conflicts with.";
 test("the published error table, written out row by row", () => {
   expect(errorTable).toEqual({
     Usage: { exit: 2, retryable: false, keepsResult: false },
@@ -88,7 +88,7 @@ test("an unknown command names the CLI as invoked in its next action", async () 
   expect(result.status).toBe(2);
   expect(result.stdout).toBe("");
   expect(result.stderr).toBe(
-    "Invalid command.\n  Command: lst\n  Did you mean: list?\n  Next: run npx quickstack --help to list the commands, or npx quickstack <command> --help for one.\n",
+    "Invalid command.\n  Command: lst\n  Did you mean: list?\n  Next: run npx stacks --help to list the commands, or npx stacks <command> --help for one.\n",
   );
 });
 test("VerifyFailed and VerifyChanged exit 5 and keep their result", () => {
@@ -159,7 +159,7 @@ test("a Next line names the CLI the way it was invoked", async () => {
   expect(human.status).toBe(2);
   expect(human.stdout).toBe("");
   expect(human.stderr).toBe(
-    "Not found.\n  Next: run npx quickstack list to see every stack and fragment id.\n",
+    "Not found.\n  Next: run npx stacks list to see every stack and fragment id.\n",
   );
 });
 test("a details object mutated to carry an extra property is a defect, not a leak", async () => {
@@ -189,8 +189,7 @@ test("EntryInvalid details name the entry in the envelope and in human mode", as
   });
   const json = await runCli(["--json"], { program: Effect.fail(error) });
   expect(json.status).toBe(2);
-  const next =
-    "fix that entry or leave it out; quickstack validate lists every problem in a registry.";
+  const next = "fix that entry or leave it out; stacks validate lists every problem in a registry.";
   expect(JSON.parse(json.stderr)).toEqual({
     error: {
       tag: "EntryInvalid",
@@ -248,7 +247,7 @@ test.each([
   [
     "NotFound for an id in a registry root list doesn't read",
     new NotFound({ details: { suggestions: ["web"], root: "/work/my registry" } }),
-    "Not found.\n  Did you mean: web?\n  Next: quickstack validate '/work/my registry' lists the ids under that root.\n",
+    "Not found.\n  Did you mean: web?\n  Next: stacks validate '/work/my registry' lists the ids under that root.\n",
   ],
   [
     "NotFound naming the fragment id it didn't find",
@@ -274,7 +273,7 @@ test.each([
         problem: "unclosed",
       },
     }),
-    "Entry is invalid.\n  Entry: bad-when (user, conditional)\n  Path: FRAGMENT.md:11\n  Problem: unclosed\n  Next: fix that entry or leave it out; quickstack validate lists every problem in a registry.\n",
+    "Entry is invalid.\n  Entry: bad-when (user, conditional)\n  Path: FRAGMENT.md:11\n  Problem: unclosed\n  Next: fix that entry or leave it out; stacks validate lists every problem in a registry.\n",
   ],
   [
     "NotFound with the path it looked for",
@@ -375,7 +374,7 @@ test.each([
         tag: "VerifyFailed",
         message: "Verify failed.",
         retryable: false,
-        next: "fix the code or config these steps exercise, not the steps, then run quickstack verify again.",
+        next: "fix the code or config these steps exercise, not the steps, then run stacks verify again.",
       },
     });
   else expect(last).toBe("Verify failed.");

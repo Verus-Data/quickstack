@@ -1,14 +1,15 @@
 /**
- * Gate briefs frozen on 2026-10-27. After proving an intentional brief change, regenerate each
+ * Gate briefs frozen on 2026-10-27, updated for the scoped npm invocation only. After proving
+ * an intentional brief change, regenerate each
  * key from `bun run dev validate --brief <stack> [--sandbox] --json` at the repo root:
  * parse stdout as JSON and sha256 its `brief` string as UTF-8, with no added newline.
  * Both presets use validate's canonical context, not new's machine-dependent brief.
  */
 export const briefDigests: Readonly<Record<string, string>> = {
-  "astro-blog:default": "sha256:63989033b58fd2ebbffb186565679676083c8ed3e55aeb80f1aeaa319d8fdb51",
-  "astro-blog:sandbox": "sha256:45eaa9e82d74413d0a32b61e98058d28768b1755341c108699e2ec6f3b064669",
-  "go-cli:default": "sha256:e7ebf50dc885df1dad3de2513516ecf74ca00e3c8cec2dae55062497c5883210",
-  "go-cli:sandbox": "sha256:ff0c9781dae830081405ed1fee7c7ac390d9af88be93bc476ba9cc24f75f205f",
-  "python-react:default": "sha256:27a6e87fccbb68f7ae6fac8494edfe8144e8b0842599f3a9c6f4d9f71dc6d71d",
-  "python-react:sandbox": "sha256:28f17b84c50e8bc97ac003b093256a67c05e231561c8a6f496d6db84da19db1f",
+  "astro-blog:default": "sha256:975fab1d4fb0a435938e7d5ce7b467cba3687a4a4bb0dc3d2ef15a7ca2e84b88",
+  "astro-blog:sandbox": "sha256:ed632f9065f1e4c13af94f7ef0c3b58de7fe71e46e7645c0125ba924e2122632",
+  "go-cli:default": "sha256:49f579e88d24f3fea6b037fb81d710b0876883f0ce0431dfd7de0a1e082cc8eb",
+  "go-cli:sandbox": "sha256:a5fc6362d05c8aec3663fa2b74cfc1855c358fb2cc6978f996e65670be5944a0",
+  "python-react:default": "sha256:b329e9af7fa697793ef2b1d069360fc8a03ef6b84fdd6cb67529a9648d107712",
+  "python-react:sandbox": "sha256:a06fca76b8d532706dce8077ef8eb28a71a2516eef20ae95ee7142446f626898",
 };

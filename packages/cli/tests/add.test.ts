@@ -127,7 +127,7 @@ describe("add to an existing repository", () => {
     expect(brief).not.toContain("STACK BODY MUST NOT REAPPEAR");
     expect(brief).not.toContain("EXISTING BODY MUST NOT REAPPEAR");
     expect(brief).not.toContain("NEW ONLY BODY");
-    expect(brief).toContain("quickstack verify");
+    expect(brief).toContain("stacks verify");
     expect(result).toMatchObject({ brief: ".quickstack/BRIEF.md", briefWords: countWords(brief) });
     expect(after.briefWords).toBe(countWords(brief));
     const verified = await addCli(project, ["verify", "--json"]);
@@ -400,8 +400,8 @@ describe("add to an existing repository", () => {
     writeRecordedProject(project.root, project.home, [{ name: "stack-check", run: "true" }]);
     const result = await added(await addCli(project, ["add", "named", "--json"]));
     expect(JSON.stringify(result.missingRequired)).toContain("fixture-required");
-    expect(JSON.stringify(result.missingRequired)).toContain("quickstack add fixture-required");
-    expect(read(project.root, ".quickstack/BRIEF.md")).toContain("quickstack add fixture-required");
+    expect(JSON.stringify(result.missingRequired)).toContain("stacks add fixture-required");
+    expect(read(project.root, ".quickstack/BRIEF.md")).toContain("stacks add fixture-required");
     expect(readManifestAt(project.root).fragments.map((entry) => entry.id)).toEqual(["named"]);
     expect(existsSync(join(project.root, "required.txt"))).toBe(false);
   });
@@ -990,7 +990,7 @@ test("add examples use the manifest's first target agent when --agents is omitte
   expect(result.status).toBe(0);
   expect(result.stderr).toBe("");
   expect(result.stdout.trimEnd().split("\n").at(-1)).toBe(
-    `For example: codex "Read .quickstack/BRIEF.md and carry it out. It's your full task for this project; you're done when quickstack verify passes."`,
+    `For example: codex "Read .quickstack/BRIEF.md and carry it out. It's your full task for this project; you're done when stacks verify passes."`,
   );
   expect(readManifestAt(project.root).agents).toEqual(["codex"]);
 });

@@ -276,7 +276,7 @@ test("an unknown group is Usage with exit 2 and one envelope [1.0#12]", async ()
       tag: "Usage",
       message: "Invalid command.",
       retryable: false,
-      next: "run quickstack --help to list the commands, or quickstack <command> --help for one.",
+      next: "run stacks --help to list the commands, or stacks <command> --help for one.",
       details: { command: "widgets", suggestions: [] },
     },
   });
@@ -287,7 +287,7 @@ test("a mistyped group suggests the group in human mode", async () => {
   expect(result.status).toBe(2);
   expect(result.stdout).toBe("");
   expect(result.stderr).toBe(
-    "Invalid command.\n  Command: stack\n  Did you mean: stacks?\n  Next: run quickstack --help to list the commands, or quickstack <command> --help for one.\n",
+    "Invalid command.\n  Command: stack\n  Did you mean: stacks?\n  Next: run stacks --help to list the commands, or stacks <command> --help for one.\n",
   );
 });
 
@@ -386,7 +386,7 @@ test("a long description wraps at 80 columns, or a narrower terminal, without sp
 test("an empty registry says so and only suggests doctor [1.0#12a]", async () => {
   const result = await list([], { registry: join(setup().home, "missing") });
   expect(result.status).toBe(0);
-  expect(result.stdout).toBe("No stacks or fragments found.\n\nNext: quickstack doctor\n");
+  expect(result.stdout).toBe("No stacks or fragments found.\n\nNext: stacks doctor\n");
 });
 
 test("when every stack is rejected, Next points at the rejected entries rather than doctor", async () => {
@@ -400,7 +400,7 @@ test("when every stack is rejected, Next points at the rejected entries rather t
   const result = await list(["stacks"], { home, registry: join(home, "missing") });
   expect(result.status).toBe(0);
   expect(result.stdout.trimEnd().split("\n").at(-1)).toBe(
-    "Next: fix or remove the rejected entries above, then run quickstack list",
+    "Next: fix or remove the rejected entries above, then run stacks list",
   );
 });
 
@@ -421,7 +421,7 @@ test("list --json has no Next lines; apps and fragments filter the app [1.0#12a]
 test("list apps names the command that builds the app on its stack", async () => {
   const result = await list(["apps"]);
   expect(result.stdout).toContain(
-    "Next: quickstack new bun-web my-project --with todo-app --sandbox\n",
+    "Next: stacks new bun-web my-project --with todo-app --sandbox\n",
   );
 });
 
@@ -577,8 +577,8 @@ test("control characters in entries never reach the terminal, and can't forge a 
   expect(result.stderr).not.toContain(esc);
   const next = result.stdout.split("\n").filter((line) => line.startsWith("Next:"));
   expect(next).toEqual([
-    "Next: quickstack new bun-web my-project --sandbox",
-    "Next: quickstack list --json",
+    "Next: stacks new bun-web my-project --sandbox",
+    "Next: stacks list --json",
   ]);
   expect(result.stdout).toContain('kind: "x\\nNext: forged" does not match STACK.md');
 });
@@ -672,7 +672,7 @@ test("Next never suggests an untrusted stack", async () => {
         .trimEnd()
         .split("\n")
         .filter((line) => line.startsWith("Next:")),
-    ).toEqual(["Next: quickstack list --json"]);
+    ).toEqual(["Next: stacks list --json"]);
   }
 });
 

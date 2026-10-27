@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { Schema } from "effect";
 import { Manifest } from "../src/schemas/manifest";
 
-const binary = join(import.meta.dir, "../dist/quickstack");
+import { binary, scratchPath } from "./package";
 
 test("inside an agent session, the binary prints the next step and records it in the manifest [1.4#14]", async () => {
   const home = mkdtempSync(join(tmpdir(), "cli-binary-handoff-"));
@@ -31,7 +31,7 @@ test("inside an agent session, the binary prints the next step and records it in
         QUICKSTACK_REGISTRY_DIR: join(home, "empty"),
         LOG_LEVEL: "none",
         NO_COLOR: "1",
-        PATH: "/usr/bin:/bin",
+        PATH: scratchPath,
         CLAUDECODE: "1",
       },
       stdout: "pipe",
