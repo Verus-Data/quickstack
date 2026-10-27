@@ -1,6 +1,6 @@
 # Phase 1.3a: `verify` runner and probes
 
-Status: EXECUTED 2026-10-26 on feat/phase-1-finish (awaiting review). Revised 2026-10-26 for
+Status: EXECUTED 2026-10-26, reviewed once and fixed, merged to main 2026-10-27. Revised 2026-10-26 for
 the amended D18: a serve step's probe is `expect: { http, within }`, and built-in file checks
 are out of v1 (an open additive item below)
 Acceptance tests: traced

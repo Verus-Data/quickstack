@@ -1,6 +1,6 @@
 # Phase 1.6a: Bundled catalog in format v1
 
-Status: EXECUTED 2026-10-26 on feat/phase-1-catalog (awaiting review). The tarball tests (acceptance, unnumbered) wait for 0.2
+Status: EXECUTED 2026-10-26, reviewed once and fixed, merged to main 2026-10-27. The tarball tests (acceptance, unnumbered) wait for 0.2
 
 Acceptance tests: traced
 

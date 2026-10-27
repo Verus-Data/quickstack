@@ -1,6 +1,6 @@
 # Phase 1.6d: Guardrail hook fragments
 
-Status: EXECUTED 2026-10-26 on feat/phase-1-catalog (awaiting review)
+Status: EXECUTED 2026-10-26, reviewed once and fixed, merged to main 2026-10-27
 Acceptance tests: traced
 
 | Field | Value |

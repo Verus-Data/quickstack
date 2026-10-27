@@ -1,6 +1,6 @@
 # Phase 1.4: Handoff and entry points
 
-Status: EXECUTED 2026-10-26 on feat/phase-1-handoff (awaiting review). The `guide`
+Status: EXECUTED 2026-10-26, reviewed once and fixed, merged to main 2026-10-27. The `guide`
 subcommand was added as a proposed scope item 2026-10-26 and is built, but the maintainers
 haven't formally agreed it; it stays proposed until they do
 
