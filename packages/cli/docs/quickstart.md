@@ -39,7 +39,7 @@ npx @steamfield/stacks --version
 npx @steamfield/stacks list stacks
 ```
 
-If you'll use it more than once, install it globally. The command it installs is `stacks`:
+If you'll use it more than once, install it globally. You install the package `@steamfield/stacks`, but the command it puts on your PATH is `stacks`, so you type `stacks list`, not `@steamfield/stacks list`:
 
 ```sh
 npm install -g @steamfield/stacks

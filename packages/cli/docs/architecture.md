@@ -75,7 +75,7 @@ Exit codes are fixed per error and chosen by what the caller should do next (2 f
 
 ## Source layout
 
-The CLI is TypeScript on [Effect](https://effect.website), compiled to one binary by Bun and tested on Node. Paths are under `packages/cli/src/`:
+The CLI is TypeScript on [Effect](https://effect.website), bundled by Bun into one Node ESM file and run and tested on Node. Paths are under `packages/cli/src/`:
 
 | Layer | Path | Job |
 | --- | --- | --- |

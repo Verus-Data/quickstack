@@ -7,23 +7,25 @@ quickstack starts projects for coding agents. To use it, follow the [quick start
 quickstack needs Node 22 or newer, on macOS or Linux. The npm package is `@steamfield/stacks`; run it with `npx`, no install step:
 
 ```sh
-npx @steamfield/stacks list stacks                  # see what you can build
-npx @steamfield/stacks new typescript-cli my-cli    # write a project and hand it to your coding agent
-npx @steamfield/stacks skill install                # or let your agent drive: install the Claude Code skill
+npx @steamfield/stacks list stacks                # see what you can build
+npx @steamfield/stacks new typescript-cli my-cli  # write a project and hand it to your coding agent
+npx @steamfield/stacks skill install              # or let your agent drive: install the Claude Code skill
 ```
 
-Or install it globally, and the command is `stacks`:
+Or install it globally. The package is `@steamfield/stacks`, but the command it puts on your PATH is `stacks`:
 
 ```sh
 npm install -g @steamfield/stacks
 stacks --version
+stacks list stacks
+stacks new typescript-cli my-cli
 ```
 
 This repository is a bun workspace. Product planning is in [plans/](plans/README.md) and [product/](product/PROBLEM_STATEMENT.md).
 
 | Path | What it is |
 | --- | --- |
-| [packages/cli](packages/cli/README.md) | `stacks`, the CLI: Effect 4, Bun-compiled binary. `new <stack>` writes a project and the brief your coding agent builds it from; the bundled stacks are listed in its README |
+| [packages/cli](packages/cli/README.md) | `@steamfield/stacks`, the CLI (installed as `stacks`): Effect 4, a Node 22+ bundle. `new <stack>` writes a project and the brief your coding agent builds it from; the bundled stacks are listed in its README |
 | [packages/api](packages/api/README.md) | `@quickstack/api`, the HTTP API (placeholder, no code yet) |
 | [packages/mcp](packages/mcp/README.md) | `@quickstack/mcp`, the MCP server (placeholder, no code yet) |
 | `.claude/`, `docs/harness.md` | The agent harness: hooks, rules, skills and their tests in `tests/hooks/`, and the acceptance trace in `tests/acceptance/` |

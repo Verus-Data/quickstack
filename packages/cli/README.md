@@ -1,14 +1,16 @@
 # quickstack
 
-`stacks` starts projects for coding agents. You pick a stack, it writes a few starter files and a brief, your coding agent builds the project from the brief, and `stacks verify` says when it's done. To try it, follow the [quick start](docs/quickstart.md).
+quickstack starts projects for coding agents. You pick a stack, it writes a few starter files and a brief, your coding agent builds the project from the brief, and `stacks verify` says when it's done. To try it, follow the [quick start](docs/quickstart.md).
+
+The npm package is `@steamfield/stacks`; the command it installs is `stacks`. It needs Node 22 or newer, on macOS or Linux.
 
 ```sh
-npx @steamfield/stacks list stacks                 # Node 22+, macOS or Linux
-npx @steamfield/stacks new typescript-cli my-cli
-npm install -g @steamfield/stacks                  # optional: then the command is `stacks`
+npx @steamfield/stacks list stacks  # no install step
+npm install -g @steamfield/stacks   # or install it, then run it as `stacks`
+stacks new typescript-cli my-cli
 ```
 
-The CLI is TypeScript on Effect, compiled to one binary by Bun. It executes nothing it reads: only `verify` runs commands, and only the steps in a project's own manifest. [How quickstack works](docs/architecture.md) explains the design, and the [docs index](docs/README.md) lists everything else: concepts, agents, authoring, and the command, output, configuration and validation references.
+The CLI is TypeScript on Effect, bundled for Node. It executes nothing it reads: only `verify` runs commands, and only the steps in a project's own manifest. [How quickstack works](docs/architecture.md) explains the design, and the [docs index](docs/README.md) lists everything else: concepts, agents, authoring, and the command, output, configuration and validation references.
 
 ## Bundled stacks
 
@@ -32,13 +34,13 @@ Use Bun 1.4.2 and Node 24 LTS. Install lefthook (`brew install lefthook` on macO
 ```sh
 bun install
 bun run dev doctor            # the CLI from source
-bun run build                 # compile dist/stacks
+bun run build                 # bundle dist/cli.mjs behind the dist/stacks entry
 node dist/stacks --version
 bun run check                 # this package's gate
 ```
 
 `bun run dev` runs the CLI from source in the directory you ran it from; [Configuration](docs/reference/configuration.md#the-development-wrapper) covers its logs, data directories and how to run it from outside the repo.
 
-`bun run check` runs Biome (including the boundary plugin), TypeScript, Vitest on Node, then the compiled binary checks under Bun. `bun run coverage` measures application code. Tests isolate HOME/XDG and clear credentials; compiled tests create their environment from scratch. No `.env`, credentials or external services are needed.
+`bun run check` runs Biome (including the boundary plugin), TypeScript, Vitest on Node, then the package e2e checks, which pack the npm tarball, install it offline and run it under Node. `bun run coverage` measures application code. Tests isolate HOME/XDG and clear credentials; e2e tests create their environment from scratch. No `.env`, credentials or external services are needed.
 
 Commands here run from `packages/cli/`; the repo root has the same names fanned out to every package. See [AGENTS.md](../../AGENTS.md), [the harness guide](../../docs/harness.md), and [the installed Effect guide](../../.claude/skills/effect/SKILL.md). CI reads Bun from packageManager through [setup-bun](https://github.com/oven-sh/setup-bun). Maintainer tasks (the bench, the ledger, publishing the plugin) are in [Maintaining the bundled registry](docs/maintaining.md).
