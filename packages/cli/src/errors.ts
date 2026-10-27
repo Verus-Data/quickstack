@@ -23,11 +23,25 @@ export class Usage extends Schema.TaggedError<Usage>()("Usage", {
  * flag (`--with`, `--without`, `--sandbox`, in `id`) that `validate` takes only with `--brief`;
  * `only`, a `verify --only` name that is no check or serve step, with those steps' names in
  * `known` (1.3a); `name` or `author`, a naming flag with an unsupported control character.
+ * `fragment` is an add request for a stack or an applied fragment (listed in `alreadyApplied`);
+ * `agents` and `sandbox` are add flags that disagree with the manifest.
  */
 export const BadInputDetails = Schema.Struct({
   id: Schema.String,
-  flag: Schema.Literals(["scope", "with_without", "dir", "brief", "only", "name", "author"]),
+  flag: Schema.Literals([
+    "scope",
+    "with_without",
+    "dir",
+    "brief",
+    "only",
+    "name",
+    "author",
+    "fragment",
+    "agents",
+    "sandbox",
+  ]),
   known: Schema.optionalKey(Schema.Array(Schema.String)),
+  alreadyApplied: Schema.optionalKey(Schema.Array(Schema.String)),
 });
 export class BadInput extends Schema.TaggedError<BadInput>()("BadInput", {
   details: Schema.optionalKey(BadInputDetails),
@@ -538,6 +552,19 @@ const shellArg = (text: string) =>
 function badInputLines(details: typeof BadInputDetails.Type): string[] {
   const id = printable(details.id);
   switch (details.flag) {
+    case "fragment":
+      return details.alreadyApplied?.length
+        ? [
+            `Already applied: ${details.alreadyApplied.map(printable).join(", ")}`,
+            "Next: choose unapplied fragments with quickstacks list.",
+          ]
+        : [`Id: ${id}`, "Next: add takes fragments; use quickstacks new for a stack."];
+    case "agents":
+    case "sandbox":
+      return [
+        `Flag: --${details.flag}`,
+        "Next: use the preset and agents recorded in the manifest.",
+      ];
     case "scope":
       return [
         `Flag: --scope ${id}`,

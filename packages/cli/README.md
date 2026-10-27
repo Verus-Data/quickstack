@@ -64,7 +64,7 @@ npx quickstacks new astro-blog my-blog
 npx quickstacks skill install
 ```
 
-For the current dev build, choose a destination outside this checkout. Use `bun run dev new astro-blog "$HOME/quickstacks-projects/my-blog"` or `bun run dev skill install` from this package, or `./dist/quickstacks` after building. The skill teaches the agent to choose a stack, read `.quickstacks/BRIEF.md`, and build until verify is green. Existing repos aren't supported yet.
+For the current dev build, choose a destination outside this checkout. Use `bun run dev new astro-blog "$HOME/quickstacks-projects/my-blog"` or `bun run dev skill install` from this package, or `./dist/quickstacks` after building. The skill teaches the agent to choose a stack, read `.quickstacks/BRIEF.md`, and build until verify is green. For an existing repository, use `add <fragment...>`.
 
 ```sh
 quickstacks skill install             # $HOME/.claude/skills/quickstacks/SKILL.md
@@ -80,9 +80,9 @@ An identical installed file is unchanged. A differing file is preserved with `Ta
 ## Listing stacks and fragments
 
 ```sh
-quickstacks list                 # Stacks, Fragments and Apps, then Next: lines
+quickstacks list                 # Addable fragments in a project; otherwise all groups
 quickstacks list stacks          # one group: stacks, fragments (apps excluded) or apps
-quickstacks list --json          # { entries, rejected } for an agent choosing a stack
+quickstacks list --json          # Full registry, plus project context when a manifest decodes
 ```
 
 Entries come from three roots, highest precedence first:
@@ -98,6 +98,8 @@ Each root holds `stacks/<id>/STACK.md` and `fragments/<id>/FRAGMENT.md`, each wi
 The markdown file starts with YAML frontmatter between two `---` lines, then guidance prose for the building agent. Frontmatter keys are snake_case (`schema_version`, `applies_to`, `needs_own_repo`, `requires_tools`); unknown keys, including camelCase spellings, are errors. Output from the CLI spells the same fields in camelCase (`appliesTo`).
 
 The same id in a higher root wins; `list --json` marks the winner's `shadows` with the origins it hides. An entry that fails to load is listed under `rejected` with a one-line error and is never silently replaced by a lower copy. An entry with a newer `schema_version` than this CLI reads is skipped with a warning, and the next root's copy is used.
+
+`list` reads the manifest in the current directory (or `--dir`). Its default text view shows fitting, unapplied fragments with add commands; explicit groups keep their usual view. JSON keeps the full registry and adds optional `project: { stack, applied, addable }`. A corrupt, newer or unreadable manifest warns and falls back to the full view.
 
 ## Bundled stacks
 
@@ -145,6 +147,22 @@ The handoff for a real run, first match wins (the manifest's `handoff` records w
 1. Run from inside an agent session (an agent marker such as `CLAUDECODE` or `AI_AGENT` is set): stdout ends with `NEXT STEP FOR THE AGENT: ...`, telling that agent to read the brief and loop on `verify`. With an untrusted entry it says `STOP` instead: show the user the entries and the brief's first section, and continue only if they confirm.
 2. `--json`, `--no-launch`, stdin or stdout not a terminal, or any untrusted entry: the prompt is printed (with an example command, for a human) and nothing is launched. An untrusted entry never launches an agent.
 3. Otherwise the first agent CLI on PATH (`--launch` alone, else the `agents` setting, then `claude`, `codex`, `opencode`, `cursor-agent`) starts in the project with the prompt as its first message, with your environment and the terminal. If it can't be started, the manifest's `handoff` is rewritten to `print`. quickstacks exits with that agent's status, with no error envelope: the project was written either way. None on PATH: the prompt is printed. `--launch` with `--no-launch` or `--json` is `Usage` (exit 2).
+
+## Adding fragments to a repository
+
+```sh
+quickstacks add ci-github                    # current repository
+quickstacks add ci-github --dir ../my-project --no-launch
+quickstacks add agent-ops --agents claude,codex --json
+```
+
+`add` applies only the requested fragments and their requirements. Existing live files keep their bytes: conflicting contributions are parked whole under `.quickstacks/incoming/<path>` for the agent to merge. Identical contributions are skipped; subsequent parked JSON contributions deep-merge with the parked copy, and other contributions get numbered copies. The result and add brief list every pending incoming file, including earlier runs.
+
+An existing manifest keeps its stack, preset, agents, accepted verify steps, and existing env and command values. Without one, `add` creates a manifest with `mode: "add"` and `stack: null`; it infers the project name from package.json, pyproject.toml, go.mod, Cargo.toml, then the directory name. `--sandbox` and `--agents` configure only a newly created manifest; contradictory values on an existing project refuse. `--yes`, `--launch`, `--no-launch` and `--json` follow `new`'s rules. Tools are looked up but never run, and `add` runs no verify steps.
+
+Before planning, `add` performs the same tamper check as `verify`. Changed steps refuse with `VerifyChanged` (5). A manifest-only project stays manifest-only. An untrusted addition under an agent or without terminal stdin writes the new steps while retaining the previous digest baseline (`digestRecorded: false`); a person must review them and run `verify --accept-changes`. Failed or interrupted writes restore parked copies, metadata and state records and remove new files.
+
+`add --json` returns `AddResult`: `added`, `alreadyApplied`, newly `written` fragment files, `skipped`, `mergeNeeded` with incoming paths, `missingRequired` with exact add commands, `commandsKept`, `warnings`, `missingTools`, inferred `name`, manifest and digest status, and the brief and handoff. Read `.quickstacks/BRIEF.md`, merge the parked contributions while preserving project choices, then run `quickstacks verify` over the whole project.
 
 ## The agent guide
 

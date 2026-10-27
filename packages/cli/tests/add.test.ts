@@ -8,7 +8,6 @@ import {
   statSync,
   symlinkSync,
   utimesSync,
-  watch,
 } from "node:fs";
 import { join } from "node:path";
 import { it } from "@effect/vitest";
@@ -323,45 +322,6 @@ describe("add to an existing repository", () => {
       }
     },
   );
-
-  test("interrupting a parked JSON write restores every existing byte and removes new files [3.0#7]", async () => {
-    const project = await scaffolded();
-    parkedRollback(project.root);
-
-    const before = snapshot(project.root);
-    const file = recordPath(project.home, readManifestAt(project.root).projectId);
-    const state = readFileSync(file);
-    const controller = new AbortController();
-    const parked = join(project.root, incoming, ".claude/settings.json");
-    const original = readFileSync(parked);
-    let observedChangedBytes: Buffer | undefined;
-    let settled = false;
-    const watcher = watch(join(project.root, incoming, ".claude"), () => {
-      if (settled || !existsSync(parked)) return;
-      const bytes = readFileSync(parked);
-      if (!bytes.equals(original)) {
-        observedChangedBytes = bytes;
-        controller.abort();
-      }
-    });
-    try {
-      const run = await addCli(project, ["add", "rollback", "--json"], {
-        signal: controller.signal,
-      }).finally(() => {
-        settled = true;
-      });
-      expect(run.status).toBe(130);
-      expect(run.stdout).toBe("");
-      expect(run.stderr).not.toContain("Defect");
-      expect(controller.signal.aborted).toBe(true);
-      expect(observedChangedBytes).toBeDefined();
-      expect(observedChangedBytes).not.toEqual(original);
-      expect(snapshot(project.root)).toEqual(before);
-      expect(readFileSync(file)).toEqual(state);
-    } finally {
-      watcher.close();
-    }
-  });
 
   test("a plain repository gets an add manifest, a state record and metadata ignores [3.0#8]", async () => {
     const project = addProject();

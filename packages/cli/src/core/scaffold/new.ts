@@ -176,6 +176,7 @@ export const scaffold = (options: NewOptions) =>
     // Outside the step digest (Trust model point 5), so filling it changes no digest.
     const manifest = {
       ...built,
+      name,
       fingerprint: contentFingerprint,
       handoff: handoffRecord(decision, built.createdAt),
     };

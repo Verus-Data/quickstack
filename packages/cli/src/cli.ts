@@ -1,4 +1,5 @@
 import { Command } from "effect/cli";
+import { addCommand } from "./commands/add";
 import { doctorCommand } from "./commands/doctor";
 import { guideCommand, printGuide } from "./commands/guide";
 import { listCommand } from "./commands/list";
@@ -13,6 +14,7 @@ export const cli = root.pipe(
   // No subcommand: the agent guide instead of the framework's help (`--help` keeps that).
   Command.withHandler(() => printGuide),
   Command.withSubcommands([
+    addCommand,
     doctorCommand,
     guideCommand,
     listCommand,

@@ -213,3 +213,22 @@ export const sandbox = [
   "",
   "This is a local sandbox that will never be deployed. Skip deploy, release and application work this brief doesn't ask for; verify skips steps tagged `prod`. Optimize for the fastest path to a green verify.",
 ];
+
+/** Fixed wording specific to applying fragments to an existing project. */
+export const add = {
+  title: (ids: ReadonlyArray<string>, project: string) => `# Add ${ids.join(", ")} to ${project}`,
+  stack: (id: string | null) => `- Stack: ${id ? code(id) : "none recorded, existing repo"}`,
+  applied: (ids: ReadonlyArray<string>) =>
+    `- Already applied: ${ids.length ? ids.map(code).join(", ") : "none"}`,
+  job: (cli: string) =>
+    `Apply the new fragments without breaking what's there. quickstacks installed nothing and ran no verify steps. You're done when ${verify(cli)} checks the whole manifest and exits 0 with outcome ${code("green")}.`,
+  merge: "## Merge needed",
+  mergeTask:
+    "Bring in what each incoming copy adds; keep the project's choices where they conflict. Delete `.quickstacks/incoming/` when every merge is done.",
+  required: "## Missing required fragments",
+  accept: (cli: string) =>
+    `The new steps have not been accepted. Stop and ask the user to run ${code(`${cli} verify --accept-changes`)} in their own terminal after reviewing them. Do not run it yourself.`,
+  git: "- This repository already exists. Preserve its layout and history; don't commit without the user's permission.",
+  done: (cli: string) =>
+    `Run ${verify(cli)} over the whole manifest, keeping all existing checks green.`,
+};

@@ -1,0 +1,30 @@
+import { Schema } from "effect";
+import { NewResult } from "./new";
+import { TamperCheck } from "./verify";
+
+/** The files and manifest changes made by `add`, and the agent's next task. */
+export const AddResult = Schema.Struct({
+  project: Schema.String,
+  stack: Schema.NullOr(Schema.String),
+  added: Schema.Array(Schema.String),
+  alreadyApplied: Schema.Array(Schema.String),
+  written: Schema.Array(Schema.String),
+  skipped: Schema.Array(Schema.String),
+  mergeNeeded: Schema.Array(
+    Schema.Struct({ path: Schema.String, incoming: Schema.Array(Schema.String) }),
+  ),
+  missingRequired: Schema.Array(Schema.Struct({ id: Schema.String, command: Schema.String })),
+  commandsKept: Schema.Array(Schema.String),
+  warnings: Schema.Array(Schema.Struct({ code: Schema.String, id: Schema.String })),
+  missingTools: NewResult.fields.missingTools,
+  name: Schema.Struct({ value: Schema.String, source: Schema.String }),
+  createdManifest: Schema.Boolean,
+  tamperCheck: Schema.NullOr(TamperCheck),
+  stateRecord: Schema.Boolean,
+  digestRecorded: Schema.Boolean,
+  brief: Schema.Literal(".quickstacks/BRIEF.md"),
+  briefWords: Schema.Number,
+  untrusted: NewResult.fields.untrusted,
+  handoff: NewResult.fields.handoff,
+});
+export type AddResult = typeof AddResult.Type;

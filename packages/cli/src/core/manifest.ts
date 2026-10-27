@@ -83,8 +83,8 @@ const projectId = Effect.gen(function* () {
  * `briefWords` is `renderBrief`'s count for the brief written beside it.
  */
 export const buildManifest = (
-  composition: Composition,
-  facts: { briefWords: number },
+  composition: Composition<Entry | null>,
+  facts: { briefWords: number; mode?: "new" | "add" },
 ): Effect.Effect<Manifest> =>
   Effect.gen(function* () {
     const verify = composition.verify.map(
@@ -99,9 +99,9 @@ export const buildManifest = (
       projectId: yield* projectId,
       createdAt: new Date(yield* Clock.currentTimeMillis).toISOString(),
       cli: VERSION,
-      mode: "new" as const,
+      mode: facts.mode ?? "new",
       agents: [...composition.agents],
-      stack: entryRef(composition.stack),
+      stack: composition.stack ? entryRef(composition.stack) : null,
       fragments: composition.fragments.map(entryRef),
       commands: { ...composition.commands },
       ...body,

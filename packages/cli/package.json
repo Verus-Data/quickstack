@@ -24,6 +24,7 @@
   "dependencies": {
     "@effect/platform-bun": "catalog:",
     "effect": "catalog:",
+    "smol-toml": "catalog:",
     "yaml": "catalog:"
   },
   "devDependencies": {

@@ -52,6 +52,8 @@ export const Manifest = Schema.Struct({
   /** The quickstacks version that wrote it. */
   cli: Schema.String,
   mode: Schema.Literals(["new", "add"]),
+  /** Project template name; older manifests fall back to inference. */
+  name: Schema.optionalKey(Schema.String),
   preset: Schema.Literals(["default", "sandbox"]),
   agents: Schema.Array(AgentId),
   stack: Schema.NullOr(EntryRef),

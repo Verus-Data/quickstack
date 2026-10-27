@@ -21,8 +21,8 @@ import { closest } from "../suggest";
 import { resolveConditionals } from "./conditionals";
 import { deepMerge } from "./merge";
 
-export type ComposeOptions = {
-  stack: string;
+export type ComposeOptions<M extends "new" | "add" = "new"> = {
+  stack: M extends "new" ? string : string | null;
   with: ReadonlyArray<string>;
   without: ReadonlyArray<string>;
   preset: "default" | "sandbox";
@@ -30,8 +30,9 @@ export type ComposeOptions = {
   agents: ReadonlyArray<AgentId>;
   /** `Settings.always`. */
   always: ReadonlyArray<string>;
-  /** "add" arrives in 3.0. */
-  mode: "new";
+  mode: M;
+  /** Already applied fragments satisfy requirements but emit nothing. */
+  existing?: ReadonlyArray<string>;
 };
 
 /** Which entry: a stack and a fragment may share an id, so an id alone is ambiguous. */
@@ -64,9 +65,9 @@ export type ComposeWarning = {
  */
 export type Via = "required" | "default" | "always" | "with" | "requires";
 
-export type Composition = {
+export type Composition<S extends Entry | null = Entry> = {
   /** The stack, its body with conditionals resolved. */
-  stack: Entry;
+  stack: S;
   /** Composition order (requirements first, ties by id, the app last), bodies resolved. */
   fragments: ReadonlyArray<Entry>;
   /** The one fragment with category "app", also in `fragments`. */
@@ -138,14 +139,17 @@ function parties(entries: ReadonlyArray<Entry>): Pick<ConflictDetails, "stack" |
  * A stack id plus `--with`/`--without`, `Settings.always` and a preset, composed into what `new`
  * writes and the brief describes. Reads only through `Registry`; otherwise pure.
  */
-export const compose = (
+type ComposeError = NotFound | BadInput | EntryInvalid | ComposeConflict | PermissionDenied;
+export function compose(
   options: ComposeOptions,
-): Effect.Effect<
-  Composition,
-  NotFound | BadInput | EntryInvalid | ComposeConflict | PermissionDenied,
-  Registry
-> =>
-  Effect.gen(function* () {
+): Effect.Effect<Composition, ComposeError, Registry>;
+export function compose(
+  options: ComposeOptions<"add">,
+): Effect.Effect<Composition<Entry | null>, ComposeError, Registry>;
+export function compose(
+  options: ComposeOptions<"new" | "add">,
+): Effect.Effect<Composition<Entry | null>, ComposeError, Registry> {
+  return Effect.gen(function* () {
     const registry = yield* Registry;
     const listed = yield* registry.all;
     const known = (kind: Kind) =>
@@ -157,22 +161,36 @@ export const compose = (
       new NotFound({ details: { suggestions: closest(id, usable(kind)), id, kind } });
 
     // Ids the user typed are checked before anything is selected.
-    if (!known("stack").includes(options.stack)) return yield* missing(options.stack, "stack");
+    if (options.stack !== null && !known("stack").includes(options.stack))
+      return yield* missing(options.stack, "stack");
     for (const id of [...options.with, ...options.without])
-      if (!fragmentIds.has(id)) return yield* missing(id, "fragment");
+      if (!fragmentIds.has(id)) {
+        if (options.mode === "add" && known("stack").includes(id))
+          return yield* new BadInput({ details: { id, flag: "fragment" } });
+        return yield* missing(id, "fragment");
+      }
     const without = new Set(options.without);
     const withIds = [...new Set(options.with)].sort(byId);
     const both = withIds.find((id) => without.has(id));
     if (both !== undefined)
       return yield* new BadInput({ details: { id: both, flag: "with_without" } });
 
-    const stackEntry = yield* registry.get("stack", options.stack);
-    if (!isStack(stackEntry)) return yield* Effect.die(new Error("Registry returned a non-stack"));
+    const stackEntry = options.stack === null ? null : yield* registry.get("stack", options.stack);
+    if (stackEntry !== null && !isStack(stackEntry))
+      return yield* Effect.die(new Error("Registry returned a non-stack"));
     const stack = stackEntry;
+    const existing = new Set(options.existing ?? []);
+    const applied = withIds.filter((id) => existing.has(id));
+    if (applied.length)
+      return yield* new BadInput({
+        details: { id: applied[0] ?? "", flag: "fragment", alreadyApplied: applied },
+      });
     const sandbox = options.preset === "sandbox";
     /** A requirer and what it requires; `null` is the stack. */
     const edge = (requirer: string | null, id: string) =>
-      requirer === null ? { stack: stack.id, ids: [id] } : { ids: [requirer, id] };
+      requirer === null
+        ? { ...(stack ? { stack: stack.id } : {}), ids: [id] }
+        : { ids: [requirer, id] };
 
     const loaded = new Map<string, Fragment>();
     /** A fragment an entry names; an id that names none is a requirement nothing can satisfy. */
@@ -199,6 +217,7 @@ export const compose = (
       path: ReadonlyArray<string>,
     ): Effect.Effect<void, NotFound | EntryInvalid | ComposeConflict | PermissionDenied> =>
       Effect.gen(function* () {
+        if (existing.has(id)) return;
         const seen = state.get(id);
         if (seen === "visiting") {
           const cycle = path.slice(path.indexOf(id));
@@ -228,9 +247,10 @@ export const compose = (
       });
 
     // 1. Required, with their requirements.
-    for (const id of stack.meta.fragments.required) yield* visit(id, null, "required", []);
+    for (const id of options.mode === "new" ? (stack?.meta.fragments.required ?? []) : [])
+      yield* visit(id, null, "required", []);
     // 2. Defaults, minus --without and the sandbox drops.
-    for (const id of stack.meta.fragments.default) {
+    for (const id of options.mode === "new" ? (stack?.meta.fragments.default ?? []) : []) {
       if (without.has(id) || via.has(id)) continue;
       const fragment = yield* load(id, null);
       if (sandbox && SANDBOX_DROPS.includes(fragment.meta.category)) continue;
@@ -245,7 +265,7 @@ export const compose = (
         continue;
       }
       const fragment = yield* load(id, null);
-      if (!fits(fragment, stack)) {
+      if (stack && !fits(fragment, stack)) {
         warnings.push({ code: "always_not_applicable", id });
         continue;
       }
@@ -255,44 +275,59 @@ export const compose = (
     // 4. --with, kept even when it doesn't fit or the sandbox would drop it.
     for (const id of withIds) {
       const fragment = yield* load(id, null);
-      if (!fits(fragment, stack)) warnings.push({ code: "with_not_applicable", id });
+      if (options.mode === "add" && stack && !fits(fragment, stack))
+        return yield* conflict({ reason: "applies_to", ids: [id] });
+      if (stack && !fits(fragment, stack)) warnings.push({ code: "with_not_applicable", id });
       if (via.get(id) !== "required") via.set(id, "with");
     }
     for (const id of [...without].sort(byId))
-      if (!stack.meta.fragments.default.includes(id) && !options.always.includes(id))
+      if (!(stack?.meta.fragments.default ?? []).includes(id) && !options.always.includes(id))
         warnings.push({ code: "without_not_selected", id });
     // 5. The requirements of everything selected so far.
     for (const id of [...via.keys()].sort(byId))
       yield* visit(id, null, via.get(id) ?? "requires", []);
 
     const selected = [...via.keys()].sort(byId).flatMap((id) => loaded.get(id) ?? []);
-    // 6. At most one app.
-    const apps = selected.filter(isApp).map((fragment) => fragment.id);
+    const present = new Set([...existing, ...selected.map((fragment) => fragment.id)]);
+    const appliedEntries: Fragment[] = [];
+    for (const id of existing) {
+      if (!fragmentIds.has(id)) continue;
+      const entry = yield* load(id, null);
+      appliedEntries.push(entry);
+    }
+    // Existing fragments still participate in composition constraints.
+    const apps = [...selected, ...appliedEntries]
+      .filter(isApp)
+      .map((fragment) => fragment.id)
+      .sort(byId);
     if (apps.length > 1) return yield* conflict({ reason: "app_count", ids: apps });
-    // 7. Conflicts, either direction.
-    const present = new Set(selected.map((fragment) => fragment.id));
-    for (const fragment of selected)
+    for (const fragment of [...selected, ...appliedEntries])
       for (const other of fragment.meta.conflicts)
         if (present.has(other))
           return yield* conflict({ reason: "conflicts", ids: [fragment.id, other].sort(byId) });
     // 8. Fit, for what the stack author or a requirement chose.
     for (const fragment of selected) {
+      if (!stack && fragment.meta.appliesTo.length)
+        warnings.push({ code: "with_not_applicable", id: fragment.id });
       const how = via.get(fragment.id);
-      if (how !== "with" && how !== "always" && !fits(fragment, stack))
+      if (how !== "with" && how !== "always" && stack && !fits(fragment, stack))
         return yield* conflict({ reason: "applies_to", ids: [fragment.id] });
     }
 
     const ordered = order(selected);
     const resolve = resolver(registry, {
-      stack: stack.id,
-      tags: stack.meta.tags,
+      stack: stack?.id ?? "",
+      tags: stack?.meta.tags ?? [],
       mode: options.mode,
       preset: options.preset,
-      with: ordered.map((fragment) => fragment.id),
+      with: [...existing, ...ordered.map((fragment) => fragment.id)],
     });
-    const resolvedStack = yield* resolve(stack);
+    const resolvedStack = stack ? yield* resolve(stack) : null;
     const fragments = yield* Effect.forEach(ordered, resolve);
-    const entries: ReadonlyArray<Entry> = [resolvedStack, ...fragments];
+    const entries: ReadonlyArray<Entry> = [
+      ...(options.mode === "new" && resolvedStack ? [resolvedStack] : []),
+      ...fragments,
+    ];
     const app = fragments.find(isApp) ?? null;
 
     return {
@@ -326,8 +361,9 @@ export const compose = (
         .filter((entry) => !entry.trusted)
         .map(({ id, kind, origin, dir }) => ({ id, kind, origin, dir })),
       warnings,
-    } satisfies Composition;
+    } satisfies Composition<Entry | null>;
   });
+}
 
 /** Topological by `requires` (a requirement first), ties by id, the app last. */
 function order(selected: ReadonlyArray<Fragment>): Fragment[] {
@@ -576,7 +612,7 @@ function mergeDeps(entries: ReadonlyArray<Entry>): Composition["deps"] {
  * needs no flag of its own. Nothing can drop a tool the stack or its required fragments need.
  */
 export function missingTools(
-  composition: Composition,
+  composition: Composition<Entry | null>,
   found: (tool: string) => boolean,
 ): MissingTool[] {
   return composition.tools
@@ -589,7 +625,7 @@ export function missingTools(
  * also used for `needs_own_repo`): empty when the stack or a required fragment is among them.
  */
 export function dropFlags(
-  composition: Composition,
+  composition: Composition<Entry | null>,
   owners: ReadonlyArray<EntryRef>,
 ): MissingTool["drop"] {
   if (owners.some((owner) => owner.kind === "stack")) return [];

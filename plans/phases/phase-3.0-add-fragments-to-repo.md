@@ -1,6 +1,6 @@
 # Phase 3.0: `add`
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: IMPLEMENTED 2026-10-27 (reviewed once; implementation findings fixed; acceptance blocked on locked watcher test 7)
 Acceptance tests: traced
 
 | Field | Value |
@@ -302,3 +302,7 @@ All through `tests/helpers/cli.ts` with the fixture registry and temporary proje
 - Appending steps assumes phase ordering is enough between old and new steps. A fragment whose setup must run before an existing step needs explicit ordering in the manifest, which is a manifest version bump.
 - 2026-10-27, from the test author: three claims didn't match the code. Item 18 said `add --launch codex --json` records the preference, but `new` refuses `--launch` with `--json` as `Usage`, and `add` follows `new`; item 18 now says so. The error table said an unreadable manifest is `InvalidConfig`, but `readManifest` fails I/O as `PermissionDenied` (6); the table now splits the two. "With a manifest, `add` uses the name it records" assumed a manifest field that didn't exist: `Manifest` gains an optional `name` (additive, schema version unchanged, like `fingerprint`), which `new` and `add` write; a manifest without one (written before this sub-phase) falls back to inference.
 - The untrusted-under-agent rule makes every agent-driven `add` of a project fragment end in a `VerifyChanged` failure until a person acts. That is the intent, but if agents report it as a broken project rather than asking the user, the brief's wording needs work.
+
+- 2026-10-27, implementation: `planAdd` also requires `AppConfig` to construct the git probe's environment through `childEnv`, as the platform boundary requires. Acceptance test 7's directory watcher can deliver the changed-file event after a fast add has completed on macOS; such a run never actually requests interruption. The implementation must still restore every byte when an interruption is delivered during the transaction.
+
+- 2026-10-27, independent review: overwriting a parked inode also changes any live hard link to it. `ProjectWriter.rewrite` therefore stages an exclusive temporary file and renames it over the parked path, preserving permission bits; rollback restores bytes through the same mechanism. This replaces the design's literal in-place write while preserving its classification and rollback contract.
