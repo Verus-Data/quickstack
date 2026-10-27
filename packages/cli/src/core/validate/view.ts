@@ -3,6 +3,7 @@ import type { AppConfig } from "../../config";
 import type { PermissionDenied } from "../../errors";
 import type { Finding, SizeRow } from "../../schemas/validate";
 import type { Processes } from "../../services/processes";
+import type { Composition } from "../compose/compose";
 import { type Entry, type Kind, markdownFile, type RejectedEntry } from "../registry/entry";
 import type { Registry } from "../registry/registry";
 
@@ -12,6 +13,8 @@ import type { Registry } from "../registry/registry";
  * every winning entry of every origin, with the root's entries shadowing the rest.
  */
 export type View = {
+  /** A preview validates just this selected composition, rather than the registry matrix. */
+  composition?: Composition;
   root: string;
   bundled: boolean;
   entries: ReadonlyArray<Entry>;

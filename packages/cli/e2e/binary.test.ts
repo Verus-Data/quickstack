@@ -130,7 +130,15 @@ describe("real standalone binary", () => {
     );
     expect(brief.status).toBe(0);
     expect(brief.stdout).toContain(`npx -y quickstacks@${version}`);
-    expect(brief.stdout).toMatch(/\nBrief: [\d,]+ words \(fixed text [\d,]+\), limit 6,000\n/);
+    // Size counts go to a human's stderr only (3.1a); a non-terminal gets the brief alone.
+    expect(brief.stderr).toBe("");
+    const sizes = await invoke(
+      ["validate", "--brief", "typescript-cli", "--sandbox", "--json"],
+      undefined,
+      env,
+    );
+    expect(sizes.status).toBe(0);
+    expect(JSON.parse(sizes.stdout)).toMatchObject({ limit: 6000 });
   });
   test("list with no registry suggests doctor", async () => {
     const { bin, prefix } = install();

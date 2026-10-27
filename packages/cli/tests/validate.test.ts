@@ -884,9 +884,21 @@ test("--brief takes --with as a comma list and --without, like new", async () =>
   fragment(root, "helper");
   fragment(root, "one");
   fragment(root, "two");
-  const result = await run([root, "--brief", "base", "--with", "one,two", "--without", "helper"]);
+  const result = await run([
+    root,
+    "--brief",
+    "base",
+    "--with",
+    "one,two",
+    "--without",
+    "helper",
+    "--json",
+  ]);
   expect(result.status).toBe(0);
-  expect(result.stdout).toContain("\nFragments: one, two\n");
+  expect(Schema.decodeUnknownSync(BriefPreview)(JSON.parse(result.stdout)).fragments).toEqual([
+    "one",
+    "two",
+  ]);
   const json = await run([root, "--brief", "base", "--with", "one", "--with", "two", "--json"]);
   expect(Schema.decodeUnknownSync(BriefPreview)(JSON.parse(json.stdout)).fragments).toEqual([
     "helper",
@@ -1078,7 +1090,7 @@ test("--brief prints the composed brief and its counts, and --json decodes as a 
   expect(human.status).toBe(0);
   expect(human.stdout).toMatch(/^# /);
   expect(human.stdout).toContain("## Sandbox");
-  expect(human.stdout).toMatch(
+  expect(human.stderr).toMatch(
     /\n---\nBrief: [\d,]+ words \(fixed text [\d,]+\), limit 6,000\nStack: typescript-cli \(sandbox\)\nFragments: effect-schema, effect, git-hooks\n$/,
   );
   const json = await run(["--brief", "typescript-cli", "--with", "openrouter-chat-cli", "--json"], {

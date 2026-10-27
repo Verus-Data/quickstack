@@ -34,6 +34,8 @@ export const BadInputDetails = Schema.Struct({
     "with_without",
     "dir",
     "brief",
+    "brief_stack",
+    "kind",
     "only",
     "name",
     "author",
@@ -588,6 +590,14 @@ function badInputLines(details: typeof BadInputDetails.Type): string[] {
         `Directory name: ${id}`,
         "Next: pick a project directory whose name has no control characters.",
       ];
+    case "kind":
+      return [
+        `Id: ${id}`,
+        "Kinds: stack, fragment",
+        "Next: select --kind stack or --kind fragment.",
+      ];
+    case "brief_stack":
+      return [`Id: ${id}`, "Next: --brief takes a stack; choose one with quickstacks list stacks."];
     case "brief":
       return [
         `Flag: ${id}`,

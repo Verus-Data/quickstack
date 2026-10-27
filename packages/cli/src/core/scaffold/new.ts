@@ -7,6 +7,7 @@ import {
   IGNORE_PATH,
   NOTES,
   NOTES_PATH,
+  projectFiles,
   STATE_DIR,
 } from "../../project-layout";
 import type { AgentId } from "../../schemas/entry";
@@ -119,13 +120,7 @@ export const scaffold = (options: NewOptions) =>
     const { files, neutralFiles } = yield* composeFilesWithNeutral(composition, values);
     const contentFingerprint = fingerprintFromFiles(composition, neutralFiles);
 
-    const written = [
-      ...files.map((file) => file.path),
-      IGNORE_PATH,
-      BRIEF_PATH,
-      NOTES_PATH,
-      MANIFEST_PATH,
-    ].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+    const written = projectFiles(files);
     const yes = options.yes || options.sandbox;
     const brief = (state: GitState) =>
       renderBrief(composition, {

@@ -98,7 +98,7 @@ export function renderReport(
   return out.join("\n");
 }
 
-/** `validate --brief` in human mode: the brief as written, then its counts after a rule. */
+/** `validate --brief` size report for human stderr. */
 export function renderPreview(preview: BriefPreview): string {
   const over = preview.briefWords > preview.limit;
   const summary = [
@@ -109,11 +109,23 @@ export function renderPreview(preview: BriefPreview): string {
       (warning) => `Warning: ${warning.code.replaceAll("_", " ")}: ${printable(warning.id)}`,
     ),
   ];
-  // Entry prose reaches the terminal: escape control characters, keeping tabs (Makefile recipes).
-  const brief = preview.brief
+  return `\n---\n${summary.join("\n")}`;
+}
+
+/** Entry prose is lossless in JSON; text preserves lines and tabs while escaping terminal controls. */
+export const renderPreviewBrief = (preview: BriefPreview): string =>
+  preview.brief
     .replace(/\n$/, "")
     .split("\n")
     .map((line) => line.split("\t").map(printable).join("\t"))
     .join("\n");
-  return `${brief}\n\n---\n${summary.join("\n")}`;
+
+/** Actionable preview failures without appending anything to the brief on stdout. */
+export function renderPreviewErrors(preview: BriefPreview): string {
+  const errors = preview.findings.filter((finding) => finding.severity === "error");
+  const width = Math.max(0, ...errors.map((finding) => finding.check.length));
+  return [
+    ...errors.map((finding) => findingLine(finding, width)),
+    "Next: fix the reported entries, then rerun this preview.",
+  ].join("\n");
 }

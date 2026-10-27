@@ -16,7 +16,14 @@ import {
   type StackMeta,
   withStepDefaults,
 } from "../../schemas/entry";
-import { type Entry, isRejected, type Kind, markdownFile, type Origin } from "../registry/entry";
+import {
+  type Entry,
+  isRejected,
+  type Kind,
+  markdownFile,
+  type Origin,
+  outputPath,
+} from "../registry/entry";
 import { Registry } from "../registry/registry";
 import { closest } from "../suggest";
 import { resolveConditionals } from "./conditionals";
@@ -411,8 +418,6 @@ function resolver(
     });
 }
 
-const TEMPLATE = ".tmpl";
-
 /** Code points HFS+ ignores in names (git's `is_hfs_dotgit`): `.git` with one inside opens `.git`. */
 const HFS_IGNORABLE = /[\u{200c}-\u{200f}\u{202a}-\u{202e}\u{206a}-\u{206f}\u{feff}]/gu;
 /** A name the way a case-insensitive filesystem compares it. */
@@ -443,9 +448,8 @@ function planFiles(
         const agent = /^adapters\/([^/]+)\//.exec(file.source)?.[1];
         if (agent !== undefined && !agents.some((id) => id === agent)) continue;
         // A template needs a name before the suffix: a file called just `.tmpl` is copied as is.
-        const base = file.path.slice(file.path.lastIndexOf("/") + 1);
-        const template = base.endsWith(TEMPLATE) && base.length > TEMPLATE.length;
-        const path = template ? file.path.slice(0, -TEMPLATE.length) : file.path;
+        const path = outputPath(file);
+        const template = path !== file.path;
         if (!path || path.startsWith("/") || path.split("/").includes(".."))
           return yield* Effect.die(
             new Error("A planned path is empty or escapes the project root"),

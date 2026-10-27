@@ -31,6 +31,15 @@ export type RejectedEntry = {
  */
 export type EntryFile = { source: string; path: string; mode: number };
 
+/** Output path of a shipped file; a literal `.tmpl` basename is copied unchanged. */
+export function outputPath(file: Pick<EntryFile, "path">): string {
+  const suffix = ".tmpl";
+  const base = file.path.slice(file.path.lastIndexOf("/") + 1);
+  return base.endsWith(suffix) && base.length > suffix.length
+    ? file.path.slice(0, -suffix.length)
+    : file.path;
+}
+
 export function isRejected(value: Entry | RejectedEntry): value is RejectedEntry {
   return "error" in value;
 }

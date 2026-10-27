@@ -69,6 +69,8 @@ export const BriefPreview = Schema.Struct({
   /** Composition warnings, such as a `--with` fragment that doesn't fit the stack. */
   warnings: Schema.Array(Schema.Struct({ code: Schema.String, id: Schema.String })),
   brief: Schema.String,
+  fingerprint: Schema.String,
+  findings: Schema.Array(Finding),
 }).annotate({
   title: "Brief preview",
   description: "A composed brief and its word counts, rendered without writing a project",
