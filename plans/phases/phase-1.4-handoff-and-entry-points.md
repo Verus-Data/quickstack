@@ -1,15 +1,16 @@
 # Phase 1.4: Handoff and entry points
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: DRAFT 2026-10-26 (not agreed). The `guide` subcommand was added as a proposed
+scope item 2026-10-26
 
 | Field | Value |
 |---|---|
-| Goal | After `new` writes the project, the brief reaches an agent without the user copying anything: the agent that called quickstacks is told what to do next, or the first agent CLI on PATH is launched with the brief as its first prompt, or the prompt is printed. No agent is ever launched for a project with an untrusted entry. Running `quickstacks` with no arguments prints a guide written for agents |
+| Goal | After `new` writes the project, the brief reaches an agent without the user copying anything: the agent that called quickstacks is told what to do next, or the first agent CLI on PATH is launched with the brief as its first prompt, or the prompt is printed. No agent is ever launched for a project with an untrusted entry. Running `quickstacks` with no arguments prints a guide written for agents; a `guide` subcommand printing the same guide is proposed, not agreed |
 | Traces to | "The CLI writes a few files and a brief, then hands off to the agent the user already has"; assumption "Handoff to whatever agent is on PATH is the right entry point" (confidence low, "Watch whether people use `new` from a terminal or ask their agent to run it"); the agent user: "It runs `list --json`, picks a stack, runs `new`, reads the brief, builds, and loops on `verify`" |
 | Depends on | [1.2a](phase-1.2a-new-scaffold-and-templates.md) (`new` and its result), [1.2b](phase-1.2b-manifest-state-and-detection.md) (the manifest with its optional `handoff` field, `AppConfig.agent`, `DetectedAgent`, `AgentMarkers`), [0.3b](phase-0.3b-processes-and-signals.md) (`Processes.interactive`, `Processes.which`, the A3 signal policy), [0.3a](phase-0.3a-errors-and-output.md) (`Output.flushNow`, `Host.stdinIsTTY`, `Host.stdoutIsTTY`) |
 | Blocks | [1.6b](phase-1.6b-mvp-gate-runs.md) (the gate runs use the real handoff), [2.0b](phase-2.0b-bench.md) (the bench reuses the launch-args table and prompt text), [3.0](phase-3.0-add-fragments-to-repo.md) (`add` reuses the handoff module and flags), [3.4c](phase-3.4c-agent-skill.md) (the agent skill reuses the guide's loop and rules) |
 | Decisions needed | D9 (both entry points, instrumented). If deferred, build both anyway and record the handoff kind, since recording costs nothing. If the maintainers drop the PATH launch, the `launch` outcome and its tests go and `print` takes its place; the rest stands. A3 (signal policy, 0.3b) as recommended; if A3 changes, only the launch step changes |
-| Settles | Launch order; when the CLI refuses to launch; the exact prompt text; how `new` exits after launching an agent; the manifest's `handoff` record; what `quickstacks` with no arguments prints |
+| Settles | Launch order; when the CLI refuses to launch; the exact prompt text; how `new` exits after launching an agent; the manifest's `handoff` record; what `quickstacks` with no arguments prints; whether a `guide` subcommand prints it too (proposed) |
 
 ## Scope
 
@@ -25,6 +26,8 @@ In:
 - Filling the manifest's optional `handoff` field (for D9) and widening the `new` result's
   `handoff` from 1.2a's print-only placeholder to the full union.
 - The no-argument agent guide.
+- Proposed 2026-10-26: a `guide` subcommand that prints the same guide, so an agent or a
+  person who learned the command names from `--help` can reach it by name.
 
 Out:
 
@@ -199,6 +202,12 @@ in `src/core/guide.ts` with a test asserting the cap with `countWords`:
 
 `--json` on the bare root returns `{ guide: "<text>", commands: [...] }`.
 
+`quickstacks guide` (proposed) is a subcommand with no arguments that prints the same
+text from the same `src/core/guide.ts`, with the same `--json` result, so there is one
+guide and two ways to reach it. It exists because the bare root is easy to miss: a
+subcommand shows up in `--help`'s command list, and an agent told "run the guide" has a
+name to run. It reads neither the project nor the registry, so it works anywhere.
+
 ### The help footer
 
 `quickstacks --help` keeps the framework's help, and ends with a fixed footer from the
@@ -210,6 +219,9 @@ Start here (agents): <cli> list --json, pick a stack and tell the user why,
 then <cli> new <stack> <dir> --json, then follow .quickstacks/BRIEF.md
 until <cli> verify is green. Run <cli> with no arguments for the full guide.
 ```
+
+If the proposed `guide` subcommand is accepted, the last sentence becomes "Run <cli> guide
+for the full guide."; until then it stays as above.
 
 `<cli>` is `Host.invocation`. Check first how `effect/cli` in the installed version lets a
 root command add text after its generated help (a description field, an epilogue, or
@@ -247,6 +259,8 @@ toward nothing (it isn't the guide's 250 words).
 |---|---|
 | `src/core/handoff.ts` | `decideHandoff`, `agentPrompt`, launch-args table, messages |
 | `src/core/guide.ts`, `src/cli.ts` | Bare-root guide and the root `--help` footer |
+| `src/commands/guide.ts` | The `guide` subcommand (proposed), a thin handler over `src/core/guide.ts` |
+| `src/schemas/guide.ts` | `GuideResult`, the `{ guide, commands }` result of the bare root's `--json` (and of `guide --json`, if accepted) |
 | `src/commands/new.ts` | Flags, lookup, decision, manifest field, flush, launch, exit status |
 | `src/schemas/new.ts` (1.2a's `NewResult`) | `handoff` widened to the union |
 | `src/main.ts` | Exit-status override; `command` record fields; guide for the bare root |
@@ -289,6 +303,9 @@ toward nothing (it isn't the guide's 250 words).
 - `quickstacks` with no args: the guide, exit 0, under 250 words by `countWords`, and it
   contains the untrusted-entry rule and the `VerifyChanged` rule; `--help` still shows the
   framework help.
+- If `guide` is accepted: `quickstacks guide` prints exactly the bare root's text, exit 0, and `guide --json`
+  returns the same result as the bare root's `--json`; `guide` appears in the root
+  `--help` command list.
 - `quickstacks --help` ends with the "Start here (agents)" footer using
   `Host.invocation`; `quickstacks new --help` does not contain it; exit 0 for both.
 - e2e: the built artifact run with `CLAUDECODE=1` on a fixture registry prints the
@@ -316,3 +333,8 @@ toward nothing (it isn't the guide's 250 words).
 - Ignoring SIGINT while the child runs assumes the child stays in the terminal's
   foreground process group. If an agent starts its own session, Ctrl+C would reach
   neither; check this against each agent in the first 1.6b gate run.
+- 2026-10-26: the `guide` subcommand is a proposed addition, matching the roadmap's
+  Feature gaps row. The help footer keeps the original "Run <cli> with no arguments for
+  the full guide" and changes to "Run <cli> guide for the full guide" only if the
+  subcommand is accepted; if the maintainers drop it, the bare root stays the only way to
+  the guide.

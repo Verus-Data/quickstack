@@ -1,6 +1,12 @@
 # Phase 3.5a: The `app` entry kind
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: WITHDRAWN 2026-10-26. D26 is superseded by the amended D18: an app is a fragment
+with `category: app`, so there is no `app` kind, no `applications/<id>/APP.md`, no
+`AppMeta` and no entry `schema_version: 3`. Loading and listing apps moved to
+[1.0](phase-1.0-entry-format-and-registry.md), composing them (one per composition,
+ordered last) to [1.1](phase-1.1-composition-and-brief.md), and app checks to
+[1.5](phase-1.5-validate-and-brief-budget.md). Kept for the record; the number is not
+reused
 
 | Field | Value |
 |---|---|

@@ -1,108 +1,167 @@
-# Phase 3.5b: The two-phase brief
+# Phase 3.5b: App stage in verify
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: DRAFT 2026-10-26 (not agreed). Shrunk 2026-10-26 by the amended D18 (D26
+superseded): 1.1 now writes one brief with "Definition of done: base" and "Then: the
+application" sections, and app steps carry the reserved `app` tag, so there is no
+separate app brief file, no `new <app>`, no `ManifestStep.stage` and no manifest version
+2. What remains here: verify reports the `app`-tagged steps as their own stage and runs
+them only after every base step passes, the per-stage run-record field, and a bench proof
+for each bundled app with a stub provider. Body rewritten to match 2026-10-26
 
 | Field | Value |
 |---|---|
-| Goal | `new <app> <dir>` composes the app's base stack and the app (3.5a), writes a two-phase brief (phase one takes the stack to green with its own verify; phase two builds the app slice, whose verify steps are appended to the manifest and digested from the start), and `verify` reports each phase. One bundled chat-style app proves it with tests that need no model-provider key |
-| Traces to | The developer who starts projects often: "I want it set up the way I'd set it up myself"; assumption 1 (brief size): splitting a brief into two bounded phases is the other tool against brief growth besides the budget; the coding agent's frustration with "ambiguity" |
-| Depends on | [3.5a](phase-3.5a-app-entry-kind.md) (the app kind and its composition), [1.2b](phase-1.2b-manifest-state-and-detection.md) (the manifest and `digestSteps`), [1.3a](phase-1.3a-verify-runner-and-probes.md) (the step runner), [1.3b](phase-1.3b-tamper-detection-and-run-records.md) (the tamper check and `RunRecord`), [1.5](phase-1.5-validate-and-brief-budget.md) (budgets), [2.0b](phase-2.0b-bench.md) (the bench run that proves the bundled app), [2.0c](phase-2.0c-run-ledger.md) (the ledger key) |
-| Blocks | Nothing. [3.3b](phase-3.3b-bundled-stack-expansion.md) may use it for a stack whose proving slice won't fit D5 |
-| Decisions needed | D26 (app entries and the two-phase brief), an amendment to D18. D5 (budgets per phase, below). D14 unchanged: app steps are in the digest |
-| Settles | How the two phases are briefed, digested and verified; budgets per phase; the manifest and run-record version consequence; the bundled `chat-app` |
+| Goal | In a project composed with an app, `verify` runs the base steps first and the app's steps only once every base step passes, reports each stage's outcome, and records both in the run record; each bundled app is proved by a bench run whose tests need no model-provider key |
+| Traces to | The developer who starts projects often: "I want it set up the way I'd set it up myself"; assumption 1 (brief size): splitting a brief into a base and an application is the other tool against brief growth besides the budget; the coding agent's frustration with "ambiguity" |
+| Depends on | [1.1](phase-1.1-composition-and-brief.md) (apps as `category: app` fragments, the `app` tag, the split brief), [1.2b](phase-1.2b-manifest-state-and-detection.md) (the manifest and `digestSteps`, which covers tags), [1.3a](phase-1.3a-verify-runner-and-probes.md) (the step runner, `VerifyResult`), [1.3b](phase-1.3b-tamper-detection-and-run-records.md) (the tamper check and `RunRecord`), [1.5](phase-1.5-validate-and-brief-budget.md) (app budgets and checks), [2.0b](phase-2.0b-bench.md) (the bench run that proves each app), [2.0c](phase-2.0c-run-ledger.md) (the ledger) |
+| Blocks | Nothing. [3.3b](phase-3.3b-bundled-stack-expansion.md) may move a stack's slice into an app when it won't fit D5 |
+| Decisions needed | D18 as amended (apps are fragments). D5 as amended: an app body 3,000 words and a composed brief with an app 9,000, which 1.5 enforces (`budget.ts::BUDGET`). D14 unchanged: app steps and their `app` tag are in the digest |
+| Settles | How verify orders and reports the two stages; the run record's `stages`; how app proofs are keyed in the ledger |
 
 ## Scope
 
 In:
 
-- `new <app> <dir>` with every `new` flag; `--with` and `--without` apply to the base stack's fragments.
-- The two-phase brief: `.quickstacks/BRIEF.md` (phase one) and `.quickstacks/BRIEF-APP.md` (phase two), both written by `new`.
-- Manifest steps with a `stage` (`"stack"` or `"app"`), digested at `new`.
-- `verify` per stage: app steps don't run until every stack step passes; green needs both.
-- The `app-budget` and `app-layers` checks.
-- One bundled app, `chat-app`, on `python-react`.
+- `verify` stages in a project whose manifest has `app`-tagged steps: base first, app
+  only after every base step passes, both reported.
+- `VerifyResult.stages` and the optional `RunRecord.stages`.
+- The human `Next:` line for "base green, app not yet".
+- A bench proof for each bundled app, with tests that use a stub provider.
 
 Out:
 
-- Model-provider credentials in any verify step. The bundled app's real-provider smoke step is tagged `prod`, skipped by default and under `--sandbox`.
-- A CLI command that renders phase two later. Both briefs are written at `new`, so the CLI still writes once and runs nothing (D2).
-- An app id on telemetry events. Events name the stack only; an `app` field needs a metric that reads it and a telemetry schema version, so it waits until app usage is worth measuring.
+- Composing apps, the split brief, the `app` tag, `--sandbox` dropping apps and the
+  one-app rule (1.1). App budgets and app checks in `validate` (1.5).
+- Writing the bundled apps (1.6a).
+- Model-provider credentials in any verify step. A bundled app's real-provider smoke step
+  is tagged `prod`, skipped by default and under `--sandbox`.
+- An app id on telemetry events. Events name the stack and its `with` list; a separate
+  `app` field needs a metric that reads it and a telemetry schema version, so it waits
+  until app usage is worth measuring.
 - Any CI wiring (D23).
 
 ## Design
 
 ### Where this fits
 
-3.5a made apps a format the CLI reads and composes. This sub-phase writes an app project. Splitting into two phases keeps each brief within its budget, and the stack phase reaching green first means a broken app slice is never confused with a broken stack.
+1.1 composes an app as the last fragment, tags its steps `app`, and splits the brief:
+the base section tells the agent to reach `verify --skip-tag app` with every base step
+passing (a `partial` run), and the application section takes it to a full green. That
+works today with 1.3a's runner, but a plain `verify` runs base and app steps together, so
+an agent that starts the app early sees app failures mixed with base ones. This
+sub-phase makes the ordering part of verify, so a broken app slice is never confused
+with a broken base.
 
-### The two briefs
+### Stages
 
-| File | Contents | Budget (D5) |
-|---|---|---|
-| `BRIEF.md` | The stack's brief exactly as `new <stack>` with the same fragments would render it, plus one fixed section at the end: "This project continues as an app. When `verify` reports the `stack` stage green, read `.quickstacks/BRIEF-APP.md` and continue there. Don't start the app before then." | The stack's existing composed cap (5,000; 6,500 with one optional fragment), unchanged |
-| `BRIEF-APP.md` | Fixed phase-two ground rules (the same no-weakening rules as phase one, including what to do on `VerifyChanged`), the app body, its decisions and commands, and the app's verify table | App body at most 2,000 words; the composed phase-two brief at most 3,000, fixed text included |
+A manifest step is in the `app` stage when its `tags` include `app`, and in the `base`
+stage otherwise. The stage comes from the tag, which `digestSteps` already covers, so the
+manifest needs no new field and stays at `schemaVersion: 1`; removing the tag from a step
+is a changed step and fails `VerifyChanged` (1.3b).
 
-Both are rendered with 1.1's renderer and counted with `countWords`. `new --json` reports `briefWords` and `appBriefWords`, both numbers. Conditional prose in the app body can use `stack=`, `with=` and `mode=` as in fragments.
-
-### Manifest and the digest
-
-Each `ManifestStep` gains `stage: "stack" | "app"`. The manifest gains `app: NullOr(EntryRef)`. Both are new fields, so the manifest's `schemaVersion` becomes 2 for app projects; a CLI that reads version 2 without knowing it fails `InvalidConfig` with the "upgrade quickstacks" message (the existing rule). `digestSteps` covers `stage` with the other step fields ([Trust model](../roadmap.md#trust-model) point 5 lists `stage`), and app steps are digested at `new` like every other step. An agent that edits an app step fails `VerifyChanged` the same way as a stack step.
+A project without app steps behaves exactly as in 1.3a, and its result has no `stages`.
 
 ### Verify by stage
 
-`verify` runs the `stack` stage in the usual phases. If any stack step fails, app steps are `skipped` and the outcome is `failed` as usual. If the stack stage passes, the `app` stage runs (its own setup, check, serve and teardown phases, after the stack's teardown). The result gains `stages: { stack: Outcome, app: Outcome | null }`. `green` needs both stages green; a run where the stack stage is green and the app stage hasn't been started by the agent yet is `failed` with the app steps' failures, and the human `Next:` line for that case points at `BRIEF-APP.md`. `RunRecord` gains the optional `stages` field (no version bump under the run-record rule). `firstGreenAt` means the whole project; the record also keeps `firstStackGreenAt`.
+1. The base stage runs in 1.3a's phases (setup, check, serve, teardown).
+2. If any base step fails, every app step is `skipped` (reason `base-failed`) and the
+   outcome is `failed` as usual.
+3. If every base step passes, the app stage runs its own setup, check, serve and teardown
+   phases after the base teardown.
+4. `green` needs both stages green and scope `full`. `--skip-tag app` still works and
+   gives scope `partial`, which is what 1.1's base section asks for.
 
-The ledger keys app runs by app id: `LedgerKey` gains an optional `app`, and 2.0b's bench takes an app id wherever it takes a stack.
+`VerifyResult` gains the optional
+`stages: { base: Outcome, app: Outcome | null }`, present only when the manifest has app
+steps; `app` is `null` when the app stage didn't run (base failed, or `--skip-tag app`).
+Human mode prints one line per stage before the usual summary. When the base is green and
+the app stage failed, the `Next:` line points at the application section of
+`.quickstacks/BRIEF.md` rather than the generic failure line.
 
-### `validate` rules
+### Run records and the ledger
 
-| Check | Severity | Rule |
-|---|---|---|
-| `app-budget` | error | App body over 2,000 words, or the phase-two brief over 3,000 |
-| `app-layers` | warning | The app's own steps include at least one `test`-layer step, and a `serve` step with a probe when the app adds a server (D7 applied to the app slice) |
+`RunRecord` gains the same optional `stages` field; new optional fields don't bump the run
+record's version (roadmap, Schema versions). `firstGreenAt` keeps meaning the whole
+project. Time to a green base is read from the first run record whose `stages.base` is
+`green`; its reader is 2.0b's run note, which records it beside the whole run's
+`minutesToGreen` (2.0c's ledger, `runs` and 4.1a's telemetry keep only the whole-run
+outcome, and 4.0a moves `RunRecord` with the field). So the state record gains no field (it follows the manifest's version rule, and
+1.2b declared no such optional field).
 
-### The bundled `chat-app`
+An app is selected with `--with`, so an app run's `LedgerKey` already names it in `with`;
+the ledger key gains no `app` field. 2.0b proves an app with
+`bench <stack> --with <app>`.
 
-On `python-react`: a chat UI and an API route that streams a reply from a model provider behind one provider interface. The interface has a stub implementation selected by environment, which the app's tests and its `serve` probe use, so verify needs no key and makes no network call. A `prod`-tagged smoke step calls the real provider when a key is present and is skipped by default and under `--sandbox`. Proving slice: send a message, see a streamed reply from the stub, one API test, one component test, one end-to-end test against both dev servers.
+### Proving each bundled app
+
+Under [3.3a's proof rule](phase-3.3a-release-and-deploy-fragments.md#the-proof-rule-for-a-bundled-entry),
+with these additions:
+
+- The app's model-provider calls go through one provider interface with a stub
+  implementation selected by environment. The app's tests and its `serve` step's
+  `expect` use the stub, so verify needs no key and makes no network call.
+- A `prod`-tagged smoke step calls the real provider when a key is present and is skipped
+  by default and under `--sandbox`.
+- The run note checks the proving slice by hand: send a message, see a streamed reply from
+  the stub, and the app's own tests at each layer it declares.
+- The record is a `pass` with `with` holding the app and `stages` green for both stages.
 
 ### Trust
 
-Nothing changes in the trust model beyond `stage` in the digest. The CLI still runs nothing it reads (point 1): both briefs are written by `new`; `verify` runs only manifest steps. An untrusted app gets the stop-and-confirm section at the top of both briefs.
+Nothing changes in the trust model. The CLI still runs nothing it reads (point 1); verify
+runs only manifest steps, in a different order. An untrusted app is reported like any
+untrusted fragment (1.1).
 
 ## Files and areas touched
 
 | Path | Change |
 |---|---|
-| `packages/cli/src/core/brief/render.ts`, `text.ts` | `BRIEF-APP.md`, the phase-one handover section |
-| `packages/cli/src/schemas/manifest.ts`, `src/core/manifest.ts` | `stage`, `app`, `schemaVersion: 2`, `digestSteps` covers `stage` |
-| `packages/cli/src/core/verify/` | Stage ordering, `stages` in the result |
-| `packages/cli/src/schemas/verify.ts`, `src/schemas/ledger.ts` | Optional `stages`, `firstStackGreenAt`; optional `app` on `LedgerKey` |
-| `packages/cli/src/core/validate/` | `app-budget`, `app-layers` |
-| `packages/cli/src/commands/new.ts`, `src/schemas/new.ts` | `new <app>`; `appBriefWords` |
-| `packages/cli/registry/applications/chat-app/` | `APP.md`, `files/` |
-| `packages/cli/tests/apps.test.ts`, fixtures | Extended |
-| `packages/cli/registry/runs.json`, `plans/runs/` | The `chat-app` bench record and note |
-| `packages/cli/README.md`, repo `AGENTS.md` | The two briefs, stages |
+| `packages/cli/src/core/verify/` | Stage ordering, `stages` in the result, the base-green `Next:` line |
+| `packages/cli/src/schemas/verify.ts` | Optional `stages` on `VerifyResult` and `RunRecord` |
+| `packages/cli/tests/verify-stages.test.ts`, fixtures | New |
+| `packages/cli/registry/fragments/<app>/` for each bundled app | Fixes from bench runs |
+| `packages/cli/registry/runs.json`, `plans/runs/` | One bench record and note per app |
+| `packages/cli/README.md`, repo `AGENTS.md` | Stages in verify |
 
 ## Acceptance tests
 
-- `new chat-app <tmp> --sandbox --no-launch --json`: writes the stack's and the app's files, both briefs, a manifest at `schemaVersion: 2` with `app` set and every step staged; runs no command (recording shim); `briefWords` equals what `new python-react --sandbox` reports plus the fixed handover section; `appBriefWords` is under 3,000.
-- Editing an app step's `run` makes `verify` exit 5 `VerifyChanged` naming that step.
-- A fixture where stack steps fail: app steps are `skipped`, `stages.app` is `null`. Stack green and app failing: outcome `failed`, `stages.stack: "green"`, the human `Next:` line names `BRIEF-APP.md`. Both green: `green`, and `firstGreenAt` and `firstStackGreenAt` both set.
-- An older-CLI fixture that knows only manifest v1 fails `InvalidConfig` with the upgrade message on a v2 manifest.
-- `validate` fixtures for `app-budget` and `app-layers`, each giving exactly its finding.
-- `chat-app`'s tests, run in its own verify, pass with no provider key in the environment and no outbound network (the test layer blocks non-local hosts).
-- The ledger holds a `pass` record keyed by `app: "chat-app"` from a 2.0b bench run.
+- A fixture project composed with an app fixture: base steps failing gives every app step
+  `skipped` with reason `base-failed`, `stages.app: null`, outcome `failed`.
+- Base green and an app step failing: outcome `failed`, `stages.base: "green"`, and the
+  human `Next:` line names the application section of `BRIEF.md`.
+- Both green: outcome `green`, `firstGreenAt` set, and the run record's `stages` holds
+  both.
+- `verify --skip-tag app` with the base green: outcome `partial`, `stages.app: null`.
+- A project without app steps: the result and run record have no `stages`, and every
+  existing 1.3a and 1.3b test passes unchanged.
+- Removing the `app` tag from an app step in the manifest fails `VerifyChanged` naming it.
+- Each bundled app's tests, run in its own verify, pass with no provider key in the
+  environment and no outbound network (the test layer blocks non-local hosts).
+- The ledger holds a `pass` record for each bundled app, `with` including it, from a 2.0b
+  bench run.
 
 ## Exit criteria
 
 - Acceptance tests pass; `bun run check` green from the repo root.
-- D26 agreed; the roadmap's trust model point 5 lists `stage`, and the Schema versions table records manifest v2 for app projects and app entries at v3.
-- One green bench run of `chat-app` recorded with its note.
+- One green bench run per bundled app recorded with its note, or this file's status line
+  lists which aren't and why.
+- The roadmap's Run record row says 3.5b adds `stages` only.
 
 ## What this plan may get wrong
 
-- Writing phase two at `new` means the app brief can't react to what the agent built in phase one. That is the point (the CLI writes once), but if agents routinely need stack-specific facts the app brief lacks, the fix is better app prose, not a second render.
-- A manifest version bump this early means every project from an app needs a CLI with this sub-phase. Projects from plain stacks stay at version 1, so this only affects app users.
-- Agents may start the app before phase one is green despite the handover line. Verify's stage ordering keeps the result honest; the bench notes show whether the wording needs work.
-- The stub-provider rule proves the app's plumbing, not the provider integration. The `prod` smoke step is where that lives, and it runs only by hand.
+- Agents may start the app before the base is green despite the brief. Stage ordering
+  keeps the result honest; the bench notes show whether the brief's wording needs work.
+- The stub-provider rule proves the app's plumbing, not the provider integration. The
+  `prod` smoke step is where that lives, and it runs only by hand.
+- Running app setup after the base teardown assumes app steps don't depend on a base
+  server still running. If an app's `serve` step needs the base's server, the app has to
+  start it in its own stage; if that is common, the base serve steps should stay up
+  through the app stage instead.
+- 2026-10-26: this plan first built on a separate `app` entry kind (3.5a), wrote a second
+  brief file at `new <app>`, added `ManifestStep.stage` and `Manifest.app` (manifest
+  version 2), keyed the ledger by an `app` field, recorded `firstStackGreenAt`, and added
+  its own `app-budget` and `app-layers` checks around one bundled app. The amended D18
+  made apps `category: app` fragments composed by 1.1, which also owns the split brief,
+  and the `app` tag gives verify its stages without a manifest field. App checks are
+  1.5's, the ledger's `with` already names the app, and time to a green base is read from
+  run records instead of a new state field. "Stack stage" became "base stage", matching
+  1.1's brief.

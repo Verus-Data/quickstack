@@ -8,7 +8,7 @@ export const doctorCommand = Command.make("doctor", {}, () =>
     const output = yield* Output;
     yield* output.result(
       report,
-      `quickstacks ${report.version}\nPlatform: ${report.platform}\nCompiled: ${report.compiled}\nConfig: ${report.paths.config}\nData: ${report.paths.data}\n${report.configErrors.length ? report.configErrors.join("\n") : "Configuration: ok"}`,
+      `quickstacks ${report.version}\nPlatform: ${report.platform}\nCompiled: ${report.compiled}\nConfig: ${report.paths.config}\nData: ${report.paths.data}\nUser entries: ${report.paths.user}\nRegistry: ${report.registry.path}${report.registry.found ? "" : " (not found)"}\n${report.configErrors.length ? report.configErrors.join("\n") : "Configuration: ok"}`,
     );
   }),
 ).pipe(Command.withDescription("Inspect local runtime, paths and optional configuration."));

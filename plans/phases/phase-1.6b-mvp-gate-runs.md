@@ -1,12 +1,16 @@
 # Phase 1.6b: MVP gate runs
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: DRAFT 2026-10-26 (not agreed). Revised 2026-10-26: runs use a compiled binary or
+a packed tarball, since packaging (0.2) moved to the final step before public release;
+the "release tarball" this file ends with is produced by 1.6c in that case. With 1.6a now
+bringing the whole catalog into v1 and validating it, D20 implies one run per bundled stack unless the maintainers
+narrow it to D13's three
 
 | Field | Value |
 |---|---|
 | Goal | One recorded green `new --sandbox` run per bundled stack, from the packed tarball, with zero interventions and `tamperCheck: "full"` (D20), each written up in `plans/runs/` with the repo commit, brief size, `firstTestPassAt`, `firstGreenAt` and a by-hand check of the deliverables. Ends with one release tarball, identified by file digest, that 1.6c publishes |
 | Traces to | Assumption "Agents can follow a 3,000 to 10,000 word brief faithfully ... The first assumption is the one to test next"; the problem statement's assumption that a stack is only known to work once an agent has taken it to a green `verify` since its last change; D5 (the brief budget is a hypothesis, and these runs are its first evidence); success rows "The agent finishes without help", "It's faster than by hand (target: under 20 minutes for a sandbox run)"; the developer under time pressure: "Success is time to first passing test" |
-| Depends on | 1.6a (stack content), 1.6d (guardrail hooks), 1.3b (tamper check, run records, `firstGreenAt`, `firstTestPassAt`), 1.4 (handoff), 0.2 (the packed artifact) |
+| Depends on | 1.6a (stack content), 1.6d (guardrail hooks), 1.3b (tamper check, run records, `firstGreenAt`, `firstTestPassAt`), 1.4 (handoff), and a compiled binary (0.1's build) or a packed tarball (0.2, if it has landed) |
 | Blocks | 1.6c (publishes the tarball this ends with), 2.0c (imports these runs into the ledger) |
 | Decisions needed | D20 (the gate rule) before the first run counts; if the maintainers choose a weaker rule, this sub-phase still records every run the same way and only the pass line changes. [Open question 8](../risks-and-open-questions.md#open-questions-for-the-maintainers) (is `## Asked` good enough to count interventions in interactive runs): runs proceed on the proposed yes, with the maintainer's own observation as the second source. [Open question 22](../risks-and-open-questions.md#open-questions-for-the-maintainers) (20 minutes to green as the stand-in for time to first passing test): both times are recorded either way. D24 (headless auth) only matters if a run uses a token login |
 | Settles | Assumption 1's first measured pairs of brief size and time to green, which are the evidence D5's budget is judged on; open question 4's first stack in practice; whether `bun pm pack` output is reproducible from a commit |

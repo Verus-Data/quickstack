@@ -46,10 +46,10 @@ demo.
 
 | Phase | Goal | Sub-phases | Traces to | Status |
 |---|---|---|---|---|
-| 0 Foundation | Name held, hard-to-reverse decisions made, `npx quickstacks` installs the real CLI, and the base can run long and interactive commands | [0.0](phases/phase-0.0-decisions-and-npm-name.md) decisions and name, [0.1](phases/phase-0.1-repo-baseline.md) repo baseline, [0.2](phases/phase-0.2-npm-distribution-artifact.md) distribution, [0.3a](phases/phase-0.3a-errors-and-output.md) errors and output, [0.3b](phases/phase-0.3b-processes-and-signals.md) processes and signals | Open questions: npm name, brief budget, registry audience | In progress (0.1, 0.3a, 0.3b executed; 0.2 deferred to late phase 1; 0.0 waits on the maintainers) |
-| 1 Core loop (MVP) | `list --json`, `new --sandbox`, the brief, `verify` with tamper detection, handoff, `validate` with the brief budget, three bundled stacks with guardrail hooks each taken to green by an agent, a manual npm release | [1.0](phases/phase-1.0-entry-format-and-registry.md) to [1.6c](phases/phase-1.6c-first-release.md), including [1.6d](phases/phase-1.6d-guardrail-hook-fragments.md) | Jobs 1, 2 and 5; success rows 1-3; assumption 1 | Not started |
+| 0 Foundation | Name held, hard-to-reverse decisions made, `npx quickstacks` installs the real CLI, and the base can run long and interactive commands | [0.0](phases/phase-0.0-decisions-and-npm-name.md) decisions and name, [0.1](phases/phase-0.1-repo-baseline.md) repo baseline, [0.2](phases/phase-0.2-npm-distribution-artifact.md) distribution, [0.3a](phases/phase-0.3a-errors-and-output.md) errors and output, [0.3b](phases/phase-0.3b-processes-and-signals.md) processes and signals | Open questions: npm name, brief budget, registry audience | In progress (0.1, 0.3a, 0.3b executed and merged; 0.2 and the npm reservation deferred to the final step before public release; 0.0 waits on the maintainers) |
+| 1 Core loop (MVP) | `list --json`, `new --sandbox`, the brief, `verify` with tamper detection, handoff, `validate` with the brief budget, the bundled catalog with guardrail hooks, each gated stack taken to green by an agent; the manual npm release (1.6c) is the final step before public release | [1.0](phases/phase-1.0-entry-format-and-registry.md) to [1.6c](phases/phase-1.6c-first-release.md), including [1.6d](phases/phase-1.6d-guardrail-hook-fragments.md) | Jobs 1, 2 and 5; success rows 1-3; assumption 1 | In progress (round 1, 1.0-1.2b, on `feat/phase-1`) |
 | 2 Stacks that prove themselves | A composition fingerprint, a run ledger, a local bench, deterministic rot checks | [2.0a](phases/phase-2.0a-composed-files-and-fingerprint.md), [2.0c](phases/phase-2.0c-run-ledger.md), [2.0b](phases/phase-2.0b-bench.md), [2.2](phases/phase-2.2-deterministic-rot-checks.md) | "How does a stack prove it still works?"; success rows 1, 2 and 4 | Not started |
-| 3 Existing repos and authors | `add`, `show`, `new` naming and dry-run options, authoring tools, git sources with trust (gated on outside demand), more bundled fragments and stacks, an agent hook harness, native adapters for other agents, an agent skill, apps with a two-phase brief | [3.0](phases/phase-3.0-add-fragments-to-repo.md) to [3.5b](phases/phase-3.5b-two-phase-brief.md) | Jobs 3 and 4; the stack author; success row 5 | Not started |
+| 3 Existing repos and authors | `add`, `show`, `new` naming and dry-run options, authoring tools, git sources with trust (gated on outside demand), more bundled fragments and stacks, an agent hook harness, native adapters for other agents, an agent skill, verify reporting an app's steps as their own stage | [3.0](phases/phase-3.0-add-fragments-to-repo.md) to [3.5b](phases/phase-3.5b-two-phase-brief.md) | Jobs 3 and 4; the stack author; success row 5 | Not started |
 | 4 The hosted side | The format package, the API and signed registry index, usage telemetry with integrity checks and a launch runbook, stats, a browsable directory, dependency trends, an MCP server | [4.0a](phases/phase-4.0a-format-package.md) to [4.3](phases/phase-4.3-mcp-server.md) | Success rows 4 and 5 across users; assumptions 5 and 6 | Not started |
 | 5 CI and scheduled inference | The release workflow with provenance, extra CI jobs, the scheduled canary, CI-built index deploys | [5.0](phases/phase-5.0-ci-release-and-checks.md) to [5.2](phases/phase-5.2-ci-index-build-and-deploy.md) | "The canary is the product's CI"; success row 4 | Not started |
 
@@ -96,6 +96,24 @@ A contract used by more than one sub-phase is defined once, in the roadmap's
 [shared contracts](roadmap.md#contracts-every-sub-phase-shares) or by the sub-phase that
 table names, and every other file cites it by name. The same holds for the
 [trust model](roadmap.md#trust-model).
+
+A plan's `## Acceptance tests` section is a numbered list (`1.`, `2.`, and `12a.` for one
+inserted later), ending with a `### Realistic edge cases` subsection whose items continue
+the numbering. Those are the cases from `.claude/rules/cli/testing.md` "Realistic edge
+cases" that apply to this sub-phase, and each becomes a test like any other item. Every
+item's test carries a tag in its name, `[<sub-phase>#<number>]`, such as
+`test("a second new into the same directory is TargetNotEmpty [1.2a#4]", ...)`. A plan
+opts into checking with a line `Acceptance tests: traced` under its status line; from
+then on the root `tests/acceptance/trace.test.ts` fails when a number has no tagged test
+under `packages/cli/tests` or `packages/cli/e2e`, or when a tag names a number the plan
+doesn't list.
+
+Each new sub-phase, starting with 1.3a, gets its acceptance tests before its code. A test
+author, a different agent from the implementer, writes them from the plan as tagged,
+failing tests and adds the traced line. The implementer makes them pass without editing
+their assertions. A change to a test's intent is a change to the plan, made there first.
+A test the implementer believes is wrong is reported to the maintainers, not quietly
+rewritten.
 
 No individual's name appears in a plan. Owners are "the maintainers" or "an agent".
 

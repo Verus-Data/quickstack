@@ -15,7 +15,7 @@ Status: DRAFT 2026-10-26 (not agreed)
 
 In:
 
-- A fragment `agent-harness-ts` (`category: agent-ops`, `appliesTo` tags `node`, `bun`, `requires: [agent-ops]`, `requiresTools: [bun]`), optional on every TypeScript stack.
+- A fragment `agent-harness-ts` (`category: agent-ops`, `applies_to` tags `node`, `bun`, `requires: [agent-ops]`, `requires_tools: [bun]`), optional on every TypeScript stack.
 - Shipped under `adapters/claude/`:
 
 | Piece | Behavior |
@@ -82,7 +82,7 @@ Two bench runs of the same stack (`astro-blog` is the TypeScript-capable small s
 - `new astro-blog --with agent-harness-ts --no-launch --json`: composes, the merged `.claude/settings.json` has the guard entry exactly once, no file has two owners, and `validate` reports zero warnings.
 - The shipped hook suite passes when run from a scaffolded project (the composition test runs `bun test` inside a temp project only in the e2e layer, since it executes shipped code).
 - `guard-destructive.sh` from `agent-ops` alone blocks its patterns; with the harness present it delegates and blocks the lexer's cases, including one chained command the pattern list misses.
-- The fragment is rejected on `go-cli` (`appliesTo`) with `ComposeConflict` reason `applies_to`.
+- `--with` the fragment on `<go-stack>`, a stack its `applies_to` excludes, composes it with a `with_not_applicable` warning (1.1 as built: an explicit `--with` is kept), and `validate`'s per-fragment composition doesn't pair it with that stack.
 - Both bench runs are in the ledger, the harness run is `pass`, and its `hooksFired` names the guard and typecheck hooks.
 
 ## Exit criteria
@@ -95,3 +95,4 @@ Two bench runs of the same stack (`astro-blog` is the TypeScript-capable small s
 - Delegating from the shell guard couples the two fragments at run time. If that proves brittle, the alternative is a format feature (a fragment replacing another's file), which is a D18 change.
 - A lexer-based guard is still a guard against accidents, not an adversary; an agent with full permissions can write its own script and run that. The harness doc says so.
 - Typecheck-on-write can be slow on large projects and annoy more than help. The hook has a time limit and skips when exceeded, logging that it did.
+- 2026-10-26: the fragment's frontmatter was written camelCase and a `--with` that doesn't fit was expected to fail `ComposeConflict`. The amended D18 uses snake_case keys (`applies_to`, `requires_tools`), and 1.1 keeps an explicit `--with` that doesn't fit, with a warning; the test now checks the warning.

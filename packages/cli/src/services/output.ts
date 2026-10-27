@@ -24,8 +24,14 @@ export class Output extends Context.Service<
     note: (text: string) => Effect.Effect<void, BrokenPipe | PermissionDenied>;
     /** A live line on stderr in human mode; nothing in JSON mode. Never fails. */
     progress: (text: string) => Effect.Effect<void>;
-    /** Encodes details and writes the envelope; details with excess properties are a defect. */
-    error: (error: AppError) => Effect.Effect<void, BrokenPipe | PermissionDenied>;
+    /**
+     * Encodes details and writes the envelope; details with excess properties are a defect.
+     * `invocation` (`Host.invocation`) is quoted in human mode's `Next:` lines.
+     */
+    error: (
+      error: AppError,
+      invocation: string,
+    ) => Effect.Effect<void, BrokenPipe | PermissionDenied>;
     flush: Effect.Effect<void, BrokenPipe | PermissionDenied>;
     /** Human mode: writes buffered results now (before a child takes the terminal). JSON: no-op. */
     flushNow: Effect.Effect<void, BrokenPipe | PermissionDenied>;
@@ -60,7 +66,7 @@ export class Output extends Context.Service<
                 )
               : Effect.void,
           ),
-        error: (error) =>
+        error: (error, invocation) =>
           encodeDetails(error).pipe(
             Effect.orDie,
             Effect.flatMap((details) =>
@@ -75,7 +81,7 @@ export class Output extends Context.Service<
                         ...(details === undefined ? {} : { details }),
                       },
                     })}\n`
-                  : `${[error.message, ...detailLines(error).map((line) => `  ${line}`)].join("\n")}\n`,
+                  : `${[error.message, ...detailLines(error, invocation).map((line) => `  ${line}`)].join("\n")}\n`,
               ),
             ),
           ),

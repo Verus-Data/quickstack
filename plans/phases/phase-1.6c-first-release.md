@@ -1,6 +1,11 @@
 # Phase 1.6c: First release
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: DRAFT 2026-10-26 (not agreed). Moved 2026-10-26 to the end of the plan (number
+kept): with 0.2 and the npm reservation it is the final step before public release, after
+the roadmap's feature gaps. It now depends on 0.2 directly, and if 1.6b ran from the
+compiled binary it repeats at least one gate run from the packed tarball before
+publishing. The Blocks list below is superseded by the roadmap's "Release: the final
+step" section (3.0 and 4.0a no longer wait for it)
 
 | Field | Value |
 |---|---|
@@ -110,7 +115,7 @@ No code changes. A code change here means the release goes back through 1.6b.
 
 - The local sha256 equals 1.6b's recorded digest, and the local sha512 integrity equals
   npm's `dist.integrity` for the published version.
-- `npx quickstacks@latest list --json` on the clean machine lists the three stacks, on
+- `npx quickstacks@latest list --json` on the clean machine lists every bundled stack, on
   the lowest D12 Node and the `.node-version` Node.
 - `npx quickstacks@latest new astro-blog <tmp> --sandbox --no-launch --json` writes the
   brief, the manifest and `.gitignore`.

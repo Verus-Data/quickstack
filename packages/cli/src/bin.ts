@@ -1,4 +1,5 @@
 #!/usr/bin/env bun
+import { join } from "node:path";
 import { BunServices } from "@effect/platform-bun";
 import { Effect, Layer } from "effect";
 import { hasFlag, main } from "./main";
@@ -36,6 +37,12 @@ const platform = Layer.mergeAll(
     cwd: process.cwd(),
     stdinIsTTY: process.stdin.isTTY === true,
     stdoutIsTTY: process.stdout.isTTY === true,
+    ...(process.stdout.isTTY && process.stdout.columns
+      ? { stdoutColumns: process.stdout.columns }
+      : {}),
+    // A stub until 0.2 resolves the bundled registry inside the npm package.
+    registry: join(import.meta.dirname, "..", "registry"),
+    invocation: "quickstacks",
   }),
 );
 const layer = Layer.provideMerge(AppLayer(), platform);

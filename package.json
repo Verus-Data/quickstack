@@ -20,11 +20,12 @@
       "@vitest/coverage-v8": "^5.0.5",
       "effect": "^4.0.6",
       "typescript": "^7.0.2",
-      "vitest": "^5.0.5"
+      "vitest": "^5.0.5",
+      "yaml": "^2.9.1"
     }
   },
   "scripts": {
-    "dev": "bun run --cwd packages/cli dev",
+    "dev": "INIT_CWD=\"${INIT_CWD:-${npm_config_local_prefix:-$PWD}}\" bun run --cwd packages/cli dev",
     "build": "bun run --filter '*' build",
     "typecheck": "tsc --noEmit && bun run --filter '*' typecheck",
     "lint": "biome check .",

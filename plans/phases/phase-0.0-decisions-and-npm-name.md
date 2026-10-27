@@ -3,14 +3,15 @@
 Status: IN PROGRESS 2026-10-26. Competitive research and the name check are done (see
 [requirements.md](../requirements.md#what-were-replacing) and the name check below). On
 2026-10-26 the maintainers deferred the npm reservation and every decision that does not
-block the prototype (see Deferred); the rest waits on them.
+block the prototype (see Deferred); the rest waits on them. The reservation is now part
+of the final step before public release, with 0.2 and 1.6c.
 
 | Field | Value |
 |---|---|
 | Goal | The npm name is held, the requirements are agreed, every decision an MVP sub-phase blocks on is made or explicitly deferred with a reason, A2-A4 are reviewed, and the first stack is named |
 | Traces to | Open question "Is the npm name available? ... The name needs resolving before anything else in the roadmap matters"; open questions "Who is the bundled registry for?" and "What is the brief budget?" |
 | Depends on | nothing. The A2-A4 review needs [0.3a](phase-0.3a-errors-and-output.md) and [0.3b](phase-0.3b-processes-and-signals.md) to have landed their answers |
-| Blocks | [0.2](phase-0.2-npm-distribution-artifact.md) (A1, D12, D22, D23), [1.0](phase-1.0-entry-format-and-registry.md) (D19), [1.1](phase-1.1-composition-and-brief.md) and [1.6a](phase-1.6a-bundled-stack-content.md) drafting (D18), [1.3b](phase-1.3b-tamper-detection-and-run-records.md) (D14), [1.4](phase-1.4-handoff-and-entry-points.md) (D9), [1.5](phase-1.5-validate-and-brief-budget.md) (D5, D7), [1.6a](phase-1.6a-bundled-stack-content.md) (D5, D6, D13), [1.6b](phase-1.6b-mvp-gate-runs.md) (D20), [1.6c](phase-1.6c-first-release.md) (A2-A4 in the log, D20), phase 2 start (D8), [2.0b](phase-2.0b-bench.md) (D24), [4.0b](phase-4.0b-api-skeleton-and-hosting-spike.md) (D16), [4.0c](phase-4.0c-registry-index.md) and [4.0d](phase-4.0d-cli-remote-origin.md) (D21), [4.1a](phase-4.1a-telemetry-cli-client.md) (D17), [4.2d](phase-4.2d-dependency-telemetry-client-and-ingest.md) (D25), [3.5a](phase-3.5a-app-entry-kind.md) (D26), [3.4b](phase-3.4b-native-agent-adapters.md) (D27), [3.3a](phase-3.3a-release-and-deploy-fragments.md) (D28), [5.1](phase-5.1-scheduled-canary.md) (D15, D24) |
+| Blocks | [0.2](phase-0.2-npm-distribution-artifact.md) (A1, D12, D22, D23), [1.0](phase-1.0-entry-format-and-registry.md) (D19), [1.1](phase-1.1-composition-and-brief.md) and [1.6a](phase-1.6a-bundled-stack-content.md) drafting (D18), [1.3b](phase-1.3b-tamper-detection-and-run-records.md) (D14), [1.4](phase-1.4-handoff-and-entry-points.md) (D9), [1.5](phase-1.5-validate-and-brief-budget.md) (D5, D7), [1.6a](phase-1.6a-bundled-stack-content.md) (D5, D6, D13), [1.6b](phase-1.6b-mvp-gate-runs.md) (D20), [1.6c](phase-1.6c-first-release.md) (A2-A4 in the log, D20), phase 2 start (D8), [2.0b](phase-2.0b-bench.md) (D24), [4.0b](phase-4.0b-api-skeleton-and-hosting-spike.md) (D16), [4.0c](phase-4.0c-registry-index.md) and [4.0d](phase-4.0d-cli-remote-origin.md) (D21), [4.1a](phase-4.1a-telemetry-cli-client.md) (D17), [4.2d](phase-4.2d-dependency-telemetry-client-and-ingest.md) (D25), [3.4b](phase-3.4b-native-agent-adapters.md) (D27), [5.1](phase-5.1-scheduled-canary.md) (D15, D24) |
 | Decisions needed | A1 and D5-D9, D12-D28 from [requirements.md](../requirements.md#proposed-decisions), plus the maintainers' review of A2-A4. Not all at once: the gating table below says which ones the MVP needs. A "no" on any of them sends the blocked sub-phase back to its plan before work starts; it does not block this file |
 | Settles | Nothing by itself. Each agreed proposal moves to the [README decisions log](../README.md#decisions-log) with its ID unchanged |
 
@@ -69,9 +70,9 @@ them doesn't block phase 1. The sub-phase each one blocks matches the
 | D21 | Signed default index | 4.0c, 4.0d | Before 4.0c |
 | D17 | Telemetry consent | 4.1a | Before 4.1a |
 | D15 | Where the canary runs, on whose agent account, with what isolation and token | 5.1 | Before 5.1 |
-| D28 | The `package_scope` template variable (entry `schemaVersion: 2`) | 3.3a | Before 3.3a |
+| D28 | Superseded 2026-10-26 by the amended D18 (`package_scope` is in v1) | n/a | n/a |
 | D27 | Native adapters for Codex, OpenCode and Cursor | 3.4b | Before 3.4b |
-| D26 | The `app` kind and its two-phase brief (entry `schemaVersion: 3`) | 3.5a, 3.5b | Before 3.5a |
+| D26 | Superseded 2026-10-26 by the amended D18 (apps are `category: app` fragments) | n/a | n/a |
 | D25 | Dependency-version telemetry, allowlisted names only (needs D17) | 4.2d | Before 4.2d |
 
 A2-A4 are architecture questions an agent answers in 0.3a and 0.3b, building to the
@@ -108,8 +109,8 @@ item is asked again by the sub-phase it blocks, and none of them blocks
 
 | Item | Deferred to | Reason |
 |---|---|---|
-| Reserving `quickstacks` on npm (and `quickstack`, open question 6) | Before [1.6c](phase-1.6c-first-release.md) publishes; sooner if someone else takes the name | Distribution is not needed for the prototype. The name was free on 2026-10-26; the risk of waiting is that someone registers it |
-| A1, D12, D22 and open question 19 | Before [0.2](phase-0.2-npm-distribution-artifact.md), which now runs late in phase 1, before [1.6b](phase-1.6b-mvp-gate-runs.md) | They only shape the npm package. Until 0.2 lands, phase 1 uses the stubs its files already describe (a stub registry path, `Host.invocation` fixed to `quickstacks`) |
+| Reserving `quickstacks` on npm (and `quickstack`, open question 6) | The final step before public release, together with [0.2](phase-0.2-npm-distribution-artifact.md) and [1.6c](phase-1.6c-first-release.md), not before 1.6b; sooner only if someone else takes the name | Distribution is not needed for the prototype. The name was free on 2026-10-26; the risk of waiting is that someone registers it |
+| A1, D12, D22 and open question 19 | Before [0.2](phase-0.2-npm-distribution-artifact.md), which now runs as part of the final step before public release, after the roadmap's feature gaps and not before [1.6b](phase-1.6b-mvp-gate-runs.md) | They only shape the npm package. Until 0.2 lands, phase 1 uses the stubs its files already describe (a stub registry path, `Host.invocation` fixed to `quickstacks`) |
 | D23 | Before [1.6c](phase-1.6c-first-release.md) | The roadmap is already written to it; nothing before 1.6c changes if it is agreed later |
 | requirements.md review and the remaining MVP-gating proposals (D5-D7, D9, D13, D14, D18-D20) | Each before the sub-phase the gating table names | None of them blocks phase 0's code; each phase-1 sub-phase asks for its own decision before work starts |
 | Review of A2-A4 | After 0.3a and 0.3b land, before 1.6c | The review is of the built code, as planned |

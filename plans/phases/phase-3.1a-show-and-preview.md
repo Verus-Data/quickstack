@@ -34,7 +34,7 @@ This sub-phase gives authors and reviewers a way to read an entry and its compos
 
 ### `show`
 
-Looks the id up with 1.0's `Registry.get`, in origin precedence order. Ids are unique within a kind; a fragment may share an id with a stack or an app, but a stack and an app may not share one ([roadmap, Contracts: Entry and its listing](../roadmap.md#types-and-schemas)). When two kinds share the id, `--kind` picks one; without it, that is `BadInput` naming both. 3.5a adds `app` to `--kind` under the same rule.
+Looks the id up with 1.0's `Registry.get`, in origin precedence order. Ids are unique within a kind; a stack and a fragment may share an id ([roadmap, Contracts: Entry and its listing](../roadmap.md#types-and-schemas)). When both kinds hold the id, `--kind` picks one; without it, that is `BadInput` naming both. An app is a fragment with `category: app`, so `show <app>` needs no kind of its own and prints its category.
 
 Human output:
 
@@ -43,7 +43,7 @@ Go CLI (go-cli), stack, origin bundled, trusted
 A Go command-line tool with ...
 Fragments: required none; default agent-ops, git-hooks, ci-github; optional goreleaser
 Verify: install, build, lint, test, smoke, readme-filled
-Brief: 2,980 words with defaults (cap 5,000)
+Brief: 2,980 words with defaults (cap 6,000; 9,000 with an app)
 Last run: green 2026-11-02, same content
 --- guidance ---
 <body, every conditional branch>
@@ -56,9 +56,9 @@ Last run: green 2026-11-02, same content
 | `id`, `kind`, `name`, `description`, `tags`, `deps`, `tools`, `decisions`, `env`, `commands` | From the entry's meta |
 | `origin`, `trusted`, `shadows`, `path` | From `Entry` ([roadmap, Contracts: Entry and its listing](../roadmap.md#types-and-schemas)) |
 | `fragments` | Stack only: `{ required, default, optional }` |
-| `appliesTo`, `requires`, `conflicts`, `needsOwnRepo`, `fits` | Fragment only. `fits` lists stack ids whose id or tags match `appliesTo` |
+| `category`, `appliesTo`, `requires`, `conflicts`, `requiresTools`, `needsOwnRepo`, `fits` | Fragment only, camelCase like every CLI output (the YAML keys are `applies_to`, `requires_tools`, `needs_own_repo`). `fits` lists stack ids whose id or tags match `appliesTo` |
 | `verify` | Every step as written, every field |
-| `files` | Every shipped file with its source path and its output path (dotfile names unescaped, `.tmpl` stripped, adapters labeled by agent) |
+| `files` | Every shipped file with its source path and its output path (dotfile names as stored, `.tmpl` stripped, adapters labeled by agent) |
 | `body` | Unfiltered: every conditional branch, markers kept, so an author or reviewer sees all of it |
 | `bodyWords`, `bodyCap` | Numbers: `countWords` of the entry's body, and its per-entry cap from D5 |
 | `briefWords`, `briefCap` | `briefWords` is a number, the same quantity it is everywhere ([roadmap, Contracts: Word count](../roadmap.md#types-and-schemas)): `countWords` of the composed brief on 1.5's canonical render (stack with required and default fragments). `null` for a fragment. `briefCap` is the composed cap |
@@ -83,25 +83,29 @@ It deliberately renders the stack, not the author's personal setup:
 - Adapters target one agent: `Settings.agents[0]`, or `claude` when `agents` is unset. A brief with several adapter targets differs only in its adapter list, and an author reads one brief.
 - `Settings.always` is ignored. The preview shows what anyone else running the stack gets; `--with` adds fragments explicitly.
 - The preset comes from `--sandbox` only.
+- An app comes in only through `--with <app>`, and then the preview is 1.1's split brief
+  (base, then application), with the app's cap from 1.5.
 
 Human output prints the brief to stdout and the size report to stderr. `--json` returns `PreviewResult`:
 
 ```json
 {
   "stack": "go-cli",
-  "fragments": ["agent-ops", "git-hooks", "ci-github"],
   "preset": "sandbox",
-  "agent": "claude",
+  "fragments": ["agent-ops", "git-hooks", "ci-github"],
+  "app": null,
+  "briefWords": 2980,
+  "fixedWords": 750,
+  "limit": 6000,
+  "warnings": [],
   "brief": "# Build example: Go CLI\n...",
-  "words": {
-    "brief": 2980,
-    "cap": 5000,
-    "entries": [{ "id": "go-cli", "body": 1266, "cap": 2000 }]
-  },
   "fingerprint": "sha256:...",
   "findings": []
 }
 ```
+
+The fields up to `brief` are 1.5's `BriefPreview` as shipped; `limit` is 6,000, or 9,000
+when `app` is set (1.5's `BUDGET`). This phase adds `fingerprint` and `findings`.
 
 `findings` are 1.5's findings for the composed entries, with 1.5's severities ([Other shared facts: validate severities](../roadmap.md#other-shared-facts)). Any `error` (a composed brief over the cap among them) exits 2 with `ValidationFailed`, which keeps its result, so stdout still holds the brief and the author can read what to cut.
 
@@ -148,7 +152,7 @@ Through `tests/helpers/cli.ts` with the fixture registry. The test helper provid
 2. Editing the fixture bundled stack's body between two `show` runs flips `sameContent` to false.
 3. A user-directory copy of the same id shows `origin: "user"`, `shadows: ["bundled"]` and `lastRun: null`; a project-origin entry shows `trusted: false` and `lastRun: null`.
 4. A bundled fragment's `lastRun` names the stack of the newest record that included it.
-5. `show` lists every shipped file with its output path, including an escaped dotfile shown unescaped and a `.tmpl` shown without the suffix.
+5. `show` lists every shipped file with its output path, including a dotfile (stored literally) at the same output path and a `.tmpl` shown without the suffix.
 6. `validate --brief <stack> --sandbox --json` returns the same brief text `new <stack> --sandbox --no-launch` writes to `BRIEF.md` when run under 1.5's canonical context (directory named as that context's project, TestClock at its year, `agents` unset), and the same `fingerprint` `new --json` records.
 7. With `Settings.always: ["ci-github"]` and `agents: ["codex", "claude"]`, the preview contains no `ci-github` body and renders `codex` adapters only.
 8. A fixture stack over the composed cap: exit 2, stdout holds the brief, the last stderr line is the `ValidationFailed` envelope.
@@ -164,3 +168,5 @@ Through `tests/helpers/cli.ts` with the fixture registry. The test helper provid
 - `show` composes to count words and compare fingerprints, so it is slower than `list`. If it is slow on large stacks, `briefWords` and `sameContent` can move behind a flag.
 - The preview's equivalence with `new` depends on 1.5's canonical context fixing every environment fact the brief mentions (missing tools, git state). If it misses one, test 6 will show it and the context, not the preview, should be fixed.
 - Authors with several agents may want to preview each. An override flag for the preview's adapter agent is a small addition if asked.
+- 2026-10-26: this plan assumed a separate `app` kind (3.5a adding it to `--kind`) and dotfiles stored under an escape that `show` would undo. The amended D18 makes an app a fragment with `category: app`, so `--kind` stays `stack|fragment` and only a stack and a fragment can share an id; dotfiles are literal, so `show` prints them as stored. `ShowReport` gained `category` and `requiresTools`, which the fragment schema has.
+- 2026-10-26 (found executing 1.5): a basic `validate --brief` landed in 1.5 (`src/core/validate/preview.ts::previewBrief`, `BriefPreview`). It prints the brief and its counts on stdout, exits 0 even over the limit, uses 1.1's default agents rather than `Settings.agents[0]`, and treats a `--brief` fragment id as an unknown stack (`NotFound`). This phase now adds the fingerprint, the findings, exit 2 over the limit, the sizes on stderr and the fragment `BadInput`, extending `BriefPreview` rather than adding `PreviewResult` beside it.

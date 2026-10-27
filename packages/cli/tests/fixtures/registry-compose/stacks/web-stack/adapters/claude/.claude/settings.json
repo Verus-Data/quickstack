@@ -1,0 +1,4 @@
+{
+  "hooks": { "PreToolUse": [{ "matcher": "Bash", "command": "guard" }] },
+  "permissions": { "allow": ["Bash(bun test)"] }
+}

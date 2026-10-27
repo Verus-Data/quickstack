@@ -56,12 +56,12 @@ and budgeted compositions, and add no new input.
 
 | Check id | Severity | What it catches |
 |---|---|---|
-| `compose-each` | error | For each fragment in the validated set and each stack in the resolution set it can join (the stack lists it in `fragments.*`, or its `appliesTo` matches the stack), composing that stack's required + default fragments plus this one fails, in either preset. Catches a fragment that only breaks next to a stack's defaults it was never budgeted with |
-| `conditional-dead-branch` | warning | A fragment's `stack=X` block can never render: stack X doesn't list the fragment in `fragments.*` and the fragment's non-empty `appliesTo` doesn't match X. When X doesn't list it but `appliesTo` allows it, the finding is a `note` (reachable only through `--with`) |
+| `compose-each` | error | For each fragment in the validated set and each stack in the resolution set it can join (the stack lists it in `fragments.*`, or its `applies_to` matches the stack), composing that stack's required + default fragments plus this one fails, in either preset. Catches a fragment that only breaks next to a stack's defaults it was never budgeted with |
+| `conditional-dead-branch` | warning | A fragment's `stack=X` block can never render: stack X doesn't list the fragment in `fragments.*` and the fragment's non-empty `applies_to` doesn't match X. When X doesn't list it but `applies_to` allows it, the finding is a `note` (reachable only through `--with`) |
 | `undeclared-command` | warning | A verify step's `run` starts with `make <x>`, `bun run <x>`, `npm run <x>`, `pnpm <x>`, `pnpm run <x>`, `yarn <x>` or `yarn run <x>`, and `<x>` isn't a key of the composition's merged `commands`. Checked per budgeted composition, so a fragment that relies on a stack defining the command is judged with that stack. The agent learns which commands exist from the brief's commands table; a step calling one the table doesn't list is a target the agent has to guess |
 | `template-expression` | warning | A `.tmpl` file contains `${{ <name> }}` where `<name>` matches 1.2a's identifier rule: 1.2a would read it as a template variable (an unknown one is `EntryInvalid`), when the author almost certainly meant a GitHub Actions expression. Ship that file without `.tmpl` |
 | `setext-heading` | warning | An entry body uses an underlined (`===` or `---`) heading, which 1.1's heading normalization leaves at its own level |
-| `version-sensitive-file` | warning | A file under `files/` or `adapters/` whose name, after the dotfile escape is undone (see roadmap, Other shared facts: Entry directories), is on the list (one constant, `VERSION_SENSITIVE`). Build and language config: `tsconfig.json`, `package.json`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `astro.config.*`, `vite.config.*`. Lint and format: `biome.json`, `biome.jsonc`, `.eslintrc*`, `eslint.config.*`, `.golangci.yml`, `.golangci.yaml`. Test runners: `vitest.config.*`, `jest.config.*`, `playwright.config.*`, `pytest.ini`. API codegen: `openapi-ts.config.*`, `orval.config.*`, `openapitools.json`. Containers: `Dockerfile`, `docker-compose.yml`, `docker-compose.yaml`, `compose.yml`, `compose.yaml`. CI and release: `.github/workflows/*`, `.goreleaser.yml`, `.goreleaser.yaml`, `release-please-config.json`, `.changeset/config.json` |
+| `version-sensitive-file` | warning | A file under `files/` or `adapters/` whose name (dotfiles are stored literally; see roadmap, Other shared facts: Entry directories), with any `.tmpl` suffix dropped, is on the list (one constant, `VERSION_SENSITIVE`). Build and language config: `tsconfig.json`, `package.json`, `pyproject.toml`, `go.mod`, `Cargo.toml`, `astro.config.*`, `vite.config.*`. Lint and format: `biome.json`, `biome.jsonc`, `.eslintrc*`, `eslint.config.*`, `.golangci.yml`, `.golangci.yaml`. Test runners: `vitest.config.*`, `jest.config.*`, `playwright.config.*`, `pytest.ini`. API codegen: `openapi-ts.config.*`, `orval.config.*`, `openapitools.json`. Containers: `Dockerfile`, `docker-compose.yml`, `docker-compose.yaml`, `compose.yml`, `compose.yaml`. CI and release: `.github/workflows/*`, `.goreleaser.yml`, `.goreleaser.yaml`, `release-please-config.json`, `.changeset/config.json` |
 | `pinned-version` | warning | An exact semver (`\d+\.\d+\.\d+` not touching another dot or digit) in an entry body, in `decisions`, or in shipped Markdown, outside code fences |
 
 The version-sensitive filename list is a warning, not an error, because a stack can
@@ -116,7 +116,7 @@ An entry's shipped files may import only from:
 - for a stack, files owned by the transitive closure of its `fragments.required`.
 
 Default and optional fragments are not in the allowed set, because `--without` can
-remove them, and `appliesTo` is not a dependency. Resolution maps `.js` to `.ts`, tries
+remove them, and `applies_to` is not a dependency. Resolution maps `.js` to `.ts`, tries
 `.ts`, `.tsx`, `.js`, `.mjs` for an extensionless path, and maps a directory to its
 `index.ts`. In shell files, a leading `$CLAUDE_PROJECT_DIR` is the project root and any
 other leading variable is the script's own directory. A finding names the importing
@@ -205,8 +205,8 @@ and notes print in 1.5's notes section. No `ValidateReport` field is added.
 
 1. Composition and content checks, one fixture each: `compose-each` fails for an
    optional fragment that conflicts with one stack's default (and passes for the stack it
-   doesn't conflict with); `conditional-dead-branch` is a warning for a `stack=go-cli`
-   block in a fragment whose `appliesTo` is `[python]`, and a note when `go-cli` could add
+   doesn't conflict with); `conditional-dead-branch` is a warning for a `stack=<go-stack>`
+   block in a fragment whose `applies_to` is `[python]`, and a note when `<go-stack>` could add
    it with `--with`; `undeclared-command` fires on `make lnt` where `commands` has `lint`,
    and not on `make lint`; `template-expression` fires on `${{ github }}` in a `.tmpl` and
    not on `${{ github.sha }}`; `setext-heading` fires on an underlined heading;
@@ -266,3 +266,9 @@ and notes print in 1.5's notes section. No `ValidateReport` field is added.
 - `ledger-changed` only covers `with: []`. A stack whose only green runs used optional
   fragments shows as unproven. If the bench starts recording runs with `--with`, compose
   those keys too.
+- 2026-10-26: this plan spelled the frontmatter key `appliesTo` and undid a `_dot_`
+  escape before matching file names. The amended D18 uses snake_case keys (`applies_to`)
+  and literal dotfiles, so names are matched as stored. `compose-each` also has to cover
+  apps: an app fragment is composed with each stack it applies to, alone, since at most
+  one app fits a composition (1.1). The catalog is now the whole bundled catalog from
+  1.6a, not three stacks, so the size concern above arrives with 1.6a rather than 3.3a.

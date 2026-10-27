@@ -1,6 +1,8 @@
 # Phase 1.2b: `new`: manifest, state record and agent detection
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: EXECUTED 2026-10-26 on feat/phase-1 (awaiting batch review)
+
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -50,7 +52,9 @@ const EntryRef = Schema.Struct({
 })
 
 const ManifestStep = Schema.Struct({
-  ...VerifyStep.fields,                // 1.0, with withStepDefaults applied
+  ...VerifyStep.fields,                // 1.0, with withStepDefaults applied: name, run, cwd?,
+                                       // phase, tags (with the CLI's "app" tag on an app's
+                                       // steps), expect?: { http, within }, layer?, timeout
   owner: Schema.String,
   skipByDefault: Schema.Boolean,       // true for prod steps under --sandbox
 })
@@ -113,7 +117,11 @@ at every level, arrays in order). Step order is part of the input, because verif
 steps in order.
 
 Acceptance test 3 lists the step fields one by one, so a field added to `VerifyStep`
-without a matching digest test fails review rather than slipping through.
+without a matching digest test fails review rather than slipping through. `expect` is
+digested as the whole nested object, so a changed probe URL or `within` changes the
+digest, and the `app` tag is digested with the other tags, so an agent can't move an app
+step into the base stage unnoticed. An app project needs no manifest version 2: the
+stage of a step is its `app` tag (3.5b).
 
 ### Project state record
 
@@ -146,8 +154,9 @@ stays the pass/fail test; the per-part digests only explain a failure.
 matches however the project was reached. This is the second copy D14 compares against; an
 agent that edits both the manifest steps and `verifyDigest` leaves this one unchanged.
 
-`config.ts::Paths` gains `state` (`XDG_STATE_HOME`, default `~/.local/state`, plus
-`SLUG`). If the state directory isn't writable (some agent sandboxes allow writes only in
+`config.ts::Paths` gains `state` (`QUICKSTACKS_STATE_DIR` when set, else
+`XDG_STATE_HOME`, default `~/.local/state`, plus `SLUG`); `bun run dev` points it at
+`packages/cli/.dev/state`, as it does data at `.dev/data`. If the state directory isn't writable (some agent sandboxes allow writes only in
 the project), `new` still succeeds and reports `stateRecord: false`; 1.3b then reports
 the tamper check as manifest-only, which never passes the gate (D20). The state record is
 written after `.quickstacks/` and before `git init` (1.2a's write order), and 1.2a's
@@ -170,8 +179,9 @@ and 3.0 all need it and 1.2b is the first sub-phase they all depend on. 1.2b its
 defines and tests it; 1.4 uses it for handoff and 1.3b for `--accept-changes`
 ([Trust model](../roadmap.md#trust-model), point 4).
 
-`config.ts::AgentMarkers` is one schema-checked constant, with the date each marker was
-last confirmed from the agent's docs:
+`config.ts::AgentMarkers` is one schema-checked constant. Each marker has an optional
+`confirmed` date, set only once someone has checked it against the agent's docs; none
+has been yet (open item below):
 
 | Agent | Markers (any one set and non-empty) |
 |---|---|
@@ -234,9 +244,11 @@ Through `runCli` with temp HOME, XDG dirs and a temp `cwd`.
    holds the same digest, the project id, `schemaVersion: 1` and `manifestPath` equal to
    the real path of the manifest (on macOS, under `/private/var`).
 3. Digest coverage, one case per field: changing any of `name`, `phase`, `layer`, `run`,
-   `check`, `cwd`, `tags`, `probe`, `timeout`, `skipByDefault`, an `env` value or
-   `preset` changes the digest; reordering keys, changing `owner`, or adding `handoff` or
-   `fingerprint` doesn't; writing a default explicitly (`timeout: "10m"`) doesn't.
+   `cwd`, `tags` (including removing the `app` tag from an app's step), `expect.http`,
+   `expect.within`, `timeout`, `skipByDefault`, an `env` value or `preset` changes the
+   digest; reordering keys, changing `owner`, or adding `handoff` or `fingerprint`
+   doesn't; writing a default explicitly (`timeout: "10m"`, `tags: []`,
+   `within: "60s"`) doesn't.
 4. Forward reads: a manifest with `handoff`, `fingerprint`, `mode: "add"`,
    `stack: null` and an `origin: "source"` decodes; one with an unknown top-level key
    fails; one with `schemaVersion: 2` fails `InvalidConfig` with
@@ -273,8 +285,117 @@ Through `runCli` with temp HOME, XDG dirs and a temp `cwd`.
 - `XDG_STATE_HOME` may not be writable in exactly the sandboxes where tamper detection
   matters most. If 1.6b's gate runs show `stateRecord: false` often, D14's second copy is
   weaker than it looks and D14's row should say so.
-- Agent markers change without notice; the confirmation dates in `AgentMarkers` are the
-  only defense. An agent whose shell tool sets no marker is `"none"` (open question 9).
+- Agent markers change without notice; checking them against each agent's docs and
+  recording `confirmed` is the only defense. An agent whose shell tool sets no marker is `"none"` (open question 9).
+- 2026-10-26: the step fields this plan first digested included `check` and `probe`.
+  The amended D18 replaced them with `expect` and dropped built-in checks; the digest
+  covers whatever `VerifyStep` has, so only test 3's field list changed. The same change
+  retired the planned manifest version 2 for app projects.
 - Writing `briefWords` into the manifest duplicates the result's value; if nothing reads
   it from the manifest by 2.0c, drop it under a version bump rather than keep a field
   without a reader.
+- 2026-10-26, from executing the core (everything that doesn't need `new`), on
+  feat/phase-1b in parallel with 1.2a:
+  - **What shipped.** `schemas/manifest.ts` (`Manifest`, `ManifestStep`, `EntryRef`);
+    `core/manifest.ts` (`buildManifest`, `encodeManifest`, `readManifest`,
+    `writeManifest`, `digestSteps`, `digestStep`, `digestSettings`, `canonicalJson`,
+    `MANIFEST_PATH`); `core/project-state.ts` (`ProjectState`, `projectStateFor`,
+    `writeProjectState`, `removeProjectState`, `readProjectState`, `projectStatePath`);
+    `config.ts` (`Paths.state`, `AgentMarkers`, `detectAgent`, `AppConfig.agent`,
+    `AGENT_MARKER_NAMES`). `DetectedAgent` already existed in `schemas/entry.ts` from 1.0.
+  - **What remains for the wiring step, after 1.2a merges.** In `commands/new.ts`: call
+    `buildManifest(composition, { briefWords })`, write `encodeManifest(manifest)` to
+    `MANIFEST_PATH` through 1.2a's safe writer (so its rollback tracks the file), then
+    `writeProjectState(manifest, <manifest path>)` before `git init`, register
+    `removeProjectState(write)` in the rollback finalizer, and set
+    `NewResult.stateRecord` to `write.written`. In `core/scaffold/target.ts`: when the
+    target holds `MANIFEST_PATH`, read it with `readManifest`, look the record up with
+    `readProjectState(manifest.projectId)`, and add `details.scaffold` (`green` when
+    `firstGreenAt` is set, else `unfinished`, also when the manifest doesn't decode) to
+    `TargetNotEmpty`, with the human hints above. Acceptance tests 1, 2 (end to end), 5
+    and 6 (through `new`), 7 (through `new`) and 11 belong to that step; the core of 2, 3,
+    4, 5, 7, 8, 9 and 10 is tested now in `tests/manifest.test.ts`,
+    `tests/project-state.test.ts` and `tests/agent-detection.test.ts`.
+  - **`InvalidConfig` gained details.** The tag had none. It now has the closed
+    `{ path, schemaVersion? }`; a manifest that isn't JSON or doesn't decode carries the
+    path, and one with `schemaVersion` above 1 carries the version too, checked before the
+    decode so a newer manifest with new keys still reports its version. The fixed "upgrade
+    quickstacks" text is a human detail line, since a tag's message is fixed. A missing
+    manifest is `NotFound` with no details (1.3a sets `looked`, the string 1.5 added, to the
+    directory its walk started from) and an unreadable one is
+    `PermissionDenied` `read`.
+  - **`ManifestStep` keeps `VerifyStep`'s optional fields.** It spreads
+    `VerifyStep.fields` without `VerifyStep`'s check (which refuses the CLI's `app` tag),
+    and keeps only the serve-needs-expect rule. `buildManifest` writes resolved steps, but
+    a hand-edited step that drops a default still decodes, and the digest applies
+    `withStepDefaults` so it matches.
+  - **`owner` is the entry id.** 1.1's owners are `{ kind, id }` because a stack and a
+    fragment may share an id; the manifest keeps the plan's string. `owner` is outside the
+    digest and only explains a step, so the ambiguity is cosmetic.
+  - **`projectId` is restricted** to letters, digits and `-`. It names the state record
+    file, so an edited manifest with `../` in it can't point 1.3b's lookup elsewhere.
+  - **The state record is written without following links.** It goes to a fresh
+    temporary file opened with exclusive create and is renamed over
+    `<projectId>.json`, which replaces a planted link instead of writing through it.
+    `manifestPath` is `FileSystem.realPath` of the manifest the caller just wrote; if that
+    fails the write is `PermissionDenied` `read`. Any filesystem failure under the state
+    directory is `{ written: false }` with one warning log line, not an error.
+  - **Project id.** Effect 4.0.6's `Random` has no UUID function, so `buildManifest`
+    builds a version 4 UUID from 16 `Random` bytes; a seeded `Random` gives a fixed id.
+  - **Scaffold facts.** `buildManifest` takes only the composition (which carries the
+    preset and agents) and `briefWords`. The project name and template variables have no
+    manifest field in this plan's schema, so they aren't passed.
+  - **Marker confirmation dates** were first all set to 2026-10-26, the date this
+    plan's table was written, without checking any agent's documentation. Review
+    removed them: `confirmed` is now optional and unset on every marker.
+  - **`childEnv` is unchanged.** It already takes a `remove` list; 1.3a passes
+    `AGENT_MARKER_NAMES` when it builds a verify step's environment. Git commands from
+    `new` don't strip them.
+- 2026-10-26, from wiring the core into `new` on feat/phase-1:
+  - **The manifest is in `NewResult.written`** (and so in the brief's list of files
+    written), like every other file `new` writes. The `new` tests' expected file lists
+    gained it on purpose.
+  - **The manifest is built once, before the first write**, from the brief's first count.
+    When `git init` fails and 1.2a re-renders the brief, the manifest is replaced through
+    the safe writer with the new `briefWords`; its id and digest stay, so the state record
+    written before git still matches it.
+  - **The state record's rollback is `Effect.acquireRelease`**, not a hook into the
+    writer: the record is outside the project, so the writer doesn't track it. Acquiring
+    is uninterruptible, so a record that was written always has its release.
+  - **`details.scaffold` is computed only when the target's entries include
+    `.quickstacks`.** A missing manifest (including a `.quickstacks/` without one) gives
+    no `scaffold` key; one that can't be read or decoded, or a newer `schemaVersion`, is
+    `unfinished`. The record is looked up by project id only, not by `manifestPath`.
+  - **The `green` hint doesn't tell the user to run `add`**, which doesn't exist until
+    3.0. It reads "This is a finished project." and "Next: pick another directory for a
+    new project; `add` will extend this one once it ships." 3.0 should point it at the real
+    command. Both hints end with a `Next:` line, replacing the generic one.
+  - **Test file**: the `new` acceptance tests are in `tests/new-manifest.test.ts`
+    (tests 1, 2, 5, 6, 7, 11, and 9 through `new`), plus a test that the rewritten
+    brief's count reaches the manifest. `tests/new.test.ts`'s SIGINT test on a real
+    process now also checks the state record is removed. Test 6 uses the interrupt during
+    `git init`, the only step after the state record; there is no later file write to make
+    unwritable.
+  - **Manual run** with the realistic fixture registry in sandbox mode: ten files
+    written (the manifest included), a fresh repository, `stateRecord: true`, the record
+    under `$XDG_STATE_HOME/quickstacks/projects/` with the manifest's real path, and a
+    rerun into the same directory gave `TargetNotEmpty` with `scaffold: "unfinished"`
+    and the hint.
+- 2026-10-26, from the code review of `new` on feat/phase-1:
+  - **Open item for 1.3b: every agent marker is unverified.** No row of
+    `AgentMarkers` has been checked against its agent's documentation, so none has a
+    `confirmed` date. `CLAUDE_CODE`, `CODEX_CI` and `CODEX_THREAD_ID` may not exist at
+    all; `CLAUDECODE`, `CODEX_SANDBOX`, `OPENCODE`, `OPENCODE_CLIENT`, `CURSOR_AGENT`,
+    `CURSOR_EXTENSION_HOST_ROLE=agent-exec` and `AI_AGENT` need checking too. Before
+    1.3b makes `--accept-changes` depend on detection, check each one, drop those that
+    don't exist and set `confirmed` on the rest.
+  - **`QUICKSTACKS_STATE_DIR`** replaces the whole state directory (no `quickstacks/`
+    appended), matching `QUICKSTACKS_DATA_DIR`. `bun run dev new` used to write its
+    records into the developer's real `~/.local/state`.
+  - **`projectStatePath` checks the id itself.** `ProjectId` is exported from
+    `schemas/manifest.ts` and `projectStatePath` returns no path for an id it refuses, so
+    `readProjectState` gives no record and `writeProjectState` gives `{ written: false }`
+    whatever string a caller passes, not only for a decoded manifest.
+  - **Human mode says when the record wasn't written**: "State record: not written (the
+    state directory isn't writable), so verify's tamper check will use the manifest
+    only." JSON callers already had `stateRecord: false`.

@@ -18,6 +18,15 @@ test("config is closed and rejects invalid values readably", () => {
     { additionalProperties: false },
   );
 });
+test("config decodes always, agents, author and the snake_case package_scope", () => {
+  const decode = Schema.decodeUnknownSync(Settings, { onExcessProperty: "error" });
+  expect(
+    decode({ always: ["ci"], agents: ["claude", "codex"], author: "Ada", package_scope: "@acme" }),
+  ).toEqual({ always: ["ci"], agents: ["claude", "codex"], author: "Ada", packageScope: "@acme" });
+  expect(() => decode({ packageScope: "@acme" })).toThrow();
+  expect(() => decode({ agents: ["emacs"] })).toThrow(/agents/);
+  expect(() => decode({ package_scope: "@Acme Corp" })).toThrow(/package_scope/);
+});
 it.effect("test clock drives scoped fibers", () =>
   Effect.gen(function* () {
     const fiber = yield* Effect.sleep("1 second").pipe(Effect.as("ready"), Effect.forkChild);

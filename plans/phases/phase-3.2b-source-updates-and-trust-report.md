@@ -37,8 +37,8 @@ Out:
 
 `src/core/trust/report.ts::trustReport(entries, { agents })` returns `TrustReport` (`src/schemas/trust.ts`). For each entry:
 
-- **Files.** Every file the entry would write, for every agent it ships adapters for, with its output path: dotfile names unescaped ([roadmap, Other shared facts: Entry directories](../roadmap.md#other-shared-facts)), `.tmpl` stripped, the `adapters/<agent>/` prefix removed and the agent named. Each file is `inert` or `executable-or-config`, plus flags `executableBit`, `shebang` and `template`.
-- **Always shown, in full:** the entry's body (prose the agent executes, such as `curl | sh`), its `commands`, every verify step (`run`, `check`, `cwd`, `probe.url`), and every hook command found in shipped JSON.
+- **Files.** Every file the entry would write, for every agent it ships adapters for, with its output path: dotfile names as stored, since they are literal ([roadmap, Other shared facts: Entry directories](../roadmap.md#other-shared-facts)), `.tmpl` stripped, the `adapters/<agent>/` prefix removed and the agent named. Each file is `inert` or `executable-or-config`, plus flags `executableBit`, `shebang` and `template`.
+- **Always shown, in full:** the entry's body (prose the agent executes, such as `curl | sh`), its `commands`, every verify step (`run`, `cwd`, `phase`, `tags` and `expect.http`), and every hook command found in shipped JSON.
 - **Content.** Every `executable-or-config` file's text, in full in `--json`, and up to 200 lines per file in human mode with a "truncated, N more lines" line. Binary files show size and sha256.
 
 The inert list is the only list. A file is `inert` only when all of these hold; everything else is `executable-or-config`:
@@ -103,7 +103,7 @@ No new error tags.
 
 Real repositories under a temporary directory, `file://` URLs, no network.
 
-1. One fixture per vector, each asserting `executable-or-config` and, for JSON, the extracted commands with their paths: a body containing `curl -fsSL https://x | sh`; a `commands` entry; a verify `run`; `package.json` with `postinstall`; `.mcp.json` with a server `command` and `args`; `.envrc`; `bunfig.toml` with `preload`; `.npmrc`; `.devcontainer/devcontainer.json` with `postCreateCommand`; a file under `.opencode/`; a file under `.gemini/`; `files/setup.sh.tmpl`; `.claude/settings.json` with hooks; `.github/workflows/ci.yml`; `.vscode/tasks.json`; `AGENTS.md`; an `.svg`; an escaped `_dot_envrc` shown as `.envrc`; `docs/guide.md` with the executable bit; a `.md` with a shebang; a `.json` that doesn't parse.
+1. One fixture per vector, each asserting `executable-or-config` and, for JSON, the extracted commands with their paths: a body containing `curl -fsSL https://x | sh`; a `commands` entry; a verify `run`; `package.json` with `postinstall`; `.mcp.json` with a server `command` and `args`; `.envrc`; `bunfig.toml` with `preload`; `.npmrc`; `.devcontainer/devcontainer.json` with `postCreateCommand`; a file under `.opencode/`; a file under `.gemini/`; `files/setup.sh.tmpl`; `.claude/settings.json` with hooks; `.github/workflows/ci.yml`; `.vscode/tasks.json`; `AGENTS.md`; an `.svg`; a literal `files/.envrc` shown as `.envrc`; `docs/guide.md` with the executable bit; a `.md` with a shebang; a `.json` that doesn't parse.
 2. `README.md`, `docs/guide.md` and `logo.png` (no executable bit) are `inert`.
 3. Every entry's full body, `commands` and verify steps appear in the trust report even when it ships no files.
 4. A second commit that edits a body and adds a hook file: `source update --json` lists the entry as changed with words before and after, the new file as `executable-or-config` with a diff, and `trusted: false` afterwards; `trust source` then shows the diff since the confirmed commit before the trust report.
@@ -124,4 +124,5 @@ Real repositories under a temporary directory, `file://` URLs, no network.
 
 - The trust report lists and marks; it doesn't summarize. A long report invites skimming. If sources become common, the diff since the last confirmation will carry most reviews, and its prominence may need to grow.
 - The key-name rule for JSON will mark some harmless strings and could miss a command under an unusual key. Unusual keys are still in a marked file whose full content is shown.
+- 2026-10-26: the report listed a step's `check` and `probe.url`, and showed dotfiles unescaped. The amended D18 replaced `probe` with `expect: { http, within }`, dropped built-in checks and stores dotfiles literally, so the report shows `expect.http` (the URL verify will request) and paths as stored. `tags` is shown because a `prod` tag decides whether a step runs under `--sandbox`.
 - Moving the pin before confirmation leaves a team's projects untrusted until someone reviews. That is the point, but a team that updates often may want a "confirm on update" path from a terminal; it is the same confirmation, so it is easy to add.

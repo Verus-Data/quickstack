@@ -9,7 +9,7 @@ Status: DRAFT 2026-10-26 (not agreed)
 | Depends on | 3.1a (`show`'s report and the preview the guide tells authors to use), 2.2 (the rot checks the guide teaches authors to pass; D8 as revised puts authoring after local proof) |
 | Blocks | Nothing |
 | Decisions needed | D8 (proposed, revised): if authoring were allowed before phase 2, the 2.2 dependency would drop and the guide would omit the rot checks. D18 (proposed): the skeleton is written against entry format v1; a different format changes the skeleton, not the commands. D19 (proposed): if project entries were trusted by default, `create --from project` would need no review |
-| Settles | What `create` scaffolds; what `--from <origin>` means; the `preset` setting; where `packageScope` is built (3.3a, D28) |
+| Settles | What `create` scaffolds; what `--from <origin>` means; the `preset` setting |
 
 ## Scope
 
@@ -22,7 +22,7 @@ In:
 Out:
 
 - `always`, `agents` and `author`: they already exist (1.1 adds them; 1.2a and 1.4 read them, per [roadmap, Other shared facts: Settings fields](../roadmap.md#other-shared-facts)).
-- `packageScope`. A `{{package_scope}}` template variable (set from `Settings.packageScope` or `new --scope`) is a new name in 1.2a's fixed variable set, where an unknown name is `EntryInvalid`, so it is a format change (a D18 amendment, a `validate` rule and the [Schema versions](../roadmap.md#schema-versions) consequence). It is proposed as D28 and built in [3.3a](phase-3.3a-release-and-deploy-fragments.md), where the release fragments that publish packages first need it. `create` skeletons gain no scope field; the authoring guide links 3.3a's description of the variable once it lands.
+- `package_scope`. It is already part of entry format v1 (D18 as amended): `Settings.package_scope` is added by 1.1, `new --scope` sets it for one run, and 1.2a renders `{{package_scope}}`. `create` skeletons gain no scope field; the authoring guide says when a `.tmpl` file should use the variable.
 - Copying an entry under a new id, and partial inheritance. `--from` copies whole entries under the same id.
 - An interactive wizard; editing existing entries; publishing or sharing (3.2a, 4.0c).
 - Any CI wiring (D23).
@@ -39,10 +39,10 @@ Writes to the user origin, `$XDG_CONFIG_HOME/quickstacks/{stacks,fragments}/<id>
 
 A stack skeleton:
 
-- `STACK.md` with every v1 frontmatter field present, `id` and `kind` filled in, a `quickstacks:fill` placeholder for the description, one decision in the "(default: ...)" form, verify steps covering the D7 layers that call project commands (`make install`, `make lint`, `make typecheck`, `make test`) plus a built-in `filled` check on `README.md`, and body headings Layout, Setup, Conventions, Tool configuration, Testing, Commands, Gotchas, each with one line saying what goes there.
-- `files/_dot_gitignore` (the escaped name from [Other shared facts: Entry directories](../roadmap.md#other-shared-facts)) and `files/README.md` containing `quickstacks:fill`.
+- `STACK.md` with every v1 frontmatter field present, `id` and `kind` filled in, a `quickstacks:fill` placeholder for the description, one decision in the "(default: ...)" form, verify steps covering the D7 layers that call project commands (`make install`, `make lint`, `make typecheck`, `make test`) plus a `readme` step (`phase: check`, `layer: docs`) whose `run` fails while `README.md` is empty or still holds a `quickstacks:fill` marker (v1 has no built-in checks, so it is a short command), and body headings Layout, Setup, Conventions, Tool configuration, Testing, Commands, Gotchas, each with one line saying what goes there.
+- `files/.gitignore` (dotfiles are stored literally; [Other shared facts: Entry directories](../roadmap.md#other-shared-facts)) and `files/README.md` containing `quickstacks:fill`.
 
-A fragment skeleton has the fragment fields (`category`, `appliesTo`, `requires`, `conflicts`, `requiresTools`, `needsOwnRepo`, `merge`) and headings What to add, Tool configuration, Verify, AGENTS.md.
+Frontmatter keys are written snake_case, as authors write them. A fragment skeleton has the fragment fields (`category`, `applies_to`, `requires`, `conflicts`, `requires_tools`, `needs_own_repo`, `merge`) and headings What to add, Tool configuration, Verify, AGENTS.md. `--category app` writes an app: a fragment with `category: app`, whose body headings follow the application half of 1.1's split brief. An app's `applies_to` must name a stack, which `create` can't guess, so a fresh app skeleton has that one error until the author fills it.
 
 `validate` on a fresh skeleton reports zero errors and only `quickstacks:fill` findings; a test enforces it so the skeleton can't drift from the format.
 
@@ -74,7 +74,8 @@ The copy is byte for byte, `files/` and `adapters/` included. A copied entry is 
 
 - Sorting a project into frontmatter, prose and `files/`, and the rule that anything that would be wrong after the next major release goes in prose, with the three forms a stale fact can take instead: the durable rule, a discovery step, or a verify step that asks the tool.
 - Setup as numbered steps that run generators non-interactively into a subdirectory.
-- Verify steps that call project commands and cover the D7 layers, using built-in check kinds instead of shell.
+- Verify steps that call project commands and cover the D7 layers; a `serve` step with `expect: { http, within }` for a dev server; a short command for a file check, since v1 has no built-in check kinds.
+- The format details authors trip on: snake_case frontmatter keys, literal dotfiles under `files/`, `{{package_scope}}` and the other fixed template variables in `.tmpl` files, and `quickstacks:when` / `quickstacks:end` markers for conditional prose.
 - Every decision stating its default; when something is a fragment.
 - Staying within the D5 budget with `validate --brief`: move shared material to an optional fragment, reference material into a shipped doc the body points to, and cut what the agent would do anyway.
 - What 2.2's rot checks flag and how to fix each.
@@ -103,7 +104,6 @@ No new error tags.
 | Question | Decision | Why |
 |---|---|---|
 | `--from` value | An origin; the id is the positional argument | One meaning; the copy shadows by id |
-| `packageScope` | Not here; D28, built in [3.3a](phase-3.3a-release-and-deploy-fragments.md) | It is a format change, not a setting, and the first content that needs it is 3.3a's |
 | Copying under a new id | Not supported | `id` must equal the directory name; renaming a copy is two edits the guide describes |
 | Preset precedence | Flag, then setting, then `"default"` | Flags always win for one run |
 
@@ -122,7 +122,7 @@ No new error tags.
 
 ## Acceptance tests
 
-1. `create stack my-api`, then `validate <userdir>/stacks/my-api --json`: zero errors, only fill-marker findings. Same for `create fragment my-ci`.
+1. `create stack my-api`, then `validate <userdir>/stacks/my-api --json`: zero errors, only fill-marker findings. Same for `create fragment my-ci`. `create fragment my-app --category app` gives exactly one error, the empty `applies_to`, and after `applies_to` names a stack, zero.
 2. `create stack go-cli --from bundled` copies the entry byte for byte; `list --json` then shows `go-cli` with `origin: "user"` and `shadows: ["bundled"]`; `new go-cli` uses the copy (a marker sentence added to its body appears in the brief).
 3. `create stack x --from project` with `CLAUDECODE=1` exits 6 and writes nothing; with `stdinIsTTY: false` and no marker, exits 6; with a TTY, no marker and `--yes`, stderr holds the trust report and the copy exists and is trusted.
 4. `create stack x --from user` exits 2.
@@ -142,3 +142,4 @@ No new error tags.
 - Authors may want inheritance ("go-cli but with my lint rules") more than whole copies. If personal stacks turn out to be near-copies, the guide should push fragments harder; real inheritance is a format change.
 - The skeleton's verify steps assume Make-style project commands. Stacks with package scripts will rewrite them every time; a `--scripts` flag may earn its place.
 - The interim review before 3.2b is `show`'s plain output. It lists everything but marks nothing; a person may skim it. 3.2b's allowlist marks are the fix, and project-entry copies are rare enough to wait.
+- 2026-10-26: this plan wrote camelCase skeleton keys, a `_dot_gitignore` file, a built-in `filled` check, and left `packageScope` to D28 and 3.3a. The amended D18 made keys snake_case, dotfiles literal, dropped built-in checks (the skeleton's README step is a command) and put `package_scope` in v1, so nothing about it is built here or in 3.3a. Apps became fragments with `category: app`, so `create` gets no `app` subcommand, only `--category app`, whose skeleton can't pass `validate` until the author names a stack.

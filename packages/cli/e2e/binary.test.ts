@@ -1,11 +1,25 @@
 import { describe, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { Schema } from "effect";
 import { version } from "../package.json";
+import { Manifest } from "../src/schemas/manifest";
 
 const binary = join(import.meta.dir, "../dist/quickstacks");
-async function invoke(args: readonly string[], prepare?: (dir: string) => void) {
+async function invoke(
+  args: readonly string[],
+  prepare?: (dir: string) => void,
+  extra: Record<string, string> = {},
+) {
   const dir = mkdtempSync(join(tmpdir(), "cli-binary-"));
   try {
     prepare?.(dir);
@@ -17,6 +31,7 @@ async function invoke(args: readonly string[], prepare?: (dir: string) => void) 
         LOG_LEVEL: "none",
         NO_COLOR: "1",
         PATH: "/usr/bin:/bin",
+        ...extra,
       },
       stdout: "pipe",
       stderr: "pipe",
@@ -67,6 +82,77 @@ describe("real standalone binary", () => {
     });
     expect(result.status).toBe(0);
     expect(JSON.parse(result.stdout).configErrors).toEqual(["Configuration is invalid."]);
+  });
+  test("list --json reads the registry QUICKSTACKS_REGISTRY_DIR names", async () => {
+    const registry = join(import.meta.dir, "../tests/fixtures/registry-real");
+    const result = await invoke(["list", "--json"], undefined, {
+      QUICKSTACKS_REGISTRY_DIR: registry,
+    });
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe("");
+    const listed = JSON.parse(result.stdout);
+    expect(listed.rejected).toEqual([]);
+    expect(listed.entries.map((row: { id: string }) => row.id)).toEqual([
+      "typescript-cli",
+      "effect",
+      "effect-schema",
+      "git-hooks",
+      "openrouter-chat-cli",
+    ]);
+  });
+  test("validate and validate --brief run from the binary over QUICKSTACKS_REGISTRY_DIR", async () => {
+    const registry = join(import.meta.dir, "../tests/fixtures/registry-real");
+    const env = { QUICKSTACKS_REGISTRY_DIR: registry };
+    const result = await invoke(["validate", "--json"], undefined, env);
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe("");
+    const report = JSON.parse(result.stdout);
+    expect(report).toMatchObject({ root: registry, bundled: true });
+    expect(report.findings.filter((f: { severity: string }) => f.severity === "error")).toEqual([]);
+    const brief = await invoke(
+      ["validate", "--brief", "typescript-cli", "--sandbox"],
+      undefined,
+      env,
+    );
+    expect(brief.status).toBe(0);
+    expect(brief.stdout).toContain(`npx -y quickstacks@${version}`);
+    expect(brief.stdout).toMatch(/\nBrief: [\d,]+ words \(fixed text [\d,]+\), limit 6,000\n/);
+  });
+  test("list with no registry suggests doctor", async () => {
+    const result = await invoke(["list"]);
+    expect(result).toEqual({
+      stdout: "No stacks or fragments found.\n\nNext: quickstacks doctor\n",
+      stderr: "",
+      status: 0,
+    });
+  });
+  test("new --sandbox --json writes the project, its brief and an executable hook", async () => {
+    const out = mkdtempSync(join(tmpdir(), "cli-binary-new-"));
+    try {
+      const app = join(out, "app");
+      const result = await invoke(["new", "fixture-stack", app, "--sandbox", "--json"], undefined, {
+        QUICKSTACKS_REGISTRY_DIR: join(import.meta.dir, "../tests/fixtures/registry-new"),
+      });
+      expect(result.stderr).toBe("");
+      expect(result.status).toBe(0);
+      const created = JSON.parse(result.stdout);
+      expect(created).toMatchObject({ project: app, stack: "fixture-stack", preset: "sandbox" });
+      expect(created.written).toContain(".quickstacks/BRIEF.md");
+      for (const rel of created.written) expect(existsSync(join(app, rel))).toBe(true);
+      expect(readFileSync(join(app, "README.md"), "utf8")).toStartWith("# app\n");
+      expect(statSync(join(app, ".githooks/pre-commit")).mode & 0o111).not.toBe(0);
+      expect(existsSync(join(app, "ran"))).toBe(false);
+      expect(created.stateRecord).toBe(true);
+      expect(created.written).toContain(".quickstacks/manifest.json");
+      const manifest = Schema.decodeUnknownSync(Manifest)(
+        JSON.parse(readFileSync(join(app, ".quickstacks/manifest.json"), "utf8")),
+        { onExcessProperty: "error" },
+      );
+      expect(manifest).toMatchObject({ schemaVersion: 1, mode: "new", preset: "sandbox" });
+      expect(manifest.briefWords).toBe(created.briefWords);
+    } finally {
+      rmSync(out, { recursive: true, force: true });
+    }
   });
   test("does not autoload dotenv or bunfig from working directory", async () => {
     const result = await invoke(["doctor", "--json"], (dir) => {

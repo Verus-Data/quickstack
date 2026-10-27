@@ -6,7 +6,7 @@ Status: DRAFT 2026-10-26 (not agreed)
 |---|---|
 | Goal | Move the entry, manifest and run-record schemas out of `packages/cli` into a private `packages/format`, add `canonicalBundle` and `bundleDigest`, and leave every CLI behavior unchanged |
 | Traces to | D11: "shared code gets its own package". The index build (4.0c), the remote origin (4.0d), the API (4.0b onward) and telemetry (4.1a, 4.1b) all need the same schemas; this is the second consumer D11 waits for |
-| Depends on | 1.3b (`RunRecord` exists to move), 1.6c (the published package whose packing 0.2 defined); 3.5a soft (the `app` kind; see Canonical bundle) |
+| Depends on | 1.3b (`RunRecord` exists to move), 1.6c (the published package whose packing 0.2 defined) |
 | Blocks | 4.0b, 4.1a; through them all of phase 4 |
 | Decisions needed | None. If D11 is ever reversed, this sub-phase is skipped and later sub-phases import from `packages/cli` through a published entry point instead |
 | Settles | What lives in `packages/format`; how the CLI depends on it without publishing it; the canonical bundle form |
@@ -16,7 +16,7 @@ Status: DRAFT 2026-10-26 (not agreed)
 In:
 
 - A new private workspace package `packages/format` (`@quickstacks/format`, `"private": true`), never published.
-- Moving the contracts the roadmap marks "moves in 4.0a" (see roadmap, [Contracts: Types and schemas](../roadmap.md#types-and-schemas)): `AgentId` and `DetectedAgent`; Entry format v1 (`StackMeta`, `FragmentMeta`, `VerifyStep`, `Probe`, `Check`); `Manifest`, `ManifestStep`, `EntryRef`; `RunRecord`. Same names, same behavior.
+- Moving the contracts the roadmap marks "moves in 4.0a" (see roadmap, [Contracts: Types and schemas](../roadmap.md#types-and-schemas)): `AgentId` and `DetectedAgent`; Entry format v1 (`StackMeta`, `FragmentMeta`, `VerifyStep`, `Probe`, `Check`); `Manifest`, `ManifestStep`, `EntryRef`; `RunRecord`. Same names, same behavior. `RunRecord` moves carrying 3.5b's optional `stages` field.
 - New: `EntryBundle` schema, `canonicalBundle` and `bundleDigest` (roadmap, Contracts: Canonical bundle).
 - Rewriting every CLI import of the moved code to `@quickstacks/format` in this one change, and deleting the old files.
 - A Grit boundary in the format package banning platform imports.
@@ -58,13 +58,13 @@ The package needs `typecheck`, `test` and `coverage` scripts so the root fan-out
 
 Two digests, never confused: `fingerprint` (CLI, 2.0a) is a sha256 over a whole composition (its entries, the preset and the `composeFiles` output); `bundleDigest` (here) is a sha256 over one entry's canonical bundle.
 
-An entry bundle is every file under an entry's directory (`STACK.md`, `FRAGMENT.md` or `APP.md`, `files/`, `adapters/`), as bytes, with the executable bit.
+An entry bundle is every file under an entry's directory (`STACK.md` or `FRAGMENT.md`, `files/`, `adapters/`), as bytes, with the executable bit.
 
 ```ts
 // packages/format/src/bundle.ts (shape)
 export const BundlePath = Schema.String.check(/* relative, "/"-separated, no "..", no leading "/", no "\\", no NUL */);
 export const EntryBundle = Schema.Struct({
-  id: EntryId, kind: Schema.Literals(["stack", "fragment", "app"]),
+  id: EntryId, kind: Schema.Literals(["stack", "fragment"]),
   files: Schema.Array(Schema.Struct({
     path: BundlePath, executable: Schema.Boolean,
     encoding: Schema.Literals(["utf8", "base64"]), content: Schema.String,
@@ -74,9 +74,9 @@ export const canonicalBundle: (bundle: EntryBundle) => Uint8Array;  // determini
 export const bundleDigest: (bundle: EntryBundle) => Effect.Effect<Digest>; // sha256 hex of canonicalBundle
 ```
 
-Rules (roadmap, Contracts: Canonical bundle): files sorted by path using byte order of the UTF-8 path; keys in the fixed order `id, kind, files` and `path, executable, encoding, content`; `utf8` only when the bytes round-trip exactly through UTF-8 decoding, otherwise `base64`; no whitespace; content is the raw file bytes, with no line-ending or trailing-newline normalization. Paths keep the escaped dotfile names from the entry directory (`_dot_gitignore`), so the digest of a bundled copy and an index copy of the same entry is the same. `bundleDigest` uses Web Crypto (`crypto.subtle.digest`), which exists on Node, Bun and Workers, so the package needs no platform import.
+Rules (roadmap, Contracts: Canonical bundle): files sorted by path using byte order of the UTF-8 path; keys in the fixed order `id, kind, files` and `path, executable, encoding, content`; `utf8` only when the bytes round-trip exactly through UTF-8 decoding, otherwise `base64`; no whitespace; content is the raw file bytes, with no line-ending or trailing-newline normalization. Paths are the names in the entry directory, dotfiles included as stored (literally, `files/.gitignore`), so the digest of a bundled copy and an index copy of the same entry is the same. `bundleDigest` uses Web Crypto (`crypto.subtle.digest`), which exists on Node, Bun and Workers, so the package needs no platform import.
 
-`kind` includes `"app"` (D26). 3.5a defines the kind; if it hasn't landed when this sub-phase runs, the literal is still declared here so the format package never changes an existing export later.
+`kind` is `src/schemas/entry.ts::Kind` as 1.0 declared it, moved here unchanged. An app is a fragment with `category: app` (D18 as amended), so it is bundled with `kind: "fragment"` and there is no third kind to reserve.
 
 `BundlePath` rejects path traversal at decode time so every reader of a bundle (the CLI extracting one, the API reading one) gets the check for free.
 
@@ -111,4 +111,5 @@ Rules (roadmap, Contracts: Canonical bundle): files sorted by path using byte or
 
 - Exporting `.ts` source assumes every consumer transforms TypeScript. Vitest, Bun and Wrangler's bundler do. If a tool doesn't (a future Node-only script), add a build step then rather than now.
 - `crypto.subtle.digest` is async, so `bundleDigest` returns an Effect. If a caller needs it synchronously, that caller is wrong about where it runs, not the function.
+- 2026-10-26: `EntryBundle.kind` reserved `"app"` for 3.5a's entry kind, the bundle listed `APP.md`, and bundle paths kept `_dot_` escaped names. The amended D18 withdrew 3.5a (an app is a fragment), so `kind` is `stack | fragment`, and dotfiles are literal in the entry directory, so bundle paths are too. A bundle path starting with `.` is ordinary; `BundlePath`'s traversal rules are unchanged.
 - Leaving `compose`, `composeFiles` and `fingerprint` in the CLI means the API can never compose a stack or compute a fingerprint itself. Nothing in phase 4 needs it to; if that changes, they move then, with the same "second consumer" rule.

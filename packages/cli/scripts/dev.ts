@@ -6,11 +6,19 @@
 //   - JSON log lines go to logs/cli.jsonl (QUICKSTACKS_LOG_FILE), appended across runs.
 //   - stderr is copied to logs/cli.log. Both files move to *.prev.* past 5 MB.
 //   - Development data is saved in .dev/data (QUICKSTACKS_DATA_DIR), not your real ~/.local/share/quickstacks.
+//   - Project state records go to .dev/state (QUICKSTACKS_STATE_DIR), not ~/.local/state/quickstacks.
 // Everything else (stdin, stdout, the exit code, Ctrl+C) passes straight through.
 import { appendFileSync, existsSync, mkdirSync, renameSync, statSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 
 const root = join(import.meta.dirname, "..");
+// The directory `bun run dev` was run from. Bun runs a script from its package directory and sets
+// PWD to it, but sets npm_config_local_prefix to where `bun run` started; the root script passes
+// that on as INIT_CWD (npm sets INIT_CWD itself). Under `bun run --cwd` both name the --cwd
+// directory, so a caller outside the repository sets INIT_CWD="$PWD".
+const caller =
+  process.env.INIT_CWD || process.env.npm_config_local_prefix || process.env.PWD || process.cwd();
+const registry = process.env.QUICKSTACKS_REGISTRY_DIR;
 const logs = join(root, "logs");
 mkdirSync(logs, { recursive: true });
 
@@ -24,19 +32,29 @@ const args = process.argv.slice(2);
 // Preserve terminal capabilities for interactive invocations; structured logs remain on disk.
 const interactive = process.stdin.isTTY && process.stdout.isTTY;
 
-const child = Bun.spawn([process.execPath, join(root, "src/bin.ts"), ...args], {
-  env: {
-    ...process.env,
-    LOG_LEVEL: process.env.LOG_LEVEL || "info",
-    QUICKSTACKS_LOG_FILE: process.env.QUICKSTACKS_LOG_FILE ?? join(logs, "cli.jsonl"),
-    QUICKSTACKS_DATA_DIR: process.env.QUICKSTACKS_DATA_DIR || join(root, ".dev", "data"),
-    // Colors survive the pipe when the real stderr is a terminal.
-    ...(process.stderr.isTTY && !process.env.NO_COLOR ? { FORCE_COLOR: "1" } : {}),
+// The CLI runs in the caller's directory, so `new` writes there and the project registry is
+// looked up there, as with the installed binary. Bun would autoload a .env and a bunfig.toml
+// from that directory; both are switched off, like the binary's compile options. This wrapper's
+// own environment (including packages/cli/.env, loaded when it started) still passes through.
+const child = Bun.spawn(
+  [process.execPath, "--no-env-file", "--config=/dev/null", join(root, "src/bin.ts"), ...args],
+  {
+    cwd: caller,
+    env: {
+      ...process.env,
+      LOG_LEVEL: process.env.LOG_LEVEL || "info",
+      QUICKSTACKS_LOG_FILE: process.env.QUICKSTACKS_LOG_FILE ?? join(logs, "cli.jsonl"),
+      QUICKSTACKS_DATA_DIR: process.env.QUICKSTACKS_DATA_DIR || join(root, ".dev", "data"),
+      QUICKSTACKS_STATE_DIR: process.env.QUICKSTACKS_STATE_DIR || join(root, ".dev", "state"),
+      ...(registry ? { QUICKSTACKS_REGISTRY_DIR: resolve(caller, registry) } : {}),
+      // Colors survive the pipe when the real stderr is a terminal.
+      ...(process.stderr.isTTY && !process.env.NO_COLOR ? { FORCE_COLOR: "1" } : {}),
+    },
+    stdin: "inherit",
+    stdout: "inherit",
+    stderr: interactive ? "inherit" : "pipe",
   },
-  stdin: "inherit",
-  stdout: "inherit",
-  stderr: interactive ? "inherit" : "pipe",
-});
+);
 
 // Forward direct wrapper signals as well as terminal-delivered signals.
 for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const) {

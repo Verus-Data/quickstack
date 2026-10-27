@@ -7,10 +7,11 @@ proposals are in [requirements.md](requirements.md#proposed-decisions).
 
 ## TL;DR
 
-Six phases. Phases 0 and 1 are the MVP: the core loop from the problem statement,
-published by hand so `npx quickstacks` works, with three bundled stacks sized so one
-composed brief is near 3,000 words and one is near the 5,000-word budget. The MVP is the
-demo. After it, the order is local proof, then reach, then scale, then automation:
+Six phases. Phases 0 and 1 are the MVP: the core loop from the problem statement, run
+from the repo or the compiled binary, over the bundled catalog. The MVP is the demo.
+Packaging for npm (0.2), reserving the name and publishing (1.6c) are the final step
+before public release, after the [feature gaps](#feature-gaps-to-close-before-release)
+are closed. After it, the order is local proof, then reach, then scale, then automation:
 
 1. Phase 2: stacks prove themselves on a maintainer's machine. Run records, a ledger, a
    fingerprint, a bench that drives the user's own agent headlessly, and the
@@ -56,8 +57,9 @@ never restates it.
 The MVP is everything in phases 0 and 1, and nothing else. It is done when all of this is
 true:
 
-- `npx quickstacks@latest list --json` works on a macOS or Linux machine with only Node
-  installed (D12, D22).
+- `quickstacks list --json` works from the repo (`bun run dev`) or the compiled binary on
+  macOS and Linux. `npx quickstacks@latest` (D12, D22) is the release step's, not the
+  MVP's.
 - `quickstacks new <stack> <dir> --sandbox` writes the starter files,
   `.quickstacks/BRIEF.md` and `.quickstacks/manifest.json`, runs no command from any
   entry, and hands off to the agent on PATH, to the agent that called it, or prints the
@@ -75,13 +77,15 @@ true:
   one is near 5,000 (D13), so the long-brief assumption gets a first data point.
 - A2-A4 are in the README decisions log before the package is published, because exit 5,
   the `details` envelope and the signal policy are permanent once agents depend on them.
-- The package is published to npm by a maintainer by hand (1.6c). The tag-driven release
-  workflow and npm provenance are phase 5 (5.0).
+- Publishing is not part of the MVP. A maintainer publishes to npm by hand (1.6c) as the
+  final step before public release, after 0.2 packs the CLI and the name is reserved. The
+  tag-driven release workflow and npm provenance are phase 5 (5.0).
 
 Below the cutline, on purpose: `add`, `show`, `new --dry-run` and the naming options
 (3.1c), authoring skeletons, the agent skill (3.4c), the rot checks beyond budget and
 layers (2.2), third-party sources, the bench, telemetry, the API, the MCP server, and
-every CI change.
+every CI change. Some of these must still land before the public release; they are listed
+in [Feature gaps to close before release](#feature-gaps-to-close-before-release).
 
 ## Phases and sub-phases
 
@@ -95,35 +99,40 @@ product behavior yet.
 |---|---|---|---|---|
 | [0.0 Decisions and name](phases/phase-0.0-decisions-and-npm-name.md) | `quickstacks` reserved on npm; the MVP-gating proposals decided or deferred with a reason; A2-A4 reviewed; first stack named | Open question "Is the npm name available?"; open questions on brief budget and registry audience | nothing | In progress (owner: maintainers). Name check done; npm reservation and non-blocking decisions deferred 2026-10-26 |
 | [0.1 Repo baseline](phases/phase-0.1-repo-baseline.md) | The ported base, workspace move and review fixes committed, CI `ci-ok` green on `main` | "What has to be true for it to be worth building": a trustworthy base (D10, D11) | nothing | Executed 2026-10-26 |
-| [0.2 Distribution](phases/phase-0.2-npm-distribution-artifact.md) | A1 answered: a Node ESM bundle packed with `bun pm pack`, a Node floor check before Effect loads, bundled assets found at runtime, local e2e against the packed tarball | Open question on the npm name; the README's first command `npx quickstacks new` | 0.0 (A1, D12, D22), 0.1 | Deferred 2026-10-26 to late phase 1, before 1.6b (see below) |
+| [0.2 Distribution](phases/phase-0.2-npm-distribution-artifact.md) | A1 answered: a Node ESM bundle packed with `bun pm pack`, a Node floor check before Effect loads, bundled assets found at runtime, local e2e against the packed tarball | Open question on the npm name; the README's first command `npx quickstacks new` | 0.0 (A1, D12, D22), 0.1 | Deferred 2026-10-26 to the final step before public release, with the npm reservation and 1.6c (see below) |
 | [0.3a Errors and output](phases/phase-0.3a-errors-and-output.md) | A2 and A4: one error table, closed `details`, exit 5, results kept on report-carrying failures, live progress on stderr | Agent as the main reader ("a verify command that doesn't exist", "ambiguity") | 0.1 | Executed 2026-10-26 |
 | [0.3b Processes and signals](phases/phase-0.3b-processes-and-signals.md) | The `Processes` service (process groups, bounded tails, drain, `which`) and A3, the signal policy for interactive children | The CLI hands off "to the agent the user already has"; verify runs long commands | 0.3a | Executed 2026-10-26 |
 
-0.2 keeps its number but runs late in phase 1: on 2026-10-26 the maintainers deferred
-distribution because the prototype runs from the repo. Phase 1 uses the stubs its files
-already describe until then (a stub registry path, `Host.invocation` fixed to
-`quickstacks`). It still has to land before 1.6b, whose gate runs install the packed
-tarball.
+0.2 keeps its number but runs last: on 2026-10-26 the maintainers deferred distribution
+because the prototype runs from the repo. Packaging (0.2), reserving the npm name (0.0)
+and publishing (1.6c) are together the final step before public release, after the
+[feature gaps](#feature-gaps-to-close-before-release) are closed; none of them comes
+before 1.6b. Until then phase 1 uses the stubs its files already describe (a stub
+registry path, `Host.invocation` fixed to `quickstacks`), and 1.6b's gate runs use the
+compiled binary, or a packed tarball if 0.2 has landed by then.
 
 ### Phase 1: the core loop (MVP)
 
 Goal: an agent can run `list --json`, `new --sandbox`, read the brief and loop on `verify`
-to green, on three bundled stacks, from the published package.
+to green on the bundled stacks, from the repo or the compiled binary. Publishing (1.6c) is
+listed at the [end of the plan](#release-the-final-step).
 
 | Sub-phase | Goal | Traces to | Depends on | Status |
 |---|---|---|---|---|
-| [1.0 Entry format and registry](phases/phase-1.0-entry-format-and-registry.md) | Entry format v1 (D18), `AgentId` and `DetectedAgent`, origins with `origin` and `trusted` marks (D19), `list` and `list --json` | Job 5 ("a target I can verify against"); the agent "runs `list --json`, picks a stack" | 0.3a (`Host.stdoutIsTTY`); 0.2 soft (registry path; a stub path works until then) | Not started |
-| [1.1 Composition and the brief](phases/phase-1.1-composition-and-brief.md) | Fragment composition, conditional prose, decisions, the commands map, the brief with its verify table, and `countWords` | The brief "must say which layers of testing", "a default for every decision" | 1.0; 0.2 soft (`Host.invocation` is stubbed as `quickstacks` until 0.2 lands) | Not started |
-| [1.2a `new`: scaffold and templates](phases/phase-1.2a-new-scaffold-and-templates.md) | Files written with single ownership and JSON merge through a real-path writer with rollback, templates, the ASCII slug, git init, missing tools, `--sandbox`, `--with`, `--without`, `--yes`, `--agents`, and the `new --json` result with `briefWords` and `fixedWords` | Job 1, job 2; "writes a few files and a brief"; "never runs a command from a stack" | 1.1, 0.3a, 0.3b | Not started |
-| [1.2b `new`: manifest, state record and detection](phases/phase-1.2b-manifest-state-and-detection.md) | The manifest with its step digest, the out-of-project state record, `TargetNotEmpty`'s `scaffold` detail, agent detection (`AgentMarkers`, `AppConfig.agent: DetectedAgent`) and the marker list `childEnv` strips | Job 5; the trust paragraph ("why the brief refuses to let the agent weaken a step") | 1.2a, 1.1, 0.3b | Not started |
-| [1.3a `verify`: runner and probes](phases/phase-1.3a-verify-runner-and-probes.md) | Phased step runner with timeouts, HTTP probes, self-backgrounding detection, teardown, built-in checks, the result | "verify as the definition of done"; success rows 1-3 | 1.2b, 0.3b | Not started |
+| [1.0 Entry format and registry](phases/phase-1.0-entry-format-and-registry.md) | Entry format v1 as amended (D18: snake_case frontmatter, literal dotfiles, apps as `category: app` fragments, `expect` on verify steps), `AgentId` and `DetectedAgent`, origins with `origin` and `trusted` marks (D19), `list [stacks\|fragments\|apps]` and `list --json` | Job 5 ("a target I can verify against"); the agent "runs `list --json`, picks a stack" | 0.3a (`Host.stdoutIsTTY`); 0.2 soft (registry path; a stub path works until then) | EXECUTED 2026-10-26 on feat/phase-1 (reviewed once, fixes applied) |
+| [1.1 Composition and the brief](phases/phase-1.1-composition-and-brief.md) | Fragment composition (including at most one app, ordered last), conditional prose, decisions, the commands map, the brief with its verify table (split into base and application when an app is present), and `countWords` | The brief "must say which layers of testing", "a default for every decision" | 1.0; 0.2 soft (`Host.invocation` is stubbed as `quickstacks` until 0.2 lands) | EXECUTED 2026-10-26 on feat/phase-1 (reviewed once, fixes applied) |
+| [1.2a `new`: scaffold and templates](phases/phase-1.2a-new-scaffold-and-templates.md) | Files written with single ownership and JSON merge through a real-path writer with rollback, `*.tmpl` templates (including `package_scope` from `--scope`), literal dotfiles, the ASCII slug, git init, missing tools, `--sandbox`, `--with`, `--without`, `--yes`, `--agents`, and the `new --json` result with `briefWords` and `fixedWords` | Job 1, job 2; "writes a few files and a brief"; "never runs a command from a stack" | 1.1, 0.3a, 0.3b | EXECUTED 2026-10-26 on feat/phase-1 (awaiting review) |
+| [1.2b `new`: manifest, state record and detection](phases/phase-1.2b-manifest-state-and-detection.md) | The manifest with its step digest, the out-of-project state record, `TargetNotEmpty`'s `scaffold` detail, agent detection (`AgentMarkers`, `AppConfig.agent: DetectedAgent`) and the marker list `childEnv` strips | Job 5; the trust paragraph ("why the brief refuses to let the agent weaken a step") | 1.2a, 1.1, 0.3b | EXECUTED 2026-10-26 on feat/phase-1 (awaiting batch review) |
+| [1.3a `verify`: runner and probes](phases/phase-1.3a-verify-runner-and-probes.md) | Phased step runner with timeouts, `expect.http` probes, self-backgrounding detection, teardown, the result (built-in file checks are an open additive item) | "verify as the definition of done"; success rows 1-3 | 1.2b, 0.3b | Not started |
 | [1.3b Tamper detection and run records](phases/phase-1.3b-tamper-detection-and-run-records.md) | D14 tamper check, `--accept-changes`, `RunRecord` in `runs.jsonl`, `firstGreenAt` and `firstTestPassAt` | Jobs ("why the brief refuses to let the agent weaken a step"); assumption 3; the time-pressure user | 1.3a | Not started |
-| [1.4 Handoff and entry points](phases/phase-1.4-handoff-and-entry-points.md) | Launch the agent on PATH with the signal policy, or print the prompt; the no-argument agent guide | Assumption "Handoff to whatever agent is on PATH" (D9) | 1.2a, 1.2b, 0.3b | Not started |
-| [1.5 `validate` and the brief budget](phases/phase-1.5-validate-and-brief-budget.md) | Format, composition and conditional-syntax checks; D5 budget on a canonical render; D7 verify layers | Open question "What is the brief budget?"; success row 3 | 1.1 | Not started |
-| [1.6a Bundled stack content](phases/phase-1.6a-bundled-stack-content.md) | Three stacks and their default fragments (the `agent-ops` body and AGENTS.md skeleton, `git-hooks`, `ci-github`, `api-client`) written to the word targets in D13, passing `validate`, packed with their dotfiles intact | Assumption 1 (brief size); D5, D6, D13 | 1.5; drafting can start after 1.0 | Not started |
+| [1.4 Handoff and entry points](phases/phase-1.4-handoff-and-entry-points.md) | Launch the agent on PATH with the signal policy, or print the prompt; the no-argument agent guide, and (proposed) a `guide` subcommand printing the same text | Assumption "Handoff to whatever agent is on PATH" (D9) | 1.2a, 1.2b, 0.3b | Not started |
+| [1.5 `validate` and the brief budget](phases/phase-1.5-validate-and-brief-budget.md) | Format, composition and conditional-syntax checks; D5 budget on a canonical render; D7 verify layers; the git-ignored check; `validate --brief` | Open question "What is the brief budget?"; success row 3 | 1.1 | EXECUTED 2026-10-26 on feat/phase-1 (merged from feat/phase-1.5; batch-reviewed once, fixes being applied) |
+| [1.6a Bundled catalog: bring into v1 and validate](phases/phase-1.6a-bundled-stack-content.md) | Bring the full bundled catalog (its stacks and fragments, apps included; see [Feature gaps](#feature-gaps-to-close-before-release)) into entry format v1 and pass `validate` with zero errors and zero warnings, with each composed size recorded. Content work for the whole catalog, not three new stacks written to D13's targets | Assumption 1 (brief size); D5, D6, D13 (as amended) | 1.5; drafting can start after 1.0 | Not started; re-scoped 2026-10-26 |
 | [1.6d Guardrail hook fragments](phases/phase-1.6d-guardrail-hook-fragments.md) | The Claude Code guardrails in `agent-ops`: five bash-3.2 hooks and their library, the `settings.json` deny rules and the `.claude/README.md` skeleton, with behavior tests | Job 1 ("agent config"); D14; success row "The result is complete" | 1.6a, 1.5 | Not started |
-| [1.6b MVP gate runs](phases/phase-1.6b-mvp-gate-runs.md) | One recorded green sandbox run per bundled stack from the packed tarball, with run notes in `plans/runs/` | Success rows 1-3; assumption 1; D20 | 1.6a, 1.6d, 1.3b, 1.4, 0.2 | Not started |
-| [1.6c First release](phases/phase-1.6c-first-release.md) | A2-A4 and the gate recorded, then a manual `npm publish` of the packed tarball, checked with `npx quickstacks@latest` | The README's first command `npx quickstacks new` | 1.6b, 0.0 (D20, A2-A4) | Not started |
+| [1.6b MVP gate runs](phases/phase-1.6b-mvp-gate-runs.md) | One recorded green sandbox run per bundled stack from a compiled binary or packed tarball, with run notes in `plans/runs/` | Success rows 1-3; assumption 1; D20 | 1.6a, 1.6d, 1.3b, 1.4, and a compiled binary (0.1) or a packed tarball (0.2) | Not started |
+
+1.6c, the first release, keeps its number but is listed at the
+[end of the plan](#release-the-final-step).
 
 ### Phase 2: stacks that prove themselves
 
@@ -142,28 +151,28 @@ reruns is phase 5 (5.1).
 ### Phase 3: existing repos and authors
 
 Goal: jobs 3 and 4. A developer can add a known-good piece to a repo they already have,
-and write their own stacks once, for themselves or their team. The bundled catalog grows
-past the MVP set, each new entry proved by a bench run (3.3a, 3.3c, 3.3b); agents other
-than Claude Code get native config (3.4b) and every agent can learn the loop from a
-skill (3.4c); `new` gains its dry-run and naming options (3.1c); and an app can be built
-on a stack with a brief in two phases (3.5a, 3.5b).
+and write their own stacks once, for themselves or their team. Each catalog entry beyond
+the gate set gets its own bench proof (3.3a, 3.3c, 3.3b); agents other than Claude Code
+get native config (3.4b) and every agent can learn the loop from a skill (3.4c); `new`
+gains its dry-run and naming options (3.1c); and verify reports an app's steps as their
+own stage (3.5b). Apps themselves are fragments composed in 1.1 (D18 as amended).
 
 | Sub-phase | Goal | Traces to | Depends on | Status |
 |---|---|---|---|---|
-| [3.0 `add`](phases/phase-3.0-add-fragments-to-repo.md) | Apply fragments to an existing repo without overwriting anything, after a tamper check; parked copies in `incoming/` and a merge brief | Job 4; D4 | 1.6c, 1.3b | Not started |
+| [3.0 `add`](phases/phase-3.0-add-fragments-to-repo.md) | Apply fragments to an existing repo without overwriting anything, after a tamper check; parked copies in `incoming/` and a merge brief; inside a project, `list` shows the fragments that fit the project's stack and aren't added yet | Job 4; D4 | 1.6b, 1.3b | Not started |
 | [3.1a `show` and preview](phases/phase-3.1a-show-and-preview.md) | `show` an entry with its last run, and `validate --brief` to preview a composed brief | Job 3; the stack author | 1.5, 2.0a, 2.0c | Not started |
 | [3.1b `create` and the authoring guide](phases/phase-3.1b-create-and-authoring-guide.md) | `create stack\|fragment`, `create --from`, the `preset` personal default, the authoring guide | Job 3; success row 5 | 3.1a, 2.2 | Not started |
 | [3.1c `new --dry-run` and naming](phases/phase-3.1c-new-dry-run-and-naming.md) | `new --dry-run`, `--name` and `--author`, and the full slug table (npm scopes, Unicode folding, camelCase) | Job 3; the stack author previewing a composition; job 1 | 1.2a, 1.2b, 3.1a | Not started |
 | [3.2a Git sources and the untrusted origin](phases/phase-3.2a-git-sources-and-untrusted-origin.md) | `source add <git-url>` pinned to a commit with hardened git calls, the source origin, untrusted behavior, `quickstacks trust` | Success row 5 ("third-party sources"); [Trust model](#trust-model) | 3.1a, 0.3b (`Processes.exec`); starts only when someone outside the maintainers asks for third-party sources | Not started, gated |
 | [3.2b Source updates and the trust report](phases/phase-3.2b-source-updates-and-trust-report.md) | `source update` with a diff, and the allowlist trust report shown before confirming a commit | Same as 3.2a | 3.2a | Not started, gated |
-| [3.3a Release and deploy fragments](phases/phase-3.3a-release-and-deploy-fragments.md) | Release and deploy fragments, each landing with a green default-preset bench run, plus the `package_scope` template variable (D28) and the proof rule for every later bundled entry | Job 4; job 1; open question "Who is the bundled registry for?" | 2.0b (`--preset default`), 2.0c, 2.2, 1.6c | Not started |
-| [3.3c Service, vendor and Effect fragments](phases/phase-3.3c-service-vendor-and-effect-fragments.md) | Service, vendor and Effect fragments, each landing with a green sandbox bench run under 3.3a's proof rule | Same as 3.3a | 3.3a, 2.0b, 2.0c, 2.2, 1.6c | Not started |
-| [3.3b Bundled stack expansion](phases/phase-3.3b-bundled-stack-expansion.md) | An edge-hosted React app, a desktop app and a mobile app under the same proof rule, plus a backlog of designed entries | Job 1; assumption 2; open question "Who is the bundled registry for?" | 2.0b, 2.0c, 2.2; 3.3a, 3.3c and 3.5b soft | Not started |
+| [3.3a Release and deploy fragments](phases/phase-3.3a-release-and-deploy-fragments.md) | The proof rule for every bundled entry beyond the gate set, and a green default-preset bench run for each bundled release and deploy fragment. `package_scope` is no longer built here: it is in v1 (D18 as amended, 1.2a) | Job 4; job 1; open question "Who is the bundled registry for?" | 2.0b (`--preset default`), 2.0c, 2.2, 1.6c | Not started |
+| [3.3c Service, vendor and Effect fragments](phases/phase-3.3c-service-vendor-and-effect-fragments.md) | A green sandbox bench run under 3.3a's proof rule for each bundled service, vendor and Effect fragment | Same as 3.3a | 3.3a, 2.0b, 2.0c, 2.2, 1.6c | Not started |
+| [3.3b Bundled stack expansion](phases/phase-3.3b-bundled-stack-expansion.md) | A green bench run under the same proof rule for each bundled stack outside the gate set, plus a backlog of designed entries | Job 1; assumption 2; open question "Who is the bundled registry for?" | 2.0b, 2.0c, 2.2; 3.3a, 3.3c and 3.5b soft | Not started |
 | [3.4a Agent harness fragment](phases/phase-3.4a-agent-harness-fragment.md) | An optional TypeScript Claude Code hook harness with its hook test suite and a bench comparison against the shell guardrails | Job 1 ("agent config"); the trust paragraph; success row "The result is complete" | 1.6a, 1.6d, 2.0b, 2.0c, 2.2 | Not started |
 | [3.4b Native agent adapters](phases/phase-3.4b-native-agent-adapters.md) | Codex, OpenCode and Cursor adapters for the agent-ops fragment (D27), a reference check per config format, and the agent skill's marketplace listing (3.4c) | Assumption "Handoff to whatever agent is on PATH" (D9) | 1.6a, 1.6d, 2.0b, 2.2, 3.4c | Not started |
 | [3.4c Agent skill](phases/phase-3.4c-agent-skill.md) | One agent skill shipped in the package and `quickstacks skill install` for Claude Code, so "ask your agent" works in a fresh session | Assumption "Handoff to whatever agent is on PATH is the right entry point" (D9); the agent's frustration with ambiguity | 1.1, 1.4, 1.6c | Not started |
-| [3.5a The `app` entry kind](phases/phase-3.5a-app-entry-kind.md) | The `app` kind (D26) at entry `schemaVersion: 3`, loaded from every origin, listed, composed onto its base stack and checked by `validate`, with app and stack ids kept distinct | The developer who starts projects often; assumption 1 (brief growth) | 1.0, 1.1, 1.5; 3.1a soft | Not started |
-| [3.5b The two-phase brief](phases/phase-3.5b-two-phase-brief.md) | `new <app>` writes a stack brief to green, then an app brief with staged verify steps under the same digest (manifest v2); verify by stage; one bundled chat app whose tests use a stub provider | Same as 3.5a, plus the agent's frustration with ambiguity | 3.5a, 1.2b, 1.3a, 1.3b, 1.5, 2.0b, 2.0c | Not started |
+| [3.5a The `app` entry kind](phases/phase-3.5a-app-entry-kind.md) | Withdrawn 2026-10-26. D26 is superseded: an app is a fragment with `category: app` (D18 as amended), so loading and listing apps is 1.0's, composing them 1.1's and checking them 1.5's | n/a | n/a | Withdrawn |
+| [3.5b App stage in verify](phases/phase-3.5b-two-phase-brief.md) | Shrunk 2026-10-26. `verify` reports the steps carrying the reserved `app` tag as their own stage, runs them only after every base step passes, and records per-stage results; each bundled app gets a bench proof whose tests use a stub provider. The split brief moved to 1.1; the manifest stays at version 1 because the stage comes from the `app` tag | The developer who starts projects often; assumption 1 (brief growth); the agent's frustration with ambiguity | 1.1, 1.2b, 1.3a, 1.3b, 1.5, 2.0b, 2.0c | Not started |
 
 ### Phase 4: the hosted side
 
@@ -174,7 +183,7 @@ a maintainer by hand; CI builds and deploys are 5.2.
 
 | Sub-phase | Goal | Traces to | Depends on | Status |
 |---|---|---|---|---|
-| [4.0a The format package](phases/phase-4.0a-format-package.md) | Extract the entry, manifest and run-record schemas to a private `packages/format` and add `canonicalBundle`/`bundleDigest`, bundled into the CLI, with the CLI suite unchanged | D11 ("shared code gets its own package") | 1.3b, 1.6c; 3.5a soft | Not started |
+| [4.0a The format package](phases/phase-4.0a-format-package.md) | Extract the entry, manifest and run-record schemas to a private `packages/format` and add `canonicalBundle`/`bundleDigest`, bundled into the CLI, with the CLI suite unchanged | D11 ("shared code gets its own package") | 1.3b, 1.6b | Not started |
 | [4.0b API skeleton and hosting spike](phases/phase-4.0b-api-skeleton-and-hosting-spike.md) | `packages/api` on Effect's HTTP modules serving `/healthz`, its own gate, a Workers spike that answers open questions 16 and 17 | "no public registry exists yet"; D16 | 4.0a, D16 | Not started |
 | [4.0c Registry index](phases/phase-4.0c-registry-index.md) | A static, content-addressed, signed index (D21) of proven compositions with each stack's last ledger run, built, signed inline and deployed by a maintainer, with `build:index --check` against the live host | "Stacks don't rot" made visible | 4.0b, 4.0a, 2.0a, 2.0c, 2.2 | Not started |
 | [4.0e Official names and directory](phases/phase-4.0e-official-names-and-directory.md) | The same build writes the signed `v1/names.json` (every official id and step name from every `v*` tag and index entry) and a static directory page per indexed stack, deployed by hand with the index | "Stacks don't rot" made visible; "None of these are collected today" (4.1c's official names) | 4.0c, 1.6c | Not started |
@@ -202,6 +211,42 @@ schedules and secrets around behavior that already exists and is already tested 
 | [5.0 CI release and checks](phases/phase-5.0-ci-release-and-checks.md) | A tag-driven release workflow with npm provenance, an `e2e-node22` job in `ci-ok`, and the bundled registry's `validate` and rot checks as CI steps | Entry point `npx quickstacks`; D12 | 1.6c | Not started |
 | [5.1 Scheduled canary](phases/phase-5.1-scheduled-canary.md) | Scheduled bench runs of every bundled stack on an isolated maintainer-controlled machine, with infra failures kept apart from rot and a report when a passing stack stops passing | "How does a stack prove it still works?"; success row 4; assumption 2 | 2.0b, 5.0, D15, D24 | Not started |
 | [5.2 CI index build and deploy](phases/phase-5.2-ci-index-build-and-deploy.md) | Build, sign and deploy the index and the API from CI with the signing key as a deploy secret | "Stacks don't rot" made visible without a maintainer at a keyboard | 4.0c, 4.0e, 4.0d, 5.0; 4.1e soft | Not started |
+
+### Release: the final step
+
+Goal: the CLI is public. Packaging (0.2), reserving the `quickstacks` name on npm (0.0)
+and the first publish (1.6c) happen together, after the
+[feature gaps](#feature-gaps-to-close-before-release) are closed. 1.6c keeps its number;
+only its place in the order changed (2026-10-26).
+
+| Sub-phase | Goal | Traces to | Depends on | Status |
+|---|---|---|---|---|
+| [1.6c First release](phases/phase-1.6c-first-release.md) | Name reserved, A2-A4 and the gate recorded, then a manual `npm publish` of the packed tarball, checked with `npx quickstacks@latest`. If 1.6b ran from the compiled binary, at least one gate run is repeated from the packed tarball first | The README's first command `npx quickstacks new` | 1.6b, 0.2, 0.0 (name, D20, A2-A4), and every row in Feature gaps below | Not started; moved to the end 2026-10-26 |
+
+4.1e, 4.3 and 5.0 need a published package and come after 1.6c. 3.3a, 3.3c, 3.4c and 4.0e
+still list 1.6c and simply follow it. 3.0 and 4.0a needed only the gated core loop, and
+both are on the path to release (3.0 is a feature gap, 4.0a comes before 4.1a), so they
+now depend on 1.6b; where their files' "Depends on" still says 1.6c, this table and the
+graph govern.
+
+## Feature gaps to close before release
+
+Planned features the public release needs, each owned by a sub-phase. Nothing here is a
+new decision except where a row says so.
+
+| Feature | Owner | Notes |
+|---|---|---|
+| A remote registry origin fetched from a git host, cached for 24 hours, with backoff on failure and `--offline` | New 3.2c (plan file not yet written) | Reuses 3.2a's hardened git calls but not its demand gate, and 4.0d's cache, backoff and `--offline` design. Its plan must answer the [Won't have](#wont-have-in-this-roadmap) row on fetching from a git branch and say how fetched content is verified before it is trusted like bundled content ([Trust model](#trust-model), points 2 and 7) |
+| `add` | [3.0](phases/phase-3.0-add-fragments-to-repo.md) | Unchanged |
+| `show` | [3.1a](phases/phase-3.1a-show-and-preview.md) | Unchanged |
+| A `guide` command | [1.4](phases/phase-1.4-handoff-and-entry-points.md) | 1.4's no-argument agent guide, also reachable as `quickstacks guide`; one text in `src/core/guide.ts`. 1.4 lists the subcommand as a proposed scope item (2026-10-26) |
+| Local telemetry | [4.1a](phases/phase-4.1a-telemetry-cli-client.md) | The client's consent checks, notice and local spool; sending waits for D17 and 4.1b-4.1e |
+| `list [stacks\|fragments\|apps]`, and an in-project `list` showing fragments that fit the project's stack and aren't added yet | [1.0](phases/phase-1.0-entry-format-and-registry.md); the in-project view [3.0](phases/phase-3.0-add-fragments-to-repo.md) | 3.0 already computes "fragments you can add" for `add` |
+| The run ledger behind `lastRun` | [2.0c](phases/phase-2.0c-run-ledger.md) | `list --json` carries `lastRun: null` from 1.0 |
+| The bundled catalog: every stack and fragment the release ships, apps included. The plans name no catalog entries beyond the MVP's; the catalog's contents are the maintainers' to choose | [1.6a](phases/phase-1.6a-bundled-stack-content.md) brings all of it into entry format v1 and validates it; bench proof per entry under 3.3a's rule (3.3a release and deploy, 3.3c service, vendor, Effect and tooling, 3.3b stacks, 3.4a the agent harness fragment, 3.5b apps) | D13 as amended. Personal-tooling entries sit uneasily with D6 (a catalog for strangers, personal tooling elsewhere); the maintainers should confirm which entries ship |
+| `validate --brief` preview | [1.5](phases/phase-1.5-validate-and-brief-budget.md) (brief and counts); [3.1a](phases/phase-3.1a-show-and-preview.md) (fingerprint, findings, exit 2 over the limit) | Moved into 1.5 on 2026-10-26 |
+| Sandbox mode skipping `prod` steps and dropping deploy, release and app fragments | [1.1](phases/phase-1.1-composition-and-brief.md), [1.3a](phases/phase-1.3a-verify-runner-and-probes.md) | Already planned; the app drop is new in 1.1 |
+| Size budgets: stack body 2,000 words, fragment body 1,000, app body 3,000, composed brief 6,000 without an app and 9,000 with one | [1.5](phases/phase-1.5-validate-and-brief-budget.md) | D5's proposal amended to these numbers 2026-10-26; they live in `src/core/validate/budget.ts::BUDGET` |
 
 ## Dependency graph
 
@@ -239,9 +284,10 @@ flowchart LR
   p16d --> p16b
   p13b --> p16b
   p14 --> p16b
-  p02 --> p16b
+  p02 -.-> p16b
   p16b --> p16c[1.6c first release]
   p00 --> p16c
+  p02 --> p16c
   p11 --> p20a[2.0a composed files + fingerprint]
   p12a --> p20a
   p12b --> p20a
@@ -257,7 +303,7 @@ flowchart LR
   p20a --> p22[2.2 rot checks]
   p20c --> p22
   p15 --> p22
-  p16c --> p30[3.0 add]
+  p16b --> p30[3.0 add]
   p13b --> p30
   p15 --> p31a[3.1a show + preview]
   p20a --> p31a
@@ -298,11 +344,7 @@ flowchart LR
   p20b --> p34b
   p22 --> p34b
   p34c --> p34b
-  p10 --> p35a[3.5a app kind]
-  p11 --> p35a
-  p15 --> p35a
-  p31a -.-> p35a
-  p35a --> p35b[3.5b two-phase brief]
+  p11 --> p35b[3.5b app stage in verify]
   p12b --> p35b
   p13a --> p35b
   p13b --> p35b
@@ -310,8 +352,7 @@ flowchart LR
   p20b --> p35b
   p20c --> p35b
   p13b --> p40a[4.0a format package]
-  p16c --> p40a
-  p35a -.-> p40a
+  p16b --> p40a
   p40a --> p40b[4.0b API skeleton]
   p40b --> p40c[4.0c index]
   p40a --> p40c
@@ -390,9 +431,9 @@ What can run in parallel, given one agent per sub-phase:
 | Phase 1, after 1.2b | 1.3a and 1.4 | `src/errors.ts` (new tags) and `src/cli.ts` (subcommand list): additive, merge by hand |
 | Phase 1, content | 1.6a drafting as soon as 1.0 fixes the format (D18); 1.6d after 1.6a | Drafts are checked by `validate` once 1.5 lands. 1.6a and 1.6d both edit `packages/cli/registry/fragments/agent-ops/` (1.6d only `adapters/claude/` and the hooks paragraph of the body) |
 | Phase 2 | 2.0c after 2.0a; 2.0b and 2.2 after 2.0c | `src/core/compose/files.ts` (`composeFiles`) is read-only for all three after 2.0a |
-| Phase 2 and 3 | 3.0 alongside phase 2, after 1.6c | `src/core/scaffold/` (3.0 adds the parking path) |
+| Phase 2 and 3 | 3.0 alongside phase 2, after 1.6b | `src/core/scaffold/` (3.0 adds the parking path) |
 | Phase 3 | 3.1a alongside 3.0 once 2.0c lands; 3.1b and 3.1c after 3.1a | `src/commands/new.ts`: 3.1b adds `--preset` and the `preset` default, 3.1c adds `--dry-run`, `--name` and `--author`, 3.0 adds nothing there; merge 3.1b and 3.1c by hand |
-| Phase 3, content | 3.3a, 3.3b, 3.4a, 3.4b, 3.4c and 3.5a in parallel after 2.0b and 2.2; 3.3c after 3.3a; 3.5b after 3.5a | `packages/cli/registry/fragments/agent-ops/` (3.4a and 3.4b both edit it; merge by hand); `registry/runs.json` (append only); `src/core/validate/` (3.3a, 3.4b, 3.5a and 3.5b each add checks); the package `files` list (3.4c adds `skill/`). 3.5b touches `compose.ts`, `manifest.ts` and verify: land it alone or rebase. 3.3b must not change the bytes of existing stack entries; shared fragments gain only `tag=` blocks that leave existing stacks' composed briefs unchanged |
+| Phase 3, content | 3.3a, 3.3b, 3.4a, 3.4b, 3.4c and 3.5b in parallel after 2.0b and 2.2; 3.3c after 3.3a | `packages/cli/registry/fragments/agent-ops/` (3.4a and 3.4b both edit it; merge by hand); `registry/runs.json` (append only); `src/core/validate/` (3.3a, 3.4b and 3.5b each add checks); the package `files` list (3.4c adds `skill/`). 3.5b touches verify: land it alone or rebase. 3.3b must not change the bytes of existing stack entries; shared fragments gain only `tag=` blocks that leave existing stacks' composed briefs unchanged |
 | Phase 4 | 4.0b and 4.1a after 4.0a; 4.0d after 4.0c | `packages/format` is additive only once 4.0a lands: 4.0c adds the index schema and keys, 4.0e the names schema, 4.1a the event schema, 4.2a the stats schema; nobody changes an existing export |
 | Phase 4, telemetry | 4.1d after 4.1c, then 4.1e; 4.2c and 4.2d in parallel after 4.2b and 4.1e; 4.2e after 4.2d | `packages/api/src/maintenance/maintain.ts` and the scheduled entry (4.1d adds a step before archive, 4.2a the hourly rollup under the same lease); `packages/api/src/stats/rollup.ts` (4.2c adds co-occurrence, 4.2e the dependency dimensions, both additive); `packages/cli/scripts/site/` and the index build (4.2c pages, 4.2d the allowlist); `packages/api/wrangler.jsonc` routes and the `STATS_ENABLED` (4.2c) and `DEPS_ENABLED` (4.2e) vars |
 | Phase 5 | 5.0 any time after 1.6c; 5.1 and 5.2 after 5.0 | `.github/workflows/` |
@@ -487,26 +528,26 @@ names.
 | Process service | `src/services/processes.ts::Processes` (`run`, `start`, `interactive`, `exec`, `which`), `ShellSpec`, `ArgvSpec`, `Captured`, `Finished`, `Running`, `SpawnFailed`, over the adapter `src/platform/process.ts` | `exec(argv, opts)` spawns argv directly with no shell, captures output and has a timeout; it is the only way to run a program on user-supplied arguments (3.2a's git). `run`, `start` and `exec` spawn detached group leaders with stdin `ignore`; `interactive` spawns `detached: false` with inherited stdio. `run` resolves on shell exit plus a 2 s drain, then kills the group and sets `Finished.pipesHeld` (callers read the flag, never parse the tail). `SpawnFailed { kind, errno }` is only for a missing cwd, a missing `/bin/sh`, resource errors, or a missing or non-executable binary for `interactive` and `exec`; a missing command under the shell is a normal exit 127. Only the adapter calls Node's spawn, `process.kill` and liveness checks (it spawns on `node:child_process`, not `effect/process`; see 0.3b). Every group is registered in the per-invocation `Foreground` holder that `bin.ts` SIGKILLs on a forced exit | 0.3b; 1.2a, 1.3a, 1.4, 2.0b, 3.2a |
 | Output tail size | `processes.ts::TAIL_BYTES` (256 KB kept), `TAIL_LINES` (60 reported) | One size everywhere; no sub-phase picks its own | 0.3b; 1.3a, 2.0b |
 | PATH lookup | `Processes.which` | The only PATH search. No `core/tools.ts` lookup and no `searchPath` field | 0.3b; 1.2a (missing tools), 1.4 (agents on PATH), 3.2a (git) |
-| Child environment | `config.ts::childEnv` | Built from the captured environment; agent session markers (from `AgentMarkers`) removed for verify steps; nothing inherited implicitly | 0.3b (builder), 1.2b (marker list); 1.3a |
+| Child environment | `config.ts::childEnv` | Built from the captured environment; agent session markers (`config.ts::AGENT_MARKER_NAMES`, from `AgentMarkers`, passed as `childEnv`'s `remove`) removed for verify steps; the CLI's own git calls remove `config.ts::GIT_REPOSITORY_VARIABLES` (`GIT_DIR`, `GIT_WORK_TREE`, `GIT_INDEX_FILE` and the other repository-selecting names a git hook or alias exports), so git finds the repository from its working directory; nothing inherited implicitly | 0.3b (builder), 1.2b (marker list); 1.3a |
 | Agent ids | `src/schemas/entry.ts::AgentId` = `"claude" \| "codex" \| "opencode" \| "cursor"`, and `DetectedAgent` = `AgentId \| "other" \| "none"` beside it | `AgentId` is used for adapters, `--agents`, `--launch`, `Settings.agents` and the manifest. `DetectedAgent` is the one type for a detected or recorded agent: `AppConfig.agent`, `RunRecord.agent` (1.3b), `HandoffDecision` (1.4) and `LastRun.agent` (4.0c) | 1.0 (moves in 4.0a); 1.1, 1.2b, 1.3b, 1.4, 2.0b, 3.4b, 3.4c, 4.0c |
 | Target agents | `src/core/compose/agents.ts::targetAgents` | `--agents`, else `Settings.agents`, else `claude`; a detected agent doesn't change the set (open question 28). `add` reads the manifest's agents first (3.0) | 1.1; 1.2a, 3.0 |
 | Shared helpers | `src/core/suggest.ts::closest` (nearest ids, edit distance 2, up to 3), `src/core/scaffold/slug.ts::slug`, `src/core/brief/paths.ts::collapsePaths`, `src/core/verify/next.ts::nextLine` | One implementation each: every "did you mean", every slug, every collapsed file list and every human `Next:` line after verify | 0.3a, 1.2a (ASCII rule; 3.1c adds the full table), 1.1, 1.3a; 1.1, 1.3b, 3.0, 3.1a, 3.1c |
-| TTY flags | `Host.stdinIsTTY`, `Host.stdoutIsTTY` | bin supplies both from the real streams; no later sub-phase adds them. 1.4 needs stdout to be a terminal before it launches | 0.3a; 1.0, 1.2a, 1.2b, 1.3b, 1.4, 3.0, 3.2a |
+| TTY flags | `Host.stdinIsTTY`, `Host.stdoutIsTTY`, `Host.stdoutColumns` | bin supplies all three from the real streams (`stdoutColumns` only when stdout is a terminal, 1.0, for wrapping human output); no later sub-phase adds them. 1.4 needs stdout to be a terminal before it launches | 0.3a; 1.0, 1.2a, 1.2b, 1.3b, 1.4, 3.0, 3.2a |
 | Agent detection | `AppConfig.agent: DetectedAgent`, `config.ts::AgentMarkers` | Only `config.ts` reads the markers; `"other"` is a generic marker (such as `AI_AGENT`) naming no known agent, and counts as a detected agent everywhere a rule says "agent detected" | 1.2b; 1.3a, 1.3b, 1.4, 3.0, 3.2a |
-| Invocation string | `Host.invocation` | `npx -y quickstacks@<version>` when bin's script path is inside npm's npx cache (a path segment `_npx`); `quickstacks` otherwise, including a global or project install and a packed tarball installed for the gate | 0.2 (field and the `_npx` rule; if 0.2 hasn't landed, 1.1 declares the field as the constant `quickstacks`), 1.1 (uses in the brief) |
-| Registry view | `src/core/registry/registry.ts::Registry.layer(roots)` | `RegistryRoots` is an ordered list of `{ origin, path }`, highest first, so 1.5 can build a view in which the root being validated shadows every other origin, and 3.2a and 4.0d can insert their origins | 1.0; 1.1, 1.5, 3.2a, 4.0d |
-| Entry and its listing | `src/core/registry/entry.ts::Entry` (`id, kind, origin, dir, trusted, shadows, meta, body`), `RejectedEntry` for a listing that failed to decode, `EntryFile { source, path, mode }` (`source` keeps the escaped dotfile name, `path` is the output path), `Origin` | `Entry.kind` is `stack` or `fragment`, and `app` from 3.5a (D26). `Origin` is `"project" \| "user" \| "bundled"`, extended by `"source"` (3.2a) and `"index"` (4.0d). `list --json` returns rejected entries in their own `rejected` array. An entry with origin `"source"` also carries `source` (the source name). Sources rank below every other origin and never shadow an id another origin provides. Ids are unique within a kind: a fragment may share an id with a stack or an app (`show` takes `--kind` when an id names more than one, 3.1a), but an app may not share an id with a stack, because `new <id>` takes both (a `validate` error, 3.5a). 2.0c adds the optional `lastRun: { date, result, agent, preset, fingerprint } \| null` per stack to `list --json`; no 1.0 field changes | 1.0; every later sub-phase |
-| Entry format v1 | `src/schemas/entry.ts::StackMeta`, `FragmentMeta`, `VerifyStep`, `Probe`, `Check` | D18. Frontmatter keys are camelCase and decode to the same names (`appliesTo`, `requiresTools`, `needsOwnRepo`); snake_case appears only in reason codes such as `ComposeConflict`'s `applies_to`. `VerifyStep.timeout` (default 10m); `check` in single-key form (`check: { filled: README.md }`); `within` matches `^\d+(ms\|s\|m)$` | 1.0 (moves in 4.0a); 1.1, 1.3a, 1.5, 1.6a |
-| Composition | `src/core/compose/compose.ts::ComposeOptions`, `Composition`, `PlannedFile`, `compose` | `Composition.deps` (`{ role, names, owners }[]`) merges each entry's `deps` for the brief. 3.0's changes are the deltas listed in 3.0, not new types | 1.1; 1.2a, 1.2b, 1.5, 2.0a, 3.0, 3.1a, 3.5a |
+| Invocation string | `Host.invocation` | `npx -y quickstacks@<version>` when bin's script path is inside npm's npx cache (a path segment `_npx`); `quickstacks` otherwise, including a global or project install and a packed tarball installed for the gate | 0.2 (field and the `_npx` rule; until 0.2 lands, the field is the constant `quickstacks`, declared by 1.0 for `list`'s `Next:` lines), 1.0 (`list`), 1.1 (uses in the brief) |
+| Registry view | `src/core/registry/registry.ts::Registry.layer(roots)` | `RegistryRoots` is an ordered list of `{ origin, path }`, highest first, so 1.5 can build a view in which the root being validated shadows every other origin, and 3.2a and 4.0d can insert their origins. `Registry.read(entry, source)` reads one entry-relative file without following a symlink (1.1, for merged JSON and conditional line numbers); `Registry.bytes(entry, source)` is the same read as raw bytes, which `new` copies byte for byte (1.2a) | 1.0; 1.1, 1.2a, 1.5, 3.2a, 4.0d |
+| Entry and its listing | `src/core/registry/entry.ts::Entry` (`id, kind, origin, dir, trusted, shadows, meta, body`), `RejectedEntry` for a listing that failed to decode, `EntryFile { source, path, mode }` (`source` is the entry-relative path on disk, `path` the output path: the same name with `files/` or `adapters/<agent>/` removed, and `.tmpl` dropped by 1.1), `Origin` | `Entry.kind` is `stack` or `fragment`; an app is a fragment with `category: app` (D18 as amended), not a kind. `Origin` is `"project" \| "user" \| "bundled"`, extended by `"source"` (3.2a) and `"index"` (4.0d). `list --json` returns rejected entries in their own `rejected` array. An entry with origin `"source"` also carries `source` (the source name). Sources rank below every other origin and never shadow an id another origin provides. Ids are unique within a kind: a fragment may share an id with a stack (`show` takes `--kind` when an id names both, 3.1a). Every `list --json` row carries `lastRun`, always `null` in 1.0; 2.0c fills it for stacks with `{ date, result, agent, preset, fingerprint }`, and no 1.0 field changes | 1.0; every later sub-phase |
+| Entry format v1 | `src/schemas/entry.ts::StackMeta`, `FragmentMeta`, `VerifyStep`, `Expect` | D18 as amended. Frontmatter keys are snake_case (`schema_version`, `applies_to`, `needs_own_repo`, `requires_tools`) and decode to camelCase TypeScript fields (`schemaVersion`, `appliesTo`, `needsOwnRepo`, `requiresTools`), which is also how every CLI output spells them: snake_case is for what authors write, camelCase for what the CLI emits and for code. `VerifyStep` is `{ name, run, cwd?, phase, tags, expect?: { http, within }, layer?, timeout? }`; `timeout` defaults to 10m, `within` to 60s, both match `^\d+(ms\|s\|m)$`; a `serve` step needs `expect`; the `app` tag is reserved for the CLI. Fragment `category` includes `app` | 1.0 (moves in 4.0a); 1.1, 1.3a, 1.5, 1.6a |
+| Composition | `src/core/compose/compose.ts::ComposeOptions`, `Composition`, `PlannedFile`, `compose` | `Composition.deps` (`{ role, names, owners }[]`) merges each entry's `deps` for the brief. 3.0's changes are the deltas listed in 3.0, not new types. `Composition.app` is the one `category: app` fragment or none. `Composition` also carries `preset` and `agents` (the brief and 1.2a read them), and each `untrusted` item is `{ id, kind, origin, dir }`. Entry bodies in a `Composition` have their conditionals resolved. Owners (of files, steps, decisions, tools and deps) are `EntryRef` `{ kind, id }`, since a stack and a fragment may share an id. `Composition.selection` (`{ id, via }[]`) records how each fragment was selected, and `missingTools` returns `MissingTool` `{ tool, owners, drop }`, where `drop` lists only the `--without` or `--with` flags that would actually leave the tool out; `dropFlags(composition, owners)` is that computation on its own, which 1.2a reuses for `needs_own_repo`'s `fix` | 1.1; 1.2a, 1.2b, 1.5, 2.0a, 3.0, 3.1a, 3.5b |
 | Composed file set | `src/core/compose/files.ts::composeFiles` | Returns `RenderedFile`s: every planned file rendered in memory, byte-identical to what `new` writes; `NEUTRAL_VARS` is the fixed template-variable set used for fingerprints and checks | 2.0a; 2.0c, 2.2, 4.0c |
-| Word count | `src/core/brief/words.ts::countWords` | Split on runs of whitespace after removing conditional marker lines; code fences and their content count. `briefWords` is a number: `countWords` of the whole rendered brief, fixed text included. `fixedWords` is a number: `countWords` summed over the brief's segments that come from `text.ts`; `renderBrief` returns both, `new --json` reports both (1.2a's `NewResult`), and 1.5 budgets them rendered with its `CANONICAL_CONTEXT` | 1.1; 1.2a, 1.5, 1.6a, 1.6b, 2.0c |
-| Manifest | `src/schemas/manifest.ts::Manifest`, `ManifestStep`, `EntryRef` (`{ id, origin, trusted }`) | Declares from the start the optional fields later sub-phases fill (`handoff` for 1.4, `fingerprint` for 2.0a) and 3.0's widened `mode` and `stack`. `EntryRef.origin` decodes as a non-empty string, so an older `verify` reads a manifest that names a newer origin | 1.2b (moves in 4.0a); 1.3a, 1.3b, 1.4, 2.0a, 3.0, 3.5b |
+| Word count | `src/core/brief/words.ts::countWords` | Split on runs of whitespace after removing conditional marker lines; code fences and their content count. `briefWords` is a number: `countWords` of the whole rendered brief, fixed text included. `fixedWords` is a number: `countWords` summed over the brief's segments that come from `text.ts`; `renderBrief` returns both, `new --json` reports both (1.2a's `NewResult`), and 1.5 budgets them rendered with `src/core/validate/budget.ts::canonicalContext` (a function of the composition) | 1.1; 1.2a, 1.5, 1.6a, 1.6b, 2.0c |
+| Manifest | `src/schemas/manifest.ts::Manifest`, `ManifestStep`, `EntryRef` (`{ id, origin, trusted }`) | Declares from the start the optional fields later sub-phases fill (`handoff` for 1.4, `fingerprint` for 2.0a) and 3.0's widened `mode` and `stack`. `EntryRef.origin` decodes as a non-empty string, so an older `verify` reads a manifest that names a newer origin. `projectId` is letters, digits and `-` only, since it names the state record file. `ManifestStep.owner` is the owning entry's id. Read through `core/manifest.ts::readManifest`; built by `buildManifest` | 1.2b (moves in 4.0a); 1.3a, 1.3b, 1.4, 2.0a, 3.0, 3.5b |
 | Step digest | `src/core/manifest.ts::digestSteps` | Coverage is in [Trust model](#trust-model), point 5 | 1.2b; 1.3b, 3.0, 3.5b |
 | Tamper check | `src/core/verify/tamper.ts` (the check `verify` runs before any step) | `add` runs the same function before planning | 1.3b; 3.0 |
 | Safe writer | `src/core/scaffold/write.ts` (real-path escape check, tracked writes, rollback finalizer) | 3.0 extends the rollback to restore the old bytes of the one file it rewrites in place | 1.2a; 3.0 |
-| Project state record | `src/core/project-state.ts::ProjectState` at `$XDG_STATE_HOME/quickstacks/projects/<projectId>.json` | The whole-set digest, one digest per step name and one over `env` plus `preset` (so `VerifyChanged` can name what changed), project id, manifest real path, `createdAt`, `firstGreenAt`, `firstTestPassAt`. Optional: when it can't be written, commands report `stateRecord: false` | 1.2b; 1.3b, 3.0 |
-| Run record | `src/schemas/verify.ts::RunRecord` | One line per verify run in `.quickstacks/state/runs.jsonl`. Later sub-phases import it unchanged; the ledger wraps it, never re-declares its fields. 3.5b adds the optional `stages` and `firstStackGreenAt`. `RunRecord.agent` is `DetectedAgent` | 1.3b (moves in 4.0a); 2.0c, 2.0b, 3.5b, 4.1a |
-| Ledger | `src/schemas/ledger.ts::LedgerRecord` at `packages/cli/registry/runs.json` | `schemaVersion`; `run: NullOr(RunRecord)` (the final independent verify's record, imported unchanged); fingerprint, stack, `with`, preset, agent, `agentVersion`, `mode` (`interactive \| headless`), `repoCommit`, `cli`, `briefWords`, `result`, `agentEnded` (`exit \| error \| timeout`), `verifyRuns`, `minutesToGreen`, `minutesToFirstTest`, `agentMinutes` and `interventions` (each `NullOr(Number)`). `result` is `pass \| partial \| fail \| infra`; an agent that ran out of time is `fail` with `agentEnded: "timeout"`, which is how 5.1 finds timeouts. 2.0b adds the optional `hooksFired: NullOr(Array(String))` and `continued`; 3.5b adds an optional `app` to the ledger key. The ledger's own `agent` is an `AgentId` (a ledger run always drove a named agent); the nested `run.agent` is `DetectedAgent` | 2.0c; 2.0b, 2.2, 3.1a, 3.5b, 4.0c, 5.1 |
+| Project state record | `src/core/project-state.ts::ProjectState` at `$XDG_STATE_HOME/quickstacks/projects/<projectId>.json` (`QUICKSTACKS_STATE_DIR` replaces `$XDG_STATE_HOME/quickstacks`; `projectStatePath` gives no path for an id `schemas/manifest.ts::ProjectId` refuses) | The whole-set digest, one digest per step name and one over `env` plus `preset` (so `VerifyChanged` can name what changed), project id, manifest real path, `createdAt`, `firstGreenAt`, `firstTestPassAt`. Optional: when it can't be written, commands report `stateRecord: false` | 1.2b; 1.3b, 3.0 |
+| Run record | `src/schemas/verify.ts::RunRecord` | One line per verify run in `.quickstacks/state/runs.jsonl`. Later sub-phases import it unchanged; the ledger wraps it, never re-declares its fields. 3.5b adds the optional `stages`; how each reader treats it is in 2.0c (`runs`, `lastOutcome`, ledger `result`), 2.0b (`minutesToGreen` is the whole run's), 4.1a (the event carries no `stages`) and 4.0a (moves with it). `RunRecord.agent` is `DetectedAgent` | 1.3b (moves in 4.0a); 2.0c, 2.0b, 3.5b, 4.1a |
+| Ledger | `src/schemas/ledger.ts::LedgerRecord` at `packages/cli/registry/runs.json` | `schemaVersion`; `run: NullOr(RunRecord)` (the final independent verify's record, imported unchanged); fingerprint, stack, `with`, preset, agent, `agentVersion`, `mode` (`interactive \| headless`), `repoCommit`, `cli`, `briefWords`, `result`, `agentEnded` (`exit \| error \| timeout`), `verifyRuns`, `minutesToGreen`, `minutesToFirstTest`, `agentMinutes` and `interventions` (each `NullOr(Number)`). `result` is `pass \| partial \| fail \| infra`; an agent that ran out of time is `fail` with `agentEnded: "timeout"`, which is how 5.1 finds timeouts. 2.0b adds the optional `hooksFired: NullOr(Array(String))` and `continued`; an app run is keyed by its `with`, which names the app (3.5b). The ledger's own `agent` is an `AgentId` (a ledger run always drove a named agent); the nested `run.agent` is `DetectedAgent` | 2.0c; 2.0b, 2.2, 3.1a, 3.5b, 4.0c, 5.1 |
 | Fingerprint | `src/core/fingerprint.ts::fingerprint` | sha256 over the composed entries (id, decoded frontmatter, body), the preset, and the output of `composeFiles(composition, NEUTRAL_VARS)`, so a prose edit changes it as well as a shipped-file edit. It stays in the CLI. Not to be confused with `bundleDigest`, which hashes one entry's canonical bundle | 2.0a; 2.0c, 2.2, 4.0c |
 | Canonical bundle | `packages/format::canonicalBundle`, `bundleDigest`, `EntryBundle`, `BundlePath` | Files sorted by path, fixed key order, raw bytes; `BundlePath` rejects traversal. The index build and the CLI both use them | 4.0a; 4.0c, 4.0d |
 | Registry index | `packages/format::RegistryIndex`, `IndexEntry`, `SignedIndex { keyId, signature, payload }`, `INDEX_PUBLIC_KEYS` (a list, for rotation) | Signature and payload in one file; each stack `IndexEntry` carries `composition: { fragmentId: digest }` for the composition that passed. 4.0e adds `v1/names.json` (below) to the same build, in the same envelope with the same key. The build signs inline (`--key` or `--unsigned`, `--previous <url>`) and `build:index --check <base-url>` verifies every signed file on the host (4.0c, "The build command and signing"). Trust model point 7 | 4.0c; 4.0d, 4.0e, 4.1c, 4.2a, 5.2 |
@@ -525,19 +566,19 @@ names.
 
 | Tag | Exit | Retryable | Keeps result | Added in |
 |---|---|---|---|---|
-| `Usage`, `BadInput`, `NotFound` | 2 | no | no | base; `Usage.details` `{ command, suggestions }` for an unknown subcommand, from `closest`; effect/cli's own suggestions are discarded (0.3a); `NotFound.details.suggestions` for stack and fragment ids (1.1) |
-| `NotConfigured`, `InvalidConfig` | 3 | no | no | base |
+| `Usage`, `BadInput`, `NotFound` | 2 | no | no | base; `Usage.details` `{ command, suggestions }` for an unknown subcommand, from `closest`; effect/cli's own suggestions are discarded (0.3a); `NotFound.details` is the closed struct `{ suggestions }` for stack and fragment ids, from `closest` (1.1), and an optional `looked` (the resolved path) in the same struct, added in 1.5 for a missing `validate` target and reused by 1.3a for a missing manifest, and an optional `root` (a non-default registry root the id was looked up in, so the human `Next:` line points at `validate <root>` rather than `list`; 1.5); every human `NotFound` ends with a `Next:` line built from `Host.invocation`; `BadInput.details` is the closed struct `{ id, flag }`, `flag` one of `with_without` (`id` given to both `--with` and `--without`, 1.1), `scope` (`id` is the bad `--scope` value, 1.2a), `dir` (`id` is a project directory name with a control character, 1.2a) and `brief` (`id` is the flag, `--with`, `--without` or `--sandbox`, given to `validate` without `--brief`, 1.5); human mode names the flag and ends with a `Next:` line |
+| `NotConfigured`, `InvalidConfig` | 3 | no | no | base; `InvalidConfig.details` is the closed struct `{ path, schemaVersion? }` (1.2b): `path` is the file that didn't decode (the manifest), `schemaVersion` the higher version a newer quickstacks wrote, and human mode then says to upgrade quickstacks. A broken `config.json` still carries no details |
 | `UpstreamUnavailable` | 4 | yes | no | base |
-| `PermissionDenied` | 6 | no | no | base; `details` is `{ reason, path? }`: `reason` is a closed set: `write` (0.3a), `read` (1.0), `escape` and `unwritable` (1.2a), and `agent`, `no-tty` and `state-unwritable` for confirmations and the state record (1.3b, 3.2a); `path` names the file or directory that couldn't be read or written (1.0, 1.2a, 1.2b, 3.4c) |
+| `PermissionDenied` | 6 | no | no | base; `details` is `{ reason, path? }`: `reason` is a closed set: `write` (0.3a), `read` (1.0), `escape` and `unwritable` (1.2a), and `agent`, `no-tty` and `state-unwritable` for confirmations and the state record (1.3b, 3.2a); `path` names the file or directory that couldn't be read or written (1.0, 1.2a, 1.2b, 3.4c); human `escape` and `unwritable` end with a `Next:` line (1.2a) |
 | `Interrupted` | 130 | no | no | base |
 | `Defect` | 1 | no | no | base |
 | `BrokenPipe` | 0, except after a keeps-result tag, where the tag's exit is kept | no | no | base, rule changed in 0.3a |
 | `VerifyFailed`, `VerifyChanged` | 5 | no | yes | 0.3a (details in 1.3a and 1.3b) |
 | `SpawnFailed` | internal; `Defect` unless the caller handles it | no | no | 0.3b |
-| `EntryInvalid` | 2 | no | no | 1.0; `details.reason` is `decode`, `symlink`, `submodule`, `dotfile`, `id_mismatch` (1.0), `conditional`, `merge_json`, `merge_template` (1.1), `template` (1.2a) |
-| `ComposeConflict` | 2 | no | no | 1.1; `details.reason` is `required`, `requires`, `cycle`, `conflicts`, `applies_to`, `file_owner`, `step_name`, `env`, `needs_own_repo` (1.2a, with `details.fix` listing the `--without` flags that avoid it) |
+| `EntryInvalid` | 2 | no | no | 1.0; `details.reason` is `decode`, `symlink`, `id_mismatch`, `missing` (an entry file is absent: the markdown file, or a file `Registry.read` was asked for) (1.0); optional `details.line` (the file line of a bad conditional marker) and `details.problem` (`unclosed`, `nested`, `stray_end`, `unknown_key`, `bad_value`, `empty`, `repeated`, `unknown_marker`, `not_alone`) with reason `conditional` (1.1); an entry that exists but can't be read is `PermissionDenied` with reason `read`, not `EntryInvalid`; `conditional`, `merge_json`, `merge_template` (1.1), `template` (1.2a; human mode ends with a `Next:` line naming the template variables), `submodule` (3.2a, for a git source tree; a local entry directory has no submodules to find) |
+| `ComposeConflict` | 2 | no | no | 1.1; `details.reason` is `required`, `requires`, `cycle`, `conflicts`, `applies_to`, `file_owner`, `step_name`, `env`, `app_required`, `app_count` (1.1); optional `details.stack` names the stack when it is a party, so `details.ids` holds fragment ids only and a stack and fragment sharing an id stay distinct (1.1); `needs_own_repo` (1.2a, with `details.path` naming the enclosing repository's root and `details.fix` listing the `--without` flags that avoid it, empty when only a `--with` change or nothing would); `file_owner` also covers two planned paths that differ only in letter case or where one is a directory prefix of another (1.2a); `reserved_path` (1.2a, with `details.path`) for an entry file planned under `.git/` or `.quickstacks/` in any letter case or any spelling git treats as those |
 | `TargetNotEmpty` | 2 | no | no | 1.2a; `details.scaffold` (1.2b) is `unfinished` or `green` when the target already holds a manifest; 3.4c reuses the tag for an edited skill copy |
-| `ValidationFailed` | 2 | no | yes | 1.5 |
+| `ValidationFailed` | 2 | no | yes | 1.5; `details` is the closed struct `{ errors, warnings }` (finding counts) |
 | `SourceFetchFailed` | 4 | no (git exits 128 for network and auth alike) | no | 3.2a |
 
 Names to use: `EntryInvalid` (not `InvalidEntry`), `ComposeConflict` (not
@@ -560,8 +601,8 @@ Names to use: `EntryInvalid` (not `InvalidEntry`), `ComposeConflict` (not
 
 | Document | Field | Rule | Owner |
 |---|---|---|---|
-| Entry frontmatter | `schemaVersion: 1` | D18. An entry with a higher value is skipped with one warning and the next origin's copy is used. A new optional field is a format change: it needs a `validate` rule and a D18 amendment, and older CLIs reject it as an excess property, so it bumps the version. Version 2 is required by an entry that uses `{{package_scope}}` (D28, 3.3a); version 3 by every `app` entry (D26, 3.5a). A CLI reading version 3 also accepts version 2 | 1.0, 3.3a, 3.5a |
-| Manifest | `schemaVersion: 1`, and `2` for app projects only (3.5b adds `app` and `ManifestStep.stage`) | Optional fields declared in 1.2b can be filled later without a bump. Any other new field bumps the version. A CLI that reads a higher version fails `InvalidConfig` with `details: { path, schemaVersion }` and a fixed "upgrade quickstacks" message | 1.2b |
+| Entry frontmatter | `schema_version: 1` | D18 as amended. An entry with a higher value is skipped with one warning and the next origin's copy is used. A new optional field is a format change: it needs a `validate` rule and a D18 amendment, and older CLIs reject it as an excess property, so it bumps the version. `package_scope` and apps are in version 1 (the old D28 and D26 versions 2 and 3 are gone) | 1.0 |
+| Manifest | `schemaVersion: 1`, app projects included (an app's steps carry the reserved `app` tag, so 3.5b needs no `stage` field) | Optional fields declared in 1.2b can be filled later without a bump. Any other new field bumps the version. A CLI that reads a higher version fails `InvalidConfig` with `details: { path, schemaVersion }` and a fixed "upgrade quickstacks" message | 1.2b |
 | Project state record | `schemaVersion: 1` | Same rule as the manifest; an unreadable record is treated as missing (`tamperCheck: "manifest-only"`) | 1.2b |
 | Run record and ledger | `schemaVersion: 1` on each line and on the ledger file | New optional fields don't bump; readers skip a line with a higher version and count it | 1.3b, 2.0c |
 | Registry index | `formatVersion: 1`, `minCli` | A CLI older than `minCli` or a higher `formatVersion` ignores the index with `lastOutcome: "unsupported"` and keeps using the bundled set | 4.0c, 4.0d |
@@ -574,15 +615,15 @@ Names to use: `EntryInvalid` (not `InvalidEntry`), `ComposeConflict` (not
 |---|---|---|
 | Registry files that aren't entries | `packages/cli/registry/removed.json` (ids withdrawn from the index, with an optional replacement; 4.2c) and `packages/cli/registry/allowlist.json` (4.2d) | 4.2c, 4.2d |
 | Project metadata | `.quickstacks/` at the project root. Committed: `manifest.json`, `.gitignore`, project-local `stacks/` and `fragments/`. Ignored by that `.gitignore`: `BRIEF.md`, `NOTES.md`, `state/`, `incoming/` | 1.2a |
-| Entry directories | `stacks/<id>/STACK.md`, `fragments/<id>/FRAGMENT.md`, `applications/<id>/APP.md` (3.5a), optional `files/` and `adapters/<agent>/`. Dotfiles in `files/` are stored with a `_dot_` prefix (`_dot_gitignore`) because npm drops some dotfiles from packages; a literal dotfile in an entry is `EntryInvalid` | 1.0, escape rule used by 1.2a and 1.6a |
+| Entry directories | `stacks/<id>/STACK.md`, `fragments/<id>/FRAGMENT.md` (apps included), optional `files/` and `adapters/<agent>/`, no symlinks. Dotfiles are stored literally (`files/.gitignore`). npm drops `.gitignore` files when packing, so the packed tarball is 0.2's problem, solved there by a pack-time escape or a check, never by the entry format | 1.0; 0.2 for packing |
 | Bundled skill | `packages/cli/skill/SKILL.md`, found the same way as the registry and passed in as `Host.skill`; `doctor` reports `skill: { path, found }`; 3.4c adds it to the package `files` list and to 0.2's tarball assertion | 3.4c |
-| Bundled registry in the repo | `packages/cli/registry/`, found at runtime by `fileURLToPath(new URL("../registry/", import.meta.url))` in `bin.ts`, passed in as `Host.registry` (`doctor` reports `registry: { path, found }`). It ships empty until 1.6a, and an empty registry passes `validate` | 0.2, 1.0, 1.5 |
-| Prose markers | `<!-- quickstacks:when key=value -->` ... `<!-- quickstacks:end -->`; `quickstacks:fill` for text the agent must replace | 1.1 |
+| Bundled registry in the repo | `packages/cli/registry/`, found at runtime by `fileURLToPath(new URL("../registry/", import.meta.url))` in `bin.ts`, passed in as `Host.registry` (`doctor` reports `registry: { path, found }`, `found` only for a directory). `QUICKSTACKS_REGISTRY_DIR` replaces it (resolved against the working directory; `bun run dev` resolves it against the caller's directory), and its entries are untrusted (Trust model, point 2); set to anything but a directory, it is a warning on `list` and in `doctor`. Until 0.2 lands, `bin.ts` runs on Bun and passes a stub path that tests override; the `import.meta.url` resolution is 0.2's. It ships empty until 1.6a, and an empty registry passes `validate` | 0.2, 1.0, 1.5 |
+| Prose markers | `<!-- quickstacks:when key=v,v2 key2=v -->` ... `<!-- quickstacks:end -->`, keys `stack`, `tag`, `tag!=`, `mode`, `preset`, `with`; comma is OR within a key, keys AND; no nesting; markers on their own line. `quickstacks:fill` for text the agent must replace | 1.1 |
 | JSON contract | One result on stdout. A keeps-result failure keeps its result on stdout and still writes the error envelope as the last stderr line. A `--only` or `--skip-tag` verify run that passes exits 0 with outcome `partial`, which never counts as green | 0.3a, 1.3a |
 | Environment | Only `config.ts` reads env, including agent markers and `PATH`. Only `bin.ts` and `src/platform/` touch Bun or Node process APIs or import `@effect/platform-node`; 0.3b creates `src/platform/` (the process adapter) and its Grit rule, and later adapters (1.3a's probe layers, 4.0d's HTTP client) go there | base, 0.2, 0.3b |
 | What the CLI executes | See [Trust model](#trust-model) | this file |
-| Verify step `layer` | One of `install`, `lint`, `typecheck`, `test`, `build`, `serve`, `docs`. D7 enforcement and run records rely on it | 1.0 |
-| Settings fields | `schemas/config.ts::Settings` keeps rejecting excess properties. `always`, `agents` and `author` are added by 1.1 (1.2a reads `author` for templates, 3.1c adds `--author` over it, 1.4 reads `agents` for launch order); `preset` by 3.1b; `packageScope` by 3.3a; `sources` by 3.2a; `telemetry` by 4.1a. Nothing trust-related lives in `config.json` | 1.1, 3.1b, 3.2a, 4.1a |
+| Verify step `layer` | Optional; one of `install`, `lint`, `typecheck`, `test`, `build`, `serve`, `docs`. D7 enforcement and run records rely on it, so 1.5 warns (`step-layer`) when any validated step has none | 1.0 |
+| Settings fields | `schemas/config.ts::Settings` keeps rejecting excess properties. `always`, `agents` and `author` are added by 1.1 (1.2a reads `author` for templates, 3.1c adds `--author` over it, 1.4 reads `agents` for launch order); `package_scope` by 1.1 (read by 1.2a; snake_case because authors write it beside entry frontmatter); `preset` by 3.1b; `sources` by 3.2a; `telemetry` by 4.1a. Nothing trust-related lives in `config.json` | 1.1, 3.1b, 3.2a, 4.1a |
 | Trust store | `$XDG_STATE_HOME/quickstacks/trust.json`, read and written through `src/core/trust/store.ts::Trust`: confirmed source commits (by commit and a digest of the checkout) and allowlisted project entries, by `src/core/trust/digest.ts::entryDigest` | 3.2a (first reader and writer), 3.2b; 1.0's `trustOf` is origin-only and reads no store until 3.2a extends it |
 | `validate` severities | `error` (exit 2), `warning` (fails the bundled registry's zero-warning gate), `note` (never affects exit or the gate) | 1.5, 2.2 |
 | Telemetry from maintainer runs | The bench (2.0b) sets `DO_NOT_TRACK=1` in the agent's child environment, so every `quickstacks` the agent runs sends nothing; the canary (5.1) runs through the bench and asserts it. Smoke events use the excluded smoke install id | 2.0b, 5.1, 4.1e |
@@ -662,9 +703,12 @@ question 9).
    chose to install). `verify` runs only the steps in the manifest of the project it is
    pointed at, prints each command before running it, and runs nothing else: the same
    trust decision as `make test` in that repo. Entries keep shell to a minimum: a `run`
-   calls a project command, and file checks are built-in check kinds (1.0, 1.3a).
-2. **Origins and default trust (D19).** Bundled entries are trusted. User-directory
-   entries are trusted: the user wrote them. Every project-origin entry
+   calls a project command. v1 has no built-in file checks, so a file check is a short
+   `run` command until 1.3a's open item adds built-in kinds.
+2. **Origins and default trust (D19).** Bundled entries are trusted when they come from the
+   registry shipped with the CLI; a bundled root set by `QUICKSTACKS_REGISTRY_DIR` is
+   untrusted, because an environment variable is as easy to plant as a project directory
+   (1.0). User-directory entries are trusted: the user wrote them. Every project-origin entry
    (`./.quickstacks/{stacks,fragments}/`) is `origin: "project"` and `trusted: false`,
    whether or not it shadows an id, because a cloned repo can ship one. It becomes trusted
    only when the trust store holds its content digest (`quickstacks trust`, 3.2a). Git
@@ -686,8 +730,8 @@ question 9).
    the state record in `$XDG_STATE_HOME/quickstacks/`, never to `config.json` or the
    project.
 5. **The tamper digest (D14).** `digestSteps` covers every field `verify` reads from each
-   step (`name`, `phase`, `layer`, `run`, `check`, `cwd`, `tags`, `probe`, `timeout`,
-   `skipByDefault`, and from 3.5b `stage`) with defaults applied and keys sorted, plus the manifest's `env` and
+   step (`name`, `phase`, `layer`, `run`, `cwd`, `tags`, `expect`, `timeout`,
+   `skipByDefault`; the CLI-added `app` tag is in `tags`) with defaults applied and keys sorted, plus the manifest's `env` and
    `preset`; it excludes `owner`. The second copy is the project state record. Verify
    looks the record up by `projectId`, and if none matches, by the manifest's real path; a
    record found by path under a different id is a change. A missing record gives
@@ -729,12 +773,12 @@ question 9).
 | D8 | Canary in phase 5; local proof before authoring and sources | Phase 2 start | Proposed, revised under D23 |
 | D9 | Both entry points, instrumented | 1.4 | Proposed |
 | D12 | Node range for the npm package | 0.2 | Proposed |
-| D13 | The three MVP stacks and their word targets | 1.6a (drafting can start after 1.0) | Proposed |
+| D13 | The three MVP stacks and their word targets; amended 2026-10-26 so 1.6a brings the whole catalog into v1 and validates it | 1.6a (drafting can start after 1.0) | Proposed; amendment is an agent proposal |
 | D14 | Changed verify steps fail verify | 1.3b | Proposed |
 | D15 | Where the canary runs, on whose agent account, with what isolation and token | 5.1 | Proposed |
 | D16 | API hosting | 4.0b | Proposed |
 | D17 | Telemetry consent model | 4.1a | Proposed; also [open question 5](risks-and-open-questions.md#open-questions-for-the-maintainers) |
-| D18 | Entry format v1 | 1.1 starts; 1.6a drafting | Proposed |
+| D18 | Entry format v1, amended 2026-10-26 (snake_case keys, literal dotfiles, `package_scope`, apps as fragments, `expect`) | 1.1 starts; 1.6a bringing the catalog into v1 | Proposed; amendment is an agent proposal |
 | D19 | Project-origin entries untrusted by default | 1.0 | Proposed |
 | D20 | MVP gate rule | 1.6b | Proposed |
 | D21 | Signed default index | 4.0c, 4.0d | Proposed |
@@ -742,9 +786,9 @@ question 9).
 | D23 | Demo first: CI and scheduled inference in phase 5 | The roadmap order; 0.2 and 1.6c scope | Proposed; this roadmap is written to it |
 | D24 | Headless agent auth by long-lived token, never copied credential files | 2.0b, 5.1 | Proposed |
 | D25 | Dependency-version telemetry, allowlisted names only | 4.2d | Proposed; needs D17 |
-| D26 | The `app` kind and its two-phase brief | 3.5a, 3.5b | Proposed; amends D18 |
+| D26 | The `app` kind and its two-phase brief | n/a | Superseded 2026-10-26 by the amended D18 (apps are fragments; the split brief is 1.1's) |
 | D27 | Native adapters for Codex, OpenCode and Cursor | 3.4b | Proposed |
-| D28 | The `package_scope` template variable | 3.3a | Proposed; amends D18 |
+| D28 | The `package_scope` template variable | n/a | Superseded 2026-10-26 by the amended D18 (in v1, built in 1.2a) |
 
 ## Competitive landscape, in one paragraph
 
@@ -765,7 +809,7 @@ registry (shadcn's registry JSON).
 
 | Idea | Why not now |
 |---|---|
-| Fetching the registry from a git branch on every run | Behavior would change under a fixed CLI version. Phase 4.0c serves a versioned index instead |
+| Fetching the registry from a git branch on every run | Behavior would change under a fixed CLI version. Phase 4.0c serves a versioned index instead. The planned 3.2c remote origin (cached for 24 hours, see [Feature gaps](#feature-gaps-to-close-before-release)) has to answer this objection in its plan |
 | Ratings, reviews, accounts | Gameable, need moderation, and verify outcomes answer "does it work" better |
 | Field notes (dated, expiring findings in briefs) | Useful, but the Build workarounds section in each generated project covers it until the canary shows the need |
 | Hooks into spec-driven workflows | A project quickstacks builds already has AGENTS.md; a spec kit can start from there |

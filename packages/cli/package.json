@@ -22,7 +22,8 @@
   },
   "dependencies": {
     "@effect/platform-bun": "catalog:",
-    "effect": "catalog:"
+    "effect": "catalog:",
+    "yaml": "catalog:"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",

@@ -26,6 +26,7 @@ proposal (D23).
 | Headless agent logins don't survive a throwaway HOME | Copied OAuth credentials rotate and invalidate the original; keychain logins can't be copied | Long-lived tokens passed by env (D24) |
 | The canary depends on one maintainer machine and one agent subscription (D15) | A machine that's off or a lapsed subscription looks like stacks passing silently | The canary reports its own last successful run; a missed schedule is itself an alert; infra failures are a separate class from rot ([5.1](phases/phase-5.1-scheduled-canary.md)) |
 | Telemetry, once added, costs trust in a tool that already hands a repo to an agent | The emotional job is trust | No collection before D17 and a published schema; the first enabled run sends nothing; consent is checked again at send time ([4.1a](phases/phase-4.1a-telemetry-cli-client.md) to [4.1c](phases/phase-4.1c-telemetry-maintenance-and-retention.md)) |
+| A stack's own prose and one of its fragments cover the same ground | `validate` only catches mechanical clashes (file owners, env, step names). A stack body that already sets up CI, hooks or a database and a fragment that does it differently compose cleanly but give the agent contradictory guidance; the result is a messy project or a red bench run, found late | An authoring rule that a stack's body never does what one of its own fragments does; `conflicts` declared by hand for known overlaps; a bench run of each stack's default composition ([2.0b](phases/phase-2.0b-bench.md)). A `validate` heuristic for overlap (shared tools, deps or headings between a stack and a fragment that applies to it) is open |
 
 ## Open questions for the maintainers
 
@@ -49,7 +50,10 @@ proposal (D23).
    count it, because that is what the agent reads, and 1.5 reports `fixedWords` beside
    `briefWords` so a CLI wording change that pushes a stack over is visible. Blocks
    [1.5](phases/phase-1.5-validate-and-brief-budget.md), and should be settled before
-   [1.6a](phases/phase-1.6a-bundled-stack-content.md) measures anything.
+   [1.6a](phases/phase-1.6a-bundled-stack-content.md) measures anything. Still defaulted
+   to "counted" as of 2026-10-26: 1.5 shipped counting it, and switching to authored text
+   only is a small change where `src/core/validate/compositions.ts` compares a size with
+   its limit.
 8. Is the agent's own log of the questions it asked the user (`## Asked` in
    `.quickstacks/NOTES.md`) good enough to count interventions in interactive runs, or do
    interactive runs only count as anecdotes and headless bench runs carry the measure?
@@ -160,3 +164,16 @@ plan keeps its choice in each case; the maintainers confirm or change it.
     page and detail route and never as a ranking of agents across stacks
     ([4.2a](phases/phase-4.2a-stats-rollup-and-routes.md)). Is a per-stack breakdown
     acceptable to publish, given it lets readers compare agents on one stack? Blocks 4.2a.
+
+32. How does a change to a stack or fragment get accepted? The plan supplies the
+    mechanical proof (`validate`, a green bench run of the affected compositions, "changed
+    since last green") but no review protocol: what evidence a contribution carries (its
+    own bench run record?), who blesses a change to a stack, how much an agent's first-pass
+    review and refactor can stand in for a human's, and how a team enforces its own rules
+    beyond its stacks' verify steps and a private source. Revisions are likely to arrive in
+    bursts (a new tool, a stack still being learned), and a burst of fragment edits
+    invalidates many compositions at once, which bench cost and the phase 5 schedule
+    assume won't happen. Needed before
+    [3.2a](phases/phase-3.2a-git-sources-and-untrusted-origin.md) opens outside sources
+    and before [3.3a](phases/phase-3.3a-release-and-deploy-fragments.md) proves entries in
+    bulk.

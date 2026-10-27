@@ -1,0 +1,117 @@
+import { Duration, Effect, FileSystem, Option } from "effect";
+import { AppConfig, GIT_REPOSITORY_VARIABLES } from "../../config";
+import type { NewResult } from "../../schemas/new";
+import { Processes } from "../../services/processes";
+import type { GitState } from "../brief/render";
+import type { Target } from "./target";
+
+/**
+ * Every git command `new` runs is one of these constants; no entry content reaches git. Each runs
+ * without `GIT_REPOSITORY_VARIABLES`, so git finds the repository from `cwd` alone, and with
+ * `LC_ALL=C`, so its messages are the untranslated ones `probeGit` reads.
+ */
+const TIMEOUT = Duration.seconds(10);
+const TOPLEVEL = "git rev-parse --show-toplevel 2>&1";
+const HAS_COMMIT = "git rev-parse --verify --quiet HEAD >/dev/null 2>&1";
+const INIT = "git init --quiet";
+const USER_NAME = "git config user.name 2>/dev/null";
+/** What git prints when no repository encloses its working directory. */
+const NOT_A_REPOSITORY = "not a git repository";
+
+/** A constant git command in `cwd`; `undefined` when it couldn't start. */
+const git = (command: string, cwd: string) =>
+  Effect.gen(function* () {
+    const processes = yield* Processes;
+    const env = (yield* AppConfig).childEnv(GIT_REPOSITORY_VARIABLES, { LC_ALL: "C" });
+    return yield* processes
+      .run({ command, cwd, env, timeout: TIMEOUT })
+      .pipe(Effect.catchTag("SpawnFailed", () => Effect.succeed(undefined)));
+  });
+
+type Finished = { exitCode: number; timedOut: boolean; tail: string };
+const ok = (finished: Finished | undefined): finished is Finished =>
+  finished !== undefined && finished.exitCode === 0 && !finished.timedOut;
+/** A git command's exit code for a warning: 124 for a timeout, none when it couldn't start. */
+const exitOf = (finished: Finished | undefined) =>
+  finished === undefined ? undefined : finished.timedOut ? 124 : finished.exitCode;
+
+/** Whether git is on the captured PATH (`Processes.which`, the only PATH search). */
+export const gitInstalled = Effect.gen(function* () {
+  return Option.isSome(yield* (yield* Processes).which("git"));
+});
+
+export type GitProbe = {
+  state: GitState;
+  /** Whether `new` should run `git init`: only for a fresh target with no `.git` of its own. */
+  init: boolean;
+  /** The repository is the target's own (its root is the target), not one enclosing it. */
+  own: boolean;
+  /** Set when git couldn't say where the target stands; the state is then `none`. */
+  warning?: NewResult["warnings"][number];
+};
+
+/**
+ * Where the target stands with git, before anything is written: `none` without git; `parent`
+ * inside another work tree, or in its own `.git` that already has commits (`own` then); `fresh`
+ * when git says no repository encloses it, or in its own repository with nothing committed.
+ *
+ * Only git's "not a git repository" counts as no repository. Any other failure (a `.git` in the
+ * target that git can't read, an unsafe-ownership refusal, a timeout) is `none` with a
+ * `git_unusable` warning, so `new` never runs `git init` over a `.git` it can't vouch for or
+ * nests a repository inside one git refused to read.
+ */
+export const probeGit = (
+  target: Target,
+  installed: boolean,
+): Effect.Effect<GitProbe, never, FileSystem.FileSystem | Processes | AppConfig> =>
+  Effect.gen(function* () {
+    const none = { state: { kind: "none" } as GitState, init: false, own: false };
+    if (!installed) return none;
+    const fs = yield* FileSystem.FileSystem;
+    const found = yield* git(TOPLEVEL, target.nearest);
+    const toplevel = ok(found) ? (found.tail.trim().split("\n").at(-1) ?? "") : "";
+    if (!toplevel) {
+      const unenclosed =
+        found !== undefined &&
+        found.exitCode !== 0 &&
+        !found.timedOut &&
+        found.tail.includes(NOT_A_REPOSITORY);
+      // A `.git` in the target that git doesn't see as a repository is not ours to init over.
+      if (unenclosed && !target.git)
+        return { state: { kind: "fresh" } as GitState, init: true, own: false };
+      const exitCode = exitOf(found);
+      return {
+        ...none,
+        warning: {
+          code: "git_unusable" as const,
+          id: "git",
+          ...(exitCode === undefined ? {} : { exitCode }),
+        },
+      };
+    }
+    const real = (at: string) => fs.realPath(at).pipe(Effect.orElseSucceed(() => at));
+    const own = target.exists && (yield* real(toplevel)) === (yield* real(target.path));
+    if (!own) return { state: { kind: "parent", toplevel } as GitState, init: false, own: false };
+    // The target's own repository: still fresh until something is committed in it.
+    const committed = ok(yield* git(HAS_COMMIT, target.path));
+    return {
+      state: (committed ? { kind: "parent", toplevel } : { kind: "fresh" }) as GitState,
+      init: false,
+      own: true,
+    };
+  });
+
+/** `git init --quiet` in the project root: its exit code, or 127 when git couldn't start. */
+export const gitInit = (root: string) =>
+  Effect.gen(function* () {
+    const finished = yield* git(INIT, root);
+    if (!finished) return 127;
+    return finished.timedOut && finished.exitCode === 0 ? 124 : finished.exitCode;
+  });
+
+/** `git config user.name` from `cwd` (the target's nearest existing directory), else empty. */
+export const gitUserName = (cwd: string) =>
+  Effect.gen(function* () {
+    const finished = yield* git(USER_NAME, cwd);
+    return ok(finished) ? (finished.tail.split("\n")[0]?.trim() ?? "") : "";
+  });

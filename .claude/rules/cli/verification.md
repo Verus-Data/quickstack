@@ -22,6 +22,6 @@ Lefthook's pre-commit formats and restages safe fixes, which can leave part of t
 
 ## Run the real command
 
-For any CLI change, run the changed command in human and `--json` modes as `rules/cli/cli.md` "Verifying UX" describes. Tests through `runCli` don't cover the compiled binary's startup or the dev wrapper.
+For any CLI change, run the changed command in human and `--json` modes as `rules/cli/cli.md` "Verifying UX" describes. Tests through `runCli` don't cover the compiled binary's startup or the dev wrapper. Running it is half the job: `rules/cli/testing.md` "Manual QA as the user" covers judging the output as the agent that will use it, and the QA note that goes in the report.
 
 When something fails, read the logs AGENTS.md "Debugging" names before guessing.

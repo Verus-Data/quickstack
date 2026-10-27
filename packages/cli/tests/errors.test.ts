@@ -5,12 +5,16 @@ import { expect, test } from "vitest";
 import {
   BadInput,
   BrokenPipe,
+  ComposeConflict,
+  EntryInvalid,
   errorClasses,
   errorTable,
   exitCode,
+  NotFound,
   PermissionDenied,
   PermissionDeniedDetails,
   retryable,
+  ValidationFailed,
   VerifyChanged,
   VerifyFailed,
 } from "../src/errors";
@@ -29,6 +33,10 @@ test("the published error table, written out row by row", () => {
     VerifyFailed: { exit: 5, retryable: false, keepsResult: true },
     VerifyChanged: { exit: 5, retryable: false, keepsResult: true },
     PermissionDenied: { exit: 6, retryable: false, keepsResult: false },
+    EntryInvalid: { exit: 2, retryable: false, keepsResult: false },
+    ComposeConflict: { exit: 2, retryable: false, keepsResult: false },
+    TargetNotEmpty: { exit: 2, retryable: false, keepsResult: false },
+    ValidationFailed: { exit: 2, retryable: false, keepsResult: true },
     Interrupted: { exit: 130, retryable: false, keepsResult: false },
     Defect: { exit: 1, retryable: false, keepsResult: false },
     BrokenPipe: { exit: 0, retryable: false, keepsResult: false },
@@ -92,6 +100,34 @@ test("details go into the JSON envelope and as indented lines in human mode", as
   expect(human.status).toBe(6);
   expect(human.stderr).toBe("Permission denied.\n  Path: /private/target\n");
 });
+test.each([
+  [
+    "escape",
+    "The path resolves outside the project directory, through a symlink or `..`.\n  Next: remove that symlink from the project directory, or pick another directory.",
+  ],
+  [
+    "unwritable",
+    "The project directory or a file in it can't be written. Nothing was left behind.\n  Next: pick a directory you can write to, or fix this one's permissions.",
+  ],
+] as const)("PermissionDenied %s ends with a Next line", async (reason, lines) => {
+  const error = new PermissionDenied({ details: { reason, path: "/work/app" } });
+  const human = await runCli([], { program: Effect.fail(error), env: quiet });
+  expect(human.status).toBe(6);
+  expect(human.stdout).toBe("");
+  expect(human.stderr).toBe(`Permission denied.\n  Path: /work/app\n  ${lines}\n`);
+});
+test("a Next line names the CLI the way it was invoked", async () => {
+  const human = await runCli([], {
+    program: Effect.fail(new NotFound({ details: { suggestions: [] } })),
+    env: quiet,
+    host: { invocation: "npx quickstacks" },
+  });
+  expect(human.status).toBe(2);
+  expect(human.stdout).toBe("");
+  expect(human.stderr).toBe(
+    "Not found.\n  Next: npx quickstacks list shows every stack and fragment.\n",
+  );
+});
 test("a details object mutated to carry an extra property is a defect, not a leak", async () => {
   const dir = tempDir();
   try {
@@ -113,6 +149,132 @@ test("a details object mutated to carry an extra property is a defect, not a lea
     dir.cleanup();
   }
 });
+test("EntryInvalid details name the entry in the envelope and in human mode", async () => {
+  const error = new EntryInvalid({
+    details: { id: "bun-web", origin: "user", reason: "symlink", path: "files/link" },
+  });
+  const json = await runCli(["--json"], { program: Effect.fail(error) });
+  expect(json.status).toBe(2);
+  expect(JSON.parse(json.stderr)).toEqual({
+    error: {
+      tag: "EntryInvalid",
+      message: "Entry is invalid.",
+      retryable: false,
+      details: { id: "bun-web", origin: "user", reason: "symlink", path: "files/link" },
+    },
+  });
+  const human = await runCli([], { program: Effect.fail(error), env: quiet });
+  expect(human.stderr).toBe(
+    "Entry is invalid.\n  Entry: bun-web (user, symlink)\n  Path: files/link\n",
+  );
+});
+test.each([
+  [
+    "ComposeConflict with every key",
+    new ComposeConflict({
+      details: {
+        reason: "env",
+        stack: "web-stack",
+        ids: ["port-clash"],
+        path: "a.json",
+        step: "web",
+        key: "PORT_WEB",
+      },
+    }),
+    "These entries can't be composed.\n  Reason: env\n  Stack: web-stack\n  Fragments: port-clash\n  Path: a.json\n  Step: web\n  Key: PORT_WEB\n",
+  ],
+  [
+    "ComposeConflict between fragments",
+    new ComposeConflict({ details: { reason: "cycle", ids: ["cycle-a", "cycle-b"] } }),
+    "These entries can't be composed.\n  Reason: cycle\n  Fragments: cycle-a, cycle-b\n",
+  ],
+  [
+    "BadInput for an id in --with and --without",
+    new BadInput({ details: { id: "ci", flag: "with_without" } }),
+    "Invalid input.\n  Id: ci\n  Flags: --with and --without\n  Next: name ci in only one of --with and --without.\n",
+  ],
+  [
+    "BadInput for --scope",
+    new BadInput({ details: { id: "Acme/x", flag: "scope" } }),
+    "Invalid input.\n  Flag: --scope Acme/x\n  Next: pass an npm scope such as acme or @acme: lowercase, URL-safe, no /.\n",
+  ],
+  [
+    "BadInput for a directory name",
+    new BadInput({ details: { id: "a\u0007b", flag: "dir" } }),
+    "Invalid input.\n  Directory name: a\\u0007b\n  Next: pick a project directory whose name has no control characters.\n",
+  ],
+  [
+    "BadInput for a flag that needs --brief",
+    new BadInput({ details: { id: "--with", flag: "brief" } }),
+    "Invalid input.\n  Flag: --with\n  Next: --with, --without and --sandbox need --brief <stack>; add it, or drop the flag.\n",
+  ],
+  [
+    "NotFound for an id in a registry root list doesn't read",
+    new NotFound({ details: { suggestions: ["web"], root: "/work/my registry" } }),
+    "Not found.\n  Did you mean: web?\n  Next: quickstacks validate '/work/my registry' lists the ids under that root.\n",
+  ],
+  [
+    "EntryInvalid for an unknown template variable",
+    new EntryInvalid({
+      details: { id: "web", origin: "user", reason: "template", path: "files/a.tmpl", line: 2 },
+    }),
+    "Entry is invalid.\n  Entry: web (user, template)\n  Path: files/a.tmpl:2\n  Next: use only project_name, project_slug, env_prefix, package_scope, author, year in that file's {{ }} tokens, or drop its .tmpl suffix to copy it as is.\n",
+  ],
+  [
+    "EntryInvalid with a line and a problem",
+    new EntryInvalid({
+      details: {
+        id: "bad-when",
+        origin: "user",
+        reason: "conditional",
+        path: "FRAGMENT.md",
+        line: 11,
+        problem: "unclosed",
+      },
+    }),
+    "Entry is invalid.\n  Entry: bad-when (user, conditional)\n  Path: FRAGMENT.md:11\n  Problem: unclosed\n",
+  ],
+  [
+    "NotFound with the path it looked for",
+    new NotFound({ details: { suggestions: [], looked: "/work/regsitry" } }),
+    "Not found.\n  Looked for: /work/regsitry\n  Next: pass a registry root (a directory holding stacks/ or fragments/) or an entry directory inside one.\n",
+  ],
+  [
+    "ValidationFailed with its counts",
+    new ValidationFailed({ details: { errors: 3, warnings: 1 } }),
+    "Validation failed.\n  Errors: 3, warnings: 1\n",
+  ],
+] as const)(
+  "%s: details in the envelope, detail lines in human mode",
+  async (_case, error, human) => {
+    const json = await runCli(["--json"], { program: Effect.fail(error), env: quiet });
+    expect(json.status).toBe(2);
+    expect(json.stdout).toBe("");
+    expect(JSON.parse(json.stderr)).toEqual({
+      error: { tag: error._tag, message: error.message, retryable: false, details: error.details },
+    });
+    const text = await runCli([], { program: Effect.fail(error), env: quiet });
+    expect(text.status).toBe(2);
+    expect(text.stdout).toBe("");
+    expect(text.stderr).toBe(human);
+  },
+);
+test.each([
+  ["ComposeConflict", () => new ComposeConflict({ details: { reason: "cycle", ids: ["a"] } })],
+  ["BadInput", () => new BadInput({ details: { id: "ci", flag: "with_without" } })],
+  ["ValidationFailed", () => new ValidationFailed({ details: { errors: 1, warnings: 0 } })],
+] as const)(
+  "%s details mutated to carry an extra key are a defect, not a leak",
+  async (_tag, make) => {
+    const error = make();
+    Object.assign(error.details ?? {}, { extra: "leaked" });
+    const result = await runCli(["--json"], { program: Effect.fail(error), env: quiet });
+    expect(result.status).toBe(1);
+    expect(result.stdout).toBe("");
+    expect(JSON.parse(result.stderr).error.tag).toBe("Defect");
+    expect(result.stderr).not.toContain("leaked");
+  },
+);
 test("construction drops keys the details schema doesn't name", () => {
   const error = new PermissionDenied({ details: { reason: "write", extra: 1 } as never });
   expect(error.details).toEqual({ reason: "write" });

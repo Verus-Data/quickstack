@@ -211,8 +211,9 @@ the same failure rule as the run record.
 2. Editing one step's `run` in the manifest fails `VerifyChanged`, exit 5, with that step
    in `edited`, no step run, and a `changed` run record.
 3. Editing the step and the stored digest together still fails, `against: "state-record"`.
-4. Editing a step's `timeout`, `skipByDefault` or `probe`, the manifest `env`, or
-   `preset` each fails `VerifyChanged` (digest coverage, checked end to end).
+4. Editing a step's `timeout`, `skipByDefault`, `tags` or `expect` (its `http` URL or its
+   `within`), the manifest `env`, or `preset` each fails `VerifyChanged` (digest coverage,
+   checked end to end; removing the `app` tag from an app step is one of the `tags` cases).
 5. Deleting the state record gives `tamperCheck: "manifest-only"` and a green run with no
    `firstGreenAt` written.
 6. Changing `projectId` in the manifest (and its digest) while the old record exists

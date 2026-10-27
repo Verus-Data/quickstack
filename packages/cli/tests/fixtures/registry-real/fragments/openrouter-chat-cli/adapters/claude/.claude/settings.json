@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun run test:tui)",
+      "Bash(bun test ./tests/tui)",
+      "Bash(bun test ./tests/tui/*)",
+      "Bash(bun run stub)",
+      "Bash(bun run stub:stop)",
+      "Bash(bun run tui:capture *)",
+      "Bash(bun run eval -- --dry-run)"
+    ]
+  }
+}

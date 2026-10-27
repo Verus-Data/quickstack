@@ -14,6 +14,7 @@ import {
   Usage,
 } from "./errors";
 import { defectTrace, entry, Logging } from "./logging";
+import { Host } from "./services/host";
 import { Output } from "./services/output";
 import { VERSION } from "./version";
 /** Whether one of `flags` comes before any `--`; what follows `--` belongs to the command. */
@@ -62,6 +63,7 @@ export function main(
   return Effect.uninterruptibleMask((restore) =>
     Effect.gen(function* () {
       const output = yield* Output;
+      const { invocation } = yield* Host;
       const logging = yield* Logging;
       const config = yield* AppConfig;
       const settings = yield* config.logging;
@@ -149,7 +151,7 @@ export function main(
           if (failure && !(failure.error instanceof BrokenPipe))
             unwritten = knownError(failure.error)?._tag ?? "Defect";
         } else yield* output.clear;
-        const written = yield* Effect.exit(output.error(error));
+        const written = yield* Effect.exit(output.error(error, invocation));
         if (
           !keep &&
           Exit.isFailure(written) &&
@@ -163,7 +165,7 @@ export function main(
           error = new Defect();
           defect = defectTrace(Cause.squash(written.cause));
           status = exitCode(error);
-          yield* output.error(error).pipe(Effect.catchCause(() => Effect.void));
+          yield* output.error(error, invocation).pipe(Effect.catchCause(() => Effect.void));
         }
       } else {
         const flushed = yield* Effect.exit(output.flush);
@@ -173,7 +175,7 @@ export function main(
           error = failure ? (knownError(failure.error) ?? new Defect()) : new Defect();
           if (error instanceof Defect) defect = defectTrace(Cause.squash(flushed.cause));
           status = exitCode(error);
-          yield* output.error(error).pipe(Effect.catchCause(() => Effect.void));
+          yield* output.error(error, invocation).pipe(Effect.catchCause(() => Effect.void));
         }
       }
       const finished = yield* Clock.currentTimeMillis;
