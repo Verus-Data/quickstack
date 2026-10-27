@@ -70,6 +70,14 @@ ships Claude rules for Effect HTTP APIs, REST resource naming, testing through H
 real layers, verification and TypeScript, `/add-resource` and `/add-service` commands, and
 boundary and command guards with tests.
 
+## 4.5a executed (2026-10-27)
+
+[4.5a](phases/phase-4.5a-search-evaluation-set.md) landed: `tests/fixtures/search/golden.json`
+holds 45 judged requests (29 tune, 16 holdout) covering every bundled stack and fragment, with
+the `GoldenSet` schema and `evaluate` in `tests/helpers/`; `docs/maintaining.md` says how to
+judge and when the baseline moves. The baseline stays at zero until 4.5c. The maintainers still
+review the judgments and record the date in the plan. 4.5b can start.
+
 ## 4.0a executed (2026-10-27)
 
 [4.0a](phases/phase-4.0a-format-package.md) landed: the entry, manifest and run-record
