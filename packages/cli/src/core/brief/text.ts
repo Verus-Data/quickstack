@@ -1,3 +1,4 @@
+import { INCOMING, MANIFEST_PATH, METADATA_DIR, NOTES_PATH } from "../../project-layout";
 /**
  * Every fixed sentence of the brief, so its wording can be read and reviewed in one place.
  * `cli` is `Host.invocation`; `code` wraps a value as inline code. Nothing else in the CLI writes
@@ -18,7 +19,7 @@ export const facts = {
   preset: (sandbox: boolean) =>
     `- Preset: ${sandbox ? "sandbox (local only, never deployed)" : "default"}`,
   agents: (ids: ReadonlyArray<string>) => `- Target agents: ${ids.join(", ")}`,
-  root: "- Project root: the directory containing `.quickstacks/`. Run every command from there.",
+  root: `- Project root: the directory containing \`${METADATA_DIR}/\`. Run every command from there.`,
   written: "- Files quickstacks wrote:",
   invocation: (cli: string) =>
     `- Wherever this brief says ${code("quickstacks <command>")}, run ${code(`${cli} <command>`)}.`,
@@ -31,7 +32,7 @@ export const untrusted = {
     `- ${kind} ${code(id)} (${origin}): ${code(dir)}`,
   where: (fromProject: boolean, fromOverride: boolean) =>
     `They came from ${[
-      ...(fromProject ? ["the project's `.quickstacks/` directory"] : []),
+      ...(fromProject ? [`the project's \`${METADATA_DIR}/\` directory`] : []),
       ...(fromOverride ? ["the registry `QUICKSTACKS_REGISTRY_DIR` points at"] : []),
     ].join(
       " and ",
@@ -68,7 +69,7 @@ export const ground = {
   agentsMd:
     "- Keep `AGENTS.md` true: every command it lists exists, and it describes the project as built.",
   notes: [
-    "- Keep `.quickstacks/NOTES.md` as you work:",
+    `- Keep \`${NOTES_PATH}\` as you work:`,
     "  - Under `## Findings`, add a line whenever this brief is ambiguous, wrong, names something that doesn't exist or made you guess, and whenever an instruction stopped you making a mistake.",
     "  - Under `## Asked`, add a line with the time whenever you ask the user something or the user tells you something unprompted. An empty `## Asked` means no interventions.",
   ],
@@ -156,8 +157,7 @@ export const done = {
   environmentHead: ["| Variable | Default |", "|---|---|"],
   ports: (cli: string, example: string) =>
     `If a port is busy, set its variable when you run verify: ${code(`${example}=<free port> ${cli} verify`)}.`,
-  keepDefaults:
-    "Don't change the defaults in `.quickstacks/manifest.json`: `env` is part of the definition of done, and editing it fails verify.",
+  keepDefaults: `Don't change the defaults in \`${MANIFEST_PATH}\`: \`env\` is part of the definition of done, and editing it fails verify.`,
   rules: "### Rules",
   rule: {
     run: (cli: string) =>
@@ -166,8 +166,7 @@ export const done = {
       `- Run ${verify(cli, " --skip-tag app")} from the project root. The base is done when every step above passes and the outcome is ${code("partial")}; the project is done only at the end of the application section.`,
     create:
       "- A command a step calls that doesn't exist yet is yours to create, and it must do real work: `test` runs the tests, `lint` lints.",
-    weaken:
-      "- Don't weaken the definition of done. That means: editing the steps, `env` or anything else in `.quickstacks/manifest.json`; making a command exit 0 without doing its job (`|| true`, `exit 0`, an empty target, a script that only echoes); deleting, skipping or excluding tests to get a pass; flags that pass with no tests; lowering a lint or typecheck setting until it reports nothing; serving a stub instead of the app the probe should reach. Changed steps fail verify; the rest shows in the diff.",
+    weaken: `- Don't weaken the definition of done. That means: editing the steps, \`env\` or anything else in \`${MANIFEST_PATH}\`; making a command exit 0 without doing its job (\`|| true\`, \`exit 0\`, an empty target, a script that only echoes); deleting, skipping or excluding tests to get a pass; flags that pass with no tests; lowering a lint or typecheck setting until it reports nothing; serving a stub instead of the app the probe should reach. Changed steps fail verify; the rest shows in the diff.`,
     servers:
       "- Stop any dev server you started before running verify, or its port is taken and the serve step fails.",
     foreground:
@@ -177,7 +176,7 @@ export const done = {
     failing:
       "- When verify fails, read the step name, command and output tail it reports, fix the code or config that step exercises (not the step), and run it again.",
     changed: (cli: string) =>
-      `- If verify fails with \`VerifyChanged\` (exit 5, "Verify steps changed since they were recorded"), stop. Don't edit \`.quickstacks/manifest.json\` back and forth, and don't run ${code(`${cli} verify --accept-changes`)} yourself (it refuses agents). Tell the user which steps or settings it says changed, and that only they can accept that, by running it in their own terminal, or undo it. Then wait.`,
+      `- If verify fails with \`VerifyChanged\` (exit 5, "Verify steps changed since they were recorded"), stop. Don't edit \`${MANIFEST_PATH}\` back and forth, and don't run ${code(`${cli} verify --accept-changes`)} yourself (it refuses agents). Tell the user which steps or settings it says changed, and that only they can accept that, by running it in their own terminal, or undo it. Then wait.`,
   },
   qa: [
     "### Manual QA",
@@ -192,8 +191,7 @@ export const done = {
       : git.kind === "parent"
         ? "2. Don't commit: this is someone else's repository. List the files to commit in your summary and ask the user."
         : "2. Skip commits (git isn't installed) and say so in your summary.",
-  summary:
-    "3. End with a short summary: what you built, the decisions you took (with their defaults), anything you couldn't do, and a pointer to `.quickstacks/NOTES.md` for what this brief got wrong.",
+  summary: `3. End with a short summary: what you built, the decisions you took (with their defaults), anything you couldn't do, and a pointer to \`${NOTES_PATH}\` for what this brief got wrong.`,
 };
 
 export const application = {
@@ -223,8 +221,7 @@ export const add = {
   job: (cli: string) =>
     `Apply the new fragments without breaking what's there. quickstacks installed nothing and ran no verify steps. You're done when ${verify(cli)} checks the whole manifest and exits 0 with outcome ${code("green")}.`,
   merge: "## Merge needed",
-  mergeTask:
-    "Bring in what each incoming copy adds; keep the project's choices where they conflict. Delete `.quickstacks/incoming/` when every merge is done.",
+  mergeTask: `Bring in what each incoming copy adds; keep the project's choices where they conflict. Delete \`${INCOMING}/\` when every merge is done.`,
   required: "## Missing required fragments",
   accept: (cli: string) =>
     `The new steps have not been accepted. Stop and ask the user to run ${code(`${cli} verify --accept-changes`)} in their own terminal after reviewing them. Do not run it yourself.`,

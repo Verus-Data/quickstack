@@ -1,6 +1,7 @@
 import { Effect, Schema } from "effect";
 import { TEMPLATE_VARIABLES } from "./core/scaffold/template";
 import { printable } from "./core/text";
+import { BRIEF_PATH, MANIFEST_PATH } from "./project-layout";
 import { Kind, Origin } from "./schemas/entry";
 import { FailureKind, VerifyChange } from "./schemas/verify";
 /**
@@ -402,7 +403,7 @@ export function detailLines(error: AppError, invocation: string): string[] {
             : details.scaffold === "unfinished"
               ? [
                   "Scaffold: unfinished. An earlier `new` wrote this.",
-                  "Next: continue with .quickstacks/BRIEF.md, or remove the directory to start again.",
+                  `Next: continue with ${BRIEF_PATH}, or remove the directory to start again.`,
                 ]
               : details.scaffold === "green"
                 ? [
@@ -426,7 +427,7 @@ export function detailLines(error: AppError, invocation: string): string[] {
         ];
       if (details.kind === "project")
         return [
-          `Looked for: .quickstacks/manifest.json in ${printable(details.looked ?? ".")} and every directory above it`,
+          `Looked for: ${MANIFEST_PATH} in ${printable(details.looked ?? ".")} and every directory above it`,
           `Next: run ${invocation} verify inside a project ${invocation} new created, or create one with ${invocation} new <stack> <dir>.`,
         ];
       return [

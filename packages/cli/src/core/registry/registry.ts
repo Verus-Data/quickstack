@@ -1,6 +1,7 @@
 import { Context, Effect, FileSystem, Layer, Path, type PlatformError } from "effect";
 import { AppConfig } from "../../config";
 import { EntryInvalid, NotFound, PermissionDenied } from "../../errors";
+import { METADATA_DIR } from "../../project-layout";
 import { Host } from "../../services/host";
 import { printable } from "../text";
 import {
@@ -82,7 +83,7 @@ export const defaultRoots = Effect.gen(function* () {
   const paths = yield* (yield* AppConfig).paths;
   const bundled = yield* bundledRoot;
   return [
-    { origin: "project", path: path.join(host.cwd, ".quickstacks") },
+    { origin: "project", path: path.join(host.cwd, METADATA_DIR) },
     { origin: "user", path: paths.user },
     { origin: "bundled", path: bundled.path, overridden: bundled.overridden },
   ] satisfies RegistryRoots;

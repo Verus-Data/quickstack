@@ -10,6 +10,7 @@ import {
   Schema,
 } from "effect";
 import { InvalidConfig, NotFound, PermissionDenied } from "../errors";
+import { MANIFEST_PATH } from "../project-layout";
 import { withStepDefaults } from "../schemas/entry";
 import { Manifest, type ManifestStep } from "../schemas/manifest";
 import { VERSION } from "../version";
@@ -17,7 +18,7 @@ import type { Composition } from "./compose/compose";
 import type { Entry } from "./registry/entry";
 
 /** Where a project's manifest lives, relative to its root. */
-export const MANIFEST_PATH = ".quickstacks/manifest.json";
+export { MANIFEST_PATH } from "../project-layout";
 
 /** What the digest reads from a manifest; a later optional field can't reach it by accident. */
 export type DigestInput = Pick<Manifest, "verify" | "env" | "preset">;

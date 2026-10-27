@@ -149,11 +149,7 @@ describe("shipped agent skill", () => {
     const body = skill().body;
     const examples = commands(body);
     expect(examples.map((example) => example.name)).toEqual(
-      expect.arrayContaining(["list", "new", "verify"]),
-    );
-    expect(examples.some((example) => example.name === "add")).toBe(false);
-    expect(body.replace(/\s+/g, " ")).toMatch(
-      /existing (?:repos?\w*|projects?)[^.]*(?:not|doesn.t|aren.t|yet)/i,
+      expect.arrayContaining(["list", "new", "add", "verify"]),
     );
     const advertised = new Set<string>();
     for (const example of examples) {

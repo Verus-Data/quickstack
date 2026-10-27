@@ -1,24 +1,31 @@
-import { Clock, Effect, Exit, FileSystem, Option, Path, Schema } from "effect";
+import { Effect, Exit, FileSystem, Option, Path } from "effect";
 import { AppConfig } from "../../config";
-import { BadInput, ComposeConflict, InvalidConfig } from "../../errors";
-import { NpmScope } from "../../schemas/config";
+import { BadInput, ComposeConflict } from "../../errors";
+import {
+  BRIEF_PATH,
+  IGNORE,
+  IGNORE_PATH,
+  NOTES,
+  NOTES_PATH,
+  STATE_DIR,
+} from "../../project-layout";
 import type { AgentId } from "../../schemas/entry";
 import type { NewResult } from "../../schemas/new";
 import { Host } from "../../services/host";
-import { Processes } from "../../services/processes";
 import { type GitState, renderBrief } from "../brief/render";
 import { targetAgents } from "../compose/agents";
-import { compose, dropFlags, missingTools } from "../compose/compose";
+import { compose, dropFlags } from "../compose/compose";
 import { composeFilesWithNeutral } from "../compose/files";
+import { missingToolsOnPath } from "../compose/tools";
 import { fingerprintFromFiles } from "../fingerprint";
 import { type HandoffDecision, handoffRecord } from "../handoff";
 import { buildManifest, encodeManifest, MANIFEST_PATH } from "../manifest";
 import { removeProjectState, writeProjectState } from "../project-state";
 import { hasControl } from "../text";
-import { gitInit, gitInstalled, gitUserName, probeGit } from "./git";
-import { envPrefix, slug } from "./slug";
+import { gitInit, gitInstalled, probeGit } from "./git";
+import { slug } from "./slug";
 import { inspectTarget } from "./target";
-import { authorValue, type TemplateValues } from "./template";
+import { templateOverrides, templateValues } from "./values";
 import { openProject } from "./write";
 
 export type NewOptions = {
@@ -45,15 +52,7 @@ export type NewOptions = {
 /** What `new` wrote or planned, and the handoff the command carries out next. */
 export type Scaffolded = { result: Omit<NewResult, "handoff">; decision: HandoffDecision };
 
-export const BRIEF_PATH = ".quickstacks/BRIEF.md";
-const NOTES_PATH = ".quickstacks/NOTES.md";
-const IGNORE_PATH = ".quickstacks/.gitignore";
-/** The brief, the notes, local state and `add`'s incoming files stay out of git (roadmap). */
-const IGNORE = "/BRIEF.md\n/NOTES.md\n/state/\n/incoming/\n";
-const NOTES = "# Notes\n\n## Findings\n\n## Asked\n";
-
 const encoder = new TextEncoder();
-const scopeOf = (value: string) => value.replace(/^@/, "");
 
 /**
  * `new`: compose, check the target, render every file in memory, then write the entry files and
@@ -66,21 +65,9 @@ export const scaffold = (options: NewOptions) =>
     const host = yield* Host;
     const path = yield* Path.Path;
     const fs = yield* FileSystem.FileSystem;
-    const processes = yield* Processes;
     const settings = yield* (yield* AppConfig).get;
 
-    // Flag values first: nothing is read or written for a bad --scope.
-    if (
-      options.scope !== undefined &&
-      Option.isNone(Schema.decodeUnknownOption(NpmScope)(options.scope))
-    )
-      return yield* new BadInput({ details: { id: options.scope, flag: "scope" } });
-    const packageScope = scopeOf(options.scope ?? settings.packageScope ?? "");
-    if (options.name !== undefined && hasControl(options.name))
-      return yield* new BadInput({ details: { id: options.name, flag: "name" } });
-    const explicitAuthor = options.author === undefined ? undefined : authorValue(options.author);
-    if (options.author !== undefined && explicitAuthor === undefined)
-      return yield* new BadInput({ details: { id: options.author, flag: "author" } });
+    const overrides = yield* templateOverrides(options);
     const dir = path.resolve(
       host.cwd,
       options.dir ?? (options.name === undefined ? options.stack : slug(options.name)),
@@ -121,30 +108,14 @@ export const scaffold = (options: NewOptions) =>
       });
     }
 
-    const found = new Set<string>();
-    for (const { tool } of composition.tools)
-      if (Option.isSome(yield* processes.which(tool))) found.add(tool);
-    const missing = missingTools(composition, (tool) => found.has(tool));
+    const missing = yield* missingToolsOnPath(composition);
 
-    const slugged = slug(name);
-    // The setting is the user's to fix; a git user.name with control characters is just unused.
-    const author =
-      explicitAuthor !== undefined
-        ? explicitAuthor
-        : settings.author !== undefined
-          ? authorValue(settings.author)
-          : installed
-            ? (authorValue(yield* gitUserName(target.nearest)) ?? "")
-            : "";
-    if (author === undefined) return yield* new InvalidConfig();
-    const values: TemplateValues = {
-      project_name: name,
-      project_slug: slugged,
-      env_prefix: envPrefix(slugged),
-      package_scope: packageScope,
-      author,
-      year: String(new Date(yield* Clock.currentTimeMillis).getUTCFullYear()),
-    };
+    const values = yield* templateValues({
+      name,
+      settings,
+      overrides,
+      git: { cwd: target.nearest, installed },
+    });
     const { files, neutralFiles } = yield* composeFilesWithNeutral(composition, values);
     const contentFingerprint = fingerprintFromFiles(composition, neutralFiles);
 
@@ -196,7 +167,7 @@ export const scaffold = (options: NewOptions) =>
             const writer = yield* openProject(dir);
             for (const file of plannedFiles)
               yield* writer.write(file.path, file.bytes, file.executable);
-            yield* writer.directory(".quickstacks/state");
+            yield* writer.directory(STATE_DIR);
             yield* writer.write(MANIFEST_PATH, manifestBytes);
             // Outside the project, so the writer doesn't track it: its own release undoes it on a
             // failure or interruption from here on. Acquiring is uninterruptible, so a written record

@@ -1,4 +1,5 @@
 import { Schema } from "effect";
+import { BRIEF_PATH } from "../project-layout";
 import { NewResult } from "./new";
 import { TamperCheck } from "./verify";
 
@@ -22,7 +23,7 @@ export const AddResult = Schema.Struct({
   tamperCheck: Schema.NullOr(TamperCheck),
   stateRecord: Schema.Boolean,
   digestRecorded: Schema.Boolean,
-  brief: Schema.Literal(".quickstacks/BRIEF.md"),
+  brief: Schema.Literal(BRIEF_PATH),
   briefWords: Schema.Number,
   untrusted: NewResult.fields.untrusted,
   handoff: NewResult.fields.handoff,

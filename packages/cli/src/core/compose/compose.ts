@@ -6,6 +6,7 @@ import {
   NotFound,
   type PermissionDenied,
 } from "../../errors";
+import { METADATA_DIR } from "../../project-layout";
 import {
   type AgentId,
   APP_TAG,
@@ -425,7 +426,7 @@ const fold = (name: string) => name.normalize("NFC").toLowerCase();
  */
 export function reservedSegment(segment: string): boolean {
   const name = (fold(segment.replace(HFS_IGNORABLE, "")).split(":")[0] ?? "").replace(/[. ]+$/, "");
-  return name === ".git" || name === ".quickstacks" || name === "git~1" || name === "quicks~1";
+  return name === ".git" || name === METADATA_DIR || name === "git~1" || name === "quicks~1";
 }
 
 /** Every output path with one owner, or one JSON merge of writers that all list it in `merge`. */

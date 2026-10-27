@@ -9,6 +9,7 @@ import { shownPath } from "../core/shown-path";
 import { closest } from "../core/suggest";
 import { printable } from "../core/text";
 import { Usage } from "../errors";
+import { METADATA_DIR } from "../project-layout";
 import { ListResult } from "../schemas/list";
 import { Host } from "../services/host";
 import { Output } from "../services/output";
@@ -67,7 +68,7 @@ export const listCommand = Command.make(
       );
       const roots = (yield* defaultRoots).map((entry) =>
         entry.origin === "project"
-          ? { ...entry, path: path.join(projectRoot, ".quickstacks") }
+          ? { ...entry, path: path.join(projectRoot, METADATA_DIR) }
           : entry,
       );
       const bundled = roots.find((root) => root.origin === "bundled");
