@@ -87,7 +87,9 @@ GIT_DIR_ABS="$(cd "$WT" && cd "$(git rev-parse --git-dir)" && pwd -P)"
 GIT_COMMON_ABS="$(cd "$WT" && cd "$(git rev-parse --git-common-dir)" && pwd -P)"
 [ "$GIT_DIR_ABS" != "$GIT_COMMON_ABS" ] ||
     die "refusing to run a delegate in the main checkout ($WT); create a worktree under .claude/worktrees/"
-[ -d "$WT/node_modules" ] || die "$WT has no node_modules; run bun install --frozen-lockfile there first"
+# A project with no package.json yet (a fresh scaffold the delegate sets up) has nothing to install.
+[ ! -f "$WT/package.json" ] || [ -d "$WT/node_modules" ] ||
+    die "$WT has no node_modules; run bun install --frozen-lockfile there first"
 CODEX="${CODEX_BIN:-$(command -v codex)}"
 [ -n "$CODEX" ] && [ -x "$CODEX" ] || die "codex not found on PATH (or set CODEX_BIN)"
 

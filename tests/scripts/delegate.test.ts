@@ -87,11 +87,18 @@ describe("delegate.sh", () => {
     expect(result.stderr).toContain("refusing to run a delegate in the main checkout");
   });
 
-  it("refuses a worktree without node_modules", () => {
+  it("refuses a worktree with a package.json but no node_modules", () => {
     rmSync(join(worktree, "node_modules"), { recursive: true });
+    writeFileSync(join(worktree, "package.json"), "{}\n");
     const result = run([contract, "--worktree", worktree]);
     expect(result.status).toBe(2);
     expect(result.stderr).toContain("no node_modules");
+  });
+
+  it("runs in a worktree with nothing to install yet", () => {
+    rmSync(join(worktree, "node_modules"), { recursive: true });
+    const result = run([contract, "--worktree", worktree, "--write"]);
+    expect(result.status, result.stderr).toBe(0);
   });
 
   it("runs Codex unsandboxed on sol 6.1 at high effort and digests a completed turn", () => {
