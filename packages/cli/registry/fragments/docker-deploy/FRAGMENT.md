@@ -15,7 +15,10 @@ decisions:
   - "Publish trigger: after CI succeeds on the default branch plus on v* tags (default), or tags only."
   - "Frontend serving (python-react): a separate static-file image (default), or the API image serves the built SPA."
 verify:
-  - { name: image-build, layer: build, run: make docker-build, tags: [prod] }
+  - name: image-build
+    layer: build
+    run: "(test ! -f Makefile || make docker-build) && (test -f Makefile || bun run docker-build)"
+    tags: [prod]
 commands:
   docker-build: Build container images
 ---
@@ -41,6 +44,12 @@ A production image per deployable part and a workflow that publishes them, writt
 <!-- quickstack:when stack=python-react -->
 **React SPA**: build with bun, serve `build/client` from an unprivileged nginx or Caddy image with the `index.html` fallback, immutable caching for hashed assets, `no-cache` for `index.html`, a `/healthz` location, and a `/api` proxy if the API shares the origin.
 <!-- quickstack:end -->
+<!-- quickstack:when stack=typescript-api -->
+**Node API**: one root `Dockerfile`. Build the bundle with bun in the build stage; the runtime stage is the official slim Node image matching `.node-version` with only `dist/`, no `node_modules` or source, running `node` on the bundle with `NODE_ENV=production`, so it logs JSON to stdout and never writes `logs/`. The health check fetches `/healthz` with Node's own `fetch`.
+<!-- quickstack:end -->
+<!-- quickstack:when stack=astro-api -->
+**API and site**: one root `Dockerfile`, one image. The build stage installs the workspace frozen and runs `bun run build`; the runtime stage is the official slim Node image matching `.node-version` with only the API bundle and `apps/web/dist`, `STATIC_DIR` pointing at the copied site and `NODE_ENV=production`. The health check fetches `/healthz` with Node's own `fetch`.
+<!-- quickstack:end -->
 <!-- quickstack:when tag=go -->
 **Go**: `CGO_ENABLED=0` with version ldflags in the official Go image, static binary copied into a distroless nonroot runtime.
 <!-- quickstack:end -->
@@ -49,7 +58,12 @@ A production image per deployable part and a workflow that publishes them, writt
 **Migrations** run as a one-shot `docker run <image> <migrate command>`, never on container start, so replicas can't race.
 <!-- quickstack:end -->
 
+<!-- quickstack:when tag=make -->
 **Makefile**: `docker-build` builds every image as `<project-slug>-<part>:local` (verify calls it); `docker-run` runs them together with `.env` (a `compose.prod.yaml` for several images).
+<!-- quickstack:end -->
+<!-- quickstack:when tag=scripts -->
+**Package scripts**: `docker-build` builds every image as `<project-slug>-<part>:local` (verify calls it with `bun run`, since there's no Makefile); `docker-run` runs them together with `.env`.
+<!-- quickstack:end -->
 
 **`.github/workflows/docker-publish.yml`**:
 - Trigger per the decision: `workflow_run` of CI on the default branch, proceeding only on `conclusion == 'success'` and checking out that run's `head_sha`, plus `v*` tag pushes.
@@ -60,4 +74,4 @@ A production image per deployable part and a workflow that publishes them, writt
 
 ## AGENTS.md
 
-A **Deploy** section: images and Dockerfiles, `make docker-build`/`docker-run`, where and when images publish, how migrations run, no secrets in images. Pending user actions: package visibility on GitHub, and the deploy target and its secrets once chosen.
+A **Deploy** section: images and Dockerfiles, the `docker-build`/`docker-run` commands, where and when images publish, how migrations run, no secrets in images. Pending user actions: package visibility on GitHub, and the deploy target and its secrets once chosen.

@@ -1,0 +1,55 @@
+---
+description: "Use before adding, renaming or changing an HTTP endpoint: resource naming, methods, status codes, bodies, pagination and versioning."
+globs: "**/api.ts,**/api/**,**/routes/**,**/routers/**,**/handlers/**,**/schemas/**,**/contract/**"
+alwaysApply: false
+---
+
+# REST resources
+
+The path is the API's public vocabulary. Clients, docs and logs repeat it for years, so name it from the domain before writing a handler. If you can't say what the resource is in one noun, the design isn't ready: stop and ask.
+
+The prefix, error envelope, pagination limits and wrong-method behavior this project chose are in AGENTS.md, "API conventions". Examples below use the default `/v1` prefix.
+
+## Naming paths
+
+- A path names a resource, never an action. The method says what happens. `POST /v1/orders`, not `POST /v1/createOrder`, `/v1/orders/create` or `/v1/order-creation`.
+- Collections are plural nouns: `/v1/orders`, `/v1/orders/{orderId}`. Never mix `/v1/order/{id}` and `/v1/orders`.
+- Lowercase kebab-case segments (`/v1/line-items`), camelCase JSON fields (`createdAt`). No underscores, file extensions or trailing slashes in paths.
+- Use the domain's word, the one users and the code already use, consistently. Don't alternate synonyms (`users`, `accounts`, `members`) for one thing, and don't invent a new noun when an existing resource fits. Search the API definitions for the existing name first.
+- Path params are named for their resource (`{orderId}`, not `{id}` or `{param}`) and identify exactly one thing. Everything optional (filters, sort, paging) goes in the query.
+- Nest only for ownership, and one level deep: `/v1/orders/{orderId}/line-items`. A resource that exists on its own gets its own top-level collection, filtered by query (`/v1/line-items?orderId=...`), not `/v1/customers/{c}/orders/{o}/line-items`.
+- No verbs, no `get`, `list`, `do`, `handle`, `manage`, `data`, `info` or `api` in paths. Generic nouns like `items`, `records` or `objects` name nothing.
+- An operation that truly isn't CRUD becomes a sub-resource noun for its outcome: `POST /v1/orders/{orderId}/cancellation`, `POST /v1/exports` (which returns an export resource you can GET). Reach for this only after trying a field update (`PATCH status`).
+- Operation names in code follow one pattern per resource: `list`, `get`, `create`, `update`, `delete`, then a noun for any sub-resource. The module or file is named for the plural path (`orders`).
+
+## Methods and status codes
+
+| Method | Use | Success |
+|---|---|---|
+| `GET /things` | List, paginated | 200 with the page |
+| `GET /things/{thingId}` | Read one | 200, or 404 |
+| `POST /things` | Create; the server assigns the id | 201 with the created resource and a `Location` header |
+| `PUT /things/{thingId}` | Replace the whole resource, only when the client owns the id | 200 or 201 |
+| `PATCH /things/{thingId}` | Partial update of named fields | 200 with the updated resource |
+| `DELETE /things/{thingId}` | Remove | 204; deleting an absent resource is 404 |
+
+GET, PUT and DELETE are idempotent and GET changes nothing; never put a side effect behind GET. Status codes come only from the project's error table: 400 malformed or invalid input, 401 no or bad credentials, 403 authenticated but not allowed, 404 absent (also for a resource the caller may not know exists), 409 conflict with current state (a duplicate unique key, a stale version), 415 a body that isn't JSON (only where the stack checks content type), 422 only if the API already distinguishes well-formed-but-invalid from malformed, 429 with `Retry-After`, 503 dependency down. A wrong method on a declared path gets what AGENTS.md records (405 with `Allow`, or the 404 envelope); test that, not the other. Don't return 200 with an error inside the body.
+
+## Bodies
+
+- Requests and responses are JSON objects at the top level, never bare arrays or strings, so a field can be added later without breaking clients.
+- A resource has the same shape everywhere it appears: the create response, the read and each list item are one schema. Ids are opaque strings, timestamps are ISO 8601 UTC strings named `<event>At`, money is integer minor units plus a currency.
+- Responses never expose storage details: no column names that differ from the domain word, no internal ids, no stack traces. Decode input and encode output through declared schemas.
+- Absent optional fields are omitted, not `null`, unless null means something different from absent.
+
+## Lists
+
+- Every list is paginated from its first version, with a server-side maximum page size. Cursor pagination by default: `?limit=50&cursor=<opaque>`, responding `{ "items": [...], "nextCursor": "<opaque>" | omitted }`. Offset pagination only for small, rarely changing collections.
+- Filters are query params named after the field (`?status=open&customerId=...`); sort is `?sort=createdAt` or `?sort=-createdAt`.
+- Reject unknown query params with 400 rather than ignoring them. Configure that for the query only: rejecting unknown headers too breaks every real request, because clients and proxies add headers.
+- Order is deterministic: sort ties break on the id.
+
+## Versions and change
+
+- Resources live under the version prefix; health checks and the OpenAPI document don't. Adding an optional field or a new endpoint is compatible. Renaming, removing or retyping a field, changing a status code, or making an optional input required is breaking and needs a new version or a deprecation period, so name things right the first time.
+- The generated OpenAPI document is the contract. Review its diff when an endpoint changes; a path, param or schema name you wouldn't want in public docs is wrong in the code too.

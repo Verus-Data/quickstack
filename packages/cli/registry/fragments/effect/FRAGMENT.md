@@ -11,7 +11,7 @@ requires: [effect-schema]
 deps:
   dev: ["@effect/vitest"]
 decisions:
-  - "Effect major: 4 (default). If the latest release is still a prerelease, pin every Effect package to the same one (with transitive overrides where needed) and record the pins under Build workarounds; otherwise use caret ranges. Check peer ranges before selecting Vitest and its coverage package."
+  - "Effect major: the current stable major (default). If the latest release is still a prerelease, pin every Effect package to the same one (with transitive overrides where needed) and record the pins under Build workarounds; otherwise use caret ranges. Check peer ranges before selecting Vitest and its coverage package."
 ---
 
 # Effect testing and development
@@ -26,7 +26,7 @@ Use `@effect/vitest` with fresh real service layers; fake only third-party bound
 
 ## Installed API guidance
 
-After core compilation, write `.claude/skills/effect/SKILL.md`, checking claims against installed declarations. Include loading triggers, current-major docs, and local types as authority. Resolve imports through package exports, not older directory layouts. Cover:
+After core compilation, write `.claude/skills/effect/SKILL.md`, checking claims against installed declarations. Include loading triggers and a lookup order: installed declarations, then compiled source for behavior, then that major's docs and changelog; other majors and memory last. Resolve imports through package exports, not older directory layouts. Cover:
 
 - Namespaced services, static layers, named functions, typed failures/defects, scope, cancellation, callbacks, and captured runtime context.
 - Current migration traps: Context, catch helpers, Result/Either, schema annotations/checks, forks, scoped layers, Config constructors/providers, log levels, and TestClock imports.

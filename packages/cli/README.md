@@ -18,6 +18,7 @@ The CLI is TypeScript on Effect, bundled for Node. It executes nothing it reads:
 
 | Stack | What it builds | App (`--with`) |
 | --- | --- | --- |
+| `astro-api` | Bun workspace: a static Astro site with React islands and an Effect HttpApi server on Node, sharing a typed contract package | |
 | `astro-blog` | Static Astro blog: MDX posts in a validated collection, React islands, Tailwind, RSS and sitemap | |
 | `cloudflare-react-router` | React Router on the local Workers runtime with typed bindings and Workers integration tests | |
 | `go-cli` | Go CLI: cobra, viper config, structured errors, human and JSON output, golangci-lint | |
@@ -25,6 +26,7 @@ The CLI is TypeScript on Effect, bundled for Node. It executes nothing it reads:
 | `python-react` | FastAPI backend and a React SPA talking through a client generated from the OpenAPI spec | |
 | `react-router` | React Router framework mode with SSR, Effect services, typed HTTP errors, Tailwind and shadcn | `openrouter-chat` |
 | `tauri-react` | Tauri desktop app: Rust crates behind a thin shell, typed IPC, a React frontend with a mock transport | |
+| `typescript-api` | Node HTTP API on Effect's HttpApi: REST resource conventions, one error-status table, request logs, a core that also runs as a fetch handler | |
 | `typescript-cli` | Bun-compiled TypeScript CLI on Effect with typed errors, safe output and logs | `openrouter-chat-cli` |
 
 `stacks list` shows each stack's fragments; `validate` reports every stack's composed brief size in both presets.
