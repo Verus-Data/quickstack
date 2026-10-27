@@ -1,4 +1,3 @@
-import { spawnSync } from "node:child_process";
 import { chmodSync, mkdirSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { it } from "@effect/vitest";
@@ -8,6 +7,7 @@ import { countWords } from "../src/core/brief/words";
 import { BUDGET } from "../src/core/validate/budget";
 import { BriefPreview, type Finding, ValidateReport } from "../src/schemas/validate";
 import { quiet, runCli, tempDir } from "./helpers/cli";
+import { spawnGit } from "./helpers/git";
 import { minimal, realRegistry, writeEntry } from "./helpers/registry";
 
 const dirs: ReturnType<typeof tempDir>[] = [];
@@ -346,7 +346,7 @@ test("sizes are rendered with the canonical context: tools, git, invocation and 
     JSON.stringify({ always: ["always-on"], agents: ["codex", "claude"] }),
   );
   const parent = temp();
-  spawnSync("git", ["init", "-q", parent]);
+  spawnGit(["init", "-q", parent]);
   const nested = join(parent, "registry");
   stack(nested, "steady", "tools: [surely-not-installed-tool]\nfragments:\n  default: [helper]");
   fragment(nested, "helper", "tools: [git]", words(40));
@@ -647,12 +647,12 @@ test("control characters from an entry are escaped in human output", async () =>
   expect(brief.stdout).not.toContain("\u001b");
 });
 
-const git = spawnSync("git", ["--version"]);
+const git = spawnGit(["--version"]);
 test.skipIf(git.status !== 0)(
   "inside a git checkout, a file the entry's own .gitignore hides is a git-ignored warning",
   async () => {
     const repo = temp();
-    spawnSync("git", ["init", "-q", repo]);
+    spawnGit(["init", "-q", repo]);
     const entry = stack(repo, "hides");
     mkdirSync(join(entry, "files"));
     writeFileSync(join(entry, "files", ".gitignore"), ".env.*\n");

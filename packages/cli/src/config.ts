@@ -67,6 +67,24 @@ export const AgentMarkers: ReadonlyArray<AgentMarker> = Schema.decodeUnknownSync
 export const AGENT_MARKER_NAMES: ReadonlyArray<string> = [
   ...new Set(AgentMarkers.map((item) => item.name)),
 ];
+/**
+ * The variables that point git at a repository, work tree, index or object store instead of
+ * letting it discover one from its working directory: `childEnv`'s `remove` list for the CLI's
+ * own git calls. A git hook or alias exports `GIT_DIR` (and a pre-commit hook `GIT_INDEX_FILE`),
+ * so `new` run from one would otherwise inspect or initialize the caller's repository. The
+ * discovery limits (`GIT_CEILING_DIRECTORIES`, `GIT_DISCOVERY_ACROSS_FILESYSTEM`) select nothing
+ * and stay, as do settings such as `GIT_CONFIG_GLOBAL`.
+ */
+export const GIT_REPOSITORY_VARIABLES: ReadonlyArray<string> = [
+  "GIT_DIR",
+  "GIT_WORK_TREE",
+  "GIT_INDEX_FILE",
+  "GIT_OBJECT_DIRECTORY",
+  "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+  "GIT_COMMON_DIR",
+  "GIT_NAMESPACE",
+  "GIT_QUARANTINE_PATH",
+];
 /** The agent `env` names, by `AgentMarkers` in order; a blank value counts as unset. */
 export function detectAgent(env: Environment): DetectedAgent {
   for (const item of AgentMarkers) {

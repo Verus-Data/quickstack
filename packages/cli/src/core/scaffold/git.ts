@@ -1,10 +1,13 @@
 import { Duration, Effect, FileSystem, Option } from "effect";
-import { AppConfig } from "../../config";
+import { AppConfig, GIT_REPOSITORY_VARIABLES } from "../../config";
 import { Processes } from "../../services/processes";
 import type { GitState } from "../brief/render";
 import type { Target } from "./target";
 
-/** Every git command `new` runs is one of these constants; no entry content reaches git. */
+/**
+ * Every git command `new` runs is one of these constants; no entry content reaches git. Each runs
+ * without `GIT_REPOSITORY_VARIABLES`, so git finds the repository from `cwd` alone.
+ */
 const TIMEOUT = Duration.seconds(10);
 const TOPLEVEL = "git rev-parse --show-toplevel 2>/dev/null";
 const HAS_COMMIT = "git rev-parse --verify --quiet HEAD >/dev/null 2>&1";
@@ -15,7 +18,7 @@ const USER_NAME = "git config user.name 2>/dev/null";
 const git = (command: string, cwd: string) =>
   Effect.gen(function* () {
     const processes = yield* Processes;
-    const env = (yield* AppConfig).childEnv([]);
+    const env = (yield* AppConfig).childEnv(GIT_REPOSITORY_VARIABLES);
     return yield* processes
       .run({ command, cwd, env, timeout: TIMEOUT })
       .pipe(Effect.catchTag("SpawnFailed", () => Effect.succeed(undefined)));

@@ -1,5 +1,5 @@
 // biome-ignore-all lint/suspicious/noTemplateCurlyInString: `${{ ... }}` text is what the template tests are about.
-import { type ChildProcess, spawn, spawnSync } from "node:child_process";
+import { type ChildProcess, spawn } from "node:child_process";
 import {
   chmodSync,
   existsSync,
@@ -21,6 +21,7 @@ import { missingTools } from "../src/core/compose/compose";
 import { NewResult } from "../src/schemas/new";
 import { quiet, runCli, tempDir } from "./helpers/cli";
 import { bundledAt, composeExit } from "./helpers/compose";
+import { spawnGit } from "./helpers/git";
 import { copyEntry, minimal, newRegistry, writeEntry } from "./helpers/registry";
 
 const dirs: ReturnType<typeof tempDir>[] = [];
@@ -35,7 +36,7 @@ function setup() {
 }
 /** git, found on the real PATH; tests that need it skip without it. */
 const gitPath = process.env.PATH ?? "";
-const hasGit = spawnSync("git", ["--version"]).status === 0;
+const hasGit = spawnGit(["--version"]).status === 0;
 /** The environment of a run with git on PATH, its global config read from the temporary HOME. */
 const withGit = { PATH: gitPath, GIT_CONFIG_NOSYSTEM: "1" };
 
@@ -591,14 +592,14 @@ describe.skipIf(!hasGit)("new and git", () => {
     expect(decode(stdout).git).toBe("fresh");
     const app = join(home, "app");
     expect(statSync(join(app, ".git")).isDirectory()).toBe(true);
-    expect(spawnSync("git", ["rev-parse", "--verify", "HEAD"], { cwd: app }).status).not.toBe(0);
+    expect(spawnGit(["rev-parse", "--verify", "HEAD"], { cwd: app }).status).not.toBe(0);
   });
 
   test("inside a parent repository nothing is initialized, and a default needs_own_repo fragment is refused with its fix", async () => {
     const home = setup();
     const repo = join(home, "repo");
     mkdirSync(repo);
-    expect(spawnSync("git", ["init", "--quiet"], { cwd: repo }).status).toBe(0);
+    expect(spawnGit(["init", "--quiet"], { cwd: repo }).status).toBe(0);
     const refused = await newCli(["fixture-stack", "repo/app", "--json"], { home, env: withGit });
     expect(refused.status).toBe(2);
     expect(refused.stdout).toBe("");
@@ -631,7 +632,7 @@ describe.skipIf(!hasGit)("new and git", () => {
 
   test("a required needs_own_repo fragment in a parent repository has no fix", async () => {
     const home = setup();
-    expect(spawnSync("git", ["init", "--quiet"], { cwd: home }).status).toBe(0);
+    expect(spawnGit(["init", "--quiet"], { cwd: home }).status).toBe(0);
     const { status, stderr } = await newCli(["own-stack", "app", "--json"], {
       home,
       env: withGit,
@@ -645,7 +646,7 @@ describe.skipIf(!hasGit)("new and git", () => {
     const home = setup();
     const app = join(home, "app");
     mkdirSync(app);
-    expect(spawnSync("git", ["init", "--quiet"], { cwd: app }).status).toBe(0);
+    expect(spawnGit(["init", "--quiet"], { cwd: app }).status).toBe(0);
     const head = readFileSync(join(app, ".git", "HEAD"), "utf8");
     const { status, stdout } = await newCli(["fixture-stack", "app", "--json"], {
       home,
@@ -656,6 +657,23 @@ describe.skipIf(!hasGit)("new and git", () => {
     expect(result.git).toBe("fresh");
     expect(result.written).toEqual(expectedWritten);
     expect(readFileSync(join(app, ".git", "HEAD"), "utf8")).toBe(head);
+  });
+
+  test("a GIT_DIR in the environment, as a git hook exports it, neither selects nor changes a repository", async () => {
+    const home = setup();
+    const elsewhere = join(home, "elsewhere");
+    mkdirSync(elsewhere);
+    expect(spawnGit(["init", "--quiet"], { cwd: elsewhere }).status).toBe(0);
+    const config = readFileSync(join(elsewhere, ".git", "config"), "utf8");
+    const { status, stdout, stderr } = await newCli(["fixture-stack", "app", "--json"], {
+      home,
+      env: { ...withGit, GIT_DIR: join(elsewhere, ".git"), GIT_WORK_TREE: elsewhere },
+    });
+    expect(stderr).toBe("");
+    expect(status).toBe(0);
+    expect(decode(stdout).git).toBe("fresh");
+    expect(statSync(join(home, "app", ".git")).isDirectory()).toBe(true);
+    expect(readFileSync(join(elsewhere, ".git", "config"), "utf8")).toBe(config);
   });
 });
 

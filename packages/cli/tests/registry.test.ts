@@ -1,4 +1,3 @@
-import { spawnSync } from "node:child_process";
 import {
   chmodSync,
   existsSync,
@@ -17,6 +16,7 @@ import { isRejected } from "../src/core/registry/entry";
 import { Registry, type RegistryRoots, trustOf } from "../src/core/registry/registry";
 import { EntryInvalid, NotFound, PermissionDenied } from "../src/errors";
 import { tempDir } from "./helpers/cli";
+import { spawnGit } from "./helpers/git";
 import {
   brokenRegistry,
   composeRegistry,
@@ -310,7 +310,7 @@ test.skipIf(process.getuid?.() === 0)(
 
 // An entry may ship a literal `files/.gitignore`, and this repo's own git reads it: a pattern in it
 // would leave the entry's other fixture files out of every commit without a word.
-const vcs = spawnSync("git", ["rev-parse", "--show-toplevel"], { cwd: import.meta.dirname });
+const vcs = spawnGit(["rev-parse", "--show-toplevel"], { cwd: import.meta.dirname });
 test.skipIf(vcs.status !== 0)("git ignores no file in the fixture or bundled registries", () => {
   const bundled = join(import.meta.dirname, "..", "registry");
   const roots = [
@@ -327,7 +327,7 @@ test.skipIf(vcs.status !== 0)("git ignores no file in the fixture or bundled reg
   );
   expect(files.length).toBeGreaterThan(20);
   // --no-index: tracked files are checked against the ignore rules too. Exit 1: none ignored.
-  const checked = spawnSync("git", ["check-ignore", "--no-index", "--stdin"], {
+  const checked = spawnGit(["check-ignore", "--no-index", "--stdin"], {
     cwd: import.meta.dirname,
     input: files.join("\n"),
     encoding: "utf8",
