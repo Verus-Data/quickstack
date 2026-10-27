@@ -1,6 +1,9 @@
 # Phase 3.3b: Bundled stack expansion
 
-Status: DRAFT 2026-10-26 (not agreed). Re-scoped 2026-10-26: 1.6a brings every bundled
+Status: EXECUTED 2026-10-27 (every traced acceptance test, the committed gate-stack brief
+digests). Unproved: the bench proofs for `cloudflare-react-router`, `mobile-expo`,
+`react-router`, `tauri-react` and `typescript-cli`, which need real bench runs and are the
+maintainers'. Drafted 2026-10-26. Re-scoped 2026-10-26: 1.6a brings every bundled
 stack into v1, including those beyond the gate set, so this file gives each of those a
 bench proof and keeps the backlog. A stack too large for the budget now splits its slice
 into an app fragment (1.1), not a D26 app entry. Body rewritten to match 2026-10-26

@@ -1,6 +1,8 @@
 # Phase 3.3a: Release and deploy fragments
 
-Status: DRAFT 2026-10-26 (not agreed). Re-scoped 2026-10-26: D28 is superseded, so
+Status: EXECUTED 2026-10-27 (every traced acceptance test, and `bun-release`'s empty-scope
+guidance). Unproved: every release and deploy fragment's bench proof, which needs real
+`bun run bench --preset default` runs and is the maintainers'. Drafted 2026-10-26. Re-scoped 2026-10-26: D28 is superseded, so
 `package_scope`, `--scope` and `Settings.package_scope` are built in
 [1.2a](phase-1.2a-new-scaffold-and-templates.md) as part of v1, with no
 `schema_version: 2` and no `template-version` check; and 1.6a brings the bundled release

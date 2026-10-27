@@ -37,10 +37,16 @@ reworded for `dist/quickstacks` or deferred in its plan.
   [2.2](phases/phase-2.2-deterministic-rot-checks.md) (rot checks; reread the condensed
   `effect` and `effect-schema` guidance it trimmed to fit `mobile-expo --with effect`),
   [2.0b](phases/phase-2.0b-bench.md) (`bun run bench`, fake-agent tested),
-  [3.1b](phases/phase-3.1b-create-and-authoring-guide.md) (`create` and the authoring guide).
-- In progress: 3.4a, 3.4b and the deterministic parts of 3.3a-c.
-- Deferred to phase 4 or later: [3.2a](phases/phase-3.2a-user-sources.md) and
-  [3.2b](phases/phase-3.2b-source-trust-and-updates.md), gated on outside demand and open
+  [3.1b](phases/phase-3.1b-create-and-authoring-guide.md) (`create` and the authoring guide),
+  [3.3a](phases/phase-3.3a-release-and-deploy-fragments.md),
+  [3.3b](phases/phase-3.3b-bundled-stack-expansion.md) and
+  [3.3c](phases/phase-3.3c-service-vendor-and-effect-fragments.md) (the composition and
+  safety tests for every bundled entry; bench proofs are the maintainers'),
+  [3.4a](phases/phase-3.4a-agent-harness-fragment.md) (the TypeScript destructive guard in
+  `claude-harness`, sharing one shell lexer with the repo's own hooks).
+- In progress: 3.4b.
+- Deferred to phase 4 or later: [3.2a](phases/phase-3.2a-git-sources-and-untrusted-origin.md) and
+  [3.2b](phases/phase-3.2b-source-updates-and-trust-report.md), gated on outside demand and open
   question 18.
 - Left to maintainers: the real bench runs beyond a few seed runs, and the proofs that need
   them (3.3a-c, parts of 3.4a, 3.4b, 3.5b and 2.0b).

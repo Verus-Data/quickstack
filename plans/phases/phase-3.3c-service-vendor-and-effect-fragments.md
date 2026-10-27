@@ -1,6 +1,8 @@
 # Phase 3.3c: Service, vendor and Effect fragments
 
-Status: DRAFT 2026-10-26 (not agreed). Re-scoped 2026-10-26: 1.6a brings the bundled
+Status: EXECUTED 2026-10-27 (every traced acceptance test). Unproved: every service,
+vendor and tooling fragment's bench proof, which needs real sandbox bench runs and is the
+maintainers'. Drafted 2026-10-26. Re-scoped 2026-10-26: 1.6a brings the bundled
 service, vendor, Effect and tooling fragments into v1, so this file gives each a bench
 proof under 3.3a's rule instead of authoring them. Body rewritten to match 2026-10-26
 Acceptance tests: traced

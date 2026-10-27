@@ -1,6 +1,9 @@
 # Phase 3.4a: Agent harness fragment
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: EXECUTED 2026-10-27 (the TypeScript destructive guard, the shell guard's delegation,
+the `harness-hooks` step; the repo's own `.claude/hooks/` lexer and the shipped one are now
+one file, kept identical by `tests/hooks/harness-sync.test.ts`). Unproved: the bench
+comparison against the shell guardrails, which is the maintainers'. Drafted 2026-10-26.
 Acceptance tests: traced
 
 | Field | Value |
