@@ -1,6 +1,7 @@
 # Phase 2.0a: Composed files and fingerprint
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: EXECUTED 2026-10-27 (`composeFiles`, `fingerprint`, the manifest and `new --json`
+fingerprint; reviewed once and fixed)
 Acceptance tests: traced
 
 | Field | Value |

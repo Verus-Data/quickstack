@@ -1,6 +1,8 @@
 # Phase 3.4c: The agent skill
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: EXECUTED 2026-10-27 (`skill/SKILL.md`, `skill install`, `doctor`'s skill check;
+reviewed once and fixed). The tarball's `files` entry waits for 0.2; the compiled binary finds
+the skill beside it
 Acceptance tests: traced
 
 | Field | Value |

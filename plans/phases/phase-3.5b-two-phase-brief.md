@@ -1,6 +1,7 @@
 # Phase 3.5b: App stage in verify
 
-Status: DRAFT 2026-10-26 (not agreed). Shrunk 2026-10-26 by the amended D18 (D26
+Status: EXECUTED 2026-10-27 (base then app stages in `verify`, stage lines, the app `Next:`
+line; reviewed once and fixed). The bench proofs wait on 2.0b's real runs. Shrunk 2026-10-26 by the amended D18 (D26
 superseded): 1.1 now writes one brief with "Definition of done: base" and "Then: the
 application" sections, and app steps carry the reserved `app` tag, so there is no
 separate app brief file, no `new <app>`, no `ManifestStep.stage` and no manifest version
