@@ -22,11 +22,11 @@ export class Usage extends Schema.TaggedError<Usage>()("Usage", {
  * and `--without`; `dir`, a project directory whose name has a control character; `brief`, a
  * flag (`--with`, `--without`, `--sandbox`, in `id`) that `validate` takes only with `--brief`;
  * `only`, a `verify --only` name that is no check or serve step, with those steps' names in
- * `known` (1.3a).
+ * `known` (1.3a); `name` or `author`, a naming flag with an unsupported control character.
  */
 export const BadInputDetails = Schema.Struct({
   id: Schema.String,
-  flag: Schema.Literals(["scope", "with_without", "dir", "brief", "only"]),
+  flag: Schema.Literals(["scope", "with_without", "dir", "brief", "only", "name", "author"]),
   known: Schema.optionalKey(Schema.Array(Schema.String)),
 });
 export class BadInput extends Schema.TaggedError<BadInput>()("BadInput", {
@@ -548,6 +548,12 @@ function badInputLines(details: typeof BadInputDetails.Type): string[] {
         `Id: ${id}`,
         "Flags: --with and --without",
         `Next: name ${id} in only one of --with and --without.`,
+      ];
+    case "name":
+    case "author":
+      return [
+        `Flag: --${details.flag} ${id}`,
+        `Next: pass --${details.flag} without control characters.`,
       ];
     case "dir":
       return [

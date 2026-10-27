@@ -59,9 +59,25 @@ export const newCommand = Command.make(
     ),
     dir: Argument.String("dir").pipe(
       Argument.withDescription(
-        "The project directory: missing, empty, or holding only .git and OS files such as .DS_Store. Defaults to ./<stack>; `.` is the current directory.",
+        "The project directory: missing, empty, or holding only .git and OS files such as .DS_Store. Defaults to the slug of --name, else ./<stack>; `.` is the current directory.",
       ),
       Argument.optional,
+    ),
+    name: Flag.String("name").pipe(
+      Flag.withDescription("Project name for templates. Default: the directory's base name."),
+      Flag.optional,
+    ),
+    author: Flag.String("author").pipe(
+      Flag.withDescription(
+        "Author for templates. Default: the author setting, then git user.name, else empty. An empty value suppresses the fallback.",
+      ),
+      Flag.optional,
+    ),
+    dryRun: Flag.Boolean("dry-run").pipe(
+      Flag.withDescription(
+        "Compose and render the plan without writing anything or starting an agent.",
+      ),
+      Flag.withDefault(false),
     ),
     with: ids("with", "Add optional fragments, comma-separated or repeated."),
     without: ids("without", "Leave out default fragments, comma-separated or repeated."),
@@ -105,7 +121,7 @@ export const newCommand = Command.make(
     ),
     launch: Flag.String("launch").pipe(
       Flag.withDescription(
-        "The agent to hand the project to: claude, codex, opencode or cursor. Default: the agents setting, then claude, codex, opencode, cursor, whichever is on PATH first. Never with --json or --no-launch.",
+        "The agent to hand the project to: claude, codex, opencode or cursor. Default: the agents setting, then claude, codex, opencode, cursor, whichever is on PATH first. Never with --json, --no-launch or --dry-run.",
       ),
       Flag.mapEffect((value) =>
         isAgent(value)
@@ -138,6 +154,8 @@ export const newCommand = Command.make(
       const { json } = yield* root;
       const preferred = Option.getOrUndefined(flags.launch);
       // Flag contradictions, before anything is read or written.
+      if (preferred && flags.dryRun)
+        return yield* new Usage({ details: { flags: ["--dry-run", "--launch"] } });
       if (preferred && flags.noLaunch)
         return yield* new Usage({ details: { flags: ["--launch", "--no-launch"] } });
       if (preferred && json)
@@ -145,7 +163,7 @@ export const newCommand = Command.make(
 
       const detected = yield* config.agent;
       const configured = (yield* config.get).agents ?? [];
-      const launch = !flags.noLaunch;
+      const launch = !flags.noLaunch && !flags.dryRun;
       // Binaries are looked up only when a launch is still possible.
       const found = new Map<AgentId, string>();
       if (detected === "none" && !json && launch)
@@ -157,25 +175,31 @@ export const newCommand = Command.make(
       const { result, decision } = yield* scaffold({
         stack: flags.stack,
         dir: Option.getOrUndefined(flags.dir),
+        name: Option.getOrUndefined(flags.name),
+        author: Option.getOrUndefined(flags.author),
+        dryRun: flags.dryRun,
         with: flags.with,
         without: flags.without,
         sandbox: flags.sandbox,
         yes: flags.yes,
         agents: flags.agents.length ? flags.agents : undefined,
         scope: Option.getOrUndefined(flags.scope),
+        // A preview hands nothing off, even inside an agent: it only prints the plan.
         handoff: (untrusted) =>
-          decideHandoff({
-            detected,
-            json,
-            launch,
-            stdinIsTTY: host.stdinIsTTY,
-            stdoutIsTTY: host.stdoutIsTTY,
-            untrusted,
-            ...(preferred ? { preferred } : {}),
-            configured,
-            found,
-            prompt,
-          }),
+          flags.dryRun
+            ? { kind: "print", reason: "no-launch", untrusted }
+            : decideHandoff({
+                detected,
+                json,
+                launch,
+                stdinIsTTY: host.stdinIsTTY,
+                stdoutIsTTY: host.stdoutIsTTY,
+                untrusted,
+                ...(preferred ? { preferred } : {}),
+                configured,
+                found,
+                prompt,
+              }),
       }).pipe(Effect.provide(Registry.layer(yield* defaultRoots)));
       yield* invocation.annotate({
         handoff: decision.kind,
@@ -197,7 +221,9 @@ export const newCommand = Command.make(
             ...result,
             handoff: { ...decision, untrusted: [...decision.untrusted], prompt },
           }),
-          `${summary}\n\n${renderHandoff(decision, { shown, invocation: host.invocation, audience: output.audience })}`,
+          result.dryRun
+            ? summary
+            : `${summary}\n\n${renderHandoff(decision, { shown, invocation: host.invocation, audience: output.audience })}`,
         );
         return;
       }

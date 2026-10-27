@@ -23,8 +23,11 @@ import { openProject } from "./write";
 
 export type NewOptions = {
   stack: string;
-  /** Relative to `Host.cwd`; defaults to the stack id. */
+  /** Relative to `Host.cwd`; defaults to the slug of `name`, else the stack id. */
   dir: string | undefined;
+  name: string | undefined;
+  author: string | undefined;
+  dryRun: boolean;
   with: ReadonlyArray<string>;
   without: ReadonlyArray<string>;
   sandbox: boolean;
@@ -39,7 +42,7 @@ export type NewOptions = {
   handoff: (untrusted: ReadonlyArray<string>) => HandoffDecision;
 };
 
-/** What `new` wrote, and the handoff the command carries out next. */
+/** What `new` wrote or planned, and the handoff the command carries out next. */
 export type Scaffolded = { result: Omit<NewResult, "handoff">; decision: HandoffDecision };
 
 export const BRIEF_PATH = ".quickstacks/BRIEF.md";
@@ -55,7 +58,8 @@ const scopeOf = (value: string) => value.replace(/^@/, "");
 /**
  * `new`: compose, check the target, render every file in memory, then write the entry files and
  * `.quickstacks/` through the safe writer and `git init` a fresh target. Runs nothing from any
- * entry (D2). Any failure or interruption after the first write rolls every write back.
+ * entry (D2). Any failure or interruption after the first write rolls every write back. A dry run
+ * stops after rendering, before opening the writer.
  */
 export const scaffold = (options: NewOptions) =>
   Effect.gen(function* () {
@@ -72,10 +76,19 @@ export const scaffold = (options: NewOptions) =>
     )
       return yield* new BadInput({ details: { id: options.scope, flag: "scope" } });
     const packageScope = scopeOf(options.scope ?? settings.packageScope ?? "");
-    const dir = path.resolve(host.cwd, options.dir ?? options.stack);
-    // project_name is inserted into templates raw, so its text can't carry a control character.
-    const name = path.basename(dir);
-    if (hasControl(name)) return yield* new BadInput({ details: { id: name, flag: "dir" } });
+    if (options.name !== undefined && hasControl(options.name))
+      return yield* new BadInput({ details: { id: options.name, flag: "name" } });
+    const explicitAuthor = options.author === undefined ? undefined : authorValue(options.author);
+    if (options.author !== undefined && explicitAuthor === undefined)
+      return yield* new BadInput({ details: { id: options.author, flag: "author" } });
+    const dir = path.resolve(
+      host.cwd,
+      options.dir ?? (options.name === undefined ? options.stack : slug(options.name)),
+    );
+    const basename = path.basename(dir);
+    if (hasControl(basename))
+      return yield* new BadInput({ details: { id: basename, flag: "dir" } });
+    const name = options.name ?? basename;
 
     const preset = options.sandbox ? "sandbox" : "default";
     const composition = yield* compose({
@@ -116,11 +129,13 @@ export const scaffold = (options: NewOptions) =>
     const slugged = slug(name);
     // The setting is the user's to fix; a git user.name with control characters is just unused.
     const author =
-      settings.author !== undefined
-        ? authorValue(settings.author)
-        : installed
-          ? (authorValue(yield* gitUserName(target.nearest)) ?? "")
-          : "";
+      explicitAuthor !== undefined
+        ? explicitAuthor
+        : settings.author !== undefined
+          ? authorValue(settings.author)
+          : installed
+            ? (authorValue(yield* gitUserName(target.nearest)) ?? "")
+            : "";
     if (author === undefined) return yield* new InvalidConfig();
     const values: TemplateValues = {
       project_name: name,
@@ -165,49 +180,58 @@ export const scaffold = (options: NewOptions) =>
       handoff: handoffRecord(decision, built.createdAt),
     };
 
-    const state = yield* Effect.scoped(
-      Effect.gen(function* () {
-        const writer = yield* openProject(dir);
-        for (const file of files) yield* writer.write(file.path, file.bytes, file.executable);
-        yield* writer.write(IGNORE_PATH, encoder.encode(IGNORE));
-        yield* writer.write(BRIEF_PATH, encoder.encode(rendered.text));
-        yield* writer.write(NOTES_PATH, encoder.encode(NOTES));
-        yield* writer.directory(".quickstacks/state");
-        yield* writer.write(MANIFEST_PATH, encoder.encode(encodeManifest(manifest)));
-        // Outside the project, so the writer doesn't track it: its own release undoes it on a
-        // failure or interruption from here on. Acquiring is uninterruptible, so a written record
-        // always has its release.
-        const record = yield* Effect.acquireRelease(
-          writeProjectState(manifest, path.join(writer.root, MANIFEST_PATH)),
-          (write, exit) => (Exit.isSuccess(exit) ? Effect.void : removeProjectState(write)),
-        );
-        if (git.init) {
-          // Adopted first, so an interrupt while git runs also takes its `.git` away; but only a
-          // `.git` that wasn't there before git ran is ours to take.
-          const dotGit = path.join(writer.root, ".git");
-          const ours = Option.isNone(yield* Effect.option(fs.lstat(dotGit)));
-          if (ours) yield* writer.adopt(".git");
-          const code = yield* gitInit(writer.root);
-          if (code !== 0) {
-            // Whatever part of a `.git` the failed init left is no repository.
-            if (ours) yield* writer.discard(".git");
-            gitState = { kind: "none" };
-            warnings.push({ code: "git_init_failed", id: "git", exitCode: code });
-            rendered = brief(gitState);
-            yield* writer.replace(BRIEF_PATH, encoder.encode(rendered.text));
-            // Only the count changed; the digest, and so the state record, stay as written.
-            yield* writer.replace(
-              MANIFEST_PATH,
-              encoder.encode(encodeManifest({ ...manifest, briefWords: rendered.briefWords })),
+    const plannedFiles = [
+      ...files,
+      { path: IGNORE_PATH, bytes: encoder.encode(IGNORE), executable: false },
+      { path: BRIEF_PATH, bytes: encoder.encode(rendered.text), executable: false },
+      { path: NOTES_PATH, bytes: encoder.encode(NOTES), executable: false },
+    ];
+    const manifestBytes = encoder.encode(encodeManifest(manifest));
+    // A preview stops at the writer boundary, after the same composition and rendering.
+    const state = options.dryRun
+      ? { written: false }
+      : yield* Effect.scoped(
+          Effect.gen(function* () {
+            const writer = yield* openProject(dir);
+            for (const file of plannedFiles)
+              yield* writer.write(file.path, file.bytes, file.executable);
+            yield* writer.directory(".quickstacks/state");
+            yield* writer.write(MANIFEST_PATH, manifestBytes);
+            // Outside the project, so the writer doesn't track it: its own release undoes it on a
+            // failure or interruption from here on. Acquiring is uninterruptible, so a written record
+            // always has its release.
+            const record = yield* Effect.acquireRelease(
+              writeProjectState(manifest, path.join(writer.root, MANIFEST_PATH)),
+              (write, exit) => (Exit.isSuccess(exit) ? Effect.void : removeProjectState(write)),
             );
-          }
-        }
-        return record;
-      }),
-    );
+            if (git.init) {
+              // Adopted first, so an interrupt while git runs also takes its `.git` away; but only a
+              // `.git` that wasn't there before git ran is ours to take.
+              const dotGit = path.join(writer.root, ".git");
+              const ours = Option.isNone(yield* Effect.option(fs.lstat(dotGit)));
+              if (ours) yield* writer.adopt(".git");
+              const code = yield* gitInit(writer.root);
+              if (code !== 0) {
+                // Whatever part of a `.git` the failed init left is no repository.
+                if (ours) yield* writer.discard(".git");
+                gitState = { kind: "none" };
+                warnings.push({ code: "git_init_failed", id: "git", exitCode: code });
+                rendered = brief(gitState);
+                yield* writer.replace(BRIEF_PATH, encoder.encode(rendered.text));
+                // Only the count changed; the digest, and so the state record, stay as written.
+                yield* writer.replace(
+                  MANIFEST_PATH,
+                  encoder.encode(encodeManifest({ ...manifest, briefWords: rendered.briefWords })),
+                );
+              }
+            }
+            return record;
+          }),
+        );
 
     const result = {
       project: dir,
+      dryRun: options.dryRun,
       fingerprint: contentFingerprint,
       stack: composition.stack.id,
       fragments: composition.fragments.map((fragment) => fragment.id),

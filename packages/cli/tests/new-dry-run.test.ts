@@ -145,7 +145,7 @@ describe("new --dry-run", () => {
       ],
       handoff: { kind: "print", reason: "no-launch", untrusted: [] },
     });
-    expect(planned.fingerprint).toMatch(/^[a-f0-9]{64}$/);
+    expect(planned.fingerprint).toMatch(/^sha256:[a-f0-9]{64}$/);
     expect(planned.briefWords).toBeGreaterThan(planned.fixedWords);
     expect(planned.fixedWords).toBeGreaterThan(0);
     expect(existsSync(join(home, "app"))).toBe(false);

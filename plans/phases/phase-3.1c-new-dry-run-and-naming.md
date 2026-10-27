@@ -147,3 +147,14 @@ with scopes, accents or camelCase change.
   allows those read-only commands. A control character in `--name` or `--author` is
   `BadInput` naming the flag (`BadInputDetails.flag` gains `name` and `author`, additively).
   `NewResult` gains a required `dryRun` (false for a real run).
+
+- 2026-10-27, implementation: there is no `scaffold/author.ts`; author sanitization lives in
+  `template.ts::authorValue` and precedence stays in `new.ts::scaffold`. The flag uses the
+  existing sanitization, including stripping line breaks before rejecting remaining controls.
+- 2026-10-27, implementation: the locked `[3.1c#1]` fingerprint assertion expects bare hex,
+  while `fingerprintFromFiles` and the existing `[2.0a#2]` and `[2.0a#3]` tests require
+  `sha256:<hex>`. The existing format is preserved; the locked assertion needs author review.
+- 2026-10-27, independent review: the existing target inspection accepted a missing path
+  beneath a file or dangling symlink; the writer alone refused it later. Shared inspection
+  now stops at the nearest existing ancestor with `lstat` and requires it to resolve to a
+  directory. Both previews and real runs report `TargetNotEmpty` without writing.
