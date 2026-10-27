@@ -1,6 +1,7 @@
 # Phase 2.2: Deterministic rot checks
 
 Status: DRAFT 2026-10-26 (not agreed)
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -235,6 +236,14 @@ and notes print in 1.5's notes section. No `ValidateReport` field is added.
 8. `ledger-schema`: an undecodable `runs.json` is an error and exit 2; a record with
    `schemaVersion: 2` alone gives no finding.
 9. The bundled registry: zero errors and zero warnings under the new checks.
+
+### Realistic edge cases
+
+10. A symlinked registry root and shipped paths with spaces, leading dashes and non-ASCII text preserve source locations and findings.
+11. Validation from another working directory under agent markers and repository-selecting git variables reads the requested checkout and never executes verify steps.
+12. CRLF text, backtick and tilde fences, IPv4 addresses and phrase word boundaries produce no spurious prose findings.
+13. Malformed reference JSON reports `ref-json` once per file, skips cascading reference checks and still checks valid sibling files.
+14. Existing ledger state distinguishes missing, empty, invalid v1 and newer records; added-fragment runs are excluded, and latest pass selection honors date and file order.
 
 ## Exit criteria
 
