@@ -20,6 +20,8 @@ export type Command = {
   argv: string[];
   /** Per argv word, whether any part of it was quoted (a quoted * is not a glob). */
   quoted: boolean[];
+  /** Per argv word, whether it contains unresolved shell expansion syntax. */
+  expands: boolean[];
   /** Assignments before the command word (GIT_DIR=x git ...). */
   env: string[];
   /** Redirect targets (> /dev/sda). */
@@ -36,7 +38,7 @@ export type Command = {
   opaque?: boolean;
 };
 
-type Word = { text: string; quoted: boolean };
+type Word = { text: string; quoted: boolean; expands: boolean };
 type Simple = {
   words: Word[];
   redirects: string[];
@@ -108,22 +110,25 @@ function lex(lx: Lexing, src: string, start: number, stopAtParen: boolean, scope
   let word = "";
   let inWord = false;
   let quoted = false;
+  let expands = false;
   let redirectNext = false;
   const pending: { delim: string; strip: boolean; expands: boolean; cmd: Simple }[] = [];
 
-  const add = (text: string, isQuoted = false) => {
+  const add = (text: string, isQuoted = false, expansion = false) => {
     word += text;
     inWord = true;
     if (isQuoted) quoted = true;
+    if (expansion) expands = true;
   };
   const endWord = () => {
     if (!inWord) return;
     if (redirectNext) cmd.redirects.push(word);
-    else cmd.words.push({ text: word, quoted });
+    else cmd.words.push({ text: word, quoted, expands });
     redirectNext = false;
     word = "";
     inWord = false;
     quoted = false;
+    expands = false;
   };
   const endCmd = (pipe = false) => {
     endWord();
@@ -194,18 +199,18 @@ function lex(lx: Lexing, src: string, start: number, stopAtParen: boolean, scope
           i += 2;
         } else if (src.startsWith("$((", i)) {
           const end = arithmeticEnd(src, i + 3);
-          add(src.slice(i, end));
+          add(src.slice(i, end), false, true);
           i = end;
         } else if (d === "$" && src.charAt(i + 1) === "(") {
           const end = substitution(i + 2);
-          add(src.slice(i, end));
+          add(src.slice(i, end), false, true);
           i = end;
         } else if (d === "`") {
           const end = backtick(i + 1);
-          add(src.slice(i, end));
+          add(src.slice(i, end), false, true);
           i = end;
         } else {
-          add(d);
+          add(d, false, d === "$");
           i++;
         }
       }
@@ -216,20 +221,20 @@ function lex(lx: Lexing, src: string, start: number, stopAtParen: boolean, scope
       // Arithmetic: nothing runs, and 1<<2 isn't a heredoc.
       const open = src.startsWith("$((", i) ? 3 : 2;
       const end = arithmeticEnd(src, i + open);
-      add(src.slice(i, end));
+      add(src.slice(i, end), false, true);
       i = end;
       continue;
     }
     if ((c === "$" || c === "<" || c === ">") && src.charAt(i + 1) === "(") {
       // $( ) command substitution, <( ) and >( ) process substitution.
       const end = substitution(i + 2);
-      add(src.slice(i, end));
+      add(src.slice(i, end), false, true);
       i = end;
       continue;
     }
     if (!raw && c === "`") {
       const end = backtick(i + 1);
-      add(src.slice(i, end));
+      add(src.slice(i, end), false, true);
       i = end;
       continue;
     }
@@ -304,7 +309,7 @@ function lex(lx: Lexing, src: string, start: number, stopAtParen: boolean, scope
       redirectNext = true;
       continue;
     }
-    add(c);
+    add(c, false, /[*?[{$~]/.test(c));
     i++;
   }
   if (!raw && stopAtParen) throw new Unbalanced();
@@ -328,7 +333,9 @@ function simples(src: string): { list: Simple[]; parents: Map<number, number> } 
     // Even without quotes the parentheses don't close: read each line as one command.
     return {
       list: src.split("\n").map((line) => ({
-        words: line.split(/[ \t]+/).map((text) => ({ text, quoted: false })),
+        words: line
+          .split(/[ \t]+/)
+          .map((text) => ({ text, quoted: false, expands: /[*?[{$~]/.test(text) })),
         redirects: [],
         heredocs: [],
         scope: 0,
@@ -427,6 +434,7 @@ function opaque(ctx: Context): Command {
   return {
     argv: [],
     quoted: [],
+    expands: [],
     env: [],
     redirects: [],
     stdin: [],
@@ -477,6 +485,7 @@ function expand(
       const cmd: Command = {
         argv: words.map((w) => w.text),
         quoted: words.map((w) => w.quoted),
+        expands: words.map((w) => w.expands),
         env: simple.words
           .slice(0, start)
           .map((w) => w.text)
@@ -527,6 +536,7 @@ function follow(cmd: Command, depth: number, budget: Budget, out: Command[]): vo
       ...cmd,
       argv: argv.slice(from),
       quoted: cmd.quoted.slice(from),
+      expands: cmd.expands.slice(from),
       env: [],
       ...extra,
     };

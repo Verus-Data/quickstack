@@ -21,7 +21,7 @@ env:
 merge: [.claude/settings.json]
 fragments:
   default: [agent-ops, git-hooks, ci-github, posthog]
-  optional: [cloudflare-pages, ce-plugin]
+  optional: [cloudflare-pages, ce-plugin, claude-harness]
 verify:
   - { name: install, phase: setup, layer: install, run: make install }
   - { name: lint, layer: lint, run: make lint }

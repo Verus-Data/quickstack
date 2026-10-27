@@ -1,6 +1,7 @@
 # Phase 3.4a: Agent harness fragment
 
 Status: DRAFT 2026-10-26 (not agreed)
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -79,16 +80,21 @@ Two bench runs of the same stack (`astro-blog` is the TypeScript-capable small s
 
 ## Acceptance tests
 
-- `new astro-blog --with agent-harness-ts --no-launch --json`: composes, the merged `.claude/settings.json` has the guard entry exactly once, no file has two owners, and `validate` reports zero warnings.
-- The shipped hook suite passes when run from a scaffolded project (the composition test runs `bun test` inside a temp project only in the e2e layer, since it executes shipped code).
-- `guard-destructive.sh` from `agent-ops` alone blocks its patterns; with the harness present it delegates and blocks the lexer's cases, including one chained command the pattern list misses.
-- `--with` the fragment on `<go-stack>`, a stack its `applies_to` excludes, composes it with a `with_not_applicable` warning (1.1 as built: an explicit `--with` is kept), and `validate`'s per-fragment composition doesn't pair it with that stack.
-- Both bench runs are in the ledger, the harness run is `pass`, and its `hooksFired` names the guard and typecheck hooks.
+1. `new astro-blog --with claude-harness --no-launch --json`: composes, the merged `.claude/settings.json` wires the destructive guard only through its shell entry (no additional direct TypeScript guard hook), non-merged files have one owner, and `validate` checks the `astro-blog + claude-harness` composition in both presets with zero errors and warnings.
+2. The shipped hook suite passes when run from one scaffolded project in the e2e layer, using its existing Vitest runner on Node, and the manifest includes a harness-owned verify step with `layer: test` that passes for the shipped suite and fails verification when a copied shipped test is made to fail.
+3. `block-destructive.sh` from `agent-ops` alone blocks its patterns; with the harness present it delegates and blocks the TypeScript guard's lexer cases, including a quoted command the pattern list misses; both allow `echo "rm -rf /"`.
+4. `--with claude-harness` on `go-cli`, whose tags its `applies_to` excludes, keeps the fragment with exactly one `with_not_applicable` warning, and `validate`'s per-fragment compositions don't pair it with that stack.
+
+### Realistic edge cases
+
+5. Delegation works through a symlinked project path containing spaces and non-ASCII characters when the hook's cwd is an unrelated directory.
+6. In a real repository with uncommitted work, both the delegated shell guard and the TypeScript guard block a quoted `git reset --hard` command without changing the work; a quoted example remains allowed.
+7. Removing only the harness's hook files from an existing composed hook directory restores the shell guard's pattern blocking and allowed near miss.
 
 ## Exit criteria
 
 - Acceptance tests pass; `bun run check` green from the repo root.
-- The bench comparison note is written, with a one-line recommendation on making the fragment a default for TypeScript stacks.
+- Maintainer-owned real-run proof (2026-10-27): both bench runs are in the ledger, the harness run is `pass`, and its `hooksFired` names the guard and typecheck hooks. Write the comparison note with a one-line recommendation on making the fragment a default for TypeScript stacks; automated acceptance tracing does not cover this proof.
 
 ## What this plan may get wrong
 
@@ -96,3 +102,47 @@ Two bench runs of the same stack (`astro-blog` is the TypeScript-capable small s
 - A lexer-based guard is still a guard against accidents, not an adversary; an agent with full permissions can write its own script and run that. The harness doc says so.
 - Typecheck-on-write can be slow on large projects and annoy more than help. The hook has a time limit and skips when exceeded, logging that it did.
 - 2026-10-26: the fragment's frontmatter was written camelCase and a `--with` that doesn't fit was expected to fail `ComposeConflict`. The amended D18 uses snake_case keys (`applies_to`, `requires_tools`), and 1.1 keeps an explicit `--with` that doesn't fit, with a warning; the test now checks the warning.
+
+- 2026-10-27: the existing fragment is `claude-harness`, not `agent-harness-ts`; keep that id. It is
+  already required by `typescript-cli` (whose guards import its helpers), not optional on every
+  TypeScript stack, and is not listed as optional by `astro-blog`. Its frontmatter uses `applies_to:
+  [bun]` rather than `[node, bun]`, and `tools: [bun]` rather than `requires_tools`. Hooks are
+  separate Bun TypeScript entry points under `adapters/claude/.claude/hooks/` (`_lib.ts`,
+  `_shell.ts`, `guard-commands.ts`, `guard-generated.ts`, `typecheck-on-write.ts`), not one
+  dispatcher or a `hooks/ts/` directory. `guard-commands.ts` currently guards package managers, not
+  destructive commands; `agent-ops` owns `block-destructive.sh` and `_destructive-patterns.sh`, with
+  no TypeScript delegation today. Acceptance tests use `guard-commands.ts` as the TypeScript guard's
+  existing entry point; its current separate settings entry must be removed when the shell delegates
+  to it, to avoid running the same guard twice. Both hook libraries deny with exit 0 and one JSON
+  `hookSpecificOutput.permissionDecision: "deny"` on stdout, not exit 2/stderr. The generated-file
+  guard currently recognizes listed output paths, not header markers; typecheck-on-write calls tsc
+  rather than a project script, and advisory timeouts stay quiet. All three commands and both agents
+  already ship. The harness doc is `adapters/claude/docs/harness.md`, with prose asking the agent to
+  fill `.claude/README.md`. The shipped suite lives in `adapters/claude/tests/hooks/` and imports
+  Vitest; Node runs it, not `bun test`. The fragment has only a documentation verify check today,
+  with no test-layer verify step. JSON settings deliberately merge owners; other files have one
+  owner. File ownership is exposed by `compose`'s planned files, not the manifest, which records
+  entry references and verify-step owners only. Acceptance tests use the existing composition
+  interface for file ownership and the manifest for the hook-test step owner. The plan's lexer case
+  is recorded as `printf ok && r"m" -rf /`, which the current shell pattern list allows. The e2e
+  fixture excludes the unrelated `git-hooks` fragment and supplies installed tooling, conventional
+  test script aliases and an offline Makefile install target, because `verify --only` also runs setup
+  and the bare scaffold has no agent-generated Makefile. Real bench proof belongs to the maintainers and is outside the traced
+  numbers.
+
+- 2026-10-27 implementation: the existing standalone hooks and Node/Vitest suite are retained.
+  `block-destructive.sh` delegates from its own directory and remains the sole settings entry;
+  removing the TypeScript guard or Bun restores the pattern list. `harness-hooks` skips only when
+  the Claude guard is absent (no Claude adapter), otherwise runs the shipped Vitest suite on Node.
+  Recursive deletion checks resolve existing symlink ancestors in filesystem order before `..`,
+  and deny unresolved expansions and xargs operands; hard resets probe the selected
+  repository, denying when dirty or unreadable. History rewriting is guarded conservatively:
+  force pushes on any branch, including leases, rebase, filter-branch/filter-repo and reflog
+  expiry/deletion require confirmation rather than discovering a remote's default branch.
+  The delegated guard covers the plan's classes; the shell fallback's broader pattern list
+  (SQL, releases, containers and similar operations) is not carried into the TypeScript guard.
+
+- Independent review found raw macOS `rdisk` targets, operand-free xargs deletes, shell
+  brace/glob expansion and symlink-parent traversal gaps. Shipped regressions reproduce all
+  four through the wired shell entry and fail again with the fixes reverted. `_shell.ts` now
+  carries per-word expansion metadata so quoted/escaped literal filenames remain allowed.

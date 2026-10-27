@@ -17,6 +17,12 @@ source "$hook_dir/_lib.sh"
 # shellcheck source=_destructive-patterns.sh
 source "$hook_dir/_destructive-patterns.sh"
 
+# Resolve from the hook, including through symlinked project paths and unrelated working dirs.
+if [ -f "$hook_dir/guard-commands.ts" ] && command -v bun >/dev/null 2>&1; then
+  export CLAUDE_PROJECT_DIR="${CLAUDE_PROJECT_DIR:-$(cd "$hook_dir/../.." && pwd -P)}"
+  exec bun "$hook_dir/guard-commands.ts"
+fi
+
 input=$(cat)
 command=$(hook_get "$input" tool_input.command) || exit 0
 [ -z "$command" ] && exit 0
