@@ -7,13 +7,21 @@ import { runStep } from "./step";
 
 export type VerifyProject = { root: string; manifest: Manifest };
 export type VerifyOptions = SelectOptions;
+/**
+ * What the runner knows about a run: the result without the tamper check's fields, which the
+ * command adds (1.3b), and never `changed`, since a changed run doesn't reach the runner.
+ */
+export type RunResult = Omit<
+  VerifyResult,
+  "outcome" | "tamperCheck" | "changed" | "firstGreen" | "stateRecord"
+> & { outcome: Exclude<VerifyResult["outcome"], "changed"> };
 
 const SETUP_FAILED = "an earlier setup step failed";
 const INTERRUPTED = "the run was interrupted";
 
 /**
  * Runs a project's verify steps and returns the result. The manifest is taken as already checked
- * (1.3b's tamper check runs before this). Setup stops at its first failure, which skips the check
+ * (`tamper.ts::checkTamper` runs before this). Setup stops at its first failure, which skips the check
  * and serve steps; every check runs; teardown always runs, and so does `onFinished`, both in the
  * finalizer of the run, so an interrupted run still tears down and reports to `onFinished` (with
  * outcome `interrupted`) before the interruption ends the command.
@@ -21,7 +29,7 @@ const INTERRUPTED = "the run was interrupted";
 export const runVerify = (
   project: VerifyProject,
   options: VerifyOptions,
-  onFinished: (result: VerifyResult) => Effect.Effect<void> = () => Effect.void,
+  onFinished: (result: RunResult) => Effect.Effect<void> = () => Effect.void,
 ) =>
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
@@ -64,7 +72,7 @@ export const runVerify = (
         if (step.phase === "setup" && result.status === "failed") setupFailed = true;
       });
 
-    let finished: VerifyResult | undefined;
+    let finished: RunResult | undefined;
     const finish = (interrupted: boolean) =>
       Effect.gen(function* () {
         const now = yield* Clock.currentTimeMillis;
@@ -120,5 +128,5 @@ export const runVerify = (
     ).pipe(
       Effect.onExit((exit) => finish(Exit.isFailure(exit) && Cause.hasInterrupts(exit.cause))),
     );
-    return finished as VerifyResult;
+    return finished as RunResult;
   });

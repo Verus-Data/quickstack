@@ -1,6 +1,6 @@
 import { Effect, FileSystem, Path, type PlatformError, Random, Schema } from "effect";
 import { AppConfig } from "../config";
-import { PermissionDenied } from "../errors";
+import { InvalidConfig, PermissionDenied } from "../errors";
 import { type Manifest, ProjectId } from "../schemas/manifest";
 import { digestSettings, digestStep } from "./manifest";
 import { printable } from "./text";
@@ -76,7 +76,6 @@ export const writeProjectState = (
 ): Effect.Effect<StateWrite, PermissionDenied, FileSystem.FileSystem | Path.Path | AppConfig> =>
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
-    const path = yield* Path.Path;
     const real = yield* fs
       .realPath(manifestPath)
       .pipe(
@@ -86,25 +85,119 @@ export const writeProjectState = (
       );
     const target = yield* projectStatePath(manifest.projectId);
     if (target === undefined) return { written: false } as const;
-    const text = `${JSON.stringify(Schema.encodeSync(ProjectState)(projectStateFor(manifest, real)), null, 2)}\n`;
-    const suffix = (yield* Random.nextIntBetween(0, 0xffffff)).toString(16);
-    const temporary = `${target}.${suffix}.tmp`;
-    return yield* Effect.gen(function* () {
-      yield* fs.makeDirectory(path.dirname(target), { recursive: true });
-      yield* fs
-        .writeFileString(temporary, text, { flag: "wx" })
-        .pipe(Effect.onError(() => Effect.ignore(fs.remove(temporary))));
-      yield* fs
-        .rename(temporary, target)
-        .pipe(Effect.onError(() => Effect.ignore(fs.remove(temporary))));
-      return { written: true, path: target } as const;
-    }).pipe(
+    return yield* saveProjectState(projectStateFor(manifest, real), target).pipe(
+      Effect.as({ written: true, path: target } as const),
       Effect.catchTag("PlatformError", (error) =>
-        Effect.logWarning(
-          `Project state record not written (${reasonOf(error)}): ${printable(target)}`,
-        ).pipe(Effect.as({ written: false } as const)),
+        warnUnwritten(error, target).pipe(Effect.as({ written: false } as const)),
       ),
     );
+  });
+
+/** The one warning a state record write that failed logs. */
+export const warnUnwritten = (error: PlatformError.PlatformError, target: string) =>
+  Effect.logWarning(`Project state record not written (${reasonOf(error)}): ${printable(target)}`);
+
+/**
+ * Writes `state` to `target` (a `projectStatePath`), creating its directory: a fresh temporary
+ * file (exclusive create, so nothing planted there is followed) renamed over the record, which
+ * replaces a link rather than writing through it. Fails with the platform error; callers decide
+ * whether that is a warning (`new`, verify's timing fields) or a refusal (`--accept-changes`).
+ */
+export const saveProjectState = (
+  state: ProjectState,
+  target: string,
+): Effect.Effect<void, PlatformError.PlatformError, FileSystem.FileSystem | Path.Path> =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const text = `${JSON.stringify(Schema.encodeSync(ProjectState)(state), null, 2)}\n`;
+    const suffix = (yield* Random.nextIntBetween(0, 0xffffff)).toString(16);
+    const temporary = `${target}.${suffix}.tmp`;
+    yield* fs.makeDirectory(path.dirname(target), { recursive: true });
+    yield* fs
+      .writeFileString(temporary, text, { flag: "wx" })
+      .pipe(Effect.onError(() => Effect.ignore(fs.remove(temporary))));
+    yield* fs
+      .rename(temporary, target)
+      .pipe(Effect.onError(() => Effect.ignore(fs.remove(temporary))));
+  });
+
+/** A state record and the file it was read from. */
+export type FoundState = { state: ProjectState; path: string };
+
+const versionOf = (value: unknown) =>
+  value !== null && typeof value === "object" && "schemaVersion" in value
+    ? value.schemaVersion
+    : undefined;
+
+/**
+ * Reads one record file: `undefined` when it is missing, unreadable, not JSON or doesn't decode
+ * (treated as missing), and `{ newer }` when a newer quickstacks wrote it.
+ */
+const readStateFile = (file: string) =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const text = yield* Effect.option(fs.readFileString(file));
+    if (text._tag === "None") return undefined;
+    const parsed = yield* Effect.option(
+      Effect.try({ try: () => JSON.parse(text.value) as unknown, catch: () => undefined }),
+    );
+    if (parsed._tag === "None") return undefined;
+    const unknown = parsed.value;
+    const version = versionOf(unknown);
+    if (typeof version === "number" && Number.isFinite(version) && version > 1)
+      return { newer: version } as const;
+    return yield* Schema.decodeUnknownEffect(ProjectState)(unknown, {
+      onExcessProperty: "error",
+    }).pipe(
+      Effect.map((state) => ({ state })),
+      Effect.orElseSucceed(() => undefined),
+    );
+  });
+
+/**
+ * The tamper check's lookup by id (1.3b): the record for `projectId` and its path, or `undefined`
+ * when there is none or it is unreadable. A record a newer quickstacks wrote is `InvalidConfig`
+ * with its path and version (Schema versions), never a silent fall back to manifest-only.
+ */
+export const findProjectState = (
+  projectId: string,
+): Effect.Effect<
+  FoundState | undefined,
+  InvalidConfig,
+  FileSystem.FileSystem | Path.Path | AppConfig
+> =>
+  Effect.gen(function* () {
+    const target = yield* projectStatePath(projectId);
+    if (target === undefined) return undefined;
+    const read = yield* readStateFile(target);
+    if (read === undefined) return undefined;
+    if ("newer" in read)
+      return yield* new InvalidConfig({ details: { path: target, schemaVersion: read.newer } });
+    return { state: read.state, path: target };
+  });
+
+/**
+ * The tamper check's lookup by path (1.3b): the first record, by file name, whose `manifestPath`
+ * is `realManifestPath`. Records that can't be read, decoded or are newer are passed over. Linear
+ * in the number of records.
+ */
+export const findProjectStateByPath = (
+  realManifestPath: string,
+): Effect.Effect<FoundState | undefined, never, FileSystem.FileSystem | Path.Path | AppConfig> =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const dir = path.join((yield* (yield* AppConfig).paths).state, "projects");
+    const names = yield* fs.readDirectory(dir).pipe(Effect.orElseSucceed(() => []));
+    for (const name of [...names].sort()) {
+      if (!name.endsWith(".json")) continue;
+      const file = path.join(dir, name);
+      const read = yield* readStateFile(file);
+      if (read && "state" in read && read.state.manifestPath === realManifestPath)
+        return { state: read.state, path: file };
+    }
+    return undefined;
   });
 
 /** Rollback for `writeProjectState`: removes the record if it is there; never fails. */

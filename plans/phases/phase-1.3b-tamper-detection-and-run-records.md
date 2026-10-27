@@ -1,6 +1,7 @@
 # Phase 1.3b: Tamper detection and run records
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: EXECUTED 2026-10-26 on feat/phase-1-finish (awaiting review)
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -255,3 +256,36 @@ the same failure rule as the run record.
 - Counting partial runs for `firstTestPassAt` may flatter the measure when an agent runs
   one quick test early. The record keeps scope and step layers, so 2.0c can recompute a
   stricter version without a schema change.
+
+Found while executing it (2026-10-26):
+
+- **Itemizing against the manifest.** The plan empties `removed`/`added`/`edited` whenever
+  `against: "manifest"`, but acceptance test 2 (edit one `run`, leave the digest) is exactly
+  that case and expects the step in `edited`. The lists now come from the state record's
+  per-step digests whenever a record was found, whichever copy disagreed; they are empty only
+  with no record (manifest-only). `against` still names the copy that disagreed first.
+- **`stateRecord` in `VerifyResult`** was named but not defined. It means the state record is
+  current after the run: a record was found by id (or created by `--accept-changes`) and any
+  timing field the run set was written. False for manifest-only, for a record found only by
+  path, and when the timing write failed.
+- **`changed` in the result** is present on a `changed` run and also on an
+  `--accept-changes` run that accepted a change, so a JSON caller sees what it accepted.
+- **The accept diff goes through `Output.progress`**, so it prints in text modes only;
+  `--json` keeps stderr for the envelope, and the result's `changed` carries the same diff.
+- **Accept order.** The state record is written first, then the manifest's `verifyDigest`
+  (only when it differs). A manifest that can't be written fails `PermissionDenied`
+  (`write`) and the previous record is put back (or the new one removed), so a half-done
+  accept leaves both copies as they were. `--accept-changes` checks the agent and the TTY
+  after the manifest is found and read, so outside a project it is still `NotFound`.
+- **An unknown `--only` name** is checked before the tamper check, so it exits 2 and appends no
+  run record, like `NotFound` and `InvalidConfig`.
+- **The run record writer** appends with plain `FileSystem` rather than `scaffold/write.ts`
+  (which creates files exclusively and has no append). It refuses to write when
+  `.quickstacks/state/` resolves outside the project (a link), with one warning.
+- **`runVerify`'s seam** now hands `onFinished` a `RunResult` (the result without the four
+  tamper fields, never outcome `changed`); the command adds `tamperCheck`, `changed`,
+  `firstGreen` and `stateRecord`. A `changed` result is built by `tamper.ts::changedResult`
+  with every step skipped, its scope from the selection flags.
+- **`RunStep.exitCode`** is present on passed steps too (exit 0), as in `StepResult`.
+- **PermissionDenied wording** for `agent` and `no-tty` is generic ("This needs a person's
+  confirmation"), since `quickstacks trust` and source confirmation (3.2a) share the reasons.

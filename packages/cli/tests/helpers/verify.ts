@@ -1,11 +1,13 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { createServer, type Server, Socket } from "node:net";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { Schema } from "effect";
 import type { Environment } from "../../src/config";
-import { encodeManifest, MANIFEST_PATH } from "../../src/core/manifest";
-import type { Manifest, ManifestStep } from "../../src/schemas/manifest";
-import { VerifyResult } from "../../src/schemas/verify";
+import { digestSteps, encodeManifest, MANIFEST_PATH } from "../../src/core/manifest";
+import { ProjectState, projectStateFor } from "../../src/core/project-state";
+import { Manifest, type ManifestStep } from "../../src/schemas/manifest";
+import { RunRecord, VerifyResult } from "../../src/schemas/verify";
+import type { HostInfo } from "../../src/services/host";
 import type { Writer } from "../../src/services/output";
 import { quiet, runCli, tempDir } from "./cli";
 
@@ -19,9 +21,12 @@ export const step = (input: StepInput): ManifestStep => ({
   ...input,
 });
 
-/** A valid schema-version-1 manifest holding `steps`. */
+/**
+ * A valid schema-version-1 manifest holding `steps`, its `verifyDigest` computed over them the way
+ * `new` computes it unless `overrides` names one.
+ */
 export function manifest(steps: StepInput[], overrides: Partial<Manifest> = {}): Manifest {
-  return {
+  const built: Manifest = {
     schemaVersion: 1,
     projectId: "0f8fad5b-d9cb-469f-a165-70867728950e",
     createdAt: "2026-10-26T09:00:00.000Z",
@@ -38,6 +43,62 @@ export function manifest(steps: StepInput[], overrides: Partial<Manifest> = {}):
     briefWords: 0,
     ...overrides,
   };
+  return overrides.verifyDigest ? built : { ...built, verifyDigest: digestSteps(built) };
+}
+
+/** XDG_STATE_HOME under `home`, as tests that keep a state record across runs set it. */
+export const stateEnv = (home: string) => ({ XDG_STATE_HOME: join(home, "state") });
+/** Where the state record for `projectId` lives under `stateEnv(home)`. */
+export const recordPath = (home: string, projectId: string) =>
+  join(home, "state", "quickstacks", "projects", `${projectId}.json`);
+
+/**
+ * Writes a project as `new` leaves it: the manifest under `root` and its state record under
+ * `stateEnv(home)`, holding the manifest's real path. Returns the manifest.
+ */
+export function writeRecordedProject(
+  root: string,
+  home: string,
+  steps: StepInput[],
+  overrides: Partial<Manifest> = {},
+): Manifest {
+  const path = writeProject(root, steps, overrides);
+  const written = manifest(steps, overrides);
+  const file = recordPath(home, written.projectId);
+  mkdirSync(dirname(file), { recursive: true });
+  writeFileSync(
+    file,
+    JSON.stringify(
+      Schema.encodeSync(ProjectState)(projectStateFor(written, realpathSync(path))),
+      null,
+      2,
+    ),
+  );
+  return written;
+}
+
+/** Reads a state record back, decoded. */
+export const readRecord = (file: string): ProjectState =>
+  Schema.decodeUnknownSync(ProjectState)(JSON.parse(readFileSync(file, "utf8")), {
+    onExcessProperty: "error",
+  });
+
+/** Reads a manifest file back, decoded. */
+export const readManifestAt = (root: string): Manifest =>
+  Schema.decodeUnknownSync(Manifest)(JSON.parse(readFileSync(join(root, MANIFEST_PATH), "utf8")), {
+    onExcessProperty: "error",
+  });
+
+/** `.quickstacks/state/runs.jsonl` under `root`, each line decoded as a `RunRecord`. */
+export function runRecords(root: string): RunRecord[] {
+  const file = join(root, ".quickstacks", "state", "runs.jsonl");
+  if (!existsSync(file)) return [];
+  return readFileSync(file, "utf8")
+    .split("\n")
+    .filter((line) => line !== "")
+    .map((line) =>
+      Schema.decodeUnknownSync(RunRecord)(JSON.parse(line), { onExcessProperty: "error" }),
+    );
 }
 
 /** Writes `.quickstacks/manifest.json` under `root` and returns its path. */
@@ -94,6 +155,8 @@ export type VerifyOptions = {
   env?: Environment;
   signal?: AbortSignal;
   stdout?: Writer;
+  /** Host fixture overrides beyond `cwd`, such as `stdinIsTTY`. */
+  host?: Partial<HostInfo>;
 };
 
 /** `quickstacks verify <args>` from `cwd`, with this machine's PATH so steps find node and sleep. */
@@ -102,7 +165,7 @@ export async function verify(args: string[], options: VerifyOptions) {
   try {
     return await runCli(["verify", ...args], {
       home: options.home ?? own?.path ?? "/invalid",
-      host: { cwd: options.cwd },
+      host: { ...options.host, cwd: options.cwd },
       env: { PATH: process.env.PATH, ...quiet, ...options.env },
       ...(options.signal ? { signal: options.signal } : {}),
       ...(options.stdout ? { stdout: options.stdout } : {}),

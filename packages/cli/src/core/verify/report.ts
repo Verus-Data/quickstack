@@ -34,6 +34,11 @@ export function renderVerify(result: VerifyResult, invocation: string): string {
   const next = nextLine(result.outcome, invocation, kinds);
   return [
     header,
+    ...(result.tamperCheck === "manifest-only"
+      ? [
+          "Tamper check: manifest only (no state record for this project on this machine), so this run can't count for the MVP gate.",
+        ]
+      : []),
     ...(result.steps.length ? ["", ...result.steps.flatMap((step) => stepLines(step, width))] : []),
     ...(next ? ["", next] : []),
   ].join("\n");

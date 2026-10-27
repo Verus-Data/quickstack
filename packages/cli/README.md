@@ -72,6 +72,7 @@ quickstacks verify                 # every step, from the project root or any di
   --only lint,test                 # only these check and serve steps (repeatable); setup and teardown still run
   --skip-tag slow                  # leave out steps with this tag (repeatable)
   --all                            # also run steps skipped by default (prod steps in a --sandbox project)
+  --accept-changes                 # a person only: record the steps as they are now, then run them
   --json                           # one VerifyResult object
 ```
 
@@ -83,6 +84,16 @@ quickstacks verify                 # every step, from the project root or any di
 - A serve step's `expect.http` (with `${VAR}` expanded from the step environment) must be an `http` URL on `localhost`, `127.0.0.1` or `::1`. Verify fails the step without starting it when that port already answers, then polls the URL every 500 ms until any status below 500, for up to `within` (default 60s). Serve commands must stay in the foreground: one that exits before its probe passes fails, and so does a server still answering on the port after its process group was stopped.
 - Outcomes: `green` (exit 0) is a full run with every step that ran passing. A passing `--only` or `--skip-tag` run is `partial` (exit 0), which never counts as done. A failed step is `failed`: exit 5 (`VerifyFailed`) with the full result still on stdout, each failed step's `failureKind` (`step`, `env`, `timeout`) and output tail in it, and the error envelope naming the failed steps as the last stderr line. Ctrl+C is exit 130 after teardown. Outside a project is `NotFound` (2); a manifest that doesn't decode is `InvalidConfig` (3).
 - Human mode streams each step's output to stderr, prefixed with its name, and ends a run that isn't green with a `Next:` line.
+
+### Changed steps and run records
+
+Before running anything, `verify` checks the steps against the copies recorded by `new`: the manifest's own `verifyDigest`, and the project state record outside the project (`$XDG_STATE_HOME/quickstacks/projects/<projectId>.json`, or under `QUICKSTACKS_STATE_DIR`). The digest covers every field verify reads from each step, plus the manifest's `env` and `preset`; a step's `owner` is left out.
+
+- Any difference is outcome `changed`: no step runs, not even teardown, and the exit is 5 (`VerifyChanged`) with the result on stdout. Its `changed` field (and the envelope's `details`) says which copy disagreed (`against`: `manifest` or `state-record`) and, from the state record's per-step digests, which steps were `edited`, `added` or `removed`, and whether `env` or `preset` changed (`settings`). A state record found only by the manifest's path, under a different `projectId`, is a change with `reason: "project-id"`.
+- With no state record on this machine (a fresh clone, or a state directory `new` couldn't write), only the manifest's copy is checked and the result says `tamperCheck: "manifest-only"`, which never counts for the MVP gate. An unreadable record counts as missing; one a newer quickstacks wrote fails `InvalidConfig` (3).
+- `verify --accept-changes` is for a person who changed the steps on purpose. It is refused with `PermissionDenied` (6) when an agent is detected (`reason: "agent"`) or stdin isn't a terminal (`no-tty`), and then changes nothing. Otherwise it prints what changed, writes the new digest to the state record (creating it on a fresh clone) and then to the manifest, keeps the project's timing fields, and runs the steps. A state record it can't write fails `PermissionDenied` (`state-unwritable`) with the manifest untouched.
+- Every run that gets past the manifest (`changed`, `failed` and interrupted ones included) appends one `RunRecord` line to `.quickstacks/state/runs.jsonl`, which the project's `.gitignore` ignores: `schemaVersion`, start time, CLI version, detected agent, outcome, scope, `tamperCheck`, `acceptedChanges`, durations and each step's name, phase, layer, status, failure kind and exit code. No commands, output, paths or environment values, so it is safe to attach to a bug report.
+- The state record's `firstGreenAt` is set by the first green run and `firstTestPassAt` by the first run, of any scope, in which a `test`-layer step passed; neither is overwritten. The result's `firstGreen` is true on the run that set it, and `stateRecord` is false when there was no record to update or it couldn't be written. A run record or state record that can't be written is one logged warning; the outcome and exit don't change.
 
 ## Validating a registry
 

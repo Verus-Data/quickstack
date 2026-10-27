@@ -1,9 +1,13 @@
-import { Effect, Schema } from "effect";
+import { Clock, Effect, type FileSystem, type Path, Schema } from "effect";
 import { Command, Flag } from "effect/cli";
+import { AppConfig } from "../config";
 import { locateManifest, readManifest } from "../core/manifest";
+import { planVerify } from "../core/verify/plan";
+import { type RecordFacts, recordRun } from "../core/verify/record";
 import { renderVerify } from "../core/verify/report";
 import { runVerify } from "../core/verify/run";
-import { VerifyFailed } from "../errors";
+import { acceptChanges, changedResult, checkTamper } from "../core/verify/tamper";
+import { changeLines, PermissionDenied, VerifyChanged, VerifyFailed } from "../errors";
 import { VerifyResult } from "../schemas/verify";
 import { Host } from "../services/host";
 import { Output } from "../services/output";
@@ -33,22 +37,80 @@ export const verifyCommand = Command.make(
       ),
       Flag.withDefault(false),
     ),
+    acceptChanges: Flag.Boolean("accept-changes").pipe(
+      Flag.withDescription(
+        "For a person who changed the verify steps on purpose: record them as they are now, then run them. Refused (exit 6) under a detected agent or without a terminal on stdin.",
+      ),
+      Flag.withDefault(false),
+    ),
   },
   (flags) =>
     Effect.gen(function* () {
       const host = yield* Host;
       const output = yield* Output;
+      const config = yield* AppConfig;
+      const started = yield* Clock.currentTimeMillis;
       const located = yield* locateManifest(host.cwd);
-      const manifest = yield* readManifest(located.path);
-      // 1.3b runs the tamper check before this and passes the run record writer as onFinished.
-      const result = yield* runVerify(
-        { root: located.root, manifest },
-        { only: names(flags.only), skipTags: names(flags.skipTag), all: flags.all },
+      let manifest = yield* readManifest(located.path);
+      if (flags.acceptChanges) {
+        if ((yield* config.agent) !== "none")
+          return yield* new PermissionDenied({ details: { reason: "agent" } });
+        if (!host.stdinIsTTY) return yield* new PermissionDenied({ details: { reason: "no-tty" } });
+      }
+      const options = { only: names(flags.only), skipTags: names(flags.skipTag), all: flags.all };
+      const plan = yield* planVerify(manifest.verify, options);
+      let tamper = yield* checkTamper(manifest, located.path);
+      if (flags.acceptChanges) {
+        if (tamper.changed)
+          yield* Effect.forEach(
+            ["Accepting the changed verify steps:", ...changeLines(tamper.changed)],
+            (line, index) => output.progress(index ? `  ${line}` : line),
+            { discard: true },
+          );
+        ({ manifest, tamper } = yield* acceptChanges(manifest, located.path, tamper));
+      }
+      const context = {
+        root: located.root,
+        manifest,
+        tamper,
+        acceptedChanges: flags.acceptChanges,
+      };
+      const write = (result: VerifyResult) =>
+        output.result(
+          Schema.encodeSync(VerifyResult)(result),
+          renderVerify(result, host.invocation),
+        );
+
+      const { changed } = tamper;
+      if (changed && !flags.acceptChanges) {
+        const result = yield* changedResult(plan, manifest, { ...tamper, changed }, started);
+        yield* recordRun(context, result);
+        yield* write(result);
+        return yield* new VerifyChanged({ details: changed });
+      }
+
+      // The record is written in the runner's finalizer, so interrupted runs are recorded too; its
+      // services are captured here, before the callback leaves this context.
+      const services = yield* Effect.context<FileSystem.FileSystem | Path.Path | AppConfig>();
+      let facts: RecordFacts = { firstGreen: false, stateRecord: false };
+      const run = yield* runVerify({ root: located.root, manifest }, options, (finished) =>
+        recordRun(context, finished).pipe(
+          Effect.tap((settled) =>
+            Effect.sync(() => {
+              facts = settled;
+            }),
+          ),
+          Effect.asVoid,
+          Effect.provideContext(services),
+        ),
       );
-      yield* output.result(
-        Schema.encodeSync(VerifyResult)(result),
-        renderVerify(result, host.invocation),
-      );
+      const result: VerifyResult = {
+        ...run,
+        tamperCheck: tamper.tamperCheck,
+        ...(changed ? { changed } : {}),
+        ...facts,
+      };
+      yield* write(result);
       if (result.outcome === "failed")
         return yield* new VerifyFailed({
           details: {
@@ -68,6 +130,6 @@ export const verifyCommand = Command.make(
     }),
 ).pipe(
   Command.withDescription(
-    "Run this project's verify steps from .quickstacks/manifest.json (found from here or any directory above): setup, check, serve (each server probed, then stopped), then teardown, which always runs. Prints each command before running it. Exits 0 when green or partial, 5 with the report on stdout when a step fails.",
+    "Run this project's verify steps from .quickstacks/manifest.json (found from here or any directory above): setup, check, serve (each server probed, then stopped), then teardown, which always runs. Prints each command before running it. First checks the steps against the copy recorded when the project was made; changed steps run nothing and exit 5 (VerifyChanged) until a person runs --accept-changes. Every run appends a record to .quickstacks/state/runs.jsonl. Exits 0 when green or partial, 5 with the report on stdout when a step fails or the steps changed.",
   ),
 );

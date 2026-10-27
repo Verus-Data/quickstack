@@ -1,5 +1,5 @@
 import { Schema } from "effect";
-import { Phase, StepLayer } from "./entry";
+import { DetectedAgent, Phase, StepLayer } from "./entry";
 
 /**
  * Why a step failed: its own command (`step`), something the machine lacks or holds (`env`: a
@@ -32,11 +32,37 @@ export const StepResult = Schema.Struct({
 export type StepResult = typeof StepResult.Type;
 
 /**
- * `verify --json`'s result. `green` is a full run with every step that ran passing; `partial` is a
- * `--only` or `--skip-tag` run that passed, which never counts as green. 1.3b adds `changed`.
+ * How the verify steps differ from the copy they were checked against (D14). `against` is the copy
+ * that disagreed: the manifest's own `verifyDigest`, or the state record outside the project.
+ * `reason: "project-id"` is a record found by the manifest's real path under another id. The step
+ * lists and `settings` (`env` or `preset`) come from the state record's per-step digests, so they
+ * are empty when there is no record to compare with.
+ */
+export const VerifyChange = Schema.Struct({
+  against: Schema.Literals(["manifest", "state-record"]),
+  reason: Schema.Literals(["digest", "project-id"]),
+  removed: Schema.Array(Schema.String),
+  added: Schema.Array(Schema.String),
+  edited: Schema.Array(Schema.String),
+  settings: Schema.Boolean,
+});
+export type VerifyChange = typeof VerifyChange.Type;
+
+/**
+ * Which copies of the digest this run checked: `full` is the manifest and the state record,
+ * `manifest-only` the manifest alone (no record for this project here), which never counts for
+ * the MVP gate (D20).
+ */
+export const TamperCheck = Schema.Literals(["full", "manifest-only"]);
+export type TamperCheck = typeof TamperCheck.Type;
+
+/**
+ * `verify --json`'s result. `green` is a full run with every step that ran passing and the tamper
+ * check passed; `partial` is a `--only` or `--skip-tag` run that passed, which never counts as
+ * green; `changed` is a run stopped before any step because the steps changed (D14).
  */
 export const VerifyResult = Schema.Struct({
-  outcome: Schema.Literals(["green", "partial", "failed", "interrupted"]),
+  outcome: Schema.Literals(["green", "partial", "failed", "changed", "interrupted"]),
   scope: Schema.Literals(["full", "partial"]),
   steps: Schema.Array(StepResult),
   totals: Schema.Struct({
@@ -47,6 +73,53 @@ export const VerifyResult = Schema.Struct({
   durationMs: Schema.Number,
   /** Seconds from the manifest's `createdAt` to the end of this run. */
   secondsSinceCreated: Schema.Number,
+  tamperCheck: TamperCheck,
+  /** What changed: on a `changed` run, and on an `--accept-changes` run that accepted a change. */
+  changed: Schema.optionalKey(VerifyChange),
+  /** This run wrote the project's `firstGreenAt`. */
+  firstGreen: Schema.Boolean,
+  /**
+   * The project's state record is current after this run: it was found (or created by
+   * `--accept-changes`) and any timing field this run set was written. False when the check was
+   * manifest-only or the record couldn't be written.
+   */
+  stateRecord: Schema.Boolean,
 });
 export type VerifyResult = typeof VerifyResult.Type;
 export type Outcome = VerifyResult["outcome"];
+
+/** One step in a run record: no command, output, reason or path, so the file is safe to share. */
+export const RunStep = Schema.Struct({
+  name: Schema.String,
+  phase: Phase,
+  layer: Schema.optionalKey(StepLayer),
+  status: Schema.Literals(["passed", "failed", "skipped"]),
+  failureKind: Schema.optionalKey(FailureKind),
+  exitCode: Schema.optionalKey(Schema.Number),
+  durationMs: Schema.Number,
+});
+export type RunStep = typeof RunStep.Type;
+
+/**
+ * One line of `.quickstacks/state/runs.jsonl`, appended by every verify run that reaches the
+ * tamper check. Green is `outcome: "green"`. A new optional field doesn't bump `schemaVersion`;
+ * readers skip a line with a higher version or one that doesn't decode.
+ */
+export const RunRecord = Schema.Struct({
+  schemaVersion: Schema.Literal(1),
+  /** ISO start time, from Clock. */
+  at: Schema.String,
+  /** The quickstacks version that ran. */
+  cli: Schema.String,
+  agent: DetectedAgent,
+  outcome: Schema.Literals(["green", "partial", "failed", "changed", "interrupted"]),
+  scope: Schema.Literals(["full", "partial"]),
+  tamperCheck: TamperCheck,
+  /** This run began with `--accept-changes`. */
+  acceptedChanges: Schema.Boolean,
+  durationMs: Schema.Number,
+  secondsSinceCreated: Schema.Number,
+  /** Every step, skipped ones included, in run order. */
+  steps: Schema.Array(RunStep),
+});
+export type RunRecord = typeof RunRecord.Type;

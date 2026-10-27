@@ -2,7 +2,7 @@ import { Effect, Schema } from "effect";
 import { TEMPLATE_VARIABLES } from "./core/scaffold/template";
 import { printable } from "./core/text";
 import { Kind, Origin } from "./schemas/entry";
-import { FailureKind } from "./schemas/verify";
+import { FailureKind, VerifyChange } from "./schemas/verify";
 /** An unknown subcommand: what was typed and up to three close known names (`core/suggest.ts`). */
 export const UsageDetails = Schema.Struct({
   command: Schema.String,
@@ -90,17 +90,31 @@ export class VerifyFailed extends Schema.TaggedError<VerifyFailed>()("VerifyFail
 }) {
   override readonly message = "Verify failed.";
 }
-/** Details schemas are defined in 1.3b; until then the tag carries none. */
-export class VerifyChanged extends Schema.TaggedError<VerifyChanged>()("VerifyChanged", {}) {
+/** What changed and against which copy: the same value as the verify result's `changed`. */
+export const VerifyChangedDetails = VerifyChange;
+export class VerifyChanged extends Schema.TaggedError<VerifyChanged>()("VerifyChanged", {
+  details: Schema.optionalKey(VerifyChangedDetails),
+}) {
   override readonly message = "Verify steps changed since they were recorded.";
 }
 /**
  * `reason` is a closed set later sub-phases extend; `path` is the file or directory involved.
  * `escape`: a write would land outside the project (its real path isn't under the project's).
  * `unwritable`: the project directory or a file in it couldn't be created or written.
+ * `agent` and `no-tty`: a confirmation only a person at a terminal may give (Trust model, point 4)
+ * was asked for under a detected agent, or without a terminal on stdin.
+ * `state-unwritable`: the state record (`path`) couldn't be written, so nothing was confirmed.
  */
 export const PermissionDeniedDetails = Schema.Struct({
-  reason: Schema.Literals(["write", "read", "escape", "unwritable"]),
+  reason: Schema.Literals([
+    "write",
+    "read",
+    "escape",
+    "unwritable",
+    "agent",
+    "no-tty",
+    "state-unwritable",
+  ]),
   path: Schema.optionalKey(Schema.String),
 });
 export class PermissionDenied extends Schema.TaggedError<PermissionDenied>()("PermissionDenied", {
@@ -313,7 +327,22 @@ export function detailLines(error: AppError, invocation: string): string[] {
                 "The project directory or a file in it can't be written. Nothing was left behind.",
                 "Next: pick a directory you can write to, or fix this one's permissions.",
               ]
-            : [];
+            : details.reason === "agent"
+              ? [
+                  "This needs a person's confirmation, and an agent was detected. Nothing was changed.",
+                  "Next: ask the user to run this command from their own terminal.",
+                ]
+              : details.reason === "no-tty"
+                ? [
+                    "This needs a person's confirmation, and stdin is not a terminal. Nothing was changed.",
+                    "Next: run this command from a terminal.",
+                  ]
+                : details.reason === "state-unwritable"
+                  ? [
+                      "The state record outside the project can't be written, so nothing was confirmed or changed.",
+                      "Next: make that directory writable (or set QUICKSTACKS_STATE_DIR to one that is), then run this command again.",
+                    ]
+                  : [];
       return [...(details.path ? [`Path: ${printable(details.path)}`] : []), ...why];
     }
     case "TargetNotEmpty": {
@@ -436,14 +465,36 @@ export function detailLines(error: AppError, invocation: string): string[] {
               .join(", ")}`,
           ]
         : [];
+    case "VerifyChanged":
+      return error.details ? changeLines(error.details) : [];
     case "NotConfigured":
     case "UpstreamUnavailable":
-    case "VerifyChanged":
     case "Interrupted":
     case "Defect":
     case "BrokenPipe":
       return [];
   }
+}
+/** The human lines naming what changed; `--accept-changes` prints the same lines. */
+export function changeLines(change: typeof VerifyChange.Type): string[] {
+  const names = (label: string, list: ReadonlyArray<string>) =>
+    list.length ? [`${label}: ${list.map(printable).join(", ")}`] : [];
+  const items = [
+    ...names("Edited", change.edited),
+    ...names("Added", change.added),
+    ...names("Removed", change.removed),
+    ...(change.settings ? ["Settings: the manifest's env or preset changed"] : []),
+  ];
+  return [
+    change.reason === "project-id"
+      ? "Against: the state record for this project directory, which is kept under another projectId"
+      : change.against === "manifest"
+        ? "Against: the manifest's own verifyDigest"
+        : "Against: the state record kept outside the project",
+    ...(items.length
+      ? items
+      : ["Which steps changed is not itemized: there are no per-step digests to compare with."]),
+  ];
 }
 /** A value as a shell argument: plain when it is safe, else single-quoted. */
 const shellArg = (text: string) =>
@@ -512,9 +563,10 @@ export function encodeDetails(error: AppError): Effect.Effect<unknown, Schema.Sc
       return encodeClosed(InvalidConfigDetails, error.details);
     case "VerifyFailed":
       return encodeClosed(VerifyFailedDetails, error.details);
+    case "VerifyChanged":
+      return encodeClosed(VerifyChangedDetails, error.details);
     case "NotConfigured":
     case "UpstreamUnavailable":
-    case "VerifyChanged":
     case "Interrupted":
     case "Defect":
     case "BrokenPipe":
