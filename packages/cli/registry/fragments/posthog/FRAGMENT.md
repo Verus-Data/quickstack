@@ -27,7 +27,7 @@ PostHog in the web client, inert without a key. An empty key is the normal state
 PUBLIC_POSTHOG_KEY=
 PUBLIC_POSTHOG_HOST=
 ```
-**Module**: `src/lib/analytics.ts`, initialized once from a module script in `BaseLayout.astro`'s head. Full page loads mean the SDK's default pageview capture is enough. Expose the pre-init queue as a stub on `window.posthog` so islands can call it before the real client loads, then swap in the real one.
+**Module**: `src/lib/analytics.ts`, initialized once from a module script in `BaseLayout.astro`'s head. Full page loads mean the SDK's default pageview capture is enough. Islands import `track()` from the module, so its pre-init buffer covers calls made before the client loads.
 <!-- quickstacks:end -->
 <!-- quickstacks:when stack=python-react -->
 **Env.** Append to `.env.example`, empty, under a comment saying analytics is off while the key is empty:

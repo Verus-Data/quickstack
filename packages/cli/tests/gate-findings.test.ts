@@ -189,6 +189,12 @@ test("astro-blog allows make new-article, so the agent needn't edit .claude/sett
   expect(settings.permissions.allow).toContain("Bash(make new-article *)");
 });
 
+test("astro-blog's analytics keeps one pre-init buffer, in the module islands import", async () => {
+  const text = await brief("astro-blog");
+  expect(text).not.toContain("window.posthog");
+  expect(text).toContain("Islands import `track()` from the module");
+});
+
 test("python-react's Makefile type-checks the backend scripts too", async () => {
   const makefile = readFileSync(join(await scaffold("python-react"), "Makefile"), "utf8");
   expect(makefile).toContain("uv run mypy app tests scripts");
