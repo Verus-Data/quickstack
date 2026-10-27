@@ -10,12 +10,12 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, relative } from "node:path";
+import { Exit } from "effect";
 import { describe, expect, test } from "vitest";
-import { parse } from "../src/cli";
-import { DEFAULT_TOOLS_JSON_PATH } from "../src/core/tools";
-import { main } from "../src/main";
+import { analyze } from "../../src/core/analyze";
+import { runAnalyze } from "./helpers";
 
-const TREE = join(import.meta.dirname, "fixtures", "tree");
+const TREE = join(import.meta.dirname, "..", "fixtures", "analyze", "tree");
 
 function copyTree(src: string, dest: string): void {
   mkdirSync(dest, { recursive: true });
@@ -73,20 +73,10 @@ function hashTree(root: string): Map<string, string> {
   return hashes;
 }
 
-async function runMain(args: string[]): Promise<{ outcome: unknown; stderr: string }> {
-  const parsed = parse(args);
-  if (!parsed.ok) throw new Error(parsed.reason);
-  const stderr: string[] = [];
-  const outcome = await main(parsed.parsed, {
-    writers: {
-      stdout: () => {},
-      stderr: (s) => {
-        stderr.push(s);
-      },
-    },
-    toolsJsonPath: DEFAULT_TOOLS_JSON_PATH,
-  });
-  return { outcome, stderr: stderr.join("") };
+async function runAnalyzeOn(target: string, tool?: readonly string[]) {
+  const { exit } = await runAnalyze(analyze({ target, tool }));
+  if (Exit.isFailure(exit)) throw new Error(`analyze failed: ${String(exit.cause)}`);
+  return exit.value;
 }
 
 describe("analysis never writes into the target", () => {
@@ -97,8 +87,7 @@ describe("analysis never writes into the target", () => {
       const before = snapshotTree(dir);
       const beforeHashes = hashTree(dir);
 
-      const { outcome } = await runMain([dir, "--tool", "ruff"]);
-      expect(outcome).toEqual({ ok: true, written: true });
+      await runAnalyzeOn(dir, ["ruff"]);
 
       const after = snapshotTree(dir);
       const afterHashes = hashTree(dir);
@@ -115,7 +104,7 @@ describe("analysis never writes into the target", () => {
     const dir = mkdtempSync(join(tmpdir(), "readonly-cache-"));
     try {
       copyTree(TREE, dir);
-      await runMain([dir, "--tool", "ruff"]);
+      await runAnalyzeOn(dir, ["ruff"]);
 
       const cachePath = join(dir, ".ruff_cache");
       let exists = false;

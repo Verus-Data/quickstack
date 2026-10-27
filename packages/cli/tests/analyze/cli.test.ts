@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { helpText, parse } from "../src/cli";
+import { helpText, parse } from "../../scripts/analyze";
 
 describe("cli parsing", () => {
   test("parses a positional target", () => {
@@ -39,6 +39,14 @@ describe("cli parsing", () => {
     if (result.ok) {
       expect(result.parsed.out).toBe("report.sarif");
       expect(result.parsed.label).toBe("demo");
+    }
+  });
+
+  test("parses --summary-out", () => {
+    const result = parse(["path", "--summary-out", "summary.json"]);
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.parsed.summaryOut).toBe("summary.json");
     }
   });
 

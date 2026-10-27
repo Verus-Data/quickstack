@@ -1,11 +1,19 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { Exit } from "effect";
 import { describe, expect, test } from "vitest";
-import { readAttribution } from "../src/core/attribution";
+import { readAttribution } from "../../src/core/analyze/record";
+import { runFs } from "./helpers";
+
+async function readAttr(target: string, label?: string) {
+  const exit = await runFs(readAttribution(target, label));
+  if (Exit.isFailure(exit)) throw new Error(`readAttribution failed: ${String(exit.cause)}`);
+  return exit.value;
+}
 
 describe("attribution", () => {
-  test("with a manifest carries stack, fragments, preset and fingerprint", () => {
+  test("with a manifest carries stack, fragments, preset and fingerprint", async () => {
     const dir = mkdtempSync(join(tmpdir(), "attr-manifest-"));
     try {
       mkdirSync(join(dir, ".quickstacks"), { recursive: true });
@@ -21,7 +29,7 @@ describe("attribution", () => {
         }),
         "utf8",
       );
-      const { attribution, warning } = readAttribution(dir);
+      const { attribution, warning } = await readAttr(dir);
       expect(warning).toBeUndefined();
       expect(attribution.kind).toBe("manifest");
       expect(attribution.stack).toBe("astro-blog");
@@ -34,10 +42,10 @@ describe("attribution", () => {
     }
   });
 
-  test("without a manifest is kind none and still valid", () => {
+  test("without a manifest is kind none and still valid", async () => {
     const dir = mkdtempSync(join(tmpdir(), "attr-none-"));
     try {
-      const { attribution } = readAttribution(dir);
+      const { attribution } = await readAttr(dir);
       expect(attribution.kind).toBe("none");
       expect(attribution.stack).toBeUndefined();
     } finally {
@@ -45,10 +53,10 @@ describe("attribution", () => {
     }
   });
 
-  test("without a manifest but with a label is kind label", () => {
+  test("without a manifest but with a label is kind label", async () => {
     const dir = mkdtempSync(join(tmpdir(), "attr-label-"));
     try {
-      const { attribution } = readAttribution(dir, "my-label");
+      const { attribution } = await readAttr(dir, "my-label");
       expect(attribution.kind).toBe("label");
       expect(attribution.label).toBe("my-label");
     } finally {
@@ -56,12 +64,12 @@ describe("attribution", () => {
     }
   });
 
-  test("with a malformed manifest warns and falls back to kind none", () => {
+  test("with a malformed manifest warns and falls back to kind none", async () => {
     const dir = mkdtempSync(join(tmpdir(), "attr-bad-"));
     try {
       mkdirSync(join(dir, ".quickstacks"), { recursive: true });
       writeFileSync(join(dir, ".quickstacks", "manifest.json"), "{not json", "utf8");
-      const { attribution, warning } = readAttribution(dir);
+      const { attribution, warning } = await readAttr(dir);
       expect(warning).toBeDefined();
       expect(attribution.kind).toBe("none");
     } finally {

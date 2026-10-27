@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { countResults, sarifSchemaUri, validateSarif } from "../src/schemas/sarif";
+import { countResults, sarifSchemaUri, validateSarif } from "../../src/schemas/analyze";
 
 describe("sarif validator", () => {
   test("accepts a minimal 2.1.0 log", () => {

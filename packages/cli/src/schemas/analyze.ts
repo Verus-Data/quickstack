@@ -1,6 +1,6 @@
-// Deliberate subset of SARIF 2.1.0 — the authority is the OASIS JSON schema at
-// https://docs.oasis-open.org/sarif/sarif/v2.1.0/cs01/schemas/sarif-schema-2.1.0.json
-// Extend this only when a reader actually needs a field, never speculatively.
+import { Schema } from "effect";
+
+// --- SARIF 2.1.0 subset (the authority is the OASIS JSON schema) ---
 
 export type SarifLogLevel = "note" | "warning" | "error" | undefined;
 
@@ -47,7 +47,7 @@ export type Artifact = {
 
 export type OriginalUriBaseId = { readonly uri?: string; readonly uriBaseId?: string };
 
-export type Run = {
+export type SarifRun = {
   readonly tool?: Tool;
   readonly invocations?: ReadonlyArray<Invocation>;
   readonly results?: ReadonlyArray<Result>;
@@ -59,11 +59,9 @@ export type Run = {
 export type SarifLog = {
   readonly version: string;
   readonly $schema?: string;
-  readonly runs: ReadonlyArray<Run>;
+  readonly runs: ReadonlyArray<SarifRun>;
   readonly properties?: Readonly<Record<string, unknown>>;
 };
-
-export type SarifRun = Run;
 
 export type ValidationResult =
   | { readonly ok: true; readonly log: SarifLog }
@@ -122,3 +120,60 @@ export function countResults(log: SarifLog): number {
   }
   return total;
 }
+
+// --- AnalysisSummary (what a ledger record holds) ---
+
+export const ToolNotRunEntry = Schema.Struct({
+  id: Schema.String,
+  status: Schema.Literals(["absent", "skipped", "failed", "timeout"]),
+  reason: Schema.optionalKey(Schema.String),
+});
+
+export const AnalysisSummary = Schema.Struct({
+  schemaVersion: Schema.Literal(1),
+  runId: Schema.String,
+  createdAt: Schema.String,
+  digest: Schema.String,
+  target: Schema.Struct({
+    files: Schema.Number,
+    bytes: Schema.Number,
+    skippedSymlinks: Schema.Number,
+    excluded: Schema.Array(Schema.String),
+  }),
+  layout: Schema.Struct({
+    topLevel: Schema.Array(Schema.String),
+    maxDepth: Schema.Number,
+  }),
+  metrics: Schema.Struct({
+    lines: Schema.Number,
+    codeLines: Schema.Number,
+    blankLines: Schema.Number,
+    testRatio: Schema.Number,
+    byLanguage: Schema.Record(Schema.String, Schema.Number),
+    markers: Schema.Record(Schema.String, Schema.Number),
+    manifests: Schema.Array(Schema.String),
+  }),
+  attribution: Schema.Struct({
+    kind: Schema.Literals(["manifest", "label", "none"]),
+    stack: Schema.optionalKey(Schema.String),
+    with: Schema.Array(Schema.String),
+    preset: Schema.optionalKey(Schema.String),
+    agent: Schema.optionalKey(Schema.String),
+    fingerprint: Schema.optionalKey(Schema.String),
+    label: Schema.optionalKey(Schema.String),
+  }),
+  toolsNotRun: Schema.Array(ToolNotRunEntry),
+  findings: Schema.Struct({
+    total: Schema.Number,
+    byLevel: Schema.Struct({
+      error: Schema.Number,
+      warning: Schema.Number,
+      note: Schema.Number,
+    }),
+  }),
+}).annotate({
+  title: "Analysis summary",
+  description: "The summary a ledger record holds; the SARIF log is the full artefact",
+});
+
+export type AnalysisSummary = typeof AnalysisSummary.Type;

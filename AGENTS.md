@@ -2,7 +2,7 @@
 
 ## Overview
 
-A bun workspace; every package is in `packages/<name>/` or `packages/tools/<name>/`. `packages/cli` is `quickstacks`, the CLI: Effect 4 commands/services, doctor/version, lazy configuration, safe output and logs. Bun compiles the executable; Node 24 runs Vitest. There is no product code, vendor, release tooling or network requirement. `packages/api` (`@quickstacks/api`) and `packages/mcp` (`@quickstacks/mcp`) are placeholders with no code or scripts. `packages/tools/analyze` (`@quickstacks/analyze`) is a standalone static-analysis record producer: open-source analyzers over any directory, one SARIF 2.1.0 log per run, no runtime dependencies, no CLI wiring (phase 2.3 in `plans/`). Code two packages share goes in its own package, never imported across another package's `src/`. How the monorepo works and how to add a package: README.md, "Monorepo".
+A bun workspace; every package is in `packages/<name>/`. `packages/cli` is `quickstacks`, the CLI: Effect 4 commands/services, doctor/version, lazy configuration, safe output and logs. Bun compiles the executable; Node 24 runs Vitest. There is no product code, vendor, release tooling or network requirement. `packages/api` (`@quickstacks/api`) and `packages/mcp` (`@quickstacks/mcp`) are placeholders with no code or scripts. Code analysis (phase 2.3 in `plans/`) is a module inside `packages/cli/src/core/analyze/`, not a package of its own. Code two packages share goes in its own package, never imported across another package's `src/`. How the monorepo works and how to add a package: README.md, "Monorepo".
 
 The root owns the harness: `.claude/`, lefthook, CI, the root `biome.json`, `tsconfig.base.json`, and the root test suite in `tests/`: the hook tests in `tests/hooks/`, the delegate runner's in `tests/scripts/` and the check in `tests/acceptance/` that traces each plan's acceptance tests to tagged CLI tests. Each package owns its source, tests, `tsconfig.json` (extending `../../tsconfig.base.json`) and any Biome plugins in a nested `biome.json` (`"root": false, "extends": "//"`). See docs/harness.md.
 
@@ -45,18 +45,17 @@ In `packages/cli/` (run there):
 | `./dist/quickstacks doctor --json` | Compiled local diagnostics |
 | `bun run check` | This package's gate only |
 
-In `packages/tools/analyze/` (run there):
+In `packages/cli/`, analysis is a module with a dev script:
 
 | Command | Purpose |
 |---|---|
-| `bun run src/bin.ts <path>` | Analyze a directory and print one SARIF 2.1.0 log on stdout |
-| `bun run src/bin.ts <path> --out <file>` | Write the log to a file (temp file, then rename) |
-| `bun run src/bin.ts <path> --tool ruff` | Run one configured analyzer; others are recorded `skipped` |
-| `bun run src/bin.ts --sarif <file> <path>` | Adopt a log produced elsewhere into the record |
-| `bun run test:unit tests/tools.test.ts` | Single test file |
-| `bun run check` | This package's gate only |
+| `bun scripts/analyze.ts <path>` | Measure a directory and print one SARIF 2.1.0 log on stdout |
+| `bun scripts/analyze.ts <path> --out <file>` | Write the log to a file (temp file, then rename) |
+| `bun scripts/analyze.ts <path> --summary-out <file>` | Also write the `AnalysisSummary` the ledger stores |
+| `bun scripts/analyze.ts <path> --tool ruff` | Run one configured analyzer; the others are recorded `skipped` |
+| `bun scripts/analyze.ts <path> --sarif <file>` | Adopt a log produced elsewhere into the record |
 
-The adapter table is `packages/tools/analyze/tools.json`. An entry with `"verified": false` has not had its flags confirmed against an installed binary; confirm, then flip it.
+The adapter table is `src/core/analyze/tools.ts`. An entry with `verified: false` has not had its flags confirmed against an installed binary; confirm, then flip it.
 
 ## Architecture map (packages/cli)
 
@@ -89,19 +88,18 @@ Paths below are relative to `packages/cli/`.
 
 bin supplies platform, Host, Foreground and the stdout/stderr writers; AppLayer builds config, then Output over config and Host (its audience needs both), then logging and Processes, without opening config. main runs one scoped command. Doctor reads cached config and reports optional-file errors. Framework help is captured and flushed only on success; failures clear the output buffer.
 
-## Architecture map (packages/tools/analyze)
+## Analysis (src/core/analyze/)
 
-Paths below are relative to `packages/tools/analyze/`. No Effect, no dependencies, runs under Node.
+Paths below are relative to `packages/cli/`. It answers one question: what did the run produce? A record of measured facts about a directory, plus whatever the local analyzers found, handed to the run ledger as `analysis`.
 
-- `src/bin.ts`: the only module touching argv, `process.exitCode` and signals.
-- `src/cli.ts`: hand-rolled argument parsing; unknown flag is a usage error.
-- `src/main.ts`: orchestration — digest, inventory, attribution, tool runs, assemble, write.
-- `src/output.ts`: the only module allowed to write stdout or stderr.
-- `src/errors.ts`: the outcome type and the exit table (0 record, 2 input, 1 defect).
-- `src/schemas/sarif.ts`: the SARIF 2.1.0 subset read and written, plus the tolerant validator that rejects any other version.
-- `src/core/`: `digest.ts` (sorted tree hash, symlinks skipped), `inventory.ts` (tier 0 metrics), `tools.ts` (adapter table, PATH resolution, spawn without a shell, ledger), `attribution.ts` (optional `.quickstacks/manifest.json`), `run.ts` (envelope assembly).
-- `tools.json`: the adapter table, data not code.
-- `tests/`, `e2e/`: Vitest over the real entry point plus fake analyzer binaries; Bun for e2e.
+- `src/schemas/analyze.ts`: `AnalysisSummary` (what the ledger stores) and the SARIF 2.1.0 subset written and decoded, with a validator that rejects any other version.
+- `src/core/analyze/index.ts`: `analyze()` — the one entry. Returns an Effect; sets no exit code, writes nothing to the terminal, does not install anything.
+- `src/core/analyze/inventory.ts`: the tree walk, `layout`, metrics and digest. `EXCLUDED_NAMES` is the ignore policy and is deliberately not `.gitignore` (the target may not be a repository and the digest must be machine-identical); symlinks are skipped, never followed.
+- `src/core/analyze/tools.ts`: the adapter table (a `const`, not a JSON file loaded from disk) and `runTool`, through `Processes.exec` with an `ArgvSpec` and `AppConfig.childEnv`. Absence is a failed spawn, never a preceding `which`. `absent`, `skipped`, `failed` and `timeout` are data; a tool that ran is described by its own SARIF run.
+- `src/core/analyze/record.ts`: attribution from `.quickstacks/manifest.json`, envelope assembly, artifact URI rewriting, SARIF encoding.
+- `scripts/analyze.ts`: the only place this feature parses argv and the only place it sets an exit code.
+
+Three rules, each with a test: analysis never writes into the target (`ruff --no-cache`); a found violation is not a failed run (exit 1 with valid SARIF is a run); absence is recorded, not treated as a failure. The plan is `plans/phases/phase-2.3-code-analysis-records.md`.
 
 ## Conventions
 

@@ -1,10 +1,12 @@
 import { copyFileSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { Exit } from "effect";
 import { describe, expect, test } from "vitest";
-import { computeInventory } from "../src/core/inventory";
+import { computeInventory, computeLayout } from "../../src/core/analyze/inventory";
+import { runFs } from "./helpers";
 
-const TREE = join(import.meta.dirname, "fixtures", "tree");
+const TREE = join(import.meta.dirname, "..", "fixtures", "analyze", "tree");
 
 function copyTree(src: string, dest: string): void {
   mkdirSync(dest, { recursive: true });
@@ -19,74 +21,104 @@ function copyTree(src: string, dest: string): void {
   }
 }
 
-describe("inventory tier 0", () => {
-  const metrics = computeInventory(TREE, []);
+async function inventory(target: string, globs: readonly string[] = []) {
+  const exit = await runFs(computeInventory(target, globs));
+  if (Exit.isFailure(exit)) throw new Error(`inventory failed: ${String(exit.cause)}`);
+  return exit.value;
+}
 
-  test("file count excludes node_modules", () => {
+describe("inventory tier 0", () => {
+  const metricsPromise = inventory(TREE);
+
+  test("file count excludes node_modules", async () => {
+    const metrics = await metricsPromise;
     expect(metrics.files).toBe(6);
   });
 
-  test("line counts match hand-computed values", () => {
+  test("line counts match hand-computed values", async () => {
+    const metrics = await metricsPromise;
     expect(metrics.lines).toBe(46);
     expect(metrics.codeLines).toBe(29);
     expect(metrics.blankLines).toBe(6);
     expect(metrics.commentLines).toBe(6);
   });
 
-  test("markers are counted across the tree", () => {
+  test("markers are counted across the tree", async () => {
+    const metrics = await metricsPromise;
     expect(metrics.markers.TODO).toBe(3);
     expect(metrics.markers.FIXME).toBe(2);
     expect(metrics.markers.HACK).toBe(0);
     expect(metrics.markers.XXX).toBe(0);
   });
 
-  test("language mix is a percentage of code lines", () => {
+  test("language mix is a percentage of code lines", async () => {
+    const metrics = await metricsPromise;
     expect(metrics.byLanguage.typescript).toBe(48);
     expect(metrics.byLanguage.python).toBe(22);
     expect(metrics.byLanguage.go).toBe(15);
   });
 
-  test("test ratio uses the language naming convention", () => {
+  test("test ratio uses the language naming convention", async () => {
+    const metrics = await metricsPromise;
     expect(metrics.testFiles).toBe(1);
     expect(metrics.sourceFiles).toBe(3);
     expect(metrics.testRatio).toBeCloseTo(1 / 3, 4);
   });
 
-  test("manifests are detected", () => {
+  test("manifests are detected", async () => {
+    const metrics = await metricsPromise;
     expect(metrics.manifests).toContain("package.json");
     expect(metrics.manifests).toContain("go.mod");
   });
 
-  test("largest files are ordered by lines and capped at ten", () => {
+  test("largest files are ordered by lines and capped at ten", async () => {
+    const metrics = await metricsPromise;
     expect(metrics.largestFiles.length).toBe(6);
     expect(metrics.largestFiles[0]?.path).toBe("src/calc.py");
     expect(metrics.largestFiles[0]?.lines).toBe(11);
   });
 
-  test("files by language counts every classified file", () => {
+  test("files by language counts every classified file", async () => {
+    const metrics = await metricsPromise;
     expect(metrics.filesByLanguage.typescript).toBe(2);
     expect(metrics.filesByLanguage.python).toBe(1);
     expect(metrics.filesByLanguage.go).toBe(1);
     expect(metrics.filesByLanguage.json).toBe(1);
   });
 
-  test("generated directories (.ruff_cache, __pycache__) do not change file counts", () => {
+  test("generated directories (.ruff_cache, __pycache__) do not change file counts", async () => {
     const dir = mkdtempSync(join(tmpdir(), "inv-gen-"));
     try {
       copyTree(TREE, dir);
-      const before = computeInventory(dir, []);
+      const before = await inventory(dir);
       mkdirSync(join(dir, ".ruff_cache"), { recursive: true });
       mkdirSync(join(dir, ".ruff_cache", "0.15.10"), { recursive: true });
       writeFileSync(join(dir, ".ruff_cache", "CACHEDIR.TAG"), "tag\n", "utf8");
       writeFileSync(join(dir, ".ruff_cache", "0.15.10", "x"), "cache\n", "utf8");
       mkdirSync(join(dir, "__pycache__"), { recursive: true });
       writeFileSync(join(dir, "__pycache__", "calc.cpython.pyc"), "pyc\n", "utf8");
-      const after = computeInventory(dir, []);
+      const after = await inventory(dir);
       expect(after.files).toBe(before.files);
       expect(after.lines).toBe(before.lines);
       expect(after.bytes).toBe(before.bytes);
     } finally {
       rmSync(dir, { recursive: true, force: true });
     }
+  });
+});
+
+async function layout(target: string) {
+  const exit = await runFs(computeLayout(target));
+  if (Exit.isFailure(exit)) throw new Error(`layout failed: ${String(exit.cause)}`);
+  return exit.value;
+}
+
+describe("layout", () => {
+  test("topLevel excludes ignored roots such as node_modules", async () => {
+    const result = await layout(TREE);
+    expect(result.topLevel).not.toContain("node_modules");
+    expect(result.topLevel).toContain("src");
+    expect(result.topLevel).toContain("package.json");
+    expect(result.topLevel).toContain("go.mod");
   });
 });
