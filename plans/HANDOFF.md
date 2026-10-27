@@ -9,6 +9,18 @@ Start here, then read repo `AGENTS.md`, the README's
 next steps, who owns each. When it grows past a couple of screens, move the dated detail
 to `archive/` and leave a link.
 
+## Demo outline (2026-10-27)
+
+[The revised outline](../product/DEMO_OUTLINE.md) leads with collaborative discovery:
+describe a product, have the agent compare shared stacks using fit and usage evidence,
+then scaffold and verify the selected starter. Rho stays a minimal example. The 4:45
+Loom sequence includes narration, a short motion-graphics opener and shot transitions.
+It retains the judge review's verification safeguard and measurable results.
+Recording depends on the actual agent access to analytics and contribution route; the
+official-only index and telemetry deferral below do not yet cover the full pitch.
+Implementation status is unchanged. PITCH.md and PREP.md still use the old narrative;
+align those and reconcile the wider positioning with the product and registry plans.
+
 ## `stacks update` (2026-10-27)
 
 [4.4d](phases/phase-4.4d-self-update.md) landed (D31): `stacks update` reads the latest
