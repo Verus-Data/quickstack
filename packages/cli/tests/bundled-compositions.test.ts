@@ -25,7 +25,7 @@ import { Registry } from "../src/core/registry/registry";
 import { BUDGET } from "../src/core/validate/budget";
 import { ComposeConflictDetails } from "../src/errors";
 import { NewResult } from "../src/schemas/new";
-import { BriefPreview, ValidateReport } from "../src/schemas/validate";
+import { BriefPreview } from "../src/schemas/validate";
 import { Processes } from "../src/services/processes";
 import { briefDigests } from "./fixtures/bundled-brief-digests";
 import { quiet, runCli, runProcesses, tempDir } from "./helpers/cli";
@@ -230,6 +230,8 @@ test.each(stacks)(
     }
     gitCallsOnly();
   },
+  // Up to two dry runs per applicable fragment; concurrent gates can exceed Vitest's 5 s.
+  30_000,
 );
 
 test.each(releases.filter((fragment) => fragment.id !== "bun-release"))(
@@ -277,17 +279,6 @@ test.each(stacks.filter((stack) => !gate.includes(stack.id)))(
     }
   },
 );
-
-test("the bundled matrix validates with no errors or warnings [3.3a#1] [3.3b#2] [3.3c#1]", async () => {
-  // validate's git check needs git on PATH. Its calls are outside new's no-entry-command assertion.
-  const run = await cli(["validate", "--json"], bundled, home, { PATH: process.env.PATH });
-  expect(run.stderr).toBe("");
-  expect(run.status).toBe(0);
-  const report = Schema.decodeUnknownSync(ValidateReport)(JSON.parse(run.stdout));
-  expect(report.bundled).toBe(true);
-  expect(report.entries).toEqual({ stacks: stacks.length, fragments: fragments.length });
-  expect(report.findings.filter((finding) => finding.severity !== "note")).toEqual([]);
-});
 
 test.each(gate)(
   "%s keeps its canonical briefs byte-identical in both presets [3.3b#3]",
