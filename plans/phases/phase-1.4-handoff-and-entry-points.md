@@ -1,6 +1,7 @@
 # Phase 1.4: Handoff and entry points
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: DRAFT 2026-10-26 (not agreed). The `guide` subcommand was added as a proposed
+scope item 2026-10-26
 
 | Field | Value |
 |---|---|
@@ -25,6 +26,8 @@ In:
 - Filling the manifest's optional `handoff` field (for D9) and widening the `new` result's
   `handoff` from 1.2a's print-only placeholder to the full union.
 - The no-argument agent guide.
+- Proposed 2026-10-26: a `guide` subcommand that prints the same guide, so an agent or a
+  person who learned the command names from `--help` can reach it by name.
 
 Out:
 
@@ -199,6 +202,12 @@ in `src/core/guide.ts` with a test asserting the cap with `countWords`:
 
 `--json` on the bare root returns `{ guide: "<text>", commands: [...] }`.
 
+`quickstacks guide` (proposed) is a subcommand with no arguments that prints the same
+text from the same `src/core/guide.ts`, with the same `--json` result, so there is one
+guide and two ways to reach it. It exists because the bare root is easy to miss: a
+subcommand shows up in `--help`'s command list, and an agent told "run the guide" has a
+name to run. It reads neither the project nor the registry, so it works anywhere.
+
 ### The help footer
 
 `quickstacks --help` keeps the framework's help, and ends with a fixed footer from the
@@ -208,7 +217,7 @@ loop:
 ```
 Start here (agents): <cli> list --json, pick a stack and tell the user why,
 then <cli> new <stack> <dir> --json, then follow .quickstacks/BRIEF.md
-until <cli> verify is green. Run <cli> with no arguments for the full guide.
+until <cli> verify is green. Run <cli> guide for the full guide.
 ```
 
 `<cli>` is `Host.invocation`. Check first how `effect/cli` in the installed version lets a
@@ -247,6 +256,7 @@ toward nothing (it isn't the guide's 250 words).
 |---|---|
 | `src/core/handoff.ts` | `decideHandoff`, `agentPrompt`, launch-args table, messages |
 | `src/core/guide.ts`, `src/cli.ts` | Bare-root guide and the root `--help` footer |
+| `src/commands/guide.ts` | The `guide` subcommand (proposed), a thin handler over `src/core/guide.ts` |
 | `src/commands/new.ts` | Flags, lookup, decision, manifest field, flush, launch, exit status |
 | `src/schemas/new.ts` (1.2a's `NewResult`) | `handoff` widened to the union |
 | `src/main.ts` | Exit-status override; `command` record fields; guide for the bare root |
@@ -289,6 +299,9 @@ toward nothing (it isn't the guide's 250 words).
 - `quickstacks` with no args: the guide, exit 0, under 250 words by `countWords`, and it
   contains the untrusted-entry rule and the `VerifyChanged` rule; `--help` still shows the
   framework help.
+- `quickstacks guide` prints exactly the bare root's text, exit 0, and `guide --json`
+  returns the same result as the bare root's `--json`; `guide` appears in the root
+  `--help` command list.
 - `quickstacks --help` ends with the "Start here (agents)" footer using
   `Host.invocation`; `quickstacks new --help` does not contain it; exit 0 for both.
 - e2e: the built artifact run with `CLAUDECODE=1` on a fixture registry prints the
@@ -316,3 +329,6 @@ toward nothing (it isn't the guide's 250 words).
 - Ignoring SIGINT while the child runs assumes the child stays in the terminal's
   foreground process group. If an agent starts its own session, Ctrl+C would reach
   neither; check this against each agent in the first 1.6b gate run.
+- 2026-10-26: the `guide` subcommand is a proposed addition, matching the roadmap's
+  Feature gaps row. If the maintainers drop it, the bare root stays the only way to the
+  guide and the help footer goes back to "Run <cli> with no arguments for the full guide".

@@ -413,7 +413,7 @@ two entries of one kind with the same id.
 | `packages/cli/src/config.ts` | `Paths.user` |
 | `packages/cli/src/errors.ts` | `EntryInvalid` and its row |
 | `packages/cli/tests/fixtures/registry/` | Two stacks, four fragments (one with a literal `files/.gitignore`, one app), one invalid entry, one with `schema_version: 2` |
-| `packages/cli/tests/fixtures/registry-real/` | Five realistic entries written in the v1 shape, so decode is tested on content like the bundled catalog rather than only on minimal fixtures: a TypeScript CLI stack (`typescript-cli`) with required and default fragments, a full body and `files/` holding literal dotfiles; three fragments it composes with: `git-hooks` (tooling, `requires_tools`), `effect` (a library fragment with `deps` and decisions) and `effect-schema` (`requires: [effect]`); and one app fragment (`category: app`, `applies_to` naming the stack, a `serve` step with `expect`). 1.1 and 1.2a reuse it |
+| `packages/cli/tests/fixtures/registry-real/` | Five realistic entries written in the v1 shape, so decode is tested on content like the bundled catalog rather than only on minimal fixtures: a TypeScript CLI stack with required and default fragments, a full body and `files/` holding literal dotfiles; three fragments it composes with: a tooling fragment with `requires_tools`, a library fragment with `deps` and decisions, and a schema fragment related to the library one by `requires`; and one app fragment (`category: app`, `applies_to` naming the stack, a `serve` step with `expect`). 1.1 and 1.2a reuse it |
 | `packages/cli/tests/list.test.ts`, `tests/registry.test.ts`, `tests/entry-schema.test.ts` | New |
 | `packages/cli/package.json`, root `package.json` catalog | `yaml` |
 
@@ -529,12 +529,13 @@ option is needed).
   - **`list` walks entry directories.** Rejecting an entry that contains a symlink means
     `list` lists every file in each entry (with `lstat`, never following a link), not
     only the frontmatter. It still reads only the markdown file's contents.
-  - **The realistic fixture's `requires`.** In `registry-real/`, `effect` requires
-    `effect-schema` (the testing fragment pulls in the schema fragment), the reverse of
-    the Files table's description. References to fragments the fixture doesn't hold were
-    trimmed rather than stubbed: the stack's required harness fragment, its CI and
-    release fragments, and the app's provider and harness requirements. The stack now
-    requires `effect-schema`, defaults to `git-hooks` and `effect`, and offers the app.
+  - **The realistic fixture's `requires`.** In `registry-real/`, the library
+    fragment requires the schema fragment (the testing fragment pulls in the schema
+    fragment), the reverse of the Files table's description. References to fragments the
+    fixture doesn't hold were trimmed rather than stubbed: the stack's required harness
+    fragment, its CI and release fragments, and the app's provider and harness
+    requirements. The stack now requires the schema fragment, defaults to the tooling and
+    library fragments, and offers the app.
   - **A literal `.gitignore` ignores its own entry's files.** Git applies
     `files/.gitignore` to the `files/` tree it sits in, so an entry whose `.gitignore`
     lists `.env.*` can't commit its own `files/.env.example.tmpl`: it is silently missing

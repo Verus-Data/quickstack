@@ -55,7 +55,7 @@ The rest of 1.2a's table is unchanged.
 ### Dry-run result
 
 `NewResult` gains `dryRun: Schema.Boolean`. A dry run returns the same shape with
-`written` as the planned list (output paths, unescaped, including the `.quickstacks/`
+`written` as the planned list (output paths, including the `.quickstacks/`
 files and the manifest), `stateRecord: false`, `git` as it would be, and nothing on disk.
 Target-directory refusals (`TargetNotEmpty`, `needs_own_repo`) and template errors fail
 the dry run exactly as they would fail `new`, because the point is to find them first.
