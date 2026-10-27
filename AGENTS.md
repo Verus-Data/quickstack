@@ -58,9 +58,10 @@ Paths below are relative to `packages/cli/`.
 - A scaffolded project holds `.quickstacks/`: `BRIEF.md`, `NOTES.md`, `state/` (all ignored by its `.gitignore`), and later the manifest (1.2b). Entry files may not be planned under `.quickstacks/` or `.git/`.
 - `src/services/`: Output buffers success output; Host supplies process facts; `processes.ts::Processes` runs child processes (`run`, `start`, `exec`, `interactive`, `which`) and `Foreground` holds this invocation's live process groups and interactive child.
 - `src/platform/`: the only Node process code. `process.ts` spawns on `node:child_process` and signals/probes process groups; `signals.ts` is the A3 signal policy (`decide`, `installSignalPolicy`).
-- `src/config.ts`: lazy per-invocation AppConfig; independent paths/log settings.
+- `src/core/manifest.ts`: `.quickstacks/manifest.json` (`buildManifest` from a `Composition`, `encodeManifest`, `readManifest`, `writeManifest`) and the tamper digests (`digestSteps`, `digestStep`, `digestSettings`: sha256 over sorted-key JSON, step defaults applied, `owner` excluded). `core/project-state.ts`: the out-of-project `ProjectState` record under `Paths.state` (`writeProjectState`, `removeProjectState` for rollback, `readProjectState`).
+- `src/config.ts`: lazy per-invocation AppConfig; independent paths/log settings; agent detection (`AgentMarkers`, `AppConfig.agent`, `AGENT_MARKER_NAMES` for `childEnv`'s strip list).
 - `src/errors.ts`, `logging.ts`, `runtime.ts`, `version.ts`: stable boundaries.
-- `src/schemas/`: config/report schemas and their types; `entry.ts` is entry format v1 (`StackMeta`, `FragmentMeta`, `VerifyStep`, `AgentId`, `DetectedAgent`, `withStepDefaults`) and `list.ts` the `list --json` result, `new.ts` the `new --json` result (`NewResult`).
+- `src/schemas/`: config/report schemas and their types; `entry.ts` is entry format v1 (`StackMeta`, `FragmentMeta`, `VerifyStep`, `AgentId`, `DetectedAgent`, `withStepDefaults`), `list.ts` the `list --json` result, `new.ts` the `new --json` result (`NewResult`) and `manifest.ts` the project manifest (`Manifest`, `ManifestStep`, `EntryRef`).
 - `tests/`, `e2e/`: Node programs/hook tests and Bun standalone binary tests.
 - `scripts/`, `biome-plugins/`: lifecycle/build and enforced boundaries.
 - Repo root: `.claude/`, `.github/`, `docs/`, `tests/hooks/`: adapter, CI, harness guide and hook tests.

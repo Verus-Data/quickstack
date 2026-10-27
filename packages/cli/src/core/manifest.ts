@@ -1,0 +1,166 @@
+import { createHash } from "node:crypto";
+import { Clock, Effect, FileSystem, type PlatformError, Random, Schema } from "effect";
+import { InvalidConfig, NotFound, PermissionDenied } from "../errors";
+import { withStepDefaults } from "../schemas/entry";
+import { Manifest, type ManifestStep } from "../schemas/manifest";
+import { VERSION } from "../version";
+import type { Composition } from "./compose/compose";
+import type { Entry } from "./registry/entry";
+
+/** Where a project's manifest lives, relative to its root. */
+export const MANIFEST_PATH = ".quickstacks/manifest.json";
+
+/** What the digest reads from a manifest; a later optional field can't reach it by accident. */
+export type DigestInput = Pick<Manifest, "verify" | "env" | "preset">;
+
+/**
+ * JSON with object keys sorted at every level and arrays kept in order; `undefined` values are
+ * dropped the way `JSON.stringify` drops them.
+ */
+export function canonicalJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (value !== null && typeof value === "object") {
+    const entries = Object.entries(value)
+      .filter(([, item]) => item !== undefined)
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+    return `{${entries.map(([key, item]) => `${JSON.stringify(key)}:${canonicalJson(item)}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+const sha256 = (value: unknown) =>
+  `sha256:${createHash("sha256").update(canonicalJson(value)).digest("hex")}`;
+
+/** Every field verify reads from a step, defaults applied; `owner` is left out. */
+function digestable(step: ManifestStep) {
+  const { owner: _owner, skipByDefault, ...fields } = step;
+  return { ...withStepDefaults(fields), skipByDefault };
+}
+
+/** One step's digest, for the state record's `stepDigests`. */
+export function digestStep(step: ManifestStep): string {
+  return sha256(digestable(step));
+}
+/** The digest of the manifest's `env` and `preset`, for the state record's `settingsDigest`. */
+export function digestSettings(input: Pick<Manifest, "env" | "preset">): string {
+  return sha256({ env: input.env, preset: input.preset });
+}
+/**
+ * The tamper digest (Trust model, point 5): the steps in order, each with every field verify reads
+ * and defaults applied, plus `env` and `preset`. `owner` and every other manifest field are out.
+ */
+export function digestSteps(input: DigestInput): string {
+  return sha256({ verify: input.verify.map(digestable), env: input.env, preset: input.preset });
+}
+
+const entryRef = (entry: Entry) => ({
+  id: entry.id,
+  origin: entry.origin,
+  trusted: entry.trusted,
+});
+
+/** A random version 4 UUID from Effect's `Random`, so a seeded test gets a fixed id. */
+const projectId = Effect.gen(function* () {
+  const bytes: number[] = [];
+  for (let i = 0; i < 16; i++) bytes.push(yield* Random.nextIntBetween(0, 255));
+  bytes[6] = ((bytes[6] ?? 0) & 0x0f) | 0x40;
+  bytes[8] = ((bytes[8] ?? 0) & 0x3f) | 0x80;
+  const hex = bytes.map((byte) => byte.toString(16).padStart(2, "0")).join("");
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+});
+
+/**
+ * The manifest `new` writes for a composition: a fresh project id and creation time, the entries
+ * in composition order, the composed steps with their owner's id, and the digest over them.
+ * `briefWords` is `renderBrief`'s count for the brief written beside it.
+ */
+export const buildManifest = (
+  composition: Composition,
+  facts: { briefWords: number },
+): Effect.Effect<Manifest> =>
+  Effect.gen(function* () {
+    const verify = composition.verify.map(
+      ({ owner, ...step }): ManifestStep => ({
+        ...step,
+        owner: owner.id,
+      }),
+    );
+    const body = { verify, env: { ...composition.env }, preset: composition.preset };
+    return {
+      schemaVersion: 1 as const,
+      projectId: yield* projectId,
+      createdAt: new Date(yield* Clock.currentTimeMillis).toISOString(),
+      cli: VERSION,
+      mode: "new" as const,
+      agents: [...composition.agents],
+      stack: entryRef(composition.stack),
+      fragments: composition.fragments.map(entryRef),
+      commands: { ...composition.commands },
+      ...body,
+      verifyDigest: digestSteps(body),
+      briefWords: facts.briefWords,
+    };
+  });
+
+/** The manifest's file contents: encoded, two-space JSON, one trailing newline. */
+export function encodeManifest(manifest: Manifest): string {
+  return `${JSON.stringify(Schema.encodeSync(Manifest)(manifest), null, 2)}\n`;
+}
+
+const isMissing = (error: PlatformError.PlatformError) =>
+  error.reason._tag === "NotFound" || error.reason._tag === "BadResource";
+const versionOf = (value: unknown) =>
+  value !== null && typeof value === "object" && "schemaVersion" in value
+    ? value.schemaVersion
+    : undefined;
+
+/**
+ * Reads and decodes a manifest. A missing file is `NotFound`; one that can't be read is
+ * `PermissionDenied` (`read`); one that isn't JSON or doesn't decode, excess keys included, is
+ * `InvalidConfig` with its path; one a newer quickstacks wrote (`schemaVersion` above 1) is
+ * `InvalidConfig` with that version too.
+ */
+export const readManifest = (
+  path: string,
+): Effect.Effect<Manifest, NotFound | PermissionDenied | InvalidConfig, FileSystem.FileSystem> =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const text = yield* fs
+      .readFileString(path)
+      .pipe(
+        Effect.mapError((error) =>
+          isMissing(error)
+            ? new NotFound()
+            : new PermissionDenied({ details: { reason: "read", path } }),
+        ),
+      );
+    const invalid = (schemaVersion?: number) =>
+      new InvalidConfig({
+        details: schemaVersion === undefined ? { path } : { path, schemaVersion },
+      });
+    const unknown = yield* Effect.try({
+      try: () => JSON.parse(text) as unknown,
+      catch: () => invalid(),
+    });
+    const version = versionOf(unknown);
+    if (typeof version === "number" && Number.isFinite(version) && version > 1)
+      return yield* invalid(version);
+    return yield* Schema.decodeUnknownEffect(Manifest)(unknown, {
+      onExcessProperty: "error",
+    }).pipe(Effect.mapError(() => invalid()));
+  });
+
+/**
+ * Writes `manifest` to `path` (whose directory must exist), replacing the file. Any write error
+ * is `PermissionDenied` (`write`) with the path. `new` writes `encodeManifest`'s text through its
+ * own safe writer instead, so its rollback covers the file; this is for later rewrites (1.4, 3.0).
+ */
+export const writeManifest = (
+  path: string,
+  manifest: Manifest,
+): Effect.Effect<void, PermissionDenied, FileSystem.FileSystem> =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    yield* fs
+      .writeFileString(path, encodeManifest(manifest))
+      .pipe(Effect.mapError(() => new PermissionDenied({ details: { reason: "write", path } })));
+  });

@@ -28,7 +28,17 @@ export class NotFound extends Schema.TaggedError<NotFound>()("NotFound", {
 export class NotConfigured extends Schema.TaggedError<NotConfigured>()("NotConfigured", {}) {
   override readonly message = "Configuration is required.";
 }
-export class InvalidConfig extends Schema.TaggedError<InvalidConfig>()("InvalidConfig", {}) {
+/**
+ * `path`: the file that didn't decode, such as `.quickstacks/manifest.json` (1.2b).
+ * `schemaVersion`: the version a newer quickstacks wrote, when that is why it didn't decode.
+ */
+export const InvalidConfigDetails = Schema.Struct({
+  path: Schema.String,
+  schemaVersion: Schema.optionalKey(Schema.Number),
+});
+export class InvalidConfig extends Schema.TaggedError<InvalidConfig>()("InvalidConfig", {
+  details: Schema.optionalKey(InvalidConfigDetails),
+}) {
   override readonly message = "Configuration is invalid.";
 }
 export class UpstreamUnavailable extends Schema.TaggedError<UpstreamUnavailable>()(
@@ -296,8 +306,19 @@ export function detailLines(error: AppError): string[] {
           : []),
       ];
     }
+    case "InvalidConfig": {
+      const details = error.details;
+      if (!details) return [];
+      return [
+        `Path: ${printable(details.path)}`,
+        ...(details.schemaVersion === undefined
+          ? []
+          : [
+              `Schema version: ${details.schemaVersion}, from a newer quickstacks. Upgrade quickstacks to read it.`,
+            ]),
+      ];
+    }
     case "NotConfigured":
-    case "InvalidConfig":
     case "UpstreamUnavailable":
     case "VerifyFailed":
     case "VerifyChanged":
@@ -331,8 +352,9 @@ export function encodeDetails(error: AppError): Effect.Effect<unknown, Schema.Sc
       return encodeClosed(ComposeConflictDetails, error.details);
     case "TargetNotEmpty":
       return encodeClosed(TargetNotEmptyDetails, error.details);
-    case "NotConfigured":
     case "InvalidConfig":
+      return encodeClosed(InvalidConfigDetails, error.details);
+    case "NotConfigured":
     case "UpstreamUnavailable":
     case "VerifyFailed":
     case "VerifyChanged":
