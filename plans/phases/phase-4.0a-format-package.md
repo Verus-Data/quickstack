@@ -1,6 +1,6 @@
 # Phase 4.0a: The format package
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: EXECUTED 2026-10-27 (gate green; publishing to npm is the maintainers' step)
 Acceptance tests: traced
 
 | Field | Value |

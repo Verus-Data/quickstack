@@ -70,6 +70,15 @@ ships Claude rules for Effect HTTP APIs, REST resource naming, testing through H
 real layers, verification and TypeScript, `/add-resource` and `/add-service` commands, and
 boundary and command guards with tests.
 
+## 4.0a executed (2026-10-27)
+
+[4.0a](phases/phase-4.0a-format-package.md) landed: the entry, manifest and run-record
+schemas live in `packages/format` (`@stacks/format`), with `canonicalBundle` and
+`bundleDigest`; the CLI links it through the workspace and bundles it, and `rr check` gains a
+`check-format` partition. D21 (a signed index) and open question 14 (proven-only serving) are
+decided, so 4.0c can start. Publishing `@stacks/format` 0.1.0 to npm is the maintainers' step,
+needed before `stacks-api` imports it (4.1b, after 4.0f).
+
 ## 4.0b executed (2026-10-27)
 
 [4.0b](phases/phase-4.0b-api-skeleton-on-node.md) is built in `stacks-api` (no remote yet):
