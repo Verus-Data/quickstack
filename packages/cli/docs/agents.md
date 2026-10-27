@@ -15,11 +15,11 @@ If you want to say "start me a Go CLI with tests" in a chat with your agent, the
 The skill is one Markdown file, under 600 words, that tells an agent when to reach for quickstack and how to run it: pick a stack, write the project, follow the brief, loop on verify, never weaken verify. Claude Code loads it automatically when a request matches its description.
 
 ```sh
-npx quickstack skill install            # ~/.claude/skills/quickstack/SKILL.md, for every project
-npx quickstack skill install --project  # .claude/skills/ in the current repository only
+npx @quickstack/cli skill install            # ~/.claude/skills/quickstack/SKILL.md, for every project
+npx @quickstack/cli skill install --project  # .claude/skills/ in the current repository only
 ```
 
-Drop the `npx` if you installed quickstack globally (`npm install -g quickstack`). The agent doesn't need a global install either: when `quickstack` isn't on its PATH, the skill tells it to run `npx -y quickstack@latest`, and each brief names the exact command for `verify`.
+With a global install (`npm install -g @quickstack/cli`), the command is `quickstack skill install`. The agent doesn't need a global install either: when `quickstack` isn't on its PATH, the skill tells it to run `npx -y @quickstack/cli@latest`, and each brief names the exact command for `verify`.
 
 Running it again is safe: an identical file is left alone, and a file you've edited is kept unless you pass `--force`.
 
@@ -28,7 +28,7 @@ For Claude Code there's also a plugin that carries the same skill; it will be li
 Other agents (Codex, OpenCode, Cursor) have their own places for instructions. Print the skill and put it where your agent reads skills or rules:
 
 ```sh
-npx quickstack skill install --print > SKILL.md
+npx @quickstack/cli skill install --print > SKILL.md
 ```
 
 ## What the agent does

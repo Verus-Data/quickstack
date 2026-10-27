@@ -32,23 +32,23 @@ The blue steps are yours, and this guide walks through each one. The purple loop
 
 ## Get the CLI
 
-quickstack is on npm, so there's nothing to clone or build. The quickest way in is `npx`, which downloads the package on first use and runs it:
+quickstack is on npm as `@quickstack/cli`, so there's nothing to clone or build. The quickest way in is `npx`, which downloads the package on first use and runs it:
 
 ```sh
-npx quickstack --version
-npx quickstack list stacks
+npx @quickstack/cli --version
+npx @quickstack/cli list stacks
 ```
 
-If you'll use it more than once, install it globally so the command is just `quickstack`:
+If you'll use it more than once, install it globally. The command it installs is `quickstack`:
 
 ```sh
-npm install -g quickstack
+npm install -g @quickstack/cli
 quickstack --version
 ```
 
 If `--version` prints a version, you're set. `quickstack doctor` shows where it looks for everything, if you ever need to check.
 
-The rest of this guide writes `quickstack <command>`. With `npx`, put `npx` in front: `npx quickstack new typescript-cli my-cli`. Every command works the same either way, and the brief records the exact command your agent should use for `verify`.
+The rest of this guide writes `quickstack <command>`. With `npx`, use `npx @quickstack/cli` in its place: `npx @quickstack/cli new typescript-cli my-cli`. Every command works the same either way, and the brief records the exact command your agent should use for `verify`.
 
 Want to run it from source instead, to try a change or write a stack against an unreleased version? Clone [the repository](https://github.com/tryopendata/quickstack) and follow its development quick start.
 
@@ -213,7 +213,7 @@ New files are written. When a file already exists, quickstack leaves it alone an
 Everything above also works the other way round: you ask your agent for a project and it runs quickstack. Install the skill once:
 
 ```sh
-quickstack skill install        # or: npx quickstack skill install
+quickstack skill install        # or: npx @quickstack/cli skill install
 ```
 
 That puts a short skill file where Claude Code finds it (`~/.claude/skills/quickstack/SKILL.md`). Then, in any Claude Code session, ask for something like "start me a Go CLI with tests and CI". The agent picks a stack, tells you which and why, writes the project and builds it until verify passes. [Using quickstack with an agent](agents.md) covers other agents and what the agent sees.

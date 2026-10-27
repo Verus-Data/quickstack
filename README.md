@@ -4,18 +4,18 @@ quickstack starts projects for coding agents. To use it, follow the [quick start
 
 ## Install
 
-quickstack needs Node 22 or newer, on macOS or Linux. Run it with `npx`, no install step:
+quickstack needs Node 22 or newer, on macOS or Linux. The npm package is `@quickstack/cli`; run it with `npx`, no install step:
 
 ```sh
-npx quickstack list stacks                     # see what you can build
-npx quickstack new typescript-cli my-cli       # write a project and hand it to your coding agent
-npx quickstack skill install                   # or let your agent drive: install the Claude Code skill
+npx @quickstack/cli list stacks                  # see what you can build
+npx @quickstack/cli new typescript-cli my-cli    # write a project and hand it to your coding agent
+npx @quickstack/cli skill install                # or let your agent drive: install the Claude Code skill
 ```
 
-Or install it globally and drop the `npx`:
+Or install it globally, and the command is `quickstack`:
 
 ```sh
-npm install -g quickstack
+npm install -g @quickstack/cli
 quickstack --version
 ```
 
