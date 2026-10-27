@@ -172,12 +172,14 @@ RC=$?
 ELAPSED=$(($(date +%s) - START))
 
 STATUS="failure"
+# A failed turn names its cause even when codex also exits nonzero (a capacity error does both).
+FAILED_EVENT="$(grep -m1 -E '"type":"(turn\.failed|error)"' "$EVENTS" 2>/dev/null | cut -c1-300)"
 if [ -e "$TIMED_OUT_MARK" ]; then
     REASON="timed out after ${TIMEOUT_SECS}s"
+elif [ -n "$FAILED_EVENT" ]; then
+    REASON="turn failed: $FAILED_EVENT"
 elif [ "$RC" -ne 0 ]; then
     REASON="codex exited $RC (see $RUN_DIR/stderr.txt)"
-elif grep -q -E '"type":"(turn\.failed|error)"' "$EVENTS"; then
-    REASON="turn failed: $(grep -m1 -E '"type":"(turn\.failed|error)"' "$EVENTS" | cut -c1-300)"
 elif ! grep -q '"type":"turn.completed"' "$EVENTS"; then
     REASON="no turn.completed event"
 elif [ ! -s "$LAST_FILE" ]; then
@@ -195,6 +197,9 @@ echo "result:    $STATUS - $REASON"
 echo "logs:      $RUN_DIR"
 SESSION="$(jq -r 'select(.type == "thread.started") | .thread_id' "$EVENTS" 2>/dev/null | head -1)"
 echo "session:   ${SESSION:-${RESUME:-(none)}}  (follow up with --resume <session>)"
+if printf '%s' "$FAILED_EVENT" | grep -qiE 'at capacity|rate limit|overloaded'; then
+    echo "transient: resume ${SESSION:-${RESUME:-<session>}} with a short 'continue' follow-up; the work so far is in the worktree"
+fi
 
 COMMANDS="$(jq -r 'select(.type == "item.completed" and .item.type == "command_execution")
     | "  [\(.item.exit_code)] \(.item.command | .[0:160])"' "$EVENTS" 2>/dev/null)"
