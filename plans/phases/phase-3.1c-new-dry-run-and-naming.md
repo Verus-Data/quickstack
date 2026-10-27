@@ -1,6 +1,7 @@
 # Phase 3.1c: `new --dry-run` and naming options
 
 Status: DRAFT 2026-10-26 (not agreed)
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -16,8 +17,9 @@ Status: DRAFT 2026-10-26 (not agreed)
 In:
 
 - `new --dry-run`: compose, render every template in memory, and report the plan; write
-  nothing, create no directory, write no state record, run no git command except the
-  read-only `git rev-parse --show-toplevel` that decides the git state.
+  nothing, create no directory, write no state record, and run only the read-only git
+  commands `new` already runs before writing (the `rev-parse` probes that decide the git state
+  and `git config user.name` for the author fallback); never `git init` or a commit.
 - `new --name "My App"` and `new --author "A. Name"`.
 - The full `slug` rule table in `src/core/scaffold/slug.ts`, replacing 1.2a's ASCII rule
   in the same function.
@@ -113,6 +115,20 @@ with scopes, accents or camelCase change.
 6. Slug: every row of the table, every row of 1.2a's table unchanged, and the property
    test that output always matches `^[a-z0-9]+(-[a-z0-9]+)*$`.
 
+### Realistic edge cases
+
+7. An explicit directory with spaces, non-ASCII text or a leading dash stays the target when `--name` is given; templates use the supplied name.
+8. With no directory, scoped, accented, camelCase and non-Latin names select the directory through the full slug rule.
+9. A dry run through a symlinked parent resolves its planned path from the caller's cwd and leaves both paths untouched.
+10. A dry run preserves an existing target's fresh, committed or broken `.git` and OS litter, and reports the same git state as `new`.
+11. Dry runs refuse a partial scaffold, a file target and a dangling symlink without changing existing files or state.
+12. In a parent repository, a dry run refuses `needs_own_repo` and succeeds with its suggested `--without`, leaving the repository untouched.
+13. Inherited `GIT_DIR` and `GIT_WORK_TREE` do not select another repository or let a dry run change it.
+14. Quotes, backslashes and line breaks in `--author` receive the existing author sanitization; ordinary punctuation in `--name` stays literal in templates.
+15. Control characters in `--name` or `--author` fail `BadInput` for that flag before any project or state is written.
+16. A detected agent still receives a dry-run handoff of `print` with reason `no-launch`, with no agent binary started.
+17. A dry run leaves an earlier project's state record intact and creates no second record.
+
 ## Exit criteria
 
 - Tests pass; `bun run check` green from the repo root.
@@ -126,3 +142,8 @@ with scopes, accents or camelCase change.
 - NFKD folding covers Latin accents but not transliteration (`Ö` becomes `o`, `日本語`
   becomes `project`). If users with non-Latin project names ask, a transliteration table
   is the next step, still in this one function.
+- 2026-10-27, from the test author: "only `git rev-parse`" ignored the author fallback's
+  `git config user.name` and the existing-repository probes `new` already runs; Scope now
+  allows those read-only commands. A control character in `--name` or `--author` is
+  `BadInput` naming the flag (`BadInputDetails.flag` gains `name` and `author`, additively).
+  `NewResult` gains a required `dryRun` (false for a real run).
