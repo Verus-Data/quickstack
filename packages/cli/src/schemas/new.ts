@@ -62,8 +62,35 @@ export const NewResult = Schema.Struct({
    * writable (verify's tamper check is then manifest-only).
    */
   stateRecord: Schema.Boolean,
-  /** `print` until 1.4: show `next` to the user or act on it. */
-  handoff: Schema.Struct({ kind: Schema.Literal("print"), next: Schema.String }),
+  /**
+   * What happens next. `inside-agent`: quickstacks runs inside an agent (`agent`), which should
+   * act on `prompt` now, unless `untrusted` (entry ids) is non-empty: then it stops and asks the
+   * user first. `print`: no agent was launched, for `reason`; give `prompt` to an agent in the
+   * project. `--json` never launches one.
+   */
+  handoff: Schema.Union([
+    Schema.Struct({
+      kind: Schema.Literal("inside-agent"),
+      agent: Schema.Union([AgentId, Schema.Literal("other")]),
+      untrusted: Schema.Array(Schema.String),
+      prompt: Schema.String,
+    }),
+    Schema.Struct({
+      kind: Schema.Literal("print"),
+      reason: Schema.Literals([
+        "json",
+        "no-launch",
+        "not-a-terminal",
+        "untrusted",
+        "no-agent-found",
+        "agent-not-found",
+      ]),
+      /** The `--launch` agent that wasn't on PATH. */
+      agent: Schema.optionalKey(AgentId),
+      untrusted: Schema.Array(Schema.String),
+      prompt: Schema.String,
+    }),
+  ]),
 }).annotate({
   title: "New result",
   description: "A project quickstacks wrote, with its brief and the next step",

@@ -9,6 +9,7 @@ import { Processes } from "../../services/processes";
 import { type GitState, renderBrief } from "../brief/render";
 import { targetAgents } from "../compose/agents";
 import { type Composition, compose, dropFlags, missingTools } from "../compose/compose";
+import { type HandoffDecision, handoffRecord } from "../handoff";
 import { buildManifest, encodeManifest, MANIFEST_PATH } from "../manifest";
 import { removeProjectState, writeProjectState } from "../project-state";
 import type { Entry } from "../registry/entry";
@@ -31,7 +32,15 @@ export type NewOptions = {
   agents: ReadonlyArray<AgentId> | undefined;
   /** `--scope`, as given. */
   scope: string | undefined;
+  /**
+   * The handoff for the composed project, given the ids of its untrusted entries; decided before
+   * anything is written, so the manifest records it in the one write.
+   */
+  handoff: (untrusted: ReadonlyArray<string>) => HandoffDecision;
 };
+
+/** What `new` wrote, and the handoff the command carries out next. */
+export type Scaffolded = { result: Omit<NewResult, "handoff">; decision: HandoffDecision };
 
 export const BRIEF_PATH = ".quickstacks/BRIEF.md";
 const NOTES_PATH = ".quickstacks/NOTES.md";
@@ -39,10 +48,6 @@ const IGNORE_PATH = ".quickstacks/.gitignore";
 /** The brief, the notes, local state and `add`'s incoming files stay out of git (roadmap). */
 const IGNORE = "/BRIEF.md\n/NOTES.md\n/state/\n/incoming/\n";
 const NOTES = "# Notes\n\n## Findings\n\n## Asked\n";
-
-/** The prompt an agent (or the user) acts on next; 1.4 decides whether to launch it. */
-export const nextPrompt = (invocation: string) =>
-  `Read ${BRIEF_PATH} and carry it out. It is your full task for this project; you're done when \`${invocation} verify\` passes.`;
 
 const encoder = new TextEncoder();
 const scopeOf = (value: string) => value.replace(/^@/, "");
@@ -151,7 +156,10 @@ export const scaffold = (options: NewOptions) =>
       ...composition.warnings,
       ...(git.warning ? [git.warning] : []),
     ];
-    const manifest = yield* buildManifest(composition, { briefWords: rendered.briefWords });
+    const decision = options.handoff(composition.untrusted.map((entry) => entry.id));
+    const built = yield* buildManifest(composition, { briefWords: rendered.briefWords });
+    // Outside the step digest (Trust model point 5), so filling it changes no digest.
+    const manifest = { ...built, handoff: handoffRecord(decision, built.createdAt) };
 
     const state = yield* Effect.scoped(
       Effect.gen(function* () {
@@ -194,7 +202,7 @@ export const scaffold = (options: NewOptions) =>
       }),
     );
 
-    return {
+    const result = {
       project: dir,
       stack: composition.stack.id,
       fragments: composition.fragments.map((fragment) => fragment.id),
@@ -213,8 +221,8 @@ export const scaffold = (options: NewOptions) =>
       warnings,
       git: gitState.kind,
       stateRecord: state.written,
-      handoff: { kind: "print", next: nextPrompt(host.invocation) },
-    } satisfies NewResult;
+    } satisfies Scaffolded["result"];
+    return { result, decision } satisfies Scaffolded;
   });
 
 type FileToWrite = { path: string; data: Uint8Array; executable: boolean };

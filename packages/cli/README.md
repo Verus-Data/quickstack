@@ -51,10 +51,22 @@ quickstacks new <stack> [dir]    # dir defaults to <stack>; `.` is the current d
   --yes                          # the brief tells the agent to take each decision's default
   --agents claude,codex          # adapter targets (default: the `agents` setting, else claude)
   --scope acme                   # npm scope for {{package_scope}} (default: the `package_scope` setting)
-  --json                         # one NewResult object
+  --launch codex                 # the agent to hand off to: claude, codex, opencode or cursor
+  --no-launch                    # print the prompt instead of starting an agent
+  --json                         # one NewResult object; never starts an agent
 ```
 
-`new` composes the stack, writes its files and `.quickstacks/` (`BRIEF.md`, `NOTES.md`, `manifest.json`, an empty `state/`, and a `.gitignore` that ignores `BRIEF.md`, `NOTES.md`, `state/` and `incoming/`), writes a state record outside the project, runs `git init` when the target isn't already inside a repository and git is on PATH, then prints the prompt to give your coding agent. It never runs a command from a stack or fragment.
+`new` composes the stack, writes its files and `.quickstacks/` (`BRIEF.md`, `NOTES.md`, `manifest.json`, an empty `state/`, and a `.gitignore` that ignores `BRIEF.md`, `NOTES.md`, `state/` and `incoming/`), writes a state record outside the project, runs `git init` when the target isn't already inside a repository and git is on PATH, then hands off to an agent. It never runs a command from a stack or fragment.
+
+The handoff, first match wins (the manifest's `handoff` records which, with the agent and time):
+
+1. Run from inside an agent session (an agent marker such as `CLAUDECODE` or `AI_AGENT` is set): stdout ends with `NEXT STEP FOR THE AGENT: ...`, telling that agent to read the brief and loop on `verify`. With an untrusted entry it says `STOP` instead: show the user the entries and the brief's first section, and continue only if they confirm.
+2. `--json`, `--no-launch`, stdin or stdout not a terminal, or any untrusted entry: the prompt is printed, with an example command, and nothing is launched. An untrusted entry never launches an agent.
+3. Otherwise the first agent CLI on PATH (`--launch` alone, else the `agents` setting, then `claude`, `codex`, `opencode`, `cursor-agent`) starts in the project with the prompt as its first message, with your environment and the terminal. quickstacks exits with that agent's status, with no error envelope: the project was written either way. None on PATH: the prompt is printed. `--launch` with `--no-launch` or `--json` is `Usage` (exit 2).
+
+## The agent guide
+
+`quickstacks` with no arguments, or `quickstacks guide` (proposed; not yet agreed by the maintainers), prints a short guide written for agents: the `list`, `new`, `verify` loop and its rules. `--json` returns `{ guide, commands }`. `quickstacks --help` keeps the full help and ends with a "Start here (agents)" footer.
 
 - `.quickstacks/manifest.json` records the stack, fragments, preset, agents and the verify steps with their digest; it is committed with the project. A manifest whose `schemaVersion` is newer than this CLI reads fails `InvalidConfig` (exit 3): upgrade quickstacks.
 - The state record is a second copy of the verify digest at `$XDG_STATE_HOME/quickstacks/projects/<projectId>.json` (`QUICKSTACKS_STATE_DIR` replaces `$XDG_STATE_HOME/quickstacks`), so editing the project's files can't hide a changed verify step. When that directory isn't writable, `new` still succeeds with `stateRecord: false`, and verify's tamper check uses the manifest only.
@@ -154,7 +166,7 @@ The development wrapper sets info logging, appends `logs/cli.jsonl`, copies noni
 
 Stdout contains results only. `--json` emits one result object; JSON version is `{ "version": "0.1.0" }` and JSON help is `{ "help": "..." }`. Failures leave stdout empty and stderr contains a safe diagnostic, or exactly one JSON `{ "error": { "tag", "message", "retryable", "details"? } }` object as the last stderr line. `details`, when present, is a closed per-tag object (for example `{ "command", "suggestions" }` for an unknown subcommand). Two exceptions keep stdout: a failure that carries a report (`VerifyFailed`, `VerifyChanged`, `ValidationFailed`) writes that report to stdout before the error, and a command that hands the terminal to another program writes its output so far before doing so, which stays on stdout if it later fails. In JSON mode ancillary logs go only to the optional log file so stderr remains parseable; set `QUICKSTACKS_LOG_FILE`, or rerun without `--json`, to see why a `Defect` happened. A `--json` after `--` belongs to the command, not to quickstacks. Human mode emits logs to stderr and optionally to the same JSONL file. No streaming command exists in this base.
 
-Exit codes: usage/bad-input/not-found 2, and validation failed 2 (the validate report stays on stdout); config 3; upstream 4; verify failed or changed 5 (the verify report stays on stdout); permission 6; interruption 130; defect 1. Scripts that expect 1 for every failure get these specific codes instead. A closed stdout pipe exits quietly with 0, except after a failure that keeps its report, which keeps its exit (2 for validate, 5 for verify). Defects never become success.
+Exit codes: usage/bad-input/not-found 2, and validation failed 2 (the validate report stays on stdout); config 3; upstream 4; verify failed or changed 5 (the verify report stays on stdout); permission 6; interruption 130; defect 1. After `new` launches an agent, the exit is that agent's own status (128 plus the signal number if a signal killed it), outside this table. Scripts that expect 1 for every failure get these specific codes instead. A closed stdout pipe exits quietly with 0, except after a failure that keeps its report, which keeps its exit (2 for validate, 5 for verify). Defects never become success.
 
 Signals: Ctrl+C (SIGINT), SIGTERM or SIGHUP stops the command after its cleanup, with exit 130, and the processes it started are killed. A second Ctrl+C within a second of the first is treated as the same keypress (a wrapper such as `bun run dev` or `npx` forwards a copy); one a second or more later exits at once, killing those processes without further cleanup. While quickstacks has handed the terminal to another program, Ctrl+C and SIGQUIT belong to that program, and SIGTERM and SIGHUP are passed on to it; once that program exits, quickstacks stops too, with exit 130.
 

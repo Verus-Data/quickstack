@@ -3,11 +3,14 @@ import { TEMPLATE_VARIABLES } from "./core/scaffold/template";
 import { printable } from "./core/text";
 import { Kind, Origin } from "./schemas/entry";
 import { FailureKind, VerifyChange } from "./schemas/verify";
-/** An unknown subcommand: what was typed and up to three close known names (`core/suggest.ts`). */
-export const UsageDetails = Schema.Struct({
-  command: Schema.String,
-  suggestions: Schema.Array(Schema.String),
-});
+/**
+ * An unknown subcommand: what was typed and up to three close known names (`core/suggest.ts`).
+ * Or two flags that can't be used together, as typed (`new --launch` with `--no-launch`, 1.4).
+ */
+export const UsageDetails = Schema.Union([
+  Schema.Struct({ command: Schema.String, suggestions: Schema.Array(Schema.String) }),
+  Schema.Struct({ flags: Schema.Tuple([Schema.String, Schema.String]) }),
+]);
 export class Usage extends Schema.TaggedError<Usage>()("Usage", {
   details: Schema.optionalKey(UsageDetails),
 }) {
@@ -104,6 +107,7 @@ export class VerifyChanged extends Schema.TaggedError<VerifyChanged>()("VerifyCh
  * `agent` and `no-tty`: a confirmation only a person at a terminal may give (Trust model, point 4)
  * was asked for under a detected agent, or without a terminal on stdin.
  * `state-unwritable`: the state record (`path`) couldn't be written, so nothing was confirmed.
+ * `launch`: the agent CLI `new` hands off to (`path`) was found but couldn't be executed (1.4).
  */
 export const PermissionDeniedDetails = Schema.Struct({
   reason: Schema.Literals([
@@ -114,6 +118,7 @@ export const PermissionDeniedDetails = Schema.Struct({
     "agent",
     "no-tty",
     "state-unwritable",
+    "launch",
   ]),
   path: Schema.optionalKey(Schema.String),
 });
@@ -309,10 +314,17 @@ export function knownError(value: unknown): AppError | undefined {
  */
 export function detailLines(error: AppError, invocation: string): string[] {
   switch (error._tag) {
-    case "Usage":
-      return error.details?.suggestions.length
-        ? [`Did you mean: ${error.details.suggestions.join(", ")}?`]
+    case "Usage": {
+      const details = error.details;
+      if (details && "flags" in details)
+        return [
+          `${details.flags[0]} and ${details.flags[1]} can't be used together.`,
+          "Next: drop one of them.",
+        ];
+      return details?.suggestions.length
+        ? [`Did you mean: ${details.suggestions.join(", ")}?`]
         : [];
+    }
     case "PermissionDenied": {
       const details = error.details;
       if (!details) return [];
@@ -342,7 +354,12 @@ export function detailLines(error: AppError, invocation: string): string[] {
                       "The state record outside the project can't be written, so nothing was confirmed or changed.",
                       "Next: make that directory writable (or set QUICKSTACKS_STATE_DIR to one that is), then run this command again.",
                     ]
-                  : [];
+                  : details.reason === "launch"
+                    ? [
+                        "The agent CLI was found on PATH but can't be run by you. The project was written.",
+                        "Next: fix the binary's permissions, or start your agent in the project yourself.",
+                      ]
+                    : [];
       return [...(details.path ? [`Path: ${printable(details.path)}`] : []), ...why];
     }
     case "TargetNotEmpty": {

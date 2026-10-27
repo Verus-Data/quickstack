@@ -5,7 +5,7 @@ import { printable } from "../text";
 /** Warnings the Git line already reports, so the Warnings list leaves them out. */
 const GIT_WARNINGS: ReadonlyArray<string> = ["git_init_failed", "git_unusable"];
 
-const gitLine = (result: NewResult) => {
+const gitLine = (result: Pick<NewResult, "warnings" | "git">) => {
   const failed = result.warnings.find((warning) => warning.code === "git_init_failed");
   if (failed) return `git init failed (exit ${failed.exitCode ?? "unknown"}); no repository`;
   const unusable = result.warnings.find((warning) => warning.code === "git_unusable");
@@ -45,16 +45,13 @@ const missingLine = (item: NewResult["missingTools"][number]) => {
   return `${printable(item.tool)} not found (needed by ${owners}${skip ? `; skip with ${skip}` : ""})`;
 };
 
-/** A directory as a shell argument: plain when it is safe, else single-quoted. */
-const shellArg = (text: string) =>
-  /^[A-Za-z0-9._/+-]+$/.test(text) ? text : `'${text.replaceAll("'", "'\\''")}'`;
-
 /**
- * `new`'s human output: the stack, fragments, written files collapsed, git, the brief, missing
- * tools with their skip flags, warnings, untrusted entries, then the next step. Every value that
- * came from an entry or the filesystem is escaped for the terminal.
+ * `new`'s human summary: the stack, fragments, written files collapsed, git, the brief, missing
+ * tools with their skip flags, warnings and untrusted entries; `core/handoff.ts` renders the next
+ * step after it. Every value that came from an entry or the filesystem is escaped for the
+ * terminal.
  */
-export function renderNew(result: NewResult, context: { shown: string }): string {
+export function renderNew(result: Omit<NewResult, "handoff">, context: { shown: string }): string {
   const lines = [
     `Created ${printable(context.shown)} from ${printable(result.stack)}${result.preset === "sandbox" ? " (sandbox)" : ""}.`,
     // `shown` is the absolute path when the project isn't under the current directory.
@@ -87,11 +84,5 @@ export function renderNew(result: NewResult, context: { shown: string }): string
           `  ${entry.kind} ${printable(entry.id)} (${entry.origin}): ${printable(entry.dir)}`,
       ),
     );
-  const cd = context.shown === "." ? "" : `cd ${printable(shellArg(context.shown))}, then `;
-  lines.push(
-    "",
-    `Next: ${cd}start your coding agent there with this prompt:`,
-    `  ${result.handoff.next}`,
-  );
   return lines.join("\n");
 }

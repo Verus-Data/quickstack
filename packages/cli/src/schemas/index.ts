@@ -12,6 +12,7 @@ export {
   VerifyStep,
   withStepDefaults,
 } from "./entry";
+export { GuideResult } from "./guide";
 export { ListResult, ListRow } from "./list";
 export { EntryRef, Manifest, ManifestStep } from "./manifest";
 export { NewResult } from "./new";

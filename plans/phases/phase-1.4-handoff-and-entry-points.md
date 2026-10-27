@@ -1,7 +1,10 @@
 # Phase 1.4: Handoff and entry points
 
-Status: DRAFT 2026-10-26 (not agreed). The `guide` subcommand was added as a proposed
-scope item 2026-10-26
+Status: EXECUTED 2026-10-26 on feat/phase-1-handoff (awaiting review). The `guide`
+subcommand was added as a proposed scope item 2026-10-26 and is built, but the maintainers
+haven't formally agreed it; it stays proposed until they do
+
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -270,46 +273,64 @@ toward nothing (it isn't the guide's 250 words).
 
 ## Acceptance tests
 
-- `decideHandoff` table test over every rule and its precedence (detected agent beats
-  `--json`; `--json` beats `--no-launch`; untrusted beats a found binary).
-- Property test with `@effect/vitest`: for any input with non-empty `untrusted`, the
-  decision is never `launch`; for any `detected` other than `"none"`, it is
-  `inside-agent`.
-- `runCli(["new", "<fixture-stack>", dir, "--sandbox"])` with `CLAUDECODE=1`: stdout
-  starts with `NEXT STEP FOR THE AGENT`, exit 0, manifest `handoff.kind` is
-  `inside-agent`, agent `claude`. Same with `--json`: one JSON result whose `handoff` is
-  `{ kind: "inside-agent", agent: "claude", untrusted: [] }`.
-- `AI_AGENT=foo` with a fake `claude` on `PATH` and both TTY flags true: `AppConfig.agent`
-  is `"other"`, the decision is `inside-agent` with agent `"other"`, the fake `claude`
-  never ran, and the manifest's `handoff` is `{ kind: "inside-agent", agent: "other" }`.
-- `new --launch claude --no-launch` and `new --launch claude --json` each exit 2 with a
-  `Usage` envelope and write nothing.
-- Same with a project-origin fixture entry composed: the `STOP` text names it, and the
-  `--json` `untrusted` lists its id.
-- Launch with a real child: a temp directory on `PATH` holding an executable `claude` (a
-  small Node script) that writes its argv, cwd and process group id to a file and exits 7.
-  `runCli` with both TTY flags true and that `PATH`: the file shows the prompt as one
-  argument, the project as cwd, and the same process group as the CLI; the invocation exits
-  7 with no error envelope; the manifest says `launch`; stdout had the scaffold summary
-  before the child ran.
-- Signal policy (subprocess form, as the dev-script test does): the fake agent sleeps; the
-  test sends SIGTERM to quickstacks and asserts the child received SIGTERM and quickstacks
-  exited 143.
-- `--no-launch`, either TTY flag false, an untrusted fixture entry with a fake `claude` on
-  `PATH`, and an empty `PATH`: each prints the prompt, exit 0, the right `reason` in
-  `--json`, and the fake `claude` never ran.
-- The prompt uses `Host.invocation`: with an npx-style invocation it reads
-  `npx -y quickstacks@<version> verify`.
-- `quickstacks` with no args: the guide, exit 0, under 250 words by `countWords`, and it
-  contains the untrusted-entry rule and the `VerifyChanged` rule; `--help` still shows the
-  framework help.
-- If `guide` is accepted: `quickstacks guide` prints exactly the bare root's text, exit 0, and `guide --json`
-  returns the same result as the bare root's `--json`; `guide` appears in the root
-  `--help` command list.
-- `quickstacks --help` ends with the "Start here (agents)" footer using
-  `Host.invocation`; `quickstacks new --help` does not contain it; exit 0 for both.
-- e2e: the built artifact run with `CLAUDECODE=1` on a fixture registry prints the
-  next-step text and writes the manifest record.
+1. `decideHandoff` table test over every rule and its precedence (detected agent beats
+   `--json`; `--json` beats `--no-launch`; untrusted beats a found binary), and a test that
+   every `AgentId` has a launch row.
+2. Property test with `@effect/vitest`: for any input with non-empty `untrusted`, the
+   decision is never `launch`; for any `detected` other than `"none"`, it is
+   `inside-agent`.
+3. `runCli(["new", "<fixture-stack>", dir, "--sandbox"])` with `CLAUDECODE=1`: stdout
+   ends with the `NEXT STEP FOR THE AGENT` text, exit 0, manifest `handoff.kind` is
+   `inside-agent`, agent `claude`. Same with `--json`: one JSON result whose `handoff` is
+   `{ kind: "inside-agent", agent: "claude", untrusted: [], prompt }`.
+4. `AI_AGENT=foo` with a fake `claude` on `PATH` and both TTY flags true: `AppConfig.agent`
+   is `"other"`, the decision is `inside-agent` with agent `"other"`, the fake `claude`
+   never ran, and the manifest's `handoff` is `{ kind: "inside-agent", agent: "other" }`.
+5. `new --launch claude --no-launch` and `new --launch claude --json` each exit 2 with a
+   `Usage` envelope naming both flags and write nothing; `--launch` with an unknown id is
+   `Usage` too.
+6. Same with a project-origin fixture entry composed: the `STOP` text names it, and the
+   `--json` `untrusted` lists its id.
+7. Launch with a real child: a temp directory on `PATH` holding an executable `claude` (a
+   small Node script) that writes its argv, cwd and process group id to a file and exits 7.
+   `runCli` with both TTY flags true and that `PATH`: the file shows the prompt as one
+   argument, the project as cwd, and the same process group as the CLI; the invocation exits
+   7 with no error envelope; the manifest says `launch`; stdout had the scaffold summary
+   before the child ran. The agent's environment is the captured one unchanged, and the
+   `command` log record names the handoff kind and agent only.
+8. Signal policy (subprocess form, as the dev-script test does): the fake agent sleeps; the
+   test sends SIGTERM to quickstacks and asserts the child received SIGTERM and quickstacks
+   exited 130 (the A3 policy: a forwarded SIGTERM stops the CLI with 130 once the child
+   exits).
+9. `--no-launch`, either TTY flag false, an untrusted fixture entry with a fake `claude` on
+   `PATH`, and an empty `PATH`: each prints the prompt, exit 0, and the fake `claude` never
+   ran.
+10. The prompt uses `Host.invocation`: with an npx-style invocation it reads
+    `npx -y quickstacks@<version> verify`.
+11. `quickstacks` with no args: the guide, exit 0, under 250 words by `countWords`, and it
+    contains the untrusted-entry rule and the `VerifyChanged` rule; `--help` still shows the
+    framework help; `--json` returns `GuideResult`.
+12. `quickstacks guide` (proposed) prints exactly the bare root's text, exit 0, and
+    `guide --json` returns the same result as the bare root's `--json`; `guide` appears in
+    the root `--help` command list.
+13. `quickstacks --help` ends with the "Start here (agents)" footer using
+    `Host.invocation`; `quickstacks new --help` does not contain it; exit 0 for both.
+14. e2e: the built artifact run with `CLAUDECODE=1` on a fixture registry prints the
+    next-step text and writes the manifest record.
+
+### Realistic edge cases
+
+15. An agent binary on `PATH` with an execute bit only for others: the spawn fails
+    `EACCES`, which is `PermissionDenied` with reason `launch` (exit 6); the project and the
+    flushed summary stay.
+16. An agent that dies by a signal: the invocation exits 128 plus the signal number, with no
+    envelope.
+17. Launch order: the `agents` setting picks the agent ahead of the default order, and
+    `--launch` picks one alone.
+18. `--launch codex` with only `claude` on `PATH`: printed with "codex isn't on PATH", and
+    the example names `codex`.
+19. The printed example command quotes a project directory with spaces and quotes, so it
+    pastes into a shell.
 
 ## Exit criteria
 
@@ -338,3 +359,43 @@ toward nothing (it isn't the guide's 250 words).
   the full guide" and changes to "Run <cli> guide for the full guide" only if the
   subcommand is accepted; if the maintainers drop it, the bare root stays the only way to
   the guide.
+
+What execution found, 2026-10-26:
+
+- The `guide` subcommand is built (`commands/guide.ts`) though the maintainers haven't
+  formally agreed it. Dropping it is deleting that file and its line in `cli.ts`; the bare
+  root keeps the same handler. The footer still says "Run <cli> with no arguments".
+- Signal test: the plan expected quickstacks to exit 143 after a forwarded SIGTERM. The A3
+  policy as built in 0.3b (`platform/signals.ts::foregroundCleared`, AGENTS.md "Error
+  handling") stops the CLI with 130 once the child exits, the same as every other signal
+  stop, so acceptance test 8 asserts 130. The agent's own status still reaches the caller
+  when nothing signaled quickstacks.
+- The prompt text changed from the 1.2a placeholder: no backticks around the verify command
+  ("It's your full task ...; you're done when <invocation> verify passes."), because the
+  printed example puts the prompt in double quotes and backticks would run as a command
+  substitution when pasted.
+- The `--json` `handoff` carries `prompt` for `inside-agent` too, not only for `print`, so an
+  agent reading JSON gets its next step without knowing the convention. Acceptance tests 3
+  and 6 assert it.
+- Acceptance test 9 asked for "the right `reason` in `--json`" for `--no-launch` and a
+  missing TTY. Rule 2 (`--json` prints with reason `json`) comes before both, so `--json`
+  can't observe them; the reasons are covered by the `decideHandoff` table (test 1), and
+  test 9 asserts the human output and that the fake agent never ran.
+- Flag contradictions are `Usage` with a new details shape, `{ flags: [a, b] }`
+  (`errors.ts::UsageDetails` is now a union with the unknown-subcommand
+  `{ command, suggestions }`), so the envelope and the human lines name both flags.
+- `--launch` with an unknown id is `Usage` without the valid ids in details: `main` maps
+  every effect/cli value error to a plain `Usage`, the same as `--agents` today. The flag's
+  help text lists the ids.
+- `EACCES` on spawn is `PermissionDenied` with a new reason, `launch`, and `path` the binary,
+  so the human output says what to fix.
+- `new` reads `--json` from the root's shared flag (`commands/root.ts::root`, yielded inside
+  the handler); the exit-status override and the log fields go through a per-invocation
+  service, `services/invocation.ts::Invocation`, which `main` builds fresh each run.
+- The launch-args table has no `checked` dates: no row has been checked against the agents'
+  docs yet. Check them in the first 1.6b gate run.
+- The bare root's `--json` `commands` are `{ name, run, purpose }` rows for the loop's
+  commands. They name `verify`, which lands with 1.3a; the test that every listed command
+  is a subcommand skips `verify` until then.
+- The e2e test puts the fixture stack in the user directory, because entries under
+  `QUICKSTACKS_REGISTRY_DIR` are untrusted and would give the `STOP` text.

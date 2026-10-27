@@ -1,12 +1,25 @@
 import { Effect, Option, Path, Schema } from "effect";
 import { Argument, CliError, Command, Flag } from "effect/cli";
+import { AppConfig } from "../config";
+import {
+  agentPrompt,
+  candidates,
+  decideHandoff,
+  LAUNCH_ARGS,
+  renderHandoff,
+} from "../core/handoff";
 import { defaultRoots, Registry } from "../core/registry/registry";
 import { scaffold } from "../core/scaffold/new";
 import { renderNew } from "../core/scaffold/report";
+import { printable } from "../core/text";
+import { PermissionDenied, Usage } from "../errors";
 import { AgentId } from "../schemas/entry";
 import { NewResult } from "../schemas/new";
 import { Host } from "../services/host";
+import { Invocation } from "../services/invocation";
 import { Output } from "../services/output";
+import { Processes } from "../services/processes";
+import { root } from "./root";
 
 /** Repeatable, comma-separated values: `--with a,b --with c` is `[a, b, c]`. */
 const list = (values: ReadonlyArray<string>) =>
@@ -73,12 +86,58 @@ export const newCommand = Command.make(
       ),
       Flag.optional,
     ),
+    launch: Flag.String("launch").pipe(
+      Flag.withDescription(
+        "The agent to hand the project to: claude, codex, opencode or cursor. Default: the agents setting, then claude, codex, opencode, cursor, whichever is on PATH first. Never with --json or --no-launch.",
+      ),
+      Flag.mapEffect((value) =>
+        isAgent(value)
+          ? Effect.succeed(value)
+          : Effect.fail(
+              new CliError.InvalidValue({
+                option: "launch",
+                value,
+                expected: "claude, codex, opencode or cursor",
+                kind: "flag",
+              }),
+            ),
+      ),
+      Flag.optional,
+    ),
+    noLaunch: Flag.Boolean("no-launch").pipe(
+      Flag.withDescription(
+        "Don't start an agent; print the prompt to give one. --json, a detected agent session or a non-terminal never starts one either.",
+      ),
+      Flag.withDefault(false),
+    ),
   },
   (flags) =>
     Effect.gen(function* () {
       const host = yield* Host;
       const path = yield* Path.Path;
-      const result = yield* scaffold({
+      const config = yield* AppConfig;
+      const processes = yield* Processes;
+      const invocation = yield* Invocation;
+      const { json } = yield* root;
+      const preferred = Option.getOrUndefined(flags.launch);
+      // Flag contradictions, before anything is read or written.
+      if (preferred && flags.noLaunch)
+        return yield* new Usage({ details: { flags: ["--launch", "--no-launch"] } });
+      if (preferred && json)
+        return yield* new Usage({ details: { flags: ["--launch", "--json"] } });
+
+      const detected = yield* config.agent;
+      const configured = (yield* config.get).agents ?? [];
+      const launch = !flags.noLaunch;
+      // Binaries are looked up only when a launch is still possible.
+      const found = new Map<AgentId, string>();
+      if (detected === "none" && !json && launch)
+        for (const agent of candidates(preferred, configured)) {
+          const bin = yield* processes.which(LAUNCH_ARGS[agent].bin);
+          if (Option.isSome(bin)) found.set(agent, bin.value);
+        }
+      const prompt = agentPrompt(host.invocation);
+      const { result, decision } = yield* scaffold({
         stack: flags.stack,
         dir: Option.getOrUndefined(flags.dir),
         with: flags.with,
@@ -87,7 +146,24 @@ export const newCommand = Command.make(
         yes: flags.yes,
         agents: flags.agents.length ? flags.agents : undefined,
         scope: Option.getOrUndefined(flags.scope),
+        handoff: (untrusted) =>
+          decideHandoff({
+            detected,
+            json,
+            launch,
+            stdinIsTTY: host.stdinIsTTY,
+            stdoutIsTTY: host.stdoutIsTTY,
+            untrusted,
+            ...(preferred ? { preferred } : {}),
+            configured,
+            found,
+            prompt,
+          }),
       }).pipe(Effect.provide(Registry.layer(yield* defaultRoots)));
+      yield* invocation.annotate({
+        handoff: decision.kind,
+        ...(decision.kind === "print" ? {} : { agent: decision.agent }),
+      });
       const relative = path.relative(host.cwd, result.project);
       const shown =
         relative === ""
@@ -95,10 +171,44 @@ export const newCommand = Command.make(
           : relative.startsWith("..") || path.isAbsolute(relative)
             ? result.project
             : relative;
-      yield* (yield* Output).result(
-        Schema.encodeSync(NewResult)(result),
-        renderNew(result, { shown }),
+      const output = yield* Output;
+      const summary = renderNew(result, { shown });
+      if (decision.kind !== "launch") {
+        yield* output.result(
+          Schema.encodeSync(NewResult)({
+            ...result,
+            handoff: { ...decision, untrusted: [...decision.untrusted], prompt },
+          }),
+          `${summary}\n\n${renderHandoff(decision, { project: result.project, shown, invocation: host.invocation })}`,
+        );
+        return;
+      }
+      // Human mode only (--json never launches): the summary reaches the terminal before the
+      // agent takes it over, and stays on stdout whatever happens next.
+      yield* output.result(
+        null,
+        `${summary}\n\nLaunching ${printable(decision.bin)} in ${printable(shown)}...`,
       );
+      yield* output.flushNow;
+      const status = yield* processes
+        .interactive({
+          bin: decision.bin,
+          args: [...decision.args],
+          cwd: result.project,
+          // The user's own agent: their environment, nothing stripped.
+          env: config.childEnv([]),
+        })
+        .pipe(
+          Effect.catchTag("SpawnFailed", (failure) =>
+            failure.errno === "EACCES"
+              ? Effect.fail(
+                  new PermissionDenied({ details: { reason: "launch", path: decision.bin } }),
+                )
+              : Effect.die(failure),
+          ),
+        );
+      // The project was written; the agent's own status is the invocation's, with no envelope.
+      yield* invocation.exitWith(status);
     }),
 ).pipe(
   Command.withDescription(
