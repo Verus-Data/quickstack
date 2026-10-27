@@ -36,7 +36,7 @@ const digests = (root: string) =>
 const artifacts = workspace();
 const compiled = benchCli(artifacts);
 // Bound child-process load; the build group runs after the shared-artifact cases.
-vi.setConfig({ maxConcurrency: 2 });
+vi.setConfig({ maxConcurrency: 8 });
 const benchTest = baseTest.extend("space", async ({ task: _task }, { onCleanup }) => {
   const space = workspace();
   onCleanup(() => space.release());

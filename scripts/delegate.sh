@@ -17,6 +17,12 @@
 # the network, `bun add`, git, process inspection and the whole gate. The worktree isolates the
 # work from other work; it doesn't contain Codex. Read-only mode uses Codex's read-only sandbox.
 #
+# Hooks: .codex/hooks.json runs the repo's command guard (.claude/hooks/guard-commands.ts) before
+# each shell command, as Claude Code's settings do. Codex trusts a project hook only by its
+# absolute path, and every worktree is a new path, so the run passes
+# --dangerously-bypass-hook-trust: the hooks file is tracked, and the orchestrator reviews any
+# change to it in the delegate's diff.
+#
 # Logs go outside the worktree so they survive its removal:
 #   ${DELEGATE_LOG_ROOT:-$TMPDIR/quickstacks-delegate}/<worktree>-<timestamp>/
 
@@ -82,6 +88,15 @@ GIT_COMMON_ABS="$(cd "$WT" && cd "$(git rev-parse --git-common-dir)" && pwd -P)"
 [ -d "$WT/node_modules" ] || die "$WT has no node_modules; run bun install --frozen-lockfile there first"
 CODEX="${CODEX_BIN:-$(command -v codex)}"
 [ -n "$CODEX" ] && [ -x "$CODEX" ] || die "codex not found on PATH (or set CODEX_BIN)"
+
+# rr reaches the test hosts through the SSH agent (AGENTS.md "Test runs"). A terminal multiplexer
+# started without one hands its panes a dead socket; on macOS, use the launchd agent instead.
+ssh-add -l >/dev/null 2>&1
+if [ $? -eq 2 ] && command -v launchctl >/dev/null; then
+    sock="$(launchctl print "gui/$(id -u)/com.openssh.ssh-agent" 2>/dev/null |
+        awk '/SSH_AUTH_SOCK =>/ { print $3; exit }')"
+    [ -S "$sock" ] && export SSH_AUTH_SOCK="$sock"
+fi
 
 # A resumed session already has the preamble.
 PROMPT="$(cat "$CONTRACT")"
@@ -160,6 +175,7 @@ fi
 cd "$WT" || die "cannot enter $WT"
 START=$(date +%s)
 run_capped "$TIMEOUT_SECS" "$CODEX" "${SUBCOMMAND[@]}" \
+    --dangerously-bypass-hook-trust \
     --model "$MODEL" \
     -c "sandbox_mode=\"$SANDBOX\"" \
     -c "model_reasoning_effort=\"$EFFORT\"" \

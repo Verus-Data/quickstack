@@ -17,6 +17,47 @@ describe("shared package manager guard", () => {
   );
 });
 
+describe("whole test suites run through rr", () => {
+  it.each([
+    "bun run check",
+    "bun run test",
+    "bun run e2e",
+    "bun run coverage",
+    "bun run test:hooks",
+    "cd packages/cli && bun run test:unit",
+    "bun run --cwd packages/cli test:unit",
+    "bun run --cwd packages/cli test:unit -- -t 'a name'",
+    "bun run --filter '*' test",
+    "bun run check 2>&1 | tail -40",
+    "bash -c 'bun run check'",
+    "bunx vitest run",
+    "npx vitest",
+    "cd packages/cli && bun test ./e2e",
+  ])("denies %s", async (command) => {
+    expect(denyReason(await runHook("PreToolUse", "guard-commands", bash(command)))).toContain(
+      "rr check",
+    );
+  });
+  it.each([
+    "rr check",
+    "rr test-cli tests/cli.test.ts",
+    "bun run lint",
+    "bun run typecheck",
+    "bun run build",
+    "bun run --cwd packages/cli test:unit tests/cli.test.ts",
+    "cd packages/cli && bun run test:unit tests/a.test.ts -t 'a name'",
+    "bun run test:hooks tests/hooks/guard-commands.test.ts",
+    "bunx vitest run tests/hooks/wiring.test.ts",
+    "cd packages/cli && bun test ./e2e/budget.test.ts",
+    "QUICKSTACKS_LOCAL_GATE=1 bun run check",
+    "git commit -m 'run bun run check before pushing'",
+  ])("allows %s", async (command) => {
+    expect(
+      denyReason(await runHook("PreToolUse", "guard-commands", bash(command))),
+    ).toBeUndefined();
+  });
+});
+
 describe("shell in-place edit guard", () => {
   it.each([
     "sed -i '' 's/a/b/' src/x.ts",

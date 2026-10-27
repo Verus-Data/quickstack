@@ -10,7 +10,7 @@ paths:
 
 ## A clean exit is not a pass
 
-A run that did nothing and a run that succeeded both exit 0. After `bun run check`, read the output: confirm the Vitest file and test counts are what you expect for the change (a new test file shows up in the count) and that the e2e section actually compiled the binary and ran its tests. When work is done by a subprocess, check what the subprocess printed, not the wrapper's status.
+A run that did nothing and a run that succeeded both exit 0. After `rr check`, read each partition's log under the result's `log_dir`: confirm the Vitest file and test counts are what you expect for the change (a new test file shows up in the count) and that the e2e section actually compiled the binary and ran its tests. When work is done by a subprocess, check what the subprocess printed, not the wrapper's status.
 
 ## Revert-verify every new regression test
 

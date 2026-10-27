@@ -20,6 +20,7 @@ The root owns the harness: `.claude/`, lefthook, CI, the root `biome.json`, `tsc
 | `.github/workflows/` | CI (see "CI") |
 | `.claude/` | The agent harness, shared by Claude Code and Codex (below) |
 | `.agents/skills` | A tracked symlink to `.claude/skills`, where Codex discovers repo skills; edit the files under `.claude/skills/` |
+| `.codex/hooks.json` | Codex's hooks: the Claude command guard for its Bash tool |
 
 `.claude/` holds the harness. `settings.json` wires the hooks in `hooks/` (command guards, boundary and secret guards, lint and typecheck on write, format on stop; `.claude/README.md` lists each), which run for Claude Code only. `rules/` holds path-scoped guidance Claude Code loads automatically: `architecture.md` and `agent-ops.md` always, `typescript.md` for TypeScript, `cli/` (`cli.md` the UX contract, `effect.md`, `testing.md`, `verification.md`) for `packages/cli`. Codex doesn't load `rules/`; read the ones covering the files you change, and a delegate contract names them. `skills/` holds `effect` (current Effect 4 APIs) and `delegate` (the orchestrator's Codex workflow, with its contract templates). `agents/` holds `architect.md` (design review) and `code-reviewer.md` (the one code review of a diff, run by Claude Code as an agent and by Codex delegates as a prompt). `commands/` holds the slash commands `/check`, `/test`, `/feature` and `/execute:codex`. `settings.local.json` and `worktrees/` are gitignored; delegate and unit worktrees live under `.claude/worktrees/`.
 
@@ -29,7 +30,7 @@ Product planning lives in `plans/`; start with [plans/HANDOFF.md](plans/HANDOFF.
 
 ## Commands
 
-Root commands run from the repo root and fan out to every workspace package (`bun run --filter '*' <script>`); preserve the runner split.
+Root commands run from the repo root and fan out to every workspace package (`bun run --filter '*' <script>`); preserve the runner split. An agent runs the whole-suite scripts (`check`, `test`, `test:hooks`, `test:unit` without a file, `coverage`, `e2e`) through rr instead ("Test runs" below); the command guard denies them locally.
 
 | Command (repo root) | Purpose |
 | --- | --- |
@@ -184,7 +185,7 @@ Application features, install/update distribution and release workflow (decision
 
 ## Delegates
 
-Claude Code orchestrates; Codex takes the coding tasks Claude delegates (`scripts/delegate.sh`, workflow in `.claude/skills/delegate/SKILL.md`). A delegate is trusted like Claude Code and works in its own worktree from a contract file with full access (network, `bun add`, git, the whole gate). It leaves its changes uncommitted and doesn't push, because Claude reviews, refactors and commits them, and it keeps to the contract's scope. A dependency it adds keeps shared versions in the root `workspaces.catalog`. The Claude hooks don't run for a delegate, so it runs the contract's checks itself (`bun run lint`, `bun run typecheck` and the named tests) and reports each result; Claude reviews, refactors and commits. `.claude/rules/` is Claude's: a contract names the rule files that apply to the task. Before handing back, a delegate runs one review in a fresh Codex process with `.claude/agents/code-reviewer.md` as its prompt.
+Claude Code orchestrates; Codex takes the coding tasks Claude delegates (`scripts/delegate.sh`, workflow in `.claude/skills/delegate/SKILL.md`). A delegate is trusted like Claude Code and works in its own worktree from a contract file with full access (network, `bun add`, git, the whole gate). It leaves its changes uncommitted and doesn't push, because Claude reviews, refactors and commits them, and it keeps to the contract's scope. A dependency it adds keeps shared versions in the root `workspaces.catalog`. Of the Claude hooks, only the command guard runs for a delegate (`.codex/hooks.json` wires `.claude/hooks/guard-commands.ts` for Codex's Bash tool; Codex reads it from the main checkout, so it lands there before it applies). The lint, typecheck and boundary hooks don't, so a delegate runs the contract's checks itself (`bun run lint`, `bun run typecheck`, the named tests and `rr check`) and reports each result; Claude reviews, refactors and commits. `.claude/rules/` is Claude's: a contract names the rule files that apply to the task. Before handing back, a delegate runs one review in a fresh Codex process with `.claude/agents/code-reviewer.md` as its prompt.
 
 ## Pending user actions
 
