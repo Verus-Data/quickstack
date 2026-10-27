@@ -7,10 +7,17 @@ import { FailureKind, VerifyChange } from "./schemas/verify";
 /**
  * An unknown subcommand: what was typed and up to three close known names (`core/suggest.ts`).
  * Or two flags that can't be used together, as typed (`new --launch` with `--no-launch`, 1.4).
+ * Or a parser-rejected value, with its expected input and optional close known values.
  */
 export const UsageDetails = Schema.Union([
   Schema.Struct({ command: Schema.String, suggestions: Schema.Array(Schema.String) }),
   Schema.Struct({ flags: Schema.Tuple([Schema.String, Schema.String]) }),
+  Schema.Struct({
+    flag: Schema.String,
+    value: Schema.String,
+    expected: Schema.String,
+    suggestions: Schema.optionalKey(Schema.Array(Schema.String)),
+  }),
 ]);
 export class Usage extends Schema.TaggedError<Usage>()("Usage", {
   details: Schema.optionalKey(UsageDetails),
@@ -385,6 +392,16 @@ function usageLines(error: Usage): string[] {
     return [
       `${details.flags[0]} and ${details.flags[1]} can't be used together.`,
       "Next: drop one of them.",
+    ];
+  if (details && "flag" in details)
+    return [
+      `Flag: ${printable(details.flag)}`,
+      `Value: ${printable(details.value)}`,
+      `Expected: ${printable(details.expected)}`,
+      ...(details.suggestions?.length
+        ? [`Did you mean: ${details.suggestions.map(printable).join(", ")}?`]
+        : []),
+      "Next: pass an expected value, or run --help for usage.",
     ];
   return details?.suggestions.length ? [`Did you mean: ${details.suggestions.join(", ")}?`] : [];
 }

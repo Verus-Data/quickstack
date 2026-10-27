@@ -15,6 +15,7 @@ import {
   Usage,
 } from "./errors";
 import { defectTrace, entry, Logging } from "./logging";
+import { AgentId } from "./schemas/entry";
 import { Host } from "./services/host";
 import { Invocation } from "./services/invocation";
 import { Output } from "./services/output";
@@ -44,22 +45,40 @@ function rootHelp(args: readonly string[]): boolean {
   );
 }
 /**
- * A parser failure is Usage; an unknown subcommand also names close known subcommands. The
- * framework's own `UnknownSubcommand.suggestions` is discarded in favor of `closest`.
+ * A parser failure is Usage; an unknown subcommand names close known subcommands (the
+ * framework's own suggestions are discarded for `closest`) and a rejected value names its flag.
  */
 function usage(error: CliError.CliError): Usage {
-  let unknown: CliError.CliError | undefined;
-  if (error._tag === "ShowHelp") unknown = error.errors.find((e) => e._tag === "UnknownSubcommand");
-  else if (error._tag === "UnknownSubcommand") unknown = error;
-  return unknown?._tag === "UnknownSubcommand"
-    ? new Usage({
-        details: {
-          command: unknown.subcommand,
-          suggestions: closest(unknown.subcommand, subcommandNames(cli, unknown.parent ?? [])),
-        },
-      })
-    : new Usage();
+  if (error._tag === "ShowHelp") {
+    const nested = error.errors.find(
+      (e) => e._tag === "UnknownSubcommand" || e._tag === "InvalidValue",
+    );
+    return nested ? usage(nested) : new Usage();
+  }
+  if (error._tag === "InvalidValue") return invalidValueUsage(error);
+  if (error._tag === "UnknownSubcommand")
+    return new Usage({
+      details: {
+        command: error.subcommand,
+        suggestions: closest(error.subcommand, subcommandNames(cli, error.parent ?? [])),
+      },
+    });
+  return new Usage();
 }
+
+function invalidValueUsage(error: CliError.InvalidValue): Usage {
+  return new Usage({
+    details: {
+      flag: error.kind === "argument" ? error.option : `--${error.option}`,
+      value: error.value,
+      expected: error.expected,
+      ...(error.option === "agents" || error.option === "launch"
+        ? { suggestions: closest(error.value, AgentId.literals) }
+        : {}),
+    },
+  });
+}
+
 export function main(
   args: readonly string[],
   program: Effect.Effect<

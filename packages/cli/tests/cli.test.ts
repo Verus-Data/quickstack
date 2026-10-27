@@ -51,14 +51,28 @@ test.each([
 test.each([
   ["--unexpected", "--json"],
   ["doctor", "extra", "--json"],
-  ["--log-level", "--json"],
-  ["--completions", "--json"],
 ])("Usage (no kept result) has empty stdout and exactly one JSON error for %j", async (...args) => {
   const result = await runCli(args);
   expect(result.status).toBe(2);
   expect(result.stdout).toBe("");
   expect(JSON.parse(result.stderr)).toEqual({
     error: { tag: "Usage", message: "Invalid command. Run --help for usage.", retryable: false },
+  });
+});
+test.each([
+  ["--log-level", "all | trace | debug | info | warn | warning | error | fatal | none"],
+  ["--completions", "bash | zsh | fish | powershell | sh | pwsh"],
+])("missing %s value is Usage with the parser's expectation", async (flag, expected) => {
+  const result = await runCli([flag, "--json"]);
+  expect(result.status).toBe(2);
+  expect(result.stdout).toBe("");
+  expect(JSON.parse(result.stderr)).toEqual({
+    error: {
+      tag: "Usage",
+      message: "Invalid command. Run --help for usage.",
+      retryable: false,
+      details: { flag, value: "", expected },
+    },
   });
 });
 test("a mistyped subcommand is Usage with the close match under the message", async () => {
@@ -166,3 +180,44 @@ test("main maps a defect once and never leaks its object", async () => {
   expect(result.stderr).not.toContain("secret-value");
   expect(result.stderr).toContain("An unexpected error occurred.");
 });
+
+// Parser failures must preserve enough context to repair the invocation.
+test.each([
+  ["agents", "gemini", "claude, codex, opencode or cursor", []],
+  ["agents", "codx", "claude, codex, opencode or cursor", ["codex"]],
+  ["launch", "codx", "claude, codex, opencode or cursor", ["codex"]],
+  ["preset", "other", '"default" | "sandbox"', undefined],
+])(
+  "invalid --%s value %s names the input and expectation in every audience",
+  async (flag, value, expected, suggestions) => {
+    const args = ["new", "go-cli", "app", `--${flag}`, value];
+    const details = { flag: `--${flag}`, value, expected, ...(suggestions ? { suggestions } : {}) };
+    const json = await runCli([...args, "--json"], { env: quiet });
+    expect(json.status).toBe(2);
+    expect(json.stdout).toBe("");
+    expect(JSON.parse(json.stderr)).toEqual({
+      error: {
+        tag: "Usage",
+        message: "Invalid command. Run --help for usage.",
+        retryable: false,
+        details,
+      },
+    });
+    for (const host of [{}, terminal]) {
+      const text = await runCli(args, { env: quiet, host });
+      expect(text.status).toBe(2);
+      expect(text.stdout).toBe("");
+      expect(text.stderr).toBe(
+        [
+          "Invalid command. Run --help for usage.",
+          `  Flag: --${flag}`,
+          `  Value: ${value}`,
+          `  Expected: ${expected}`,
+          ...(suggestions?.length ? [`  Did you mean: ${suggestions.join(", ")}?`] : []),
+          "  Next: pass an expected value, or run --help for usage.",
+          "",
+        ].join("\n"),
+      );
+    }
+  },
+);

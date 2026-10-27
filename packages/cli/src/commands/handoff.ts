@@ -131,6 +131,7 @@ export type SummaryContext = {
 /** Render the result, then print the next task or give the terminal to the selected agent. */
 export const completeHandoff = (input: {
   project: string;
+  agent: AgentId | undefined;
   untrusted: NewResult["untrusted"];
   decision: HandoffDecision;
   preview?: boolean;
@@ -163,7 +164,7 @@ export const completeHandoff = (input: {
         }),
         input.preview
           ? summary
-          : `${summary}\n\n${renderHandoff(decision, { shown, invocation: host.invocation, audience: output.audience })}`,
+          : `${summary}\n\n${renderHandoff(decision, { shown, invocation: host.invocation, audience: output.audience, agent: input.agent })}`,
       );
       return;
     }

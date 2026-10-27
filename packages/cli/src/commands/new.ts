@@ -84,6 +84,7 @@ export const newCommand = Command.make(
       }).pipe(Effect.provide(Registry.layer(yield* defaultRoots)));
       yield* completeHandoff({
         project: result.project,
+        agent: result.agents[0],
         untrusted: result.untrusted,
         decision,
         preview: result.dryRun,

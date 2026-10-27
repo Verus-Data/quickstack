@@ -2,6 +2,7 @@ import { Effect, Option, Path, Schema } from "effect";
 import { Argument, Command, Flag } from "effect/cli";
 import { add } from "../core/add";
 import { renderAdd } from "../core/add/report";
+import { MANIFEST_PATH, readManifest } from "../core/manifest";
 import { defaultRoots, Registry } from "../core/registry/registry";
 import { INCOMING, METADATA_DIR } from "../project-layout";
 import { AddResult } from "../schemas/add";
@@ -43,8 +44,10 @@ export const addCommand = Command.make(
         agents: flags.agents.length ? flags.agents : undefined,
         handoff,
       }).pipe(Effect.provide(Registry.layer(roots)));
+      const manifest = yield* readManifest(path.join(project, MANIFEST_PATH));
       yield* completeHandoff({
         project: result.project,
+        agent: manifest.agents[0],
         untrusted: result.untrusted,
         decision,
         render: (context) =>

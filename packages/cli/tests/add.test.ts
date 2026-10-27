@@ -924,3 +924,27 @@ test("without yes or sandbox the brief asks for its decisions [3.0#18]", async (
   expect(brief).toContain(T.decisions.ask);
   expect(brief).not.toContain(T.decisions.yes);
 });
+
+test("add examples use the manifest's first target agent when --agents is omitted", async () => {
+  const project = addProject();
+  const created = await addCli(project, [
+    "new",
+    "fixture-stack",
+    project.root,
+    "--agents",
+    "codex",
+    "--json",
+  ]);
+  expect(created.status).toBe(0);
+  expect(created.stderr).toBe("");
+  expect(JSON.parse(created.stdout).agents).toEqual(["codex"]);
+  const result = await addCli(project, ["add", "ci-github", "--no-launch"], {
+    host: { stdinIsTTY: true, stdoutIsTTY: true },
+  });
+  expect(result.status).toBe(0);
+  expect(result.stderr).toBe("");
+  expect(result.stdout.trimEnd().split("\n").at(-1)).toBe(
+    `For example: codex "Read .quickstacks/BRIEF.md and carry it out. It's your full task for this project; you're done when quickstacks verify passes."`,
+  );
+  expect(readManifestAt(project.root).agents).toEqual(["codex"]);
+});
