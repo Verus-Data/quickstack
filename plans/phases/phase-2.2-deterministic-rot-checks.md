@@ -259,6 +259,7 @@ and notes print in 1.5's notes section. No `ValidateReport` field is added.
 
 ## What this plan may get wrong
 
+- 2026-10-27: preview checks are scoped to the selected composition, preset and fragment flags, rendered per shipped adapter; the registry-wide composition matrix and `compose-each` must stay out of previews.
 - The settings and launch file checks are specific to Claude Code and VS Code formats.
   When the native adapters for other agents ship config
   ([3.4b](phase-3.4b-native-agent-adapters.md), D27), each needs its own reference check

@@ -181,6 +181,7 @@ Through `tests/helpers/cli.ts` with the fixture registry. The tests write a fixt
 
 ## What this plan may get wrong
 
+- 2026-10-27: preview checks are scoped to the selected composition, preset and fragment flags, rendered per shipped adapter; registry-wide `compose-each` is excluded and only selected entries' sources are read.
 - `show` composes to count words and compare fingerprints, so it is slower than `list`. If it is slow on large stacks, `briefWords` and `sameContent` can move behind a flag.
 - The preview's equivalence with `new` depends on 1.5's canonical context fixing every environment fact the brief mentions (missing tools, git state). If it misses one, test 6 will show it and the context, not the preview, should be fixed.
 - Authors with several agents may want to preview each. An override flag for the preview's adapter agent is a small addition if asked.
