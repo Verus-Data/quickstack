@@ -1,0 +1,1 @@
+{ "permissions": { "allow": ["safe"] }, "hooks": { "second": true } }

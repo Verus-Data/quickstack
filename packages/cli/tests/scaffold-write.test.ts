@@ -8,6 +8,7 @@ import {
   renameSync,
   statSync,
   symlinkSync,
+  writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
 import { NodeServices } from "@effect/platform-node";
@@ -203,4 +204,32 @@ test("replace rewrites only a file this writer created", async () => {
   expect(failure(exit)).toMatchObject({ _tag: "PermissionDenied", details: { reason: "escape" } });
   // The failure rolled back the whole project.
   expect(existsSync(target)).toBe(false);
+});
+
+test("an interrupt after rewriting a parked file restores its bytes and mode and removes new files [3.0#7]", async () => {
+  const target = temp();
+  const parked = join(target, ".quickstacks/incoming/.claude/settings.json");
+  mkdirSync(join(target, ".quickstacks/incoming/.claude"), { recursive: true });
+  writeFileSync(parked, '{"keep":true}\n', { mode: 0o640 });
+  const controller = new AbortController();
+  let rewritten: string | undefined;
+  const exit = await Effect.runPromiseExit(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const writer = yield* openProject(target);
+        yield* writer.write("a-created.txt", bytes("new"));
+        yield* writer.rewrite(".quickstacks/incoming/.claude/settings.json", bytes('{"merged":1}'));
+        rewritten = readFileSync(parked, "utf8");
+        controller.abort();
+        yield* Effect.never;
+      }),
+    ).pipe(Effect.provide(NodeServices.layer)),
+    { signal: controller.signal },
+  );
+  expect(Exit.isFailure(exit) && Cause.hasInterruptsOnly(exit.cause)).toBe(true);
+  expect(rewritten).toBe('{"merged":1}');
+  expect(readFileSync(parked, "utf8")).toBe('{"keep":true}\n');
+  expect(statSync(parked).mode & 0o777).toBe(0o640);
+  expect(existsSync(join(target, "a-created.txt"))).toBe(false);
+  expect(readdirSync(join(target, ".quickstacks/incoming/.claude"))).toEqual(["settings.json"]);
 });

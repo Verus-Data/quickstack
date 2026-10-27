@@ -1,3 +1,4 @@
+import { BRIEF_PATH } from "../project-layout";
 import type { AgentId, DetectedAgent } from "../schemas/entry";
 import type { Audience } from "../services/output";
 import { printable } from "./text";
@@ -42,7 +43,7 @@ export const LAUNCH_ORDER: ReadonlyArray<AgentId> = ["claude", "codex", "opencod
 
 /** The one prompt every outcome gives the agent. No quotes or backticks, so it pastes into a shell. */
 export const agentPrompt = (invocation: string) =>
-  `Read .quickstacks/BRIEF.md and carry it out. It's your full task for this project; you're done when ${invocation} verify passes.`;
+  `Read ${BRIEF_PATH} and carry it out. It's your full task for this project; you're done when ${invocation} verify passes.`;
 
 export type HandoffInput = {
   /** `AppConfig.agent`. */
@@ -120,8 +121,8 @@ export function renderHandoff(
   const where = context.shown === "." ? "the current directory" : printable(context.shown);
   if (decision.kind === "inside-agent")
     return decision.untrusted.length
-      ? `STOP: this project uses entries this machine hasn't trusted: ${ids}. Don't start. Show the user the list and .quickstacks/BRIEF.md's first section, and continue only if they confirm.`
-      : `NEXT STEP FOR THE AGENT: read .quickstacks/BRIEF.md now and carry it out, working in ${where}. Loop on ${context.invocation} verify until it passes. Don't stop here to report back; the brief says when to ask the user.`;
+      ? `STOP: this project uses entries this machine hasn't trusted: ${ids}. Don't start. Show the user the list and ${BRIEF_PATH}'s first section, and continue only if they confirm.`
+      : `NEXT STEP FOR THE AGENT: read ${BRIEF_PATH} now and carry it out, working in ${where}. Loop on ${context.invocation} verify until it passes. Don't stop here to report back; the brief says when to ask the user.`;
   const prompt = agentPrompt(context.invocation);
   const example = LAUNCH_ARGS[decision.agent ?? "claude"];
   const dir = printable(shellArg(context.shown));

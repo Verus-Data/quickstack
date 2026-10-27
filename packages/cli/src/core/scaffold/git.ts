@@ -35,6 +35,12 @@ const ok = (finished: Finished | undefined): finished is Finished =>
 const exitOf = (finished: Finished | undefined) =>
   finished === undefined ? undefined : finished.timedOut ? 124 : finished.exitCode;
 
+const toplevelOf = (finished: Finished | undefined) =>
+  ok(finished) ? finished.tail.trim().split("\n").at(-1) || undefined : undefined;
+
+/** The repository root, if git can identify one from cwd alone. */
+export const gitToplevel = (cwd: string) => Effect.map(git(TOPLEVEL, cwd), toplevelOf);
+
 /** Whether git is on the captured PATH (`Processes.which`, the only PATH search). */
 export const gitInstalled = Effect.gen(function* () {
   return Option.isSome(yield* (yield* Processes).which("git"));
@@ -69,7 +75,7 @@ export const probeGit = (
     if (!installed) return none;
     const fs = yield* FileSystem.FileSystem;
     const found = yield* git(TOPLEVEL, target.nearest);
-    const toplevel = ok(found) ? (found.tail.trim().split("\n").at(-1) ?? "") : "";
+    const toplevel = toplevelOf(found);
     if (!toplevel) {
       const unenclosed =
         found !== undefined &&

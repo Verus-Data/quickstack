@@ -1,12 +1,15 @@
 import { Schema } from "effect";
+import { BRIEF_PATH } from "../project-layout";
 import { AgentId, Kind, Origin } from "./entry";
 
 const EntryRef = Schema.Struct({ kind: Kind, id: Schema.String });
 
-/** What `new` wrote and what to do next; `new --json` prints one. */
+/** What `new` wrote or planned and what to do next; `new --json` prints one. */
 export const NewResult = Schema.Struct({
   /** The project root, absolute. */
   project: Schema.String,
+  /** True for a preview: no project files, state record or repository were created. */
+  dryRun: Schema.Boolean,
   /** The composition rendered with neutral template values, hashed as sha256. */
   fingerprint: Schema.String,
   stack: Schema.String,
@@ -14,9 +17,12 @@ export const NewResult = Schema.Struct({
   fragments: Schema.Array(Schema.String),
   preset: Schema.Literals(["default", "sandbox"]),
   agents: Schema.Array(AgentId),
-  /** Every file written, relative to the project root, sorted; OS litter is never listed. */
+  /**
+   * Every file written (or, for a dry run, planned), relative to the project root, sorted; OS
+   * litter is never listed.
+   */
   written: Schema.Array(Schema.String),
-  brief: Schema.Literal(".quickstacks/BRIEF.md"),
+  brief: Schema.Literal(BRIEF_PATH),
   /** `countWords` of the whole brief. */
   briefWords: Schema.Number,
   /** `countWords` of the brief's fixed text. */
@@ -61,7 +67,7 @@ export const NewResult = Schema.Struct({
   git: Schema.Literals(["fresh", "parent", "none"]),
   /**
    * Whether the out-of-project state record was written; false when the state directory isn't
-   * writable (verify's tamper check is then manifest-only).
+   * writable (verify's tamper check is then manifest-only), or for a dry run.
    */
   stateRecord: Schema.Boolean,
   /**
@@ -95,6 +101,6 @@ export const NewResult = Schema.Struct({
   ]),
 }).annotate({
   title: "New result",
-  description: "A project quickstacks wrote, with its brief and the next step",
+  description: "A project quickstacks wrote or planned, with its brief and the next step",
 });
 export type NewResult = typeof NewResult.Type;

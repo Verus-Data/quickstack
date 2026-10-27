@@ -1,5 +1,6 @@
 import { Clock, Effect, FileSystem, Option, Path, type PlatformError, Schema } from "effect";
 import { AppConfig } from "../../config";
+import { METADATA_DIR, RUNS_PATH, STATE_DIR } from "../../project-layout";
 import type { Manifest } from "../../schemas/manifest";
 import { RunRecord, type RunStep, type VerifyResult } from "../../schemas/verify";
 import { VERSION } from "../../version";
@@ -9,7 +10,7 @@ import type { RunResult } from "./run";
 import type { Tamper } from "./tamper";
 
 /** Where a project's run records go, relative to its root (ignored by its `.gitignore`). */
-export const RUNS_PATH = ".quickstacks/state/runs.jsonl";
+export { RUNS_PATH } from "../../project-layout";
 
 /** What a finished run settles in the state record, for the result's `firstGreen` and `stateRecord`. */
 export type RecordFacts = Pick<VerifyResult, "firstGreen" | "stateRecord">;
@@ -53,13 +54,13 @@ const appendRunRecord = (root: string, record: RunRecord) =>
       Effect.logWarning(`Run record not written (${why}): ${printable(file)}`);
     yield* Effect.gen(function* () {
       const realRoot = yield* fs.realPath(root);
-      const inside = path.join(realRoot, ".quickstacks");
+      const inside = path.join(realRoot, METADATA_DIR);
       if ((yield* fs.realPath(path.dirname(dir))) !== inside)
         return yield* refuse("outside the project");
       yield* fs.makeDirectory(dir, { recursive: true });
       const realDir = yield* fs.realPath(dir);
-      if (realDir !== path.join(inside, "state")) return yield* refuse("outside the project");
-      const target = path.join(realDir, "runs.jsonl");
+      if (realDir !== path.join(realRoot, STATE_DIR)) return yield* refuse("outside the project");
+      const target = path.join(realDir, path.basename(RUNS_PATH));
       const info = yield* fs.lstat(target).pipe(
         Effect.map(Option.some),
         Effect.catchIf(

@@ -1,4 +1,4 @@
-import { Effect, FileSystem, Path, type PlatformError, Random, Schema } from "effect";
+import { Effect, Exit, FileSystem, Path, type PlatformError, Random, Schema } from "effect";
 import { AppConfig } from "../config";
 import { InvalidConfig, PermissionDenied } from "../errors";
 import { type Manifest, ProjectId } from "../schemas/manifest";
@@ -120,6 +120,33 @@ export const saveProjectState = (
     yield* fs
       .rename(temporary, target)
       .pipe(Effect.onError(() => Effect.ignore(fs.remove(temporary))));
+  });
+
+/**
+ * Replace a record within the caller's transaction. Acquisition finishes the save before it can
+ * be interrupted; failure or interruption of the scope restores the exact old bytes, or removes
+ * a newly created record. The caller decides whether an unavailable state directory is fatal.
+ */
+export const replaceProjectState = (state: ProjectState, target: string) =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    yield* Effect.acquireRelease(
+      Effect.gen(function* () {
+        const old = yield* fs
+          .readFile(target)
+          .pipe(
+            Effect.catch((error) =>
+              error.reason._tag === "NotFound" ? Effect.succeed(undefined) : Effect.fail(error),
+            ),
+          );
+        yield* saveProjectState(state, target);
+        return old;
+      }),
+      (old, exit) =>
+        Exit.isSuccess(exit)
+          ? Effect.void
+          : Effect.ignore(old ? fs.writeFile(target, old) : fs.remove(target)),
+    );
   });
 
 /** A state record and the file it was read from. */

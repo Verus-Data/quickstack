@@ -1,6 +1,9 @@
 # Phase 2.0c: Run ledger
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: EXECUTED 2026-10-27 (ledger schema and store, `runs`, `list`'s last-run column, the
+import script; `registry/runs.json` seeded from the three 1.6b gate notes; reviewed once and
+fixed). Item 6 checks the compiled binary's shipped ledger; the tarball form waits for 0.2
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -283,7 +286,19 @@ Human `list` shows `proven <date>` for `pass`, `<result> <date>` otherwise, or `
    `fingerprint` computed at the first commit and differs from the current one; a note
    missing the repo commit is skipped with exit 1; importing the same note twice adds one
    record.
-6. The packed tarball contains `registry/runs.json` and no `scripts/` files.
+6. The compiled binary (`bun run build` makes `packages/cli/dist/quickstacks`) reads
+   the `registry/runs.json` it ships with, so `./dist/quickstacks list --json` shows a
+   bundled stack's `lastRun`.
+
+### Realistic edge cases
+
+7. `runs` finds the project and its state through a symlinked nested cwd with spaces and non-ASCII names under an agent marker.
+8. Missing, empty, malformed or newer history and ledger files, including a directory at the ledger path, do not invent proof or overwrite existing state.
+9. `NOTES.md` counts only non-empty list items under `## Asked`, excluding wrapped prose and later headings; an empty or absent section counts zero.
+10. Import skips an unknown commit or an old undecodable registry, continues with valid notes, handles paths with spaces and leading dashes, and dry-run leaves the working tree unchanged.
+11. An append that cannot write keeps the existing ledger and unrelated files and leaves no temporary file behind.
+12. A run with a green base and failed app remains a failed run in `runs`, and `LedgerRecord` preserves its optional `stages` unchanged.
+13. Import maps partial, failed, infra and manifest-only green outcomes honestly, leaving absent optional final records and agent minutes null.
 
 ## Exit criteria
 
@@ -295,6 +310,32 @@ Human `list` shows `proven <date>` for `pass`, `<result> <date>` otherwise, or `
 
 ## What this plan may get wrong
 
+- 2026-10-27 review: the driving agent is not the adapter target set (Contracts: Target
+  agents). Imports default to Claude targets, independently of the driver, and accept an
+  optional `Target agents` note row for recorded overrides. `LedgerRecord` has no adapter
+  target field; later readers must settle how to reconstruct such overrides.
+- 2026-10-27 review: project state lookup follows verify's project-id semantics, preserving
+  timings after a move, and rejects a newer state schema with `InvalidConfig` (Contracts:
+  Schema versions). A green Outcome row that contradicts its final `RunRecord` is skipped;
+  a maintainer's partial classification is preserved over a green verify.
+
+- 2026-10-27 implementation: registries with no ledger keep the existing text layout,
+  as the unchanged 1.0 and audience tests require. When a ledger is present, stack rows
+  show proven/result/unproven labels. JSON always carries `lastRun`, null without proof.
+
+- 2026-10-27 implementation: gate notes list all composed fragments, while `LedgerRecord.with`
+  means additions. The importer removes fragments selected by the default composition at the
+  recorded commit. The three gate notes therefore have `with: []`.
+- 2026-10-27 implementation: a compiled-binary note may identify its CLI version only in the
+  optional final `RunRecord`; the importer uses that recorded version when the CLI row has no
+  `quickstacks@<version>`. Abbreviated repo commits are resolved by git to full commit ids.
+- 2026-10-27 implementation: `Manifest.stack` already permits null for the future `add`
+  command, while `ProjectRuns.stack` is a string. A stackless manifest reports `"none"`.
+- 2026-10-27 implementation: Bun consumes an initial option terminator before the script sees
+  argv. Single-dash note names are accepted as positional arguments; long-option filenames
+  need `./` when they would collide with an option.
+
+- 2026-10-27: The tarball content check waits for 0.2; work currently runs from the compiled dev build.
 - Old run notes may lack a field the import needs. The import skips rather than guesses,
   so a skipped gate run has to be rerun or its note completed by hand from the kept
   project.

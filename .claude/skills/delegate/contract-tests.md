@@ -65,7 +65,14 @@ assertions, so each test must:
   a typo or a broken fixture;
 - carry the tag `[<sub-phase>#<number>]` in its name, one tag per plan number it covers;
 - be specific enough that a wrong implementation fails it, and loose enough that it doesn't
-  pin internal structure the plan leaves open.
+  pin internal structure the plan leaves open;
+- be deterministic. An interruption test first makes the program block at the step it
+  interrupts (a git or tool shim on `PATH` that hangs after touching a marker file, as
+  `tests/new.test.ts` does for `git init`, or a writer-level program that ends in
+  `Effect.never`, as `tests/scaffold-write.test.ts` does), then aborts. Never race an abort
+  against a command that can finish first (an `fs.watch` callback, a timer).
+- match formats the code already has (ids, digests such as `sha256:<hex>`, paths): read the
+  producing function rather than guessing a shape.
 
 Steps:
 

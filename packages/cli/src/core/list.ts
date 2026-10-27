@@ -1,11 +1,14 @@
+import type { LedgerRecord } from "../schemas/ledger";
 import type { ListResult, ListRow } from "../schemas/list";
+import { lastRun } from "./ledger";
 import { type Entry, isRejected, type RejectedEntry } from "./registry/entry";
 import { printable } from "./text";
 
 export const groups = ["stacks", "fragments", "apps"] as const;
 export type Group = (typeof groups)[number];
 
-export function toRow(entry: Entry): ListRow {
+/** `records` is the bundled ledger, so only bundled stacks get a `lastRun` from it. */
+export function toRow(entry: Entry, records: ReadonlyArray<LedgerRecord> = []): ListRow {
   const { meta } = entry;
   return {
     id: entry.id,
@@ -17,7 +20,8 @@ export function toRow(entry: Entry): ListRow {
     origin: entry.origin,
     trusted: entry.trusted,
     shadows: entry.shadows,
-    lastRun: null,
+    lastRun:
+      entry.kind === "stack" && entry.origin === "bundled" ? lastRun(records, entry.id) : null,
   };
 }
 
@@ -31,12 +35,13 @@ const inGroup = (row: ListRow, group: Group | undefined) =>
 export function listResult(
   items: ReadonlyArray<Entry | RejectedEntry>,
   group: Group | undefined,
+  records: ReadonlyArray<LedgerRecord> = [],
 ): ListResult {
   const kind = group === undefined ? undefined : group === "stacks" ? "stack" : "fragment";
   return {
     entries: items
       .filter((item): item is Entry => !isRejected(item))
-      .map(toRow)
+      .map((entry) => toRow(entry, records))
       .filter((row) => inGroup(row, group)),
     rejected: items
       .filter(isRejected)
@@ -73,7 +78,7 @@ const sections = [
 export function renderList(
   result: ListResult,
   all: ReadonlyArray<ListRow>,
-  options: { group: Group | undefined; width: number; invocation: string },
+  options: { group: Group | undefined; width: number; invocation: string; ledgerPresent?: boolean },
 ): string {
   const { width, invocation } = options;
   const rows = result.entries;
@@ -88,6 +93,13 @@ export function renderList(
         : row.category
           ? [row.category]
           : []),
+      ...(options.ledgerPresent && row.kind === "stack"
+        ? [
+            row.lastRun
+              ? `${row.lastRun.result === "pass" ? "proven" : row.lastRun.result} ${printable(row.lastRun.date)}`
+              : "unproven",
+          ]
+        : []),
       ...(row.trusted ? [] : ["untrusted"]),
       ...(row.shadows.length ? [`shadows ${row.shadows.join(", ")}`] : []),
     ]

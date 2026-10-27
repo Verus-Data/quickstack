@@ -19,6 +19,42 @@ bun run build
 
 `doctor` reports version, platform, compiled status, executable/config/data/working paths, the user entry directory, the bundled registry and skill paths (and whether each exists), and safe configuration errors. A missing configuration file is fine. A malformed optional file is reported in `configErrors` while doctor exits successfully; help and version do not open that file.
 
+## Project run history and the bundled ledger
+
+`quickstacks runs [--json]` finds the nearest project and reports its stack, fingerprint,
+creation time, handoff kind, brief words, verify count, last outcome, timings, interventions,
+state-record availability and skipped history lines. It reads the project’s
+`.quickstacks/state/runs.jsonl` and `NOTES.md`. Timings come only from the out-of-project
+state record; unavailable timings or notes stay unknown. Invalid or newer history lines
+are counted and skipped. Outside a project it exits 2 with `NotFound`. A newer state schema exits 3 with
+`InvalidConfig`. Moving a project retains its timings through its project id.
+
+Each bundled stack in `list --json` carries `lastRun: { date, result, agent, preset,
+fingerprint } | null`, the latest run of its default composition across agents and presets.
+When the registry has a ledger, text output labels it `proven <date>` for a pass, `<result> <date>` otherwise, or `unproven`.
+Other origins and fragments have no proof. This describes the recorded run; it does not
+claim the current stack still has that fingerprint.
+
+The reviewed ledger is `registry/runs.json`. From this package, import gate notes with:
+
+```sh
+bun run ledger:import ../../plans/runs/2026-10-27-*.md
+bun run ledger:import ../../plans/runs/2026-10-27-*.md --dry-run
+```
+
+The development script discovers the repo from cwd, archives only the registry at each
+note’s commit into a temporary directory and fingerprints it with the current composition
+code. A contradictory Outcome row and final verify record are reported and skipped; a
+maintainer’s explicit `partial` remains partial even when verify is green. The driving agent
+is independent of adapter targets: targets default to `claude`; notes for an override can
+include a `Target agents` table row with comma-separated ids such as `codex`, `claude`.
+It records only added fragments in `with`, removing fragments already selected by
+the default composition at that commit. Existing `(repoCommit, stack, date)` records are
+skipped. Incomplete notes are reported, other notes continue, and any failure exits 1.
+`--dry-run` prints a JSON array and writes no ledger; `--` ends options. Bun consumes an
+initial `--` before passing arguments to a script, so single-dash note names are also
+accepted directly. Use `./` for a note name that collides with a long option.
+
 ## Starting a project with an agent
 
 There are two ways in: run the CLI yourself, or install the skill once and ask your coding agent to start a project. The skill ships with the next release; npm publication is deferred. These are the packaged entry points:
@@ -28,7 +64,7 @@ npx quickstacks new astro-blog my-blog
 npx quickstacks skill install
 ```
 
-For the current dev build, choose a destination outside this checkout. Use `bun run dev new astro-blog "$HOME/quickstacks-projects/my-blog"` or `bun run dev skill install` from this package, or `./dist/quickstacks` after building. The skill teaches the agent to choose a stack, read `.quickstacks/BRIEF.md`, and build until verify is green. Existing repos aren't supported yet.
+For the current dev build, choose a destination outside this checkout. Use `bun run dev new astro-blog "$HOME/quickstacks-projects/my-blog"` or `bun run dev skill install` from this package, or `./dist/quickstacks` after building. The skill teaches the agent to choose a stack, read `.quickstacks/BRIEF.md`, and build until verify is green. For an existing repository, use `add <fragment...>`.
 
 ```sh
 quickstacks skill install             # $HOME/.claude/skills/quickstacks/SKILL.md
@@ -44,9 +80,9 @@ An identical installed file is unchanged. A differing file is preserved with `Ta
 ## Listing stacks and fragments
 
 ```sh
-quickstacks list                 # Stacks, Fragments and Apps, then Next: lines
+quickstacks list                 # Addable fragments in a project; otherwise all groups
 quickstacks list stacks          # one group: stacks, fragments (apps excluded) or apps
-quickstacks list --json          # { entries, rejected } for an agent choosing a stack
+quickstacks list --json          # Full registry, plus project context when a manifest decodes
 ```
 
 Entries come from three roots, highest precedence first:
@@ -62,6 +98,8 @@ Each root holds `stacks/<id>/STACK.md` and `fragments/<id>/FRAGMENT.md`, each wi
 The markdown file starts with YAML frontmatter between two `---` lines, then guidance prose for the building agent. Frontmatter keys are snake_case (`schema_version`, `applies_to`, `needs_own_repo`, `requires_tools`); unknown keys, including camelCase spellings, are errors. Output from the CLI spells the same fields in camelCase (`appliesTo`).
 
 The same id in a higher root wins; `list --json` marks the winner's `shadows` with the origins it hides. An entry that fails to load is listed under `rejected` with a one-line error and is never silently replaced by a lower copy. An entry with a newer `schema_version` than this CLI reads is skipped with a warning, and the next root's copy is used.
+
+`list` reads the manifest in the current directory (or `--dir`). Its default text view shows fitting, unapplied fragments with add commands; explicit groups keep their usual view. JSON keeps the full registry and adds optional `project: { stack, applied, addable }`. A corrupt, newer or unreadable manifest warns and falls back to the full view.
 
 ## Bundled stacks
 
@@ -83,12 +121,15 @@ The core loop: `new <stack>` writes the starter files and `.quickstacks/BRIEF.md
 ## Starting a project
 
 ```sh
-quickstacks new <stack> [dir]    # dir defaults to <stack>; `.` is the current directory
+quickstacks new <stack> [dir]    # dir defaults to the slug of --name, else <stack>; `.` is the current directory
   --with a --with b              # add optional fragments (repeatable, or comma-separated)
   --without a                    # remove default fragments
   --sandbox                      # every default, nothing deployed or released; implies --yes
   --yes                          # the brief tells the agent to take each decision's default
   --agents claude,codex          # adapter targets (default: the `agents` setting, else claude)
+  --name "My App"                # project_name for templates (default: directory base name)
+  --author "A. Name"             # author for templates (default: setting, then git user.name)
+  --dry-run                      # render and report the plan without writing or launching
   --scope acme                   # npm scope for {{package_scope}} (default: the `package_scope` setting)
   --launch codex                 # the agent to hand off to: claude, codex, opencode or cursor
   --no-launch                    # print the prompt instead of starting an agent
@@ -97,11 +138,31 @@ quickstacks new <stack> [dir]    # dir defaults to <stack>; `.` is the current d
 
 `new` composes the stack, writes its files and `.quickstacks/` (`BRIEF.md`, `NOTES.md`, `manifest.json`, an empty `state/`, and a `.gitignore` that ignores `BRIEF.md`, `NOTES.md`, `state/` and `incoming/`), writes a state record outside the project, runs `git init` when the target isn't already inside a repository and git is on PATH, then hands off to an agent. It never runs a command from a stack or fragment.
 
-The handoff, first match wins (the manifest's `handoff` records which, with the agent and time):
+`--dry-run` checks the same target, composes and renders every file in memory, including the manifest, then stops before writing. It creates no directory, state record or git repository and starts no agent. Its JSON result has `dryRun: true`, `stateRecord: false`, and `written` lists the planned files; real runs have `dryRun: false`. Git, fingerprints, word counts and missing tools describe the planned scaffold. Read-only git probes and the author fallback still run. A preview's handoff is `print` with reason `no-launch`, even inside an agent session; text output ends with `Dry run: nothing was written.`. `--dry-run --launch` is `Usage` (exit 2).
+
+`--name` sets `project_name` and, when no directory is given, chooses the directory through its slug. An explicit directory stays the target. Slugs strip npm scopes, fold accents with NFKD, split camelCase and digit boundaries, then join lowercase ASCII words with dashes; names without ASCII words become `project`. `--author` overrides the `author` setting and git fallback; an explicit empty value suppresses both.
+
+The handoff for a real run, first match wins (the manifest's `handoff` records which, with the agent and time):
 
 1. Run from inside an agent session (an agent marker such as `CLAUDECODE` or `AI_AGENT` is set): stdout ends with `NEXT STEP FOR THE AGENT: ...`, telling that agent to read the brief and loop on `verify`. With an untrusted entry it says `STOP` instead: show the user the entries and the brief's first section, and continue only if they confirm.
 2. `--json`, `--no-launch`, stdin or stdout not a terminal, or any untrusted entry: the prompt is printed (with an example command, for a human) and nothing is launched. An untrusted entry never launches an agent.
 3. Otherwise the first agent CLI on PATH (`--launch` alone, else the `agents` setting, then `claude`, `codex`, `opencode`, `cursor-agent`) starts in the project with the prompt as its first message, with your environment and the terminal. If it can't be started, the manifest's `handoff` is rewritten to `print`. quickstacks exits with that agent's status, with no error envelope: the project was written either way. None on PATH: the prompt is printed. `--launch` with `--no-launch` or `--json` is `Usage` (exit 2).
+
+## Adding fragments to a repository
+
+```sh
+quickstacks add ci-github                    # current repository
+quickstacks add ci-github --dir ../my-project --no-launch
+quickstacks add agent-ops --agents claude,codex --json
+```
+
+`add` applies only the requested fragments and their requirements. Existing live files keep their bytes: conflicting contributions are parked whole under `.quickstacks/incoming/<path>` for the agent to merge. Identical contributions are skipped; subsequent parked JSON contributions deep-merge with the parked copy, and other contributions get numbered copies. The result and add brief list every pending incoming file, including earlier runs.
+
+An existing manifest keeps its stack, preset, agents, accepted verify steps, and existing env and command values. Without one, `add` creates a manifest with `mode: "add"` and `stack: null`; it infers the project name from package.json, pyproject.toml, go.mod, Cargo.toml, then the directory name. `--sandbox` and `--agents` configure only a newly created manifest; contradictory values on an existing project refuse. `--yes`, `--launch`, `--no-launch` and `--json` follow `new`'s rules. Tools are looked up but never run, and `add` runs no verify steps.
+
+Before planning, `add` performs the same tamper check as `verify`. Changed steps refuse with `VerifyChanged` (5). A manifest-only project stays manifest-only. An untrusted addition under an agent or without terminal stdin writes the new steps while retaining the previous digest baseline (`digestRecorded: false`); a person must review them and run `verify --accept-changes`. Failed or interrupted writes restore parked copies, metadata and state records and remove new files.
+
+`add --json` returns `AddResult`: `added`, `alreadyApplied`, newly `written` fragment files, `skipped`, `mergeNeeded` with incoming paths, `missingRequired` with exact add commands, `commandsKept`, `warnings`, `missingTools`, inferred `name`, manifest and digest status, and the brief and handoff. Read `.quickstacks/BRIEF.md`, merge the parked contributions while preserving project choices, then run `quickstacks verify` over the whole project.
 
 ## The agent guide
 
@@ -111,7 +172,7 @@ The handoff, first match wins (the manifest's `handoff` records which, with the 
 - The state record is a second copy of the verify digest at `$XDG_STATE_HOME/quickstacks/projects/<projectId>.json` (`QUICKSTACKS_STATE_DIR` replaces `$XDG_STATE_HOME/quickstacks`), so editing the project's files can't hide a changed verify step. When that directory isn't writable, `new` still succeeds with `stateRecord: false`, and verify's tamper check uses the manifest only.
 - The target must not exist, or be empty. A directory holding only `.git` or OS litter (`.DS_Store`, `Thumbs.db`, `desktop.ini`, `._*`) counts as empty; anything else fails `TargetNotEmpty` (exit 2).
 - Inside another repository nothing is initialized, and a fragment with `needs_own_repo` is refused (`ComposeConflict`, with the `--without` flags that would avoid it). A target that is itself a repository's root is that project's own repository, so those fragments are allowed. When git fails for any reason other than "not a git repository" (a broken `.git`, unsafe ownership), nothing is initialized and the result carries a `git_unusable` warning.
-- Files ending `.tmpl` are rendered and lose the suffix. The only variables are `project_name` (the directory's name, which may not contain control characters), `project_slug`, `env_prefix`, `package_scope`, `author` (the `author` setting, else `git config user.name`; quotes, backslashes and line breaks are removed) and `year`; a token is `{{ name }}` on one line, and an unknown name fails `EntryInvalid` before anything is written. Every other file is copied byte for byte, keeping its executable bit.
+- Files ending `.tmpl` are rendered and lose the suffix. The only variables are `project_name` (`--name`, else the directory's base name; control characters are refused), `project_slug`, `env_prefix`, `package_scope`, `author` (`--author`, else the `author` setting, else `git config user.name`; quotes, backslashes and line breaks are removed, and other control characters in the flag fail `BadInput`) and `year`; a token is `{{ name }}` on one line, and an unknown name fails `EntryInvalid` before anything is written. Every other file is copied byte for byte, keeping its executable bit.
 - No entry may write under `.git/` or `.quickstacks/`, in any letter case (`ComposeConflict`, reason `reserved_path`), and two entry files whose paths differ only in case collide (`file_owner`).
 - Every write is checked against the project's real path, so nothing lands outside it (`PermissionDenied`, reason `escape`). A failure or Ctrl+C removes everything `new` wrote, the state record included.
 - Missing tools never fail `new`: they are listed in the result and the brief, with the `--without` flag that would drop the fragment needing one.

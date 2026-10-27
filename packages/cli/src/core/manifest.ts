@@ -10,6 +10,7 @@ import {
   Schema,
 } from "effect";
 import { InvalidConfig, NotFound, PermissionDenied } from "../errors";
+import { MANIFEST_PATH } from "../project-layout";
 import { withStepDefaults } from "../schemas/entry";
 import { Manifest, type ManifestStep } from "../schemas/manifest";
 import { VERSION } from "../version";
@@ -17,7 +18,7 @@ import type { Composition } from "./compose/compose";
 import type { Entry } from "./registry/entry";
 
 /** Where a project's manifest lives, relative to its root. */
-export const MANIFEST_PATH = ".quickstacks/manifest.json";
+export { MANIFEST_PATH } from "../project-layout";
 
 /** What the digest reads from a manifest; a later optional field can't reach it by accident. */
 export type DigestInput = Pick<Manifest, "verify" | "env" | "preset">;
@@ -83,8 +84,8 @@ const projectId = Effect.gen(function* () {
  * `briefWords` is `renderBrief`'s count for the brief written beside it.
  */
 export const buildManifest = (
-  composition: Composition,
-  facts: { briefWords: number },
+  composition: Composition<Entry | null>,
+  facts: { briefWords: number; mode?: "new" | "add" },
 ): Effect.Effect<Manifest> =>
   Effect.gen(function* () {
     const verify = composition.verify.map(
@@ -99,9 +100,9 @@ export const buildManifest = (
       projectId: yield* projectId,
       createdAt: new Date(yield* Clock.currentTimeMillis).toISOString(),
       cli: VERSION,
-      mode: "new" as const,
+      mode: facts.mode ?? "new",
       agents: [...composition.agents],
-      stack: entryRef(composition.stack),
+      stack: composition.stack ? entryRef(composition.stack) : null,
       fragments: composition.fragments.map(entryRef),
       commands: { ...composition.commands },
       ...body,

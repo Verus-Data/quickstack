@@ -1,5 +1,6 @@
 import { Effect, FileSystem, Path } from "effect";
 import { PermissionDenied, TargetNotEmpty } from "../../errors";
+import { METADATA_DIR } from "../../project-layout";
 import { MANIFEST_PATH, readManifest } from "../manifest";
 import { readProjectState } from "../project-state";
 
@@ -33,7 +34,8 @@ const scaffoldOf = (manifestPath: string) =>
 /**
  * Checks `dir` before anything is written: missing, empty, `.git`-only and litter-only are usable;
  * anything else is `TargetNotEmpty` with up to ten names (sorted, litter excluded). A path that
- * exists but isn't a directory (including a dangling symlink) is `TargetNotEmpty` with no names.
+ * exists but isn't a directory (including a dangling symlink), or has a non-directory ancestor,
+ * is `TargetNotEmpty` with no names.
  */
 export const inspectTarget = (dir: string) =>
   Effect.gen(function* () {
@@ -47,10 +49,14 @@ export const inspectTarget = (dir: string) =>
     if (present._tag === "None") {
       let nearest = path.dirname(dir);
       while (
-        (yield* Effect.option(fs.stat(nearest)))._tag === "None" &&
+        (yield* Effect.option(fs.lstat(nearest)))._tag === "None" &&
         path.dirname(nearest) !== nearest
       )
         nearest = path.dirname(nearest);
+      // Stop at links too: a dangling link cannot become a parent directory for the writer.
+      const ancestor = yield* Effect.option(fs.stat(nearest));
+      if (ancestor._tag === "None" || ancestor.value.type !== "Directory")
+        return yield* notEmpty([]);
       return { path: dir, exists: false, git: false, nearest } satisfies Target;
     }
     const info = yield* Effect.option(fs.stat(dir));
@@ -64,9 +70,7 @@ export const inspectTarget = (dir: string) =>
     if (other.length)
       return yield* notEmpty(
         other.slice(0, 10),
-        other.includes(".quickstacks")
-          ? yield* scaffoldOf(path.join(dir, MANIFEST_PATH))
-          : undefined,
+        other.includes(METADATA_DIR) ? yield* scaffoldOf(path.join(dir, MANIFEST_PATH)) : undefined,
       );
     return { path: dir, exists: true, git: names.includes(".git"), nearest: dir } satisfies Target;
   });
