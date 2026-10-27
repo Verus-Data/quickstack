@@ -1,3 +1,4 @@
+import { projectFiles } from "../../project-layout";
 import { VERSION } from "../../version";
 import { type Brief, type BriefContext, renderBrief } from "../brief/render";
 import type { Composition } from "../compose/compose";
@@ -35,7 +36,7 @@ export function canonicalContext(composition: Composition): BriefContext {
   return {
     project: "project",
     git: { kind: "fresh" },
-    written: composition.files.map((file) => file.path),
+    written: projectFiles(composition.files),
     missing: [],
     yes: composition.preset === "sandbox",
     invocation: `npx -y quickstacks@${VERSION}`,

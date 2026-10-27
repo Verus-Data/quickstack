@@ -3,7 +3,12 @@ import { Argument, Command, Flag } from "effect/cli";
 import { shownPath } from "../core/shown-path";
 import { validate } from "../core/validate/index";
 import { previewBrief } from "../core/validate/preview";
-import { renderPreview, renderReport } from "../core/validate/report";
+import {
+  renderPreview,
+  renderPreviewBrief,
+  renderPreviewErrors,
+  renderReport,
+} from "../core/validate/report";
 import { resolveTarget } from "../core/validate/target";
 import { BadInput, ValidationFailed } from "../errors";
 import { BriefPreview, ValidateReport } from "../schemas/validate";
@@ -25,7 +30,7 @@ export const validateCommand = Command.make(
     ),
     brief: Flag.String("brief").pipe(
       Flag.withDescription(
-        "Print the brief this stack composes to, with its word counts, instead of checking. Rendered on the same fixed context the budget uses, so counts match on every machine. Writes nothing.",
+        "Print the brief this stack composes to, with its word counts, with findings. Rendered on the same fixed context the budget uses, so counts match on every machine. Writes nothing.",
       ),
       Flag.optional,
     ),
@@ -66,10 +71,19 @@ export const validateCommand = Command.make(
           without: ids(flags.without),
           preset: flags.sandbox ? "sandbox" : "default",
         });
-        return yield* output.result(
-          Schema.encodeSync(BriefPreview)(preview),
-          renderPreview(preview),
-        );
+        yield* output.result(Schema.encodeSync(BriefPreview)(preview), renderPreviewBrief(preview));
+        if (output.audience === "human") yield* output.progress(renderPreview(preview));
+        const count = (severity: string) =>
+          preview.findings.filter((finding) => finding.severity === severity).length;
+        if (count("error")) {
+          // A closed diagnostic stream must not replace the kept-result validation failure.
+          if (output.audience !== "json")
+            yield* output.note(renderPreviewErrors(preview)).pipe(Effect.ignore);
+          return yield* new ValidationFailed({
+            details: { errors: count("error"), warnings: count("warning") },
+          });
+        }
+        return;
       }
       const report = yield* validate(target);
       const firstStack = report.findings.some((finding) => finding.severity === "error")

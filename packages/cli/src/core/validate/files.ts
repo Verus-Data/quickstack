@@ -1,18 +1,9 @@
 import { Effect, Result } from "effect";
 import type { Finding, SizeRow } from "../../schemas/validate";
 import { countWords } from "../brief/words";
-import type { Entry, EntryFile } from "../registry/entry";
+import { type Entry, outputPath } from "../registry/entry";
 import { Registry } from "../registry/registry";
 import { type Check, entryFile, finding } from "./view";
-
-const TEMPLATE = ".tmpl";
-/** The output path of a shipped file: `.tmpl` dropped, as 1.1 plans it. */
-const outputPath = (file: EntryFile) => {
-  const base = file.path.slice(file.path.lastIndexOf("/") + 1);
-  return base.endsWith(TEMPLATE) && base.length > TEMPLATE.length
-    ? file.path.slice(0, -TEMPLATE.length)
-    : file.path;
-};
 
 /**
  * Shipped files: every `merge` path is one of the entry's own files, each copy of a merge file

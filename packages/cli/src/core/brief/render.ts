@@ -1,3 +1,4 @@
+import { METADATA_DIR } from "../../project-layout";
 import { APP_TAG, DEFAULT_STEP_TIMEOUT, withStepDefaults } from "../../schemas/entry";
 import type { Manifest } from "../../schemas/manifest";
 import type { ComposedStep, Composition, MissingTool } from "../compose/compose";
@@ -93,12 +94,13 @@ export function renderBrief(composition: Composition<Entry | null>, context: Bri
   );
   if (context.written.length) {
     fixed(T.facts.written);
-    data(
-      ...collapsePaths(context.written).map((line) => {
-        const dir = / \(\d+ files\)$/.exec(line);
-        return `  - ${dir ? `${T.code(line.slice(0, dir.index))}${dir[0]}` : T.code(line)}`;
-      }),
-    );
+    for (const line of collapsePaths(context.written)) {
+      const dir = / \(\d+ files\)$/.exec(line);
+      const text = `  - ${dir ? `${T.code(line.slice(0, dir.index))}${dir[0]}` : T.code(line)}`;
+      // The metadata listing is CLI-owned text; entry file paths are supplied by entries.
+      if (line.startsWith(`${METADATA_DIR}/`)) fixed(text);
+      else data(text);
+    }
   }
   if (cli !== "quickstacks") fixed(T.facts.invocation(cli));
 
@@ -145,7 +147,7 @@ export function renderBrief(composition: Composition<Entry | null>, context: Bri
   const guidance = (heading: string, entry: Entry) => {
     gap();
     fixed(heading);
-    const body = nest(entry.body).trim();
+    const body = nest(entry.body).replace(/^\n+|\n+$/g, "");
     if (body) data("", ...body.split("\n"));
   };
   guidance(T.sections.stack(oneLine(stack.meta.name), stack.id), stack);
@@ -191,7 +193,7 @@ export function renderBrief(composition: Composition<Entry | null>, context: Bri
   if (app) {
     gap();
     fixed(T.application.heading, "", T.application.intro);
-    const body = nest(app.body).trim();
+    const body = nest(app.body).replace(/^\n+|\n+$/g, "");
     if (body) data("", ...body.split("\n"));
     const appSteps = composition.verify.filter((step) => step.tags.includes(APP_TAG));
     if (appSteps.length) {

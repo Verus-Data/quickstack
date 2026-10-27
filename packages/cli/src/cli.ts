@@ -6,6 +6,7 @@ import { listCommand } from "./commands/list";
 import { newCommand } from "./commands/new";
 import { root } from "./commands/root";
 import { runsCommand } from "./commands/runs";
+import { showCommand } from "./commands/show";
 import { skillCommand } from "./commands/skill";
 import { validateCommand } from "./commands/validate";
 import { verifyCommand } from "./commands/verify";
@@ -21,6 +22,7 @@ export const cli = root.pipe(
     newCommand,
     runsCommand,
     skillCommand,
+    showCommand,
     validateCommand,
     verifyCommand,
   ]),

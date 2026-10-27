@@ -194,19 +194,23 @@ export const compositionChecks: Check = (view) =>
         string,
         ComposeWarning & { added: string | undefined; presets: Preset[] }
       >();
-      for (const preset of PRESETS) {
-        for (const plan of plans(view, stack)) {
+      for (const preset of view.composition ? [view.composition.preset] : PRESETS) {
+        for (const plan of view.composition
+          ? [{ added: undefined, with: [], without: [] }]
+          : plans(view, stack)) {
           const name = subject(stack.id, preset, plan.added);
           const composed = yield* Effect.result(
-            compose({
-              stack: stack.id,
-              with: plan.with,
-              without: plan.without,
-              preset,
-              agents,
-              always: [],
-              mode: "new",
-            }),
+            view.composition
+              ? Effect.succeed(view.composition)
+              : compose({
+                  stack: stack.id,
+                  with: plan.with,
+                  without: plan.without,
+                  preset,
+                  agents,
+                  always: [],
+                  mode: "new",
+                }),
           );
           if (Result.isFailure(composed)) {
             const error = composed.failure;

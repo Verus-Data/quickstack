@@ -46,7 +46,7 @@ export const validationRoots = (target: Target) =>
 
 const severityRank = { error: 0, warning: 1, note: 2 } as const;
 const kindRank = (kind: Finding["kind"]) => (kind === undefined ? 0 : kind === "stack" ? 1 : 2);
-function compareFindings(a: Finding, b: Finding): number {
+export function compareFindings(a: Finding, b: Finding): number {
   return (
     kindRank(a.kind) - kindRank(b.kind) ||
     (a.entry ?? "").localeCompare(b.entry ?? "", "en") ||

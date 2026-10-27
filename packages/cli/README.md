@@ -83,6 +83,8 @@ An identical installed file is unchanged. A differing file is preserved with `Ta
 quickstacks list                 # Addable fragments in a project; otherwise all groups
 quickstacks list stacks          # one group: stacks, fragments (apps excluded) or apps
 quickstacks list --json          # Full registry, plus project context when a manifest decodes
+quickstacks show <id> --json     # Full metadata, guidance, files and bundled run evidence
+quickstacks show <id> --kind fragment   # Resolve an id shared with a stack
 ```
 
 Entries come from three roots, highest precedence first:
@@ -234,7 +236,9 @@ Word budgets, counted with every conditional branch in a body and, for a compose
 
 Findings are errors, warnings or notes. Exit 0 when there are no errors; exit 2 (`ValidationFailed`) with the full report still on stdout and `Validation failed.` (with `--json`, the error envelope, whose `details` carry the counts) as the last stderr line. A path that is neither a registry root nor an entry under `stacks/` or `fragments/` is `NotFound` (2); an unreadable root is exit 6. Warnings don't change the exit, but the bundled registry is held to zero.
 
-`--brief <stack>` prints the composed brief, then its word count, fixed-text count and limit. `--with` and `--without` take ids (repeatable or comma-separated); they and `--sandbox` work only with `--brief`.
+`show <id>` reviews a stack or fragment without starting a process: metadata, every guidance branch, commands, verify steps and shipped output paths, including adapters for every agent. `--json` returns `ShowReport`. Only bundled entries receive ledger evidence; `sameContent` compares the current composition fingerprint with the recorded run. Non-bundled entries get `lastRun: null`.
+
+`--brief <stack>` prints only the canonical composed brief to stdout. Word count, fixed-text count and limit go to stderr in human mode; agent stderr stays empty on success. `--json` returns `BriefPreview`, including its fingerprint and findings for the selected entries. Error findings exit 2 with `ValidationFailed` and keep the brief on stdout. Preview uses only the first configured agent (default `claude`), ignores `always`, and starts no processes. `--with` and `--without` take ids (repeatable or comma-separated); they and `--sandbox` work only with `--brief`.
 
 ## Configuration
 
