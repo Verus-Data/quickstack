@@ -28,11 +28,11 @@ Write `lefthook.yml` at the root for the installed lefthook (its schema changed 
 
 **pre-commit**: staged files only, one job per language area (glob, plus root in a monorepo). Format with fixes re-staged (stage-fixed), then lint in check mode if the project has a linter, with the project commands' tools and config, silent on ignored files (eslint `--no-warn-ignored`). Tools that need the whole project (golangci-lint) run the project's lint command instead. A few seconds total.
 
-**commit-msg**: a few lines of shell (no commitlint in a non-JS project) requiring `type(scope)!: description`, types `feat fix docs style refactor perf test build ci chore revert`, scope and `!` optional. Allow merges, git reverts, `fixup!`/`squash!`. On failure print the format and an example.
+**commit-msg**: a few lines of shell (no commitlint in a non-JS project) requiring `type(scope)!: description`, types `feat fix docs style refactor perf test build ci chore revert`, scope and `!` optional. Allow merges, git reverts, `fixup!`/`squash!`. On failure print the format and an example. Read the message from `{1}` with `cat "{1}"`; `$1` is unset under lefthook.
 
 **pre-push**: the project's test target. Add the lint target only if pre-commit lints just staged files.
 
-**Prove it** before finishing: run the pre-commit hook on all files (`lefthook run pre-commit` with its all-files flag; it only sees tracked files, so `git add -A` first in a repo with no commits), then `printf 'bad\n' > /tmp/msg && lefthook run commit-msg /tmp/msg` must fail and the same with `feat: add thing` must pass.
+**Prove it** before finishing: run the pre-commit hook on all files (`lefthook run pre-commit` with its all-files flag; it only sees tracked files, so `git add -A` first in a repo with no commits), then commit a non-conforming message, see it refused, then `feat: add thing`, see it accepted, then drop both.
 
 ## AGENTS.md
 
