@@ -81,7 +81,7 @@ export class Logging extends Context.Service<
             warned = true;
             yield* output
               .note("Log file unavailable; continuing with stderr.")
-              .pipe(Effect.catchCause(() => Effect.void));
+              .pipe(Effect.ignoreCause);
           }
         });
       const appendRecord = (file: string, record: LogEntry, quiet: boolean) =>
@@ -95,10 +95,7 @@ export class Logging extends Context.Service<
         flush: (settings, quiet = false) =>
           Effect.gen(function* () {
             for (const record of records.splice(0)) {
-              if (!quiet)
-                yield* output
-                  .note(logLine(record, settings))
-                  .pipe(Effect.catchCause(() => Effect.void));
+              if (!quiet) yield* output.note(logLine(record, settings)).pipe(Effect.ignoreCause);
               if (settings.file) {
                 yield* appendRecord(settings.file, record, quiet);
               }

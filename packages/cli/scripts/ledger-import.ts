@@ -180,7 +180,7 @@ const program = Effect.scoped(
                 stack: parsed.stack,
                 with: parsed.with,
                 without: [],
-                preset: Schema.decodeUnknownSync(Schema.Literals(["default", "sandbox"]))(
+                preset: yield* Schema.decodeUnknownEffect(Schema.Literals(["default", "sandbox"]))(
                   parsed.preset,
                 ),
                 agents: parsed.targets,
