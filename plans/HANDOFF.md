@@ -24,8 +24,9 @@ the site can build against the real routes instead of fixtures. Executed on the 
 2. 4.2a's QA findings (its last dated line): unrounded minute medians, shares and medians
    published on cells under the threshold, `BadInput` without details, the OpenAPI enum type
    mismatch, and one unexplained suppressed week. A failing test first for each.
-3. 4.5e's route: `GET /v1/search` in `stacks-api`, after a maintainer publishes format 0.2.0
-   (command below) and `stacks-api` bumps to it. Fold in 0.3.0 if D38 has landed.
+3. Done 2026-10-28: 4.5e's route is deployed at `https://stacks.steamfield.io`, and
+   `bin.ts::DEFAULT_API_URL` names it, so the CLI's search, stats and allowlist use the hosted
+   API (stats there are still seeded and labeled until wave 5's demo deploy).
 4. 4.1e, telemetry launch and runbook. Small, but its first live deploy is a maintainer's step.
 5. 4.2d, dependency telemetry through the client and ingest (verify events carry `deps` at
    schema version 2), then 4.2e, dependency trends and pages, the largest piece left.

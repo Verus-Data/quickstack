@@ -33,6 +33,7 @@ test("the installed package reads its shipped ledger, including after relocation
           NO_COLOR: "1",
           LOG_LEVEL: "none",
           PATH: scratchPath,
+          STACKS_OFFLINE: "1",
         },
         stdin: "ignore",
         stdout: "pipe",

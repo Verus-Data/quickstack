@@ -21,8 +21,8 @@ are saved under `$XDG_CACHE_HOME/stacks/search/backoff.json`; no request or resp
 Search stores no request text in logs and never calls a model. Cached statistics and last-run
 evidence are optional; search never fetches statistics or refreshes the registry index.
 
-This release has no hosted API endpoint, so it ranks locally with `remoteReason: "no_endpoint"`.
-Source builds can use a loopback `STACKS_DEV_API_URL`; release builds ignore that variable.
+The endpoint is the hosted API at `https://stacks.steamfield.io`. Source builds can point at a
+loopback `STACKS_DEV_API_URL` instead; release builds ignore that variable.
 `--local`, `--offline`, `STACKS_OFFLINE=1` and `DO_NOT_TRACK` (except empty, `0` or `false`)
 each prevent the API call.
 

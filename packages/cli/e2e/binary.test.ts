@@ -50,6 +50,8 @@ async function invoke(
         LOG_LEVEL: "none",
         NO_COLOR: "1",
         PATH: scratchPath,
+        // The package names the hosted API; keep these runs off the network.
+        STACKS_OFFLINE: "1",
         ...extra,
       },
       stdout: "pipe",

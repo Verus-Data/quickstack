@@ -96,8 +96,8 @@ const platform = Layer.mergeAll(
     invocation: invocationFor(process.argv[1] ?? ""),
   }),
 );
-// No hosted API exists yet; a release build reads no stats until this names it.
-const DEFAULT_API_URL: string | undefined = undefined;
+// The hosted API: search, stats and the dependency allowlist.
+const DEFAULT_API_URL: string | undefined = "https://stacks.steamfield.io";
 const application = AppLayer(output, undefined, {
   releaseBuild: typeof STACKS_RELEASE_BUILD !== "undefined" && STACKS_RELEASE_BUILD,
   defaultApiUrl: DEFAULT_API_URL,
