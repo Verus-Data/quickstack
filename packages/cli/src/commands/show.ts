@@ -25,7 +25,14 @@ export const showCommand = Command.make(
         output.audience === "agent" ? yield* shownPath(host.cwd, report.path) : report.path;
       yield* output.result(
         Schema.encodeSync(ShowReport)(report),
-        renderShow({ ...report, path }, host.invocation),
+        renderShow(
+          { ...report, path },
+          host.invocation,
+          output.audience === "human" && Option.isSome(host.columns)
+            ? { width: host.columns.value, measure: host.stringWidth }
+            : undefined,
+          output.style,
+        ),
       );
     }),
 ).pipe(

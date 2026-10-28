@@ -13,7 +13,7 @@ import { printable } from "../core/text";
 import { Usage } from "../errors";
 import { METADATA_DIR } from "../project-layout";
 import { ListResult } from "../schemas/list";
-import { Host } from "../services/host";
+import { Host, type HostInfo } from "../services/host";
 import { Output } from "../services/output";
 
 const isGroup = (value: string): value is Group =>
@@ -91,12 +91,22 @@ export const listCommand = Command.make(
       yield* output.result(
         Schema.encodeSync(ListResult)({ ...result, ...(project ? { project } : {}) }),
         manifest && typed === undefined
-          ? renderAddable({ addable, rejected, width, invocation: host.invocation, dirFlag })
+          ? renderAddable({
+              addable,
+              rejected,
+              width,
+              invocation: host.invocation,
+              dirFlag,
+              measure: host.stringWidth,
+              style: output.style,
+            })
           : renderList({ ...result, rejected }, all, {
               group: typed,
               width,
               invocation: host.invocation,
               ledgerPresent: ledger?.present ?? false,
+              measure: host.stringWidth,
+              style: output.style,
             }),
       );
     }),
@@ -118,13 +128,12 @@ export const listCommand = Command.make(
   ]),
 );
 
-function descriptionWidth(
-  agent: boolean,
-  host: { stdoutIsTTY: boolean; stdoutColumns?: number },
-): number {
+function descriptionWidth(agent: boolean, host: HostInfo): number {
   if (agent) return Number.POSITIVE_INFINITY;
-  if (host.stdoutIsTTY && host.stdoutColumns) return Math.min(80, Math.max(20, host.stdoutColumns));
-  return 80;
+  return Option.match(host.columns, {
+    onNone: () => 80,
+    onSome: (columns) => Math.min(80, Math.max(20, columns)),
+  });
 }
 const selectedGroup = (group: Option.Option<string>) =>
   Effect.gen(function* () {

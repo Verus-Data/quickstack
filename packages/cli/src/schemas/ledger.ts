@@ -1,4 +1,4 @@
-import { AgentId, RunRecord } from "@stacks/format";
+import { DetectedAgent, RunRecord } from "@stacks/format";
 import { Schema } from "effect";
 
 export const LedgerResult = Schema.Literals(["pass", "partial", "fail", "infra"]);
@@ -10,7 +10,7 @@ export const LedgerRecord = Schema.Struct({
   stack: Schema.String,
   with: Schema.Array(Schema.String),
   preset: Schema.String,
-  agent: AgentId,
+  agent: DetectedAgent,
   agentVersion: Schema.String,
   mode: Schema.Literals(["interactive", "headless"]),
   repoCommit: Schema.String,

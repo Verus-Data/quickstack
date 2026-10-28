@@ -1,5 +1,5 @@
 import type { NewResult } from "../../schemas/new";
-import type { Audience } from "../../services/output";
+import { type Audience, plainStyle, type Style } from "../../services/output";
 import { collapsePaths } from "../brief/paths";
 import { printable } from "../text";
 
@@ -61,9 +61,10 @@ export const missingLine = (item: NewResult["missingTools"][number]) => {
  */
 export function renderNew(
   result: Omit<NewResult, "handoff">,
-  context: { shown: string; audience: Audience },
+  context: { shown: string; audience: Audience; style?: Style },
 ): string {
   const human = context.audience === "human";
+  const { style = plainStyle } = context;
   const lines = [
     `${result.dryRun ? "Planned" : "Created"} ${printable(context.shown)} from ${printable(result.stack)}${result.preset === "sandbox" ? " (sandbox)" : ""}.`,
     // `shown` is the absolute path when the project isn't under the current directory.
@@ -91,7 +92,10 @@ export function renderNew(
     );
   const warnings = result.warnings.filter((warning) => !GIT_WARNINGS.includes(warning.code));
   if (warnings.length)
-    lines.push("Warnings:", ...warnings.map((warning) => `  ${warningLine(warning)}`));
+    lines.push(
+      style("warn", "Warnings:"),
+      ...warnings.map((warning) => `  ${style("warn", warningLine(warning))}`),
+    );
   if (result.untrusted.length)
     lines.push(
       "Untrusted entries (the brief makes the agent ask you before using them):",

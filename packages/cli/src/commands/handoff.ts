@@ -14,10 +14,11 @@ import {
   renderHandoff,
 } from "../core/handoff";
 import { encodeManifest, MANIFEST_PATH, readManifest } from "../core/manifest";
+import { displayPicker } from "../core/prompting";
 import { openProject } from "../core/scaffold/write";
 import { shownPath } from "../core/shown-path";
 import { printable } from "../core/text";
-import { BrokenPipe, Interrupted, PermissionDenied, Usage } from "../errors";
+import { Interrupted, PermissionDenied, Usage } from "../errors";
 import type { NewResult } from "../schemas/new";
 import { Host } from "../services/host";
 import { Invocation } from "../services/invocation";
@@ -203,19 +204,6 @@ const chooseHarness = Effect.fn("handoff.chooseHarness")(function* (
   } satisfies HandoffDecision;
 });
 
-const displayPicker = (terminal: Terminal.Terminal, text: string) =>
-  terminal.display(text).pipe(
-    Effect.mapError((error) => {
-      const cause = error.reason.cause;
-      return typeof cause === "object" &&
-        cause !== null &&
-        "code" in cause &&
-        cause.code === "EPIPE"
-        ? new BrokenPipe()
-        : new PermissionDenied({ details: { reason: "write" } });
-    }),
-  );
-
 const launchTerminal = Effect.fn("handoff.launchTerminal")(function* (
   decision: Extract<HandoffDecision, { kind: "launch"; via: "terminal" }>,
   project: string,
@@ -330,6 +318,7 @@ export const completeHandoff = (input: {
       invocation: host.invocation,
       audience: output.audience,
       agent: input.agent,
+      style: output.style,
     };
     const prefix = choosing ? "" : `${summary}\n\n`;
     if (decision.kind !== "launch") {

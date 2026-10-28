@@ -1,6 +1,10 @@
 import type { ShowReport } from "../schemas/show";
+import { plainStyle, type Style } from "../services/output";
 import { printable } from "./text";
 import { BUDGET } from "./validate/budget";
+import { wrap } from "./wrap";
+
+const safeLine = (line: string) => line.split("\t").map(printable).join("\t");
 
 function lastRunLine(lastRun: ShowReport["lastRun"]): string {
   if (!lastRun) return "Last run: none";
@@ -8,7 +12,12 @@ function lastRunLine(lastRun: ShowReport["lastRun"]): string {
 }
 
 /** Complete text review, including commands and every unfiltered guidance branch. */
-export function renderShow(report: ShowReport, invocation: string): string {
+export function renderShow(
+  report: ShowReport,
+  invocation: string,
+  layout?: { width: number; measure: (text: string) => number },
+  style: Style = plainStyle,
+): string {
   const list = (values: ReadonlyArray<string>) => (values.length ? values.join(", ") : "none");
   const out = [
     `${report.name} (${report.id}), ${report.kind}, origin ${report.origin}, ${report.trusted ? "trusted" : "untrusted"}`,
@@ -68,11 +77,23 @@ export function renderShow(report: ShowReport, invocation: string): string {
   out.push(
     "",
     "--- guidance ---",
-    ...report.body.trimEnd().split("\n"),
+    ...(layout
+      ? wrap(
+          report.body.trimEnd().split("\n").map(safeLine).join("\n"),
+          layout.width,
+          layout.measure,
+        )
+      : report.body.trimEnd()
+    ).split("\n"),
     "",
     report.kind === "stack"
       ? `Next: ${invocation} validate --brief ${report.id} --sandbox`
       : `Next: ${invocation} new <stack> --with ${report.id}`,
   );
-  return out.map((line) => line.split("\t").map(printable).join("\t")).join("\n");
+  return out
+    .map((line) => {
+      const safe = safeLine(line);
+      return safe.startsWith("Next:") ? style("next", safe) : safe;
+    })
+    .join("\n");
 }

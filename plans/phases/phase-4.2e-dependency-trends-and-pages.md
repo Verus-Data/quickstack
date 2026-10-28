@@ -16,7 +16,7 @@ Status: DRAFT 2026-10-26 (not agreed)
 In:
 
 - New dimensions in 4.2a's daily rollup step: `dep`, `dep_major`, `dep_stack`, `dep_transition`, `dep_cooccur`, `ecosystem`.
-- `GET /v1/stats/deps/:ecosystem` (the ecosystem's numbers and its dependencies with their metrics) and `GET /v1/stats/deps/:ecosystem/:name` (one dependency's metrics), returning `StatsDeps` and `StatsDep` from `packages/format` (additive), with the same `{ value, suppressed }` shape and gate as 4.2a's routes, and 4.2a's `interval`, `from` and `to` parameters on `/v1/stats/deps/:ecosystem/:name`, which select stored series points of the major shares and never aggregate a new range. The site build is their named reader (the major-share area chart 4.2f specifies draws over time from them); the CLI doesn't call them.
+- `GET /v1/deps/:ecosystem/stats` (the ecosystem's numbers and its dependencies with their metrics) and `GET /v1/deps/:ecosystem/:name/stats` (one dependency's metrics), returning `StatsDeps` and `StatsDep` from `packages/format` (additive), with the same `{ value, suppressed }` shape and gate as 4.2a's routes, and 4.2a's `interval`, `from` and `to` parameters on `/v1/deps/:ecosystem/:name/stats`, which select stored series points of the major shares and never aggregate a new range. The site build is their named reader (the major-share area chart 4.2f specifies draws over time from them); the CLI doesn't call them.
 - Astro pages in `stacks-api/apps/web` at `/deps/`, `/deps/<ecosystem>/`, `/deps/<ecosystem>/<name>/`, built from those routes, and a dependencies section on `/stacks/<id>/` from the stack detail route's added `deps` field.
 
 Out:
@@ -97,10 +97,10 @@ The routes answer the same cases: 404 `NotFound` for a name not on the allowlist
 - Lift over a seeded window matches a hand computation; a pair under the sample floor is not shown.
 - The with-and-without green rate appears only when both cells pass the rate thresholds.
 - Before the publishing gate is met, the built `/deps/npm/react/` shows the fixed sentence.
-- An allowlisted dependency no project reported, after the gate is met, shows the fixed sentence; a name not on the allowlist has no page and `GET /v1/stats/deps/npm/<name>` returns 404; with `DEPS_ENABLED` off, no `/deps/` page is built and `/deps/npm/` returns the static 404; a name with `<` in a fixture is escaped; no built dependency page contains `<script>`.
-- Only `/v1/stats/deps/*` and `StatsDetail.deps` carry dependency numbers; every response decodes with its `packages/format` schema.
-- Under the local Workers runtime, the daily trigger writes the dependency rows and `GET /v1/stats/deps/npm` returns them with the cache header; the site built against that runtime renders them on `/deps/npm/`.
-- `GET /v1/stats/deps/npm/react?from=2026-09-01&to=2026-09-30` returns exactly the stored points with end days in September; `interval=28` returns every fourth; a span over 366 days, `from` after `to` or a malformed date is `400 BadInput`, as on 4.2a's routes.
+- An allowlisted dependency no project reported, after the gate is met, shows the fixed sentence; a name not on the allowlist has no page and `GET /v1/deps/npm/<name>/stats` returns 404; with `DEPS_ENABLED` off, no `/deps/` page is built, `/deps/npm/` returns the static 404, and no built page's nav links to Dependencies (4.2c's nav rule), while with it on every page's nav does; a name with `<` in a fixture is escaped; no built dependency page contains a `<script>` other than the theme toggle and the copy script (4.0e).
+- Only the `/v1/deps/.../stats` routes and `StatsDetail.deps` carry dependency numbers; every response decodes with its `packages/format` schema.
+- Under the local Workers runtime, the daily trigger writes the dependency rows and `GET /v1/deps/npm/stats` returns them with the cache header; the site built against that runtime renders them on `/deps/npm/`.
+- `GET /v1/deps/npm/react/stats?from=2026-09-01&to=2026-09-30` returns exactly the stored points with end days in September; `interval=28` returns every fourth; a span over 366 days, `from` after `to` or a malformed date is `400 BadInput`, as on 4.2a's routes.
 - Page checks, built through 4.2f's components: a dependency page shows its transitions as a `from → to` table with counts and renders no sankey; every green-rate value has its interval and `n` and every major share figure names its population (4.2f test 3's scan); Axe (through Playwright) reports no violations on `/deps/npm/` and a dependency page, in light and dark.
 
 ## Exit criteria
@@ -114,4 +114,5 @@ The routes answer the same cases: 404 `NotFound` for a name not on the allowlist
 - With few stacks and a 7-day report spacing, dependency cells will be small for a long time. The gate and suppression handle that; the pages may stay at "Not enough runs yet" well after stack stats are public.
 - Adoption and drop depend on projects that keep reporting. A project that stops verifying looks like neither, which undercounts drops; the definitions say so on the page.
 - 2026-10-27: the plan had no dependency route, because the Worker rendered the pages from `window_metrics` directly. Under D35 the pages are built by the site, which needs the numbers over HTTP, so two read routes and `StatsDetail.deps` exist with the site build as their reader.
+- 2026-10-27: the routes were `GET /v1/stats/deps/:ecosystem` and `/v1/stats/deps/:ecosystem/:name`, which end in a path param against the API's routing rule. They are now `GET /v1/deps/:ecosystem/stats` and `GET /v1/deps/:ecosystem/:name/stats`, under the resource and ending in a literal, as 4.2a's detail routes are.
 - The with-and-without green rate invites a causal reading it doesn't support. The page states it is a comparison of projects, not an effect of the dependency.

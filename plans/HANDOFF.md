@@ -78,6 +78,35 @@ the `GoldenSet` schema and `evaluate` in `tests/helpers/`; `docs/maintaining.md`
 judge and when the baseline moves. The baseline stays at zero until 4.5c. The maintainers still
 review the judgments and record the date in the plan. 4.5b can start.
 
+## 4.4a executed (2026-10-27)
+
+[4.4a](phases/phase-4.4a-human-styling-and-live-progress.md) landed: a person at a terminal
+gets colored status words (`Output.style`), a live stderr line for each verify step and `new`'s
+write and `git init` stages (`Output.live`), and prose wrapped to the terminal
+(`core/wrap.ts`, `Host.columns`, `Host.stringWidth` from `platform/width.ts`). A nonempty
+`NO_COLOR` turns off color and the live line; `FORCE_COLOR=1` colors human output through a
+pipe. JSON and agent bytes are unchanged. `Host.stdoutColumns` folded into `Host.columns`.
+
+## 4.0c executed (2026-10-27)
+
+[4.0c](phases/phase-4.0c-registry-index.md) landed: `bun run build:index` in `packages/cli`
+builds the proven-only `v1/index.json` and its bundles, signed inline with Ed25519 (`--key` or
+`--unsigned`, `--previous <url>` for carry-forward), and `--check <base-url>` verifies a host.
+`@stacks/format` gains `LastRun`, `IndexEntry`, `RegistryIndex`, `SignedIndex` and an empty
+`INDEX_PUBLIC_KEYS`; `LedgerRecord.agent` widens to `DetectedAgent`. Against today's ledger the
+index proves no stack: four have stale fingerprints and six have no default-composition record,
+so a bench rerun per stack comes first. Maintainers' steps: generate the production key and add
+it to `INDEX_PUBLIC_KEYS`, rerun the bench, then the first signed build and deploy. The
+`stacks-api` side (static `/v1/` files winning over the 404, the deploy procedure) is next.
+
+## 4.4b executed (2026-10-27)
+
+[4.4b](phases/phase-4.4b-interactive-pickers.md) landed: at a person's terminal, `new`, `add`
+and `create` with missing arguments offer numbered pickers (`core/prompting.ts`, built on the
+agent picker's `Terminal.readLine`) and print the `Running:` command the picks stand for. A set
+`CI` now resolves to the agent audience. There is no arrow-key selection or filtering; long
+menus are plain numbered lists.
+
 ## 4.0a executed (2026-10-27)
 
 [4.0a](phases/phase-4.0a-format-package.md) landed: the entry, manifest and run-record

@@ -1,6 +1,7 @@
-import { Effect, Schema } from "effect";
+import { Effect, Option, Schema } from "effect";
 import { Command } from "effect/cli";
 import { guideCommands, guideText, humanLead } from "../core/guide";
+import { wrap } from "../core/wrap";
 import { GuideResult } from "../schemas/guide";
 import { Host } from "../services/host";
 import { Output } from "../services/output";
@@ -10,12 +11,17 @@ import { Output } from "../services/output";
  * one line saying who the guide is for and how to start a project yourself.
  */
 export const printGuide = Effect.gen(function* () {
-  const { invocation } = yield* Host;
+  const host = yield* Host;
+  const { invocation } = host;
   const output = yield* Output;
   const text = guideText(invocation);
+  const human = `${humanLead(invocation)}\n\n${text}`;
+  const wrapped = Option.isSome(host.columns)
+    ? wrap(human, host.columns.value, host.stringWidth)
+    : human;
   yield* output.result(
     Schema.encodeSync(GuideResult)({ guide: text, commands: guideCommands(invocation) }),
-    output.audience === "human" ? `${humanLead(invocation)}\n\n${text}` : text,
+    output.audience === "human" ? wrapped : text,
   );
 });
 

@@ -1,4 +1,4 @@
-import { Context, Layer } from "effect";
+import { Context, Layer, Option } from "effect";
 export type HostInfo = {
   platform: string;
   executable: string;
@@ -6,8 +6,11 @@ export type HostInfo = {
   /** Whether stdin and stdout are terminals; bin.ts reads them so core never touches the streams. */
   stdinIsTTY: boolean;
   stdoutIsTTY: boolean;
-  /** The terminal's width when stdout is one; human layouts wrap to it when it is narrower. */
-  stdoutColumns?: number;
+  stderrIsTTY: boolean;
+  /** The terminal's width when stdout is one; human layouts wrap to it. */
+  columns: Option.Option<number>;
+  /** Display width in terminal columns, escape sequences excluded. */
+  stringWidth: (text: string) => number;
   /**
    * The bundled registry root, resolved by bin.ts; core code never computes it.
    */
@@ -30,6 +33,9 @@ export class Host extends Context.Service<Host, HostInfo>()("stacks/Host") {
       cwd: "/test",
       stdinIsTTY: false,
       stdoutIsTTY: false,
+      stderrIsTTY: overrides.stdoutIsTTY ?? false,
+      columns: Option.none(),
+      stringWidth: (text) => Array.from(text).length,
       registry: "/test/registry",
       packageRoot: "/test/package",
       skill: "/test/skill",

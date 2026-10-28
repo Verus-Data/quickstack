@@ -37,7 +37,8 @@ Your own stacks and fragments live beside this file, in `stacks/<id>/` and `frag
 | `STACKS_LOG_FILE` | Optional JSONL file; the directory is recreated when needed |
 | `LOG_LEVEL` | trace/debug/info/warn/error/fatal/none; default and invalid-value fallback warn |
 | `STACKS_REGISTRY_DIR` | A directory used as the bundled registry instead of the one shipped with the CLI, relative to the working directory; its entries are untrusted |
-| `NO_COLOR` | Keep output free of ANSI (the current formatter always uses plain text) |
+| `NO_COLOR` | Any nonempty value turns off color and the live progress line, so human output carries no ANSI escapes; it wins over `FORCE_COLOR`. JSON and agent output never carry them |
+| `FORCE_COLOR` | `1` colors human output even through a pipe (for `bun run human` and tests); it never colors JSON or agent output |
 | `HOME`, `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`, `XDG_CACHE_HOME` | Path roots; an unset `HOME` means the user's home directory. The cache is `$XDG_CACHE_HOME/stacks` (`$HOME/.cache/stacks`) |
 
 ## The development wrapper

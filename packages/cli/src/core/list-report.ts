@@ -1,19 +1,20 @@
 import type { ListResult, ListRow } from "../schemas/list";
+import { plainStyle, type Style } from "../services/output";
 import { type Group, inGroup } from "./list";
 import { printable } from "./text";
+import { wrapWords } from "./wrap";
 
 /** Words of `text` in lines no wider than `width` (with `indent`); a long word gets its own line. */
-function wrap(text: string, width: number, indent: string): string[] {
-  const lines: string[] = [];
-  let line = "";
-  for (const word of text.split(/\s+/).filter(Boolean)) {
-    if (line && indent.length + line.length + 1 + word.length > width) {
-      lines.push(indent + line);
-      line = word;
-    } else line = line ? `${line} ${word}` : word;
-  }
-  if (line) lines.push(indent + line);
-  return lines;
+function descriptionLines(
+  text: string,
+  width: number,
+  measure = (s: string) => s.length,
+): string[] {
+  const normalized = text.trim();
+  if (!normalized) return [];
+  return wrapWords(normalized, width - measure("    "), measure)
+    .split("\n")
+    .map((line) => `    ${line}`);
 }
 
 const sections = [
@@ -27,11 +28,13 @@ function categoryFields(row: ListRow): string[] {
   return row.category ? [row.category] : [];
 }
 
-function ledgerFields(row: ListRow, present: boolean | undefined): string[] {
+function ledgerFields(row: ListRow, present: boolean | undefined, style: Style): string[] {
   if (!present || row.kind !== "stack") return [];
-  if (!row.lastRun) return ["unproven"];
+  if (!row.lastRun) return [style("dim", "unproven")];
   const result = row.lastRun.result === "pass" ? "proven" : row.lastRun.result;
-  return [`${result} ${printable(row.lastRun.date)}`];
+  return [
+    `${style(row.lastRun.result === "pass" ? "ok" : "warn", result)} ${printable(row.lastRun.date)}`,
+  ];
 }
 
 /**
@@ -42,9 +45,17 @@ function ledgerFields(row: ListRow, present: boolean | undefined): string[] {
 export function renderList(
   result: ListResult,
   all: ReadonlyArray<ListRow>,
-  options: { group: Group | undefined; width: number; invocation: string; ledgerPresent?: boolean },
+  options: {
+    group: Group | undefined;
+    width: number;
+    invocation: string;
+    ledgerPresent?: boolean;
+    measure?: (text: string) => number;
+    style?: Style;
+  },
 ): string {
   const { width, invocation } = options;
+  const style = options.style ?? plainStyle;
   const rows = result.entries;
   const showOrigin = new Set(rows.map((row) => row.origin)).size > 1;
   const originWidth = Math.max(0, ...rows.map((row) => row.origin.length));
@@ -53,7 +64,7 @@ export function renderList(
       printable(row.id).padEnd(idWidth),
       ...(showOrigin ? [row.origin.padEnd(originWidth)] : []),
       ...categoryFields(row),
-      ...ledgerFields(row, options.ledgerPresent),
+      ...ledgerFields(row, options.ledgerPresent, style),
       ...(row.trusted ? [] : ["untrusted"]),
       ...(row.shadows.length ? [`shadows ${row.shadows.join(", ")}`] : []),
     ]
@@ -70,7 +81,11 @@ export function renderList(
     for (const row of members)
       out.push(
         `  ${line(row, idWidth)}`,
-        ...wrap(printable(row.description.replace(/\s+/g, " ")), width, "    "),
+        ...descriptionLines(
+          printable(row.description.replace(/\s+/g, " ")),
+          width,
+          options.measure,
+        ),
       );
   }
   if (!rows.length) {
@@ -78,7 +93,12 @@ export function renderList(
     out.push(`No ${what} found.`);
   }
   out.push(...rejectedLines(result.rejected));
-  out.push("", ...nextLines(all, result.rejected.length > 0, options.group, invocation));
+  out.push(
+    "",
+    ...nextLines(all, result.rejected.length > 0, options.group, invocation).map((line) =>
+      style("next", line),
+    ),
+  );
   return out.join("\n");
 }
 
@@ -122,6 +142,8 @@ type AddableContext = {
   width: number;
   invocation: string;
   dirFlag: string;
+  measure?: (text: string) => number;
+  style?: Style;
 };
 export function renderAddable({
   addable,
@@ -129,17 +151,19 @@ export function renderAddable({
   width,
   invocation,
   dirFlag,
+  measure,
+  style = plainStyle,
 }: AddableContext): string {
   return [
     "Fragments you can add",
     ...addable.flatMap((row) => [
       `  ${printable(row.id)}${row.trusted ? "" : "  untrusted"}`,
-      ...wrap(printable(row.description.replace(/\s+/g, " ")), width, "    "),
-      `    Next: ${invocation} add ${row.id}${dirFlag}`,
+      ...descriptionLines(printable(row.description.replace(/\s+/g, " ")), width, measure),
+      `    ${style("next", `Next: ${invocation} add ${row.id}${dirFlag}`)}`,
     ]),
     ...rejectedLines(rejected),
     "",
-    `Next: ${invocation} list stacks${dirFlag}`,
+    style("next", `Next: ${invocation} list stacks${dirFlag}`),
   ].join("\n");
 }
 
