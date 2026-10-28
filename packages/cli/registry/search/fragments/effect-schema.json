@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "kind": "fragment",
+  "id": "effect-schema",
+  "source": {
+    "digest": "sha256:3fd213c425acc4f6b2d083ff928f0ec81e1d38eb63b1ea6ee8e9bacbda3f9d35",
+    "by": "drafted",
+    "model": "codex/gpt-6.1-sol",
+    "promptVersion": 1,
+    "reviewedAt": null
+  },
+  "summary": "Validate incoming data and encode outgoing data from shared schemas that also define TypeScript types.",
+  "capabilities": [],
+  "requests": [
+    "derive my data types and runtime validation from the same definition",
+    "reject malformed requests and external responses before they enter application logic",
+    "generate JSON Schema for tools and validate their structured output"
+  ],
+  "useCases": ["validating data at trust boundaries", "shared client and server schemas"],
+  "synonyms": [
+    "Effect Schema",
+    "branded ids",
+    "tagged errors",
+    "Standard Schema",
+    "round-trip tests"
+  ],
+  "goodFor": [
+    "explicit decoding and encoding",
+    "incremental adoption alongside existing validators"
+  ],
+  "notFor": ["replacing required framework validators"]
+}

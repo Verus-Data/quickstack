@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "kind": "fragment",
+  "id": "docker-deploy",
+  "source": {
+    "digest": "sha256:830a28fbf6688f11dcf9412befbf219b920f74bcc2026f6910efb7e187535649",
+    "by": "drafted",
+    "model": "codex/gpt-6.1-sol",
+    "promptVersion": 1,
+    "reviewedAt": null
+  },
+  "summary": "Package deployable services as production container images and publish them to GitHub Container Registry after CI passes.",
+  "capabilities": ["deploy"],
+  "requests": [
+    "package my API in a small container that runs without root",
+    "publish versioned service images when checks pass or I tag a release",
+    "build separate production images for my frontend and backend"
+  ],
+  "useCases": ["container packaging", "automated image publishing"],
+  "synonyms": ["Dockerfile", "GHCR", "Buildx", "multi-stage builds", "health checks"],
+  "goodFor": ["minimal runtime images", "cached builds and tagged images"],
+  "notFor": ["automatic rollout to a host", "container orchestration"]
+}

@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "kind": "stack",
+  "id": "typescript-cli",
+  "source": {
+    "digest": "sha256:67ca2c0fe142fdc3552457da3b37db91b96c1bec61613c555bb12aee301f3ef1",
+    "by": "drafted",
+    "model": "codex/gpt-6.1-sol",
+    "promptVersion": 1,
+    "reviewedAt": null
+  },
+  "summary": "A compiled command-line tool with subcommands, JSON results, lazy configuration and structured logs.",
+  "platforms": ["cli"],
+  "productKinds": ["cli-tool"],
+  "languages": ["typescript"],
+  "requests": [
+    "build a terminal utility I can distribute as an executable",
+    "let scripts consume results while diagnostics go to stderr",
+    "keep help and diagnostics working when configuration is broken"
+  ],
+  "useCases": ["shell automation", "diagnostic utilities"],
+  "synonyms": [
+    "Effect commands",
+    "Bun executable",
+    "subcommands",
+    "doctor",
+    "machine-readable output"
+  ],
+  "goodFor": ["stable exit codes and safe errors", "testing commands before and after compilation"],
+  "notFor": ["a terminal user interface", "built-in installation and update workflows"]
+}

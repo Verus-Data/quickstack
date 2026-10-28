@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "kind": "fragment",
+  "id": "effect",
+  "source": {
+    "digest": "sha256:f2da7e10fe08fbde279e6ff2e8bbf4785eabbfa0635d8ea84add3c8123b8dbe6",
+    "by": "drafted",
+    "model": "codex/gpt-6.1-sol",
+    "promptVersion": 1,
+    "reviewedAt": null
+  },
+  "summary": "Add isolated service tests, controllable time and guidance checked against the installed Effect APIs.",
+  "capabilities": [],
+  "requests": [
+    "test timed operations by advancing a clock instead of sleeping",
+    "keep service state isolated between tests while using real layers",
+    "document the APIs my installed dependencies actually expose for coding agents"
+  ],
+  "useCases": ["Effect program testing", "maintaining installed API guidance"],
+  "synonyms": ["@effect/vitest", "TestClock", "virtual time", "service layers", "ConfigProvider"],
+  "goodFor": ["asserting typed failures and defects", "finding unintended shared test state"],
+  "notFor": ["choosing the application's runtime architecture"]
+}

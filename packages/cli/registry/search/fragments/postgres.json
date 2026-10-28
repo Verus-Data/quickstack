@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "kind": "fragment",
+  "id": "postgres",
+  "source": {
+    "digest": "sha256:b01c691fd7050d408e798ed32f99b6b45e5002adbe3b7ea32109cd401bf746da",
+    "by": "drafted",
+    "model": "codex/gpt-6.1-sol",
+    "promptVersion": 1,
+    "reviewedAt": null
+  },
+  "summary": "Add local PostgreSQL services, explicit schema migrations and a private database for each test file cloned from a migrated template.",
+  "capabilities": ["database"],
+  "requests": [
+    "give my backend a local SQL database with persistent development data",
+    "isolate each test file's database without rebuilding its schema every time",
+    "manage schema changes through migrations and check them against my models",
+    "run a separate fast database service for tests"
+  ],
+  "useCases": ["local database development", "parallel database integration tests"],
+  "synonyms": ["Postgres", "Docker Compose", "SQLAlchemy", "Alembic", "template database"],
+  "goodFor": ["migrations as the schema source", "async Python database sessions"],
+  "notFor": [
+    "managed production database provisioning",
+    "automatic migrations on application startup"
+  ]
+}

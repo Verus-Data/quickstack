@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "kind": "stack",
+  "id": "react-router",
+  "source": {
+    "digest": "sha256:eebd77b99c359c34493851019e7e255fe4a4683c438a49d5ce4fbcaf92b41dfa",
+    "by": "drafted",
+    "model": "codex/gpt-6.1-sol",
+    "promptVersion": 1,
+    "reviewedAt": null
+  },
+  "summary": "A server-rendered React app with page loaders, form actions and shared backend services with typed errors and structured logs.",
+  "platforms": ["web", "server"],
+  "productKinds": ["web-app", "fullstack"],
+  "languages": ["typescript"],
+  "requests": [
+    "render my React pages on the server and load their data there",
+    "handle form submissions alongside page routes in one application",
+    "share backend services across requests with consistent errors and request logs",
+    "keep server code out of my browser components"
+  ],
+  "useCases": ["server-rendered web applications", "page and resource routes in one project"],
+  "synonyms": ["React Router framework mode", "SSR", "Effect runtime", "loaders and actions"],
+  "goodFor": ["typed server boundaries", "local request diagnostics"],
+  "notFor": ["static SPA hosting without a server"]
+}

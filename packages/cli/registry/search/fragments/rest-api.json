@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "kind": "fragment",
+  "id": "rest-api",
+  "source": {
+    "digest": "sha256:6ff9aa2b4f7a57ec67ba52b004689bc2f1b863964adbfb642a37f44e82ef0ba2",
+    "by": "drafted",
+    "model": "codex/gpt-6.1-sol",
+    "promptVersion": 1,
+    "reviewedAt": null
+  },
+  "summary": "Give coding agents consistent HTTP resource conventions for paths, methods, status codes, response shapes, pagination and versioning.",
+  "capabilities": [],
+  "requests": [
+    "keep endpoint names consistent as agents add resources",
+    "use predictable methods and status codes across my API",
+    "paginate collection responses with cursors and stable ordering",
+    "document my API's version prefix and resource conventions for future changes"
+  ],
+  "useCases": ["consistent HTTP resource design", "shared API guidance for coding agents"],
+  "synonyms": ["REST", "plural resource nouns", "cursor pagination", "API versioning", "CRUD"],
+  "goodFor": ["framework-neutral conventions", "one response shape per resource"],
+  "notFor": ["generating a server implementation", "choosing an application framework"]
+}

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "kind": "fragment",
+  "id": "ce-plugin",
+  "source": {
+    "digest": "sha256:5c9bd204409ec134ce16afa82c2ee6f7d30a77d2b199d637e06bad497c13d897",
+    "by": "drafted",
+    "model": "codex/gpt-6.1-sol",
+    "promptVersion": 1,
+    "reviewedAt": null
+  },
+  "summary": "Enable shared engineering skills and review agents in Claude Code, with rules that load relevant guidance for testing, debugging, errors and writing.",
+  "capabilities": ["agent-harness"],
+  "requests": [
+    "give Claude reusable guidance for testing and debugging",
+    "load writing advice when Claude edits documentation",
+    "enable engineering skills and review agents for everyone opening this project",
+    "route source files to error handling guidance automatically"
+  ],
+  "useCases": ["shared Claude Code practices", "guidance matched to file paths"],
+  "synonyms": [
+    "claude-essentials",
+    "ce plugin",
+    "engineering skills",
+    "path-scoped rules",
+    "code review"
+  ],
+  "goodFor": ["on-demand skills", "project-wide plugin configuration"],
+  "notFor": ["agents other than Claude Code", "enforcing checks with hooks"]
+}

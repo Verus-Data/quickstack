@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "kind": "fragment",
+  "id": "openrouter-chat-cli",
+  "source": {
+    "digest": "sha256:bcda573956c6ddc5e241c0438bc77963eb271ca2a36aa17fe2026576526f4022",
+    "by": "drafted",
+    "model": "codex/gpt-6.1-sol",
+    "promptVersion": 1,
+    "reviewedAt": null
+  },
+  "summary": "Add terminal chat and scriptable model commands with saved conversations, tool calls, structured extraction and Markdown export.",
+  "capabilities": ["ai"],
+  "requests": [
+    "pipe text into a model command and consume structured events in scripts",
+    "resume a saved conversation in a keyboard-driven terminal interface",
+    "expose my chat tools to an MCP client over standard input and output"
+  ],
+  "useCases": ["interactive terminal conversations", "shell pipelines", "contact extraction"],
+  "synonyms": ["OpenRouter", "OpenTUI", "NDJSON", "MCP", "model picker"],
+  "goodFor": ["local conversation files", "usage and cost reporting"],
+  "notFor": ["browser chat interfaces", "concurrent edits to one saved chat"]
+}

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "kind": "fragment",
+  "id": "claude-harness",
+  "source": {
+    "digest": "sha256:351309ab132fa117aab1749339bd268cb5ce6198a68b2b4ff6066bbd3689ffb3",
+    "by": "drafted",
+    "model": "codex/gpt-6.1-sol",
+    "promptVersion": 1,
+    "reviewedAt": null
+  },
+  "summary": "Add reusable TypeScript hook helpers and a Claude Code adapter with command guards, incremental type checks, hook tests, workflows and review agents.",
+  "capabilities": ["agent-harness"],
+  "requests": [
+    "catch TypeScript errors after Claude changes a file",
+    "keep the agent from editing generated files or using the wrong package manager",
+    "give Claude commands for checking, testing and developing features",
+    "build project-specific agent guards using shared helpers and regression tests"
+  ],
+  "useCases": ["Claude Code development workflows", "tested agent hooks"],
+  "synonyms": [
+    "Bun hooks",
+    "incremental typecheck",
+    "generated-file guard",
+    "architect agent",
+    "reviewer agent"
+  ],
+  "goodFor": ["shared hook payload and shell parsing", "guard denial and near-miss tests"],
+  "notFor": ["sandboxing untrusted code", "projects without Bun"]
+}

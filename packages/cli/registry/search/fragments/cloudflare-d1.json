@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "kind": "fragment",
+  "id": "cloudflare-d1",
+  "source": {
+    "digest": "sha256:6aeef66a5e32d0461c51b02a7fce1408aca30d14b8aa5f7dc95522258c1dfeff",
+    "by": "drafted",
+    "model": "codex/gpt-6.1-sol",
+    "promptVersion": 1,
+    "reviewedAt": null
+  },
+  "summary": "Add a typed SQL database binding with checked-in migrations and isolated local tests before provisioning production.",
+  "capabilities": ["database"],
+  "requests": [
+    "store records from my Worker through a typed database client",
+    "develop database changes locally without opening a cloud account",
+    "test SQL migrations without touching my development database"
+  ],
+  "useCases": ["Worker database access", "local migration testing"],
+  "synonyms": ["Cloudflare D1", "Drizzle", "SQLite", "SQL migrations", "typed bindings"],
+  "goodFor": ["schema-driven SQL generation", "health checks that query the database"],
+  "notFor": ["Postgres databases", "opening filesystem databases inside Workers"]
+}
