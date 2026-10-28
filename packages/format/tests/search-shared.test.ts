@@ -1,4 +1,8 @@
 import {
+  FragmentMeta,
+  type Kind,
+  type RankInput,
+  type RankRecord,
   rank,
   SearchHit,
   SearchIndex,
@@ -6,10 +10,175 @@ import {
   SearchResponse,
   SearchResult,
   SearchVocabulary,
+  StackMeta,
 } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { expect, test } from "vitest";
 import { searchInput } from "./helpers/search-input";
+
+const selectionRequest = "quasar nebula pulsar";
+function selectionRecord(kind: Kind, id: string, metadataMatch = false): RankRecord {
+  const fields = {
+    schema_version: 1,
+    kind,
+    id,
+    name: metadataMatch ? selectionRequest : "A starter",
+    description: metadataMatch ? selectionRequest : "General purpose tooling.",
+    tags: metadataMatch ? selectionRequest.split(" ") : [],
+    category: "tooling",
+  };
+  return {
+    entry: {
+      id,
+      kind,
+      origin: "bundled",
+      trusted: true,
+      meta:
+        kind === "stack"
+          ? Schema.decodeUnknownSync(StackMeta)(fields)
+          : Schema.decodeUnknownSync(FragmentMeta)(fields),
+      body: selectionRequest,
+    },
+  };
+}
+function selectionInput(): RankInput {
+  return {
+    request: selectionRequest,
+    vocabulary: Schema.decodeUnknownSync(SearchVocabulary)({
+      schemaVersion: 1,
+      platforms: {},
+      productKinds: {},
+      languages: {},
+      capabilities: {},
+    }),
+    entries: (["stack", "fragment"] as const).flatMap((kind) => [
+      selectionRecord(kind, "quasar-nebula-pulsar", true),
+      ...Array.from({ length: 8 }, (_, index) => selectionRecord(kind, `body-match-${index}`)),
+    ]),
+  };
+}
+
+test.each(["!!!", "unfindable"])(
+  "a request with no matches (%s) returns empty lists",
+  (request) => {
+    const result = rank({ ...selectionInput(), request });
+    expect(result).toMatchObject({ stacks: [], fragments: [], noStrongMatch: true });
+  },
+);
+
+test.each([true, false])(
+  "strong or partial matches cap weak padding per list (trusted %s)",
+  (trusted) => {
+    const input = selectionInput();
+    const result = rank({
+      ...input,
+      entries: input.entries.map((record) =>
+        record.entry.id === "quasar-nebula-pulsar"
+          ? { ...record, entry: { ...record.entry, trusted } }
+          : record,
+      ),
+    });
+    for (const list of [result.stacks, result.fragments]) {
+      expect(list.map(({ id }) => id)).toEqual([
+        "quasar-nebula-pulsar",
+        "body-match-0",
+        "body-match-1",
+      ]);
+      expect(list[0]?.tier).toBe(trusted ? "strong" : "partial");
+      expect(list.slice(1).map(({ tier }) => tier)).toEqual(["weak", "weak"]);
+    }
+    expect(result.noStrongMatch).toBe(!trusted);
+  },
+);
+
+test.each([1, 3, 5, 20])("weak-only lists keep positive candidates up to limit %s", (limit) => {
+  const input = selectionInput();
+  const result = rank({
+    ...input,
+    limit,
+    entries: input.entries.filter(({ entry }) => entry.id !== "quasar-nebula-pulsar"),
+  });
+  expect(result.noStrongMatch).toBe(true);
+  for (const list of [result.stacks, result.fragments]) {
+    expect(list).toHaveLength(Math.min(limit, 8));
+    for (const hit of list) {
+      expect(hit.tier).toBe("weak");
+      expect(hit.score).toBeGreaterThan(0);
+      expect(hit.why.length).toBeGreaterThan(0);
+    }
+  }
+});
+
+test.each(["stack", "fragment"] as const)(
+  "a %s match does not cap the other weak-only list",
+  (kind) => {
+    const input = selectionInput();
+    const result = rank({
+      ...input,
+      entries: input.entries.filter(
+        ({ entry }) => entry.kind === kind || entry.id !== "quasar-nebula-pulsar",
+      ),
+    });
+    expect(result.stacks).toHaveLength(kind === "stack" ? 3 : 5);
+    expect(result.fragments).toHaveLength(kind === "fragment" ? 3 : 5);
+  },
+);
+
+test.each(["stack", "fragment"] as const)(
+  "%s filtering preserves per-list limits and stack noStrongMatch",
+  (kind) => {
+    const result = rank({ ...selectionInput(), kind, limit: 1 });
+    expect(result.stacks).toHaveLength(kind === "stack" ? 1 : 0);
+    expect(result.fragments).toHaveLength(kind === "fragment" ? 1 : 0);
+    expect(result.noStrongMatch).toBe(false);
+  },
+);
+
+test("returned hits explain a positive match and round scores and coverage to three decimals", () => {
+  const raw = searchInput();
+  const input = {
+    ...raw,
+    request: "go cli tool unknown",
+    vocabulary: Schema.decodeUnknownSync(SearchVocabulary)(raw.vocabulary),
+    entries: raw.entries.map((record) => ({
+      ...record,
+      search: Schema.decodeUnknownSync(SearchMetadata)(record.search),
+    })),
+  };
+  const result = rank(input);
+  expect(result.stacks.length).toBeGreaterThan(0);
+  for (const hit of [...result.stacks, ...result.fragments]) {
+    expect(hit.score).toBeGreaterThan(0);
+    expect(hit.why.length).toBeGreaterThan(0);
+    for (const value of [hit.score, hit.coverage]) expect(value).toBe(Number(value.toFixed(3)));
+  }
+});
+
+test("scores that round to zero are omitted", () => {
+  const input = selectionInput();
+  const result = rank({
+    ...input,
+    request: "quasar",
+    entries: input.entries.filter(({ entry }) => entry.id !== "quasar-nebula-pulsar"),
+  });
+  expect(result.stacks.length).toBeGreaterThan(0);
+  expect(result.fragments).toEqual([]);
+});
+
+test("rounding does not replace score ordering with an id tie-break", () => {
+  const input = selectionInput();
+  const record = selectionRecord("stack", "z-higher-score", true);
+  const body = `${selectionRequest} ${"filler ".repeat(1000)}`;
+  const result = rank({
+    ...input,
+    entries: [
+      { ...record, entry: { ...record.entry, id: "a-lower-score", body: `${body} filler` } },
+      { ...record, entry: { ...record.entry, body } },
+    ],
+  });
+  expect(result.stacks.map(({ id }) => id)).toEqual(["z-higher-score", "a-lower-score"]);
+  expect(result.stacks[0]?.score).toBe(result.stacks[1]?.score);
+});
 
 test("the public search schemas and pure ranker retain lexical language and TUI behaviour [4.5e#13]", () => {
   const raw = searchInput();

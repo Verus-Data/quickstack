@@ -144,7 +144,15 @@ test("known incompatible platforms are penalized while absent cards remain unkno
   const result = rank({
     request,
     vocabulary: vocabulary(),
-    entries: [desktop, { entry: unknown.entry }],
+    entries: [
+      desktop,
+      {
+        entry: {
+          ...unknown.entry,
+          meta: { ...unknown.entry.meta, description: "A workout journal." },
+        },
+      },
+    ],
   });
   expect(hit(result.stacks, "desktop").penalties).toContain("platform");
   expect(hit(result.stacks, "desktop").tier).not.toBe("strong");

@@ -195,7 +195,7 @@ test("kind and per-list limits filter real hits [4.5c#11]", async () => {
   expect(stacks.fragments).toEqual([]);
   expect(stacks.stacks.map(({ id }) => id)).toEqual(["mobile-expo"]);
   const defaults = (await searched(ios, opts)).value;
-  expect(defaults.stacks).toHaveLength(5);
+  expect(defaults.stacks).toHaveLength(3);
   expect(defaults.fragments).toHaveLength(5);
 });
 
