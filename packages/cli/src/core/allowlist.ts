@@ -38,7 +38,8 @@ export class Allowlist extends Context.Service<
         const client = yield* HttpClient.HttpClient;
         const config = yield* AppConfig;
         const apiUrl = yield* config.apiUrl;
-        if (apiUrl === undefined)
+        // Without a key nothing could verify, so a release build with no published keys never fetches.
+        if (apiUrl === undefined || keys.length === 0)
           return {
             refresh: Effect.succeed(Option.none<DependencyAllowlist>()),
             cached: Effect.succeed(Option.none<DependencyAllowlist>()),
