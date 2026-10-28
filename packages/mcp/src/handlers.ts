@@ -65,30 +65,34 @@ export const listHandler = (
     return { entries } satisfies ListSuccess;
   });
 
+function newArgs(params: NewParams): string[] {
+  const args = ["new", params.stack];
+  if (params.dir !== undefined) {
+    args.push(params.dir);
+  }
+  const sandbox = params.sandbox ?? true;
+  if (sandbox) {
+    args.push("--sandbox");
+  }
+  args.push("--no-launch");
+  if (params.with !== undefined) {
+    for (const frag of params.with) {
+      args.push("--with", frag);
+    }
+  }
+  if (params.without !== undefined) {
+    for (const frag of params.without) {
+      args.push("--without", frag);
+    }
+  }
+  return args;
+}
+
 export const newHandler = (params: NewParams): Effect.Effect<NewSuccess, CliFailure, CliRunner> =>
   Effect.gen(function* () {
     const runner = yield* CliRunner;
-    const args = ["new", params.stack];
-    if (params.dir !== undefined) {
-      args.push(params.dir);
-    }
-    const sandbox = params.sandbox ?? true;
-    if (sandbox) {
-      args.push("--sandbox");
-    }
-    args.push("--no-launch");
-    if (params.with !== undefined) {
-      for (const frag of params.with) {
-        args.push("--with", frag);
-      }
-    }
-    if (params.without !== undefined) {
-      for (const frag of params.without) {
-        args.push("--without", frag);
-      }
-    }
     const start = Date.now();
-    const output: CliOutput = yield* runner.run(args);
+    const output: CliOutput = yield* runner.run(newArgs(params));
     const elapsed = Date.now() - start;
     if (output.exit !== 0) {
       const failure = parseEnvelope(output.stderr, output.exit);
