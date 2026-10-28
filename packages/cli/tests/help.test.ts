@@ -37,7 +37,10 @@ test("every command has a description and a one-line short description for the r
 });
 
 test("the root --help lists subcommands alphabetically by their short descriptions", async () => {
-  const listed = helpSection(await help([]), "SUBCOMMANDS").map((line) => line.trim());
+  const text = await help([]);
+  expect(text).toContain('Start here (agents): stacks search "<their words>" --json');
+  expect(text).toContain("Browse or recover with stacks list --json.");
+  const listed = helpSection(text, "SUBCOMMANDS").map((line) => line.trim());
   const names = listed.map((line) => line.split(/\s+/)[0]);
   expect(names).toEqual([...names].sort());
   for (const command of children(cli)) {

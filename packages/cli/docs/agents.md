@@ -41,9 +41,11 @@ sequenceDiagram
   participant A as Agent
   participant Q as stacks
   You->>A: "set up a TypeScript CLI properly"
-  A->>Q: list --json
-  Q-->>A: stacks and fragments
-  A->>You: "typescript-cli, because ..."
+  A->>Q: search "a TypeScript CLI with tests" --json
+  Q-->>A: matches, why and evidence
+  A->>Q: show typescript-cli --json
+  Q-->>A: full entry
+  A->>You: "typescript-cli, because ...; one tradeoff is ..."
   A->>Q: new typescript-cli my-cli --json
   Q-->>A: NewResult, BRIEF.md written
   A->>You: the brief's decisions (unless --sandbox or --yes)
@@ -53,13 +55,15 @@ sequenceDiagram
     A->>Q: verify
     Q-->>A: failed steps, or green
   end
+  A->>Q: verify --all
+  Q-->>A: green (fix failures and retry otherwise)
   A->>You: summary: stack, decisions, what's left
 ```
 
-1. The agent runs `stacks list --json`, picks a stack, and tells you which one and why, naming a close second if there is one. It won't pick an untrusted entry unless you named it.
+1. The agent runs `stacks search "<their words>" --json`, compares matches using `why` and `evidence`, then reviews a candidate with `stacks show <id> --json`. It explains its pick and one tradeoff. It won't pick an untrusted entry unless you named it. If `noStrongMatch` is true, it says nothing fits well, runs `stacks list --json` and offers the closest entries. `list` also browses entries.
 2. It runs `stacks new <stack> <dir> --json`, or adds `--sandbox` if you asked for the quickest local setup.
 3. It reads `.stacks/BRIEF.md` and follows it. It asks you only the decisions the brief tells it to ask; with `--sandbox` or `--yes` there are none.
-4. It runs `stacks verify`, fixes what fails, and runs it again until the outcome is `green`.
+4. It runs `stacks verify`, fixes what fails, and runs it again until the outcome is `green`. Before calling it done, it runs `stacks verify --all` and fixes failures until that is green too.
 5. It works through the brief's after-green list (manual QA, checking the docs) and summarizes for you: the stack, the decisions it took, anything left undone, and where it noted problems with the brief (`.stacks/NOTES.md`).
 
 For an existing repository, step 2 is `stacks add <fragment...> --json` instead, and the agent also merges the files `add` parked under `.stacks/incoming/`.

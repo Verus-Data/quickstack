@@ -142,7 +142,10 @@ test("Next uses the first trusted hit and never offers new for an untrusted hit 
   const text = await runCli(["search", "iOS workout journal"], { ...opts, host });
   expect(text.status).toBe(0);
   expect(text.stderr).toBe("");
-  const next = text.stdout.trim().split("\n").at(-1) ?? "";
+  const next = text.stdout
+    .split("\n")
+    .filter((line) => line.startsWith("Next:"))
+    .join("\n");
   expect(next).toMatch(
     /^Next:.*workspace-stacks show trusted-fallback.*workspace-stacks new trusted-fallback/,
   );
@@ -155,7 +158,10 @@ test("Next asks the user when every returned hit is untrusted [4.5c#9a]", async 
   const text = await runCli(["search", "iOS workout journal"], options(home, emptyRegistry));
   expect(text.status).toBe(0);
   expect(text.stderr).toBe("");
-  const next = text.stdout.trim().split("\n").at(-1) ?? "";
-  expect(next).toMatch(/^Next:.*ask.*user/i);
+  const next = text.stdout
+    .split("\n")
+    .filter((line) => line.startsWith("Next:"))
+    .join("\n");
+  expect(next).toMatch(/^Next:.*ask.*user/im);
   expect(next).not.toMatch(/\bnew\b/);
 });

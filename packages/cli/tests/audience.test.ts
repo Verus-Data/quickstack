@@ -297,7 +297,7 @@ describe("the guide by audience", () => {
       expect(agent.stdout).toMatch(/^stacks starts projects for coding agents\./);
       const human = await runCli(args, { host: terminal });
       expect(human.stdout).toBe(
-        `This guide is written for coding agents. To start a project yourself, run stacks list, then stacks new <stack> <dir>; stacks --help lists every command.\n\n${agent.stdout}`,
+        `This guide is written for coding agents. To start a project yourself, run stacks search "<what you want to build>", then stacks new <stack> <dir>; stacks --help lists every command.\n\n${agent.stdout}`,
       );
       const json = await runCli([...args, "--json"], { host: terminal });
       expect(JSON.parse(json.stdout).guide).toBe(agent.stdout.trimEnd());

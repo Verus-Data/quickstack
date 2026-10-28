@@ -135,7 +135,7 @@ test.skipIf(!hasScript)(
         expect(result.stderr).toBe("");
         const stdout = result.stdout.replaceAll("\r\n", "\n").replace(/^\^D/, "");
         const lead =
-          "This guide is written for coding agents. To start a project yourself, run stacks list, then stacks new <stack> <dir>; stacks --help lists every command.";
+          'This guide is written for coding agents. To start a project yourself, run stacks search "<what you want to build>", then stacks new <stack> <dir>; stacks --help lists every command.';
         expect(stdout.includes(lead)).toBe(human);
         expect(stdout).toContain("stacks starts projects for coding agents.");
       }

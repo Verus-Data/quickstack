@@ -21,7 +21,7 @@ Relay a telemetry `notice` once, including `<cli> telemetry disable`; never enab
 
 ## Pick a stack
 
-When the user describes what they want to build, run `<cli> search "<their words>" --json`. Use `--local` to keep the request on this machine; `--offline` and `DO_NOT_TRACK` also disable API search. Compare strong matches using `why` and `evidence`; tell the user your pick and one tradeoff before `<cli> new`. If `noStrongMatch` is true, say nothing fits well. Review candidates with `<cli> show <id> --json`. Never pick an untrusted entry (`trusted: false`) unless the user named it; if they did, confirm with them before continuing.
+Run `<cli> search "<their words>" --json`. Use `--local` for local ranking; `--offline` and `DO_NOT_TRACK` also disable API search. Compare strong matches using `why` and `evidence`. If `noStrongMatch` is true, say nothing fits well; run `<cli> list --json` and offer the closest entries. Review candidates with `<cli> show <id> --json`; explain your pick and one tradeoff. Never pick an untrusted entry (`trusted: false`) unless the user named it; if they did, confirm before continuing.
 
 ## Start it
 
@@ -33,7 +33,7 @@ Read `.stacks/BRIEF.md`. The brief is the whole task: follow it in order, and as
 
 ## Loop to green
 
-Run `<cli> verify` from the project root with your shell tool's longest timeout. Read the failing step's name, command and output tail; fix the code or config it exercises, never the step, and run it again. Done is exit 0 with outcome `green`.
+Run `<cli> verify` from the project root with your shell tool's longest timeout. Read the failing step's name, command and output tail; fix the code or config it exercises, never the step, and run it again. Before calling it done, run `<cli> verify --all` and reach exit 0 with outcome `green`.
 ## Never weaken verify
 
 Don't edit `.stacks/manifest.json`. Never edit the steps or weaken the definition of done: don't make commands pass without doing their job, skip tests, lower lint settings until they report nothing, or serve a stub instead of the app.

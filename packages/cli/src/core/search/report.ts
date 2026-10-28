@@ -3,7 +3,6 @@ import { printable } from "../text";
 import { wrap } from "../wrap";
 
 const localReasons = {
-  local_flag: "--local",
   offline: "offline",
   do_not_track: "DO_NOT_TRACK",
   backoff: "API backoff",
@@ -51,14 +50,21 @@ function hitBlock(hit: SearchHit, human: boolean): string {
   ].join("\n");
 }
 function next(result: SearchResult, invocation: string): string {
-  if (!result.stacks.length && !result.fragments.length)
-    return `Next: ask the user to describe the product differently, then run ${invocation} search "<request>" or ${invocation} list.`;
+  const recovery = [
+    `Next: ${invocation} list stacks`,
+    `Next: ${invocation} search "<fewer, broader words>"`,
+  ];
+  if (!result.stacks.length && !result.fragments.length) return recovery.join("\n");
   const trusted = result.stacks.find((hit) => hit.trusted);
-  if (!trusted) return "Next: ask the user before using any of these matches.";
   const confirmation = result.noStrongMatch
     ? "confirm with the user before using a weak match; then "
     : "";
-  return `Next: ${confirmation}${invocation} show ${trusted.id}, then ${invocation} new ${trusted.id} <dir>.`;
+  return [
+    trusted
+      ? `Next: ${confirmation}${invocation} show ${trusted.id}, then ${invocation} new ${trusted.id} <dir>.`
+      : "Next: ask the user before using any of these matches.",
+    ...(result.noStrongMatch ? recovery : []),
+  ].join("\n");
 }
 export function renderSearch(
   result: SearchResult,
@@ -67,7 +73,7 @@ export function renderSearch(
   const empty = !result.stacks.length && !result.fragments.length;
   const text = [
     ...(result.remote === "unavailable" ? ["Ranked locally: API unavailable.", ""] : []),
-    ...(result.remote === "off" && result.remoteReason
+    ...(result.remote === "off" && result.remoteReason && result.remoteReason !== "local_flag"
       ? [`Ranked locally: ${localReasons[result.remoteReason]}.`, ""]
       : []),
     ...(empty ? ["Nothing matched.", ""] : []),

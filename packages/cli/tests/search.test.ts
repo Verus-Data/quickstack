@@ -49,7 +49,9 @@ test("unsupported firmware asks for a better description or confirmation of weak
       ? "Nothing fits strongly. Confirm the fit with the user."
       : "Nothing matched.",
   );
-  expect(text.stdout.trim().split("\n").at(-1)).toMatch(/^Next:.*(?:confirm|ask).*user/i);
+  expect(text.stdout.trimEnd()).toMatch(
+    /Next: stacks list stacks\nNext: stacks search "<fewer, broader words>"$/,
+  );
 });
 
 test("search publishes its schema and deterministic schema-valid JSON [4.5c#4]", async () => {

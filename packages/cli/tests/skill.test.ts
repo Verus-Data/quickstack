@@ -177,6 +177,10 @@ describe("shipped agent skill", () => {
     expect(body).toMatch(/after.green/i);
     expect(body).toMatch(/summari[sz]e/i);
     expect(body).toMatch(/stack[^.\n]*why/i);
+    expect(body).toContain(
+      "If noStrongMatch is true, say nothing fits well; run <cli> list --json and offer the closest entries.",
+    );
+    expect(body).toContain("<cli> verify --all");
     expect(body).toMatch(/decisions?[^.\n]*defaults?/i);
     expect(body).toMatch(/(?:undone|unfinished|left to do)/i);
     const names = (text: string) =>
