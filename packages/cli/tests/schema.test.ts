@@ -15,6 +15,11 @@ function refs(value: unknown): string[] {
   );
 }
 
+function objects(value: unknown): JsonObject[] {
+  if (Array.isArray(value)) return value.flatMap(objects);
+  return isObject(value) ? [value, ...Object.values(value).flatMap(objects)] : [];
+}
+
 /** A top-level object schema's property names and required names. */
 function keysOf(document: JsonObject) {
   const properties = isObject(document.properties) ? Object.keys(document.properties) : [];
@@ -97,6 +102,31 @@ describe("schema", () => {
     expectShape(error, inner);
   });
 
+  test("the error schema requires search's value or length instead of an id", async () => {
+    const document = await schemaJson("error");
+    for (const [flag, field, type] of [
+      ["limit", "value", "string"],
+      ["request", "length", "integer"],
+    ] as const) {
+      const variant = objects(document).find((node) => {
+        const properties = node.properties;
+        return (
+          isObject(properties) &&
+          isObject(properties.flag) &&
+          Array.isArray(properties.flag.enum) &&
+          properties.flag.enum.length === 1 &&
+          properties.flag.enum[0] === flag
+        );
+      });
+      expect(variant).toMatchObject({
+        required: ["flag", field],
+        additionalProperties: false,
+        properties: { [field]: { type } },
+      });
+      expect(variant?.properties).not.toHaveProperty("id");
+    }
+  });
+
   test("an unknown name is Usage labelled as an argument, with the names expected and a did-you-mean", async () => {
     const result = await runCli(["schema", "verfy"]);
     expect(result.status).toBe(2);
@@ -108,7 +138,7 @@ describe("schema", () => {
         "  Value: verfy",
         `  Expected: ${RESULT_NAMES.join(" | ")}`,
         "  Did you mean: verify?",
-        "  Next: pass a value from Expected; stacks <command> --help lists every argument.",
+        "  Next: pass a value from Expected; stacks schema --help lists every argument.",
         "",
       ].join("\n"),
     );
@@ -123,9 +153,10 @@ describe("schema", () => {
         tag: "Usage",
         message: "Invalid command.",
         retryable: false,
-        next: "pass a value from Expected; stacks <command> --help lists every argument.",
+        next: "pass a value from Expected; stacks schema --help lists every argument.",
         details: {
           flag: "name",
+          command: "schema",
           value: "verfy",
           expected: RESULT_NAMES.join(" | "),
           suggestions: ["verify"],

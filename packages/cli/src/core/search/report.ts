@@ -21,7 +21,7 @@ function reasons(hit: SearchHit): string {
     .map(([phrase, fields]) => `${printable(phrase)} (${fields.map(printable).join(", ")})`)
     .join("; ");
 }
-function hitBlock(hit: SearchHit): string {
+function hitBlock(hit: SearchHit, human: boolean): string {
   const stats = hit.evidence.stats;
   const lastRun = hit.evidence.lastRun;
   const evidence = [
@@ -33,7 +33,7 @@ function hitBlock(hit: SearchHit): string {
     .filter(Boolean)
     .join("; ");
   return [
-    `${hit.kind} ${hit.id} (${hit.tier}${hit.trusted ? "" : ", untrusted"})`,
+    `${hit.kind} ${hit.id}${human ? ` · ${printable(hit.name)}` : ""} (${hit.tier}${hit.trusted ? "" : ", untrusted"})`,
     printable(hit.summary),
     ...(hit.why.length ? [`Why: ${reasons(hit)}`] : []),
     ...(hit.penalties.length
@@ -51,6 +51,8 @@ function hitBlock(hit: SearchHit): string {
   ].join("\n");
 }
 function next(result: SearchResult, invocation: string): string {
+  if (!result.stacks.length && !result.fragments.length)
+    return `Next: ask the user to describe the product differently, then run ${invocation} search "<request>" or ${invocation} list.`;
   const trusted = result.stacks.find((hit) => hit.trusted);
   if (!trusted) return "Next: ask the user before using any of these matches.";
   const confirmation = result.noStrongMatch
@@ -60,19 +62,29 @@ function next(result: SearchResult, invocation: string): string {
 }
 export function renderSearch(
   result: SearchResult,
-  options: { invocation: string; width: number; measure: (text: string) => number },
+  options: { invocation: string; human: boolean; width: number; measure: (text: string) => number },
 ): string {
+  const empty = !result.stacks.length && !result.fragments.length;
   const text = [
     ...(result.remote === "unavailable" ? ["Ranked locally: API unavailable.", ""] : []),
     ...(result.remote === "off" && result.remoteReason
       ? [`Ranked locally: ${localReasons[result.remoteReason]}.`, ""]
       : []),
-    ...(result.noStrongMatch ? ["Nothing fits strongly. Confirm the fit with the user.", ""] : []),
+    ...(empty ? ["Nothing matched.", ""] : []),
+    ...(!empty && result.noStrongMatch
+      ? ["Nothing fits strongly. Confirm the fit with the user.", ""]
+      : []),
     ...(result.understood.unmatched.length
       ? [`Unmatched: ${result.understood.unmatched.map(printable).join(", ")}`, ""]
       : []),
-    [...result.stacks, ...result.fragments].map(hitBlock).join("\n\n"),
-    "",
+    ...(empty
+      ? []
+      : [
+          [...result.stacks, ...result.fragments]
+            .map((hit) => hitBlock(hit, options.human))
+            .join("\n\n"),
+          "",
+        ]),
     next(result, options.invocation),
   ].join("\n");
   return wrap(text, options.width, options.measure);

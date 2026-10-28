@@ -50,7 +50,11 @@ function rootHelp(args: readonly string[]): boolean {
  * A parser failure is Usage; an unknown subcommand names close known subcommands (the
  * framework's own suggestions are discarded for `closest`) and a rejected value names its flag.
  */
-function usage(error: CliError.CliError, help?: HelpDoc.HelpDoc): Usage {
+function usage(
+  error: CliError.CliError,
+  help?: HelpDoc.HelpDoc,
+  command: string = cli.name,
+): Usage {
   if (error._tag === "ShowHelp") {
     const nested = error.errors.find(
       (e) =>
@@ -59,13 +63,15 @@ function usage(error: CliError.CliError, help?: HelpDoc.HelpDoc): Usage {
         e._tag === "InvalidValue" ||
         e._tag === "MissingArgument",
     );
-    return nested ? usage(nested, help) : new Usage();
+    return nested
+      ? usage(nested, help, error.commandPath.slice(1).join(" ") || cli.name)
+      : new Usage();
   }
   if (error._tag === "UnrecognizedOption") return unknownFlagUsage(error, help);
-  if (error._tag === "InvalidValue") return invalidValueUsage(error);
+  if (error._tag === "InvalidValue") return invalidValueUsage(error, command);
   if (error._tag === "MissingArgument")
     return new Usage({
-      details: { flag: error.argument, value: "", expected: "a required argument" },
+      details: { flag: error.argument, value: "", expected: "a required argument", command },
     });
   if (error._tag === "UnknownSubcommand")
     return new Usage({
@@ -111,20 +117,25 @@ const captureUnknownFlagHelp = Effect.fn("main.captureUnknownFlagHelp")(function
   return yield* Effect.fail(error);
 });
 
-function invalidValueUsage(error: CliError.InvalidValue): Usage {
+function valueSuggestions(error: CliError.InvalidValue): string[] | undefined {
+  if (!error.value) return undefined;
+  if (error.option === "agents") return closest(error.value, AgentId.literals);
+  if (error.option === "launch") return closest(error.value, Harness.literals);
+  // Choice primitives report literal values separated by pipes, quoted on invalid input.
+  if (!error.expected.includes(" | ")) return undefined;
+  const choices = error.expected.split(" | ").map((value) => value.replace(/^"|"$/g, ""));
+  return closest(error.value, choices);
+}
+
+function invalidValueUsage(error: CliError.InvalidValue, command: string): Usage {
+  const suggestions = valueSuggestions(error);
   return new Usage({
     details: {
       flag: error.kind === "argument" ? error.option : `--${error.option}`,
       value: error.value,
       expected: error.expected,
-      ...(error.option === "agents" || error.option === "launch"
-        ? {
-            suggestions: closest(
-              error.value,
-              error.option === "launch" ? Harness.literals : AgentId.literals,
-            ),
-          }
-        : {}),
+      command,
+      ...(suggestions === undefined ? {} : { suggestions }),
     },
   });
 }

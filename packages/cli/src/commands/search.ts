@@ -34,9 +34,9 @@ export const searchCommand = Command.make(
       const request = words.join(" ").trim();
       const length = [...request].length;
       if (length === 0 || length > 500)
-        return yield* new BadInput({ details: { flag: "request", id: "", length } });
+        return yield* new BadInput({ details: { flag: "request", length } });
       if (limit < 1 || limit > 20)
-        return yield* new BadInput({ details: { flag: "limit", id: String(limit) } });
+        return yield* new BadInput({ details: { flag: "limit", value: String(limit) } });
       const result = yield* search(request, {
         limit,
         kind: Option.getOrUndefined(kind),
@@ -54,6 +54,7 @@ export const searchCommand = Command.make(
         Schema.encodeSync(SearchResult)(result),
         renderSearch(result, {
           invocation: host.invocation,
+          human: output.audience === "human",
           width: textWidth(output.audience === "human", host.columns),
           measure: host.stringWidth,
         }),
@@ -61,7 +62,7 @@ export const searchCommand = Command.make(
     }),
 ).pipe(
   Command.withDescription(
-    "Rank stacks and fragments using the API and local entries, falling back to local ranking. Use --local to keep the request on this machine. Exits 0 even when nothing fits strongly, 2 for invalid input (Usage; BadInput), 6 for unreadable registries (PermissionDenied), 130 when interrupted.",
+    "Rank stacks and fragments using local entries and the hosted stacks API, which receives the request text unless --local, --offline, STACKS_OFFLINE=1 or DO_NOT_TRACK is set. Exits 0 even when nothing fits strongly, 2 for invalid input (Usage; BadInput), 6 for unreadable registries (PermissionDenied), 130 when interrupted.",
   ),
   Command.withShortDescription("Find stacks and fragments for what you want to build."),
   Command.withExamples(({ commandPath }) => [

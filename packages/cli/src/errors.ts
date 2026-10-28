@@ -16,17 +16,18 @@ import { VerifyChange, VerifyResult } from "./schemas/verify";
 export const UsageDetails = Schema.Union([
   Schema.Struct({
     flag: Schema.String,
+    value: Schema.String,
+    expected: Schema.String,
+    command: Schema.optionalKey(Schema.String),
+    suggestions: Schema.optionalKey(Schema.Array(Schema.String)),
+  }),
+  Schema.Struct({
+    flag: Schema.String,
     command: Schema.String,
     suggestions: Schema.Array(Schema.String),
   }),
   Schema.Struct({ command: Schema.String, suggestions: Schema.Array(Schema.String) }),
   Schema.Struct({ flags: Schema.Tuple([Schema.String, Schema.String]) }),
-  Schema.Struct({
-    flag: Schema.String,
-    value: Schema.String,
-    expected: Schema.String,
-    suggestions: Schema.optionalKey(Schema.Array(Schema.String)),
-  }),
 ]);
 export class Usage extends Schema.TaggedError<Usage>()("Usage", {
   details: Schema.optionalKey(UsageDetails),
@@ -44,36 +45,38 @@ export class Usage extends Schema.TaggedError<Usage>()("Usage", {
  * `fragment` is an add request for a stack or an applied fragment (listed in `alreadyApplied`);
  * `agents` and `sandbox` are add flags that disagree with the manifest.
  * `create_shadows` names an existing id, with its winning and shadowed origins in `origins`.
+ * Search's `request` carries only its trimmed `length`; `limit` carries the rejected `value`.
  */
-export const BadInputDetails = Schema.Struct({
-  id: Schema.String,
-  flag: Schema.Literals([
-    "scope",
-    "source",
-    "with_without",
-    "dir",
-    "brief",
-    "brief_stack",
-    "kind",
-    "only",
-    "name",
-    "author",
-    "fragment",
-    "agents",
-    "sandbox",
-    "create_id",
-    "create_target",
-    "create_shadows",
-    "from",
-    "confirmation",
-    "request",
-    "limit",
-  ]),
-  known: Schema.optionalKey(Schema.Array(Schema.String)),
-  alreadyApplied: Schema.optionalKey(Schema.Array(Schema.String)),
-  origins: Schema.optionalKey(Schema.Array(Origin)),
-  length: Schema.optionalKey(Schema.Int),
-});
+export const BadInputDetails = Schema.Union([
+  Schema.Struct({ flag: Schema.Literal("request"), length: Schema.Int }),
+  Schema.Struct({ flag: Schema.Literal("limit"), value: Schema.String }),
+  Schema.Struct({
+    id: Schema.String,
+    flag: Schema.Literals([
+      "scope",
+      "source",
+      "with_without",
+      "dir",
+      "brief",
+      "brief_stack",
+      "kind",
+      "only",
+      "name",
+      "author",
+      "fragment",
+      "agents",
+      "sandbox",
+      "create_id",
+      "create_target",
+      "create_shadows",
+      "from",
+      "confirmation",
+    ]),
+    known: Schema.optionalKey(Schema.Array(Schema.String)),
+    alreadyApplied: Schema.optionalKey(Schema.Array(Schema.String)),
+    origins: Schema.optionalKey(Schema.Array(Origin)),
+  }),
+]);
 export class BadInput extends Schema.TaggedError<BadInput>()("BadInput", {
   details: Schema.optionalKey(BadInputDetails),
 }) {
@@ -476,23 +479,8 @@ function usageGuide(error: Usage, invocation: string): FailureGuide {
       [`${details.flags[0]} and ${details.flags[1]} can't be used together.`],
       "drop one of them.",
     );
-  if (details && "flag" in details && "command" in details)
-    return unknownFlagGuide(details, invocation);
-  if (details && "flag" in details) {
-    // A flag arrives with its dashes (`--agents`); a positional argument by its bare name.
-    const positional = !details.flag.startsWith("-");
-    return guide(
-      [
-        `${positional ? "Argument" : "Flag"}: ${printable(details.flag)}`,
-        `Value: ${printable(details.value)}`,
-        `Expected: ${printable(details.expected)}`,
-        ...(details.suggestions?.length
-          ? [`Did you mean: ${details.suggestions.map(printable).join(", ")}?`]
-          : []),
-      ],
-      `pass a value from Expected; ${invocation} <command> --help lists every ${positional ? "argument" : "flag"}.`,
-    );
-  }
+  if (details && "value" in details) return invalidValueGuide(details, invocation);
+  if (details && "flag" in details) return unknownFlagGuide(details, invocation);
   return guide(
     [
       ...(details?.command === undefined ? [] : [`Command: ${printable(details.command)}`]),
@@ -501,6 +489,29 @@ function usageGuide(error: Usage, invocation: string): FailureGuide {
         : []),
     ],
     `run ${invocation} --help to list the commands, or ${invocation} <command> --help for one.`,
+  );
+}
+
+function invalidValueGuide(
+  details: Extract<typeof UsageDetails.Type, { value: string }>,
+  invocation: string,
+): FailureGuide {
+  // A flag arrives with its dashes (`--agents`); a positional argument by its bare name.
+  const positional = !details.flag.startsWith("-");
+  const command =
+    details.command && details.command !== "stacks"
+      ? `${invocation} ${details.command}`
+      : invocation;
+  return guide(
+    [
+      `${positional ? "Argument" : "Flag"}: ${printable(details.flag)}`,
+      `Value: ${printable(details.value)}`,
+      `Expected: ${printable(details.expected)}`,
+      ...(details.suggestions?.length
+        ? [`Did you mean: ${details.suggestions.map(printable).join(", ")}?`]
+        : []),
+    ],
+    `pass a value from Expected; ${printable(command)} --help lists every ${positional ? "argument" : "flag"}.`,
   );
 }
 
@@ -677,15 +688,18 @@ export function changeLines(change: typeof VerifyChange.Type): string[] {
   ];
 }
 function badInputGuide(details: typeof BadInputDetails.Type, invocation: string): FailureGuide {
+  if (details.flag === "request")
+    return guide(
+      [`Request length: ${details.length}`],
+      `run ${invocation} search with a request of 1 to 500 characters after trimming.`,
+    );
+  if (details.flag === "limit")
+    return guide(
+      [`Flag: --limit ${printable(details.value)}`],
+      `run ${invocation} search with --limit from 1 to 20.`,
+    );
   const id = printable(details.id);
   switch (details.flag) {
-    case "request":
-      return guide(
-        [`Request length: ${details.length ?? 0}`],
-        `run ${invocation} search with a request of 1 to 500 characters after trimming.`,
-      );
-    case "limit":
-      return guide([`Flag: --limit ${id}`], `run ${invocation} search with --limit from 1 to 20.`);
     case "create_id":
       return guide(
         [`Id: ${id}`],
