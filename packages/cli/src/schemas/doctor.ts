@@ -1,4 +1,5 @@
 import { Schema } from "effect";
+import { RemoteStatus } from "./remote-index";
 export const DoctorReport = Schema.Struct({
   version: Schema.String,
   platform: Schema.String,
@@ -15,6 +16,7 @@ export const DoctorReport = Schema.Struct({
   registry: Schema.Struct({ path: Schema.String, found: Schema.Boolean }),
   /** The bundled skill directory, and whether SKILL.md exists. */
   skill: Schema.Struct({ path: Schema.String, found: Schema.Boolean }),
+  remoteIndex: RemoteStatus,
   configErrors: Schema.Array(Schema.String),
 }).annotate({
   title: "Doctor report",

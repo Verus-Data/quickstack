@@ -6,6 +6,7 @@ import { METADATA_DIR } from "../../project-layout";
 import { Host } from "../../services/host";
 import { printable } from "../text";
 import {
+  type CatalogEntry,
   decodeEntry,
   type Entry,
   type EntryFile,
@@ -13,12 +14,13 @@ import {
   type Origin,
   type RejectedEntry,
 } from "./entry";
+import { remoteRegistry } from "./remote";
 
 /**
  * One registry root. `overridden` marks a bundled root set by STACKS_REGISTRY_DIR instead of
  * the one shipped with the CLI, whose entries are untrusted.
  */
-export type RegistryRoot = { origin: Origin; path: string; overridden?: boolean };
+export type RegistryRoot = { origin: Origin; path: string; overridden?: boolean; remote?: boolean };
 /** Registry roots, highest precedence first (roadmap, Contracts: Registry view). */
 export type RegistryRoots = ReadonlyArray<RegistryRoot>;
 type Reason = "decode" | "symlink" | "id_mismatch" | "missing" | "unreadable";
@@ -128,7 +130,7 @@ const kinds = [
  * entries from a bundled root set by STACKS_REGISTRY_DIR; user entries and the shipped
  * bundled ones are (Trust model, point 2; D19). 3.2a adds the trust store's digests.
  */
-export function trustOf(entry: Omit<Entry, "trusted">, root: RegistryRoot): boolean {
+export function trustOf(entry: Pick<Entry, "origin">, root: RegistryRoot): boolean {
   return entry.origin !== "project" && !root.overridden;
 }
 
@@ -170,9 +172,18 @@ export const defaultRoots = Effect.gen(function* () {
   ] satisfies RegistryRoots;
 });
 
+/** Only entry-consuming commands opt into network-backed registry resolution. */
+export const remoteRoots = defaultRoots.pipe(
+  Effect.map((roots) =>
+    roots.map((root) => (root.origin === "bundled" ? { ...root, remote: true } : root)),
+  ),
+);
+
 export class Registry extends Context.Service<
   Registry,
   {
+    /** Names and tags, including supported index metadata, without fetching bundles. */
+    readonly catalog: Effect.Effect<ReadonlyArray<CatalogEntry>, PermissionDenied>;
     /** Every winning entry and every rejected one: stacks first, then fragments, each by id. */
     readonly all: Effect.Effect<ReadonlyArray<Entry | RejectedEntry>, PermissionDenied>;
     /** What loading skipped, in load order; `validate` reports it. */
@@ -351,11 +362,32 @@ export class Registry extends Context.Service<
             }
             for (const { kind, dir } of kinds) yield* loadKind(root, kind, dir, found);
           }
-          return registryWinners(found);
+          const winners = registryWinners(found);
+          const bundled = [...found.values()].flatMap((candidates) =>
+            candidates.flatMap(({ root, candidate }) =>
+              root.origin === "bundled" && candidate._tag === "Entry"
+                ? [{ ...candidate.entry, shadows: [], trusted: trustOf(candidate.entry, root) }]
+                : [],
+            ),
+          );
+          return { winners, bundled };
         });
         /** Filled while `load` runs; read only after it has. */
         const skipped: Skipped[] = [];
-        const loaded = yield* Effect.cached(load);
+        const local = yield* Effect.cached(load);
+        const view = yield* Effect.cached(
+          Effect.gen(function* () {
+            const { winners, bundled } = yield* local;
+            return yield* remoteRegistry(
+              winners.map((item) => ("rejected" in item ? item.rejected : item)),
+              bundled,
+              roots.some((root) => root.remote),
+            ).pipe(
+              Effect.provideService(FileSystem.FileSystem, fs),
+              Effect.provideService(Path.Path, path),
+            );
+          }),
+        );
 
         /**
          * `lstat`s the entry directory and every prefix of `source` down to the file, so a symlink
@@ -435,19 +467,24 @@ export class Registry extends Context.Service<
         };
 
         return {
-          all: loaded.pipe(
-            Effect.map((items) => items.map((item) => ("rejected" in item ? item.rejected : item))),
-          ),
-          skipped: loaded.pipe(Effect.map(() => [...skipped])),
+          all: view.pipe(Effect.flatMap((registry) => registry.all)),
+          catalog: view.pipe(Effect.map((registry) => registry.catalog)),
+          skipped: local.pipe(Effect.map(() => [...skipped])),
           get: (kind, id) =>
             Effect.gen(function* () {
-              const item = (yield* loaded).find((value) => {
-                const at = "rejected" in value ? value.rejected : value;
-                return at.kind === kind && at.id === id;
-              });
+              const item = yield* (yield* view).get(kind, id);
               if (!item) return yield* new NotFound({ details: { suggestions: [], id, kind } });
-              if (!("rejected" in item)) return item;
-              return yield* rejectionError(item, id);
+              if (!("error" in item)) return item;
+              const rejected = (yield* local).winners.find(
+                (candidate): candidate is Rejection =>
+                  "rejected" in candidate &&
+                  candidate.rejected.id === id &&
+                  candidate.rejected.kind === kind,
+              );
+              if (rejected) return yield* rejectionError(rejected, id);
+              return yield* new EntryInvalid({
+                details: { id, origin: item.origin, reason: "decode" },
+              });
             }),
           files: (entry) =>
             Effect.gen(function* () {

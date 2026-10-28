@@ -86,9 +86,7 @@ export function renderShow(
       : report.body.trimEnd()
     ).split("\n"),
     "",
-    report.kind === "stack"
-      ? `Next: ${invocation} validate --brief ${report.id} --sandbox`
-      : `Next: ${invocation} new <stack> --with ${report.id}`,
+    nextLine(report, invocation),
   );
   return out
     .map((line) => {
@@ -96,4 +94,11 @@ export function renderShow(
       return safe.startsWith("Next:") ? style("next", safe) : safe;
     })
     .join("\n");
+}
+
+function nextLine(report: ShowReport, invocation: string): string {
+  if (report.kind === "fragment") return `Next: ${invocation} new <stack> --with ${report.id}`;
+  if (report.origin === "index")
+    return `Next: ${invocation} new ${report.id} --dry-run --sandbox --no-launch`;
+  return `Next: ${invocation} validate --brief ${report.id} --sandbox`;
 }

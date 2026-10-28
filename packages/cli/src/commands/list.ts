@@ -5,7 +5,7 @@ import { type Group, groups, listResult, projectChoices, toRow } from "../core/l
 import { renderAddable, renderList } from "../core/list-report";
 import { MANIFEST_PATH, readManifest } from "../core/manifest";
 import { type Entry, isRejected } from "../core/registry/entry";
-import { defaultRoots, Registry } from "../core/registry/registry";
+import { Registry, remoteRoots } from "../core/registry/registry";
 import { shellArg } from "../core/shell";
 import { shownPath } from "../core/shown-path";
 import { closest } from "../core/suggest";
@@ -61,7 +61,7 @@ export const listCommand = Command.make(
               .pipe(Effect.as(undefined)),
         }),
       );
-      const roots = (yield* defaultRoots).map((entry) =>
+      const roots = (yield* remoteRoots).map((entry) =>
         entry.origin === "project"
           ? { ...entry, path: path.join(projectRoot, METADATA_DIR) }
           : entry,

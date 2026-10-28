@@ -130,7 +130,7 @@ export const cacheRoot = (home: string) => join(home, "cache/stacks/index");
 type RemoteDependencies = FileSystem.FileSystem | Path.Path | HttpClient.HttpClient | AppConfig;
 async function indexLayer(): Promise<Layer.Layer<RemoteIndexService, never, RemoteDependencies>> {
   const { RemoteIndex } = await import("../../src/core/remote-index");
-  return RemoteIndex.layer(keys);
+  return RemoteIndex.layer({ keys, officialUrl: "https://index.example.test/v1/index.json" });
 }
 
 // Dynamic imports let every acceptance test execute and report the missing implementation,
@@ -192,10 +192,21 @@ export async function buildRemoteFixture(temporary: string) {
   success(await f.invoke(["--out", previous, "--previous", "none", "--key", privateKey]));
   const old = await readBuild(previous);
   writeFileSync(join(tools, "files/pinned.txt"), "newer tools, proven with another stack\n");
+  // `extra` stays indexed only through a proof over today's content: changing `tools` made the
+  // first snapshot's optional proof stale (4.0c's rule for optional fragments).
   writeLedger(f.registry, [
     await proof(f.registry, {
       stack: "never-proven",
       fingerprint: await compositionFingerprint(f.registry, { stack: "never-proven" }),
+      date: "2026-10-28",
+    }),
+    await proof(f.registry, {
+      stack: "never-proven",
+      with: ["extra"],
+      fingerprint: await compositionFingerprint(f.registry, {
+        stack: "never-proven",
+        with: ["extra"],
+      }),
       date: "2026-10-28",
     }),
   ]);

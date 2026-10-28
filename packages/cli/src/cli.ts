@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import { Command } from "effect/cli";
 import { addCommand } from "./commands/add";
 import { createCommand } from "./commands/create";
@@ -13,6 +14,7 @@ import { skillCommand } from "./commands/skill";
 import { updateCommand } from "./commands/update";
 import { validateCommand } from "./commands/validate";
 import { verifyCommand } from "./commands/verify";
+import { AppConfig } from "./config";
 export const cli = root.pipe(
   Command.withDescription("Start projects from stacks your coding agent builds and verifies."),
   // No subcommand: the agent guide instead of the framework's help (`--help` keeps that).
@@ -32,4 +34,7 @@ export const cli = root.pipe(
     validateCommand,
     verifyCommand,
   ]),
+  Command.provideEffectDiscard(({ offline }) =>
+    Effect.flatMap(AppConfig, (config) => config.setOffline(offline)),
+  ),
 );
