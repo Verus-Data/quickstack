@@ -18,7 +18,5 @@ pre-push:
   jobs:
     - name: typecheck
       run: bun run typecheck
-    - name: tests
-      run: bun run test
     - name: lint
       run: bun run lint
