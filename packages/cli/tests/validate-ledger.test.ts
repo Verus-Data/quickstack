@@ -1,7 +1,8 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { NodeServices } from "@effect/platform-node";
-import { Effect, Exit } from "effect";
+import { AgentId } from "@stacks/format";
+import { Effect, Exit, Schema } from "effect";
 import { afterEach, expect, test } from "vitest";
 import { fingerprint } from "../src/core/fingerprint";
 import type { LedgerRecord } from "../src/schemas/ledger";
@@ -37,7 +38,7 @@ async function record(root: string, overrides: Partial<LedgerRecord> = {}) {
       stack: base.stack,
       with: [...base.with],
       preset: base.preset,
-      agents: [base.agent],
+      agents: [Schema.decodeUnknownSync(AgentId)(base.agent)],
     },
     { roots: bundledAt(root) },
   );

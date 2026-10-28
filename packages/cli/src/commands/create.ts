@@ -1,19 +1,60 @@
 import { Category, type Kind } from "@stacks/format";
 import { Effect, Option, Schema } from "effect";
-import { Argument, Command, Flag } from "effect/cli";
-import { createEntry } from "../core/create";
+import { Argument, CliError, Command, Flag } from "effect/cli";
+import { type CreateOptions, createEntry } from "../core/create";
+import { pickCreate, promptingAllowed, replayFlags, runningCommand } from "../core/prompting";
 import { shownPath } from "../core/shown-path";
 import { printable } from "../core/text";
+import { Usage } from "../errors";
 import { CreateResult } from "../schemas/create";
 import { Origin } from "../schemas/origin";
 import { Host } from "../services/host";
 import { Output } from "../services/output";
 
+const runCreate = Effect.fn("create.runCreate")(function* (options: CreateOptions) {
+  const result = yield* createEntry(options);
+  const output = yield* Output;
+  const host = yield* Host;
+  const path = output.audience === "agent" ? yield* shownPath(host.cwd, result.path) : result.path;
+  const directory = `'${path.replaceAll("'", "'\\''")}'`;
+  yield* output.result(
+    Schema.encodeSync(CreateResult)(result),
+    [
+      `Created ${options.kind} ${printable(result.id)}: ${printable(path)}`,
+      `Guide: ${printable(result.guide)}`,
+      `Next: edit the entry, then run ${host.invocation} validate ${printable(directory)}.`,
+    ].join("\n"),
+  );
+});
+
+const promptedCreate = Effect.fn("create.promptedCreate")(function* (input: {
+  kind?: Kind;
+  from?: Origin;
+  category: Category;
+  yes: boolean;
+}) {
+  const picked = yield* pickCreate(input);
+  yield* runningCommand([
+    "create",
+    picked.kind,
+    picked.id,
+    ...replayFlags({
+      from: picked.from,
+      category: picked.kind === "fragment" ? input.category : undefined,
+      yes: input.yes,
+    }),
+  ]);
+  yield* runCreate({ ...picked, category: input.category, yes: input.yes });
+});
+
 const entryCommand = (kind: Kind) =>
   Command.make(
     kind,
     {
-      id: Argument.String("id").pipe(Argument.withDescription("A lowercase kebab-case entry id.")),
+      id: Argument.String("id").pipe(
+        Argument.withDescription("A lowercase kebab-case entry id."),
+        Argument.optional,
+      ),
       from: Flag.Literals("from", Origin.literals).pipe(
         Flag.withDescription(
           "Copy this id from bundled or project into the user registry; user is refused.",
@@ -39,26 +80,16 @@ const entryCommand = (kind: Kind) =>
     },
     (flags) =>
       Effect.gen(function* () {
-        const result = yield* createEntry({
+        const options = {
           kind,
-          id: flags.id,
           from: Option.getOrUndefined(flags.from),
           category: flags.category ?? "tooling",
           yes: flags.yes,
-        });
-        const output = yield* Output;
-        const host = yield* Host;
-        const path =
-          output.audience === "agent" ? yield* shownPath(host.cwd, result.path) : result.path;
-        const directory = `'${path.replaceAll("'", "'\\''")}'`;
-        yield* output.result(
-          Schema.encodeSync(CreateResult)(result),
-          [
-            `Created ${kind} ${printable(result.id)}: ${printable(path)}`,
-            `Guide: ${printable(result.guide)}`,
-            `Next: edit the entry, then run ${host.invocation} validate ${printable(directory)}.`,
-          ].join("\n"),
-        );
+        };
+        const id = Option.getOrUndefined(flags.id);
+        if (id !== undefined) return yield* runCreate({ ...options, id });
+        if (!(yield* promptingAllowed)) return yield* new Usage();
+        yield* promptedCreate(options);
       }),
   ).pipe(
     Command.withDescription(
@@ -87,7 +118,13 @@ const entryCommand = (kind: Kind) =>
     ),
   );
 
-export const createCommand = Command.make("create").pipe(
+export const createCommand = Command.make("create", {}, () =>
+  Effect.gen(function* () {
+    if (!(yield* promptingAllowed))
+      return yield* new CliError.ShowHelp({ commandPath: ["stacks", "create"], errors: [] });
+    yield* promptedCreate({ category: "tooling", yes: false });
+  }),
+).pipe(
   Command.withDescription("Start a stack or fragment, or copy an existing entry for editing."),
   Command.withShortDescription("Create or copy a stack or fragment for editing."),
   Command.withSubcommands([entryCommand("stack"), entryCommand("fragment")]),

@@ -22,9 +22,10 @@ export function resolveAudience(
   json: boolean,
   stdoutIsTTY: boolean,
   agent: DetectedAgent,
+  ci = false,
 ): Audience {
   if (json) return "json";
-  return stdoutIsTTY && agent === "none" ? "human" : "agent";
+  return !ci && stdoutIsTTY && agent === "none" ? "human" : "agent";
 }
 export type Writer = (text: string) => Promise<void>;
 export type StyleKind = "error" | "warn" | "ok" | "skip" | "dim" | "next";
@@ -96,7 +97,7 @@ export class Output extends Context.Service<
         const config = yield* AppConfig;
         const agent = yield* config.agent;
         const color = yield* config.color;
-        const audience = resolveAudience(json, host.stdoutIsTTY, agent);
+        const audience = resolveAudience(json, host.stdoutIsTTY, agent, config.ci);
         const enabled = audience === "human" && !color.noColor;
         const stderrTTY = host.stderrIsTTY;
         return make(audience, stdout, stderr, {

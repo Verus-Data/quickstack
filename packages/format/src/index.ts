@@ -14,5 +14,7 @@ export {
   VerifyStep,
   withStepDefaults,
 } from "./entry.js";
+export { INDEX_PUBLIC_KEYS } from "./index-keys.js";
+export { IndexEntry, LastRun, RegistryIndex, SignedIndex } from "./index-schema.js";
 export { EntryRef, Manifest, ManifestStep, ProjectId } from "./manifest.js";
 export { FailureKind, Outcome, RunRecord, RunStep, TamperCheck } from "./run-record.js";

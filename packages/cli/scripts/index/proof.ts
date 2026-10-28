@@ -1,0 +1,145 @@
+import { bundleDigest, canonicalBundle, type EntryBundle, type IndexEntry } from "@stacks/format";
+import { Effect } from "effect";
+import { type Composition, compose } from "../../src/core/compose/compose";
+import { fingerprint } from "../../src/core/fingerprint";
+import { latestMatchingRecord, ledgerAdapterSets, readLedger } from "../../src/core/ledger";
+import { type Entry, isRejected, isStack } from "../../src/core/registry/entry";
+import { Registry } from "../../src/core/registry/registry";
+import type { LedgerRecord } from "../../src/schemas/ledger";
+import { bundlePath } from "./remote";
+
+const proveRecord = Effect.fn("index.proveRecord")(function* (record: LedgerRecord) {
+  if (record.result !== "pass" || record.interventions !== 0 || record.run?.tamperCheck !== "full")
+    return null;
+  if (record.preset !== "default" && record.preset !== "sandbox") return null;
+  for (const agents of ledgerAdapterSets()) {
+    const attempt = yield* Effect.result(
+      compose({
+        stack: record.stack,
+        with: record.with,
+        without: [],
+        preset: record.preset,
+        agents,
+        always: [],
+        mode: "new",
+      }).pipe(
+        Effect.flatMap((composition) =>
+          Effect.map(fingerprint(composition), (value) => ({ composition, value })),
+        ),
+      ),
+    );
+    if (attempt._tag === "Success" && attempt.success.value === record.fingerprint)
+      return attempt.success.composition;
+  }
+  return null;
+});
+
+const rawEntry = Effect.fn("index.rawEntry")(function* (entry: Entry) {
+  const registry = yield* Registry;
+  const tree = yield* registry.tree(entry);
+  const files: EntryBundle["files"][number][] = [];
+  for (const file of tree.files) {
+    const content = yield* registry.bytes(entry, file.source);
+    files.push({
+      path: file.source,
+      executable: (file.mode & 0o111) !== 0,
+      encoding: "base64",
+      content: Buffer.from(content).toString("base64"),
+    });
+  }
+  const bundle: EntryBundle = { id: entry.id, kind: entry.kind, files };
+  const digest = yield* bundleDigest(bundle);
+  const metadata: IndexEntry = {
+    id: entry.id,
+    kind: entry.kind,
+    schemaVersion: entry.meta.schemaVersion,
+    name: entry.meta.name,
+    description: entry.meta.description,
+    tags: entry.meta.tags,
+    digest,
+    ...(entry.kind === "stack" ? { composition: {} } : {}),
+  };
+  return { metadata, bytes: canonicalBundle(bundle) };
+});
+
+type Proven = { record: LedgerRecord; composition: Composition };
+type Raw = ReadonlyMap<string, Effect.Success<ReturnType<typeof rawEntry>>>;
+
+function stackEntry(stack: Entry, proven: ReadonlyArray<Proven>, raw: Raw): IndexEntry | null {
+  const own = proven.filter(({ record }) => record.stack === stack.id && record.with.length === 0);
+  const newest = latestMatchingRecord(
+    own.map(({ record }) => record),
+    () => true,
+  );
+  const proof = own.find(({ record }) => record === newest);
+  const value = raw.get(`stack/${stack.id}`);
+  if (proof === undefined || value === undefined) return null;
+  const composition: Record<string, string> = {};
+  for (const fragment of proof.composition.fragments) {
+    const fragmentValue = raw.get(`fragment/${fragment.id}`);
+    if (fragmentValue !== undefined) composition[fragment.id] = fragmentValue.metadata.digest;
+  }
+  const record = proof.record;
+  return {
+    ...value.metadata,
+    composition,
+    lastRun: {
+      date: record.date,
+      result: "pass",
+      agent: record.agent,
+      preset: record.preset,
+      minutesToGreen: record.minutesToGreen,
+      fingerprint: record.fingerprint,
+    },
+  };
+}
+
+function publicationEntries(
+  entries: ReadonlyArray<Entry>,
+  proven: ReadonlyArray<Proven>,
+  raw: Raw,
+) {
+  const published = new Map<string, IndexEntry>();
+  const add = (metadata: IndexEntry) => {
+    published.set(`${metadata.kind}/${metadata.id}`, metadata);
+  };
+  for (const stack of entries.filter(isStack)) {
+    const metadata = stackEntry(stack, proven, raw);
+    if (metadata === null) continue;
+    add(metadata);
+    for (const id of Object.keys(metadata.composition ?? {})) {
+      const value = raw.get(`fragment/${id}`);
+      if (value !== undefined) add(value.metadata);
+    }
+  }
+  for (const proof of proven.filter(({ record }) => record.with.length > 0))
+    for (const fragment of proof.composition.fragments) {
+      const value = raw.get(`fragment/${fragment.id}`);
+      if (value !== undefined) add(value.metadata);
+    }
+  return [...published.values()];
+}
+
+export const currentIndex = Effect.fn("index.currentIndex")(function* (root: string) {
+  const registry = yield* Registry;
+  const entries = (yield* registry.all).filter((entry): entry is Entry => !isRejected(entry));
+  const ledger = yield* readLedger(root);
+  const proven: Proven[] = [];
+  for (const record of ledger.records) {
+    const composition = yield* proveRecord(record);
+    if (composition !== null) proven.push({ record, composition });
+  }
+  const raw = new Map<string, Effect.Success<ReturnType<typeof rawEntry>>>();
+  for (const entry of entries) raw.set(`${entry.kind}/${entry.id}`, yield* rawEntry(entry));
+  const published = publicationEntries(entries, proven, raw);
+  const bundles = new Map<string, Uint8Array>();
+  for (const metadata of published) {
+    const value = raw.get(`${metadata.kind}/${metadata.id}`);
+    if (value !== undefined) bundles.set(bundlePath(metadata), value.bytes);
+  }
+  return {
+    entries: published,
+    bundles,
+    stacks: entries.filter(isStack).map((entry) => entry.id),
+  };
+});
