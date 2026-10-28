@@ -686,6 +686,152 @@
         "lint-on-write.sh",
         "session-start.sh"
       ]
+    },
+    {
+      "schemaVersion": 1,
+      "date": "2026-10-28",
+      "stack": "python-react",
+      "with": [],
+      "preset": "sandbox",
+      "agent": "codex",
+      "agentVersion": "0.165.0",
+      "mode": "headless",
+      "repoCommit": "997216ff30f5b632a8bfdcbf27e3bd776048896c",
+      "cli": "0.3.1",
+      "fingerprint": "sha256:beaff8c956eaadd9aa36efb3673456246a50f8361889fe569071e66b56591b4e",
+      "briefWords": 4803,
+      "result": "pass",
+      "agentEnded": "exit",
+      "run": {
+        "schemaVersion": 1,
+        "at": "2026-10-28T23:14:13.156Z",
+        "cli": "0.3.1",
+        "agent": "none",
+        "outcome": "green",
+        "scope": "full",
+        "tamperCheck": "full",
+        "acceptedChanges": false,
+        "durationMs": 6510,
+        "secondsSinceCreated": 160,
+        "steps": [
+          {
+            "name": "install",
+            "phase": "setup",
+            "layer": "install",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 105
+          },
+          {
+            "name": "git-hooks-install",
+            "phase": "setup",
+            "layer": "install",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 30
+          },
+          {
+            "name": "lint",
+            "phase": "check",
+            "layer": "lint",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 1379
+          },
+          {
+            "name": "typecheck",
+            "phase": "check",
+            "layer": "typecheck",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 1468
+          },
+          {
+            "name": "test",
+            "phase": "check",
+            "layer": "test",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 1829
+          },
+          {
+            "name": "api-contract",
+            "phase": "check",
+            "layer": "check",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 270
+          },
+          {
+            "name": "build",
+            "phase": "check",
+            "layer": "build",
+            "status": "skipped",
+            "durationMs": 0
+          },
+          {
+            "name": "readme-filled",
+            "phase": "check",
+            "layer": "check",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 9
+          },
+          {
+            "name": "agents-md-filled",
+            "phase": "check",
+            "layer": "check",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 7
+          },
+          {
+            "name": "claude-readme-filled",
+            "phase": "check",
+            "layer": "check",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 5
+          },
+          {
+            "name": "git-hooks-validate",
+            "phase": "check",
+            "layer": "check",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 20
+          },
+          {
+            "name": "git-hooks-configured",
+            "phase": "check",
+            "layer": "check",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 5
+          },
+          {
+            "name": "api",
+            "phase": "serve",
+            "layer": "serve",
+            "status": "passed",
+            "durationMs": 744
+          },
+          {
+            "name": "web",
+            "phase": "serve",
+            "layer": "serve",
+            "status": "passed",
+            "durationMs": 637
+          }
+        ]
+      },
+      "verifyRuns": 1,
+      "minutesToGreen": 2.3648666666666665,
+      "minutesToFirstTest": 2.3648666666666665,
+      "agentMinutes": 2.4553333333333334,
+      "interventions": 0,
+      "note": "plans/runs/2026-10-28-python-react.md",
+      "hooksFired": null
     }
   ]
 }

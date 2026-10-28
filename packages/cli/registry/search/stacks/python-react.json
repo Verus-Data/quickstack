@@ -3,7 +3,7 @@
   "kind": "stack",
   "id": "python-react",
   "source": {
-    "digest": "sha256:3f8035d1e0bffb424657103890837eb62cfa8435a6b57feda7e9675df2e371d8",
+    "digest": "sha256:047cc9fef0ad6f6328954bcd3194c76100b4ce0a3d81ec2c760baf09dea704f5",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 2,

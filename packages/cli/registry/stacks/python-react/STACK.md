@@ -30,6 +30,7 @@ verify:
   - { name: lint, layer: lint, run: make lint }
   - { name: typecheck, layer: typecheck, run: make typecheck }
   - { name: test, layer: test, run: make test }
+  - { name: home-route-test, layer: test, run: cd frontend && bun run test app/routes/home.test.tsx }
   - { name: api-contract, layer: check, run: make check-api }
   - { name: build, layer: build, run: make build, tags: [prod] }
   - name: api
@@ -113,7 +114,7 @@ Every generator runs in its subdirectory, never the populated root.
 4. **shadcn/ui.** Run its init non-interactively in `frontend/` (check `--help`: current versions also need a style/preset and base-library flag to skip every prompt), and let it add its own utility deps; it infers aliases from tsconfig. Check that `components.json` points at `~/components`, `~/components/ui`, `~/lib`, `~/lib/utils`, `~/hooks` (`~` is `app/`) and fix only what's wrong, rather than writing it by hand. Make sure `button` exists (init may add it).
 5. **Data layer.** One `QueryClient` in `app/lib/query-client.ts`, provided in `root.tsx`; the Vite dev proxy.
 6. **Typed client.** `make generate-api`. The home route calls `/health` through a generated hook and renders it: one real UI-to-API round trip.
-7. **Frontend tooling** per Tool configuration, a component test for the home route (against MSW), one Playwright smoke spec. Fill the README's `stacks:fill` markers.
+7. **Frontend tooling** per Tool configuration, a component test for the home route in `app/routes/home.test.tsx` (against MSW; the `home-route-test` verify step runs it), one Playwright smoke spec. Fill the README's `stacks:fill` markers.
 8. Run `stacks verify` until it passes.
 
 ## Conventions
