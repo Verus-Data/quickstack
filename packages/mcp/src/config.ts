@@ -1,3 +1,5 @@
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { LogLevel } from "effect";
 
 const VALID_LEVELS = new Set<string>([
@@ -20,4 +22,13 @@ function parseLogLevel(raw: string | undefined): LogLevel.LogLevel {
   return "Info";
 }
 
+function resolveCliPath(): string {
+  const envPath = process.env.QUICKSTACKS_MCP_CLI;
+  if (envPath) return envPath;
+  const here = fileURLToPath(new URL(".", import.meta.url));
+  return resolve(here, "../../cli/src/bin.ts");
+}
+
 export const logLevel: LogLevel.LogLevel = parseLogLevel(process.env.MCP_LOG_LEVEL);
+
+export const cliPath: string = resolveCliPath();

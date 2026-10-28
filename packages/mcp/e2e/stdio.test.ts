@@ -9,8 +9,6 @@ import {
   make as makeSpawner,
 } from "effect/process/ChildProcessSpawner";
 import { describe, expect, it } from "vitest";
-import { README_RESOURCE_BODY, README_RESOURCE_URI } from "../src/resource";
-import { ECHO_TOO_LONG_MESSAGE, MAX_ECHO_LENGTH } from "../src/toolkit";
 
 const serverPath = resolve(import.meta.dirname, "../dist/server.js");
 
@@ -59,54 +57,46 @@ function findTool<T extends { name: string }>(tools: ReadonlyArray<T>, name: str
 }
 
 describe("stdio handshake", () => {
-  it("lists tools, calls them, reads the resource, and connects on both protocol revisions", async () => {
+  it("lists tools, calls them, reads resources, and connects on both protocol revisions", async () => {
     const program = Effect.gen(function* () {
       const client = yield* McpClient.McpClient;
 
       const tools = yield* client.listTools();
-      const toolNames = tools.map((t) => t.name);
+      const toolNames = tools.map((t) => t.name).sort();
 
-      expect(tools).toHaveLength(2);
-      expect(toolNames).toContain("ping");
-      expect(toolNames).toContain("echo");
+      expect(toolNames).toEqual(["quickstacks_list", "quickstacks_new", "quickstacks_verify"]);
 
-      const pingTool = findTool(tools, "ping");
-      const pingResult = yield* client.callTool({ tool: pingTool });
-      expect(pingResult.isError).toBeFalsy();
-      expect(pingResult.content).toHaveLength(1);
-      expect(pingResult.content[0]?.type).toBe("text");
+      const listTool = findTool(tools, "quickstacks_list");
+      const listResult = yield* client.callTool({ tool: listTool });
+      expect(listResult.isError).toBeFalsy();
+      const listText = (listResult.content[0] as { text: string }).text;
+      const listParsed = JSON.parse(listText);
+      expect(Array.isArray(listParsed.entries)).toBe(true);
+      expect(listParsed.entries.length).toBeGreaterThanOrEqual(9);
+      for (const entry of listParsed.entries) {
+        expect(typeof entry.id).toBe("string");
+        expect(typeof entry.kind).toBe("string");
+      }
 
-      const echoTool = findTool(tools, "echo");
-      const echoResult = yield* client.callTool({
-        tool: echoTool,
-        arguments: { text: "hello" },
+      const newTool = findTool(tools, "quickstacks_new");
+      const newResult = yield* client.callTool({
+        tool: newTool,
+        arguments: { stack: "bogus-stack" },
       });
-      expect(echoResult.isError).toBeFalsy();
-      const echoText = (echoResult.content[0] as { text: string }).text;
-      const echoParsed = JSON.parse(echoText);
-      expect(echoParsed).toEqual({ text: "hello", length: 5 });
-
-      const longText = "a".repeat(MAX_ECHO_LENGTH + 1);
-      const failResult = yield* client.callTool({
-        tool: echoTool,
-        arguments: { text: longText },
-      });
-      expect(failResult.isError).toBe(true);
-      const failText = (failResult.content[0] as { text: string }).text;
-      const failParsed = JSON.parse(failText);
-      expect(failParsed).toEqual({
-        _tag: "EchoTooLong",
-        message: ECHO_TOO_LONG_MESSAGE,
-      });
+      expect(newResult.isError).toBe(true);
+      const newText = (newResult.content[0] as { text: string }).text;
+      expect(newText).toContain("NotFound");
 
       const resources = yield* client.listResources();
-      expect(resources).toHaveLength(1);
-      expect(resources[0]?.uri).toBe(README_RESOURCE_URI);
+      const uris = resources.map((r) => r.uri);
+      expect(uris).toContain("quickstacks://guide");
+      const skillUris = uris.filter((u) => u.startsWith("skill://"));
+      expect(skillUris.length).toBeGreaterThanOrEqual(2);
 
-      const readResult = yield* client.readResource({ uri: README_RESOURCE_URI });
-      expect(readResult.contents).toHaveLength(1);
-      const content = readResult.contents[0] as { text: string };
-      expect(content.text).toBe(README_RESOURCE_BODY);
+      const guideResult = yield* client.readResource({ uri: "quickstacks://guide" });
+      expect(guideResult.contents).toHaveLength(1);
+      const guideContent = guideResult.contents[0] as { text: string };
+      expect(guideContent.text).toContain("verify");
     }).pipe(Effect.scoped, Effect.provide(makeClientLayer(McpProtocol.v2025_11_25)));
 
     await Effect.runPromise(program).catch((error) => {
@@ -119,7 +109,7 @@ describe("stdio handshake", () => {
     const program = Effect.gen(function* () {
       const client = yield* McpClient.McpClient;
       const tools = yield* client.listTools();
-      expect(tools).toHaveLength(2);
+      expect(tools).toHaveLength(3);
       expect(client.protocolVersion).toBe("2026-07-28");
     }).pipe(Effect.scoped, Effect.provide(makeClientLayer(McpProtocol.v2026_07_28)));
 
