@@ -1,0 +1,136 @@
+import { mkdirSync, realpathSync, symlinkSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { NodeServices } from "@effect/platform-node";
+import { DependencyAllowlist } from "@steamfield/stacks-format";
+import { Effect, Schema } from "effect";
+import { afterEach, expect, test } from "vitest";
+import { readDependencies } from "../src/core/deps";
+import { tempDir } from "./helpers/cli";
+
+const allowlist = Schema.decodeUnknownSync(DependencyAllowlist)({
+  formatVersion: 1,
+  generatedAt: "2026-10-28T00:00:00Z",
+  names: { npm: ["react"], pypi: ["requests"], go: ["example.com/lib"], crates: ["serde"] },
+});
+const temps: ReturnType<typeof tempDir>[] = [];
+function project() {
+  const temp = tempDir();
+  temps.push(temp);
+  return realpathSync(temp.path);
+}
+function put(root: string, relative: string, contents: string) {
+  const file = join(root, relative);
+  mkdirSync(join(file, ".."), { recursive: true });
+  writeFileSync(file, contents);
+}
+function read(root: string) {
+  return Effect.runPromise(
+    readDependencies(root, allowlist).pipe(Effect.provide(NodeServices.layer)),
+  );
+}
+afterEach(() => {
+  for (const temp of temps.splice(0)) temp.cleanup();
+});
+
+test("Go v10 module suffix uses the required version", async () => {
+  const root = project();
+  put(root, "go.mod", "module example.com/app\nrequire example.com/lib/v10 v10.2.3\n");
+  expect(await read(root)).toEqual([{ ecosystem: "go", name: "example.com/lib", major: "10" }]);
+});
+
+test("two Go module suffixes with different majors report an unknown major", async () => {
+  const root = project();
+  put(
+    root,
+    "go.mod",
+    "module example.com/app\nrequire (\n example.com/lib/v2 v2.3.1\n example.com/lib/v3 v3.1.0\n)\n",
+  );
+  expect(await read(root)).toEqual([{ ecosystem: "go", name: "example.com/lib", major: null }]);
+});
+
+test("an unterminated Go require block skips the whole file", async () => {
+  const root = project();
+  put(root, "go.mod", "module example.com/app\nrequire (\n example.com/lib v2.3.1\n");
+  expect(await read(root)).toEqual([]);
+});
+
+test("an installed npm package symlink outside the project has no version", async () => {
+  const root = project();
+  const outside = project();
+  put(root, "package.json", '{"dependencies":{"react":"^18"}}');
+  put(outside, "package.json", '{"version":"18.3.1"}');
+  mkdirSync(join(root, "node_modules/react"), { recursive: true });
+  symlinkSync(join(outside, "package.json"), join(root, "node_modules/react/package.json"));
+  expect(await read(root)).toEqual([{ ecosystem: "npm", name: "react", major: null }]);
+});
+
+test("an invalid uv lock falls back to Poetry and a renamed Cargo package uses its package name", async () => {
+  const root = project();
+  put(root, "pyproject.toml", '[project]\ndependencies = ["Requests>=2"]\n');
+  put(root, "uv.lock", "[[package]\nname = 'requests'\n");
+  put(root, "poetry.lock", '[[package]]\nname = "requests"\nversion = "2.32.1"\n');
+  put(root, "Cargo.toml", '[dependencies]\nserde_alias = { package = "serde", version = "1" }\n');
+  put(root, "Cargo.lock", '[[package]]\nname = "serde"\nversion = "1.0.210"\n');
+  expect(await read(root)).toEqual([
+    { ecosystem: "crates", name: "serde", major: "1" },
+    { ecosystem: "pypi", name: "requests", major: "2" },
+  ]);
+});
+
+test("PyPI prerelease versions retain their breaking 0.x minor", async () => {
+  const root = project();
+  put(root, "pyproject.toml", '[project]\ndependencies = ["requests"]\n');
+  put(root, "uv.lock", '[[package]]\nname = "requests"\nversion = "0.7rc1"\n');
+  expect(await read(root)).toEqual([{ ecosystem: "pypi", name: "requests", major: "0.7" }]);
+});
+
+test("ambiguous lock majors are null unless the root package identifies a version", async () => {
+  const ambiguous = project();
+  put(
+    ambiguous,
+    "Cargo.toml",
+    '[package]\nname = "app"\nversion = "0.1.0"\n[dependencies]\nserde = "1"\n',
+  );
+  put(
+    ambiguous,
+    "Cargo.lock",
+    '[[package]]\nname = "serde"\nversion = "1.0.0"\n[[package]]\nname = "serde"\nversion = "2.0.0"\n',
+  );
+  expect(await read(ambiguous)).toEqual([{ ecosystem: "crates", name: "serde", major: null }]);
+
+  const resolved = project();
+  put(
+    resolved,
+    "Cargo.toml",
+    '[package]\nname = "app"\nversion = "0.1.0"\n[dependencies]\nserde = "1"\n',
+  );
+  put(
+    resolved,
+    "Cargo.lock",
+    '[[package]]\nname = "app"\nversion = "0.1.0"\ndependencies = ["serde 1.0.0"]\n[[package]]\nname = "serde"\nversion = "1.0.0"\n[[package]]\nname = "serde"\nversion = "2.0.0"\n',
+  );
+  expect(await read(resolved)).toEqual([{ ecosystem: "crates", name: "serde", major: "1" }]);
+});
+
+test("the sorted report is capped at 100 names", async () => {
+  const root = project();
+  const packageNames = Array.from(
+    { length: 101 },
+    (_, index) => `pkg${String(index).padStart(3, "0")}`,
+  );
+  put(
+    root,
+    "package.json",
+    JSON.stringify({ dependencies: Object.fromEntries(packageNames.map((name) => [name, "1"])) }),
+  );
+  const many = Schema.decodeUnknownSync(DependencyAllowlist)({
+    formatVersion: 1,
+    generatedAt: "2026-10-28T00:00:00Z",
+    names: { npm: packageNames, pypi: [], go: [], crates: [] },
+  });
+  const result = await Effect.runPromise(
+    readDependencies(root, many).pipe(Effect.provide(NodeServices.layer)),
+  );
+  expect(result).toHaveLength(100);
+  expect(result.at(-1)).toEqual({ ecosystem: "npm", name: "pkg099", major: null });
+});

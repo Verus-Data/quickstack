@@ -22,6 +22,7 @@ type Loader<A, R = never> = (
 ) => Effect.Effect<Loaded<A>, CacheFailure, R | Scope.Scope>;
 export type CachedResource<A> = {
   current: () => Effect.Effect<Option.Option<A>>;
+  cached: Effect.Effect<Option.Option<A>>;
   get: <B, R>(at: string, read: Decoder<B, R>) => Effect.Effect<Option.Option<Loaded<B>>, never, R>;
   status: Effect.Effect<CacheState>;
 };
@@ -171,5 +172,6 @@ export const makeCachedFetch = Effect.fn("cachedFetch.make")(function* <A>(optio
   });
 
   const status = initialize.pipe(Effect.map(() => ({ ...state })));
-  return { current, get, status } satisfies CachedResource<A>;
+  const cached = initialize.pipe(Effect.map(() => body));
+  return { current, cached, get, status } satisfies CachedResource<A>;
 });

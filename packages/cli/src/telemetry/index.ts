@@ -1,9 +1,10 @@
 // Telemetry is best effort: failures and defects are swallowed only at this boundary, because
 // collection must never change a command's output or exit. Debug logs omit error messages.
-import { type RunRecord, TelemetryEvent } from "@steamfield/stacks-format";
+import { type RunRecord, TelemetryEventV2 } from "@steamfield/stacks-format";
 import { Cause, Context, Effect, FileSystem, Layer, Option, Path, Schema } from "effect";
 import { HttpClient } from "effect/http";
 import { AppConfig } from "../config";
+import { Allowlist } from "../core/allowlist";
 import { Registry, remoteRoots } from "../core/registry/registry";
 import { defectTrace } from "../logging";
 import type { Consent, TelemetryFlush, TelemetryStatus } from "../schemas/telemetry";
@@ -21,11 +22,10 @@ import {
   type ScaffoldFacts,
   type ShowFacts,
 } from "./events";
-import { recoverNotice } from "./notice";
-import { scaffold, verify } from "./projects";
+import { settleNotice, showNotice } from "./notice";
+import { markDepsSent, scaffold, verify } from "./projects";
 import { enqueue } from "./spool";
 import {
-  directory,
   Install,
   installId,
   Notice,
@@ -35,12 +35,13 @@ import {
   type Storage,
   timestamp,
   uuid,
-  write,
 } from "./storage";
 
 /** The privacy page is `/telemetry` on the host that receives the events. */
 export const notice = (endpoint: string) =>
-  `stacks collects anonymous usage and verify results, never your code, paths or command output. Privacy and schema: ${new URL("/telemetry", endpoint).href}. Turn it off: stacks telemetry disable`;
+  `stacks collects anonymous usage and verify results, including allowlisted dependency names and major versions from project manifest and lock files after green verify runs. It never sends your code, paths or command output. Privacy and allowlist: ${new URL("/telemetry", endpoint).href}. Turn it off: stacks telemetry disable`;
+export const dependencyNotice = (endpoint: string) =>
+  `stacks now sends allowlisted dependency names and major versions from project manifest and lock files after green verify runs, normally no more than once every 7 days per project. Privacy and allowlist: ${new URL("/telemetry", endpoint).href}. Turn it off: stacks telemetry disable`;
 const safe = <A, E, R>(effect: Effect.Effect<A, E, R>, fallback: A) =>
   effect.pipe(
     Effect.catchCause((cause) =>
@@ -50,6 +51,24 @@ const safe = <A, E, R>(effect: Effect.Effect<A, E, R>, fallback: A) =>
       ),
     ),
   );
+const emitEvent = Effect.fn("telemetry.emitEvent")(function* (input: {
+  store: Storage;
+  output: Output["Service"] | undefined;
+  debug: boolean;
+  envelope: Effect.Effect<Envelope, unknown>;
+  build: Effect.Effect<Omit<TelemetryEventV2, keyof Envelope>, unknown>;
+  onQueued?: (event: TelemetryEventV2) => Effect.Effect<void, unknown>;
+}) {
+  const event = yield* Schema.decodeUnknownEffect(TelemetryEventV2, {
+    onExcessProperty: "error",
+  })({ ...(yield* input.envelope), ...(yield* input.build) });
+  if (input.debug) {
+    if (input.output) yield* input.output.note(JSON.stringify(event));
+    return;
+  }
+  yield* enqueue(input.store, event);
+  if (input.onQueued) yield* input.onQueued(event);
+});
 export class Telemetry extends Context.Service<
   Telemetry,
   {
@@ -74,6 +93,7 @@ export class Telemetry extends Context.Service<
         const path = yield* Path.Path;
         const host = yield* Host;
         const client = yield* HttpClient.HttpClient;
+        const allowlist = yield* Allowlist;
         const files = yield* Effect.context<FileSystem.FileSystem | Path.Path>();
         const registryContext = yield* Effect.context<
           AppConfig | Host | FileSystem.FileSystem | Path.Path
@@ -87,16 +107,15 @@ export class Telemetry extends Context.Service<
         const url = config.telemetry.url ?? options.officialUrl;
         let noticeRun = false;
         let ownsNotice: string | undefined;
+        let previousNotice: typeof Notice.Type | undefined;
         yield* Effect.addFinalizer(() =>
           safe(
-            Effect.gen(function* () {
-              if (!ownsNotice || Option.isNone(output)) return;
-              const current = yield* read(store, "notice.json", Notice).pipe(Effect.option);
-              if (Option.isNone(current) || current.value.claimId !== ownsNotice) return;
-              if (yield* output.value.noticeDelivered)
-                yield* write(store, "notice.json", { noticeShownAt: yield* timestamp });
-              else yield* remove(store, "notice.json");
-            }),
+            settleNotice(
+              store,
+              Option.isSome(output) ? output.value : undefined,
+              ownsNotice,
+              previousNotice,
+            ),
             undefined,
           ),
         );
@@ -109,34 +128,23 @@ export class Telemetry extends Context.Service<
         );
         const notify = safe(
           Effect.gen(function* () {
-            // Consent is never not_notified without an endpoint (no_endpoint wins).
-            if ((yield* check) !== "not_notified" || url === undefined) return;
-            noticeRun = true;
-            if (Option.isNone(output)) return;
-            yield* directory(store, store.root);
-            yield* recoverNotice(store);
-            const claimId = yield* uuid;
-            const created = yield* Effect.result(
-              fs.writeFileString(
-                path.join(store.root, "notice.json"),
-                JSON.stringify({ noticeShownAt: yield* timestamp, pending: true, claimId }),
-                { flag: "wx", mode: 0o600 },
-              ),
-            );
-            if (created._tag === "Success") {
-              ownsNotice = claimId;
-              yield* output.value.notice(notice(url));
-              if (yield* output.value.noticeDelivered) {
-                yield* write(store, "notice.json", { noticeShownAt: yield* timestamp });
-                ownsNotice = undefined;
-              }
-            }
+            if (noticeRun || url === undefined) return;
+            const shown = yield* showNotice({
+              store,
+              output: Option.isSome(output) ? output.value : undefined,
+              reason: yield* check,
+              firstText: notice(url),
+              secondText: dependencyNotice(url),
+            });
+            noticeRun = shown.shown;
+            ownsNotice = shown.claimId;
+            previousNotice = shown.previous;
           }),
           undefined,
         );
         const envelope = Effect.gen(function* (): Effect.fn.Return<Envelope, unknown> {
           return {
-            schemaVersion: 1,
+            schemaVersion: 2,
             eventId: yield* uuid,
             installId: yield* installId(store),
             cliVersion: VERSION,
@@ -146,18 +154,34 @@ export class Telemetry extends Context.Service<
             sentAt: yield* timestamp,
           };
         });
-        const queue = (build: Effect.Effect<Omit<TelemetryEvent, keyof Envelope>, unknown>) =>
+        const onVerifyQueued = (event: TelemetryEventV2) =>
+          event.type === "verify" && event.deps !== undefined
+            ? markDepsSent(store, host.cwd, event.sentAt).pipe(Effect.provideContext(files))
+            : Effect.void;
+        const sendEvent = (
+          build: Effect.Effect<Omit<TelemetryEventV2, keyof Envelope>, unknown>,
+          verifyRun: boolean,
+        ) =>
+          emitEvent({
+            store,
+            output: Option.isSome(output) ? output.value : undefined,
+            debug: config.telemetry.debug,
+            envelope,
+            build,
+            ...(verifyRun ? { onQueued: onVerifyQueued } : {}),
+          });
+        const queue = (
+          build: Effect.Effect<Omit<TelemetryEventV2, keyof Envelope>, unknown>,
+          verifyRun = false,
+        ) =>
           safe(
-            Effect.gen(function* () {
-              yield* notify;
-              if (noticeRun || (yield* check) !== "enabled") return;
-              const event = yield* Schema.decodeUnknownEffect(TelemetryEvent, {
-                onExcessProperty: "error",
-              })({ ...(yield* envelope), ...(yield* build) });
-              if (config.telemetry.debug) {
-                if (Option.isSome(output)) yield* output.value.note(JSON.stringify(event));
-              } else yield* enqueue(store, event);
-            }),
+            notify.pipe(
+              Effect.andThen(check),
+              Effect.flatMap((reason) => {
+                if (noticeRun || reason !== "enabled") return Effect.void;
+                return sendEvent(build, verifyRun);
+              }),
+            ),
             undefined,
           );
         const recordScaffold = (input: ScaffoldFacts) => {
@@ -171,7 +195,15 @@ export class Telemetry extends Context.Service<
           return queue(facts.pipe(Effect.flatMap((value) => scaffold(store, value))));
         };
         const recordVerify = (record: RunRecord) =>
-          queue(verify({ store, cwd: host.cwd, record }).pipe(Effect.provideContext(files)));
+          queue(
+            verify({
+              store,
+              cwd: host.cwd,
+              record,
+              cachedAllowlist: allowlist.cached,
+            }).pipe(Effect.provideContext(files)),
+            true,
+          );
         const flush = (deadline: number) =>
           safe(
             Effect.gen(function* (): Effect.fn.Return<TelemetryFlush, unknown> {

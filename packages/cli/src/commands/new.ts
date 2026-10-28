@@ -1,5 +1,6 @@
 import { Effect, Layer, Option, Schema } from "effect";
 import { Argument, Command, Flag } from "effect/cli";
+import { Allowlist } from "../core/allowlist";
 import { handoffRecord } from "../core/handoff";
 import { pickNew, promptingAllowed, replayFlags, runningCommand } from "../core/prompting";
 import { Registry, remoteRoots } from "../core/registry/registry";
@@ -127,6 +128,7 @@ export const newCommand = Command.make("new", newFlags, (flags) =>
     const output = yield* Output;
     const source = yield* sourceValue(flags.source);
     const options = yield* resolveArguments(flags);
+    yield* (yield* Allowlist).refresh;
     const handoff = yield* prepareHandoff(flags, json);
     const { result, decision, manifest, composition } = yield* scaffold({ ...options, handoff });
     const telemetry = yield* Telemetry;

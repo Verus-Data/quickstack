@@ -18,7 +18,7 @@ function supported(minCli: string): boolean {
   return true;
 }
 
-const signatureValid = (envelope: SignedIndex, keys: typeof INDEX_PUBLIC_KEYS) =>
+export const signatureValid = (envelope: SignedIndex, keys: typeof INDEX_PUBLIC_KEYS) =>
   Effect.tryPromise({
     try: async () => {
       const trusted = keys.find((key) => key.keyId === envelope.keyId);

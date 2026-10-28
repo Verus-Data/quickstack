@@ -11,11 +11,18 @@ import {
 import { createServer, type ServerResponse } from "node:http";
 import { dirname, join } from "node:path";
 import { NodeServices } from "@effect/platform-node";
-import { TelemetryAccepted, TelemetryBatch, TelemetryEvent } from "@steamfield/stacks-format";
+import {
+  INDEX_PUBLIC_KEYS,
+  TelemetryAccepted,
+  TelemetryBatch,
+  TelemetryEvent,
+  TelemetryEventV2,
+} from "@steamfield/stacks-format";
 import { type Clock, Effect, type FileSystem, Layer, type Path, Schema } from "effect";
 import type { HttpClient } from "effect/http";
 import { expect } from "vitest";
 import { AppConfig, type Environment } from "../../src/config";
+import { Allowlist } from "../../src/core/allowlist";
 import { ErrorEnvelope } from "../../src/errors";
 import { NetLayer } from "../../src/platform/net";
 import { Host } from "../../src/services/host";
@@ -24,7 +31,10 @@ import { environment } from "./remote-index";
 
 export const telemetryModule = join(import.meta.dirname, "../../src/telemetry/index.ts");
 export const registry = join(import.meta.dirname, "../fixtures/telemetry/registry");
-export const decodeEvent = Schema.decodeUnknownSync(TelemetryEvent, { onExcessProperty: "error" });
+export const decodeEvent = Schema.decodeUnknownSync(
+  Schema.Union([TelemetryEvent, TelemetryEventV2]),
+  { onExcessProperty: "error" },
+);
 export const telemetryRoot = (home: string) => join(home, "state/stacks/telemetry");
 export const configFile = (home: string) => join(home, "config/stacks/config.json");
 export const json = (file: string): unknown => JSON.parse(readFileSync(file, "utf8"));
@@ -86,7 +96,9 @@ type TelemetryDependencies =
 /** A complete real layer for core tests that consume RunRecord without invoking the parser. */
 export async function telemetryLayer(options: { home: string; cwd: string; env: Environment }) {
   const { Telemetry } = await import(telemetryModule);
-  const layer: Layer.Layer<unknown, never, TelemetryDependencies> = Telemetry.layer({});
+  const layer: Layer.Layer<unknown, never, TelemetryDependencies> = Telemetry.layer({}).pipe(
+    Layer.provideMerge(Allowlist.layer({ keys: INDEX_PUBLIC_KEYS })),
+  );
   const config = Layer.effect(
     AppConfig,
     Effect.map(AppConfig, (live) => ({ ...live, releaseBuild: true })),
@@ -160,13 +172,18 @@ export function seed(home: string, count: number, sentAt = new Date().toISOStrin
   return events;
 }
 export async function telemetryServer() {
-  const requests: { method: string; path: string; events: readonly TelemetryEvent[] }[] = [];
+  const requests: {
+    method: string;
+    path: string;
+    events: readonly TelemetryBatch["events"][number][];
+  }[] = [];
   const errors: unknown[] = [];
-  const held: { response: ServerResponse; events: readonly TelemetryEvent[] }[] = [];
+  const held: { response: ServerResponse; events: readonly TelemetryBatch["events"][number][] }[] =
+    [];
   let mode: "accept" | "hold" | "fail" | "foreign" | "reject" | "retry" = "accept";
   let retryStatus = 429;
   let retryAfter = "1200";
-  const reply = (response: ServerResponse, events: readonly TelemetryEvent[]) => {
+  const reply = (response: ServerResponse, events: readonly TelemetryBatch["events"][number][]) => {
     let rejected: string[] = [];
     if (mode === "foreign") rejected = [randomUUID()];
     if (mode === "reject") rejected = events.slice(0, 1).map((e) => e.eventId);

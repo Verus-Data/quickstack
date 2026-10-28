@@ -2,6 +2,7 @@ import { fileURLToPath } from "node:url";
 import { NodeServices } from "@effect/platform-node";
 import { INDEX_PUBLIC_KEYS } from "@steamfield/stacks-format";
 import { Effect, FileSystem, Layer, Option } from "effect";
+import { Allowlist } from "./core/allowlist";
 import { RemoteIndex } from "./core/remote-index";
 import { invocationFor } from "./invocation";
 import { hasFlag, main } from "./main";
@@ -104,7 +105,8 @@ const application = AppLayer(output, undefined, {
 const remote = RemoteIndex.layer({ keys: INDEX_PUBLIC_KEYS, officialUrl: undefined }).pipe(
   Layer.provide(application),
 );
-const layer = Layer.merge(application, remote).pipe(Layer.provideMerge(platform));
+const allowlist = Allowlist.layer({ keys: INDEX_PUBLIC_KEYS }).pipe(Layer.provide(application));
+const layer = Layer.mergeAll(application, remote, allowlist).pipe(Layer.provideMerge(platform));
 const controller = new AbortController();
 const removeSignalPolicy = installSignalPolicy(holder, () => controller.abort());
 try {

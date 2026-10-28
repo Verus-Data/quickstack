@@ -209,6 +209,15 @@ export async function fixture(temporary: string) {
     GIT_COMMITTER_DATE: "2026-10-27T09:00:00Z",
   };
   const registry = join(cli, "registry");
+  mkdirSync(registry, { recursive: true });
+  writeFileSync(
+    join(registry, "allowlist.json"),
+    JSON.stringify({
+      formatVersion: 1,
+      generatedAt: "2026-10-28T00:00:00Z",
+      names: { npm: [], pypi: [], go: [], crates: [] },
+    }),
+  );
   for (const id of ["sample", "never-proven"]) {
     writeEntry({
       root: registry,

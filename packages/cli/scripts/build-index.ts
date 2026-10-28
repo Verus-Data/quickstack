@@ -9,6 +9,7 @@ import { stringWidth } from "../src/platform/width";
 import { Host } from "../src/services/host";
 import { Foreground, Processes } from "../src/services/processes";
 import { VERSION } from "../src/version";
+import { readAllowlist } from "./index/allowlist";
 import { argumentsFor, IncludeUnprovenUsage } from "./index/arguments";
 import { buildDirectory } from "./index/directory";
 import { historyExec, requireFullHistory } from "./index/history";
@@ -55,6 +56,7 @@ const program = Effect.gen(function* () {
   }
   yield* requireFullHistory(packageRoot);
   yield* validateRegistry();
+  const allowlist = yield* readAllowlist(root);
   const previous = options.previous === null ? null : yield* fetchIndex(options.previous.href);
   const previousNames =
     options.previous === null
@@ -103,6 +105,7 @@ const program = Effect.gen(function* () {
       previous: previousSearch,
     }),
     names,
+    allowlist,
     directory,
     index: {
       formatVersion: 1,

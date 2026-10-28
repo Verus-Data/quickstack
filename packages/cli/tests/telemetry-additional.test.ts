@@ -159,6 +159,67 @@ test("a failed first JSON command cannot count as having delivered the notice", 
   expect(spooled(home)).toEqual([]);
 });
 
+test("a failed JSON command leaves the second notice pending", async () => {
+  const home = space.home;
+  const env = { STACKS_TELEMETRY_URL: server.url };
+  await notified(home, server.url);
+  ok(await checkedCli(["new", "go-cli", "project", "--json"], { home, env }));
+  const old = { noticeShownAt: new Date().toISOString(), noticeVersion: 1 };
+  writeJson(join(telemetryRoot(home), "notice.json"), old);
+  mkdirSync(join(home, "occupied"));
+  writeFileSync(join(home, "occupied/file"), "existing");
+  const failed = await checkedCli(["new", "go-cli", "occupied", "--json"], { home, env });
+  expect(failed.status).toBe(2);
+  expect(failed.stdout).toBe("");
+  expect(JSON.parse(readFileSync(join(telemetryRoot(home), "notice.json"), "utf8"))).toEqual(old);
+  const next = await checkedCli(["verify", "--json"], {
+    home,
+    env: { ...env, PATH: process.env.PATH },
+    host: { cwd: join(home, "project") },
+  });
+  expect(next.status).toBe(0);
+  expect(JSON.parse(next.stdout)).toHaveProperty("notice");
+});
+
+test("the second notice claim counts as shown while JSON output is pending", async () => {
+  const home = space.home;
+  const env = { STACKS_TELEMETRY_URL: server.url, PATH: process.env.PATH };
+  await notified(home, server.url);
+  ok(await checkedCli(["new", "go-cli", "project", "--json"], { home, env }));
+  const noticeFile = join(telemetryRoot(home), "notice.json");
+  writeJson(noticeFile, { noticeShownAt: new Date().toISOString(), noticeVersion: 1 });
+  let writing = false;
+  let release = () => {};
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const cwd = join(home, "project");
+  const first = checkedCli(["verify", "--json"], {
+    home,
+    env,
+    host: { cwd },
+    stdout: async () => {
+      writing = true;
+      await held;
+    },
+  });
+  try {
+    await vi.waitFor(() => expect(writing).toBe(true));
+    expect(JSON.parse(readFileSync(noticeFile, "utf8"))).toMatchObject({
+      noticeVersion: 2,
+      pending: true,
+      claimId: expect.stringMatching(/^second:/),
+    });
+    const second = await checkedCli(["verify", "--json"], { home, env, host: { cwd } });
+    expect(second.status).toBe(0);
+    expect(server.events().filter((event) => event.type === "verify")).toHaveLength(1);
+  } finally {
+    release();
+  }
+  expect((await first).status).toBe(0);
+  expect(JSON.parse(readFileSync(noticeFile, "utf8"))).toMatchObject({ noticeVersion: 2 });
+});
+
 test("another invocation cannot queue before the first JSON notice is delivered", async () => {
   const home = space.home;
   const env = { STACKS_TELEMETRY_URL: server.url };

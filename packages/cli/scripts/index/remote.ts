@@ -1,5 +1,6 @@
 import {
   bundleDigest,
+  DependencyAllowlist,
   DirectoryData,
   EntryBundle,
   type IndexEntry,
@@ -75,6 +76,14 @@ export const fetchNames = Effect.fn("index.fetchNames")(function* (url: string) 
   return yield* signedPayload(url, text, { schema: OfficialNames, name: "OfficialNames" });
 });
 
+export const fetchAllowlist = Effect.fn("index.fetchAllowlist")(function* (url: string) {
+  const text = yield* fetchText(url);
+  return yield* signedPayload(url, text, {
+    schema: DependencyAllowlist,
+    name: "DependencyAllowlist",
+  });
+});
+
 export const fetchSearch = Effect.fn("index.fetchSearch")(function* (url: string) {
   const text = yield* fetchOptionalText(url);
   if (text === null) return null;
@@ -139,11 +148,13 @@ export const checkHost = Effect.fn("index.checkHost")(function* (base: URL) {
   const namesUrl = new URL("v1/names.json", root).href;
   if ((yield* fetchNames(namesUrl)) === null)
     return yield* Effect.fail(new Error(`${namesUrl}: could not fetch file (HTTP 404).`));
+  const allowlistUrl = new URL("v1/allowlist.json", root).href;
+  yield* fetchAllowlist(allowlistUrl);
   const searchUrl = new URL("v1/search.json", root).href;
   if ((yield* fetchSearch(searchUrl)) === null)
     return yield* Effect.fail(new Error(`${searchUrl}: could not fetch file (HTTP 404).`));
   const directoryUrl = new URL("v1/directory.json", root).href;
   if ((yield* fetchPreviousDirectory(directoryUrl)) === null)
     return yield* Effect.fail(new Error(`${directoryUrl}: could not fetch file (HTTP 404).`));
-  return `Checked v1/index.json, v1/names.json, v1/search.json, v1/directory.json and ${refs.length} bundle(s).`;
+  return `Checked v1/index.json, v1/names.json, v1/allowlist.json, v1/search.json, v1/directory.json and ${refs.length} bundle(s).`;
 });

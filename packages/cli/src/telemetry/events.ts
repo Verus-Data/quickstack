@@ -3,7 +3,7 @@ import type {
   Manifest,
   RunRecord,
   TelemetryErrorEvent,
-  TelemetryEvent,
+  TelemetryEventV2,
   TelemetryNewEvent,
   TelemetryVerifyEvent,
 } from "@steamfield/stacks-format";
@@ -24,7 +24,7 @@ export type ErrorFacts = {
   stack?: Pick<Entry, "id" | "origin" | "trusted">;
 };
 export type Envelope = Pick<
-  TelemetryEvent,
+  TelemetryEventV2,
   "schemaVersion" | "eventId" | "installId" | "cliVersion" | "os" | "nodeMajor" | "agent" | "sentAt"
 >;
 export const official = (entry: { origin: string; trusted?: boolean }) =>
@@ -153,4 +153,5 @@ export const TELEMETRY_FIELD_CONSUMERS = {
   stepsChanged: "Changed-step share (4.2a)",
   secondsSinceScaffold: "Time to green (4.2a)",
   secondsToFirstTestPass: "Time to first test (4.2a)",
+  deps: "Allowlisted dependency trends (4.2e)",
 } as const;

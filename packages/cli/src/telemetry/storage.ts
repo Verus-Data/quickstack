@@ -59,6 +59,7 @@ export const Install = Schema.fromJsonString(
 export const Notice = Schema.fromJsonString(
   Schema.Struct({
     noticeShownAt: Schema.String,
+    noticeVersion: Schema.optionalKey(Schema.Int),
     pending: Schema.optionalKey(Schema.Boolean),
     claimId: Schema.optionalKey(Schema.String),
   }),
@@ -70,6 +71,7 @@ export const Project = Schema.Struct({
   fragments: Schema.Array(Schema.String),
   steps: Schema.Array(Schema.String),
   firstTestPassAt: Schema.optionalKey(Schema.String),
+  depsSentAt: Schema.optionalKey(Schema.String),
 });
 export type Project = typeof Project.Type;
 export const installId = Effect.fn("telemetry.installId")(function* (store: Storage) {

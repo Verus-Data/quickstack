@@ -1,4 +1,4 @@
-import { TelemetryAccepted, type TelemetryEvent } from "@steamfield/stacks-format";
+import { TelemetryAccepted, type TelemetryBatch } from "@steamfield/stacks-format";
 import { Clock, Effect, Option, Schema } from "effect";
 import { type HttpClient, HttpClientRequest } from "effect/http";
 import type { TelemetryFlush } from "../schemas/telemetry";
@@ -41,7 +41,7 @@ function retryDelay(value: string | undefined, now: number) {
 const post = Effect.fn("telemetry.post")(function* (input: {
   client: HttpClient.HttpClient;
   url: string;
-  events: readonly TelemetryEvent[];
+  events: readonly TelemetryBatch["events"][number][];
 }) {
   const response = yield* input.client.execute(
     HttpClientRequest.post(`${input.url.replace(/\/$/, "")}/v1/events`).pipe(
