@@ -53,7 +53,7 @@ A ranking tuned without a fixed target drifts toward whatever the last query som
 
 - `first` is the result that must rank first among its kind. It is set only where the maintainers agree there is one right answer.
 - `relevant` grades: 2 is what a person would pick, 1 is a fair second choice. Anything else is not relevant.
-- `noMatch: true` means no result should reach the `strong` tier (4.5c defines tiers); returning weak candidates is fine.
+- `noMatch: true` means no result should reach the `strong` tier (4.5c defines tiers); returning weak candidates is fine. A `noMatch` query may still list `relevant` entries at grade 1, the closest fits that should rank first without being strong; MRR and recall count them as for any other query.
 - `split`: about a third of the queries are `holdout`. Tuning reports (4.5c's `bun run search:eval --split tune`) show only `tune`; the gate checks both, so a change tuned on one pool can't quietly lose the other. The people who write sidecars (4.5b) also write this set, so no golden query may appear in the drafting prompt or its examples, and no holdout query may appear in, or share a run of five consecutive words with, any sidecar's `requests`; 4.5b's tests enforce both. Without that, a maintainer could make the holdout split pass by copying it into the cards.
 - `gate` holds the current baseline (below). It starts at zero and is set by 4.5c's first passing ranking.
 
@@ -61,13 +61,13 @@ A ranking tuned without a fixed target drifts toward whatever the last query som
 
 | Pool | What it tests | Examples (ids are today's registry) |
 |---|---|---|
-| `platform` | The request names where it runs | "an iOS health app" → `mobile-expo`; "an iPhone and Android app with a backend" → `mobile-expo`; "a macOS desktop app" → `tauri-react`; "a command line tool in Go" → `go-cli` |
+| `platform` | The request names where it runs | "an iOS health app" → `mobile-expo`; "an iPhone and Android app with a backend" → `mobile-expo`; "a macOS desktop app" → `tauri-react`; "a command line tool in Go" → `go-cli`; "go cli" → `go-cli` (a two-word query, the shape people type into a search box) |
 | `product` | The request names what it is | "a personal blog with MDX posts" → `astro-blog`; "a REST API in TypeScript" → `typescript-api`; "an AI chat web app" → `react-router` with `openrouter-chat` |
 | `paraphrase` | Neither the platform nor the product word the entry uses | "something people install on their phone to log workouts" → `mobile-expo`; "a tool I run in my terminal to rename files" → `go-cli` or `typescript-cli` (both grade 2, no `first`) |
 | `trap` | A word that appears in entry bodies in a technical sense | "an iOS health app" (stack bodies are full of `/healthz` probes and health checks); "a monitoring dashboard" (healthchecks in `docker-deploy`); "a test prep app for students" (every body says "test") |
 | `fragment` | A need, not a project | "sign-in for my mobile app" → `clerk`; "a Postgres database for my FastAPI app" → `postgres`; "release binaries for my Go CLI" → `goreleaser`; "product analytics" → `posthog` |
 | `combined` | A project and a need | "a static blog deployed to Cloudflare" → `astro-blog` first, `cloudflare-pages` relevant |
-| `no-match` | Nothing in the registry fits | "firmware for a microcontroller"; "a Unity game"; "an Android-only app in Kotlin" and "a native SwiftUI iPhone app" (Expo is a fair grade-1 answer to both, so these have `relevant` with `mobile-expo` at grade 1 and no `first`, rather than `noMatch`) |
+| `no-match` | Nothing in the registry fits | "firmware for a microcontroller"; "a Unity game"; "an Android-only app in Kotlin" and "a native SwiftUI iPhone app" (Expo is a fair grade-1 answer to both, so these have `relevant` with `mobile-expo` at grade 1 and no `first`, rather than `noMatch`); "a command line tool in Python" (`go-cli` and `typescript-cli` at grade 1, no `first`: the platform fits and the language doesn't, which 4.5c's language rule must keep out of `strong`); "a cli with a good TUI experience" (`noMatch: true` with `go-cli` and `typescript-cli` at grade 1: they are the closest fits and should rank first, but neither ships a TUI library, so neither may be `strong`) |
 
 The `trap` pool is the reason this set exists before the ranking: a plain lexical ranking over entry bodies would rank stacks with a `/health` endpoint above `mobile-expo` for "an iOS health app", because "health" is in their bodies and "iOS" appears only a few times in `mobile-expo`'s, and not in its tags. The set records that failure as a test before anyone builds the ranking that has it.
 

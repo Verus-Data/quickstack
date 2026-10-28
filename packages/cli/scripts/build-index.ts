@@ -10,9 +10,12 @@ import { Host } from "../src/services/host";
 import { Foreground, Processes } from "../src/services/processes";
 import { VERSION } from "../src/version";
 import { argumentsFor } from "./index/arguments";
+import { indexNames } from "./index/index-names";
+import { mergeNames } from "./index/names";
 import { currentIndex } from "./index/proof";
 import { carryForward, publish } from "./index/publish";
-import { checkHost, fetchIndex } from "./index/remote";
+import { releaseNames } from "./index/release-names";
+import { checkHost, fetchIndex, fetchNames } from "./index/remote";
 
 const root = fileURLToPath(new URL("../registry", import.meta.url));
 const packageRoot = fileURLToPath(new URL("..", import.meta.url));
@@ -57,19 +60,34 @@ const program = Effect.gen(function* () {
   }
   yield* validateRegistry();
   const previous = options.previous === null ? null : yield* fetchIndex(options.previous.href);
+  const previousNames =
+    options.previous === null
+      ? null
+      : yield* fetchNames(new URL("names.json", options.previous).href);
   const base = options.previous === null ? "" : new URL("../", options.previous).href;
   const current = yield* currentIndex(root);
   const selected = yield* carryForward(current, previous, base);
   const path = yield* Path.Path;
+  const generatedAt = new Date(yield* Clock.currentTimeMillis).toISOString();
+  const checkoutCommit = yield* commit();
+  const bootstrapEntries = previousNames === null ? (previous?.entries ?? []) : [];
+  const sources = [
+    ...(yield* releaseNames(packageRoot)),
+    yield* indexNames([...selected.entries, ...bootstrapEntries], selected.bundles),
+  ];
   yield* publish({
     out: path.resolve(options.out),
     key: options.key,
     bundles: selected.bundles,
+    names: mergeNames(
+      { formatVersion: 1, generatedAt, commit: checkoutCommit, sources },
+      previousNames,
+    ),
     index: {
       formatVersion: 1,
       minCli: VERSION,
-      generatedAt: new Date(yield* Clock.currentTimeMillis).toISOString(),
-      commit: yield* commit(),
+      generatedAt,
+      commit: checkoutCommit,
       entries: selected.entries,
     },
   });

@@ -214,8 +214,8 @@ plan keeps its choice in each case; the maintainers confirm or change it.
     keeps the request on the machine: embed the query locally with a small WASM model that
     the CLI downloads on demand into its cache (never bundled), and ship entry vectors in
     the signed index. It keeps D2 (no model call leaves the machine, and the model is data
-    the CLI runs, not a service) and D36 (nothing is sent), and could make semantic search
-    the default rather than an opt-in. The cost is the download size, a model file the CLI
+    the CLI runs, not a service) and would let semantic search work in the local fallback and
+    under `--local` (D36 as amended sends the request to the API by default). The cost is the download size, a model file the CLI
     must verify like the index, and an exception to A1's single-bundle rule. Blocks 4.5d.
 37. `stacks-api/.claude/rules/api/effect-api.md` puts each store in
     `api/services/<Name>Store.ts` (its "Store" row: an in-memory layer for tests and local

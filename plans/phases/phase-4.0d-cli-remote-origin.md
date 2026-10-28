@@ -1,6 +1,6 @@
 # Phase 4.0d: The CLI's remote origin
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: EXECUTED 2026-10-27 (no official index URL ships yet: the origin is off unless `STACKS_INDEX_URL` is set)
 Acceptance tests: traced
 
 | Field | Value |

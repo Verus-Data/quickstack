@@ -9,6 +9,18 @@ Start here, then read repo `AGENTS.md`, the README's
 next steps, who owns each. When it grows past a couple of screens, move the dated detail
 to `archive/` and leave a link.
 
+## Phase 4 in progress (2026-10-27)
+
+Executed: 4.0a, 4.0b, 4.0c (both repositories: `stacks-api` serves the index and its
+`sha256:`-named bundles, and its API README has the by-hand deploy), 4.0d (the remote origin; no official
+index URL ships until the host exists, so `bin.ts` passes none and the origin is off unless
+`STACKS_INDEX_URL` is set), 4.4a, 4.4b, 4.4c, 4.5a, and 4.0e's signed `v1/names.json`. In
+flight, as Codex units: 4.0e's directory site in `stacks-api`; 4.5b's implementation (the
+bundled cards follow, drafted in a checkout without the golden set, then approved by a
+maintainer at a terminal before 4.5b merges). Waiting: 4.2c after 4.0e; everything from 4.1a on behind D17. Maintainers' steps: review the 47 search
+judgments (4.5a), generate the index key and add it to `INDEX_PUBLIC_KEYS`, rerun the bench per
+stack so the index proves something (4.0c), and publish `@stacks/format` before 4.1b.
+
 ## Demo outline (2026-10-27)
 
 [The revised outline](../product/DEMO_OUTLINE.md) leads with collaborative discovery:
@@ -33,8 +45,8 @@ never shown in the demo), and [4.5a](phases/phase-4.5a-search-evaluation-set.md)
 [4.5d](phases/phase-4.5d-semantic-retrieval.md) (a golden query set, reviewed search
 sidecars, `stacks search` with local ranking, and an opt-in semantic leg that starts only if
 the holdout paraphrase numbers need it). 4.2a gained a weekly series stride, `interval`,
-`previous` and summary `sort`/`limit`/`kind`. Proposals D36 (search privacy, opt-in through
-`stacks search-hybrid enable`) and D37 (sidecars outside the entry) are in
+`previous` and summary `sort`/`limit`/`kind`. Proposals D36 (search privacy; amended 2026-10-27 to API-first `GET /v1/search` with a local
+fallback, [4.5e](phases/phase-4.5e-search-endpoint.md)) and D37 (sidecars outside the entry) are in
 [requirements.md](requirements.md#proposed-decisions); open questions 33-40 cover rounding,
 the agent dot plot, the golden set's growth, the embedding provider, the API's store layout,
 the 90-day window, server-side decoration and a native iOS stack.
@@ -73,7 +85,7 @@ boundary and command guards with tests.
 ## 4.5a executed (2026-10-27)
 
 [4.5a](phases/phase-4.5a-search-evaluation-set.md) landed: `tests/fixtures/search/golden.json`
-holds 45 judged requests (29 tune, 16 holdout) covering every bundled stack and fragment, with
+holds 47 judged requests (30 tune, 17 holdout; "go cli" and the TUI query added with the 4.5 search revision) covering every bundled stack and fragment, with
 the `GoldenSet` schema and `evaluate` in `tests/helpers/`; `docs/maintaining.md` says how to
 judge and when the baseline moves. The baseline stays at zero until 4.5c. The maintainers still
 review the judgments and record the date in the plan. 4.5b can start.
@@ -275,7 +287,7 @@ amended D18); the roadmap's decision table says which sub-phase each one blocks.
 | Review requirements.md and roadmap.md; decide A1, D12, D22 and D23 first, then D5-D7, D9, D13, D14, D18-D20 | Maintainers | The gating table in [0.0](phases/phase-0.0-decisions-and-npm-name.md) says which can wait |
 | Review A2-A4 as answered in 0.3a and 0.3b | Maintainers | Must be in the decisions log before [1.6c](phases/phase-1.6c-first-release.md) publishes |
 | Answer the open questions in [risks-and-open-questions.md](risks-and-open-questions.md) | Maintainers | Question 1 (registry audience) decides which stacks ship bundled |
-| Review the 4.2f, 4.2g and 4.5a-4.5d drafts; decide D36 and D37; answer open questions 33-40 | Maintainers | 4.5a can start any time (data and pure functions); 4.5b and 4.5c need no API; the stats plans wait on D17 and 4.0f |
+| Review the 4.2f, 4.2g and 4.5a-4.5e drafts; decide D36 and D37; answer open questions 33-40 | Maintainers | 4.5a can start any time (data and pure functions); 4.5b and 4.5c need no API; the stats plans wait on D17 and 4.0f |
 | ~~Apply the batch review's fixes to phase 1 round 1 (1.0, 1.1, 1.2a, 1.2b, 1.5)~~ | Agents | Done 2026-10-26, merged in PR #4; notes in [archive/handoff-2026-10-26.md](archive/handoff-2026-10-26.md) |
 | Confirm 1.6b's three gate runs | Maintainers | One green counting run each for astro-blog, go-cli and python-react; the other four bundled stacks have none |
 | ~~Choose how `validate` treats a verify step no layer describes (a file-existence or config check)~~ | Maintainers | Decided 2026-10-26: `check` layer added (roadmap, "Verify step `layer`"). `step-layer` stays a warning and `check` isn't a D7 layer; see [1.5](phases/phase-1.5-validate-and-brief-budget.md), "What this plan may get wrong" |

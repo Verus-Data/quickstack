@@ -4,7 +4,7 @@ Status: DRAFT 2026-10-26 (not agreed). Gated: start only when the evidence below
 
 | Field | Value |
 |---|---|
-| Goal | `@stacks/mcp` is a published stdio MCP server that exposes `list`, `show`, `new` (never launching an agent) and `verify` as tools by running the published CLI's `--json` contract, so an agent whose client prefers MCP tools, or has no shell, gets the same results and the same trust boundary as the CLI |
+| Goal | `@stacks/mcp` is a published stdio MCP server that exposes `search`, `list`, `show`, `new` (never launching an agent) and `verify` as tools by running the published CLI's `--json` contract, so an agent whose client prefers MCP tools, or has no shell, gets the same results and the same trust boundary as the CLI |
 | Traces to | Assumption 5: "Handoff to whatever agent is on PATH is the right entry point. Confidence: Low. Validate: Watch whether people use `new` from a terminal or ask their agent to run it." The coding agent as "the CLI's main reader". D11: "an MCP server will be its own package" |
 | Depends on | 1.6c (a published `stacks` with a stable `--json` contract), 3.1a (`show --json`, which `stacks_show` wraps). Evidence: open question 15 |
 | Blocks | Nothing |
@@ -25,13 +25,13 @@ A majority of `new` events with handoff kind `inside-agent` (4.2a's entry-point 
 In:
 
 - Filling in the `packages/mcp` placeholder: a stdio MCP server, tests, scripts the root fan-out runs, `.claude/rules/mcp/`.
-- Four tools and one resource.
+- Five tools and one resource. `stacks_search` is the entry point: an agent describing what the user wants to build starts there, as the agent guide tells a shell agent to start with `stacks search` (4.5c).
 - A manual `npm publish` of `@stacks/mcp` by a maintainer, the same way 1.6c publishes the CLI. A CI release of this package is out of scope here and owned by no sub-phase: 5.0's workflow releases only `stacks`.
 
 Out:
 
 - HTTP or SSE transports. A remote MCP server would run commands on a server and need auth.
-- `add` and `source` tools until the four basics are used.
+- `add` and `source` tools until the five basics are used.
 - Any tool that runs a command from an entry.
 
 ## Design
@@ -58,6 +58,7 @@ The server runs the CLI with `--json` for each tool call. The JSON contract is s
 
 | Tool | Input | Runs | Returns |
 |---|---|---|---|
+| `stacks_search` | `{ query: string, kind?: "stack" \| "fragment", limit?: number }` | `stacks search <query> --json` with `--kind` and `--limit` when given | The `search --json` result: ranked hits with tier, `why`, caveats and evidence, `noStrongMatch`, and `ranking`/`remote` saying whether the API ranked it (4.5e) or the CLI did |
 | `stacks_list` | `{ kind?: "stacks" \| "fragments" }` | `stacks list --json` | The `list --json` result |
 | `stacks_show` | `{ id: string }` | `stacks show <id> --json` | The `show --json` result |
 | `stacks_new` | `{ stack, dir, with?, without?, sandbox?, yes? }` | `stacks new <stack> <dir> --no-launch --json ...` | The `new --json` result, including `next` and the brief path |
@@ -65,7 +66,7 @@ The server runs the CLI with `--json` for each tool call. The JSON contract is s
 
 Plus a resource `stacks://brief/<dir>` returning `.stacks/BRIEF.md`.
 
-Arguments are passed as an argv array, never through a shell. Tool descriptions are written for the agent: `stacks_new` never launches an agent and its `next` text is the caller's task; `stacks_verify` runs the project's own steps and weakening a step counts as failure; any non-empty untrusted list in a result means stop and ask the user.
+Arguments are passed as an argv array, never through a shell. Tool descriptions are written for the agent: `stacks_search` takes the user's own description of what they want to build, and says to compare strong hits by `why` and `evidence`, tell the user the pick before `stacks_new`, and say nothing fits when `noStrongMatch` is true; `stacks_new` never launches an agent and its `next` text is the caller's task; `stacks_verify` runs the project's own steps and weakening a step counts as failure; any non-empty untrusted list in a result means stop and ask the user.
 
 A non-zero exit becomes a tool result with `isError: true` and structured content `{ exit, error }`, where `error` is the CLI's envelope from the last stderr line and, for keeps-result failures (exit 5), `result` is the stdout result.
 
@@ -98,7 +99,8 @@ Trust model ([roadmap, Trust model](../roadmap.md#trust-model)) points 1 to 4 ap
 
 All against the built bundles: the package's `test` script builds the CLI (`bun run --cwd ../cli build`) and the server, then runs Vitest on Node, so tests exercise the files that get published.
 
-- An `McpClient` from `effect/ai` connects over stdio to the built server, lists four tools and one resource.
+- An `McpClient` from `effect/ai` connects over stdio to the built server, lists five tools and one resource.
+- `stacks_search` with `{ query: "go cli" }` returns the CLI's `search --json` result with `go-cli` first; the query reaches the CLI as one argv element, so a query containing quotes, `;` or `$(...)` is searched as text and runs nothing.
 - `stacks_list` returns the same JSON as running the resolved CLI with `list --json` directly, byte for byte.
 - The server resolves the CLI through `stacks/package.json`'s `bin` field: with a fake `stacks` earlier on PATH that would fail, tools still work.
 - `stacks_new` into a temp dir writes the brief and manifest, the result's `handoff.kind` is `print`, and no agent process starts with a fake agent on PATH.
