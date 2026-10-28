@@ -43,7 +43,13 @@ function killOwned(pid: number) {
   try {
     process.kill(pid, "SIGKILL");
   } catch (error) {
-    if (!(error instanceof Error) || !("code" in error) || error.code !== "ESRCH") throw error;
+    // macOS can answer EPERM while an owned group's last members are zombies.
+    if (
+      !(error instanceof Error) ||
+      !("code" in error) ||
+      (error.code !== "ESRCH" && error.code !== "EPERM")
+    )
+      throw error;
   }
 }
 
