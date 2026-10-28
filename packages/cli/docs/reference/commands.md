@@ -226,7 +226,7 @@ An identical installed file is unchanged. A differing file is preserved with `Ta
 
 ## guide
 
-`stacks` with no arguments, or `stacks guide` (proposed; not yet agreed by the maintainers), prints a short guide written for agents: the `list`, `new`, `verify` loop and its rules. `--json` returns `{ guide, commands }`. `stacks --help` keeps the full help and ends with a "Start here (agents)" footer.
+`stacks` with no arguments, or `stacks guide`, prints a short guide written for agents: `search` in plain words, `show <id>` to review a candidate and explain the pick, `new <stack> <dir>`, then `verify` and `verify --all` before calling it done. `list` browses entries and helps recover when nothing fits. `--json` returns `{ guide, commands }`. `stacks --help` keeps the full help and ends with a "Start here (agents)" footer.
 
 ## doctor
 

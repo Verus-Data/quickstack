@@ -116,37 +116,116 @@ test("API fragments retain local cached stats when their evidence is empty", asy
   expect(server.requests).toHaveLength(1);
 });
 
-test("empty search lists ask for a different product description in every audience", async () => {
+test("empty search lists end with browse and broader-search recovery in both text audiences", async () => {
   server.answer(response([], []));
   const opts = apiOptions(space.dir(), server.url);
   opts.host = { ...opts.host, registry: emptyRegistry };
   const json = decoded(await runCli(["search", "!!!", "--json"], opts));
-  expect(json).toMatchObject({ noStrongMatch: true, stacks: [], fragments: [], remote: "used" });
+  expect(json).toEqual({
+    request: "!!!",
+    ranking: "api",
+    method: "lexical",
+    remote: "used",
+    understood: response().understood,
+    noStrongMatch: true,
+    stacks: [],
+    fragments: [],
+  });
   for (const host of [{}, terminal]) {
     const text = await runCli(["search", "!!!"], { ...opts, host: { ...opts.host, ...host } });
     expect(text.status).toBe(0);
     expect(text.stderr).toBe("");
     expect(text.stdout).toContain("Nothing matched.");
-    expect(text.stdout.replace(/\s+/g, " ")).toContain(
-      'Next: ask the user to describe the product differently, then run stacks search "<request>" or stacks list.',
+    expect(text.stdout.trimEnd()).toMatch(
+      /Next: stacks list stacks\nNext: stacks search "<fewer, broader words>"$/,
     );
     expect(text.stdout).not.toMatch(/stacks (?:show|new)|weak match|confirm the fit/i);
   }
   expect(server.requests).toHaveLength(3);
 });
 
-test("weak-only search still asks before using a match", async () => {
+test("weak-only search keeps confirmation and ends with invocation-aware recovery", async () => {
   server.answer(response([officialHit("go-cli", { tier: "weak" })]));
   const opts = apiOptions(space.dir(), server.url);
   opts.host = { ...opts.host, registry: emptyRegistry };
   for (const host of [{}, terminal]) {
-    const text = await runCli(["search", "cli"], { ...opts, host: { ...opts.host, ...host } });
+    const text = await runCli(["search", "cli"], {
+      ...opts,
+      host: { ...opts.host, ...host, invocation: "npx -y stacks@1.2.3" },
+    });
     expect(text.status).toBe(0);
     expect(text.stderr).toBe("");
     expect(text.stdout).toContain("confirm with the user before using a weak match");
-    expect(text.stdout).toContain("stacks show go-cli");
+    expect(text.stdout.replace(/\s+/g, " ")).toContain("npx -y stacks@1.2.3 show go-cli");
+    expect(text.stdout.trimEnd()).toMatch(
+      /Next: npx -y stacks@1\.2\.3 list stacks\nNext: npx -y stacks@1\.2\.3 search "<fewer, broader words>"$/,
+    );
   }
 });
+
+test("unreachable API and persisted backoff each explain local ranking once in both text audiences", async () => {
+  server.mode("disconnect");
+  for (const host of [{}, terminal]) {
+    const opts = apiOptions(space.dir(), server.url);
+    for (const reason of ["API unavailable", "API backoff"]) {
+      const text = await runCli(["search", "go cli"], {
+        ...opts,
+        host: { ...opts.host, ...host },
+      });
+      expect(text.status).toBe(0);
+      expect(text.stderr).toBe("");
+      expect(text.stdout.match(/^Ranked locally: .*$/gm)).toEqual([`Ranked locally: ${reason}.`]);
+      expect(text.stdout).toContain("go-cli");
+    }
+  }
+  expect(server.requests).toHaveLength(2);
+});
+
+test.each([
+  { env: { STACKS_OFFLINE: "1" }, reason: "offline", message: "offline" },
+  { env: { DO_NOT_TRACK: "1" }, reason: "do_not_track", message: "DO_NOT_TRACK" },
+  { env: { STACKS_DEV_API_URL: "" }, reason: "no_endpoint", message: "no API endpoint configured" },
+])(
+  "API off ($reason) explains local ranking in both text audiences",
+  async ({ env, reason, message }) => {
+    const opts = apiOptions(space.dir(), server.url);
+    opts.env = { ...opts.env, ...env };
+    expect(decoded(await runCli(["search", "go cli", "--json"], opts))).toMatchObject({
+      ranking: "local",
+      remote: "off",
+      remoteReason: reason,
+    });
+    for (const host of [{}, terminal]) {
+      const text = await runCli(["search", "go cli"], { ...opts, host: { ...opts.host, ...host } });
+      expect(text.status).toBe(0);
+      expect(text.stderr).toBe("");
+      expect(text.stdout.match(/^Ranked locally: .*$/gm)).toEqual([`Ranked locally: ${message}.`]);
+      expect(text.stdout).toContain("go-cli");
+    }
+    expect(server.requests).toEqual([]);
+  },
+);
+
+test.each([false, true])(
+  "API ranking and explicit --local (%s) omit fallback notices",
+  async (local) => {
+    const opts = apiOptions(space.dir(), server.url);
+    const args = ["search", "go cli", ...(local ? ["--local"] : [])];
+    expect(decoded(await runCli([...args, "--json"], opts))).toMatchObject(
+      local
+        ? { ranking: "local", remote: "off", remoteReason: "local_flag" }
+        : { ranking: "api", remote: "used" },
+    );
+    for (const host of [{}, terminal]) {
+      const text = await runCli(args, { ...opts, host: { ...opts.host, ...host } });
+      expect(text.status).toBe(0);
+      expect(text.stderr).toBe("");
+      expect(text.stdout).not.toContain("Ranked locally:");
+      expect(text.stdout).toContain("go-cli");
+    }
+    expect(server.requests).toHaveLength(local ? 0 : 3);
+  },
+);
 
 test.each([
   { args: ["search", "go", "--limit", "50"], details: { flag: "limit", value: "50" } },

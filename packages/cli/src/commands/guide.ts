@@ -27,7 +27,7 @@ export const printGuide = Effect.gen(function* () {
 
 export const guideCommand = Command.make("guide", {}, () => printGuide).pipe(
   Command.withDescription(
-    "Print the guide for coding agents: the list, new, verify loop and the rules. Same as running stacks with no arguments. Exits 0, 2 on a usage error, 130 when interrupted.",
+    "Print the guide for coding agents: the search, show, new, verify loop and the rules. Same as running stacks with no arguments. Exits 0, 2 on a usage error, 130 when interrupted.",
   ),
   Command.withShortDescription("Print the guide for coding agents."),
   Command.withExamples(({ commandPath }) => [
