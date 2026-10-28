@@ -14,10 +14,12 @@ to `archive/` and leave a link.
 Executed: 4.0a, 4.0b, 4.0c (both repositories: `stacks-api` serves the index and its
 `sha256:`-named bundles, and its API README has the by-hand deploy), 4.0d (the remote origin; no official
 index URL ships until the host exists, so `bin.ts` passes none and the origin is off unless
-`STACKS_INDEX_URL` is set), 4.4a, 4.4b, 4.4c, 4.5a, and 4.0e's signed `v1/names.json`. In
-flight, as Codex units: 4.0e's directory site in `stacks-api`; 4.5b's implementation (the
-bundled cards follow, drafted in a checkout without the golden set, then approved by a
-maintainer at a terminal before 4.5b merges). Also in flight: 4.2c's telemetry-free parts, `v1/directory.json` here and its pages in `stacks-api` (the pages merge after 4.0e's). Waiting: everything from 4.1a on behind D17. Maintainers' steps: review the 47 search
+`STACKS_INDEX_URL` is set), 4.4a, 4.4b, 4.4c, 4.5a, and 4.0e (`v1/names.json` here, the directory site in `stacks-api`,
+with no source link until the repository has a public URL). 4.5b is implemented with all 30
+bundled cards drafted (by Codex agents in checkouts without the golden set) and waits on a
+maintainer: `bun run decorate --approve <id>` at a terminal for each card, after reading it,
+then it merges. In flight, as Codex units: 4.2c's telemetry-free parts, `v1/directory.json`
+here and its pages in `stacks-api`. Waiting: everything from 4.1a on behind D17. Maintainers' steps: review the 47 search
 judgments (4.5a), generate the index key and add it to `INDEX_PUBLIC_KEYS`, rerun the bench per
 stack so the index proves something (4.0c), and publish `@stacks/format` before 4.1b.
 

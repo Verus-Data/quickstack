@@ -1,6 +1,6 @@
 # Phase 4.0e: Official names and directory
 
-Status: IN PROGRESS 2026-10-27 (`v1/names.json` executed in this repository; the `stacks-api` directory half is next)
+Status: EXECUTED 2026-10-27 (`v1/names.json` here; the directory site in `stacks-api`, whose build-time decoder copies the format v1 schemas until `@stacks/format` is published)
 Acceptance tests: traced
 
 | Field | Value |
