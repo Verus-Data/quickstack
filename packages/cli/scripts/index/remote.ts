@@ -5,11 +5,11 @@ import {
   type IndexEntry,
   OfficialNames,
   RegistryIndex,
+  SearchIndex,
   SignedIndex,
 } from "@steamfield/stacks-format";
 import { Effect, Schema } from "effect";
 import { decodeEntry } from "../../src/core/registry/entry";
-import { SearchIndex } from "../../src/schemas/search";
 import { verifySignature } from "./signing";
 
 export type BundleRef = Pick<IndexEntry, "kind" | "id" | "digest">;

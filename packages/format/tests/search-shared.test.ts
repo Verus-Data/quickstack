@@ -1,6 +1,7 @@
 import {
   rank,
   SearchHit,
+  SearchIndex,
   SearchMetadata,
   SearchResponse,
   SearchResult,
@@ -41,6 +42,21 @@ test("the public search schemas and pure ranker retain lexical language and TUI 
   }
   expect(JSON.stringify(input)).toBe(before);
   expect(rank(input)).toEqual(go);
+});
+
+test("the public signed search schema roundtrips vocabulary and rejects its absence [4.5e#13]", () => {
+  const raw = searchInput();
+  const document = {
+    formatVersion: 1,
+    entries: raw.entries.map((record) => record.search),
+    vocabulary: raw.vocabulary,
+  };
+  const decoded = Schema.decodeUnknownSync(SearchIndex)(document);
+  expect(Schema.decodeUnknownSync(SearchIndex)(Schema.encodeSync(SearchIndex)(decoded))).toEqual(
+    decoded,
+  );
+  const { vocabulary: _vocabulary, ...withoutVocabulary } = document;
+  expect(() => Schema.decodeUnknownSync(SearchIndex)(withoutVocabulary)).toThrow();
 });
 
 test("the shared HTTP schema accepts the route response without request text [4.5e#13]", () => {

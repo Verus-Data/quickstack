@@ -3,9 +3,9 @@ import {
   type IndexEntry,
   OfficialNames,
   RegistryIndex,
+  SearchIndex,
 } from "@steamfield/stacks-format";
 import { Console, Effect, Exit, FileSystem, Path, Schema } from "effect";
-import { SearchIndex } from "../../src/schemas/search";
 import type { currentIndex } from "./proof";
 import { bundlePath, bundleRefs, fetchBundle, fetchFragment } from "./remote";
 import { signIndex } from "./signing";

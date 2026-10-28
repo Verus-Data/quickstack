@@ -86,6 +86,20 @@ export const SearchVocabulary = Schema.Struct({
 });
 export type SearchVocabulary = typeof SearchVocabulary.Type;
 
+/** The signed search publication contains the aliases needed to rank its cards. */
+export const SearchIndex = Schema.Struct({
+  formatVersion: Schema.Literal(1),
+  entries: Schema.Array(
+    Schema.Union(
+      SearchMetadata.members.map((member) =>
+        Schema.Struct({ ...member.fields, stale: Schema.optionalKey(Schema.Boolean) }),
+      ),
+    ),
+  ),
+  vocabulary: SearchVocabulary,
+});
+export type SearchIndex = typeof SearchIndex.Type;
+
 const Share = Schema.Number.check(Schema.isFinite(), Schema.isBetween({ minimum: 0, maximum: 1 }));
 export const SearchEvidence = Schema.Struct({
   stats: Schema.optionalKey(
