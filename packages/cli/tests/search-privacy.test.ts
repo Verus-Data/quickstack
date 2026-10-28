@@ -14,8 +14,15 @@ import { workspace } from "./helpers/verify";
 const space = workspace();
 afterEach(() => space.release());
 const digest = (text: string) => createHash("sha256").update(text).digest("hex");
+// 4.5e reports why the API wasn't asked, which differs by mode; the ranking must not.
+const ranked = (stdout: string) => {
+  const value = JSON.parse(stdout) as unknown;
+  if (typeof value !== "object" || value === null) throw new Error("search printed no object");
+  const rest = Object.entries(value).filter(([key]) => key !== "remote" && key !== "remoteReason");
+  return digest(JSON.stringify(rest));
+};
 
-test("online, unreachable and offline search send no HTTP request and give identical bytes [4.5c#5]", async () => {
+test("online, unreachable and offline search send no HTTP request and give identical rankings [4.5c#5]", async () => {
   const server = await remoteServer(space.dir());
   const home = space.dir();
   const opts = { ...options(home), home, server };
@@ -26,14 +33,14 @@ test("online, unreachable and offline search send no HTTP request and give ident
     success(online);
     const offline = await remoteCli([...args, "--offline"], opts);
     success(offline);
-    expect(digest(offline.stdout)).toBe(digest(online.stdout));
+    expect(ranked(offline.stdout)).toBe(ranked(online.stdout));
     expect(server.requests).toEqual([]);
   } finally {
     await server.close();
   }
   const unreachable = await remoteCli(args, opts);
   success(unreachable);
-  expect(digest(unreachable.stdout)).toBe(digest(online.stdout));
+  expect(ranked(unreachable.stdout)).toBe(ranked(online.stdout));
 });
 
 test("search reads published cached stats and omits absent or unpublished summaries [4.5c#6]", async () => {

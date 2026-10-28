@@ -26,7 +26,12 @@ test("search includes cached index entries without refreshing the index or fetch
     expect(server.requests).toEqual([]);
     const offline = await remoteCli(["search", "sample", "--offline", "--json"], options);
     success(offline);
-    expect(offline.stdout).toBe(result.stdout);
+    // 4.5e's remote fields say why the API wasn't asked, which differs offline.
+    const ranking = (result: object) =>
+      Object.entries(result).filter(([key]) => key !== "remote" && key !== "remoteReason");
+    expect(ranking(Schema.decodeUnknownSync(SearchResult)(JSON.parse(offline.stdout)))).toEqual(
+      ranking(value),
+    );
     expect(server.requests).toEqual([]);
   } finally {
     await server.close();
