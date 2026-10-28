@@ -3,12 +3,20 @@
   "through": "2026-10-25",
   "population": "seeded development data",
   "window": 28,
-  "published": true,
+  "id": "go-cli",
+  "kind": "stack",
+  "lastRun": {
+    "date": "2026-10-25",
+    "result": "pass",
+    "agent": "claude",
+    "preset": "default",
+    "minutesToGreen": 2.5,
+    "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
   "interval": 7,
   "from": "2026-10-01",
   "to": "2026-10-25",
-  "id": "go-cli",
-  "kind": "stack",
+  "published": true,
   "projects": {
     "value": 215,
     "suppressed": false
@@ -40,14 +48,6 @@
       "sample": 150,
       "suppressed": false
     }
-  },
-  "lastRun": {
-    "date": "2026-10-25",
-    "result": "pass",
-    "agent": "claude",
-    "preset": "default",
-    "minutesToGreen": 2.5,
-    "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   },
   "trending": {
     "value": false,
@@ -90,58 +90,26 @@
       }
     }
   },
-  "series": [
-    {
-      "day": "2026-10-11",
-      "projects": {
-        "value": null,
-        "suppressed": true
-      },
-      "greenRate": {
-        "value": null,
-        "lower": null,
-        "upper": null,
-        "sample": null,
-        "suppressed": true
-      },
-      "changes": []
-    },
-    {
-      "day": "2026-10-18",
-      "projects": {
-        "value": 180,
-        "suppressed": false
-      },
-      "greenRate": {
-        "value": 0.85,
-        "lower": 0.79,
-        "upper": 0.9,
-        "sample": 150,
-        "suppressed": false
-      },
-      "changes": []
-    },
-    {
-      "day": "2026-10-25",
-      "projects": {
-        "value": 215,
-        "suppressed": false
-      },
-      "greenRate": {
-        "value": 0.91,
-        "lower": 0.86,
-        "upper": 0.95,
-        "sample": 180,
-        "suppressed": false
-      },
-      "changes": [
+  "series": {
+    "day": ["2026-10-11", "2026-10-18", "2026-10-25"],
+    "projects.value": [null, 180, 215],
+    "projects.suppressed": [true, false, false],
+    "greenRate.value": [null, 0.85, 0.91],
+    "greenRate.lower": [null, 0.79, 0.86],
+    "greenRate.upper": [null, 0.9, 0.95],
+    "greenRate.sample": [null, 150, 180],
+    "greenRate.suppressed": [true, false, false],
+    "changes": [
+      [],
+      [],
+      [
         {
           "day": "2026-10-20",
           "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
         }
       ]
-    }
-  ],
+    ]
+  },
   "p75MinutesToGreen": {
     "value": 24,
     "suppressed": false
@@ -168,177 +136,79 @@
     "value": 0.03,
     "suppressed": false
   },
-  "withoutRates": [
-    {
-      "id": "lint",
-      "rate": {
-        "value": 0.08,
-        "suppressed": false
-      }
-    }
-  ],
-  "attachRates": [
-    {
-      "id": "docker",
-      "rate": {
-        "value": 0.25,
-        "suppressed": false
-      }
-    }
-  ],
-  "byAgent": [
-    {
-      "agent": "claude",
-      "projects": {
-        "value": 140,
-        "suppressed": false
-      },
-      "greenRate": {
-        "value": 0.92,
-        "lower": 0.85,
-        "upper": 0.96,
-        "sample": 120,
-        "suppressed": false
-      },
-      "medianMinutesToGreen": {
-        "value": 13,
-        "suppressed": false
-      }
-    },
-    {
-      "agent": "other",
-      "projects": {
-        "value": 75,
-        "suppressed": false
-      },
-      "greenRate": {
-        "value": 0.88,
-        "lower": 0.77,
-        "upper": 0.94,
-        "sample": 60,
-        "suppressed": false
-      },
-      "medianMinutesToGreen": {
-        "value": 16,
-        "suppressed": false
-      }
-    }
-  ],
-  "byPreset": [
-    {
-      "preset": "default",
-      "projects": {
-        "value": 140,
-        "suppressed": false
-      },
-      "greenRate": {
-        "value": 0.9,
-        "lower": 0.83,
-        "upper": 0.94,
-        "sample": 120,
-        "suppressed": false
-      },
-      "medianMinutesToGreen": {
-        "value": 16,
-        "suppressed": false
-      }
-    },
-    {
-      "preset": "sandbox",
-      "projects": {
-        "value": 75,
-        "suppressed": false
-      },
-      "greenRate": {
-        "value": null,
-        "lower": null,
-        "upper": null,
-        "sample": null,
-        "suppressed": true
-      },
-      "medianMinutesToGreen": {
-        "value": 10,
-        "suppressed": false
-      }
-    }
-  ],
-  "byComposition": [
-    {
-      "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-      "with": [],
-      "without": [],
-      "greenRate": {
-        "value": 0.9,
-        "lower": 0.83,
-        "upper": 0.94,
-        "sample": 120,
-        "suppressed": false
-      },
-      "firstSeen": "2026-10-04",
-      "lastSeen": "2026-10-25",
-      "changes": [
+  "withoutRates": {
+    "id": ["lint"],
+    "rate.value": [0.08],
+    "rate.suppressed": [false]
+  },
+  "attachRates": {
+    "id": ["docker"],
+    "rate.value": [0.25],
+    "rate.suppressed": [false]
+  },
+  "byAgent": {
+    "agent": ["claude", "other"],
+    "projects.value": [140, 75],
+    "projects.suppressed": [false, false],
+    "greenRate.value": [0.92, 0.88],
+    "greenRate.lower": [0.85, 0.77],
+    "greenRate.upper": [0.96, 0.94],
+    "greenRate.sample": [120, 60],
+    "greenRate.suppressed": [false, false],
+    "medianMinutesToGreen.value": [13, 16],
+    "medianMinutesToGreen.suppressed": [false, false]
+  },
+  "byPreset": {
+    "preset": ["default", "sandbox"],
+    "projects.value": [140, 75],
+    "projects.suppressed": [false, false],
+    "greenRate.value": [0.9, null],
+    "greenRate.lower": [0.83, null],
+    "greenRate.upper": [0.94, null],
+    "greenRate.sample": [120, null],
+    "greenRate.suppressed": [false, true],
+    "medianMinutesToGreen.value": [16, 10],
+    "medianMinutesToGreen.suppressed": [false, false]
+  },
+  "byComposition": {
+    "fingerprint": [
+      "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    ],
+    "with": [[], ["docker"]],
+    "without": [[], ["lint"]],
+    "greenRate.value": [0.9, null],
+    "greenRate.lower": [0.83, null],
+    "greenRate.upper": [0.94, null],
+    "greenRate.sample": [120, null],
+    "greenRate.suppressed": [false, true],
+    "firstSeen": ["2026-10-04", "2026-10-25"],
+    "lastSeen": ["2026-10-25", "2026-10-25"],
+    "changes": [
+      [
         {
           "day": "2026-10-20",
           "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
         }
-      ]
-    },
-    {
-      "fingerprint": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-      "with": ["docker"],
-      "without": ["lint"],
-      "greenRate": {
-        "value": null,
-        "lower": null,
-        "upper": null,
-        "sample": null,
-        "suppressed": true
+      ],
+      []
+    ]
+  },
+  "seriesByPreset": {
+    "preset": ["default", "sandbox"],
+    "series": [
+      {
+        "day": ["2026-10-18", "2026-10-25"],
+        "projects.value": [35, 40],
+        "projects.suppressed": [false, false]
       },
-      "firstSeen": "2026-10-25",
-      "lastSeen": "2026-10-25",
-      "changes": []
-    }
-  ],
-  "seriesByPreset": [
-    {
-      "preset": "default",
-      "series": [
-        {
-          "day": "2026-10-18",
-          "projects": {
-            "value": 35,
-            "suppressed": false
-          }
-        },
-        {
-          "day": "2026-10-25",
-          "projects": {
-            "value": 40,
-            "suppressed": false
-          }
-        }
-      ]
-    },
-    {
-      "preset": "sandbox",
-      "series": [
-        {
-          "day": "2026-10-18",
-          "projects": {
-            "value": null,
-            "suppressed": true
-          }
-        },
-        {
-          "day": "2026-10-25",
-          "projects": {
-            "value": 25,
-            "suppressed": false
-          }
-        }
-      ]
-    }
-  ],
+      {
+        "day": ["2026-10-18", "2026-10-25"],
+        "projects.value": [null, 25],
+        "projects.suppressed": [true, false]
+      }
+    ]
+  },
   "entryPoints": {
     "handoff": {
       "launch": 0.41,

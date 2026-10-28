@@ -1,5 +1,6 @@
 import { Schema } from "effect";
 import { DetectedAgent } from "./agent.js";
+import { Columnar } from "./columnar.js";
 import { Kebab, Kind } from "./entry.js";
 import { Digest, LastRun } from "./index-schema.js";
 
@@ -131,13 +132,13 @@ export const StatsSummary = Schema.Union([
     ...Header.fields,
     published: Schema.Literal(true),
     entryPoints: EntryPoints,
-    items: Schema.Array(StatsSummaryItem),
+    items: Columnar(StatsSummaryItem),
     nextCursor: Schema.optionalKey(Schema.String),
   }),
   Schema.Struct({
     ...Header.fields,
     published: Schema.Literal(false),
-    items: Schema.Array(Identity),
+    items: Columnar(Identity),
     nextCursor: Schema.optionalKey(Schema.String),
   }),
 ]);
@@ -212,20 +213,18 @@ export const StackStatsDetail = Schema.Struct({
   published: Schema.Literal(true),
   ...SummaryMetrics.fields,
   ...DetailMetrics.fields,
-  series: Schema.Array(SeriesPoint),
+  series: Columnar(SeriesPoint),
   p75MinutesToGreen: ValueCell,
   medianMinutesToFirstTestPass: ValueCell,
   medianVerifyRunsToGreen: ValueCell,
   stepFailureShares: Schema.Record(Schema.String, ShareCell),
   envBlockedShare: ShareCell,
-  withoutRates: Schema.Array(Schema.Struct({ id: Kebab, rate: ShareCell })),
-  attachRates: Schema.Array(Schema.Struct({ id: Kebab, rate: ShareCell })),
-  byAgent: Schema.Array(Schema.Struct({ agent: DetectedAgent, ...StatsBreakdown.fields })),
-  byPreset: Schema.Array(Schema.Struct({ preset: Kebab, ...StatsBreakdown.fields })),
-  byComposition: Schema.Array(CompositionStats),
-  seriesByPreset: Schema.Array(
-    Schema.Struct({ preset: Kebab, series: Schema.Array(ProjectsPoint) }),
-  ),
+  withoutRates: Columnar(Schema.Struct({ id: Kebab, rate: ShareCell })),
+  attachRates: Columnar(Schema.Struct({ id: Kebab, rate: ShareCell })),
+  byAgent: Columnar(Schema.Struct({ agent: DetectedAgent, ...StatsBreakdown.fields })),
+  byPreset: Columnar(Schema.Struct({ preset: Kebab, ...StatsBreakdown.fields })),
+  byComposition: Columnar(CompositionStats),
+  seriesByPreset: Columnar(Schema.Struct({ preset: Kebab, series: Columnar(ProjectsPoint) })),
   entryPoints: EntryPoints,
   pickRate: ShareCell,
   scaffoldFailureShares: Schema.Record(Schema.String, ShareCell),
@@ -241,10 +240,10 @@ export const FragmentStatsDetail = Schema.Struct({
   kind: Schema.Literal("fragment"),
   published: Schema.Literal(true),
   ...DetailMetrics.fields,
-  series: Schema.Array(ProjectsPoint),
-  byStack: Schema.Array(FragmentStackStats),
-  seriesByStack: Schema.Array(Schema.Struct({ stack: Kebab, series: Schema.Array(ProjectsPoint) })),
-  oftenUsedWith: Schema.optionalKey(Schema.Array(OftenUsedWith)),
+  series: Columnar(ProjectsPoint),
+  byStack: Columnar(FragmentStackStats),
+  seriesByStack: Columnar(Schema.Struct({ stack: Kebab, series: Columnar(ProjectsPoint) })),
+  oftenUsedWith: Schema.optionalKey(Columnar(OftenUsedWith)),
 });
 export type FragmentStatsDetail = typeof FragmentStatsDetail.Type;
 

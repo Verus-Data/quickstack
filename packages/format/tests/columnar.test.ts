@@ -6,7 +6,10 @@ import {
   Columnar,
   CompositionStats,
   FragmentStackStats,
+  FragmentStatsDetail,
   SeriesPoint,
+  StackStatsDetail,
+  StatsSummary,
   StatsSummaryItem,
 } from "../src/index.js";
 import { SearchEvidence } from "../src/search/schema.js";
@@ -24,18 +27,11 @@ const stackFixture: unknown = JSON.parse(
 const fragmentFixture: unknown = JSON.parse(
   readFileSync(new URL("./fixtures/stats/fragment-detail.json", import.meta.url), "utf8"),
 );
-const summaryRows = Schema.decodeUnknownSync(
-  Schema.Struct({ items: Schema.Array(StatsSummaryItem) }),
-)(summaryFixture).items;
-const stackRows = Schema.decodeUnknownSync(
-  Schema.Struct({
-    series: Schema.Array(SeriesPoint),
-    byComposition: Schema.Array(CompositionStats),
-  }),
-)(stackFixture);
-const fragmentRows = Schema.decodeUnknownSync(
-  Schema.Struct({ byStack: Schema.Array(FragmentStackStats) }),
-)(fragmentFixture).byStack;
+const summary = Schema.decodeUnknownSync(StatsSummary)(summaryFixture);
+if (!summary.published) throw new Error("summary fixture must be published");
+const summaryRows = summary.items;
+const stackRows = Schema.decodeUnknownSync(StackStatsDetail)(stackFixture);
+const fragmentRows = Schema.decodeUnknownSync(FragmentStatsDetail)(fragmentFixture).byStack;
 const firstSummary = summaryRows[0];
 if (firstSummary === undefined) throw new Error("summary fixture needs an item");
 const { trending: _trending, ...withoutTrending } = firstSummary;
