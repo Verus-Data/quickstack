@@ -1,4 +1,4 @@
-import { RunRecord } from "@stacks/format";
+import { RunRecord } from "@steamfield/stacks-format";
 import { Effect, FileSystem, Option, Path, Result, Schema } from "effect";
 import type { ProjectRuns } from "../schemas/runs";
 import { locateManifest, readManifest } from "./manifest";

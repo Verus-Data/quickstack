@@ -1,4 +1,4 @@
-import { type IndexEntry, IndexEntry as IndexEntrySchema } from "@stacks/format";
+import { type IndexEntry, IndexEntry as IndexEntrySchema } from "@steamfield/stacks-format";
 import { Effect, FileSystem, Option, Path, Schema } from "effect";
 import { RemoteIndex } from "../remote-index";
 import { directoryMatches } from "../remote-index/files";

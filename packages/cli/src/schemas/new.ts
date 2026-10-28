@@ -1,12 +1,14 @@
-import { AgentId, Harness, Kind } from "@stacks/format";
+import { AgentId, Harness, Kind } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { BRIEF_PATH } from "../project-layout";
+import { NoticeFields } from "./notice";
 import { Origin } from "./origin";
 
 const EntryRef = Schema.Struct({ kind: Kind, id: Schema.String });
 
 /** What `new` wrote or planned and what to do next; `new --json` prints one. */
 export const NewResult = Schema.Struct({
+  ...NoticeFields,
   /** The project root, absolute. */
   project: Schema.String,
   /** True for a preview: no project files, state record or repository were created. */

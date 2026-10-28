@@ -1,5 +1,5 @@
 import { styleText } from "node:util";
-import type { DetectedAgent } from "@stacks/format";
+import type { DetectedAgent } from "@steamfield/stacks-format";
 import { Clock, Context, Effect, Layer, Option, type Scope, Semaphore } from "effect";
 import { AppConfig } from "../config";
 import {
@@ -55,6 +55,8 @@ export class Output extends Context.Service<
   {
     /** Resolved once when the layer is built; commands pick their text rendering by it. */
     audience: Audience;
+    notice: (text: string) => Effect.Effect<void>;
+    noticeDelivered: Effect.Effect<boolean>;
     style: Style;
     /** Clears on scope close; the caller renders completion through normal output. */
     live: (label: string) => Effect.Effect<void, never, Scope.Scope>;
@@ -167,6 +169,8 @@ function make(
 ): Output["Service"] {
   const json = audience === "json";
   const results: string[] = [];
+  let notice: string | undefined;
+  let noticeDelivered = false;
   const terminal = makeLive(stderr, color.live, color.layout);
   const style = makeStyle(color.stdout);
   const errorStyle = makeStyle(color.stderr);
@@ -174,15 +178,37 @@ function make(
     if (!results.length) return Effect.void;
     const text = `${results.join("\n")}\n`;
     results.length = 0;
-    return terminal.around(write(stdout, text));
+    return terminal.around(write(stdout, text)).pipe(
+      Effect.tap(() =>
+        Effect.sync(() => {
+          if (json && notice !== undefined) noticeDelivered = true;
+        }),
+      ),
+    );
   });
   return {
     audience,
+    notice: (text) =>
+      Effect.gen(function* () {
+        notice = text;
+        if (!json)
+          yield* terminal.around(write(stderr, `${text}\n`)).pipe(
+            Effect.tap(() =>
+              Effect.sync(() => {
+                noticeDelivered = true;
+              }),
+            ),
+            Effect.ignoreCause,
+          );
+      }),
+    noticeDelivered: Effect.sync(() => noticeDelivered),
     style,
     live: terminal.live,
     result: (value, text) =>
       Effect.sync(() => {
-        results.push(json ? JSON.stringify(value) : text);
+        const result =
+          notice && typeof value === "object" && value !== null ? { ...value, notice } : value;
+        results.push(json ? JSON.stringify(result) : text);
       }),
     note: (text) =>
       terminal.around(

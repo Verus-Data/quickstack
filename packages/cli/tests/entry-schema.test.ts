@@ -1,5 +1,5 @@
 import { it } from "@effect/vitest";
-import { FragmentMeta, StackMeta } from "@stacks/format";
+import { FragmentMeta, StackMeta } from "@steamfield/stacks-format";
 import { Effect, Schema } from "effect";
 import { expect, test } from "vitest";
 import { parse, stringify } from "yaml";

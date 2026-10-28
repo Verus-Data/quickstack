@@ -1,6 +1,6 @@
 import { readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
-import type { Kind } from "@stacks/format";
+import type { Kind } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { expect } from "vitest";
 import type { Entry } from "../../src/core/registry/entry";

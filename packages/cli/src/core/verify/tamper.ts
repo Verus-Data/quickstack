@@ -1,4 +1,4 @@
-import type { Manifest, TamperCheck } from "@stacks/format";
+import type { Manifest, TamperCheck } from "@steamfield/stacks-format";
 import { Clock, Effect, FileSystem, type Path } from "effect";
 import type { AppConfig } from "../../config";
 import { type InvalidConfig, PermissionDenied } from "../../errors";

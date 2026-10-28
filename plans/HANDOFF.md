@@ -65,12 +65,15 @@ SQLite on the Node host now. 4.5c is executed (2026-10-28): `stacks search` rank
 36/36 first results and 4/4 no-match on the golden set (`plans/runs/2026-10-28-search-lexical.md`);
 the embeddings comparison waits on a maintainer's provider key. 4.1b is executed (2026-10-28):
 `stacks-api` accepts `POST /v1/events` into SQLite (development defaults to `.dev/data/`,
-production needs `STACKS_DB_PATH`, `NETWORK_HASH_KEY` and the trusted proxy headers). In flight:
-4.1a (CLI telemetry client), 4.1c (maintenance in `stacks-api`) and 4.5e's CLI side (tests
-first); then 4.1d, 4.2a and 4.2g, all AGREED. 4.5e's route in `stacks-api` imports `rank` from
-`@stacks/format`, so it waits on that package's publication. Maintainers' steps: review the 47 search
+production needs `STACKS_DB_PATH`, `NETWORK_HASH_KEY` and the trusted proxy headers). 4.1a is
+executed (2026-10-28): the CLI queues opt-out telemetry and shows the first-run notice, but with
+no official endpoint yet consent is `no_endpoint` unless `STACKS_TELEMETRY_URL` is set. 4.1c is
+executed (2026-10-28): `stacks-api` runs archive, pruning and refresh under a lease (production
+needs `STACKS_ARCHIVE_DIR`). In flight: 4.5e's CLI side (tests first); then 4.1d, 4.2a and
+4.2g, all AGREED. 4.5e's route in `stacks-api` imports `rank` from
+`@steamfield/stacks-format`, so it waits on that package's publication. Maintainers' steps: review the 47 search
 judgments (4.5a), generate the index key and add it to `INDEX_PUBLIC_KEYS`, rerun the bench per
-stack so the index proves something (4.0c), and publish `@stacks/format` (until then the API
+stack so the index proves something (4.0c), and publish `@steamfield/stacks-format` (until then the API
 copies the schemas it reads).
 
 ## Demo outline (2026-10-27)
@@ -122,7 +125,7 @@ definition both apps import). It runs as a Node server on a maintainers' host fi
 "API skeleton on Node"), serving only `/healthz`, the signed index files and the built site;
 the Workers spike and move are 4.0f, deferred until after the hackathon demo. Every storage-
 or telemetry-backed sub-phase (4.1b onward) starts after 4.0f, on D1, so no data ever moves
-between hosts. The index and `names.json` are still built and signed here. `@stacks/format`
+between hosts. The index and `names.json` are still built and signed here. `@steamfield/stacks-format`
 (4.0a) is now published, with a `dist/` build, because the API consumes it across repositories.
 
 The bundled `astro-api` stack is what `stacks-api` is scaffolded from; it builds on the
@@ -156,7 +159,7 @@ pipe. JSON and agent bytes are unchanged. `Host.stdoutColumns` folded into `Host
 [4.0c](phases/phase-4.0c-registry-index.md) landed: `bun run build:index` in `packages/cli`
 builds the proven-only `v1/index.json` and its bundles, signed inline with Ed25519 (`--key` or
 `--unsigned`, `--previous <url>` for carry-forward), and `--check <base-url>` verifies a host.
-`@stacks/format` gains `LastRun`, `IndexEntry`, `RegistryIndex`, `SignedIndex` and an empty
+`@steamfield/stacks-format` gains `LastRun`, `IndexEntry`, `RegistryIndex`, `SignedIndex` and an empty
 `INDEX_PUBLIC_KEYS`; `LedgerRecord.agent` widens to `DetectedAgent`. Against today's ledger the
 index proves no stack: four have stale fingerprints and six have no default-composition record,
 so a bench rerun per stack comes first. Maintainers' steps: generate the production key and add
@@ -174,10 +177,10 @@ menus are plain numbered lists.
 ## 4.0a executed (2026-10-27)
 
 [4.0a](phases/phase-4.0a-format-package.md) landed: the entry, manifest and run-record
-schemas live in `packages/format` (`@stacks/format`), with `canonicalBundle` and
+schemas live in `packages/format` (`@steamfield/stacks-format`), with `canonicalBundle` and
 `bundleDigest`; the CLI links it through the workspace and bundles it, and `rr check` gains a
 `check-format` partition. D21 (a signed index) and open question 14 (proven-only serving) are
-decided, so 4.0c can start. Publishing `@stacks/format` 0.1.0 to npm is the maintainers' step,
+decided, so 4.0c can start. Publishing `@steamfield/stacks-format` 0.1.0 to npm is the maintainers' step,
 needed before `stacks-api` imports it (4.1b, after 4.0f).
 
 ## 4.0b executed (2026-10-27)

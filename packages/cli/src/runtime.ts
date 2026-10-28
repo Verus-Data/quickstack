@@ -8,10 +8,16 @@ import { Processes } from "./services/processes";
  * Config, `output` (built over config and Host, so it can resolve the audience), logging and
  * Processes; the platform supplies FileSystem, Path, Host and Foreground.
  */
-export const AppLayer = (output: Layer.Layer<Output, never, Host | AppConfig>, env?: Environment) =>
-  Layer.merge(Processes.layer, Logging.layer).pipe(
+export const AppLayer = (
+  output: Layer.Layer<Output, never, Host | AppConfig>,
+  env?: Environment,
+  releaseBuild = false,
+) =>
+  Layer.mergeAll(Processes.layer, Logging.layer).pipe(
     Layer.provideMerge(output),
-    Layer.provideMerge(env === undefined ? AppConfig.layer() : AppConfig.memory(env)),
+    Layer.provideMerge(
+      env === undefined ? AppConfig.layer(releaseBuild) : AppConfig.memory(env, releaseBuild),
+    ),
   );
 
 // An interrupted fiber remains interrupted after main finishes its masked cleanup.

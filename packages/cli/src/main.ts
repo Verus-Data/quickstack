@@ -1,4 +1,4 @@
-import { AgentId, Harness } from "@stacks/format";
+import { AgentId, Harness } from "@steamfield/stacks-format";
 import { Cause, Clock, Console, Effect, Exit, Logger, Random, References } from "effect";
 import { CliError, Command } from "effect/cli";
 import { cli } from "./cli";
@@ -19,6 +19,7 @@ import { defectTrace, entry, Logging } from "./logging";
 import { Host } from "./services/host";
 import { Invocation } from "./services/invocation";
 import { Output } from "./services/output";
+import { Telemetry } from "./telemetry";
 import { VERSION } from "./version";
 /** Whether one of `flags` comes before any `--`; what follows `--` belongs to the command. */
 export function hasFlag(args: readonly string[], ...flags: readonly string[]): boolean {
@@ -96,6 +97,7 @@ export function main(
     unknown,
     Command.Services<typeof cli> | Command.Environment
   > = Command.runWith(cli, { version: VERSION, renderErrors: false })(args),
+  telemetryOptions: { officialUrl?: string } = {},
 ) {
   return Effect.uninterruptibleMask((restore) =>
     Effect.gen(function* () {
@@ -150,7 +152,7 @@ export function main(
       yield* logging.flush(settings, quiet || expectedFailure(error, defect));
       return status;
     }),
-  );
+  ).pipe(Effect.provide(Telemetry.layer(telemetryOptions)));
 }
 
 function captureConsole(framework: string[]): Console.Console {

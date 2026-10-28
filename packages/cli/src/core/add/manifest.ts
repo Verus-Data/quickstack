@@ -1,4 +1,4 @@
-import type { DetectedAgent, Manifest } from "@stacks/format";
+import type { DetectedAgent, Manifest } from "@steamfield/stacks-format";
 import { digestSteps } from "../manifest";
 
 /** Merge checked fragment contributions; the project's accepted step form stays authoritative. */

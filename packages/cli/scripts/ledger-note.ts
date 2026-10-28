@@ -1,4 +1,4 @@
-import { AgentId, RunRecord } from "@stacks/format";
+import { AgentId, RunRecord } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { targetAgents } from "../src/core/compose/agents";
 

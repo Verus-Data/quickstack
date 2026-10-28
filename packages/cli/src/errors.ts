@@ -1,4 +1,4 @@
-import { FailureKind, Kind } from "@stacks/format";
+import { FailureKind, Kind } from "@steamfield/stacks-format";
 import { Effect, Schema } from "effect";
 import { TEMPLATE_VARIABLES } from "./core/scaffold/template";
 import { shellArg } from "./core/shell";
@@ -43,6 +43,7 @@ export const BadInputDetails = Schema.Struct({
   id: Schema.String,
   flag: Schema.Literals([
     "scope",
+    "source",
     "with_without",
     "dir",
     "brief",
@@ -697,6 +698,8 @@ function badInputGuide(details: typeof BadInputDetails.Type, invocation: string)
         [`Flag: --scope ${id}`],
         "pass an npm scope such as acme or @acme: lowercase, URL-safe, no /.",
       );
+    case "source":
+      return guide(["Flag: --source"], "pass web, docs, skill, cli or other.");
     case "with_without":
       return guide(
         [`Id: ${id}`, "Flags: --with and --without"],

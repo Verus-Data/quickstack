@@ -1,4 +1,4 @@
-import type { AgentId } from "@stacks/format";
+import type { AgentId } from "@steamfield/stacks-format";
 import type { Settings } from "../../schemas/config";
 
 /**

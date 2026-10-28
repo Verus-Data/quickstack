@@ -64,7 +64,7 @@ function tarball(): string {
   if (name === undefined) throw new Error("pack did not produce a tarball");
   return join(directory, name);
 }
-const installed = join(scratch.path, "node_modules/@stacks/format");
+const installed = join(scratch.path, "node_modules/@steamfield/stacks-format");
 
 beforeAll(() => {
   writeFileSync(env.npm_config_userconfig, "");
@@ -113,7 +113,7 @@ test("the tarball ships only dist JavaScript/declarations, JSON schemas, metadat
     expect(hash(join(installed, file))).toBe(hash(join(pkg, file)));
   const packed = readFileSync(join(installed, "package.json"), "utf8");
   expect(packed).not.toMatch(/(?:catalog|workspace):/);
-  expect(JSON.parse(packed)).toMatchObject({ name: "@stacks/format", type: "module" });
+  expect(JSON.parse(packed)).toMatchObject({ name: "@steamfield/stacks-format", type: "module" });
   expect(JSON.parse(packed).dependencies).toEqual({ effect: workspaces.catalog.effect });
 });
 
@@ -125,10 +125,10 @@ test("plain Node imports the installed package and decodes a manifest [4.0a#5]",
     `
 import { readFileSync } from "node:fs";
 import { Effect, Schema } from "effect";
-import { bundleDigest, Manifest, EntryBundle } from "@stacks/format";
+import { bundleDigest, Manifest, EntryBundle } from "@steamfield/stacks-format";
 const manifest = Schema.decodeUnknownSync(Manifest)(JSON.parse(readFileSync("manifest.json", "utf8")));
 const bundle = Schema.decodeUnknownSync(EntryBundle)({ id: "demo", kind: "stack", files: [] });
-console.log(JSON.stringify({ manifest, digest: await Effect.runPromise(bundleDigest(bundle)), resolved: import.meta.resolve("@stacks/format") }));
+console.log(JSON.stringify({ manifest, digest: await Effect.runPromise(bundleDigest(bundle)), resolved: import.meta.resolve("@steamfield/stacks-format") }));
 `,
   );
   const result = run(node, ["consumer.mjs"]);
@@ -145,7 +145,7 @@ test("installed declarations typecheck a consumer with no platform ambient types
     join(scratch.path, "consumer.ts"),
     `
 import { Effect, Schema } from "effect";
-import { bundleDigest, canonicalBundle, EntryBundle, Manifest, RunRecord, type ResolvedStep, withStepDefaults } from "@stacks/format";
+import { bundleDigest, canonicalBundle, EntryBundle, Manifest, RunRecord, type ResolvedStep, withStepDefaults } from "@steamfield/stacks-format";
 const manifest: Manifest = Schema.decodeUnknownSync(Manifest)({});
 const run: RunRecord = Schema.decodeUnknownSync(RunRecord)({});
 const bundle: EntryBundle = Schema.decodeUnknownSync(EntryBundle)({ id: "demo", kind: "stack", files: [] });
@@ -177,7 +177,7 @@ export { manifest, run, bytes, digest, step };
   // A second compile must reject an incompatible assignment, proving declarations aren't `any`.
   writeFileSync(
     join(scratch.path, "consumer.ts"),
-    'import { Schema } from "effect"; import { bundleDigest, EntryBundle } from "@stacks/format"; const bundle = Schema.decodeUnknownSync(EntryBundle)({ id: "demo", kind: "stack", files: [] }); const wrong: number = bundleDigest(bundle); export { wrong };',
+    'import { Schema } from "effect"; import { bundleDigest, EntryBundle } from "@steamfield/stacks-format"; const bundle = Schema.decodeUnknownSync(EntryBundle)({ id: "demo", kind: "stack", files: [] }); const wrong: number = bundleDigest(bundle); export { wrong };',
   );
   const invalid = run(join(repo, "node_modules/.bin/tsc"), ["-p", "tsconfig.json"]);
   expect(invalid.status).not.toBe(0);

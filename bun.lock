@@ -23,7 +23,7 @@
         "@effect/platform-bun": "catalog:",
         "@effect/platform-node": "catalog:",
         "@effect/vitest": "catalog:",
-        "@stacks/format": "workspace:*",
+        "@steamfield/stacks-format": "workspace:*",
         "@types/bun": "catalog:",
         "@types/node": "catalog:",
         "@vitest/coverage-v8": "catalog:",
@@ -35,7 +35,7 @@
       },
     },
     "packages/format": {
-      "name": "@stacks/format",
+      "name": "@steamfield/stacks-format",
       "version": "0.1.0",
       "dependencies": {
         "effect": "catalog:",
@@ -160,11 +160,11 @@
 
     "@rolldown/pluginutils": ["@rolldown/pluginutils@1.0.1", "", {}, "sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw=="],
 
-    "@stacks/format": ["@stacks/format@workspace:packages/format"],
-
     "@stacks/mcp": ["@stacks/mcp@workspace:packages/mcp"],
 
     "@steamfield/stacks": ["@steamfield/stacks@workspace:packages/cli"],
+
+    "@steamfield/stacks-format": ["@steamfield/stacks-format@workspace:packages/format"],
 
     "@types/bun": ["@types/bun@1.4.3", "", { "dependencies": { "bun-types": "1.4.3" } }, "sha512-N67Pqy8JXbAY/j0tNraS3V5mubGvc6rrrNDmDCtZLlFzccbUJPDb0tvgUBC5q4m8ybkP93Jcn1QB+RYQ6PvBhw=="],
 

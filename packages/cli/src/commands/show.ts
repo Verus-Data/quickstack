@@ -6,6 +6,7 @@ import { shownPath } from "../core/shown-path";
 import { ShowReport } from "../schemas/show";
 import { Host } from "../services/host";
 import { Output } from "../services/output";
+import { Telemetry } from "../telemetry";
 
 export const showCommand = Command.make(
   "show",
@@ -21,6 +22,7 @@ export const showCommand = Command.make(
       const output = yield* Output;
       const host = yield* Host;
       const report = yield* showReport(id, Option.getOrUndefined(kind));
+      yield* (yield* Telemetry).recordShow(report);
       const path =
         output.audience === "agent" ? yield* shownPath(host.cwd, report.path) : report.path;
       yield* output.result(

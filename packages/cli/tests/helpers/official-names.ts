@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { OfficialNames, SignedIndex } from "@stacks/format";
+import { OfficialNames, SignedIndex } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { expect } from "vitest";
 import { entryPath, fixture, privateKey, proof } from "../fixtures/index/harness";

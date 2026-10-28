@@ -1,4 +1,4 @@
-import type { Manifest, Outcome } from "@stacks/format";
+import type { Manifest, Outcome } from "@steamfield/stacks-format";
 import { Cause, Clock, Effect, Exit, FileSystem } from "effect";
 import { AGENT_MARKER_NAMES, AppConfig } from "../../config";
 import type { StepResult, VerifyResult } from "../../schemas/verify";

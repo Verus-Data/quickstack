@@ -89,6 +89,7 @@ The CLI is TypeScript on [Effect](https://effect.website), bundled by Bun into o
 | Commands | `cli.ts`, `commands/` | The command tree. Each handler is thin: read flags, call core, hand the result to `Output` |
 | Core | `core/` | The programs: registry, compose, brief, scaffold, add, validate, verify, ledger. No Node or Bun APIs, so it runs unchanged under tests |
 | Services | `services/` | `Output` (audience and writing), `Host`, `Processes` (every child process), `Tcp` |
+| Telemetry | `telemetry/` | Fresh consent, validated anonymous events, private identities and spool; bounded delivery before agent launch and after verify |
 | Platform | `platform/` | The only Node process code: spawning, process groups, signals, HTTP |
 | Schemas | `schemas/` | Effect Schemas for every input and every JSON result |
 

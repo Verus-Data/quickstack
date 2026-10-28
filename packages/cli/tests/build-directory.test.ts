@@ -108,7 +108,7 @@ test("check verifies directory bytes and rejects a one-byte change [4.2c#1]", as
   const file = join(published.out, "v1/directory.json");
   const original = readFileSync(file, "utf8");
   const envelope = directoryEnvelope(published.out);
-  const { DirectoryData } = await import("@stacks/format");
+  const { DirectoryData } = await import("@steamfield/stacks-format");
   const before = Schema.decodeUnknownSync(DirectoryData)(JSON.parse(envelope.payload));
   const changed = envelope.payload.replace(/"addedAt"\s*:\s*"2026-10-27/, (field) =>
     field.replace("2026-10-27", "2026-10-28"),

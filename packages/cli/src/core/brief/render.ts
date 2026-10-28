@@ -1,5 +1,5 @@
-import type { Manifest } from "@stacks/format";
-import { APP_TAG, DEFAULT_STEP_TIMEOUT, withStepDefaults } from "@stacks/format";
+import type { Manifest } from "@steamfield/stacks-format";
+import { APP_TAG, DEFAULT_STEP_TIMEOUT, withStepDefaults } from "@steamfield/stacks-format";
 import { METADATA_DIR } from "../../project-layout";
 import type { ComposedStep, Composition, MissingTool } from "../compose/compose";
 import type { Entry } from "../registry/entry";
@@ -121,7 +121,7 @@ export function renderBrief(composition: Composition<Entry | null>, context: Bri
   gap();
   fixed(T.ground.heading, "", T.ground.generators, T.ground.git(context.git));
   if (context.written.length) fixed(T.ground.written);
-  fixed(T.ground.agentsMd, ...T.ground.notes);
+  fixed(T.ground.agentsMd, T.ground.telemetry, ...T.ground.notes);
   if (context.missing.length) fixed(T.ground.missing);
 
   // 6. Decisions.
@@ -414,6 +414,7 @@ function renderAddBrief(
     "",
     T.add.git,
     T.ground.agentsMd,
+    T.ground.telemetry,
     ...T.ground.notes,
   );
   if (context.missing.length) fixed(T.ground.missing);

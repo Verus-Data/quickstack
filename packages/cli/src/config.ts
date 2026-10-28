@@ -1,5 +1,5 @@
 import { homedir } from "node:os";
-import { AgentId, type DetectedAgent } from "@stacks/format";
+import { AgentId, type DetectedAgent } from "@steamfield/stacks-format";
 import { Config, ConfigProvider, Context, Effect, FileSystem, Layer, Path, Schema } from "effect";
 import { InvalidConfig } from "./errors";
 import { Settings } from "./schemas";
@@ -111,7 +111,7 @@ function provider(env: Environment) {
   );
 }
 const text = (key: string, fallback = "") => Config.String(key).pipe(Config.withDefault(fallback));
-export function configLayer(env: Environment = process.env) {
+export function configLayer(env: Environment = process.env, releaseBuild = false) {
   const captured = { ...env };
   return Layer.effect(
     AppConfig,
@@ -146,19 +146,21 @@ export function configLayer(env: Environment = process.env) {
           ...(registry ? { registry } : {}),
         };
       });
+      const settings = Effect.gen(function* () {
+        const locations = yield* paths;
+        const exists = yield* fs.exists(locations.config);
+        if (!exists) return {};
+        const raw = yield* fs.readFileString(locations.config);
+        const unknown = yield* Effect.try({
+          try: () => JSON.parse(raw) as unknown,
+          catch: () => new InvalidConfig(),
+        });
+        return yield* Schema.decodeUnknownEffect(Settings, { onExcessProperty: "error" })(unknown);
+      }).pipe(Effect.mapError(() => new InvalidConfig()));
       const get = yield* Effect.cached(
         Effect.gen(function* () {
           const locations = yield* paths;
-          const exists = yield* fs.exists(locations.config);
-          if (!exists) return { dataDir: locations.data };
-          const raw = yield* fs.readFileString(locations.config);
-          const unknown = yield* Effect.try({
-            try: () => JSON.parse(raw) as unknown,
-            catch: () => new InvalidConfig(),
-          });
-          const file = yield* Schema.decodeUnknownEffect(Settings, { onExcessProperty: "error" })(
-            unknown,
-          );
+          const file = yield* settings;
           const override = yield* read(text("STACKS_DATA_DIR"));
           return { ...file, dataDir: override || file.dataDir || locations.data };
         }).pipe(Effect.mapError(() => new InvalidConfig())),
@@ -203,10 +205,29 @@ export function configLayer(env: Environment = process.env) {
         Effect.sync(() => {
           offlineFlag = value;
         });
+      let telemetryFlag = false;
+      const noTelemetry = Effect.sync(() => telemetryFlag);
+      const setNoTelemetry = (value: boolean) =>
+        Effect.sync(() => {
+          telemetryFlag = value;
+        });
+      const switchedOff = (value: string | undefined) =>
+        value !== undefined && !["", "0", "false"].includes(value);
+      const telemetry = {
+        doNotTrack: switchedOff(captured.DO_NOT_TRACK),
+        disabled: switchedOff(captured.STACKS_TELEMETRY_DISABLED),
+        debug: captured.STACKS_TELEMETRY_DEBUG === "1",
+        url: captured.STACKS_TELEMETRY_URL || undefined,
+      };
       const indexUrl = read(text("STACKS_INDEX_URL")).pipe(Effect.map((url) => url || undefined));
       return {
         get,
+        settings,
         paths,
+        releaseBuild,
+        telemetry,
+        noTelemetry,
+        setNoTelemetry,
         logging,
         childEnv,
         agent,
@@ -222,10 +243,16 @@ export function configLayer(env: Environment = process.env) {
 export class AppConfig extends Context.Service<
   AppConfig,
   {
+    releaseBuild: boolean;
+    telemetry: { doNotTrack: boolean; disabled: boolean; debug: boolean; url: string | undefined };
+    noTelemetry: Effect.Effect<boolean>;
+    setNoTelemetry: (value: boolean) => Effect.Effect<void>;
     indexUrl: Effect.Effect<string | undefined>;
     offline: Effect.Effect<boolean>;
     setOffline: (value: boolean) => Effect.Effect<void>;
     get: Effect.Effect<Settings, InvalidConfig>;
+    /** Current file settings, without environment defaults; consent is rechecked before sending. */
+    settings: Effect.Effect<Settings, InvalidConfig>;
     paths: Effect.Effect<Paths>;
     logging: Effect.Effect<LogSettings>;
     color: Effect.Effect<{ noColor: boolean; forceColor: boolean }>;
@@ -240,6 +267,6 @@ export class AppConfig extends Context.Service<
     ci: boolean;
   }
 >()("stacks/AppConfig") {
-  static layer = () => configLayer();
-  static memory = (env: Environment = {}) => configLayer(env);
+  static layer = (releaseBuild = false) => configLayer(undefined, releaseBuild);
+  static memory = (env: Environment = {}, releaseBuild = false) => configLayer(env, releaseBuild);
 }

@@ -9,8 +9,8 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join, relative } from "node:path";
-import type { IndexEntry } from "@stacks/format";
-import { canonicalBundle, EntryBundle } from "@stacks/format";
+import type { IndexEntry } from "@steamfield/stacks-format";
+import { canonicalBundle, EntryBundle } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { afterEach, expect, test } from "vitest";
 import { ValidateReport } from "../src/schemas/validate";

@@ -26,6 +26,7 @@ const platform = Layer.mergeAll(
   Foreground.layer(holder),
   NetLayer,
   Host.layer({
+    nodeMajor: Number(process.versions.node.split(".")[0]),
     platform: process.platform,
     executable: process.execPath,
     cwd: process.cwd(),

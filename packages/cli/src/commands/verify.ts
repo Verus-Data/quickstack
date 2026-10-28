@@ -12,6 +12,7 @@ import { MANIFEST_PATH, RUNS_PATH } from "../project-layout";
 import { VerifyResult } from "../schemas/verify";
 import { Host } from "../services/host";
 import { Output } from "../services/output";
+import { Telemetry } from "../telemetry";
 
 /** Repeated flags, each value also split on commas: `--only a --only b,c`. */
 const names = (values: ReadonlyArray<string>) =>
@@ -49,6 +50,7 @@ export const verifyCommand = Command.make(
     Effect.gen(function* () {
       const host = yield* Host;
       const output = yield* Output;
+      const telemetry = yield* Telemetry;
       const started = yield* Clock.currentTimeMillis;
       const located = yield* locateManifest(host.cwd);
       let manifest = yield* readManifest(located.path);
@@ -79,13 +81,16 @@ export const verifyCommand = Command.make(
       if (changed && !flags.acceptChanges) {
         const result = yield* changedResult(plan, manifest, { ...tamper, changed }, started);
         yield* recordRun(context, result);
+        yield* telemetry.flush;
         yield* write(result);
         return yield* new VerifyChanged({ details: changed });
       }
 
       // The record is written in the runner's finalizer, so interrupted runs are recorded too; its
       // services are captured here, before the callback leaves this context.
-      const services = yield* Effect.context<FileSystem.FileSystem | Path.Path | AppConfig>();
+      const services = yield* Effect.context<
+        FileSystem.FileSystem | Path.Path | AppConfig | Telemetry
+      >();
       let facts: RecordFacts = { firstGreen: false, stateRecord: false };
       const project = { root: located.root, manifest, createdAt: createdAtOf(manifest, tamper) };
       const run = yield* runVerify(project, options, (finished) =>
@@ -105,6 +110,7 @@ export const verifyCommand = Command.make(
         ...(changed ? { changed } : {}),
         ...facts,
       };
+      yield* telemetry.flush;
       yield* write(result);
       if (result.outcome === "failed")
         return yield* new VerifyFailed({

@@ -1,10 +1,12 @@
-import { TamperCheck } from "@stacks/format";
+import { TamperCheck } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { BRIEF_PATH } from "../project-layout";
 import { NewResult } from "./new";
+import { NoticeFields } from "./notice";
 
 /** The files and manifest changes made by `add`, and the agent's next task. */
 export const AddResult = Schema.Struct({
+  ...NoticeFields,
   project: Schema.String,
   stack: Schema.NullOr(Schema.String),
   added: Schema.Array(Schema.String),

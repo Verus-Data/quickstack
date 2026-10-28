@@ -1,4 +1,4 @@
-import type { AgentId } from "@stacks/format";
+import type { AgentId } from "@steamfield/stacks-format";
 import { Clock, Effect } from "effect";
 import { AppConfig } from "../config";
 import { BRIEF_PATH } from "../project-layout";
@@ -94,5 +94,5 @@ export const add = (options: AddOptions) =>
       briefWords: brief.briefWords,
       untrusted: [...composition.untrusted],
     };
-    return { result, decision };
+    return { result, decision, manifest, composition };
   });

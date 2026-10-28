@@ -1,4 +1,4 @@
-import { AgentId, Harness } from "@stacks/format";
+import { AgentId, Harness } from "@steamfield/stacks-format";
 import { Effect, FileSystem, Option, Path, Schema, Terminal } from "effect";
 import { CliError, Flag } from "effect/cli";
 import { AppConfig } from "../config";
@@ -299,6 +299,7 @@ export const completeHandoff = (input: {
   preview?: boolean;
   render: (context: SummaryContext) => string;
   encode: (handoff: NewResult["handoff"]) => unknown;
+  beforeHandoff?: (decision: HandoffDecision) => Effect.Effect<void>;
 }) =>
   Effect.gen(function* () {
     const host = yield* Host;
@@ -308,6 +309,7 @@ export const completeHandoff = (input: {
     const summary = input.render({ shown, audience: output.audience, untrusted });
     const choosing = input.decision.kind === "choose";
     const decision = yield* resolveChoice(input.decision, input.project, summary);
+    if (input.beforeHandoff) yield* input.beforeHandoff(decision);
     const invocation = yield* Invocation;
     yield* invocation.annotate({
       handoff: decision.kind,

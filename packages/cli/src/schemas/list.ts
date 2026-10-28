@@ -1,6 +1,7 @@
-import { Category, Kind } from "@stacks/format";
+import { Category, Kind } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { LastRun } from "./ledger";
+import { NoticeFields } from "./notice";
 import { Origin } from "./origin";
 
 export const ListRow = Schema.Struct({
@@ -22,6 +23,7 @@ export const ListRow = Schema.Struct({
 export type ListRow = typeof ListRow.Type;
 
 export const ListResult = Schema.Struct({
+  ...NoticeFields,
   project: Schema.optionalKey(
     Schema.Struct({
       stack: Schema.NullOr(Schema.String),

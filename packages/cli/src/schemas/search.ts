@@ -1,6 +1,7 @@
-import { Kebab, Kind } from "@stacks/format";
+import { Kebab, Kind } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { LastRun } from "./ledger";
+import { NoticeFields } from "./notice";
 import { Origin } from "./origin";
 
 const Words = Schema.Array(Schema.String);
@@ -127,6 +128,7 @@ export const SearchHit = Schema.Struct({
 });
 export type SearchHit = typeof SearchHit.Type;
 export const SearchResult = Schema.Struct({
+  ...NoticeFields,
   request: Schema.String,
   ranking: Schema.Literal("local"),
   understood: Schema.Struct({

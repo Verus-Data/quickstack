@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { Manifest, type ManifestStep, withStepDefaults } from "@stacks/format";
+import { Manifest, type ManifestStep, withStepDefaults } from "@steamfield/stacks-format";
 import {
   Clock,
   Effect,

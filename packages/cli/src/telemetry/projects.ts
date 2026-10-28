@@ -1,0 +1,62 @@
+import type { RunRecord } from "@steamfield/stacks-format";
+import { Clock, Effect, Option, Schema } from "effect";
+import { locateManifest, readManifest } from "../core/manifest";
+import { type ScaffoldFacts, scaffoldEvent, verifyEvent } from "./events";
+import { DAY, Project, read, remove, type Storage, uuid, write } from "./storage";
+
+export const scaffold = Effect.fn("telemetry.scaffold")(function* (
+  store: Storage,
+  input: ScaffoldFacts,
+) {
+  const event = scaffoldEvent(input);
+  const file = store.path.join("projects", `${input.manifest.projectId}.json`);
+  const previous = yield* read(store, file, Schema.fromJsonString(Project)).pipe(Effect.option);
+  const project: Project = Option.isSome(previous)
+    ? previous.value
+    : {
+        telemetryProjectId: yield* uuid,
+        scaffoldedAt: input.manifest.createdAt,
+        stack: event.stack,
+        fragments: event.fragments,
+        steps: [],
+      };
+  yield* write(store, file, {
+    ...project,
+    stack: event.stack,
+    fragments: event.fragments,
+    steps: [...new Set([...project.steps, ...input.steps])],
+  });
+  return { ...event, projectId: project.telemetryProjectId };
+});
+const linkedProject = Effect.fn("telemetry.linkedProject")(function* (store: Storage, cwd: string) {
+  const located = yield* locateManifest(cwd).pipe(Effect.option);
+  if (Option.isNone(located)) return undefined;
+  const manifest = yield* readManifest(located.value.path);
+  const file = store.path.join("projects", `${manifest.projectId}.json`);
+  const saved = yield* read(store, file, Schema.fromJsonString(Project)).pipe(Effect.option);
+  if (Option.isNone(saved)) return undefined;
+  const now = yield* Clock.currentTimeMillis;
+  if (now - Date.parse(saved.value.scaffoldedAt) > 365 * DAY) {
+    yield* remove(store, file);
+    return undefined;
+  }
+  return { file, project: saved.value };
+});
+export const verify = Effect.fn("telemetry.verify")(function* (input: {
+  store: Storage;
+  cwd: string;
+  record: RunRecord;
+}) {
+  const { store, record } = input;
+  const link = yield* linkedProject(store, input.cwd);
+  let project = link?.project;
+  const now = yield* Clock.currentTimeMillis;
+  const testPassed =
+    record.outcome !== "changed" &&
+    record.steps.some((step) => step.layer === "test" && step.status === "passed");
+  if (link && project && !project.firstTestPassAt && testPassed) {
+    project = { ...project, firstTestPassAt: new Date(now).toISOString() };
+    yield* write(store, link.file, project);
+  }
+  return verifyEvent(record, project, now);
+});

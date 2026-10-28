@@ -1,4 +1,4 @@
-import { FragmentMeta, type IndexEntry, type Kind, StackMeta } from "@stacks/format";
+import { FragmentMeta, type IndexEntry, type Kind, StackMeta } from "@steamfield/stacks-format";
 import { Effect, Result, Schema, SchemaIssue } from "effect";
 import { parseDocument } from "yaml";
 import type { Origin } from "../../schemas/origin";

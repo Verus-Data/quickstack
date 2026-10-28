@@ -11,7 +11,7 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { it } from "@effect/vitest";
-import { EntryBundle, type IndexEntry } from "@stacks/format";
+import { EntryBundle, type IndexEntry } from "@steamfield/stacks-format";
 import { Effect, Fiber, Option, Schema } from "effect";
 import { TestClock } from "effect/testing";
 import { afterAll, afterEach, beforeAll, beforeEach, expect, test } from "vitest";

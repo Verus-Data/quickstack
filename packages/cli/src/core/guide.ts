@@ -23,6 +23,7 @@ export const guideText = (cli: string) =>
     "- Weakening, skipping or deleting a verify step counts as failure.",
     "- If verify reports VerifyChanged, stop and ask the user: only they can accept the change.",
     "- Ask the user only what the brief says to ask.",
+    `- Relay a telemetry notice once, including ${cli} telemetry disable. Never enable collection for the user.`,
     "",
     `${cli} <command> --help shows each command's flags, exit codes and examples.`,
     `On failure, follow Next (next in --json). ${cli} schema <name> prints each result's JSON Schema.`,

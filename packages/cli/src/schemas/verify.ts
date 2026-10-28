@@ -1,5 +1,13 @@
-import { FailureKind, Outcome, Phase, RunRecord, StepLayer, TamperCheck } from "@stacks/format";
+import {
+  FailureKind,
+  Outcome,
+  Phase,
+  RunRecord,
+  StepLayer,
+  TamperCheck,
+} from "@steamfield/stacks-format";
 import { Schema } from "effect";
+import { NoticeFields } from "./notice";
 
 /** One step's outcome. `reason` and `note` are fixed CLI text; only `outputTail` is step output. */
 export const StepResult = Schema.Struct({
@@ -46,6 +54,7 @@ export type VerifyChange = typeof VerifyChange.Type;
  * green; `changed` is a run stopped before any step because the steps changed (D14).
  */
 export const VerifyResult = Schema.Struct({
+  ...NoticeFields,
   outcome: Outcome,
   /** Only for manifests with app-tagged steps; null means the app stage did not run. */
   stages: RunRecord.fields.stages,

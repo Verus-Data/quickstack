@@ -1,6 +1,6 @@
 # Phase 4.0e: Official names and directory
 
-Status: EXECUTED 2026-10-27 (`v1/names.json` here; the directory site in `stacks-api`, whose build-time decoder copies the format v1 schemas until `@stacks/format` is published)
+Status: EXECUTED 2026-10-27 (`v1/names.json` here; the directory site in `stacks-api`, whose build-time decoder copies the format v1 schemas until `@steamfield/stacks-format` is published)
 Acceptance tests: traced
 
 | Field | Value |
@@ -67,7 +67,7 @@ Each stack lists the composition of its default set and one composition per opti
 
 ### Directory
 
-Astro pages with static output, generated at build time from the index entries and their bundles. `apps/web` reads the `--out` directory of a `build:index` run (its path is site build config), verifies the index signature with the published `INDEX_PUBLIC_KEYS` from `@stacks/format`, and decodes it as `RegistryIndex`; a build over an index that fails either check fails. The pages ship no island here, so no client JavaScript beyond the theme toggle and the copy script (Design tokens and Copy buttons, below). The directory ships whether or not D17 is agreed, and is rebuilt after each index deploy.
+Astro pages with static output, generated at build time from the index entries and their bundles. `apps/web` reads the `--out` directory of a `build:index` run (its path is site build config), verifies the index signature with the published `INDEX_PUBLIC_KEYS` from `@steamfield/stacks-format`, and decodes it as `RegistryIndex`; a build over an index that fails either check fails. The pages ship no island here, so no client JavaScript beyond the theme toggle and the copy script (Design tokens and Copy buttons, below). The directory ships whether or not D17 is agreed, and is rebuilt after each index deploy.
 
 - `/`: each stack's name, description, tags, last ledger run (`passed <date> with <agent>` or `carried forward from <date>`), and the copy command.
 - `/stacks/<id>/`: deps by role and default and optional fragments from the stack's frontmatter, the verify steps (name, phase, layer, command), the last ledger run, a link to the entry's source in the repo, and the exact command `npx @steamfield/stacks new <id>`.
@@ -187,7 +187,7 @@ These are traced by `stacks-api`'s own tests, not by this repository's trace che
 
 - 2026-10-27: this repository's existing 4.0c test fixes the generated `_headers` to exactly its two index/bundle rules. This unit preserves that output; `stacks-api` must add the names cache rule when assembling the deployed static directory.
 - 2026-10-27, settled for the `stacks-api` site half from its test author's questions:
-  - The site build reads the index output from `STACKS_INDEX_DIR` and the trusted keys from `STACKS_INDEX_PUBLIC_KEYS` (JSON `[{ keyId, publicKey }]`), set only for the build. Production keys will come from `@stacks/format`'s `INDEX_PUBLIC_KEYS` once it is published; until then a deploy supplies them through the variable.
+  - The site build reads the index output from `STACKS_INDEX_DIR` and the trusted keys from `STACKS_INDEX_PUBLIC_KEYS` (JSON `[{ keyId, publicKey }]`), set only for the build. Production keys will come from `@steamfield/stacks-format`'s `INDEX_PUBLIC_KEYS` once it is published; until then a deploy supplies them through the variable.
   - The deploy assembler rejects colliding paths. `_headers` is the one allowed overlap: the assembled file is the site's rules followed by the index output's, plus the names rule, with a test.
   - The plan's `CopyCommand.astro` follows the site rule for reusable components instead: a server-rendered `.tsx` component in `components/` with a colocated test.
   - The directory takes over `/`, so 4.0b's `ApiStatus` island moves to `/status/`, and test `[4.0b#9]` checks that page instead. The directory pages keep only the theme toggle and the copy script.

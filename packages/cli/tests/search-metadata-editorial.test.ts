@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { NodeServices } from "@effect/platform-node";
-import { canonicalBundle, type IndexEntry } from "@stacks/format";
+import { canonicalBundle, type IndexEntry } from "@steamfield/stacks-format";
 import { Effect, Schema } from "effect";
 import { afterEach, expect, test } from "vitest";
 import { EXAMPLE_CARDS, PROMPT_VERSION } from "../scripts/decorate/prompt";

@@ -1,4 +1,4 @@
-import type { FragmentMeta, Kind, StackMeta } from "@stacks/format";
+import type { FragmentMeta, Kind, StackMeta } from "@steamfield/stacks-format";
 import type {
   SearchEvidence,
   SearchHit,

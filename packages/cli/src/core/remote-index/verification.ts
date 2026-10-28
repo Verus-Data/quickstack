@@ -1,4 +1,4 @@
-import { type INDEX_PUBLIC_KEYS, RegistryIndex, SignedIndex } from "@stacks/format";
+import { type INDEX_PUBLIC_KEYS, RegistryIndex, SignedIndex } from "@steamfield/stacks-format";
 import { Effect, Schema } from "effect";
 import { VERSION } from "../../version";
 

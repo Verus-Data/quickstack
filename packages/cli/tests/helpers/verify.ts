@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { createServer, type Server, Socket } from "node:net";
 import { dirname, join } from "node:path";
-import { Manifest, type ManifestStep, RunRecord } from "@stacks/format";
+import { Manifest, type ManifestStep, RunRecord } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import type { Environment } from "../../src/config";
 import { digestSteps, encodeManifest, MANIFEST_PATH } from "../../src/core/manifest";

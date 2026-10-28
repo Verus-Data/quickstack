@@ -55,6 +55,8 @@ export const versions = [
 ];
 
 export const ground = {
+  telemetry:
+    "- If stacks printed a telemetry notice, tell the user once, in one sentence, including how to turn it off.",
   heading: "## Ground rules",
   generators:
     "- Run generators non-interactively, into their own subdirectory or a temporary directory you move the result from. Never run one into the populated project root.",
@@ -66,9 +68,8 @@ export const ground = {
     return "- git isn't installed, so there is no repository. Skip generators' git setup and all commits.";
   },
   written:
-    "- The files stacks wrote are starting points: adapt them to what you build, don't delete them.",
-  agentsMd:
-    "- Keep `AGENTS.md` true: every command it lists exists, and it describes the project as built.",
+    "- Files stacks wrote are starting points: adapt them to what you build, don't delete them.",
+  agentsMd: "- Keep `AGENTS.md` accurate: real commands, implemented behavior.",
   notes: [
     `- Keep \`${NOTES_PATH}\` here as you work; git worktrees lack it and the brief (both git-ignored):`,
     "  - Under `## Findings`, add a line whenever this brief is ambiguous, wrong, names something that doesn't exist or made you guess, and whenever an instruction stopped you making a mistake.",

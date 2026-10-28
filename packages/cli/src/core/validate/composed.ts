@@ -1,4 +1,4 @@
-import { AgentId } from "@stacks/format";
+import { AgentId } from "@steamfield/stacks-format";
 import { Effect, Result } from "effect";
 import type { ComposeConflict, EntryInvalid } from "../../errors";
 import type { Finding } from "../../schemas/validate";

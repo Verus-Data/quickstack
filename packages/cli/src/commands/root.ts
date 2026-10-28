@@ -7,6 +7,10 @@ import { Command, Flag } from "effect/cli";
  */
 export const root = Command.make("stacks").pipe(
   Command.withSharedFlags({
+    noTelemetry: Flag.Boolean("no-telemetry").pipe(
+      Flag.withDescription("Skip telemetry for this invocation, keeping queued events."),
+      Flag.withDefault(false),
+    ),
     offline: Flag.Boolean("offline").pipe(
       Flag.withDescription("Use cached and bundled entries without network requests."),
       Flag.withDefault(false),

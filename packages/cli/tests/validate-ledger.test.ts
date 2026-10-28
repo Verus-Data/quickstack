@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { NodeServices } from "@effect/platform-node";
-import { AgentId } from "@stacks/format";
+import { AgentId } from "@steamfield/stacks-format";
 import { Effect, Exit, Schema } from "effect";
 import { afterEach, expect, test } from "vitest";
 import { fingerprint } from "../src/core/fingerprint";

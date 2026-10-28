@@ -1,4 +1,4 @@
-import type { Manifest } from "@stacks/format";
+import type { Manifest } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { LastRun, type LedgerRecord } from "../schemas/ledger";
 import type { ListResult, ListRow } from "../schemas/list";

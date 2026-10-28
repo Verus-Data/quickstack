@@ -10,7 +10,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import type { Manifest } from "@stacks/format";
+import type { Manifest } from "@steamfield/stacks-format";
 import { Exit, Schema } from "effect";
 import { afterEach, expect, test } from "vitest";
 import { digestSteps, encodeManifest, MANIFEST_PATH } from "../src/core/manifest";

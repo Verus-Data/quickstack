@@ -1,4 +1,4 @@
-import type { FailureKind } from "@stacks/format";
+import type { FailureKind } from "@steamfield/stacks-format";
 import { Clock, Duration, Effect, FileSystem, Path } from "effect";
 import type { SpawnFailed } from "../../errors";
 import type { StepResult } from "../../schemas/verify";

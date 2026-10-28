@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { AgentId } from "@stacks/format";
+import { AgentId } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { afterEach, expect, test } from "vitest";
 import { NewResult } from "../src/schemas/new";
@@ -14,7 +14,7 @@ afterEach(() => {
 });
 
 test("Harness adds launch-only ids without widening AgentId [4.4c#8]", async () => {
-  const { Harness } = await import("@stacks/format");
+  const { Harness } = await import("@steamfield/stacks-format");
   expect(Harness.literals).toEqual([...AgentId.literals, "copilot", "codex-app"]);
   expect(AgentId.literals).toEqual(["claude", "codex", "opencode", "cursor"]);
 });

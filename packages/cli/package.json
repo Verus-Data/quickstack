@@ -40,7 +40,7 @@
     "effect": "catalog:",
     "smol-toml": "catalog:",
     "yaml": "catalog:",
-    "@stacks/format": "workspace:*"
+    "@steamfield/stacks-format": "workspace:*"
   },
   "description": "Compose project guidance and verify agent-built projects.",
   "bin": {

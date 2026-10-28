@@ -5,7 +5,7 @@ import {
   Kebab,
   type OfficialNames,
   type RegistryIndex,
-} from "@stacks/format";
+} from "@steamfield/stacks-format";
 import { Effect, FileSystem, Path, Schema } from "effect";
 import { type Entry, isRejected, markdownFile } from "../../src/core/registry/entry";
 import { Registry } from "../../src/core/registry/registry";

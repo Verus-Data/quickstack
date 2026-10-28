@@ -1,6 +1,8 @@
 import { Schema } from "effect";
+import { NoticeFields } from "./notice";
 import { RemoteStatus } from "./remote-index";
 export const DoctorReport = Schema.Struct({
+  ...NoticeFields,
   version: Schema.String,
   platform: Schema.String,
   executable: Schema.String,

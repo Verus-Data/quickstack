@@ -12,6 +12,7 @@ New here? Start with the [quick start](quickstart.md). It gets a project running
 | [Command reference](reference/commands.md) | Look up every command and flag |
 | [Output and errors](reference/output.md) | Script against `--json`, exit codes and the error envelope |
 | [Configuration](reference/configuration.md) | Set defaults in `config.json` or the environment |
+| [Telemetry](reference/telemetry.md) | See collection, consent, state and privacy controls |
 | [Validation](reference/validation.md) | Learn what `validate` checks and the word budgets |
 | [Maintaining the bundled registry](maintaining.md) | Run the bench, update the ledger, publish the plugin |
 

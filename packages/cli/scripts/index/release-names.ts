@@ -4,7 +4,7 @@ import {
   type NamedComposition,
   type OfficialNames,
   type StackMeta,
-} from "@stacks/format";
+} from "@steamfield/stacks-format";
 import { Console, Effect, FileSystem, Path, Schema } from "effect";
 import { parseDocument } from "yaml";
 import { compose } from "../../src/core/compose/compose";

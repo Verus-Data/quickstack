@@ -8,7 +8,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import type { Manifest } from "@stacks/format";
+import type { Manifest } from "@steamfield/stacks-format";
 import { Deferred, Effect, Fiber, FileSystem, Schema } from "effect";
 import { afterEach, describe, expect, test } from "vitest";
 import { AgentMarkers } from "../src/config";

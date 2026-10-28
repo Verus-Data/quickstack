@@ -1,5 +1,5 @@
-import type { ManifestStep } from "@stacks/format";
-import { type Phase, type ResolvedStep, withStepDefaults } from "@stacks/format";
+import type { ManifestStep } from "@steamfield/stacks-format";
+import { type Phase, type ResolvedStep, withStepDefaults } from "@steamfield/stacks-format";
 import { Effect } from "effect";
 import { BadInput } from "../../errors";
 

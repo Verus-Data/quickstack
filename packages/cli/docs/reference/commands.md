@@ -4,6 +4,8 @@ Every command, its flags and what it does. `stacks <command> --help` prints the 
 
 Every command also accepts `--offline` to disable remote registry requests while using verified cached entries. `STACKS_OFFLINE=1` has the same effect. See [the cache and trust rules](configuration.md#remote-registry-cache).
 
+Every command accepts `--no-telemetry` to skip telemetry for this invocation. `new` and `add` accept optional `--source web|docs|skill|cli|other` attribution. [Telemetry](telemetry.md) describes what is collected and the off switches; no official endpoint is configured yet.
+
 | Command | Does |
 | --- | --- |
 | [`list`](#list) | List the stacks, fragments and apps you can build from |
@@ -18,6 +20,7 @@ Every command also accepts `--offline` to disable remote registry requests while
 | [`guide`](#guide) | Print the guide for coding agents |
 | [`doctor`](#doctor) | Inspect the runtime, paths and configuration |
 | [`schema`](#schema) | Print the JSON Schema of a `--json` result |
+| [`telemetry status\|enable\|disable\|reset\|flush`](telemetry.md) | Inspect consent, turn collection off, rotate identity or send pending events |
 
 ## list
 

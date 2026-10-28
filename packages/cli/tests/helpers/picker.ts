@@ -1,6 +1,6 @@
 import { mkdirSync, readFileSync, realpathSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { Manifest } from "@stacks/format";
+import { Manifest } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { MANIFEST_PATH } from "../../src/core/manifest";
 import { quiet, runCli, tempDir } from "./cli";

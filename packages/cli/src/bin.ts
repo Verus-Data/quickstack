@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { NodeServices } from "@effect/platform-node";
-import { INDEX_PUBLIC_KEYS } from "@stacks/format";
+import { INDEX_PUBLIC_KEYS } from "@steamfield/stacks-format";
 import { Effect, FileSystem, Layer, Option } from "effect";
 import { RemoteIndex } from "./core/remote-index";
 import { invocationFor } from "./invocation";
@@ -33,6 +33,7 @@ const holder = Foreground.make();
 const registry = fileURLToPath(new URL("../registry/", import.meta.url));
 // Replaced by Bun at build time; source development has no escaped asset paths.
 declare const PACKAGED_GITIGNORES: ReadonlyArray<string>;
+declare const STACKS_RELEASE_BUILD: boolean;
 // npm drops literal .gitignore members even when present in a tarball. Only this installed
 // registry's reads translate the packer's escape; authors and core see the original names.
 const packagedFiles = Layer.effect(
@@ -76,6 +77,7 @@ const platform = Layer.mergeAll(
   Foreground.layer(holder),
   NetLayer,
   Host.layer({
+    nodeMajor: Number(process.versions.node.split(".")[0]),
     platform: process.platform,
     executable: process.execPath,
     cwd: process.cwd(),
@@ -93,7 +95,11 @@ const platform = Layer.mergeAll(
     invocation: invocationFor(process.argv[1] ?? ""),
   }),
 );
-const application = AppLayer(output);
+const application = AppLayer(
+  output,
+  undefined,
+  typeof STACKS_RELEASE_BUILD !== "undefined" && STACKS_RELEASE_BUILD,
+);
 const remote = RemoteIndex.layer({ keys: INDEX_PUBLIC_KEYS, officialUrl: undefined }).pipe(
   Layer.provide(application),
 );
@@ -102,7 +108,7 @@ const controller = new AbortController();
 const removeSignalPolicy = installSignalPolicy(holder, () => controller.abort());
 try {
   process.exitCode = await runInvocation(
-    main(args).pipe(Effect.provide(layer), Effect.scoped),
+    main(args, undefined, { officialUrl: undefined }).pipe(Effect.provide(layer), Effect.scoped),
     controller.signal,
   );
 } finally {

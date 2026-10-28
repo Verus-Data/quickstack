@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, rmSync } from "node:fs";
 import { join, relative } from "node:path";
-import { StatsSummary } from "@stacks/format";
+import { StatsSummary } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { afterEach, expect, test } from "vitest";
 import { runCli } from "./helpers/cli";

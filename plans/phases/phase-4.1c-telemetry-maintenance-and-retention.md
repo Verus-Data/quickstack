@@ -1,6 +1,6 @@
 # Phase 4.1c: Telemetry maintenance and retention
 
-Status: IN PROGRESS 2026-10-28 (on SQLite on the Node host, amended D16)
+Status: EXECUTED 2026-10-28 (on SQLite on the Node host, amended D16)
 
 | Field | Value |
 |---|---|
@@ -149,6 +149,7 @@ export const maintain: (now: Date) => Effect.Effect<MaintenanceReport, never,
 
 - 2026-10-27 (amended D16): runs on the Node host's SQLite store (4.1b's dated line). The scheduled entry is a Node timer in `apps/api/src/platform/` that runs the same `maintain` program on the planned schedule under its lease; Workers' cron trigger replaces it at 4.0f. The archive goes to a local directory from config until object storage exists.
 - 2026-10-28: as in 4.1b, no in-memory services. `Archive` has the directory implementation only, and tests use a real temp directory, so "R2 failing for day 5" is a real filesystem failure for that day. Stores are SQLite with migrations on a fresh file per test; the new tables arrive as a migration. Tests drive `maintain(now)` with `TestClock`, plus one check that the platform timer starts and stops with the server's scope; there is no local Workers run. npm is answered by a local HTTP server in the test.
+- 2026-10-28 (implementation): a row whose network hash expired or whose project history was pruned can't be re-checked, so it stays `unreleased_version`, is counted in the report's `leftExcluded` and `leftByReason`, and the step stays ok. Production requires `STACKS_ARCHIVE_DIR` (`ArchivePathRequired`), as 4.1b requires `STACKS_DB_PATH`. Archive metadata whose line counts disagree with the file is kept and logged as `archive_mismatch` rather than rewritten. The platform timer logs a failed run (a defect included) and keeps its schedule; only interruption ends it.
 
 - Reading npm from the scheduled job adds an outside dependency to the server. It's one request a day; a publish-time push is an optional later speed-up.
 - Count matching proves the archive has the right number of rows, not the right rows. A digest of the day's rows would be stronger; add it if the archive is ever used for more than recomputing aggregates.

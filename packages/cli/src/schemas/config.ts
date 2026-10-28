@@ -1,4 +1,4 @@
-import { AgentId } from "@stacks/format";
+import { AgentId } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 
 /** An npm scope, with or without its leading `@`: lowercase and URL-safe, no `/`. */
@@ -11,6 +11,7 @@ export const NpmScope = Schema.String.check(
  * set it beside the entry frontmatter that uses it. Unknown keys are rejected where it's decoded.
  */
 export const Settings = Schema.Struct({
+  telemetry: Schema.optional(Schema.Boolean),
   dataDir: Schema.optional(Schema.String),
   /** Fragment ids composed into every stack they apply to (1.1). */
   always: Schema.optional(Schema.Array(Schema.String)),

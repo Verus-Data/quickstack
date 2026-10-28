@@ -1,6 +1,6 @@
 import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import type { ManifestStep } from "@stacks/format";
+import type { ManifestStep } from "@steamfield/stacks-format";
 import { Effect, Exit, Random } from "effect";
 import { afterEach, expect, test } from "vitest";
 import {
