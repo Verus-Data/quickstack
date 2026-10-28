@@ -1,7 +1,7 @@
 # Handoff for the next stacks session
 
-Status: DRAFT 2026-10-27 (phases 0 and 1 merged; the doable plans of phases 2 and 3 executed
-and production-reviewed, 3.2a/3.2b deferred; plan awaiting the maintainers' review)
+Status: DRAFT 2026-10-28 (phases 0 to 3 as before; phase 4's API, telemetry and search work
+executed apart from the items under "Next session")
 
 Start here, then read repo `AGENTS.md`, the README's
 [product summary](README.md#product-to-preserve), and
@@ -9,34 +9,33 @@ Start here, then read repo `AGENTS.md`, the README's
 next steps, who owns each. When it grows past a couple of screens, move the dated detail
 to `archive/` and leave a link.
 
-## Next session: the rest of the API (2026-10-28)
+## Next session: finish phase 4, then the demo host (2026-10-28)
 
-The seeded dev API runs on a fresh checkout (the run command is under "Phase 4 in progress"), so
-the site can build against the real routes instead of fixtures. Executed on the API side: 4.0b,
-4.1b, 4.1c, 4.1d, 4.2a, 4.2g. What's left, in order:
+Executed this batch: D38 (columnar lists, format 0.3.0), 4.2a's QA fixes, 4.1e, 4.2b's CLI
+half, 4.2d, 4.2e, 4.2c's trending, 4.2g's test 4, the v2 deps seed and the active-scale profile,
+and 4.5e: search is deployed at `https://stacks.steamfield.io` and `bin.ts::DEFAULT_API_URL`
+names it, so the CLI's search, stats and allowlist use the hosted API. The search QA fixes
+(4.5e's last dated line) are on `main` in format 0.4.0. What's left, in order:
 
-1. D38, columnar responses. Every list in an API response (the stats summary's `items`, each
-   history series, the breakdown lists) becomes one object of column arrays, defined in
-   `@steamfield/stacks-format` so TypeScript enforces it on the API, the site and the CLI. One
-   contract covers the format schemas (a 0.3.0 the maintainer publishes), the `stacks-api`
-   serializers and the `apps/web` client; the frontend agent owns `apps/web`, so agree the shape
-   with it first. Measured before: the summary is 12.8 KB for 30 items, a stack detail 12 KB.
-2. 4.2a's QA findings (its last dated line): unrounded minute medians, shares and medians
-   published on cells under the threshold, `BadInput` without details, the OpenAPI enum type
-   mismatch, and one unexplained suppressed week. A failing test first for each.
-3. Done 2026-10-28: 4.5e's route is deployed at `https://stacks.steamfield.io`, and
-   `bin.ts::DEFAULT_API_URL` names it, so the CLI's search, stats and allowlist use the hosted
-   API (stats there are still seeded and labeled until wave 5's demo deploy).
-4. 4.1e, telemetry launch and runbook. Small, but its first live deploy is a maintainer's step.
-5. 4.2d, dependency telemetry through the client and ingest (verify events carry `deps` at
-   schema version 2), then 4.2e, dependency trends and pages, the largest piece left.
-6. 4.2c's telemetry views need a trending dimension in the rollup; 4.2g's test 4 waits on it.
+1. Publish format 0.4.0 (maintainer):
+   `cd packages/format && npm publish dist/pack/steamfield-stacks-format-0.4.0.tgz --access public`.
+   Until `stacks-api` takes it and redeploys, a CLI built from `main` can't decode the deployed
+   API's 0.3.0 penalties and ranks locally.
+2. `stacks-api`: bump to 0.4.0, land the API search evidence (S4: API hits carry `lastRun` and
+   stats evidence instead of nulls), gate, `prod:deploy`, re-QA search.
+3. Seed throughput (`maintain`'s integrity pass dominates the active profile's run), then run
+   `--profile active` and judge it against what a healthy CLI would show.
+4. The Docker stack locally with the active store, then the demo host deploy with
+   `STACKS_DEMO=true` and manual QA. Production still serves the small default seed with the
+   seeded label.
+5. 4.2f's stats pages and charts and 4.2c's telemetry views: the frontend agent's work.
 
-Seed realism is thin (4.2g's last dated line): improve it when a page reads those fields.
-The site's own index reader (`apps/web/src/data/read-directory.ts`) still requires signatures;
-the frontend agent decides whether it follows the API's unsigned-in-development rule. 4.0f
-(Workers) stays deferred. The format 0.2.0 publish, from the prepared worktree:
-`cd .claude/worktrees/publish-format-0.2.0/packages/format && bun run pack && npm publish dist/pack/steamfield-stacks-format-0.2.0.tgz --access public`.
+Open questions: the index omits `lastRun` because no bundled stack has a ledger pass at its
+current fingerprint, while local search shows ledger passes without that check, so the two
+paths disagree. The site's own index reader (`apps/web/src/data/read-directory.ts`) still
+requires signatures. 4.0f (Workers) stays deferred; 4.3 and 4.5d wait on their start
+conditions. Maintainers' steps: the allowlist review, 4.1e's live launch and alert
+destination, the index key, and 4.2d's production rerun.
 
 ## Manual library QA and fixes (2026-10-27–28)
 

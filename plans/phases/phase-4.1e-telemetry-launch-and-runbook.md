@@ -1,6 +1,6 @@
 # Phase 4.1e: Telemetry launch and runbook
 
-Status: IN PROGRESS 2026-10-28 (on the Node host, amended D16; the live launch stays the maintainers' step)
+Status: EXECUTED 2026-10-28 (on the Node host, amended D16; the live launch, its production acceptance run and the alert destination stay the maintainers' steps)
 
 | Field | Value |
 |---|---|

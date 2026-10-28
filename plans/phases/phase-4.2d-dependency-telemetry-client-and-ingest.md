@@ -1,6 +1,6 @@
 # Phase 4.2d: Dependency telemetry, client and ingest
 
-Status: IN PROGRESS 2026-10-28 (D25 decided)
+Status: EXECUTED 2026-10-28 (D25 decided; the allowlist review and the production rerun are the maintainers' steps)
 
 | Field | Value |
 |---|---|

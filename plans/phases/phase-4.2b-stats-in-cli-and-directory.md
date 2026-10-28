@@ -1,6 +1,6 @@
 # Phase 4.2b: Stats in the CLI and the directory
 
-Status: IN PROGRESS 2026-10-28 (the CLI half, tests 1-9, is executed; the site section, tests 10-11, is 4.2f's frontend work)
+Status: EXECUTED 2026-10-28 (the CLI half, tests 1-9; the site section, tests 10-11, moved to 4.2f's frontend work)
 
 | Field | Value |
 |---|---|

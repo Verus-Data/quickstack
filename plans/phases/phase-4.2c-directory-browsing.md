@@ -1,6 +1,6 @@
 # Phase 4.2c: Directory browsing
 
-Status: IN PROGRESS 2026-10-27: the telemetry-free parts are executed (`v1/directory.json`, newest, tags, fragments, removed pages, nav); the telemetry views are being built on fixtures with 4.2f
+Status: IN PROGRESS 2026-10-28: the telemetry-free parts are executed (`v1/directory.json`, newest, tags, fragments, removed pages, nav), and the trending dimension is served with the summary's sort options; the telemetry views are being built on fixtures with 4.2f
 Acceptance tests: traced
 
 | Field | Value |
