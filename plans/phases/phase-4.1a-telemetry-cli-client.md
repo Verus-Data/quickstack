@@ -1,6 +1,7 @@
 # Phase 4.1a: Usage telemetry, CLI side
 
 Status: IN PROGRESS 2026-10-27 (D17 decided: opt-out with these protections)
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -162,7 +163,6 @@ export class Telemetry extends Context.Service<Telemetry, {
   readonly flush: Effect.Effect<void>;                                    // never fails, bounded, re-checks consent
 }>()("stacks/Telemetry") {
   static layer: Layer.Layer<Telemetry, never, FileSystem.FileSystem | Path.Path | HttpClient.HttpClient | AppConfig>;
-  static recording: () => { events: TelemetryEvent[]; layer: Layer.Layer<Telemetry> }; // tests
 }
 ```
 
@@ -198,25 +198,39 @@ Telemetry never writes to stdout, never changes an exit code, and never adds war
 
 Against a real local HTTP server that records requests and can hang, return 500 or reject ids. Enabled-path tests set `releaseBuild: true` through the test helper.
 
-- Consent table: one test per row; `telemetry status --json` reports the expected reason.
-- Without the helper override, every command sends nothing and creates no telemetry files (the `source_build` row), even with every env switch cleared.
-- First enabled run prints the notice and the server receives nothing; `telemetry status --json` then reports `reason: "enabled"`, `noticeShownAt` set, no `installId` and `spooled: 0`. The second run creates the install id and its flush delivers its events; `status` then reports that `installId`.
-- Queue an event, then set `DO_NOT_TRACK=1` and run a command: no request, spool empty. Same with `"telemetry": false`. With `--no-telemetry` instead: no request, spool kept, next normal run sends it.
-- `telemetry disable` deletes spool, project files and `install.json`; `telemetry reset` changes `installId` and empties the spool. `telemetry enable` with an agent marker set exits 6 (`PermissionDenied`); `disable` under the same marker succeeds.
-- With the server hanging, `new --json` stdout and exit code are byte-identical to a disabled run, finishing within 1 second of it.
-- A recording sink that throws: every command's output and exit code unchanged.
-- No serialized event contains the project directory name, the manifest project id or any custom entry id (property test over random names and ids).
-- A step added by hand is sent as `custom`.
-- `show go-cli` queues one `show` event with no project id; `new` failing `TargetNotEmpty` queues one `error` event with `code: "TargetNotEmpty"` and no message; a tag outside the closed list is sent as `other`.
-- `new` with one bundled and one user-directory fragment sends `origin: "bundled"`, `nonOfficial: { user: 1, project: 0, source: 0 }` and `fragments` containing `custom`, and the serialized event contains no user entry id.
-- `new --source skill` sends `source: "skill"`; without the flag the field is absent; `--source other-thing` is `BadInput`.
-- No serialized event has a `yes` or `existingRepo` field; every field in the schema appears in the field-consumer table (a test reads the table's field list from a constant shared with the docs).
-- `telemetry flush --json` with three queued events and a recording server: `sent: 3`, spool empty; with `DO_NOT_TRACK=1`: `sent: 0`, `reason: "do_not_track"`, spool deleted.
-- The telemetry directory is `0700` and every file `0600` after a run; a project record with `scaffoldedAt` 366 days old is gone after the next flush, one 364 days old stays.
-- The schema snapshot test fails when a field is added to `TelemetryEvent` v1 (a fixture edit in the test), and passes on the committed snapshot.
-- The notice text contains the `/telemetry` URL.
-- Spool caps: 600 queued become 500, oldest gone; events older than 7 days dropped.
-- Two processes flushing at once never send the same `eventId` twice.
+1. Consent table: one test per row; `telemetry status --json` reports the expected reason.
+2. Without the helper override, every command sends nothing and creates no telemetry files (the `source_build` row), even with every env switch cleared.
+3. First enabled run prints the notice and the server receives nothing; `telemetry status --json` then reports `reason: "enabled"`, `noticeShownAt` set, no `installId` and `spooled: 0`. The second run creates the install id and its flush delivers its events; `status` then reports that `installId`.
+4. Queue an event, then set `DO_NOT_TRACK=1` and run a command: no request, spool empty. Same with `"telemetry": false`. With `--no-telemetry` instead: no request, spool kept, next normal run sends it.
+5. `telemetry disable` deletes spool, project files and `install.json`; `telemetry reset` changes `installId` and empties the spool. `telemetry enable` with an agent marker set exits 6 (`PermissionDenied`); `disable` under the same marker succeeds.
+6. With the server hanging, `new --json` stdout and exit code are byte-identical to a disabled run, finishing within 1 second of it.
+7. A spool write that fails (`spool/` is a file, after the notice run): every command's output and exit code unchanged.
+8. No serialized event contains the project directory name, the manifest project id or any custom entry id (property test over random names and ids).
+9. A step added by hand is sent as `custom`.
+10. `show go-cli` queues one `show` event with no project id; `new` failing `TargetNotEmpty` queues one `error` event with `code: "TargetNotEmpty"` and no message; a tag outside the closed list is sent as `other`.
+11. `new` with one bundled and one user-directory fragment sends `origin: "bundled"`, `nonOfficial: { user: 1, project: 0, source: 0 }` and `fragments` containing `custom`, and the serialized event contains no user entry id.
+12. `new --source skill` sends `source: "skill"`; without the flag the field is absent; `--source other-thing` is `BadInput`.
+13. No serialized event has a `yes` or `existingRepo` field; every field in the schema appears in the field-consumer table (a test reads the table's field list from a constant shared with the docs).
+14. `telemetry flush --json` with three queued events and a recording server: `sent: 3`, spool empty; with `DO_NOT_TRACK=1`: `sent: 0`, `reason: "do_not_track"`, spool deleted.
+15. The telemetry directory is `0700` and every file `0600` after a run; a project record with `scaffoldedAt` 366 days old is gone after the next flush, one 364 days old stays.
+16. The schema snapshot test fails when a field is added to `TelemetryEvent` v1 (a fixture edit in the test), and passes on the committed snapshot.
+17. The notice text contains the `/telemetry` URL.
+18. Spool caps: 600 queued become 500, oldest gone; events older than 7 days dropped.
+19. Two processes flushing at once never send the same `eventId` twice.
+
+### Realistic edge cases
+
+20. A read-only home/state directory sends nothing, keeps command output unchanged and never writes a project-local fallback.
+21. A corrupt `install.json` never sends under an unpersisted identity and leaves command output unchanged.
+22. A corrupt spool file is discarded without blocking delivery of valid queued events.
+23. A full/unwritable spool directory drops the new event without changing command output or exit status.
+24. A 202 response naming an event id not sent keeps the entire batch and records backoff; valid rejected ids are removed and counted.
+25. 429 and 503 honor `Retry-After` (seconds and HTTP date), keeping events and preventing a premature retry.
+26. An interrupted flush preserves every claimed event; stale claims are recovered by a later flush without lost ids.
+27. A symlinked state path and a project path containing spaces and non-ASCII characters keep telemetry outside the project.
+28. Consent is checked again at flush after an event was queued, including every standing off switch and transient offline switches.
+29. Debug mode emits only schema-valid events on stderr, without queuing or sending them, and still honors consent.
+30. A fresh clone has no telemetry project link; known verifies use the separate telemetry id, bucket durations and report the whole run outcome.
 
 ## Exit criteria
 
@@ -226,6 +240,8 @@ Against a real local HTTP server that records requests and can hang, return 500 
 
 ## What this plan may get wrong
 
+- 2026-10-28 (tests written): the first draft gave `Telemetry` a `recording()` layer for tests. That would stub this repo's own service (rules/cli/testing.md), so item 7 fails the real spool write instead, and the service has only `layer`.
+- 2026-10-28: no API host exists yet, so there is no default telemetry URL, as 4.0d has no default index URL. `Telemetry.layer` takes `officialUrl`, which `bin.ts` leaves undefined until a host exists; `STACKS_TELEMETRY_URL` (read in `config.ts`) overrides it. With neither, consent is `no_endpoint`, placed after `source_build`: nothing is queued and nothing exists to delete. The enabled-path tests set `STACKS_TELEMETRY_URL` to their recording server. `TelemetryEvent` v1 has landed in `packages/format` (`TelemetryBatch` is the POST body, `TelemetryAccepted` the 202 body); `origin` is absent when no entry is official, and the sender posts to `<url>/v1/events` (roadmap "API route map").
 - Losing every run from a read-only home may lose most agent-sandboxed runs, which skew toward failures. If the no-verify share is high, revisit a project-local queue.
 - `handoff` alone may not separate "the user asked their agent" from "the user ran `new` in a terminal inside an agent session". `agent` plus `handoff` is the cheap signal.
 - Deleting the spool on `CI` means a developer who exports `CI=1` in their shell loses queued events. That errs the right way.
