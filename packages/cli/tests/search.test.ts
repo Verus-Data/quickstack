@@ -78,7 +78,9 @@ test("Python penalizes CLI languages, sign-in names auth, and go live is not Go 
   expect(python.understood.languages).toEqual(["python"]);
   expect(python.noStrongMatch).toBe(true);
   for (const id of ["go-cli", "typescript-cli"]) {
-    expect(hit(python.stacks, id).penalties).toContain("language");
+    expect(hit(python.stacks, id).penalties).toContainEqual(
+      expect.objectContaining({ kind: "language" }),
+    );
     expect(hit(python.stacks, id).tier).not.toBe("strong");
   }
   const auth = (await searched("sign-in for my mobile app", opts)).value;
@@ -109,7 +111,7 @@ test("overlapping vocabulary categories and TUI exclusions remain visible [4.5c#
       .sort(),
   ).toEqual(["go-cli", "typescript-cli"]);
   for (const row of tui.stacks.slice(0, 2)) {
-    expect(row.penalties).toContain("notFor");
+    expect(row.penalties).toContainEqual(expect.objectContaining({ kind: "notFor" }));
     expect(row.tier).not.toBe("strong");
   }
   expect(tui.noStrongMatch).toBe(true);

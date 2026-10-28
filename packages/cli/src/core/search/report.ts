@@ -36,7 +36,16 @@ function hitBlock(hit: SearchHit): string {
     `${hit.kind} ${hit.id} (${hit.tier}${hit.trusted ? "" : ", untrusted"})`,
     printable(hit.summary),
     ...(hit.why.length ? [`Why: ${reasons(hit)}`] : []),
-    ...(hit.penalties.length ? [`Penalties: ${hit.penalties.join(", ")}`] : []),
+    ...(hit.penalties.length
+      ? [
+          `Penalties: ${hit.penalties
+            .map(
+              (penalty) =>
+                `${penalty.kind} (${penalty.request ? `${printable(penalty.request)}; ` : ""}entry: ${printable(penalty.entry)})`,
+            )
+            .join(", ")}`,
+        ]
+      : []),
     ...(hit.caveats ?? []).map((caveat) => `Caveat: ${printable(caveat)}`),
     ...(evidence ? [`Evidence: ${printable(evidence)}`] : []),
   ].join("\n");

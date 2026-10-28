@@ -28,7 +28,10 @@ test("mixed case and punctuation preserve ranks and scores [4.5c#15]", async () 
       id,
       score,
       tier,
-      penalties,
+      penalties: penalties.map((penalty) => ({
+        ...penalty,
+        request: penalty.request.toLowerCase(),
+      })),
     }));
   expect(comparable(mixed)).toEqual(comparable(lower));
   expect(mixed.stacks[0]?.id).toBe("mobile-expo");
@@ -53,9 +56,15 @@ test("either named platform satisfies the platform rule [4.5c#17]", async () => 
     vocabulary: vocabulary(),
   });
   expect([...result.understood.platforms].sort()).toEqual(["ios", "web"]);
-  expect(hit(result.stacks, "phone").penalties).not.toContain("platform");
-  expect(hit(result.stacks, "browser").penalties).not.toContain("platform");
-  expect(hit(result.stacks, "desktop").penalties).toContain("platform");
+  expect(hit(result.stacks, "phone").penalties).not.toContainEqual(
+    expect.objectContaining({ kind: "platform" }),
+  );
+  expect(hit(result.stacks, "browser").penalties).not.toContainEqual(
+    expect.objectContaining({ kind: "platform" }),
+  );
+  expect(hit(result.stacks, "desktop").penalties).toContainEqual(
+    expect.objectContaining({ kind: "platform" }),
+  );
 });
 
 test("same-id stack and fragment keep their own explanations [4.5c#18]", async () => {
@@ -242,12 +251,19 @@ test("fragment platform and language penalties follow applies_to, including tag 
     vocabulary: vocabulary(),
   });
   expect(hit(result.fragments, "wrong").penalties).toEqual(
-    expect.arrayContaining(["platform", "language"]),
+    expect.arrayContaining([
+      { kind: "platform", request: "iOS (ios)", entry: "desktop" },
+      { kind: "language", request: "TypeScript (typescript)", entry: "go" },
+    ]),
   );
   expect(hit(result.fragments, "wrong").tier).not.toBe("strong");
   for (const id of ["either", "any", "tagged"]) {
-    expect(hit(result.fragments, id).penalties).not.toContain("platform");
-    expect(hit(result.fragments, id).penalties).not.toContain("language");
+    expect(hit(result.fragments, id).penalties).not.toContainEqual(
+      expect.objectContaining({ kind: "platform" }),
+    );
+    expect(hit(result.fragments, id).penalties).not.toContainEqual(
+      expect.objectContaining({ kind: "language" }),
+    );
   }
 });
 
