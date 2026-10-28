@@ -9,6 +9,10 @@
       "javascript": { "formatter": { "quoteStyle": "single" } }
     },
     {
+      "includes": ["registry/search/**"],
+      "formatter": { "enabled": false }
+    },
+    {
       "includes": ["registry/**"],
       "linter": {
         "rules": {

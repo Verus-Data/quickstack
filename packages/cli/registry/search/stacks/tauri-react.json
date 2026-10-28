@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "kind": "stack",
+  "id": "tauri-react",
+  "source": {
+    "digest": "sha256:f10dddd5843a5b5110a6edabd0d2ea4b02829d64bfb1930e6a3d175c0f0dc5cf",
+    "by": "drafted",
+    "model": "codex/gpt-6.1-sol",
+    "promptVersion": 1,
+    "reviewedAt": "2026-10-28"
+  },
+  "summary": "A desktop app with a React interface and Rust logic connected through generated TypeScript bindings.",
+  "platforms": [
+    "desktop"
+  ],
+  "productKinds": [
+    "desktop-app"
+  ],
+  "languages": [
+    "typescript",
+    "rust"
+  ],
+  "requests": [
+    "build desktop windows that call my Rust code with checked types",
+    "preview my desktop interface in a browser using sample data",
+    "show live updates from Rust in my app window"
+  ],
+  "useCases": [
+    "desktop interfaces",
+    "Rust applications with graphical controls"
+  ],
+  "synonyms": [
+    "Tauri",
+    "React",
+    "webview",
+    "typed IPC",
+    "native windows",
+    "live channels"
+  ],
+  "goodFor": [
+    "sharing types between Rust and TypeScript",
+    "testing interfaces through a mock transport"
+  ],
+  "notFor": [
+    "server-rendered websites",
+    "browser-only products"
+  ],
+  "caveats": [
+    "Browser previews and Playwright use a mock transport; the packaged webview needs a manual check.",
+    "App bundles target the developer's OS; Linux shell builds require WebKitGTK system packages."
+  ]
+}

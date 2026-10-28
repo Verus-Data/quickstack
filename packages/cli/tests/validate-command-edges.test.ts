@@ -1,5 +1,6 @@
 import { afterEach, test } from "vitest";
 import { findingsAre, fragment, rotWorkspace, ship, stack, validateRot } from "./helpers/rot";
+import { missingSearchNotes } from "./helpers/search-fixture";
 
 const space = rotWorkspace();
 afterEach(() => space.cleanup());
@@ -16,6 +17,7 @@ test.each(["bun run \\\n  missing", "bun r\\\nun miss\\\ning", 'bun run "miss\\\
       JSON.stringify({ permissions: { allow: [`Bash(${command})`] } }),
     );
     findingsAre((await validate(root)).report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"] }),
       ["ref-command", "error", { entry: "sample", text: ["runs missing,"] }],
     ]);
   },
@@ -32,6 +34,7 @@ test.each([";", "&&", "||", "|", "' ';' '", "' > '"])(
       `commands: { audit: "Audit the project" }\nverify:\n  - name: example\n    layer: check\n    run: ${JSON.stringify(`printf '%s' 'example ${separator} bun run audit'`)}`,
     );
     findingsAre((await validate(root)).report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"], fragments: ["audit"] }),
       ["ref-command-coverage", "warning", { entry: "audit", text: ["command audit"] }],
     ]);
   },
@@ -46,6 +49,7 @@ test("comments mentioning a command do not satisfy verify coverage", async () =>
     `commands: { audit: "Audit the project" }\nverify:\n  - name: example\n    layer: check\n    run: ${JSON.stringify("true # example; bun run audit")}`,
   );
   findingsAre((await validate(root)).report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"], fragments: ["audit"] }),
     ["ref-command-coverage", "warning", { entry: "audit", text: ["command audit"] }],
   ]);
 });
@@ -60,7 +64,9 @@ test.each(["&&", ";", "\n", "# comment\n"])(
       "audit",
       `commands: { audit: "Audit the project" }\nverify:\n  - name: audit\n    layer: check\n    run: ${JSON.stringify(`printf '%s' 'example; ignored' ${separator} bun run audit`)}`,
     );
-    findingsAre((await validate(root)).report.findings, []);
+    findingsAre((await validate(root)).report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"], fragments: ["audit"] }),
+    ]);
   },
 );
 
@@ -73,7 +79,9 @@ test("single quotes preserve a literal backslash and newline in a permission ope
     "files/.claude/settings.json",
     JSON.stringify({ permissions: { allow: [`Bash(bun run '${target}')`] } }),
   );
-  findingsAre((await validate(root)).report.findings, []);
+  findingsAre((await validate(root)).report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"] }),
+  ]);
 });
 
 test.each(
@@ -97,12 +105,13 @@ test.each(
       "audit",
       `commands: { audit: "Audit the project" }\nverify:\n  - name: example\n    layer: check\n    run: ${JSON.stringify(`${heredoc}\n${after ? "bun run audit" : "true"}`)}`,
     );
-    findingsAre(
-      (await validate(root)).report.findings,
-      after
-        ? []
-        : [["ref-command-coverage", "warning", { entry: "audit", text: ["command audit"] }]],
-    );
+    const expected: Parameters<typeof findingsAre>[1] = after
+      ? []
+      : [["ref-command-coverage", "warning", { entry: "audit", text: ["command audit"] }]];
+    findingsAre((await validate(root)).report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"], fragments: ["audit"] }),
+      ...expected,
+    ]);
   },
 );
 
@@ -116,7 +125,9 @@ test.each(["printf '%s' '<<EOF'", "cat <<< 'example'"])(
       "audit",
       `commands: { audit: "Audit the project" }\nverify:\n  - name: audit\n    layer: check\n    run: ${JSON.stringify(`${prefix}\nbun run audit`)}`,
     );
-    findingsAre((await validate(root)).report.findings, []);
+    findingsAre((await validate(root)).report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"], fragments: ["audit"] }),
+    ]);
   },
 );
 
@@ -141,11 +152,12 @@ test.each([
       "audit",
       `commands: { audit: "Audit the project" }\nverify:\n  - name: example\n    layer: check\n    run: ${JSON.stringify(command)}`,
     );
-    findingsAre(
-      (await validate(root)).report.findings,
-      covered
-        ? []
-        : [["ref-command-coverage", "warning", { entry: "audit", text: ["command audit"] }]],
-    );
+    const expected: Parameters<typeof findingsAre>[1] = covered
+      ? []
+      : [["ref-command-coverage", "warning", { entry: "audit", text: ["command audit"] }]];
+    findingsAre((await validate(root)).report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"], fragments: ["audit"] }),
+      ...expected,
+    ]);
   },
 );

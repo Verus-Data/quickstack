@@ -8,7 +8,8 @@ import { BUDGET } from "../src/core/validate/budget";
 import { BriefPreview, type Finding, ValidateReport } from "../src/schemas/validate";
 import { quiet, runCli, tempDir, terminal, writeError } from "./helpers/cli";
 import { spawnGit } from "./helpers/git";
-import { minimal, realRegistry, writeEntry } from "./helpers/registry";
+import { emptyRegistry, minimal, realRegistry, writeEntry } from "./helpers/registry";
+import { reviewSearchFixture } from "./helpers/search-fixture";
 
 const dirs: ReturnType<typeof tempDir>[] = [];
 afterEach(() => {
@@ -73,7 +74,7 @@ async function run(args: string[], options: Options = {}) {
   return runCli(["validate", ...args], {
     home,
     env: { ...quiet, ...options.env },
-    host: { registry: options.registry ?? join(home, "no-bundled-registry"), ...options.host },
+    host: { registry: options.registry ?? emptyRegistry, ...options.host },
   });
 }
 /** The decoded `--json` report and the exit status. */
@@ -96,7 +97,32 @@ test("a clean registry validates with no findings, exit 0, and a size row per co
   fragment(root, "extra");
   const { status, stderr, report: got } = await report([root]);
   expect({ status, stderr }).toEqual({ status: 0, stderr: "" });
-  expect(got.findings).toEqual([]);
+  expect(got.findings).toEqual([
+    {
+      check: "search-missing",
+      entry: "clean",
+      file: "search/stacks/clean.json",
+      kind: "stack",
+      message: "No search card; add a reviewed sidecar for search discovery.",
+      severity: "note",
+    },
+    {
+      check: "search-missing",
+      entry: "extra",
+      file: "search/fragments/extra.json",
+      kind: "fragment",
+      message: "No search card; add a reviewed sidecar for search discovery.",
+      severity: "note",
+    },
+    {
+      check: "search-missing",
+      entry: "helper",
+      file: "search/fragments/helper.json",
+      kind: "fragment",
+      message: "No search card; add a reviewed sidecar for search discovery.",
+      severity: "note",
+    },
+  ]);
   expect(got.entries).toEqual({ stacks: 1, fragments: 2 });
   expect(got.bundled).toBe(false);
   expect(
@@ -117,7 +143,7 @@ test("human mode groups findings by entry, prints sizes and a total, and suggest
   expect(result.stdout).toContain(`Validated ${root}: 1 stack, 0 fragments`);
   expect(result.stdout).toMatch(/Sizes \(words\)\n {2}clean body +\d+ \/ 2,000\n/);
   expect(result.stdout).toMatch(/clean \(sandbox\) +[\d,]+ \/ 6,000 {3}fixed [\d,]+\n/);
-  expect(result.stdout).toContain("1 stack, 0 fragments: 0 errors, 0 warnings, 0 notes");
+  expect(result.stdout).toContain("1 stack, 0 fragments: 0 errors, 0 warnings, 1 note");
   expect(result.stdout).toContain(`Next: stacks validate ${root} --brief clean --sandbox`);
 });
 
@@ -128,7 +154,11 @@ test("errors keep the report on stdout, end stderr with the ValidationFailed env
   const json = await run([root, "--json"]);
   expect(json.status).toBe(2);
   const decoded = Schema.decodeUnknownSync(ValidateReport)(JSON.parse(json.stdout));
-  expect(checks(decoded.findings)).toEqual(["error decision-default broken"]);
+  expect(checks(decoded.findings)).toEqual([
+    "error decision-default broken",
+    "note search-missing broken",
+    "note search-missing fine",
+  ]);
   expect(JSON.parse(json.stderr.trim().split("\n").at(-1) ?? "")).toEqual({
     error: {
       tag: "ValidationFailed",
@@ -178,6 +208,7 @@ test("entries that don't load are findings, and the rest of the registry still r
   expect(status).toBe(2);
   expect(got.findings.map((finding) => [finding.check, finding.entry, finding.file])).toEqual([
     ["schema", "bad-yaml", "stacks/bad-yaml/STACK.md"],
+    ["search-missing", "fine", "search/stacks/fine.json"],
     ["schema", "no-file", "stacks/no-file/STACK.md"],
     ["id-matches-dir", "renamed", "stacks/renamed/STACK.md"],
     ["schema", "unknown-key", "stacks/unknown-key/STACK.md"],
@@ -200,7 +231,16 @@ test("one entry directory validates only that entry, with references resolved th
   const { status, report: got } = await report([join(root, "stacks", "solo")]);
   expect(status).toBe(0);
   expect(got.entries).toEqual({ stacks: 1, fragments: 0 });
-  expect(got.findings).toEqual([]);
+  expect(got.findings).toEqual([
+    {
+      check: "search-missing",
+      entry: "solo",
+      file: "search/stacks/solo.json",
+      kind: "stack",
+      message: "No search card; add a reviewed sidecar for search discovery.",
+      severity: "note",
+    },
+  ]);
   expect(got.sizes.map((row) => row.entry)).toEqual(["solo", "solo", "solo"]);
 });
 
@@ -229,11 +269,12 @@ test("a path that is no registry root, no entry and no bundled registry is NotFo
   expect((await run([loose], { home })).status).toBe(2);
 });
 
-test("the bundled registry with only its README validates clean; with no directory at all it is NotFound [1.5#12]", async () => {
+test("an empty bundled registry with its vocabulary validates clean; with no directory at all it is NotFound [1.5#12]", async () => {
   const home = temp();
   const bundled = join(home, "bundled");
   mkdirSync(bundled);
   writeFileSync(join(bundled, "README.md"), "# Bundled\n");
+  reviewSearchFixture(bundled);
   for (const args of [[], [bundled]]) {
     const { status, report: got } = await report(args, { home, registry: bundled });
     expect(status).toBe(0);
@@ -434,11 +475,20 @@ test("a reference found only in another origin is a note naming it, and the frag
   const home = temp();
   const bundled = join(home, "bundled");
   fragment(bundled, "shared", "", words(300, "shared"));
+  reviewSearchFixture(bundled);
   const user = join(home, "authoring");
   stack(user, "mine", "fragments:\n  default: [shared]");
   const { status, report: got } = await report([user], { home, registry: bundled });
   expect(status).toBe(0);
   expect(got.findings).toEqual([
+    {
+      check: "search-missing",
+      entry: "mine",
+      file: "search/stacks/mine.json",
+      kind: "stack",
+      message: "No search card; add a reviewed sidecar for search discovery.",
+      severity: "note",
+    },
     {
       check: "resolved-outside-root",
       severity: "note",
@@ -456,6 +506,7 @@ test("a reference found only in another origin is a note naming it, and the frag
 
   // The same reference from inside the bundled registry has nothing else to resolve through.
   stack(bundled, "mine", "fragments:\n  default: [elsewhere]");
+  reviewSearchFixture(bundled);
   fragment(user, "elsewhere");
   const inside = await report([], { home, registry: bundled });
   expect(inside.status).toBe(2);
@@ -490,7 +541,48 @@ test("an optional fragment that conflicts with a default replaces it, in either 
   fragment(root, "kept");
   const { status, report: got } = await report([root]);
   expect(status).toBe(0);
-  expect(got.findings).toEqual([]);
+  expect(got.findings).toEqual([
+    {
+      check: "search-missing",
+      entry: "swap",
+      file: "search/stacks/swap.json",
+      kind: "stack",
+      message: "No search card; add a reviewed sidecar for search discovery.",
+      severity: "note",
+    },
+    {
+      check: "search-missing",
+      entry: "a",
+      file: "search/fragments/a.json",
+      kind: "fragment",
+      message: "No search card; add a reviewed sidecar for search discovery.",
+      severity: "note",
+    },
+    {
+      check: "search-missing",
+      entry: "b",
+      file: "search/fragments/b.json",
+      kind: "fragment",
+      message: "No search card; add a reviewed sidecar for search discovery.",
+      severity: "note",
+    },
+    {
+      check: "search-missing",
+      entry: "d",
+      file: "search/fragments/d.json",
+      kind: "fragment",
+      message: "No search card; add a reviewed sidecar for search discovery.",
+      severity: "note",
+    },
+    {
+      check: "search-missing",
+      entry: "kept",
+      file: "search/fragments/kept.json",
+      kind: "fragment",
+      message: "No search card; add a reviewed sidecar for search discovery.",
+      severity: "note",
+    },
+  ]);
   expect(got.sizes.filter((row) => row.kind === "composed").map((row) => row.with)).toEqual([
     undefined,
     "b",
@@ -510,6 +602,10 @@ test("a compose failure that remains is one finding per composition, naming the 
   expect(status).toBe(2);
   expect(got.findings.map((finding) => [finding.check, finding.entry, finding.message])).toEqual([
     ["compose", "torn", "torn (default, sandbox) + b: can't compose (conflicts): b, r"],
+    ["search-missing", "torn", "No search card; add a reviewed sidecar for search discovery."],
+    ["search-missing", "a", "No search card; add a reviewed sidecar for search discovery."],
+    ["search-missing", "b", "No search card; add a reviewed sidecar for search discovery."],
+    ["search-missing", "r", "No search card; add a reviewed sidecar for search discovery."],
   ]);
   expect(got.sizes.filter((row) => row.kind === "composed").map((row) => row.with)).toEqual([
     undefined,
@@ -539,10 +635,28 @@ test("an optional fragment that doesn't apply to its stack is an error on the st
       "no serve step with expect, which a stack tagged web or api needs (default, sandbox)",
     ],
     [
+      "note",
+      "search-missing",
+      "site",
+      "No search card; add a reviewed sidecar for search discovery.",
+    ],
+    [
       "error",
       "optional-fits",
       "terminal",
       "fragments.optional names web-only, whose applies_to matches neither this stack nor its tags",
+    ],
+    [
+      "note",
+      "search-missing",
+      "terminal",
+      "No search card; add a reviewed sidecar for search discovery.",
+    ],
+    [
+      "note",
+      "search-missing",
+      "web-only",
+      "No search card; add a reviewed sidecar for search discovery.",
     ],
   ]);
 });
@@ -562,13 +676,17 @@ test("an unknown or rejected id a stack names is reported once, by its own check
   expect(status).toBe(2);
   expect(checks(got.findings)).toEqual([
     "error unknown-reference ghostly",
+    "note search-missing ghostly",
     "error unknown-reference phantom",
+    "note search-missing phantom",
+    "note search-missing uses-bad",
     "error schema bad",
   ]);
   // Validating the stack alone doesn't report the rejected fragment, so compose still does.
   const alone = await report([join(root, "stacks", "uses-bad")]);
   expect(alone.report.findings.map((finding) => [finding.check, finding.message])).toEqual([
     ["compose", "uses-bad (default, sandbox): user entry bad is invalid (decode) at FRAGMENT.md"],
+    ["search-missing", "No search card; add a reviewed sidecar for search discovery."],
   ]);
 });
 
@@ -576,6 +694,7 @@ test("apps are enumerated from the validated root, not from every origin", async
   const home = temp();
   const bundled = join(home, "bundled");
   app(bundled, "elsewhere-app", "cli");
+  reviewSearchFixture(bundled);
   const user = join(home, "authoring");
   stack(user, "mine");
   app(user, "local-app", "mine");
@@ -683,7 +802,24 @@ test("a check-layer step is a described step: no step-layer warning, and no D7 l
   fragment(root, "hooks", 'verify:\n  - { name: hooks-defined, layer: check, run: "true" }');
   const { status, report: got } = await report([root]);
   expect(status).toBe(0);
-  expect(got.findings).toEqual([]);
+  expect(got.findings).toEqual([
+    {
+      check: "search-missing",
+      entry: "checked",
+      file: "search/stacks/checked.json",
+      kind: "stack",
+      message: "No search card; add a reviewed sidecar for search discovery.",
+      severity: "note",
+    },
+    {
+      check: "search-missing",
+      entry: "hooks",
+      file: "search/fragments/hooks.json",
+      kind: "fragment",
+      message: "No search card; add a reviewed sidecar for search discovery.",
+      severity: "note",
+    },
+  ]);
 });
 
 test("stack-setup-section, task-runner-tag, step-layer and dep-version [1.5#1] [1.5#8]", async () => {
@@ -706,15 +842,45 @@ test("stack-setup-section, task-runner-tag, step-layer and dep-version [1.5#1] [
       "tags hold both make and scripts; a stack declares exactly one",
     ],
     [
+      "note",
+      "search-missing",
+      "both-runners",
+      "No search card; add a reviewed sidecar for search discovery.",
+    ],
+    [
       "warning",
       "task-runner-tag",
       "no-runner",
       "tags hold neither make nor scripts; a stack declares exactly one",
     ],
+    [
+      "note",
+      "search-missing",
+      "no-runner",
+      "No search card; add a reviewed sidecar for search discovery.",
+    ],
     ["warning", "stack-setup-section", "no-setup", 'no "## Setup" heading in the body'],
+    [
+      "note",
+      "search-missing",
+      "no-setup",
+      "No search card; add a reviewed sidecar for search discovery.",
+    ],
     ["warning", "step-layer", "loose-step", "verify step check-it has no layer"],
+    [
+      "note",
+      "search-missing",
+      "loose-step",
+      "No search card; add a reviewed sidecar for search discovery.",
+    ],
     ["error", "dep-version", "pinned", "deps.app[2] carries a version; deps name packages only"],
     ["error", "dep-version", "pinned", "deps.app[3] carries a version; deps name packages only"],
+    [
+      "note",
+      "search-missing",
+      "pinned",
+      "No search card; add a reviewed sidecar for search discovery.",
+    ],
   ]);
 });
 
@@ -792,6 +958,7 @@ test("a with= or stack= id that resolves only in another origin is a resolved-ou
   const bundled = join(home, "bundled");
   fragment(bundled, "shared");
   stack(bundled, "far-stack");
+  reviewSearchFixture(bundled);
   const user = join(home, "authoring");
   stack(user, "mine", "", {
     body: `${SETUP}<!-- stacks:when with=shared stack=far-stack -->\nx\n<!-- stacks:end -->\n`,
@@ -800,6 +967,7 @@ test("a with= or stack= id that resolves only in another origin is a resolved-ou
   expect(status).toBe(0);
   expect(got.findings.map((finding) => [finding.severity, finding.check, finding.message])).toEqual(
     [
+      ["note", "search-missing", "No search card; add a reviewed sidecar for search discovery."],
       [
         "note",
         "resolved-outside-root",
@@ -891,6 +1059,7 @@ test("a closed stdout keeps the failure's exit 2 and still writes the envelope",
   const result = await runCli(["validate", root, "--json"], {
     home: temp(),
     env: quiet,
+    host: { registry: emptyRegistry },
     stdout: async () => {
       throw writeError("EPIPE");
     },
@@ -1052,11 +1221,14 @@ test.skipIf(git.status !== 0)(
         "adapted",
         "git ignores settings.local.json here (rule *.local.json in stacks/adapted/adapters/claude/.claude/.gitignore), so it never reaches a commit; ship stacks/adapted/adapters/claude/.claude/.gitignore as .gitignore.tmpl, which git doesn't read as ignore rules and new still writes as .gitignore",
       ],
+      ["search-missing", "adapted", "No search card; add a reviewed sidecar for search discovery."],
+      ["search-missing", "fixed", "No search card; add a reviewed sidecar for search discovery."],
       [
         "git-ignored",
         "local",
         "git ignores a.tmpl here (rule *.tmpl in stacks/local/.gitignore), so it never reaches a commit",
       ],
+      ["search-missing", "local", "No search card; add a reviewed sidecar for search discovery."],
     ]);
   },
 );
@@ -1220,7 +1392,10 @@ test("for an agent, no size table when every size is within budget; JSON keeps e
     [
       "Validated .: 1 stack, 0 fragments",
       "",
-      "1 stack, 0 fragments: 0 errors, 0 warnings, 0 notes",
+      "stack clean",
+      "  note     search-missing  search/stacks/clean.json: No search card; add a reviewed sidecar for search discovery.",
+      "",
+      "1 stack, 0 fragments: 0 errors, 0 warnings, 1 note",
       "Next: stacks validate . --brief clean --sandbox",
       "",
     ].join("\n"),
@@ -1241,7 +1416,7 @@ test("for an agent, only the sizes over their limit, and the counts once", async
   expect(agent.status).toBe(2);
   expect(agent.stdout).toMatch(/\nSizes \(words\)\n {2}long body {2}2,1\d\d \/ 2,000 {3}over\n\n/);
   expect(agent.stdout).not.toContain("short body");
-  expect(agent.stdout).toContain("2 stacks, 0 fragments: 1 error, 0 warnings, 0 notes\n");
+  expect(agent.stdout).toContain("2 stacks, 0 fragments: 1 error, 0 warnings, 2 notes\n");
   // The report on stdout ends with the counts, so stderr only names the failure.
   expect(agent.stderr).toBe("Validation failed.\n");
   const human = await run([root], { host: terminal });

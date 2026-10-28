@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "port-same",
+  "source": {
+    "digest": "sha256:994c28a072476ee32b857655eb3538534bfa9fbc70d36539ebc4bc28f858e38e",
+    "by": "author",
+    "reviewedAt": "2026-10-27"
+  },
+  "summary": "A synthetic registry entry for CLI tests.",
+  "requests": ["exercise a fixture workflow", "inspect a sample project", "check a local example"],
+  "useCases": [],
+  "synonyms": [],
+  "goodFor": [],
+  "notFor": [],
+  "kind": "fragment",
+  "capabilities": []
+}

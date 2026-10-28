@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "kind": "stack",
+  "id": "typescript-api",
+  "source": {
+    "digest": "sha256:d73ebb61c0c2f973cf71bbcdec41f6b7c7896cc0bb53d15fab4a0e562ded3c15",
+    "by": "drafted",
+    "model": "codex/gpt-6.1-sol",
+    "promptVersion": 1,
+    "reviewedAt": "2026-10-28"
+  },
+  "summary": "An HTTP service with validated requests, documented endpoints, consistent errors and structured request logs.",
+  "platforms": [
+    "server"
+  ],
+  "productKinds": [
+    "api"
+  ],
+  "languages": [
+    "typescript"
+  ],
+  "requests": [
+    "serve typed resources with automatically generated API documentation",
+    "return consistent errors when callers send invalid requests",
+    "trace a failed HTTP call through structured logs"
+  ],
+  "useCases": [
+    "REST services",
+    "HTTP backends"
+  ],
+  "synonyms": [
+    "Effect HttpApi",
+    "Node",
+    "OpenAPI",
+    "request validation"
+  ],
+  "goodFor": [
+    "one definition for routing and schemas",
+    "testing both HTTP listeners and web handlers"
+  ],
+  "notFor": [
+    "graphical interfaces",
+    "a preconfigured database or authentication system"
+  ]
+}

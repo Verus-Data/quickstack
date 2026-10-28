@@ -15,6 +15,7 @@ import { fingerprint } from "../../src/core/fingerprint";
 import { BriefPreview } from "../../src/schemas/validate";
 import { bundledAt, composeExit } from "./compose";
 import { minimal, writeEntry } from "./registry";
+import { reviewSearchFixture } from "./search-fixture";
 
 export const setupBody = "## Setup\n\nBuild the small public interface.\n";
 const steps = [
@@ -43,6 +44,18 @@ export function fragment(root: string, id: string, extra = "", body = "# Fragmen
     frontmatter: minimal("fragment", id, extra),
     body,
   });
+}
+
+export function bundledStack(...options: Parameters<typeof stack>) {
+  const entry = stack(...options);
+  reviewSearchFixture(options[0]);
+  return entry;
+}
+
+export function bundledFragment(...options: Parameters<typeof fragment>) {
+  const entry = fragment(...options);
+  reviewSearchFixture(options[0]);
+  return entry;
 }
 export function shipped(entry: string, source: string, text = "fixture\n") {
   const path = join(entry, source);

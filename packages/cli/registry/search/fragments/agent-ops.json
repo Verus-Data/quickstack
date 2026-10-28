@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "kind": "fragment",
+  "id": "agent-ops",
+  "source": {
+    "digest": "sha256:eb246d18e4ac82c024fe709a8fba428101ca8746424d50e9825180761f25ba4f",
+    "by": "drafted",
+    "model": "codex/gpt-6.1-sol",
+    "promptVersion": 1,
+    "reviewedAt": "2026-10-28"
+  },
+  "summary": "Give coding agents shared project instructions, with Claude Code hooks for destructive commands, secrets, lint feedback and formatting.",
+  "capabilities": [
+    "agent-harness"
+  ],
+  "requests": [
+    "help different coding assistants follow the same project instructions",
+    "document commands and architecture so agents can work in this repository",
+    "stop Claude from writing credentials or running destructive commands",
+    "show lint errors after edits and format the agent's changed files"
+  ],
+  "useCases": [
+    "repositories using coding assistants",
+    "shared agent onboarding"
+  ],
+  "synonyms": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "agent instructions",
+    "secret guards",
+    "lint on write"
+  ],
+  "goodFor": [
+    "one canonical project guide",
+    "session-specific formatting in Claude Code"
+  ],
+  "notFor": [
+    "sandboxing untrusted code",
+    "hosted continuous integration"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "ci-github",
+  "source": {
+    "digest": "sha256:191bf5723e887f8fd7c1e1fdc78bfd4cff06ac13c7e84865e30a1eee8ae95020",
+    "by": "author",
+    "reviewedAt": "2026-10-27"
+  },
+  "summary": "A synthetic registry entry for CLI tests.",
+  "requests": ["exercise a fixture workflow", "inspect a sample project", "check a local example"],
+  "useCases": [],
+  "synonyms": [],
+  "goodFor": [],
+  "notFor": [],
+  "kind": "fragment",
+  "capabilities": []
+}

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "eventId": "20194791-cf2f-452f-8a76-af86b9903c14",
+  "type": "add",
+  "installId": "ad7c7211-cc24-4d18-9913-64f8a531523f",
+  "projectId": "4b4bce19-dd67-4358-a490-02846b30b228",
+  "cliVersion": "0.3.1",
+  "os": "linux",
+  "nodeMajor": 24,
+  "agent": "cursor",
+  "sentAt": "2026-10-27T14:04:01.000Z",
+  "stack": "go-cli",
+  "fragments": ["agent-ops", "ci-github", "custom"],
+  "without": ["git-hooks"],
+  "preset": "sandbox",
+  "targetAgents": ["cursor"],
+  "handoff": "print",
+  "origin": "bundled",
+  "nonOfficial": { "user": 1, "project": 0, "source": 0 }
+}

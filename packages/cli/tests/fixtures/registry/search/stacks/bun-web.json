@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "bun-web",
+  "source": {
+    "digest": "sha256:a6aa10f53911e0cc2f870f596b00601f367b8f3c98674fb9a9837fd73b6b2914",
+    "by": "author",
+    "reviewedAt": "2026-10-27"
+  },
+  "summary": "A synthetic registry entry for CLI tests.",
+  "requests": ["exercise a fixture workflow", "inspect a sample project", "check a local example"],
+  "useCases": [],
+  "synonyms": [],
+  "goodFor": [],
+  "notFor": [],
+  "kind": "stack",
+  "platforms": ["cli"],
+  "productKinds": ["cli-tool"],
+  "languages": ["typescript"]
+}

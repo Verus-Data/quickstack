@@ -10,10 +10,11 @@ import { shellArg } from "../core/shell";
 import { shownPath } from "../core/shown-path";
 import { closest } from "../core/suggest";
 import { printable } from "../core/text";
+import { textWidth } from "../core/wrap";
 import { Usage } from "../errors";
 import { METADATA_DIR } from "../project-layout";
 import { ListResult } from "../schemas/list";
-import { Host, type HostInfo } from "../services/host";
+import { Host } from "../services/host";
 import { Output } from "../services/output";
 
 const isGroup = (value: string): value is Group =>
@@ -80,7 +81,7 @@ export const listCommand = Command.make(
       const { project, addable } = projectChoices(all, manifest);
       const agent = output.audience === "agent";
       // A human's descriptions wrap to the terminal; an agent's stay on one line each.
-      const width = descriptionWidth(agent, host);
+      const width = textWidth(!agent, host.columns);
       const rejected = agent
         ? yield* Effect.forEach(result.rejected, (entry) =>
             Effect.map(shownPath(host.cwd, entry.dir), (dir) => ({ ...entry, dir })),
@@ -128,13 +129,6 @@ export const listCommand = Command.make(
   ]),
 );
 
-function descriptionWidth(agent: boolean, host: HostInfo): number {
-  if (agent) return Number.POSITIVE_INFINITY;
-  return Option.match(host.columns, {
-    onNone: () => 80,
-    onSome: (columns) => Math.min(80, Math.max(20, columns)),
-  });
-}
 const selectedGroup = (group: Option.Option<string>) =>
   Effect.gen(function* () {
     const typed = Option.getOrUndefined(group);

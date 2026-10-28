@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "rival",
+  "source": {
+    "digest": "sha256:af436e2fe1381dc0074f5e81564a6646e72117d5687a46143a36a30de8e1944c",
+    "by": "author",
+    "reviewedAt": "2026-10-27"
+  },
+  "summary": "A synthetic registry entry for CLI tests.",
+  "requests": ["exercise a fixture workflow", "inspect a sample project", "check a local example"],
+  "useCases": [],
+  "synonyms": [],
+  "goodFor": [],
+  "notFor": [],
+  "kind": "fragment",
+  "capabilities": []
+}

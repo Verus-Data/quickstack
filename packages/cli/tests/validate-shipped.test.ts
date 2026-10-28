@@ -1,3 +1,4 @@
+import { cpSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, expect, test } from "vitest";
 import {
@@ -9,6 +10,7 @@ import {
   stack,
   validateRot,
 } from "./helpers/rot";
+import { missingSearchNotes, reviewSearchFixture } from "./helpers/search-fixture";
 
 const space = rotWorkspace();
 afterEach(() => space.cleanup());
@@ -50,6 +52,7 @@ test.each(["args", "runtimeArgs"])(
     });
     const { report, status } = await validate(root);
     findingsAre(report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"] }),
       [
         "ref-command",
         "error",
@@ -74,6 +77,7 @@ test.each(["make", "bun run", "npm run", "pnpm", "pnpm run"])(
     });
     const { report } = await validate(root);
     findingsAre(report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"] }),
       [
         "ref-command",
         "error",
@@ -99,6 +103,7 @@ test("a command declared by a fragment satisfies the stack's shipped permission 
   );
   const { report } = await validate(root);
   findingsAre(report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"], fragments: ["tools"] }),
     [
       "ref-command",
       "error",
@@ -124,6 +129,7 @@ test("reference checks read neutral-rendered templates and accept commands decla
   );
   const bad = await validate(root);
   findingsAre(bad.report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"] }),
     [
       "ref-command",
       "error",
@@ -136,7 +142,9 @@ test("reference checks read neutral-rendered templates and accept commands decla
   ]);
   expect(bad.report.findings[0]?.message).not.toContain("{{ project_slug }}");
   stack(root, "sample", 'commands: { example: "Run the project" }');
-  findingsAre((await validate(root)).report.findings, []);
+  findingsAre((await validate(root)).report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"] }),
+  ]);
 });
 
 test("missing hook files fail while hooks shipped by a merged settings owner's sibling pass [2.2#3]", async () => {
@@ -152,12 +160,18 @@ test("missing hook files fail while hooks shipped by a merged settings owner's s
   // The hook named by the fragment lives in the other settings owner.
   ship(entry, "files/.claude/hooks/present.sh", "#!/bin/sh\nexit 0\n");
   const { report } = await validate(root);
-  findingsAre(report.findings, [["ref-hook", "error", { text: ["missing.sh"] }]]);
+  findingsAre(report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"], fragments: ["hooks"] }),
+    ["ref-hook", "error", { text: ["missing.sh"] }],
+  ]);
   expect(report.findings[0]?.message).toContain("missing.sh");
   settings(entry, hook("present.sh"));
   settings(hooks, hook("fragment-missing.sh"));
   const inverse = await validate(root);
-  findingsAre(inverse.report.findings, [["ref-hook", "error", { text: ["fragment-missing.sh"] }]]);
+  findingsAre(inverse.report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"], fragments: ["hooks"] }),
+    ["ref-hook", "error", { text: ["fragment-missing.sh"] }],
+  ]);
 });
 
 test("reference checks visit codex-only adapters as well as the default Claude adapter [2.2#3]", async () => {
@@ -166,6 +180,7 @@ test("reference checks visit codex-only adapters as well as the default Claude a
   settings(entry, hook("missing.sh"), "codex");
   const { report } = await validate(root);
   findingsAre(report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"] }),
     [
       "ref-hook",
       "error",
@@ -190,6 +205,7 @@ test.each(["localhost", "127.0.0.1"])(
     ship(entry, "files/fixture.json", JSON.stringify({ endpoint: `http://${host}:5173` }));
     const { report, status } = await validate(root);
     findingsAre(report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"] }),
       [
         "ref-port",
         "warning",
@@ -220,6 +236,7 @@ test("PORT is an env-name segment, and expanded ports don't produce literal-port
   settings(noPort, { endpoint: "http://localhost:5173" });
   const { report } = await validate(root);
   findingsAre(report.findings, [
+    ...missingSearchNotes({ stacks: ["declared", "ordinary"] }),
     [
       "ref-port",
       "warning",
@@ -240,6 +257,7 @@ test("a default fragment is not an import dependency; requiring it makes the sam
   ship(helper, "files/_lib.ts", "export const helper = () => 1;\n");
   const bad = await validate(root);
   findingsAre(bad.report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"], fragments: ["helper"] }),
     [
       "import-closure",
       "error",
@@ -251,7 +269,9 @@ test("a default fragment is not an import dependency; requiring it makes the sam
   expect(bad.report.findings[0]?.message).toContain("helper");
   expect(bad.report.findings[0]?.message).toContain("fragments.required");
   stack(root, "sample", "fragments:\n  required: [helper]");
-  findingsAre((await validate(root)).report.findings, []);
+  findingsAre((await validate(root)).report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"], fragments: ["helper"] }),
+  ]);
 });
 
 test("two requires hops allow a fragment's import, but applies_to never grants ownership [2.2#5]", async () => {
@@ -262,11 +282,15 @@ test("two requires hops allow a fragment's import, but applies_to never grants o
   fragment(root, "middle", "requires: [producer]");
   const producer = fragment(root, "producer");
   ship(producer, "files/shared.ts", "export const shared = 1;\n");
-  findingsAre((await validate(root)).report.findings, []);
+  findingsAre((await validate(root)).report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"], fragments: ["consumer", "middle", "producer"] }),
+  ]);
   fragment(root, "consumer", "applies_to: [sample]");
   stack(root, "sample", "fragments:\n  required: [consumer]\n  default: [producer]");
   const bad = await validate(root);
   findingsAre(bad.report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"], fragments: ["consumer", "middle", "producer"] }),
+
     [
       "import-closure",
       "error",
@@ -277,7 +301,7 @@ test("two requires hops allow a fragment's import, but applies_to never grants o
       },
     ],
   ]);
-  expect(bad.report.findings[0]?.message).toContain("requires");
+  expect(bad.report.findings[1]?.message).toContain("requires");
 });
 
 test.each([
@@ -297,6 +321,7 @@ test.each([
     ship(lib, "files/lib/index.ts", "export const value = 1;\n");
     ship(lib, "files/lib/load.sh", "#!/bin/sh\ntrue\n");
     findingsAre((await validate(root)).report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"], fragments: ["library"] }),
       [
         "import-closure",
         "error",
@@ -304,7 +329,9 @@ test.each([
       ],
     ]);
     stack(root, "sample", "fragments:\n  required: [library]");
-    findingsAre((await validate(root)).report.findings, []);
+    findingsAre((await validate(root)).report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"], fragments: ["library"] }),
+    ]);
   },
 );
 
@@ -315,6 +342,7 @@ test("missing relative imports fail while self-owned and package imports pass [2
   ship(entry, "files/local.ts", "export {};\n");
   const { report } = await validate(root);
   findingsAre(report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"] }),
     [
       "import-closure",
       "error",
@@ -338,13 +366,14 @@ test("fragment command deliverables need verify coverage while stack dev and cle
   );
   const { report } = await validate(root);
   findingsAre(report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"], fragments: ["check"] }),
     [
       "ref-command-coverage",
       "warning",
       { entry: "check", file: "fragments/check/FRAGMENT.md", text: ["format"] },
     ],
   ]);
-  expect(report.findings[0]?.message).toContain("format");
+  expect(report.findings[1]?.message).toContain("format");
 });
 
 test("malformed reference JSON reports one error per file and skips cascading reference findings [2.2#13]", async () => {
@@ -359,6 +388,7 @@ test("malformed reference JSON reports one error per file and skips cascading re
   ship(entry, "files/.vscode/settings.json", '{"endpoint":"http://localhost:5173"}');
   const { report, status } = await validate(root);
   findingsAre(report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"] }),
     ["ref-json", "error", { entry: "sample", file: "stacks/sample/files/.claude/settings.json" }],
     ["ref-json", "error", { entry: "sample", file: "stacks/sample/files/.vscode/launch.json" }],
     [
@@ -370,8 +400,10 @@ test("malformed reference JSON reports one error per file and skips cascading re
   expect(status).toBe(2);
 });
 
-test("the shipped registry has zero errors and warnings with every rot check enabled [2.2#9]", async () => {
-  const root = join(import.meta.dirname, "..", "registry");
+test("the shipped entry bodies have zero errors and warnings with every rot check enabled [2.2#9]", async () => {
+  const root = space.temp();
+  cpSync(join(import.meta.dirname, "..", "registry"), root, { recursive: true });
+  reviewSearchFixture(root);
   const { report, status } = await validateRot(root, {
     home: space.temp(),
     bundled: true,

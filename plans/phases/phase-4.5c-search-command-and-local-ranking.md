@@ -1,6 +1,7 @@
 # Phase 4.5c: `stacks search` and local ranking
 
-Status: DRAFT 2026-10-27 (not agreed)
+Status: EXECUTED 2026-10-28
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -198,6 +199,13 @@ To show what the metadata buys, `search:eval --without-sidecars` ranks with side
 22. A user copy of `mobile-expo` made by `create --from bundled` shadows the bundled entry and still ranks first for "an iOS health app" with the copied sidecar's `why` and caveat.
 23. A 500-character request of multi-byte characters is accepted (the limit counts characters after trimming, not bytes).
 
+24. A symlinked user registry root with spaces and non-ASCII paths remains searchable from another working directory under agent markers and inherited Git wrapper variables.
+25. Editing a sidecar between invocations changes the next result; no stale card is cached across runs.
+26. Control characters and newlines in a sidecar summary survive JSON encoding but are escaped in terminal output, so an entry cannot forge a `Next:` line.
+27. Fragment platform and language penalties follow `applies_to` stack ids or tags; matching any compatible stack or applying everywhere avoids the penalty.
+28. Repeated identical request examples do not inflate a score and caveats are displayed without being scored.
+29. An empty visible registry returns empty lists, `noStrongMatch: true` and exit 0.
+
 ## Exit criteria
 
 - Acceptance tests pass; the gate green, with `gate` in 4.5a's set set to this ranking's first numbers.
@@ -207,6 +215,10 @@ To show what the metadata buys, `search:eval --without-sidecars` ranks with side
 
 ## What this plan may get wrong
 
+- 2026-10-28 (implementation follow-up): the merged descriptions and the react-router AI-chat request in e0bd75b resolve the health and first-result conflicts. Description search remains enabled as specified. Absolute-score scales remain 1 for stacks and 20 for fragments, with all field weights at the starting values. All golden judgments now pass, and the first baseline is set to `{ mrr: 1, recallAt3: 0.98, fragmentRecallAt5: 1 }`. The revised react-router card still needs a maintainer's renewed approval; this follow-up does not approve or restamp it.
+- 2026-10-28 (test and scope follow-up): e0bd75b aligned the invalid-flag text assertions with failureGuide's indented `Next:` line. The authorized help-table change adds search's exits, and the plugin skill copy is synchronized with `skill/SKILL.md` as the publishing guide requires. Missing positional arguments use the parser's `MissingArgument.argument` in the existing closed Usage details shape, with empty `value` and a fixed `expected`.
+- 2026-10-28 (evaluation): the refreshed reports are in `plans/runs/2026-10-28-search-lexical.md`. With cards, MRR is 1.0000 versus 0.8563 without, recall@3 is 0.9800 versus 0.8833, and fragment recall@5 is 1.0000 in both. First-result checks are 36/36 versus 30/36; no-match checks are 4/4 versus 3/4. The gate is initialized from the passing with-card metrics. The embedding experiment uses OpenRouter embeddings and reciprocal rank fusion (k=60) within each kind, excludes zero-score votes, and retains lexical scores and tiers. Fusion receives the full pool, including entries beyond the first twenty lexical hits. Only local fake-provider tests were run; the real provider report requires a maintainer's key and remains their step. Text reports show the first five ranks per kind; metrics use every ranked result.
+- 2026-10-28 (tests written): `rank` takes one options object, `{ request, vocabulary, entries: { entry, search?, evidence? }[], limit?, kind? }`, and returns `SearchResult`. Each hit also carries `coverage`, the share defined under Tiers, so an agent can see why a hit is `partial`. With `noStrongMatch` and an untrusted first hit, `Next:` gives both: confirm with the user, then `show` and `new` for the first trusted stack. 4.2b's `Stats` service doesn't exist yet, so this sub-phase reads the summary from 4.2b's documented cache file (`$XDG_CACHE_HOME/stacks/stats/summary.json`, decoded with `StatsSummary`) through a read-only module named for the cache, which 4.2b's service later owns and extends with fetching. Three draft cards contradicted acceptance items 1, 8b and 14a (health synonyms on `typescript-api` and `docker-deploy`, no TUI `notFor` on `go-cli`); the cards were corrected before review.
 - Starting weights and the `c` constant are guesses; the `tune` split decides them, and the `holdout` split checks they weren't overfitted. With 40 queries both are noisy; prefer round numbers that pass over precise ones that pass by a hair.
 - The generic-word list ("app", "tool") is a judgment. If a stack's real name contains one, it still matches through id and name.
 - Lexical ranking can't connect "log my workouts on my phone" to `mobile-expo` unless "phone" is an alias or a synonym. The vocabulary covers the common ones; the `paraphrase` pool says how much is left for 4.5d.

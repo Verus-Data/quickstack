@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "kind": "stack",
+  "id": "astro-api",
+  "source": {
+    "digest": "sha256:6e6f49aa30b09a876b612af2906f7fef610329cd0dfb1861173c078f054beeb0",
+    "by": "drafted",
+    "model": "codex/gpt-6.1-sol",
+    "promptVersion": 1,
+    "reviewedAt": "2026-10-28"
+  },
+  "summary": "A static website with interactive components and a separate HTTP API sharing one typed contract.",
+  "platforms": [
+    "web",
+    "server"
+  ],
+  "productKinds": [
+    "content-site",
+    "api",
+    "fullstack"
+  ],
+  "languages": [
+    "typescript"
+  ],
+  "requests": [
+    "build static pages with interactive widgets that fetch fresh data",
+    "catch API response changes in the browser code during type checking",
+    "serve my website and backend from one process and origin"
+  ],
+  "useCases": [
+    "static sites with live data",
+    "shared frontend and backend contracts"
+  ],
+  "synonyms": [
+    "Astro",
+    "React islands",
+    "Effect HttpApi",
+    "typed client",
+    "Bun workspace"
+  ],
+  "goodFor": [
+    "builds without a running API",
+    "one contract for client and server"
+  ],
+  "notFor": [
+    "server-rendered pages by default",
+    "browser-only projects"
+  ]
+}

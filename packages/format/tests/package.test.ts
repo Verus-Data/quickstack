@@ -90,7 +90,7 @@ beforeAll(() => {
   );
 }, 120_000); // One build, pack and offline install for this file; each child is capped at 60 seconds.
 
-test("the tarball ships only dist JavaScript/declarations, metadata and license [4.0a#5]", () => {
+test("the tarball ships only dist JavaScript/declarations, JSON schemas, metadata and license [4.0a#5]", () => {
   const listing = run("tar", ["-tzf", tarball()]);
   succeeded(listing);
   const actual = listing.stdout
@@ -105,9 +105,11 @@ test("the tarball ships only dist JavaScript/declarations, metadata and license 
   expect(dist).toContain("dist/index.js");
   expect(dist).toContain("dist/index.d.ts");
   expect(dist.every((file) => file.endsWith(".js") || file.endsWith(".d.ts"))).toBe(true);
-  expect(actual).toEqual(["LICENSE", "package.json", ...dist].sort());
+  const schemas = files(join(pkg, "schemas")).map((file) => `schemas/${file}`);
+  expect(schemas).toContain("schemas/telemetry-event.v1.json");
+  expect(actual).toEqual(["LICENSE", "package.json", ...dist, ...schemas].sort());
   const hash = (file: string) => createHash("sha256").update(readFileSync(file)).digest("hex");
-  for (const file of ["LICENSE", ...dist])
+  for (const file of ["LICENSE", ...dist, ...schemas])
     expect(hash(join(installed, file))).toBe(hash(join(pkg, file)));
   const packed = readFileSync(join(installed, "package.json"), "utf8");
   expect(packed).not.toMatch(/(?:catalog|workspace):/);

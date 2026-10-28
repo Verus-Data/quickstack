@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "kind": "stack",
+  "id": "python-react",
+  "source": {
+    "digest": "sha256:d11f0301685a560444ea42c1bb4f431a913eedacab30e4a718aea2be4283df06",
+    "by": "drafted",
+    "model": "codex/gpt-6.1-sol",
+    "promptVersion": 1,
+    "reviewedAt": "2026-10-28"
+  },
+  "summary": "A browser app backed by a Python API, with generated frontend types, query hooks and test mocks.",
+  "platforms": [
+    "web",
+    "server"
+  ],
+  "productKinds": [
+    "web-app",
+    "fullstack",
+    "api"
+  ],
+  "languages": [
+    "python",
+    "typescript"
+  ],
+  "requests": [
+    "build my browser interface around a separate Python backend",
+    "generate frontend data hooks from my backend's API specification",
+    "keep my browser client aligned with backend response types",
+    "run frontend and backend checks through one set of commands"
+  ],
+  "useCases": [
+    "browser apps with a separate API",
+    "frontend and backend contract checks"
+  ],
+  "synonyms": [
+    "FastAPI",
+    "React SPA",
+    "OpenAPI",
+    "orval",
+    "TanStack Query"
+  ],
+  "goodFor": [
+    "Python business logic with a TypeScript interface",
+    "generated API mocks"
+  ],
+  "notFor": [
+    "server-rendered pages"
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "kind": "stack",
+  "id": "mobile-expo",
+  "source": {
+    "digest": "sha256:882eafd76d893581e61c32e59cd803106d5970a41c58b580fd64c527244ff9d2",
+    "by": "drafted",
+    "model": "codex/gpt-6.1-sol",
+    "promptVersion": 1,
+    "reviewedAt": "2026-10-28"
+  },
+  "summary": "An iOS and Android app sharing TypeScript schemas with its own API and Postgres database.",
+  "platforms": [
+    "ios",
+    "android",
+    "mobile"
+  ],
+  "productKinds": [
+    "mobile-app",
+    "fullstack"
+  ],
+  "languages": [
+    "typescript"
+  ],
+  "requests": [
+    "build one phone app for both major mobile platforms",
+    "keep my app screens and backend responses consistent through shared types",
+    "store my mobile app's data behind an API I control",
+    "give screens reusable hooks for loading data and handling failures"
+  ],
+  "useCases": [
+    "mobile apps with a backend",
+    "shared app and API schemas"
+  ],
+  "synonyms": [
+    "Expo Router",
+    "React Native",
+    "Hono",
+    "Drizzle",
+    "NativeWind"
+  ],
+  "goodFor": [
+    "typed app-to-API calls",
+    "database-backed API tests",
+    "utility-class styling"
+  ],
+  "notFor": [
+    "native Swift or Kotlin projects"
+  ],
+  "caveats": [
+    "Entitlements such as Apple sign-in can require signing even for simulator builds; gate them to EAS builds."
+  ]
+}

@@ -22,6 +22,7 @@ import {
   userRoot,
 } from "./helpers/create";
 import { minimal, writeEntry } from "./helpers/registry";
+import { missingSearchCards } from "./helpers/search-fixture";
 
 afterEach(releaseCreate);
 
@@ -34,7 +35,7 @@ test.each(["null", "true", "123"])(
       await createCli(home, ["validate", entryPath(home, "stack", id), "--json"]),
       ValidateReport,
     );
-    expect(report.findings).toEqual([]);
+    expect(report.findings).toEqual(missingSearchCards({ stacks: [id] }));
   },
 );
 

@@ -102,6 +102,8 @@ This sub-phase builds the section's data path and its three states with plain ma
 
 ## What this plan may get wrong
 
+- 2026-10-27 (roadmap "API route map"): the summary route is `GET /v1/stats`, not `/v1/stats/summary`, and its `sort` values are `-greenRate.lower` (default), `-greenRate`, `-projects`, `-trending.score` and `id`. The site's build-time reader (`stacks-api/apps/web/src/data/read-stats.ts`) and its fixture server still use the old names and move with the site work.
+
 - A stack author may want the daily series as a chart. With the site in Astro that is one more island over the detail route; it is left out until someone asks, and the series is in `show --json` for anyone who wants to plot it. 2026-10-27: the maintainers asked; [4.2f](phase-4.2f-stats-pages-and-charts.md) draws it, as a static chart with one island.
 - 2026-10-27: `stats` carried only `greenRate` and `greenRateLower`, so an agent asked to quote a stack's interval and `n` couldn't from `list --json`; `greenRateUpper` and `sample` are added. The detail routes moved to `/v1/stacks/:id/stats` and `/v1/fragments/:id/stats`, and the summary is paged (4.2a).
 - Agents may ignore `stats`. Test with a bench run (2.0b) where two stacks fit and see whether the pick and its explanation change before promoting it.

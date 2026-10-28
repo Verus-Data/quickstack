@@ -36,6 +36,7 @@ test("a carried fragment keeps its first add date after an undecodable first com
   await buildDirectory(f, previous);
   setDefaults(f.registry, "default: [draft-tool]", "default: []");
   rmSync(join(f.registry, "fragments", dir), { recursive: true });
+  rmSync(join(f.registry, "search/fragments", `${dir}.json`));
   writeLedger(f.registry, []);
   commitAt(f, "2026-11-01T09:00:00Z", "fixture: remove draft source");
   const host = await serve(previous);
@@ -58,6 +59,8 @@ test("an index-only removal keeps its exact last content, without a version, acr
   expect(lastRun).toBeDefined();
   rmSync(join(f.registry, "stacks"), { recursive: true });
   rmSync(join(f.registry, "fragments/tools"), { recursive: true });
+  rmSync(join(f.registry, "search/stacks"), { recursive: true });
+  rmSync(join(f.registry, "search/fragments/tools.json"));
   writeLedger(f.registry, []);
   writeRemoved(f, {
     sample: { kind: "stack", removedAt: "2026-11-01", reason: "Retired sample" },

@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "kind": "fragment",
+  "id": "cloudflare-pages",
+  "source": {
+    "digest": "sha256:5f11ead576b105ef7419f4c03da93babfb6c319acabb7438660893c1f21cab19",
+    "by": "drafted",
+    "model": "codex/gpt-6.1-sol",
+    "promptVersion": 1,
+    "reviewedAt": "2026-10-28"
+  },
+  "summary": "Publish a static site to Cloudflare Pages with production deploys, pull request previews, caching headers and redirects.",
+  "capabilities": [
+    "deploy"
+  ],
+  "requests": [
+    "publish my built site after the checks pass",
+    "give each pull request a preview URL for review",
+    "configure redirects and caching when hosting my static pages"
+  ],
+  "useCases": [
+    "static site hosting",
+    "previewing site changes"
+  ],
+  "synonyms": [
+    "wrangler",
+    "direct upload",
+    "preview deploys",
+    "Cloudflare Pages"
+  ],
+  "goodFor": [
+    "deploying existing build output",
+    "production and branch previews"
+  ],
+  "notFor": [
+    "running a backend server",
+    "container image hosting"
+  ]
+}

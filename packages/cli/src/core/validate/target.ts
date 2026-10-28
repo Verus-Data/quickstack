@@ -51,7 +51,7 @@ export const resolveTarget = (given: string | undefined) =>
 
     const registryDirectory = (at: string) =>
       Effect.gen(function* () {
-        for (const { dir } of kinds)
+        for (const dir of ["stacks", "fragments", "search"])
           if (yield* isDirectory(path.join(at, dir)))
             return { root: at, bundled: yield* isBundled(at) } satisfies Target;
         return undefined;

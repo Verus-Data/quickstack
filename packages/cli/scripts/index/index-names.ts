@@ -1,19 +1,8 @@
-import { EntryBundle, type IndexEntry, type OfficialNames } from "@stacks/format";
-import { Effect, Schema } from "effect";
+import type { IndexEntry, OfficialNames } from "@stacks/format";
+import { Effect } from "effect";
 import { decodeEntry, markdownFile } from "../../src/core/registry/entry";
+import { readBundle } from "./bundle";
 import { type BundleRef, bundlePath } from "./remote";
-
-const readBundle = Effect.fn("index.namesBundle")(function* (
-  ref: BundleRef,
-  bundles: ReadonlyMap<string, Uint8Array>,
-) {
-  const bytes = bundles.get(bundlePath(ref));
-  if (bytes === undefined)
-    return yield* Effect.fail(new Error(`${bundlePath(ref)}: missing names source bundle.`));
-  return yield* Schema.decodeUnknownEffect(Schema.fromJsonString(EntryBundle))(
-    new TextDecoder().decode(bytes),
-  );
-});
 
 const bundleSteps = Effect.fn("index.namesSteps")(function* (
   ref: BundleRef,

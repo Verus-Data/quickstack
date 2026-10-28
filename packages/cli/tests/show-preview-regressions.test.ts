@@ -4,7 +4,13 @@ import { Schema } from "effect";
 import { afterEach, expect, test } from "vitest";
 import { BriefPreview } from "../src/schemas/validate";
 import { quiet, runCli, terminal, writeError } from "./helpers/cli";
-import { fragment, previewResult, shipped, showReport, stack } from "./helpers/show-preview";
+import {
+  bundledFragment as fragment,
+  previewResult,
+  shipped,
+  showReport,
+  bundledStack as stack,
+} from "./helpers/show-preview";
 import { workspace } from "./helpers/verify";
 
 const space = workspace();

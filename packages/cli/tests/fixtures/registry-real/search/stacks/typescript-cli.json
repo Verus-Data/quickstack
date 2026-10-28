@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "typescript-cli",
+  "source": {
+    "digest": "sha256:fa1ccccb9b4205053fbd507eca688543a71b9bad0c2b5d3b93f0c39a622e7d5a",
+    "by": "author",
+    "reviewedAt": "2026-10-27"
+  },
+  "summary": "A synthetic registry entry for CLI tests.",
+  "requests": ["exercise a fixture workflow", "inspect a sample project", "check a local example"],
+  "useCases": [],
+  "synonyms": [],
+  "goodFor": [],
+  "notFor": [],
+  "kind": "stack",
+  "platforms": ["cli"],
+  "productKinds": ["cli-tool"],
+  "languages": ["typescript"]
+}

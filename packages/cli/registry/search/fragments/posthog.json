@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "kind": "fragment",
+  "id": "posthog",
+  "source": {
+    "digest": "sha256:6189bc5e1f9181f097c8212bf783a177d9ab9a756f358ce20220689584de4c88",
+    "by": "drafted",
+    "model": "codex/gpt-6.1-sol",
+    "promptVersion": 1,
+    "reviewedAt": "2026-10-28"
+  },
+  "summary": "Track browser pageviews and typed product events through PostHog, with buffered initialization and analytics disabled when no key is configured.",
+  "capabilities": [
+    "analytics"
+  ],
+  "requests": [
+    "record page visits and product interactions from my web interface",
+    "keep analytics silent in tests when credentials are absent",
+    "queue browser events while the analytics library loads",
+    "identify signed-in users by internal id and reset tracking on sign-out"
+  ],
+  "useCases": [
+    "web product analytics",
+    "pageview tracking across client routes"
+  ],
+  "synonyms": [
+    "PostHog",
+    "event catalog",
+    "pageviews",
+    "pre-init buffer"
+  ],
+  "goodFor": [
+    "one typed tracking module",
+    "development without an analytics account"
+  ],
+  "notFor": [
+    "server-side event collection",
+    "collecting user-entered text or emails"
+  ]
+}

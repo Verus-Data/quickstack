@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "step-clash",
+  "source": {
+    "digest": "sha256:e188b079a2e5a8abe496e7860eaa378a44636684109be10821478189d78a2617",
+    "by": "author",
+    "reviewedAt": "2026-10-27"
+  },
+  "summary": "A synthetic registry entry for CLI tests.",
+  "requests": ["exercise a fixture workflow", "inspect a sample project", "check a local example"],
+  "useCases": [],
+  "synonyms": [],
+  "goodFor": [],
+  "notFor": [],
+  "kind": "fragment",
+  "capabilities": []
+}

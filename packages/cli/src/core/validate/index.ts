@@ -16,6 +16,7 @@ import { headingChecks } from "./headings";
 import { importChecks } from "./imports";
 import { ledgerChecks } from "./ledger-notes";
 import { referenceChecks } from "./references";
+import { searchChecks } from "./search";
 import { shippedReferenceChecks } from "./shipped-refs";
 import { snapshotRegistry } from "./snapshot";
 import { readSources } from "./sources";
@@ -27,6 +28,7 @@ import { type Check, rootPaths, type View } from "./view";
 /** Every check group; each module owns one class of findings over the same view. */
 export const checks: ReadonlyArray<Check> = [
   loadChecks,
+  searchChecks,
   metadataChecks,
   referenceChecks,
   conditionalChecks,
@@ -102,6 +104,7 @@ export const validate = (target: Target) =>
         const sourceView: Omit<View, "composed"> = {
           root: target.root,
           bundled: target.bundled,
+          ...(target.only === undefined ? {} : { only: target.only }),
           entries: validated.filter((item): item is Entry => !isRejected(item)),
           rejected: validated.filter((item): item is RejectedEntry => isRejected(item)),
           all,

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "git-hooks",
+  "source": {
+    "digest": "sha256:0e86a041828ae9db93937844511b520a09709045578c9646bab794d27a1a185c",
+    "by": "author",
+    "reviewedAt": "2026-10-27"
+  },
+  "summary": "A synthetic registry entry for CLI tests.",
+  "requests": ["exercise a fixture workflow", "inspect a sample project", "check a local example"],
+  "useCases": [],
+  "synonyms": [],
+  "goodFor": [],
+  "notFor": [],
+  "kind": "fragment",
+  "capabilities": []
+}

@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "web-stack",
+  "source": {
+    "digest": "sha256:c48a14ddc338ce05a4a1e13e685375115a501ce592945a040d091295da722162",
+    "by": "author",
+    "reviewedAt": "2026-10-27"
+  },
+  "summary": "A synthetic registry entry for CLI tests.",
+  "requests": ["exercise a fixture workflow", "inspect a sample project", "check a local example"],
+  "useCases": [],
+  "synonyms": [],
+  "goodFor": [],
+  "notFor": [],
+  "kind": "stack",
+  "platforms": ["cli"],
+  "productKinds": ["cli-tool"],
+  "languages": ["typescript"]
+}

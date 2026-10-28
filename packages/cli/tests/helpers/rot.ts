@@ -4,7 +4,7 @@ import { Schema } from "effect";
 import { expect } from "vitest";
 import { type Finding, ValidateReport } from "../../src/schemas/validate";
 import { quiet, runCli, tempDir } from "./cli";
-import { minimal, writeEntry } from "./registry";
+import { emptyRegistry, minimal, writeEntry } from "./registry";
 
 export const setupBody = "## Setup\n\nCreate the project.\n";
 const steps = [
@@ -74,7 +74,7 @@ export async function validateRot(
     env: { ...quiet, ...options.env },
     host: {
       cwd: options.cwd ?? options.home,
-      registry: options.bundled ? root : join(options.home, "no-bundled-registry"),
+      registry: options.bundled ? root : emptyRegistry,
     },
   });
   const report = Schema.decodeUnknownSync(ValidateReport)(JSON.parse(result.stdout));
@@ -105,7 +105,7 @@ export function findingsAre(
   findings: readonly Finding[],
   expected: readonly (readonly [string, Finding["severity"], FindingLocation?])[],
 ) {
-  expect(findings).toHaveLength(expected.length);
+  expect(findings, JSON.stringify(findings)).toHaveLength(expected.length);
   const remaining = [...findings];
   for (const [check, severity, location = {}] of expected) {
     const index = remaining.findIndex(

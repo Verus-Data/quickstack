@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "kind": "fragment",
+  "id": "openrouter-ai",
+  "source": {
+    "digest": "sha256:0ca4f2a8175bc994d60a5f27f140c96eb2cd1ef7a44d8055951e5b9c4390072c",
+    "by": "drafted",
+    "model": "codex/gpt-6.1-sol",
+    "promptVersion": 1,
+    "reviewedAt": "2026-10-28"
+  },
+  "summary": "Configure OpenRouter access, discover available models, handle provider failures safely and test requests against a local server.",
+  "capabilities": [
+    "ai"
+  ],
+  "requests": [
+    "let my app discover models and configure provider routing",
+    "test failed model requests locally without using paid credentials",
+    "keep my application usable before a model API key is configured"
+  ],
+  "useCases": [
+    "shared provider configuration",
+    "testing upstream failures"
+  ],
+  "synonyms": [
+    "OpenRouter",
+    "model discovery",
+    "routing",
+    "fallback models",
+    "local stub"
+  ],
+  "goodFor": [
+    "bounded retries and timeouts",
+    "secret handling and safe errors"
+  ],
+  "notFor": [
+    "a complete chat interface",
+    "application-owned recording and evaluations"
+  ]
+}

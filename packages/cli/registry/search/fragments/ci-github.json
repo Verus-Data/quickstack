@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "kind": "fragment",
+  "id": "ci-github",
+  "source": {
+    "digest": "sha256:94c47e10d9d39d5f833323086b95800fd7c039904f88cf6dae6be9a4e5387677",
+    "by": "drafted",
+    "model": "codex/gpt-6.1-sol",
+    "promptVersion": 1,
+    "reviewedAt": "2026-10-28"
+  },
+  "summary": "Run the project's existing checks on GitHub pushes and pull requests, with a single required result and selective jobs for monorepos.",
+  "capabilities": [
+    "ci"
+  ],
+  "requests": [
+    "run our existing checks whenever someone opens a pull request",
+    "check only affected parts of our monorepo in CI",
+    "give branch protection one required check even when jobs are skipped",
+    "check that committed generated files still match their sources"
+  ],
+  "useCases": [
+    "pull request validation",
+    "monorepo checks",
+    "generated-code drift detection"
+  ],
+  "synonyms": [
+    "GitHub Actions",
+    "continuous integration",
+    "ci-ok",
+    "required check",
+    "path filters"
+  ],
+  "goodFor": [
+    "reusing Makefile targets or package scripts",
+    "least-privilege workflows"
+  ],
+  "notFor": [
+    "deployment pipelines",
+    "local commit hooks"
+  ]
+}

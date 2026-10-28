@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "kind": "fragment",
+  "id": "goreleaser",
+  "source": {
+    "digest": "sha256:ca8f8100406654dc78bb352067ca258a17b932b07cd8d61a4a80bd49271e0d8f",
+    "by": "drafted",
+    "model": "codex/gpt-6.1-sol",
+    "promptVersion": 1,
+    "reviewedAt": "2026-10-28"
+  },
+  "summary": "Publish Go binaries for multiple operating systems from version tags, with archives, checksums, changelogs and optional Homebrew distribution.",
+  "capabilities": [
+    "release"
+  ],
+  "requests": [
+    "publish downloadable builds of my Go tool whenever I push a version tag",
+    "package my executable for Linux, macOS and Windows with checksums",
+    "preview release artifacts locally before making them public",
+    "optionally distribute my Go binary through a Homebrew tap"
+  ],
+  "useCases": [
+    "Go binary distribution",
+    "tag-triggered GitHub releases"
+  ],
+  "synonyms": [
+    "GoReleaser",
+    "cross-compilation",
+    "release snapshots",
+    "changelog"
+  ],
+  "goodFor": [
+    "version metadata in binaries",
+    "repeatable release archives",
+    "optional Homebrew publishing"
+  ],
+  "notFor": [
+    "Bun-compiled binaries"
+  ]
+}

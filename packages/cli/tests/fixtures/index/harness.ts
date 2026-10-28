@@ -24,6 +24,7 @@ import { quiet, runCli } from "../../helpers/cli";
 import { bundledAt, composeExit } from "../../helpers/compose";
 import { runRecord, writeLedger } from "../../helpers/ledger";
 import { minimal, writeEntry } from "../../helpers/registry";
+import { reviewSearchFixture } from "../../helpers/search-fixture";
 
 const repo = join(import.meta.dirname, "../../../../..");
 export const keyId = "index-test-only";
@@ -220,6 +221,7 @@ export async function fixture(temporary: string) {
   for (const id of ["tools", "extra", "unproven"]) {
     writeEntry({ root: registry, kind: "fragment", dir: id, frontmatter: minimal("fragment", id) });
   }
+  reviewSearchFixture(registry);
   const validation = await runCli(["validate", "--json"], {
     home,
     host: { registry, cwd: cli },

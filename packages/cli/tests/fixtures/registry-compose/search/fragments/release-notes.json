@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "release-notes",
+  "source": {
+    "digest": "sha256:cfd532391bfd65e1a417232b5c83972bd3c07bf87fe2b741260289a65c28de67",
+    "by": "author",
+    "reviewedAt": "2026-10-27"
+  },
+  "summary": "A synthetic registry entry for CLI tests.",
+  "requests": ["exercise a fixture workflow", "inspect a sample project", "check a local example"],
+  "useCases": [],
+  "synonyms": [],
+  "goodFor": [],
+  "notFor": [],
+  "kind": "fragment",
+  "capabilities": []
+}
