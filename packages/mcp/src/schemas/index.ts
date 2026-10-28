@@ -1,2 +1,2 @@
-export * from "./echo";
-export * from "./ping";
+export * from "./cli";
+export * from "./tools";

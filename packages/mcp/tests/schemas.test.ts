@@ -1,63 +1,142 @@
 import { Schema } from "effect";
 import { describe, expect, it } from "vitest";
-import { EchoTooLong } from "../src/errors";
-import { EchoParams, EchoSuccess } from "../src/schemas/echo";
-import { PingSuccess } from "../src/schemas/ping";
+import { CliFailure } from "../src/errors";
+import { CliErrorEnvelope, ListEntry } from "../src/schemas/cli";
+import { ListParams, NewParams, VerifyParams } from "../src/schemas/tools";
 
-describe("PingSuccess", () => {
-  it("decodes a valid object", () => {
-    const result = Schema.decodeUnknownSync(PingSuccess)({ alive: true });
-    expect(result).toEqual({ alive: true });
+describe("ListParams", () => {
+  it("decodes with no kind", () => {
+    const result = Schema.decodeUnknownSync(ListParams)({});
+    expect(result.kind).toBeUndefined();
   });
 
-  it("rejects a missing field", () => {
-    expect(() => Schema.decodeUnknownSync(PingSuccess)({})).toThrow();
+  it("decodes with kind stack", () => {
+    const result = Schema.decodeUnknownSync(ListParams)({ kind: "stack" });
+    expect(result.kind).toBe("stack");
   });
 
-  it("rejects a wrong type", () => {
-    expect(() => Schema.decodeUnknownSync(PingSuccess)({ alive: "yes" })).toThrow();
-  });
-});
-
-describe("EchoParams", () => {
-  it("decodes a valid object", () => {
-    const result = Schema.decodeUnknownSync(EchoParams)({ text: "hello" });
-    expect(result).toEqual({ text: "hello" });
-  });
-
-  it("rejects a missing text field", () => {
-    expect(() => Schema.decodeUnknownSync(EchoParams)({})).toThrow();
-  });
-
-  it("rejects a wrong type for text", () => {
-    expect(() => Schema.decodeUnknownSync(EchoParams)({ text: 42 })).toThrow();
+  it("rejects an invalid kind", () => {
+    expect(() => Schema.decodeUnknownSync(ListParams)({ kind: "bogus" })).toThrow();
   });
 });
 
-describe("EchoSuccess", () => {
-  it("round-trips a valid value", () => {
-    const value = { text: "hello", length: 5 };
-    const encoded = Schema.encodeSync(EchoSuccess)(value);
-    const decoded = Schema.decodeUnknownSync(EchoSuccess)(encoded);
-    expect(decoded).toEqual(value);
+describe("NewParams", () => {
+  it("decodes with required stack only", () => {
+    const result = Schema.decodeUnknownSync(NewParams)({ stack: "astro-blog" });
+    expect(result.stack).toBe("astro-blog");
+    expect(result.dir).toBeUndefined();
+    expect(result.sandbox).toBeUndefined();
   });
 
-  it("rejects a non-integer length", () => {
-    expect(() => Schema.decodeUnknownSync(EchoSuccess)({ text: "hi", length: 2.5 })).toThrow();
+  it("decodes with all fields", () => {
+    const result = Schema.decodeUnknownSync(NewParams)({
+      stack: "astro-blog",
+      dir: "./myproject",
+      sandbox: false,
+      with: ["effect-schema"],
+      without: ["deploy"],
+    });
+    expect(result.stack).toBe("astro-blog");
+    expect(result.dir).toBe("./myproject");
+    expect(result.sandbox).toBe(false);
+    expect(result.with).toEqual(["effect-schema"]);
+    expect(result.without).toEqual(["deploy"]);
+  });
+
+  it("rejects a missing stack", () => {
+    expect(() => Schema.decodeUnknownSync(NewParams)({})).toThrow();
   });
 });
 
-describe("EchoTooLong", () => {
-  it("creates an error with a _tag and message", () => {
-    const error = new EchoTooLong({ message: "too long" });
-    expect(error._tag).toBe("EchoTooLong");
-    expect(error.message).toBe("too long");
+describe("VerifyParams", () => {
+  it("decodes with no dir", () => {
+    const result = Schema.decodeUnknownSync(VerifyParams)({});
+    expect(result.dir).toBeUndefined();
   });
 
-  it("encodes to JSON with _tag and message", () => {
-    const error = new EchoTooLong({ message: "too long" });
-    const encoded = Schema.encodeSync(EchoTooLong)(error);
-    expect(encoded._tag).toBe("EchoTooLong");
-    expect(encoded.message).toBe("too long");
+  it("decodes with dir", () => {
+    const result = Schema.decodeUnknownSync(VerifyParams)({ dir: "/tmp/project" });
+    expect(result.dir).toBe("/tmp/project");
+  });
+});
+
+describe("ListEntry", () => {
+  it("decodes a valid entry", () => {
+    const result = Schema.decodeUnknownSync(ListEntry)({
+      id: "x",
+      kind: "stack",
+      name: "X",
+      description: "d",
+      tags: [],
+      origin: "bundled",
+      trusted: true,
+      shadows: [],
+      lastRun: null,
+    });
+    expect(result.id).toBe("x");
+  });
+
+  it("decodes lastRun as a string", () => {
+    const result = Schema.decodeUnknownSync(ListEntry)({
+      id: "x",
+      kind: "fragment",
+      name: "X",
+      description: "d",
+      tags: [],
+      origin: "bundled",
+      trusted: false,
+      shadows: [],
+      lastRun: "2026-01-01T00:00:00Z",
+    });
+    expect(result.lastRun).toBe("2026-01-01T00:00:00Z");
+  });
+});
+
+describe("CliErrorEnvelope", () => {
+  it("decodes with details", () => {
+    const result = Schema.decodeUnknownSync(CliErrorEnvelope)({
+      error: {
+        tag: "NotFound",
+        message: "Not found.",
+        retryable: false,
+        details: { suggestions: [], id: "bogus", kind: "stack" },
+      },
+    });
+    expect(result.error.tag).toBe("NotFound");
+    expect(result.error.details).toBeDefined();
+  });
+
+  it("decodes without details", () => {
+    const result = Schema.decodeUnknownSync(CliErrorEnvelope)({
+      error: { tag: "Usage", message: "Bad.", retryable: false },
+    });
+    expect(result.error.tag).toBe("Usage");
+    expect(result.error.details).toBeUndefined();
+  });
+});
+
+describe("CliFailure", () => {
+  it("creates with tag and details", () => {
+    const error = new CliFailure({
+      message: "Not found.",
+      tag: "NotFound",
+      details: { id: "bogus" },
+      exitCode: 2,
+    });
+    expect(error._tag).toBe("CliFailure");
+    expect(error.tag).toBe("NotFound");
+    expect(error.exitCode).toBe(2);
+  });
+
+  it("encodes to JSON with _tag", () => {
+    const error = new CliFailure({
+      message: "Not found.",
+      tag: "NotFound",
+      details: {},
+      exitCode: 2,
+    });
+    const encoded = Schema.encodeSync(CliFailure)(error);
+    expect(encoded._tag).toBe("CliFailure");
+    expect(encoded.tag).toBe("NotFound");
   });
 });
