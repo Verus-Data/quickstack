@@ -52,18 +52,7 @@ or collides with work another session already has in flight.
    versions. From `stacks-api`, record the format version in the root `package.json` catalog
    and `bun.lock`.
 
-3. Inventory consumers of `/v1/search` (input to D3). In a scratch directory:
-
-   ```sh
-   npm pack @steamfield/stacks@0.3.1
-   tar -xzf steamfield-stacks-0.3.1.tgz
-   grep -rl 'v1/search' package/ || echo "no /v1/search consumer in 0.3.1"
-   ```
-
-   Also check whether the site calls `/v1/search` (`grep -rn "v1/search" stacks-api/apps/web/src`).
-   Record the list. If nothing released calls it, write "D3 recommended default holds".
-
-4. Inspect the in-flight active seed without touching it (from `stacks-api`):
+3. Inspect the in-flight active seed without touching it (from `stacks-api`):
 
    ```sh
    pgrep -fl "seed/index.ts"
@@ -71,9 +60,9 @@ or collides with work another session already has in flight.
    ```
 
    Record pid (if any), `profileVersion`, `days`, `through`, `inputDigest` and `complete`. This
-   artifact is useful for R2's local inspection only; production will be regenerated (D7).
+   artifact is useful for R2's local inspection only; production is regenerated in R5.
 
-5. Close or confirm the audit's gaps. For each row of the table below, write "still open
+4. Close or confirm the audit's gaps. For each row of the table below, write "still open
    (evidence)" or "closed (evidence)":
 
    | Gap from the 2026-10-28 audit | How to check |
@@ -81,13 +70,11 @@ or collides with work another session already has in flight.
    | Published CLI lacks search and stats | step 2 |
    | Live search uses older penalty encoding | step 2: penalties should be objects with `kind`, `request`, `entry` |
    | Nonsense search returns zero-score hits | `curl -s 'https://stacks.steamfield.io/v1/search?q=!!!' \| jq` |
-   | Search omits `show`'s content comparison | `packages/cli/src/core/search/` has no `sameContent` |
    | Guide, help footer and `guideCommands` teach different paths | `packages/cli/src/core/guide.ts` |
    | Seed has sparse dependency evidence, install-only failures | R2 checks this; mark "R2 owns" |
    | `/deps/` 404, canonical `example.com`, clipboard failure leaves text collapsed | step 2 and R4 |
-   | Remote index and telemetry endpoints unset, index keys empty | `bin.ts`, `packages/format/src/index-keys.ts` |
 
-6. Carry the known gate failure. The final quickstack gate failed one test:
+5. Carry the known gate failure. The final quickstack gate failed one test:
    `packages/cli/tests/mobile-dev-ownership.test.ts`, a `test.each` titled
    `mobile dev cleans owned groups after %s`, in the `signal` case, with a process-cleanup
    `EPERM`. Reproduce once from `packages/cli`:
@@ -98,11 +85,10 @@ or collides with work another session already has in flight.
 
    Record the host, result and error. HANDOFF records recurring `kill EPERM` failures on the
    rr host `m4-mini`; note whether the failure reproduces locally, only on that host, or not
-   at all. Assign the diagnosis to the user or a named agent; R5 can't close while it's
-   unexplained. Don't weaken the assertion, and don't treat a host permission failure as a
-   recipe defect.
+   at all. Don't weaken the assertion. If it passes locally and only fails on that host, it's
+   a host issue: note it and move on (R5 step 1 handles it); don't spend more time on it.
 
-7. Fix the demo scope and write it into `submission.md`:
+6. Fix the demo scope and write it into `submission.md`:
    - Composition: `python-react --sandbox` (matches the site's example and `DEMO_OUTLINE.md`).
    - App: a React view that makes a typed request to the Python API and renders the
      response, with one test that exercises that path end to end. No persistence, no auth,
@@ -112,9 +98,9 @@ or collides with work another session already has in flight.
    - Tools: from `stacks show python-react --json` (`uv`, `bun`, `make`, `git`, `jq` on
      2026-10-28). Check each is executable (`uv --version`, and so on), not just on PATH.
    - Agent and model: record what the demo will use.
-   - Rho: D5. Until D5 is decided, record it as excluded.
+   - Rho: S5. Until S5 is decided, record it as excluded.
 
-8. Organizer requirements. Ask the user for the organizer's rules (or a link) and record:
+7. Organizer requirements. Ask the user for the organizer's rules (or a link) and record:
    deadline with timezone, video length and format limits, whether edited video is allowed,
    required links, repository-access rules, sponsor eligibility, whether a live judging table
    exists. Each unknown is a named blocker on R6 and R10, not on R1 to R4.
@@ -122,9 +108,9 @@ or collides with work another session already has in flight.
 ## Done when
 
 - [ ] `baseline.md` has the repository state, worktree/branch inventory, version matrix,
-      `/v1/search` consumer list, seed status and the audit-gap table with evidence.
-- [ ] The EPERM test is reproduced (or not) with host recorded, and has an assignee.
-- [ ] `submission.md` has the demo scope from step 7 and the organizer table from step 8,
+      seed status and the audit-gap table with evidence.
+- [ ] The EPERM test result is recorded with its host.
+- [ ] `submission.md` has the demo scope from step 6 and the organizer table from step 7,
       with unknowns marked as blockers.
 - [ ] The README's facts table is updated wherever this baseline found drift.
-- [ ] Decisions D3 and D5 have the evidence they need; tell the user.
+- [ ] Decision S5 (Rho) has the organizer evidence it needs; tell the user.

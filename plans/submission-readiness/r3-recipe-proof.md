@@ -1,6 +1,6 @@
 # R3. Fresh proof for the demonstrated recipe
 
-Priority P0. Depends on R0, D5 (demo scope) and D8 (proof route and token). Evidence:
+Priority P0. Depends on R0, S5 (demo scope) and S8 (proof route and token). Evidence:
 `recipe-proof.md`. Works in quickstack.
 
 ## Outcome
@@ -27,7 +27,7 @@ but never index proof.
 
 ## Steps
 
-1. Preconditions. D8 decided; a `CLAUDE_CODE_OAUTH_TOKEN` or `CODEX_ACCESS_TOKEN` in the
+1. Preconditions. S8 decided; a `CLAUDE_CODE_OAUTH_TOKEN` or `CODEX_ACCESS_TOKEN` in the
    environment (the user supplies it; never write it to a file). Tools from R0 step 7 are
    executable. The audit once found an installed but broken Go shim; run each tool's
    `--version`.
@@ -40,7 +40,7 @@ but never index proof.
    `dist/stacks` and `dist/cli.mjs` and writes `dist/pack/steamfield-stacks-<version>.tgz`.
    Record the tarball name and its `shasum -a 256`.
 
-4. Bench run (D8 route a), from `packages/cli`:
+4. Bench run (S8 route a), from `packages/cli`:
 
    ```sh
    bun run bench python-react --preset sandbox --cli dist/stacks --keep

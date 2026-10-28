@@ -1,22 +1,19 @@
-# R9. Follow-up work and explicit deferrals
+# R9. After submission
 
-None of this blocks submission. Each item starts only when its condition holds; give it
-its own plan or phase file when it starts, and link it here.
+Nothing here blocks the submission. Start an item when its condition holds; give larger
+ones their own plan and link it here.
 
 | Pri | Work | Start condition | Exit |
 | --- | --- | --- | --- |
-| P1 | Scheduled canaries (`plans/phases/phase-5.1-scheduled-canary.md`) | An isolated runner and credentials are provisioned by the user | A scheduled run of a current recipe records proof and surfaces failures. Manual bench runs (R3's procedure) bridge the gap |
-| P1 | Wider library proof | After R6 | Remaining bundled stacks proven in batches with R3's procedure, including the behavior check |
-| P1 | Search judgments review (phase 4.5a) | User time | The 47 judgments reviewed by the user; the golden set updated |
-| P1 | Real `stacks update` (phase 4.4d) | The first patch release after R5 | On a machine with the R5 version installed globally by npm, `stacks update` moves it to the patch. 4.4d tested only a fake npm |
-| P1 | Agent picker leftovers (phase 4.4c) | Next CLI release | The live Codex app link and Copilot's agent marker checked by hand |
-| P1 | CI release and checks (phase 5.0, draft, not agreed) | The user agrees the phase | Both repositories already have `.github/workflows/ci.yml`; 5.0 decides release automation. Until then, releases follow R5 by hand |
-| P2 | Signed remote-only recipe distribution (was R7; phases 4.0c, 4.0d) | The catalog needs to grow faster than CLI releases | A released CLI fetches a newer signed recipe from the hosted index with no overrides and refuses tampered ones. Needs an official signing key decision, `officialUrl` in `bin.ts`, and publisher-attested `sameContent` in API search |
-| P2 | CI index build and deploy (phase 5.2, draft, not agreed) | Remote distribution done and 5.0 agreed | The signed index builds and deploys from CI instead of the user's checkout, which removes R5 step 3's manual precondition |
-| P1 | Worktree and branch cleanup | R0's inventory; after R6 | The user removes the worktrees and branches R0 listed as superseded |
-| P2 | Dependency decision cohorts | The accepted directory RFC's separate data milestone | Producer-defined eligible populations, outside-default adoption, valid drop denominators. Never inferred from installed counts |
-| P2 | Community contribution and third-party sources | External author demand plus the roadmap's trust requirements | An outside author can create and validate a recipe |
-| P2 | Embeddings (4.5d), MCP (4.3), Workers (4.0f) | Their phase files' start conditions | Not needed for the CLI-led submission |
-
-Out of scope for this plan: accounts, ratings, AI recommendation chat, automatic agent
-execution, a comparison builder.
+| P1 | Wider library proof | After R6 | The other bundled stacks proven with R3's procedure |
+| P1 | Stats acceptance tests (4.2f, 4.2c, 4.2b tests 10-11) | After R6 | `stats.spec.ts` and fixtures from `delegate/t-4.2f` (`0b6c6e5`) brought onto `main`, updated for the redesign, green; phases marked `EXECUTED` |
+| P1 | Live telemetry launch (was R8; phases 4.1e, 4.2d) | After judging; allowlist reviewed; alert destination chosen | `stacks-api/apps/api/README.md` "Telemetry launch" completed; replaces the demo store, so never before judging ends |
+| P1 | Search evidence: content match (`sameContent`) in search, proof bonus only for current runs | After R6 | Format release; local search and the index agree on which runs count as current |
+| P1 | API search `BadInput` details and OpenAPI constraints; CLI no backoff on 400 | After R6 | Actionable 400s without echoing `q`; a rejected query doesn't disable remote search for 10 minutes |
+| P1 | Production restore procedure | Before real telemetry | A tested inverse of `prod:seed`'s backup |
+| P1 | Search judgments review (4.5a) | User time | The 47 judgments reviewed |
+| P1 | Real `stacks update` (4.4d); Codex link and Copilot marker (4.4c) | Next patch release | Checked by hand |
+| P1 | Worktree and branch cleanup | After R6 | The user removes what R0 listed as superseded |
+| P2 | Signed remote-only recipe distribution (was R7; 4.0c, 4.0d) | The catalog needs to grow faster than CLI releases | Signing-key decision, `officialUrl` in `bin.ts`, refusal tests |
+| P2 | CI release, scheduled canary, CI index build (5.0, 5.1, 5.2) | The user agrees the phases | Per phase file |
+| P2 | Dependency decision cohorts, community sources, embeddings (4.5d), MCP (4.3), Workers (4.0f) | Their own start conditions | Per phase file or spec |

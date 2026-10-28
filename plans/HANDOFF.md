@@ -12,12 +12,13 @@ to `archive/` and leave a link.
 ## Submission queue (2026-10-28)
 
 Use [the submission-readiness plan](submission-readiness/README.md) for the remaining
-order. Its README is the tracker and decision log (D1 to D9 need the user); each row has
-its own file: R0 release baseline; R1 agent/search contracts, R2 seed quality, R3 current
-demo proof, R4 website closure and R10 judge access; R5 coordinated release; R6 submission
-and R11 judging-window operations. R8 live collection follows, with explicit gates; signed
-remote distribution (formerly R7) is deferred. This queue updates the ordering below; earlier dated
-execution notes remain historical evidence.
+order, scoped to a working, polished demo before the deadline. Its README is the tracker
+and the decisions the user owes (S1 to S8); each row has its own file: R0 baseline; R1
+search guidance, R2 seed realism, R3 demo recipe proof, R4 website polish and R10 judge
+docs; R5 release and deploy; R6 demo and submission; R11 judging-window freeze. Signed
+remote distribution, the live telemetry launch and hardening work are deferred to its R9.
+This queue updates the ordering below; earlier dated execution notes remain historical
+evidence.
 
 ## Earlier phase 4 handoff (2026-10-28)
 
