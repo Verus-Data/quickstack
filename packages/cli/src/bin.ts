@@ -2,6 +2,7 @@
 import { dirname, join } from "node:path";
 import { BunServices } from "@effect/platform-bun";
 import { Effect, Layer } from "effect";
+import { readStackInfos, shouldShowStacks, stackLines } from "./core/wizard";
 import { hasFlag, main } from "./main";
 import { NetLayer } from "./platform/net";
 import { installSignalPolicy } from "./platform/signals";
@@ -57,6 +58,20 @@ const platform = Layer.mergeAll(
 const layer = Layer.provideMerge(AppLayer(output), platform);
 const controller = new AbortController();
 const removeSignalPolicy = installSignalPolicy(holder, () => controller.abort());
+// Before the framework wizard runs, show the available stacks for `new --wizard` (or `new` with
+// no stack on a terminal). JSON mode is silent. Best effort: a registry that can't be read here
+// will be reported by the command itself.
+if (shouldShowStacks(args, process.stdin.isTTY === true)) {
+  try {
+    const stacks = await Effect.runPromise(
+      readStackInfos.pipe(Effect.provide(layer), Effect.scoped),
+    );
+    const lines = stackLines(stacks);
+    if (lines.length) await writer(process.stderr)(`Available stacks:\n${lines.join("\n")}\n\n`);
+  } catch {
+    // The command will report its own errors.
+  }
+}
 try {
   process.exitCode = await runInvocation(
     main(args).pipe(Effect.provide(layer), Effect.scoped),

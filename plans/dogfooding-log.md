@@ -757,6 +757,11 @@ id and name, with the free-text field as a fallback for an unregistered path; an
 time. Same for fragments, once the stack is known. Sequence should be stack first, then the questions
 that only make sense for that stack — fragments now arrive before the stack, which is backwards.
 
+**Partly fixed on `feat/wizard-discovery`:** the nine stacks now print before the wizard asks, id first
+with the display name, and the same block appears when `new` runs with no stack on a terminal. Silent
+under `--json`, and not printed when the stack is already given. The reordering and a real choice menu
+are still open, because both need the framework's wizard to be replaced for that argument.
+
 ## DF-39 — the wizard asks boolean flags twice, and offers contradictory pairs
 
 **Symptom:** `Set No launch (--no-launch)? › (y/N)`, answered yes, is followed by
