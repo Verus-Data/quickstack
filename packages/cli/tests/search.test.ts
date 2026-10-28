@@ -37,13 +37,18 @@ test("iOS beats incidental body health matches [4.5c#1]", async () => {
     expect(row.tier).not.toBe("strong");
 });
 
-test("unsupported firmware is a successful search and asks before using weak matches [4.5c#3]", async () => {
+test("unsupported firmware asks for a better description or confirmation of weak matches [4.5c#3]", async () => {
   const opts = options(space.dir());
-  expect((await searched("firmware for a microcontroller", opts)).value.noStrongMatch).toBe(true);
+  const { value } = await searched("firmware for a microcontroller", opts);
+  expect(value.noStrongMatch).toBe(true);
   const text = await runCli(["search", "firmware for a microcontroller"], opts);
   expect(text.status).toBe(0);
   expect(text.stderr).toBe("");
-  expect(text.stdout).toMatch(/nothing fits strongly|no strong match/i);
+  expect(text.stdout).toContain(
+    value.stacks.length || value.fragments.length
+      ? "Nothing fits strongly. Confirm the fit with the user."
+      : "Nothing matched.",
+  );
   expect(text.stdout.trim().split("\n").at(-1)).toMatch(/^Next:.*(?:confirm|ask).*user/i);
 });
 
@@ -133,7 +138,7 @@ test.each([
     expect.objectContaining({
       error: expect.objectContaining({
         tag: "BadInput",
-        details: { flag: "request", id: "", length },
+        details: { flag: "request", length },
       }),
     }),
   ]);
@@ -151,8 +156,10 @@ test("no positional request is Usage [4.5c#10]", async () => {
   expect(ndjson(result.stderr)).toEqual([
     expect.objectContaining({ error: expect.objectContaining({ tag: "Usage" }) }),
   ]);
-  const envelope = Schema.decodeUnknownSync(ErrorEnvelope)(JSON.parse(result.stderr));
-  expect(envelope.error.details).not.toHaveProperty("command");
+  const envelope = Schema.decodeUnknownSync(ErrorEnvelope)(JSON.parse(result.stderr), {
+    onExcessProperty: "error",
+  });
+  expect(envelope.error.details).toMatchObject({ command: "search" });
 });
 
 test.each([
@@ -172,7 +179,8 @@ test.each([
         tag,
         details: expect.objectContaining({
           flag: detailFlag,
-          ...(tag === "BadInput" ? { id: value } : { value, expected: expect.any(String) }),
+          value,
+          ...(tag === "BadInput" ? {} : { expected: expect.any(String) }),
         }),
       }),
     }),
@@ -227,4 +235,20 @@ test("agent blocks show caveats, human text wraps, JSON contains only the result
   expect(human.stdout.replace(/\s+/g, " ")).toContain(mobileCaveats()[0]?.replace(/\s+/g, " "));
   expect(human.stdout.split("\n").length).toBeGreaterThan(agent.stdout.split("\n").length);
   expect(human.stdout).toContain("strong");
+  const humanText = human.stdout.replace(/\s+/g, " ");
+  for (const row of [...value.stacks, ...value.fragments]) {
+    expect(humanText).toContain(`${row.kind} ${row.id} · ${row.name}`);
+    expect(agent.stdout).not.toContain(`${row.id} · ${row.name}`);
+  }
+});
+
+test("search help names the hosted request and every privacy opt-out", async () => {
+  for (const host of [{}, terminal]) {
+    const result = await runCli(["search", "--help"], { host });
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout.replace(/\s+/g, " ")).toContain(
+      "the hosted stacks API, which receives the request text unless --local, --offline, STACKS_OFFLINE=1 or DO_NOT_TRACK is set.",
+    );
+  }
 });

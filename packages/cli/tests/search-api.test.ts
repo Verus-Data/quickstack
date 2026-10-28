@@ -102,7 +102,10 @@ test("API hits replace official copies while user and project entries keep their
   expect(hit(value.stacks, "go-cli").origin).toBe("user");
   expect(hit(value.stacks, "project-cli").origin).toBe("project");
   expect(value.stacks.filter(({ id }) => id === "go-cli")).toHaveLength(1);
-  expect(hit(value.stacks, "typescript-cli")).toEqual(body.stacks[1]);
+  expect(hit(value.stacks, "typescript-cli")).toEqual({
+    ...body.stacks[1],
+    evidence: hit(local.stacks, "typescript-cli").evidence,
+  });
   await validResponse(body);
 });
 
@@ -381,7 +384,10 @@ test("bundled entries absent from an older API remain locally ranked in both lis
   for (const row of local.stacks.filter(({ id }) => id !== "go-cli"))
     expect(hit(value.stacks, row.id)).toEqual(row);
   expect(value.fragments).toEqual(local.fragments);
-  expect(hit(value.stacks, "go-cli")).toEqual(body.stacks[0]);
+  expect(hit(value.stacks, "go-cli")).toEqual({
+    ...body.stacks[0],
+    evidence: hit(local.stacks, "go-cli").evidence,
+  });
   expect(server.requests).toHaveLength(1);
   await validResponse(body);
 });

@@ -100,8 +100,8 @@ test.each([
       tag: "Usage",
       message: "Invalid command.",
       retryable: false,
-      next: "pass a value from Expected; stacks <command> --help lists every flag.",
-      details: { flag, value: "", expected },
+      next: "pass a value from Expected; stacks --help lists every flag.",
+      details: { flag, value: "", expected, command: "stacks" },
     },
   });
 });
@@ -221,12 +221,12 @@ test.each([
   ["agents", "gemini", "claude, codex, opencode or cursor", []],
   ["agents", "codx", "claude, codex, opencode or cursor", ["codex"]],
   ["launch", "codx", "claude, codex, opencode, cursor, copilot, codex-app", ["codex"]],
-  ["preset", "other", '"default" | "sandbox"', undefined],
+  ["preset", "other", '"default" | "sandbox"', []],
 ])(
   "invalid --%s value %s names the input and expectation in every audience",
   async (flag, value, expected, suggestions) => {
     const args = ["new", "go-cli", "app", `--${flag}`, value];
-    const details = { flag: `--${flag}`, value, expected, ...(suggestions ? { suggestions } : {}) };
+    const details = { flag: `--${flag}`, value, expected, command: "new", suggestions };
     const json = await runCli([...args, "--json"], { env: quiet });
     expect(json.status).toBe(2);
     expect(json.stdout).toBe("");
@@ -235,7 +235,7 @@ test.each([
         tag: "Usage",
         message: "Invalid command.",
         retryable: false,
-        next: "pass a value from Expected; stacks <command> --help lists every flag.",
+        next: "pass a value from Expected; stacks new --help lists every flag.",
         details,
       },
     });
@@ -250,7 +250,7 @@ test.each([
           `  Value: ${value}`,
           `  Expected: ${expected}`,
           ...(suggestions?.length ? [`  Did you mean: ${suggestions.join(", ")}?`] : []),
-          "  Next: pass a value from Expected; stacks <command> --help lists every flag.",
+          "  Next: pass a value from Expected; stacks new --help lists every flag.",
           "",
         ].join("\n"),
       );

@@ -12,12 +12,20 @@ function mergeHits(
   api: ReadonlyArray<SearchHit>,
   overrides: ReadonlySet<string>,
 ) {
+  const localById = new Map(local.map((hit) => [`${hit.kind}:${hit.id}`, hit]));
   const official = api
     .filter((hit) => !overrides.has(`${hit.kind}:${hit.id}`))
     .map((hit) => {
-      if (hit.evidence.lastRun !== null) return hit;
-      const { lastRun: _lastRun, ...evidence } = hit.evidence;
-      return { ...hit, evidence };
+      const fallback = localById.get(`${hit.kind}:${hit.id}`)?.evidence;
+      const stats = hit.evidence.stats ?? fallback?.stats;
+      const lastRun = hit.evidence.lastRun ?? fallback?.lastRun;
+      return {
+        ...hit,
+        evidence: {
+          ...(stats ? { stats } : {}),
+          ...(lastRun ? { lastRun } : {}),
+        },
+      };
     });
   const replaced = new Set(official.map((hit) => hit.id));
   return [...local.filter((hit) => !replaced.has(hit.id)), ...official].sort(compareSearchHits);

@@ -15,6 +15,7 @@ const selectedName = (name: Option.Option<string>) =>
       return yield* new Usage({
         details: {
           flag: "name",
+          command: "schema",
           value: typed,
           expected: RESULT_NAMES.join(" | "),
           suggestions: closest(typed, RESULT_NAMES),
