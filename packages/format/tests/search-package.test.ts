@@ -109,7 +109,7 @@ test("plain Node imports and runs rank from the installed tarball without a Type
     `
 import { readFileSync } from "node:fs";
 import { Schema } from "effect";
-import { rank, SearchHit, SearchMetadata, SearchResponse, SearchResult, SearchVocabulary } from "@stacks/format";
+import { rank, SearchHit, SearchMetadata, SearchResponse, SearchResult, SearchVocabulary } from "@steamfield/stacks-format";
 const raw = JSON.parse(readFileSync("input.json", "utf8"));
 const input = {
   ...raw, vocabulary: Schema.decodeUnknownSync(SearchVocabulary)(raw.vocabulary),
@@ -122,7 +122,7 @@ const response = Schema.decodeUnknownSync(SearchResponse)({
   understood: result.understood, noStrongMatch: result.noStrongMatch,
   stacks: result.stacks.map(hit => ({ ...hit, origin: "index", trusted: true })), fragments: [],
 });
-console.log(JSON.stringify({ result, hit, response, resolved: import.meta.resolve("@stacks/format") }));
+console.log(JSON.stringify({ result, hit, response, resolved: import.meta.resolve("@steamfield/stacks-format") }));
 `,
   );
   const result = run(node, ["--no-experimental-strip-types", "consumer.mjs"]);
@@ -130,7 +130,7 @@ console.log(JSON.stringify({ result, hit, response, resolved: import.meta.resolv
   expect(result.stderr).toBe("");
   const output = JSON.parse(result.stdout);
   expect(output.resolved).toBe(
-    pathToFileURL(join(scratch.path, "node_modules/@stacks/format/dist/index.js")).href,
+    pathToFileURL(join(scratch.path, "node_modules/@steamfield/stacks-format/dist/index.js")).href,
   );
   expect(output.hit).toMatchObject({ id: "go-cli", tier: "strong" });
   expect(output.result).toMatchObject({

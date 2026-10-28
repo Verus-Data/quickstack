@@ -1,4 +1,4 @@
-import { StackMeta } from "@stacks/format";
+import { StackMeta } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 
 /** Plain records preserve the existing rank input; no filesystem or CLI-owned entry fields. */

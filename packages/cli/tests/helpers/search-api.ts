@@ -2,7 +2,7 @@ import { execFile } from "node:child_process";
 import { realpathSync } from "node:fs";
 import { createServer } from "node:http";
 import { join } from "node:path";
-import { SearchResponse } from "@stacks/format";
+import { SearchResponse } from "@steamfield/stacks-format";
 import { Clock, Effect, Schema } from "effect";
 import { Command } from "effect/cli";
 import { expect } from "vitest";

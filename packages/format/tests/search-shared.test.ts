@@ -5,7 +5,7 @@ import {
   SearchResponse,
   SearchResult,
   SearchVocabulary,
-} from "@stacks/format";
+} from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { expect, test } from "vitest";
 import { searchInput } from "./helpers/search-input";
