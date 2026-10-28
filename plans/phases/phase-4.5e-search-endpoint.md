@@ -1,6 +1,6 @@
 # Phase 4.5e: Search endpoint and API-first search
 
-Status: IN PROGRESS 2026-10-28 (the CLI side and the move first; the route waits on the package's publication)
+Status: EXECUTED 2026-10-28
 
 | Field | Value |
 |---|---|
@@ -158,6 +158,7 @@ In `packages/cli`, against a local server:
 - 2026-10-28 (execution, D38): `SearchResponse`'s result lists are columnar too, through the format package's `Columnar` schema, so the API and the CLI decode the same token-efficient shape an agent or MCP client will read; nested per-hit lists (`why`, `penalties`) stay arrays inside their column. 0.2.0 is never published: `rank` ships in 0.3.0 with D38, and the route starts after that publish.
 - 2026-10-28 (execution): the signed `v1/search.json` doesn't carry the vocabulary `rank` needs, and the API has no other signed source for it. `scripts/index/search.ts` adds the bundled `SearchVocabulary` to the signed document beside the cards, and the route ranks with it. `IndexAssets` lives at `apps/api/src/maintenance/names.ts`, not `services/`, and gains a `read(path)` for search's assets.
 - 2026-10-28 (landed): the columnar `SearchResponse` (Q1c) and the format package's `SearchIndex` with its required `vocabulary` (Q7) are on `main`. `build:index` fails when the bundled `search/vocabulary.json` is missing or invalid, naming the file. The CLI copy of `SearchIndex` is gone. The route waits on 0.3.0's publish.
+- 2026-10-28 (landed): the route is on `stacks-api` `main` and deployed to the hosted API, `https://stacks.steamfield.io`. Manual QA there: "go cli" returns `go-cli` first (5.7 KB, `method: "lexical"`), a nonsense request sets `noStrongMatch`, `limit=3` returns three stacks, every response is `no-store`, an empty `q` or unknown key is a 400 `BadInput`, `POST` is a 405. `bin.ts::DEFAULT_API_URL` now names that origin, so release builds use it for search, stats and the allowlist; with the API unreachable, `search` ranks locally with `remote: "unavailable"` and `list` omits `stats`, both exit 0. The packaged e2e runs set `STACKS_OFFLINE=1` so the suite never reaches the hosted API.
 - No rate limit until 4.1b's `RateLimiter`, which needs D1 and so arrives after 4.0f. A ranking over a few dozen entries costs well under a millisecond, so the route is cheaper than the static files beside it; if abuse shows up on the Node host before then, an in-process token bucket per client network in the Node platform layer is the stopgap.
 - While both sides rank lexically, the API mostly duplicates the local result, and the 800 ms wait buys only fresher cards. That is the price of having the server in place when 4.5d's semantic leg starts; if 4.5d is never started, the call can be dropped from the CLI (keeping the route for the site and MCP) by making `--local` the default.
 - The 800 ms deadline is a guess for an interactive command an agent waits on. Measure the route's p95 from a few regions after deploy and set the deadline to about twice it.
