@@ -53,7 +53,8 @@ faster than you could write the contract, or when you can't yet say what done lo
 
    Read-only is the default; `--write` lets Codex edit the worktree. Read-only suits review and
    investigation only: Vitest writes `node_modules/.vite-temp`, so no test runs without `--write`. Independent units run as
-   2-4 delegates at once, one worktree each. The digest (result, commands run, files written,
+   at most five delegates at once, one worktree each (more starve the test hosts and this
+   machine). The digest (result, commands run, files written,
    last message) is the command's output; full logs stay under `$TMPDIR/stacks-delegate/`.
    Runs use Codex's fast mode (`service_tier="priority"`: about twice the speed, more usage);
    `DELEGATE_SERVICE_TIER=default` turns it off for a run.
