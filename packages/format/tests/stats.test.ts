@@ -38,6 +38,10 @@ const qualifying = {
 };
 const decodeSummary = Schema.decodeUnknownSync(StatsSummary);
 const decodeDetail = Schema.decodeUnknownSync(StatsDetail);
+const decodeSummaryRows = (input: unknown) =>
+  decodeSummary(Schema.encodeUnknownSync(StatsSummary)(input));
+const decodeDetailRows = (input: unknown) =>
+  decodeDetail(Schema.encodeUnknownSync(StatsDetail)(input));
 
 // Expand the route example's ellipses and add Time filtering's required previous cell.
 const routeExample = {
@@ -70,8 +74,8 @@ const routeExample = {
 };
 
 test("the plan's expanded route example decodes without trending", () => {
-  expect(decodeSummary(routeExample)).toEqual(routeExample);
-  expect(decodeSummary({ ...routeExample, window: 7 }).window).toBe(7);
+  expect(decodeSummaryRows(routeExample)).toEqual(routeExample);
+  expect(decodeSummaryRows({ ...routeExample, window: 7 }).window).toBe(7);
 });
 
 test.each([qualifying, { ...qualifying, value: false, score: 1.1 }, suppressed])(
@@ -81,28 +85,68 @@ test.each([qualifying, { ...qualifying, value: false, score: 1.1 }, suppressed])
       ...routeExample,
       items: routeExample.items.map((item) => ({ ...item, trending })),
     };
-    expect(decodeSummary(input)).toEqual(input);
+    expect(decodeSummaryRows(input)).toEqual(input);
   },
 );
 
 test("the two-item summary fixture preserves suppressed previous cells and omits the final cursor", () => {
   const decoded = decodeSummary(summary);
-  expect(decoded).toEqual(summary);
+  expect(Schema.encodeSync(StatsSummary)(decoded)).toEqual(summary);
   expect(decoded.items).toHaveLength(2);
   expect(decoded).not.toHaveProperty("nextCursor");
 });
 
+test("summary items encode as equal-length flattened columns", () => {
+  const decoded = decodeSummary(summary);
+  const encoded = Schema.encodeSync(StatsSummary)(decoded);
+  expect(encoded.published).toBe(true);
+  for (const name of ["id", "kind", "greenRate.value", "greenRate.suppressed"]) {
+    expect(encoded.items).toHaveProperty(name);
+  }
+  expect(
+    Object.values(encoded.items).every((column) => column.length === decoded.items.length),
+  ).toBe(true);
+});
+
 test("stack and fragment detail fixtures preserve every field through the public decoder", () => {
-  expect(Schema.decodeUnknownSync(StackStatsDetail)(stack)).toEqual(stack);
-  expect(Schema.decodeUnknownSync(FragmentStatsDetail)(fragment)).toEqual(fragment);
-  expect(decodeDetail(stack)).toEqual(stack);
-  expect(decodeDetail(fragment)).toEqual(fragment);
+  expect(
+    Schema.encodeSync(StackStatsDetail)(Schema.decodeUnknownSync(StackStatsDetail)(stack)),
+  ).toEqual(stack);
+  expect(
+    Schema.encodeSync(FragmentStatsDetail)(Schema.decodeUnknownSync(FragmentStatsDetail)(fragment)),
+  ).toEqual(fragment);
+  expect(Schema.encodeSync(StatsDetail)(decodeDetail(stack))).toEqual(stack);
+  expect(Schema.encodeSync(StatsDetail)(decodeDetail(fragment))).toEqual(fragment);
+});
+
+test("stack detail row lists encode as columns while changes stay array cells", () => {
+  const encoded = Schema.encodeSync(StackStatsDetail)(
+    Schema.decodeUnknownSync(StackStatsDetail)(stack),
+  );
+  expect(encoded.series).toHaveProperty("day");
+  expect(encoded.byAgent).toHaveProperty("agent");
+  expect(encoded.byComposition).toHaveProperty("fingerprint");
+  expect(encoded.series.changes?.every(Array.isArray)).toBe(true);
+  expect(encoded.seriesByPreset.series?.every((cell) => !Array.isArray(cell))).toBe(true);
+});
+
+test("invalid rate intervals fail when supplied through summary columns", () => {
+  const encoded = Schema.encodeSync(StatsSummary)(decodeSummary(summary));
+  expect(encoded.published).toBe(true);
+  const invalid = {
+    ...encoded,
+    items: {
+      ...encoded.items,
+      "greenRate.lower": [0.92, ...(encoded.items["greenRate.lower"]?.slice(1) ?? [])],
+    },
+  };
+  expect(() => decodeSummary(invalid)).toThrow();
 });
 
 test("a fragment payload from before oftenUsedWith was added still decodes", () => {
   const { oftenUsedWith: _oftenUsedWith, ...older } =
     Schema.decodeUnknownSync(FragmentStatsDetail)(fragment);
-  expect(decodeDetail(older)).toEqual(older);
+  expect(decodeDetailRows(older)).toEqual(older);
 });
 
 test("fragment history carries 7-day projects without requiring green rates", () => {
@@ -111,7 +155,7 @@ test("fragment history carries 7-day projects without requiring green rates", ()
     window: 28,
     series: [{ day: "2026-10-25", projects: { value: 70, suppressed: false } }],
   };
-  expect(decodeDetail(input)).toEqual(input);
+  expect(decodeDetailRows(input)).toEqual(input);
 });
 
 test("the shared fixtures' trending inputs agree with their stored window cells", () => {
@@ -148,11 +192,13 @@ function assertRateCanPublish(value: unknown): void {
 }
 
 test("published fixture rates can contain five green and five not-green projects", () => {
-  for (const input of [summary, stack, fragment]) assertRateCanPublish(input);
+  for (const input of [decodeSummary(summary), decodeDetail(stack), decodeDetail(fragment)]) {
+    assertRateCanPublish(input);
+  }
 });
 
 test("optional keys may be absent but cannot encode explicit undefined", () => {
-  const decoded = decodeSummary(routeExample);
+  const decoded = decodeSummaryRows(routeExample);
   expect(() => Schema.encodeSync(StatsSummary)({ ...decoded, nextCursor: undefined })).toThrow();
   expect(() =>
     Schema.encodeUnknownSync(StatsSummary)({
@@ -177,7 +223,7 @@ test("before publication only ledger identities and response metadata are needed
     published: false,
     items: routeExample.items.map(({ id, kind, lastRun }) => ({ id, kind, lastRun })),
   };
-  expect(decodeSummary(input)).toEqual(input);
+  expect(decodeSummaryRows(input)).toEqual(input);
   const detail = {
     generatedAt: input.generatedAt,
     through: input.through,
@@ -228,16 +274,16 @@ test("agents use the recorded DetectedAgent ids, including other and none", () =
   const detail = Schema.decodeUnknownSync(StackStatsDetail)(stack);
   for (const agent of ["claude", "codex", "opencode", "cursor", "other", "none"]) {
     const input = { ...detail, byAgent: detail.byAgent.map((cell) => ({ ...cell, agent })) };
-    expect(decodeDetail(input)).toEqual(input);
+    expect(decodeDetailRows(input)).toEqual(input);
   }
   expect(() =>
-    decodeDetail({
+    decodeDetailRows({
       ...detail,
       byAgent: detail.byAgent.map((cell) => ({ ...cell, agent: "gemini" })),
     }),
   ).toThrow();
   expect(() =>
-    decodeSummary({
+    decodeSummaryRows({
       ...routeExample,
       items: routeExample.items.map((item) => ({
         ...item,
@@ -277,7 +323,7 @@ test("ids, digests, population and windows reject values outside their contracts
     { population: "ecosystem" },
     { items: routeExample.items.map((item) => ({ ...item, id: "../go-cli" })) },
   ]) {
-    expect(() => decodeSummary({ ...routeExample, ...update })).toThrow();
+    expect(() => decodeSummaryRows({ ...routeExample, ...update })).toThrow();
   }
   expect(() =>
     Schema.decodeUnknownSync(SeriesPoint)({
@@ -291,9 +337,11 @@ test("ids, digests, population and windows reject values outside their contracts
 
 test("encode and JSON round-trip the shared summary and both detail fixtures", () => {
   const encodedSummary = Schema.encodeSync(StatsSummary)(decodeSummary(summary));
-  expect(decodeSummary(JSON.parse(JSON.stringify(encodedSummary)))).toEqual(summary);
+  expect(encodedSummary).toEqual(summary);
+  expect(decodeSummary(JSON.parse(JSON.stringify(encodedSummary)))).toEqual(decodeSummary(summary));
   for (const input of [stack, fragment]) {
     const encoded = Schema.encodeSync(StatsDetail)(decodeDetail(input));
-    expect(decodeDetail(JSON.parse(JSON.stringify(encoded)))).toEqual(input);
+    expect(encoded).toEqual(input);
+    expect(decodeDetail(JSON.parse(JSON.stringify(encoded)))).toEqual(decodeDetail(input));
   }
 });

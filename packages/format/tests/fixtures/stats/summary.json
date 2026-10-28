@@ -14,103 +14,42 @@
       "unknown": 0.78
     }
   },
-  "items": [
-    {
-      "id": "go-cli",
-      "kind": "stack",
-      "projects": {
-        "value": 215,
-        "suppressed": false
-      },
-      "greenRate": {
-        "value": 0.91,
-        "lower": 0.86,
-        "upper": 0.95,
-        "sample": 180,
-        "suppressed": false
-      },
-      "noVerifyShare": {
-        "value": 0.12,
-        "suppressed": false
-      },
-      "medianMinutesToGreen": {
-        "value": 14,
-        "suppressed": false
-      },
-      "previous": {
-        "projects": {
-          "value": 180,
-          "suppressed": false
-        },
-        "greenRate": {
-          "value": 0.85,
-          "lower": 0.79,
-          "upper": 0.9,
-          "sample": 150,
-          "suppressed": false
-        }
-      },
-      "lastRun": {
-        "date": "2026-10-25",
-        "result": "pass",
-        "agent": "claude",
-        "preset": "default",
-        "minutesToGreen": 2.5,
-        "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-      },
-      "trending": {
-        "value": false,
-        "score": 1.4,
-        "suppressed": false,
-        "last7": {
-          "value": 65,
-          "suppressed": false
-        },
-        "prior28": {
-          "value": 180,
-          "suppressed": false
-        }
-      }
-    },
-    {
-      "id": "astro-api",
-      "kind": "stack",
-      "projects": {
-        "value": 10,
-        "suppressed": false
-      },
-      "greenRate": {
-        "value": null,
-        "lower": null,
-        "upper": null,
-        "sample": null,
-        "suppressed": true
-      },
-      "noVerifyShare": {
-        "value": null,
-        "suppressed": true
-      },
-      "medianMinutesToGreen": {
-        "value": null,
-        "suppressed": true
-      },
-      "previous": {
-        "projects": {
-          "value": null,
-          "suppressed": true
-        },
-        "greenRate": {
-          "value": null,
-          "lower": null,
-          "upper": null,
-          "sample": null,
-          "suppressed": true
-        }
-      },
-      "trending": {
-        "value": null,
-        "suppressed": true
-      }
-    }
-  ]
+  "items": {
+    "id": ["go-cli", "astro-api"],
+    "kind": ["stack", "stack"],
+    "lastRun.date": ["2026-10-25", null],
+    "lastRun.result": ["pass", null],
+    "lastRun.agent": ["claude", null],
+    "lastRun.preset": ["default", null],
+    "lastRun.minutesToGreen": [2.5, null],
+    "lastRun.fingerprint": [
+      "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      null
+    ],
+    "projects.value": [215, 10],
+    "projects.suppressed": [false, false],
+    "greenRate.value": [0.91, null],
+    "greenRate.lower": [0.86, null],
+    "greenRate.upper": [0.95, null],
+    "greenRate.sample": [180, null],
+    "greenRate.suppressed": [false, true],
+    "noVerifyShare.value": [0.12, null],
+    "noVerifyShare.suppressed": [false, true],
+    "medianMinutesToGreen.value": [14, null],
+    "medianMinutesToGreen.suppressed": [false, true],
+    "previous.projects.value": [180, null],
+    "previous.projects.suppressed": [false, true],
+    "previous.greenRate.value": [0.85, null],
+    "previous.greenRate.lower": [0.79, null],
+    "previous.greenRate.upper": [0.9, null],
+    "previous.greenRate.sample": [150, null],
+    "previous.greenRate.suppressed": [false, true],
+    "trending.value": [false, null],
+    "trending.score": [1.4, null],
+    "trending.suppressed": [false, true],
+    "trending.last7.value": [65, null],
+    "trending.last7.suppressed": [false, null],
+    "trending.prior28.value": [180, null],
+    "trending.prior28.suppressed": [false, null]
+  }
 }

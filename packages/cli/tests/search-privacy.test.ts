@@ -50,10 +50,11 @@ test("search reads published cached stats and omits absent or unpublished summar
   const request = "go cli";
   const env = { ...opts?.env, XDG_CACHE_HOME: join(home, "cache") };
   const before = (await searched(request, { ...opts, env })).value;
-  const summary = Schema.decodeUnknownSync(StatsSummary)(
-    readJson(join(import.meta.dirname, "../../format/tests/fixtures/stats/summary.json")),
+  const wire = readJson(
+    join(import.meta.dirname, "../../format/tests/fixtures/stats/summary.json"),
   );
-  put(cached, JSON.stringify(summary));
+  const summary = Schema.decodeUnknownSync(StatsSummary)(wire);
+  put(cached, JSON.stringify(wire));
   const published = (await searched(request, { ...opts, env })).value;
   expect(hit(published.stacks, "go-cli").evidence.stats).toMatchObject({
     greenRateLower: 0.86,
@@ -69,10 +70,12 @@ test("search reads published cached stats and omits absent or unpublished summar
     }),
   });
   expect(stripStats(published)).toEqual(stripStats(before));
+  put(cached, JSON.stringify(summary));
+  expect((await searched(request, { ...opts, env })).value).toEqual(before);
   put(
     cached,
     JSON.stringify(
-      Schema.decodeUnknownSync(StatsSummary)({
+      Schema.encodeUnknownSync(StatsSummary)({
         ...summary,
         published: false,
         items: [{ id: "go-cli", kind: "stack" }],
