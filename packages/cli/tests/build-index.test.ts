@@ -32,6 +32,7 @@ import {
 } from "./fixtures/index/harness";
 import { quiet, runCli } from "./helpers/cli";
 import { runRecord, writeLedger } from "./helpers/ledger";
+import { reviewSearchFixture } from "./helpers/search-fixture";
 import { workspace } from "./helpers/verify";
 
 // Each case copies a source workspace and runs real Bun processes plus validation and git.
@@ -192,6 +193,7 @@ test("changed stack and fragment carry old proof and every old bundle [4.0c#5]",
     `${readFileSync(fragmentFile, "utf8")}\nChanged fragment guidance.\n`,
   );
   expect(await compositionFingerprint(f.registry)).not.toBe(f.record.fingerprint);
+  reviewSearchFixture(f.registry);
   const host = await serve(previous);
   try {
     const { index } = await build(f, `${host.url}/v1/index.json`);
@@ -235,6 +237,7 @@ test("shared fragments retain old and new proven digests when only one stack is 
   const oldTools = named(old.index.entries, "fragment", "tools");
   const fragmentFile = join(entryPath(f.registry, "fragment", "tools"), "FRAGMENT.md");
   writeFileSync(fragmentFile, `${readFileSync(fragmentFile, "utf8")}\nNew shared guidance.\n`);
+  reviewSearchFixture(f.registry);
   const updated = await proof(f.registry, { date: "2026-10-28" });
   writeLedger(f.registry, [f.record, second, updated]);
   const currentDigest = await digestOf(rawBundle(f.registry, "fragment", "tools"));
@@ -345,7 +348,7 @@ test("check verifies a good host and names an index whose payload changed [4.0c#
   }
 }, 30_000);
 
-test("generated headers declare exactly the two cache rules [4.0c#11]", async () => {
+test("generated headers declare exactly the index, bundle and search cache rules [4.0c#11]", async () => {
   const f = await setup();
   await build(f);
   expect(
@@ -359,6 +362,8 @@ test("generated headers declare exactly the two cache rules [4.0c#11]", async ()
     "Cache-Control: public, max-age=300, stale-while-revalidate=3600",
     "/v1/entries/*",
     "Cache-Control: public, max-age=31536000, immutable",
+    "/v1/search.json",
+    "Cache-Control: public, max-age=300, stale-while-revalidate=3600",
   ]);
 }, 30_000);
 
@@ -376,6 +381,7 @@ test("optional fragments enter the index only with current proven compositions [
   expect(index.entries.some((entry: IndexEntry) => entry.id === "unproven")).toBe(false);
   const file = join(entryPath(f.registry, "fragment", "extra"), "FRAGMENT.md");
   writeFileSync(file, `${readFileSync(file, "utf8")}\nNew optional guidance.\n`);
+  reviewSearchFixture(f.registry);
   const changed = await build(f);
   expect(changed.index.entries.some((entry: IndexEntry) => entry.id === "extra")).toBe(false);
 }, 30_000);
@@ -508,6 +514,7 @@ test("a warning-only registry cannot be published [4.0c#17]", async () => {
   const f = await setup();
   const file = join(f.registry, "stacks/sample/STACK.md");
   writeFileSync(file, readFileSync(file, "utf8").replace("tags: [scripts]", "tags: []"));
+  reviewSearchFixture(f.registry);
   writeLedger(f.registry, [await proof(f.registry)]);
   const validation = await runCli(["validate", "--json"], {
     home: join(f.root, "home"),

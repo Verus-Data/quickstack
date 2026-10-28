@@ -8,6 +8,7 @@ import {
 } from "@stacks/format";
 import { Effect, Schema } from "effect";
 import { decodeEntry } from "../../src/core/registry/entry";
+import { SearchIndex } from "../../src/schemas/search";
 import { verifySignature } from "./signing";
 
 export type BundleRef = Pick<IndexEntry, "kind" | "id" | "digest">;
@@ -73,6 +74,12 @@ export const fetchNames = Effect.fn("index.fetchNames")(function* (url: string) 
   return yield* signedPayload(url, text, { schema: OfficialNames, name: "OfficialNames" });
 });
 
+export const fetchSearch = Effect.fn("index.fetchSearch")(function* (url: string) {
+  const text = yield* fetchOptionalText(url);
+  if (text === null) return null;
+  return yield* signedPayload(url, text, { schema: SearchIndex, name: "SearchIndex" });
+});
+
 export const fetchBundle = Effect.fn("index.fetchBundle")(function* (base: string, ref: BundleRef) {
   const url = new URL(bundlePath(ref), base).href;
   const text = yield* fetchText(url);
@@ -123,5 +130,8 @@ export const checkHost = Effect.fn("index.checkHost")(function* (base: URL) {
   const namesUrl = new URL("v1/names.json", root).href;
   if ((yield* fetchNames(namesUrl)) === null)
     return yield* Effect.fail(new Error(`${namesUrl}: could not fetch file (HTTP 404).`));
-  return `Checked v1/index.json, v1/names.json and ${refs.length} bundle(s).`;
+  const searchUrl = new URL("v1/search.json", root).href;
+  if ((yield* fetchSearch(searchUrl)) === null)
+    return yield* Effect.fail(new Error(`${searchUrl}: could not fetch file (HTTP 404).`));
+  return `Checked v1/index.json, v1/names.json, v1/search.json and ${refs.length} bundle(s).`;
 });

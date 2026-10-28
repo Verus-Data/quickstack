@@ -240,6 +240,10 @@ With 4.0c, `build:index` reads each indexed entry's sidecar and writes `v1/searc
 
 ## What this plan may get wrong
 
+- 2026-10-27: restamping must refuse a card whose `reviewedAt` is null, otherwise an agent can use it to bypass the human-only approval guard. Restamp refreshes an existing review; initial approval still requires a person.
+
+- 2026-10-27: the implementation-only unit excludes bundled cards, but locked tests 13a, 19 and the HTTP prompt example assertion also read those cards. Those checks need the separate card unit before they can pass; item 1 is not the only card-dependent test. Existing exact-finding assertions and index fixtures also need updates for missing-card findings; synthetic bundled roots, including the installed-binary registry-real fixture, need a vocabulary to retain their previous validation outcomes.
+
 - 2026-10-27: acceptance test 14 traces only the landed 4.0c build and signature checks. The 4.0d `RemoteIndex` half is outside this unit because its implementation is on another branch.
 - 2026-10-27: "stops before a request would pass `--max-usd`" didn't say how the next request's cost is known. The script estimates it as the highest per-request cost reported so far in the run (the first request always goes if any budget remains), so the cap errs toward stopping early.
 - 2026-10-27: `validate` of a root with `search/` and no `stacks/` or `fragments/` fails today with `NotFound`. Item 18 keeps the plan's rule: such a root lists no entries and reports every sidecar as `search-orphan`.

@@ -1,5 +1,6 @@
 import { type IndexEntry, OfficialNames, RegistryIndex } from "@stacks/format";
 import { Console, Effect, Exit, FileSystem, Path, Schema } from "effect";
+import { SearchIndex } from "../../src/schemas/search";
 import type { currentIndex } from "./proof";
 import { bundlePath, bundleRefs, fetchBundle, fetchFragment } from "./remote";
 import { signIndex } from "./signing";
@@ -8,6 +9,8 @@ const headers = `/v1/index.json
   Cache-Control: public, max-age=300, stale-while-revalidate=3600
 /v1/entries/*
   Cache-Control: public, max-age=31536000, immutable
+/v1/search.json
+  Cache-Control: public, max-age=300, stale-while-revalidate=3600
 `;
 
 function selectStacks(
@@ -98,6 +101,7 @@ export const publish = Effect.fn("index.publish")(function* (options: {
   out: string;
   index: RegistryIndex;
   names: OfficialNames;
+  search: SearchIndex;
   bundles: ReadonlyMap<string, Uint8Array>;
   key: string | undefined;
 }) {
@@ -106,6 +110,11 @@ export const publish = Effect.fn("index.publish")(function* (options: {
   const envelope = yield* signIndex(`${JSON.stringify(options.index, null, 2)}\n`, options.key);
   const namesEnvelope = yield* signIndex(
     `${JSON.stringify(options.names, null, 2)}\n`,
+    options.key,
+  );
+  yield* Schema.decodeUnknownEffect(SearchIndex)(options.search);
+  const searchEnvelope = yield* signIndex(
+    `${JSON.stringify(options.search, null, 2)}\n`,
     options.key,
   );
   // Encoding checks the same contract the consumer will decode before touching the output.
@@ -133,6 +142,10 @@ export const publish = Effect.fn("index.publish")(function* (options: {
       yield* fs.writeFileString(
         path.join(stage, "v1/names.json"),
         `${JSON.stringify(namesEnvelope, null, 2)}\n`,
+      );
+      yield* fs.writeFileString(
+        path.join(stage, "v1/search.json"),
+        `${JSON.stringify(searchEnvelope, null, 2)}\n`,
       );
       yield* replaceOutput({ stage, backup: path.join(temporary, "previous"), out: options.out });
     }),

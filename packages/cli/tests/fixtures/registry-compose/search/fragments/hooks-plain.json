@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "hooks-plain",
+  "source": {
+    "digest": "sha256:0174d6afa6c9c22e26260d3a57d1b055ad2b1b1ddd56c5725de6facaa0a12bae",
+    "by": "author",
+    "reviewedAt": "2026-10-27"
+  },
+  "summary": "A synthetic registry entry for CLI tests.",
+  "requests": ["exercise a fixture workflow", "inspect a sample project", "check a local example"],
+  "useCases": [],
+  "synonyms": [],
+  "goodFor": [],
+  "notFor": [],
+  "kind": "fragment",
+  "capabilities": []
+}

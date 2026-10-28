@@ -7,6 +7,7 @@ import { expect } from "vitest";
 import { entryPath, fixture, privateKey, proof } from "../fixtures/index/harness";
 import { writeLedger } from "./ledger";
 import { minimal, writeEntry } from "./registry";
+import { reviewSearchFixture } from "./search-fixture";
 
 export type NamesFixture = Awaited<ReturnType<typeof fixture>>;
 export type NamesSource = OfficialNames["sources"][number];
@@ -32,6 +33,7 @@ export function git(f: NamesFixture, ...args: string[]) {
 }
 
 export function release(f: NamesFixture, tag: string) {
+  reviewSearchFixture(f.registry);
   git(f, "add", "packages/cli/registry");
   git(f, "commit", "--quiet", "-m", `fixture: ${tag}`);
   git(f, "tag", tag);
@@ -42,6 +44,7 @@ export function renameStep(f: NamesFixture, from: string, to: string) {
   const text = readFileSync(file, "utf8");
   expect(text).toContain(`name: ${from},`);
   writeFileSync(file, text.replace(`name: ${from},`, `name: ${to},`));
+  reviewSearchFixture(f.registry);
 }
 
 export function defaultOnly(f: NamesFixture) {
@@ -49,6 +52,7 @@ export function defaultOnly(f: NamesFixture) {
   const text = readFileSync(file, "utf8");
   expect(text).toContain("  optional: [extra, unproven]\n");
   writeFileSync(file, text.replace("  optional: [extra, unproven]\n", ""));
+  reviewSearchFixture(f.registry);
 }
 
 export async function taggedFixture(temporary: string) {
@@ -73,6 +77,8 @@ export async function taggedFixture(temporary: string) {
   release(f, "v0.1.0");
   rmSync(retired, { recursive: true });
   rmSync(entryPath(f.registry, "fragment", "retired-tool"), { recursive: true });
+  rmSync(join(f.registry, "search/stacks/retired.json"));
+  rmSync(join(f.registry, "search/fragments/retired-tool.json"));
   renameStep(f, "lint-v1", "lint-v2");
   release(f, "v0.2.0");
   renameStep(f, "lint-v2", "lint-index");

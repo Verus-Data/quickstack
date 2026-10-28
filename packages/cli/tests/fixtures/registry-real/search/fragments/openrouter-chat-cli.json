@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "openrouter-chat-cli",
+  "source": {
+    "digest": "sha256:db480e39c2c328a97d2680422db35c44d2adc5ed64db20adb6811d89acc417de",
+    "by": "author",
+    "reviewedAt": "2026-10-27"
+  },
+  "summary": "A synthetic registry entry for CLI tests.",
+  "requests": ["exercise a fixture workflow", "inspect a sample project", "check a local example"],
+  "useCases": [],
+  "synonyms": [],
+  "goodFor": [],
+  "notFor": [],
+  "kind": "fragment",
+  "capabilities": []
+}

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "hooked",
+  "source": {
+    "digest": "sha256:7c83b25bc103d37db5362a19ab1c5acea6bd6f4056250582ba75de2c2c701300",
+    "by": "author",
+    "reviewedAt": "2026-10-27"
+  },
+  "summary": "A synthetic registry entry for CLI tests.",
+  "requests": ["exercise a fixture workflow", "inspect a sample project", "check a local example"],
+  "useCases": [],
+  "synonyms": [],
+  "goodFor": [],
+  "notFor": [],
+  "kind": "fragment",
+  "capabilities": []
+}

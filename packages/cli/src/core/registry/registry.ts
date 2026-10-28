@@ -4,6 +4,7 @@ import { AppConfig } from "../../config";
 import { EntryInvalid, NotFound, PermissionDenied } from "../../errors";
 import { METADATA_DIR } from "../../project-layout";
 import { Host } from "../../services/host";
+import { readSearchFile, sidecarPath } from "../search/sidecar";
 import { printable } from "../text";
 import {
   decodeEntry,
@@ -182,6 +183,9 @@ export class Registry extends Context.Service<
       kind: Kind,
       id: string,
     ) => Effect.Effect<Entry, NotFound | EntryInvalid | PermissionDenied>;
+    readonly vocabulary: Effect.Effect<Uint8Array | undefined, PermissionDenied>;
+    /** Raw sidecar of this entry's own origin, never a higher or lower root's card. */
+    readonly search: (entry: Entry) => Effect.Effect<Uint8Array | undefined, PermissionDenied>;
     /** `files/` and `adapters/` of an entry, sorted by `source`. */
     readonly files: (
       entry: Entry,
@@ -434,7 +438,20 @@ export class Registry extends Context.Service<
           });
         };
 
+        const readSearch = (root: string, rel: string) =>
+          readSearchFile(root, rel).pipe(
+            Effect.provideService(FileSystem.FileSystem, fs),
+            Effect.provideService(Path.Path, path),
+          );
+        const vocabularyRoot = roots.find((root) => root.origin === "bundled");
+        const vocabulary = yield* Effect.cached(
+          vocabularyRoot === undefined
+            ? Effect.succeed(undefined)
+            : readSearch(vocabularyRoot.path, "search/vocabulary.json"),
+        );
         return {
+          vocabulary,
+          search: (entry) => readSearch(path.dirname(path.dirname(entry.dir)), sidecarPath(entry)),
           all: loaded.pipe(
             Effect.map((items) => items.map((item) => ("rejected" in item ? item.rejected : item))),
           ),

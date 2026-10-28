@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "editor-config",
+  "source": {
+    "digest": "sha256:acff2a21534db6314fb1772eada1eff129b0bb6c86d29e58c1449c400b0d93e4",
+    "by": "author",
+    "reviewedAt": "2026-10-27"
+  },
+  "summary": "A synthetic registry entry for CLI tests.",
+  "requests": ["exercise a fixture workflow", "inspect a sample project", "check a local example"],
+  "useCases": [],
+  "synonyms": [],
+  "goodFor": [],
+  "notFor": [],
+  "kind": "fragment",
+  "capabilities": []
+}

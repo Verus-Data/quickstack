@@ -10,6 +10,7 @@ import { skeleton, starterFiles, trustQuestion } from "./create-text";
 import { isRejected, markdownFile } from "./registry/entry";
 import { defaultRoots, Registry } from "./registry/registry";
 import { openProject } from "./scaffold/write";
+import { sidecarPath } from "./search/sidecar";
 import { showReport } from "./show";
 import { renderShow } from "./show-report";
 import { closest } from "./suggest";
@@ -54,15 +55,20 @@ export const createEntry = (options: CreateOptions) =>
 
     if (!from) yield* refuseShadow(kind, id);
 
-    const { directories, files } = from
+    const snapshot: Snapshot = from
       ? yield* copySnapshot(kind, id, from, yes)
       : skeletonSnapshot(kind, id, category);
 
     yield* Effect.scoped(
       Effect.gen(function* () {
         const writer = yield* openProject(target, { exclusive: true });
-        for (const directory of directories) yield* writer.directory(directory);
-        for (const file of files) yield* writer.write(file.source, file.bytes, file.permissions);
+        for (const directory of snapshot.directories) yield* writer.directory(directory);
+        for (const file of snapshot.files)
+          yield* writer.write(file.source, file.bytes, file.permissions);
+        if (snapshot.search !== undefined) {
+          const registryWriter = yield* openProject(path.resolve(host.cwd, paths.user));
+          yield* registryWriter.write(sidecarPath({ kind, id }), snapshot.search);
+        }
       }),
     ).pipe(Effect.catchTag("TargetNotEmpty", () => Effect.fail(occupied)));
     return {
@@ -93,6 +99,7 @@ const refuseShadow = (kind: Kind, id: string) =>
   });
 
 type Snapshot = {
+  search?: Uint8Array;
   directories: ReadonlyArray<string>;
   files: ReadonlyArray<{ source: string; bytes: Uint8Array; permissions: boolean | number }>;
 };
@@ -176,6 +183,11 @@ const copySnapshot = (kind: Kind, id: string, from: Origin, yes: boolean) =>
           .bytes(entry, file.source)
           .pipe(Effect.map((bytes) => ({ source: file.source, bytes, permissions: file.mode }))),
       );
-      return { directories: tree.directories, files } satisfies Snapshot;
+      const search = yield* registry.search(entry);
+      return {
+        directories: tree.directories,
+        files,
+        ...(search === undefined ? {} : { search }),
+      } satisfies Snapshot;
     }).pipe(Effect.provide(Registry.layer(sourceRoots)));
   });

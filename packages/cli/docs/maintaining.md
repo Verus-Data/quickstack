@@ -69,6 +69,60 @@ bun run test:unit tests/search-golden-coverage.test.ts tests/search-eval.test.ts
 
 The baseline in `gate` starts at zero. Phase 4.5c adds the real ranking and gate test, sets the first baseline, and requires every first-result and no-match case to pass. Each metric may fall at most 0.02 below its baseline. When an accepted ranking raises a metric, raise that baseline in the same commit; never lower another metric to offset it. Lowering a baseline requires a plan change with the reason recorded in 4.5c's "What this plan may get wrong". Review judgment changes as product decisions, explain their effect on the scores, and record the maintainers' review date in the evaluation-set plan once they agree them.
 
+## Drafting and reviewing search cards
+
+From `packages/cli/`, the checkout-only script drafts cards through OpenRouter:
+
+```sh
+bun run decorate --dry-run mobile-expo
+bun run decorate --missing --model anthropic/claude-sonnet-4.6 --max-usd 1.00
+bun run decorate --stale
+bun run decorate --restamp mobile-expo
+bun run decorate --approve mobile-expo
+```
+
+Set `OPENROUTER_API_KEY` in the maintainer environment for paid requests. The
+default model is `anthropic/claude-sonnet-4.6`; `--model` overrides it. The optional
+`OPENROUTER_BASE_URL` override accepts a loopback HTTP test server only. The script
+and its credentials never ship in the package or enter the CLI's runtime graph.
+The CLI reads files and never drafts through a model.
+
+Positional ids select entries; without ids the script selects all entries.
+`--missing` and `--stale` select either condition, combined as a union. Dry runs
+print prompt sizes and an indicative estimate using the default model's rates,
+without needing a key or making requests. Actual request logs name the model,
+entry, tokens and reported cost. The total includes invalid model responses.
+Before each request, the script estimates its cost as the highest per-request
+cost seen in this run. It stops if that would exceed the remaining cap; the first
+request goes whenever budget remains, so its unknown cost can exceed the cap.
+
+The prompt lives in `scripts/decorate/prompt.ts`, with `PROMPT_VERSION` and two
+teaching cards derived from entry bodies. Bump the version when changing the text
+or examples. The script uses two reviewed registry cards when available, falling
+back to the teaching cards before reviewed cards have landed. Inputs are decoded frontmatter, dependency roles, body, vocabulary
+and the two examples. A malformed or schema-invalid card gets one correction
+retry; HTTP 408, 429 and 5xx get up to three retries with backoff. Other failures
+skip the entry and are listed. A failed draft preserves an existing card.
+
+Drafts record the actual model and prompt version, `by: "drafted"`, and
+`reviewedAt: null`. Read their claims and requests against the entry before
+approving. `--approve` refuses under a detected agent or without terminal stdin
+(`PermissionDenied`, reason `agent` or `no-tty`, exit 6). `--restamp` preserves
+every other field and refreshes only the digest and review date after an entry
+change that still fits its card. Authors can also write cards by hand.
+Restamping an unread draft is refused; use the guarded approval operation first.
+
+When dispatching agents to draft cards, provide the same prompt and examples at
+the current version in a checkout without the golden evaluation set. Do not read
+that set while drafting: requests must not echo holdout queries or five-word runs.
+Keep agent drafts unreviewed for a person to approve.
+
+`build:index` publishes signed `v1/search.json` beside the index and names file.
+Each indexed entry has a card; a card whose baseline differs from a carried-forward
+bundle is annotated `stale: true`. `build:index --check` verifies its signature and
+payload along with the index, names and immutable bundles. Metadata edits alone
+leave the proven bundles unchanged.
+
 ## Publishing the Claude Code plugin
 
 `plugin/` is a Claude Code plugin carrying the agent skill, published by hand after a CLI release to a marketplace repository the maintainers own (not created yet; see [marketplaces](https://code.claude.com/docs/en/plugin-marketplaces) and the [manifest reference](https://code.claude.com/docs/en/plugins-reference)). `skill/SKILL.md` is the source; `plugin/skills/stacks/SKILL.md` is a committed copy, because a plugin's paths can't leave its directory. `tests/native-agent-plugin.test.ts` fails when the copy or the manifest's `version` drifts from the skill and `package.json`.

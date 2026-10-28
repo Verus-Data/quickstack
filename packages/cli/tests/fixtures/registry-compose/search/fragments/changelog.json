@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "changelog",
+  "source": {
+    "digest": "sha256:8deecabe04f75343fd58136aac0a0fe8decbd2d21957d82863b1ff3ce8e9acf5",
+    "by": "author",
+    "reviewedAt": "2026-10-27"
+  },
+  "summary": "A synthetic registry entry for CLI tests.",
+  "requests": ["exercise a fixture workflow", "inspect a sample project", "check a local example"],
+  "useCases": [],
+  "synonyms": [],
+  "goodFor": [],
+  "notFor": [],
+  "kind": "fragment",
+  "capabilities": []
+}

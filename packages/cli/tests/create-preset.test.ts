@@ -17,6 +17,7 @@ import {
   releaseCreate,
 } from "./helpers/create";
 import { minimal, writeEntry } from "./helpers/registry";
+import { reviewSearchFixture } from "./helpers/search-fixture";
 
 afterEach(releaseCreate);
 function setup(settings?: unknown) {
@@ -40,6 +41,7 @@ function setup(settings?: unknown) {
   });
   if (settings !== undefined)
     putCreate(home, "config/stacks/config.json", JSON.stringify(settings));
+  reviewSearchFixture(registry);
   return { home, registry };
 }
 async function newProject(home: string, registry: string, dir: string, flags: string[] = []) {
@@ -172,6 +174,7 @@ test("the preview ignores a configured sandbox preset [3.1b#21]", async () => {
     ),
     body: "## Setup\n\nDescribe setup.\n",
   });
+  reviewSearchFixture(registry);
   const preview = jsonResult(
     await createCli(home, ["validate", registry, "--brief", "plain", "--json"], {
       host: { registry },

@@ -3,7 +3,13 @@ import { afterEach, expect, test } from "vitest";
 import { BriefPreview } from "../src/schemas/validate";
 import { quiet, runCli } from "./helpers/cli";
 import { minimal, writeEntry } from "./helpers/registry";
-import { fragment, previewResult, shipped, stack } from "./helpers/show-preview";
+import { reviewSearchFixture } from "./helpers/search-fixture";
+import {
+  bundledFragment as fragment,
+  previewResult,
+  shipped,
+  bundledStack as stack,
+} from "./helpers/show-preview";
 import { workspace } from "./helpers/verify";
 
 const space = workspace();
@@ -62,6 +68,7 @@ test("preview file checks use only the selected preset", async () => {
     body: "Deployment guidance.\n",
   });
   shipped(deployment, "adapters/codex/AGENTS.md", "Deployment guidance.\n");
+  reviewSearchFixture(registry);
 
   const result = await runCli(["validate", "--brief", "sample", "--sandbox", "--json"], {
     home,

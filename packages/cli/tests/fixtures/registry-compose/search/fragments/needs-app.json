@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "needs-app",
+  "source": {
+    "digest": "sha256:98ca805334c259433b5727f26f0e467ad5619f8ffd51c12eee66a6a37ba47c06",
+    "by": "author",
+    "reviewedAt": "2026-10-27"
+  },
+  "summary": "A synthetic registry entry for CLI tests.",
+  "requests": ["exercise a fixture workflow", "inspect a sample project", "check a local example"],
+  "useCases": [],
+  "synonyms": [],
+  "goodFor": [],
+  "notFor": [],
+  "kind": "fragment",
+  "capabilities": []
+}

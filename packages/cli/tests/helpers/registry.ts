@@ -2,6 +2,8 @@ import { cpSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const fixtures = join(import.meta.dirname, "..", "fixtures");
+/** An empty bundled catalog still supplies the canonical search vocabulary. */
+export const emptyRegistry = join(fixtures, "registry-empty");
 /** Two stacks, four fragments (one app, one with a literal `files/.gitignore`), all valid. */
 export const smallRegistry = join(fixtures, "registry");
 /** Five realistic entries: a TypeScript CLI stack, three fragments and an app. */

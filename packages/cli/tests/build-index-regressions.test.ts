@@ -15,6 +15,7 @@ import {
   serve,
 } from "./fixtures/index/harness";
 import { writeLedger } from "./helpers/ledger";
+import { reviewSearchFixture } from "./helpers/search-fixture";
 import { workspace } from "./helpers/verify";
 
 // Real builds and loopback servers, including three generations, need a 30 s budget.
@@ -44,6 +45,7 @@ test("a second carry-forward keeps fragment metadata aligned with its advertised
       .replace("tools name", "tools revised name")
       .replace("tools description.", "tools revised description."),
   );
+  reviewSearchFixture(f.registry);
   writeLedger(f.registry, [
     f.record,
     secondRecord,
@@ -108,6 +110,7 @@ test("a cached previous index can fetch its bundles after a proven update", asyn
     const source = join(entryPath(f.registry, entry.kind, entry.id), name);
     writeFileSync(source, `${readFileSync(source, "utf8")}\nNew guidance.\n`);
   }
+  reviewSearchFixture(f.registry);
   writeLedger(f.registry, [await proof(f.registry)]);
   const firstHost = await serve(first);
   try {

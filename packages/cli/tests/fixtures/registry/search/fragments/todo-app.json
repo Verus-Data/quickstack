@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "todo-app",
+  "source": {
+    "digest": "sha256:e5635a5579354d81614cce959ec12e5bf5cfafdfd3878446264693ff8b11ac2f",
+    "by": "author",
+    "reviewedAt": "2026-10-27"
+  },
+  "summary": "A synthetic registry entry for CLI tests.",
+  "requests": ["exercise a fixture workflow", "inspect a sample project", "check a local example"],
+  "useCases": [],
+  "synonyms": [],
+  "goodFor": [],
+  "notFor": [],
+  "kind": "fragment",
+  "capabilities": []
+}
