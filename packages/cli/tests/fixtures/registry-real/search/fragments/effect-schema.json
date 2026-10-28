@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "effect-schema",
+  "source": {
+    "digest": "sha256:31363c7ffd7027baf0f0f4ce96a452dd6a975756f917023efc62d08a51376a49",
+    "by": "author",
+    "reviewedAt": "2026-10-27"
+  },
+  "summary": "A synthetic registry entry for CLI tests.",
+  "requests": ["exercise a fixture workflow", "inspect a sample project", "check a local example"],
+  "useCases": [],
+  "synonyms": [],
+  "goodFor": [],
+  "notFor": [],
+  "kind": "fragment",
+  "capabilities": []
+}

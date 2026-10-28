@@ -28,6 +28,7 @@ import {
   unordered,
 } from "./helpers/official-names";
 import { minimal, writeEntry } from "./helpers/registry";
+import { reviewSearchFixture } from "./helpers/search-fixture";
 import { workspace } from "./helpers/verify";
 
 const shared = workspace();
@@ -208,6 +209,7 @@ test("index names come from carried bundles rather than changed working files wi
       'verify:\n  - { name: tools-old-check, layer: check, run: "true" }',
     ),
   });
+  reviewSearchFixture(f.registry);
   writeLedger(f.registry, [await proof(f.registry)]);
   const previous = join(f.root, "previous names");
   await buildNames(f, previous);
@@ -217,6 +219,7 @@ test("index names come from carried bundles rather than changed working files wi
     fragment,
     readFileSync(fragment, "utf8").replace("tools-old-check", "tools-new-check"),
   );
+  reviewSearchFixture(f.registry);
   const host = await serve(previous);
   try {
     await buildNames(f, f.out, `${host.url}/v1/index.json`);

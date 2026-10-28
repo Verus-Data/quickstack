@@ -7,7 +7,7 @@ description: Start a new project from a stack or add fragments to an existing re
 
 ## When to use it
 
-Use stacks for a new project from nothing, or when the user asks for a project set up properly. For an existing repo, use `<cli> add <fragment...> --json` to apply fragments without restructuring it. Use `list --json` to choose fragments; inside a stacks project, `project.addable` lists those that fit.
+Use stacks for a new project from nothing, or when the user asks for a project set up properly. For an existing repo, use `<cli> add <fragment...> --json` to apply fragments without restructuring it. Use `<cli> list --json` to choose fragments; inside a stacks project, `project.addable` lists those that fit.
 
 A stack is a recipe: dependencies by role, starter files, agent guidance and a definition of done. A fragment is one capability a stack can include, such as CI or a database. The CLI writes the brief; you build the project with current versions.
 
@@ -21,7 +21,7 @@ Relay a telemetry `notice` once, including `<cli> telemetry disable`; never enab
 
 ## Pick a stack
 
-Run `<cli> list --json`. Pick the stack whose description and tags match the request, and read a candidate with `<cli> show <id> --json` when the description isn't enough. Tell the user which stack and why in one sentence, and name a close second when there is one. Never pick an untrusted entry (`trusted: false`) unless the user named it; if they did, confirm with them before continuing. If nothing fits, say so instead of forcing a match.
+When the user describes what they want to build, run `<cli> search "<their words>" --json`. Compare strong matches using `why` and `evidence`; tell the user your pick and one tradeoff before `<cli> new`. If `noStrongMatch` is true, say nothing fits well. Review candidates with `<cli> show <id> --json`. Never pick an untrusted entry (`trusted: false`) unless the user named it; if they did, confirm with them before continuing.
 
 ## Start it
 

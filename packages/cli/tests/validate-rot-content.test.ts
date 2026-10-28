@@ -12,6 +12,7 @@ import {
   stack,
   validateRot,
 } from "./helpers/rot";
+import { missingSearchNotes } from "./helpers/search-fixture";
 
 const space = rotWorkspace();
 afterEach(() => space.cleanup());
@@ -27,10 +28,11 @@ test("a listed fragment's undeclared collision uses the existing composition che
   ship(extra, "files/shared.txt", "Extra file.\n");
   const { report, status } = await validate(root);
   findingsAre(report.findings, [
+    ...missingSearchNotes({ stacks: ["compatible", "conflicting"], fragments: ["base", "extra"] }),
     ["compose", "error", { entry: "conflicting", text: ["extra", "base"] }],
   ]);
   expect(status).toBe(2);
-  expect(report.findings[0]?.message).toContain("conflicting");
+  expect(report.findings[1]?.message).toContain("conflicting");
 });
 
 test("compose-each checks an undeclared collision for an unlisted tag-applicable fragment [2.2#1]", async () => {
@@ -41,7 +43,10 @@ test("compose-each checks an undeclared collision for an unlisted tag-applicable
   ship(base, "files/shared.txt", "Base file.\n");
   ship(extra, "files/shared.txt", "Extra file.\n");
   const { report } = await validate(root);
-  findingsAre(report.findings, [["compose-each", "error", { text: ["extra", "base", "sample"] }]]);
+  findingsAre(report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"], fragments: ["base", "extra"] }),
+    ["compose-each", "error", { text: ["extra", "base", "sample"] }],
+  ]);
 });
 
 test("a tag-applicable fragment replaces a default it declares a conflict with [2.2#1]", async () => {
@@ -49,7 +54,9 @@ test("a tag-applicable fragment replaces a default it declares a conflict with [
   stack(root, "sample", "fragments:\n  default: [base]");
   fragment(root, "base");
   fragment(root, "extra", "applies_to: [cli]\nconflicts: [base]");
-  findingsAre((await validate(root)).report.findings, []);
+  findingsAre((await validate(root)).report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"], fragments: ["base", "extra"] }),
+  ]);
 });
 
 test("dead stack branches warn, --with-only branches note, listed branches are reachable [2.2#1]", async () => {
@@ -62,6 +69,10 @@ test("dead stack branches warn, --with-only branches note, listed branches are r
   fragment(root, "listed", "", branch);
   const { report } = await validate(root);
   findingsAre(report.findings, [
+    ...missingSearchNotes({
+      stacks: ["go-stack", "python"],
+      fragments: ["dead", "listed", "manual"],
+    }),
     [
       "conditional-dead-branch",
       "warning",
@@ -86,13 +97,18 @@ test("dead stack branches warn, --with-only branches note, listed branches are r
     ],
   ]);
   expect(report.findings.map((f) => [f.entry, f.severity])).toEqual([
+    ["go-stack", "note"],
+    ["python", "note"],
     ["dead", "warning"],
+    ["dead", "note"],
+    ["listed", "note"],
+    ["manual", "note"],
     ["manual", "note"],
   ]);
-  for (const finding of report.findings) {
-    expect(finding.file).toBe(`fragments/${finding.entry}/FRAGMENT.md`);
-    expect(finding.line).toBeGreaterThan(0);
-    expect(finding.message).toContain("go-stack");
+  for (const finding of [report.findings[2], report.findings[5]]) {
+    expect(finding?.file).toBe(`fragments/${finding?.entry}/FRAGMENT.md`);
+    expect(finding?.line).toBeGreaterThan(0);
+    expect(finding?.message).toContain("go-stack");
   }
 });
 
@@ -107,9 +123,12 @@ test.each(["make", "bun run", "npm run", "pnpm", "pnpm run", "yarn", "yarn run"]
       `verify:\n  - { name: typo, layer: check, run: "${runner} lnt" }\n  - { name: correct, layer: check, run: "${runner} lint" }`,
     );
     const { report, warnings } = await validate(root);
-    findingsAre(report.findings, [["undeclared-command", "warning", { text: ["lnt"] }]]);
+    findingsAre(report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"], fragments: ["check"] }),
+      ["undeclared-command", "warning", { text: ["lnt"] }],
+    ]);
     expect(warnings).toBe(1);
-    expect(report.findings[0]?.message).toContain("lnt");
+    expect(report.findings[1]?.message).toContain("lnt");
   },
 );
 
@@ -119,8 +138,11 @@ test("a command supplied by one stack doesn't hide its absence in another compos
   stack(root, "missing", "fragments:\n  default: [check]");
   fragment(root, "check", 'verify:\n  - { name: check-lint, layer: check, run: "make lint" }');
   const { report } = await validate(root);
-  findingsAre(report.findings, [["undeclared-command", "warning", { text: ["missing", "lint"] }]]);
-  expect(report.findings[0]?.message).toContain("missing");
+  findingsAre(report.findings, [
+    ...missingSearchNotes({ stacks: ["declared", "missing"], fragments: ["check"] }),
+    ["undeclared-command", "warning", { text: ["missing", "lint"] }],
+  ]);
+  expect(report.findings[2]?.message).toContain("missing");
 });
 
 test("a bare Actions expression in a template warns while dotted and literal expressions pass [2.2#1]", async () => {
@@ -134,13 +156,14 @@ test("a bare Actions expression in a template warns while dotted and literal exp
   ship(good, "files/literal.yml", `value: \${{ github }}\n`);
   const { report } = await validate(root);
   findingsAre(report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"], fragments: ["bad", "good"] }),
     [
       "template-expression",
       "warning",
       { kind: "fragment", entry: "bad", file: "fragments/bad/files/action.yml.tmpl", line: 1 },
     ],
   ]);
-  expect(report.findings[0]).toMatchObject({
+  expect(report.findings[1]).toMatchObject({
     entry: "bad",
     file: "fragments/bad/files/action.yml.tmpl",
     line: 1,
@@ -155,6 +178,10 @@ test("underlined headings warn while ATX headings and thematic breaks pass [2.2#
   fragment(root, "ordinary", "", "# Title\n\nText.\n\n---\n\n## Subtitle\n");
   const { report } = await validate(root);
   findingsAre(report.findings, [
+    ...missingSearchNotes({
+      stacks: ["sample"],
+      fragments: ["ordinary", "underlined-sub", "underlined-top"],
+    }),
     [
       "setext-heading",
       "warning",
@@ -185,6 +212,7 @@ test.each([
     ship(entry, "files/README.md", "# Project\n");
     const { report } = await validate(root);
     findingsAre(report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"] }),
       [
         "version-sensitive-file",
         "warning",
@@ -197,7 +225,11 @@ test.each([
       ],
     ]);
     expect(report.findings.map((f) => f.file).sort()).toEqual(
-      [`stacks/sample/adapters/codex/nested/${name}.tmpl`, `stacks/sample/files/${name}`].sort(),
+      [
+        "search/stacks/sample.json",
+        `stacks/sample/adapters/codex/nested/${name}.tmpl`,
+        `stacks/sample/files/${name}`,
+      ].sort(),
     );
   },
 );
@@ -216,6 +248,7 @@ test.each(["body", "decisions", "markdown"])(
     if (location === "markdown") ship(entry, "files/README.md.tmpl", text);
     const { report } = await validate(root);
     findingsAre(report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"] }),
       [
         "pinned-version",
         "warning",
@@ -244,9 +277,9 @@ test("each known dated phrase warns; version-less prerelease advice and fenced t
     "if the latest release is still a prerelease\n\n```text\nwhile published rc dist-tag alpha nightly canary\n```\n",
   );
   const { report } = await validate(root);
-  findingsAre(
-    report.findings,
-    ["while published", "rc", "dist-tag"].map(
+  findingsAre(report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"], fragments: ["current", "dated"] }),
+    ...["while published", "rc", "dist-tag"].map(
       (phrase) =>
         [
           "dated-phrase",
@@ -259,8 +292,15 @@ test("each known dated phrase warns; version-less prerelease advice and fenced t
           },
         ] as const,
     ),
-  );
-  expect(report.findings.map((f) => f.entry)).toEqual(["dated", "dated", "dated"]);
+  ]);
+  expect(report.findings.map((f) => f.entry)).toEqual([
+    "sample",
+    "current",
+    "dated",
+    "dated",
+    "dated",
+    "dated",
+  ]);
 });
 
 test.each(["ALPHA", "Nightly", "canary", "as of March", "as of 2026", "October 2026"])(
@@ -271,6 +311,7 @@ test.each(["ALPHA", "Nightly", "canary", "as of March", "as of 2026", "October 2
     ship(entry, "files/README.md", `${phrase}\n`);
     const { report } = await validate(root);
     findingsAre(report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"] }),
       ["dated-phrase", "warning", { entry: "sample", file: "stacks/sample/STACK.md" }],
       [
         "dated-phrase",
@@ -307,6 +348,7 @@ test("fence styles, CRLF and word boundaries don't turn examples or IP addresses
   );
   const { report } = await validate(root);
   findingsAre(report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"] }),
     [
       "pinned-version",
       "warning",
@@ -330,6 +372,7 @@ test("a symlinked root and paths with spaces and non-ASCII text retain real sour
   const first = await validateRot(alias, { home });
   const second = await validateRot(realpathSync(root), { home });
   findingsAre(first.report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"] }),
     [
       "pinned-version",
       "warning",
@@ -371,6 +414,7 @@ test("validation in an author's checkout ignores repository-selecting env and ne
     },
   });
   findingsAre(report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"], fragments: ["check"] }),
     ["undeclared-command", "warning", { text: ["lnt"] }],
     ["git-ignored", "warning", { entry: "sample", file: "stacks/sample/files/ignored.txt" }],
   ]);

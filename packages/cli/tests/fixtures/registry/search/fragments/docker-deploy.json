@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "docker-deploy",
+  "source": {
+    "digest": "sha256:faa23a127077517a518b6d1706f65a207711222324080ee7d81fb75f2770ec4e",
+    "by": "author",
+    "reviewedAt": "2026-10-27"
+  },
+  "summary": "A synthetic registry entry for CLI tests.",
+  "requests": ["exercise a fixture workflow", "inspect a sample project", "check a local example"],
+  "useCases": [],
+  "synonyms": [],
+  "goodFor": [],
+  "notFor": [],
+  "kind": "fragment",
+  "capabilities": []
+}

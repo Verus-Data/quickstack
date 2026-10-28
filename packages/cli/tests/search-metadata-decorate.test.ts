@@ -1,0 +1,368 @@
+import { existsSync, readdirSync, readFileSync, rmSync, statSync } from "node:fs";
+import { join } from "node:path";
+import { Schema } from "effect";
+import { afterEach, expect, test } from "vitest";
+import {
+  card,
+  cardPath,
+  type DecorateWorkspace,
+  decorate,
+  decorateWorkspace,
+  entryAt,
+  openRouter,
+  put,
+  type Ref,
+  readJson,
+  searchFindings,
+  sourceDigest,
+  stamp,
+  validateSearch,
+} from "./helpers/search-metadata";
+import { workspace } from "./helpers/verify";
+
+const space = workspace();
+afterEach(() => space.release());
+const mobile = { kind: "stack", id: "mobile-expo" } as const;
+const sentinel = "test-openrouter-secret-4-5b-never-persist";
+const model = "fixture/model";
+function setup() {
+  const f = decorateWorkspace(space.dir());
+  rmSync(cardPath(f.registry, mobile), { force: true });
+  return f;
+}
+function success(result: Awaited<ReturnType<typeof decorate>>) {
+  expect(result.status, result.stderr).toBe(0);
+  expect(result.stderr).not.toMatch(/error|failed/i);
+  expect(result.stdout.trim()).not.toBe("");
+}
+async function drafted(f: DecorateWorkspace, ref: Ref = mobile) {
+  const { SearchMetadata } = await import("../src/schemas/search");
+  const value = Schema.decodeUnknownSync(SearchMetadata)(readJson(cardPath(f.registry, ref)));
+  expect(value.source).toMatchObject({
+    digest: await sourceDigest(f.registry, ref),
+    by: "drafted",
+    model,
+    reviewedAt: null,
+    promptVersion: expect.any(Number),
+  });
+  expect(value.source.promptVersion).toBeGreaterThan(0);
+  expect(value).toEqual({ ...card(ref), source: value.source });
+  return value;
+}
+function requestText(body: unknown) {
+  const value = Schema.decodeUnknownSync(
+    Schema.Struct({
+      messages: Schema.Array(Schema.Struct({ role: Schema.String, content: Schema.String })),
+    }),
+  )(body);
+  return value.messages.map(({ content }) => content).join("\n");
+}
+async function assertPrompt(f: DecorateWorkspace, body: unknown) {
+  const text = requestText(body);
+  const entry = await entryAt(f.registry, mobile);
+  for (const input of [
+    entry.id,
+    entry.meta.name,
+    entry.meta.description,
+    ...entry.meta.tags,
+    ...Object.keys(entry.meta.deps),
+  ])
+    expect(text).toContain(input);
+  expect(text.includes(entry.body) || text.includes(JSON.stringify(entry.body))).toBe(true);
+  const { SearchMetadata, SearchVocabulary } = await import("../src/schemas/search");
+  const vocabulary = Schema.decodeUnknownSync(SearchVocabulary)(
+    readJson(join(f.registry, "search/vocabulary.json")),
+  );
+  for (const category of [
+    vocabulary.platforms,
+    vocabulary.productKinds,
+    vocabulary.languages,
+    vocabulary.capabilities,
+  ]) {
+    for (const [name, aliases] of Object.entries(category)) {
+      expect(text).toContain(name);
+      for (const alias of Schema.decodeUnknownSync(Schema.Array(Schema.String))(aliases))
+        expect(text).toContain(alias);
+    }
+  }
+  const examples = files(join(f.registry, "search"))
+    .filter((path) => !path.endsWith("/vocabulary.json"))
+    .map((path) => Schema.decodeUnknownSync(SearchMetadata)(readJson(path)))
+    .filter(({ source }) => source.reviewedAt !== null);
+  const included = new Set(
+    examples.filter(({ summary }) => text.includes(summary)).map(({ summary }) => summary),
+  );
+  expect(included.size).toBeGreaterThanOrEqual(2);
+}
+function files(root: string): string[] {
+  return readdirSync(root).flatMap((name) => {
+    if (["node_modules", ".git"].includes(name)) return [];
+    const path = join(root, name);
+    return statSync(path).isDirectory() ? files(path) : [path];
+  });
+}
+
+test("dry-run prints prompt sizes without contacting OpenRouter [4.5b#8]", async () => {
+  const f = setup();
+  const server = await openRouter([]);
+  try {
+    const result = await decorate(f, ["--dry-run", mobile.id], {
+      env: { OPENROUTER_BASE_URL: server.url },
+    });
+    success(result);
+    expect(result.stdout).toMatch(/mobile-expo/);
+    expect(result.stdout).toMatch(/\d+\s*(tokens?|words?|bytes?|characters?)/i);
+    expect(result.stdout).toMatch(/estimate|estimated|\$/i);
+    expect(server.requests).toEqual([]);
+    expect(existsSync(cardPath(f.registry, mobile))).toBe(false);
+  } finally {
+    await server.close();
+  }
+}, 30_000);
+
+test("drafts through the real HTTP boundary and keeps credentials out of all writes [4.5b#8] [4.5b#12]", async () => {
+  const f = setup();
+  const response = {
+    ...card(mobile),
+    source: { ...card(mobile).source, reviewedAt: "2020-01-01", by: "author" },
+  };
+  const server = await openRouter([{ content: JSON.stringify(response) }]);
+  try {
+    const result = await decorate(f, [mobile.id, "--model", model], {
+      env: {
+        OPENROUTER_BASE_URL: server.url,
+        OPENROUTER_API_KEY: sentinel,
+        STACKS_LOG_FILE: join(f.root, "requests.jsonl"),
+      },
+    });
+    success(result);
+    expect(server.requests).toHaveLength(1);
+    expect(server.requests[0]).toMatchObject({
+      url: "/api/v1/chat/completions",
+      authorization: `Bearer ${sentinel}`,
+      body: { model, response_format: { type: "json_object" } },
+    });
+    await assertPrompt(f, server.requests[0]?.body);
+    await drafted(f);
+    for (const file of files(f.root))
+      expect(readFileSync(file).includes(Buffer.from(sentinel)), file).toBe(false);
+    expect(result.stdout + result.stderr).not.toContain(sentinel);
+    expect(result.stdout + result.stderr).toMatch(/0\.001/);
+  } finally {
+    await server.close();
+  }
+}, 30_000);
+
+test.each([
+  {
+    label: "malformed JSON",
+    content: "{bad json",
+    diagnostic: /json|parse|unexpected|syntax|property|position/i,
+  },
+  {
+    label: "missing languages",
+    content: JSON.stringify(
+      Object.fromEntries(Object.entries(card(mobile)).filter(([name]) => name !== "languages")),
+    ),
+    diagnostic: /languages/i,
+  },
+])(
+  "invalid model output ($label) is retried once then skipped [4.5b#9]",
+  async ({ content, diagnostic }) => {
+    const f = setup();
+    const server = await openRouter([{ content }, { content }]);
+    try {
+      const result = await decorate(f, [mobile.id], {
+        env: { OPENROUTER_BASE_URL: server.url, OPENROUTER_API_KEY: sentinel },
+      });
+      expect(result.stdout + result.stderr).toMatch(/skip/i);
+      expect(result.stdout + result.stderr).toContain(mobile.id);
+      expect(result.stderr).not.toMatch(/Cannot find|Module not found|SyntaxError/);
+      expect([0, 2]).toContain(result.status);
+      expect(server.requests).toHaveLength(2);
+      const initial = requestText(server.requests[0]?.body);
+      const retry = requestText(server.requests[1]?.body);
+      expect(retry).toContain(initial);
+      expect(retry.replace(initial, "")).toMatch(diagnostic);
+      expect(existsSync(cardPath(f.registry, mobile))).toBe(false);
+    } finally {
+      await server.close();
+    }
+  },
+  30_000,
+);
+
+test("a schema decode retry can recover and write the corrected card [4.5b#9]", async () => {
+  const f = setup();
+  const invalid = { ...card(mobile), languages: "typescript" };
+  const server = await openRouter([
+    { content: JSON.stringify(invalid) },
+    { content: JSON.stringify(card(mobile)) },
+  ]);
+  try {
+    success(
+      await decorate(f, [mobile.id, "--model", model], {
+        env: { OPENROUTER_BASE_URL: server.url, OPENROUTER_API_KEY: sentinel },
+      }),
+    );
+    expect(server.requests).toHaveLength(2);
+    const initial = requestText(server.requests[0]?.body);
+    const retry = requestText(server.requests[1]?.body);
+    expect(retry).toContain(initial);
+    expect(retry.replace(initial, "")).toMatch(/languages/i);
+    await drafted(f);
+  } finally {
+    await server.close();
+  }
+}, 30_000);
+
+test("429 retries the same entry and writes exactly one draft [4.5b#9]", async () => {
+  const f = setup();
+  const server = await openRouter([
+    { status: 429, content: "rate limit" },
+    { content: JSON.stringify(card(mobile)) },
+  ]);
+  try {
+    const result = await decorate(f, [mobile.id, "--model", model], {
+      env: { OPENROUTER_BASE_URL: server.url, OPENROUTER_API_KEY: sentinel },
+    });
+    success(result);
+    expect(server.requests).toHaveLength(2);
+    await drafted(f);
+  } finally {
+    await server.close();
+  }
+}, 30_000);
+
+test("a cap prevents the next paid request and reports the actual total [4.5b#10]", async () => {
+  const f = setup();
+  const second = { kind: "stack", id: "second" } as const;
+  rmSync(cardPath(f.registry, second), { force: true });
+  put(
+    join(f.registry, "stacks/second/STACK.md"),
+    readFileSync(join(f.registry, "stacks/mobile-expo/STACK.md"), "utf8").replace(
+      /^id: mobile-expo$/m,
+      "id: second",
+    ),
+  );
+  // At 0.006 per request a similarly sized prompt exceeds the remaining 0.004 budget.
+  const server = await openRouter([{ content: JSON.stringify(card(mobile)), cost: 0.006 }]);
+  try {
+    const result = await decorate(
+      f,
+      [mobile.id, second.id, "--model", model, "--max-usd", "0.01"],
+      { env: { OPENROUTER_BASE_URL: server.url, OPENROUTER_API_KEY: sentinel } },
+    );
+    expect([0, 2]).toContain(result.status);
+    expect(result.stderr).not.toMatch(/Cannot find|Module not found|SyntaxError/);
+    expect(result.stdout + result.stderr).toMatch(/budget|cap|limit/i);
+    expect(result.stdout + result.stderr).toMatch(/0\.006/);
+    expect(server.requests).toHaveLength(1);
+    await drafted(f);
+    expect(existsSync(cardPath(f.registry, second))).toBe(false);
+  } finally {
+    await server.close();
+  }
+}, 30_000);
+
+test("a sufficient budget drafts both selected entries and totals their cost [4.5b#10]", async () => {
+  const f = setup();
+  const second = { kind: "stack", id: "second" } as const;
+  const server = await openRouter([
+    { content: JSON.stringify(card(mobile)), cost: 0.002 },
+    { content: JSON.stringify(card(second)), cost: 0.003 },
+  ]);
+  try {
+    const result = await decorate(
+      f,
+      [mobile.id, second.id, "--model", model, "--max-usd", "1.00"],
+      { env: { OPENROUTER_BASE_URL: server.url, OPENROUTER_API_KEY: sentinel } },
+    );
+    success(result);
+    expect(server.requests).toHaveLength(2);
+    await drafted(f);
+    await drafted(f, second);
+    expect(result.stdout + result.stderr).toMatch(/0\.005/);
+  } finally {
+    await server.close();
+  }
+}, 30_000);
+
+test.each([
+  { env: { CLAUDECODE: "1" }, tty: true, reason: "agent" },
+  { env: {}, tty: false, reason: "no-tty" },
+])(
+  "approval refuses $reason and preserves an unreviewed card [4.5b#11]",
+  async ({ env, tty, reason }) => {
+    const f = setup();
+    const value = {
+      ...card(mobile),
+      source: { ...card(mobile).source, by: "drafted", model, promptVersion: 1, reviewedAt: null },
+    };
+    put(cardPath(f.registry, mobile), JSON.stringify(value));
+    const before = readFileSync(cardPath(f.registry, mobile), "utf8");
+    const result = await decorate(f, ["--approve", mobile.id], { env, tty });
+    expect(result.status, result.stdout + result.stderr).toBe(6);
+    if (!tty) expect(result.stdout).toBe("");
+    expect(result.stdout + result.stderr).toContain("PermissionDenied");
+    expect(result.stdout + result.stderr).toContain(reason);
+    expect(readFileSync(cardPath(f.registry, mobile), "utf8")).toBe(before);
+  },
+  30_000,
+);
+
+test("a person with terminal stdin can approve without drafting [4.5b#11]", async () => {
+  const f = setup();
+  const value = {
+    ...card(mobile),
+    source: { ...card(mobile).source, by: "drafted", model, promptVersion: 1, reviewedAt: null },
+  };
+  put(cardPath(f.registry, mobile), JSON.stringify(value));
+  const before = new Date().toISOString().slice(0, 10);
+  const result = await decorate(f, ["--approve", mobile.id], { tty: true });
+  expect(result.status, result.stdout + result.stderr).toBe(0);
+  expect(result.stderr).toBe("");
+  const { SearchMetadata } = await import("../src/schemas/search");
+  const approved = Schema.decodeUnknownSync(SearchMetadata)(readJson(cardPath(f.registry, mobile)));
+  expect([before, new Date().toISOString().slice(0, 10)]).toContain(approved.source.reviewedAt);
+  expect(approved).toEqual({
+    ...value,
+    source: { ...value.source, reviewedAt: approved.source.reviewedAt },
+  });
+}, 30_000);
+
+test("changing body text stales only its card and restamp changes only the review baseline [4.5b#2]", async () => {
+  const f = setup();
+  const original = await stamp(f.registry, mobile);
+  const second = { kind: "stack", id: "second" } as const;
+  await stamp(f.registry, second);
+  const entry = join(f.registry, "stacks/mobile-expo/STACK.md");
+  put(entry, `${readFileSync(entry, "utf8")}\nClarification.\n`);
+  const changed = await validateSearch(f.registry, { home: join(f.root, "home"), bundled: true });
+  expect(
+    searchFindings(changed)
+      .filter(({ check }) => check === "search-stale")
+      .map(({ entry }) => entry),
+  ).toEqual([mobile.id]);
+  const before = new Date().toISOString().slice(0, 10);
+  success(await decorate(f, ["--restamp", mobile.id]));
+  const { SearchMetadata } = await import("../src/schemas/search");
+  const restamped = Schema.decodeUnknownSync(SearchMetadata)(
+    readJson(cardPath(f.registry, mobile)),
+  );
+  expect(restamped.source.digest).not.toBe(original.source.digest);
+  expect([before, new Date().toISOString().slice(0, 10)]).toContain(restamped.source.reviewedAt);
+  expect(restamped).toEqual({
+    ...original,
+    source: {
+      ...original.source,
+      digest: restamped.source.digest,
+      reviewedAt: restamped.source.reviewedAt,
+    },
+  });
+  expect(
+    searchFindings(
+      await validateSearch(f.registry, { home: join(f.root, "home"), bundled: true }),
+    ).filter(({ check }) => check === "search-stale"),
+  ).toEqual([]);
+}, 30_000);

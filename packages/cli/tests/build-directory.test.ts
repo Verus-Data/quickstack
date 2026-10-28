@@ -57,6 +57,7 @@ beforeAll(async () => {
   const extra = join(f.registry, "fragments/extra/FRAGMENT.md");
   const original = readFileSync(extra, "utf8");
   rmSync(extra);
+  rmSync(join(f.registry, "search/fragments/extra.json"));
   commitAt(f, "2026-11-02T12:00:00Z", "fixture: remove extra");
   writeFileSync(extra, original);
   commitAt(f, "2026-11-03T12:00:00Z", "fixture: restore extra");

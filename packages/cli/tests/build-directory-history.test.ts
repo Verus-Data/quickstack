@@ -18,6 +18,7 @@ import {
 import { gitEnv } from "./helpers/git";
 import { writeLedger } from "./helpers/ledger";
 import { git, succeeded } from "./helpers/official-names";
+import { reviewSearchFixture } from "./helpers/search-fixture";
 import { workspace } from "./helpers/verify";
 
 // Each case runs real builds and git history reads; carry-forward also owns an HTTP server.
@@ -46,6 +47,7 @@ test("an id from a previous index needs a removal record even without release ta
   const previous = join(f.root, "previous");
   await buildDirectory(f, previous);
   rmSync(join(f.registry, "stacks/sample"), { recursive: true });
+  rmSync(join(f.registry, "search/stacks/sample.json"));
   writeLedger(f.registry, []);
   commitAt(f, "2026-11-01T09:00:00Z", "fixture: remove index-only stack");
   const host = await serve(previous);
@@ -141,6 +143,7 @@ test.each([
         : text.replace("category: tooling", `category: tooling\ntags: ['${tag}']`),
     );
     writeLedger(f.registry, [await proof(f.registry)]);
+    reviewSearchFixture(f.registry);
     const result = await f.invoke(["--out", f.out, "--previous", "none", "--key", privateKey]);
     failedDirectory(result);
     expect(result.stderr).toContain(id);
@@ -211,6 +214,7 @@ test("index-only carried fragment gets its added date from historical source [4.
     writeFileSync(file, readFileSync(file, "utf8").replace("default: [tools]", "default: []"));
   }
   rmSync(join(f.registry, "fragments/tools"), { recursive: true });
+  rmSync(join(f.registry, "search/fragments/tools.json"));
   writeLedger(f.registry, []);
   commitAt(f, "2026-11-01T09:00:00Z", "fixture: change unproven source and remove fragment");
   const host = await serve(previous);

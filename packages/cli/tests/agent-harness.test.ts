@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync } from "node:fs";
+import { cpSync, mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Manifest } from "@stacks/format";
 import { Exit, Schema } from "effect";
@@ -7,6 +7,7 @@ import { NewResult } from "../src/schemas/new";
 import { ValidateReport } from "../src/schemas/validate";
 import { quiet, runCli, tempDir } from "./helpers/cli";
 import { bundledAt, composeExit } from "./helpers/compose";
+import { reviewSearchFixture } from "./helpers/search-fixture";
 
 const registry = join(import.meta.dirname, "../registry");
 const dirs: ReturnType<typeof tempDir>[] = [];
@@ -32,6 +33,9 @@ const Settings = Schema.Struct({
 
 async function scaffold(stack: string) {
   const home = workspace();
+  const bundled = join(home, "bundled");
+  cpSync(registry, bundled, { recursive: true });
+  reviewSearchFixture(bundled);
   const cwd = join(home, "unrelated cwd");
   mkdirSync(cwd);
   const result = await runCli(
@@ -49,7 +53,7 @@ async function scaffold(stack: string) {
     {
       home,
       env: { ...quiet, PATH: process.env.PATH, GIT_CONFIG_NOSYSTEM: "1" },
-      host: { registry, cwd },
+      host: { registry: bundled, cwd },
     },
   );
   expect(result.stderr).toBe("");
@@ -63,7 +67,7 @@ async function validate(home: string) {
   const result = await runCli(["validate", "--json"], {
     home,
     env: quiet,
-    host: { registry },
+    host: { registry: join(home, "bundled") },
   });
   expect(result.stderr).toBe("");
   expect(result.status).toBe(0);

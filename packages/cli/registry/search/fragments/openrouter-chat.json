@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "kind": "fragment",
+  "id": "openrouter-chat",
+  "source": {
+    "digest": "sha256:89412086282e5ed5c97280b86f9770d82e2bd88326226191564683771ee90c3e",
+    "by": "drafted",
+    "model": "codex/gpt-6.1-sol",
+    "promptVersion": 1,
+    "reviewedAt": "2026-10-28"
+  },
+  "summary": "Add browser chat with streaming replies, model selection, server history, tool calls, usage costs and Markdown export.",
+  "capabilities": [
+    "ai"
+  ],
+  "requests": [
+    "let visitors choose a model and watch replies arrive in the browser",
+    "keep conversations on the server and offer a Markdown download",
+    "add a form that extracts contact details from free text"
+  ],
+  "useCases": [
+    "browser conversations",
+    "structured contact extraction"
+  ],
+  "synonyms": [
+    "OpenRouter",
+    "streaming chat",
+    "model picker",
+    "tool calls",
+    "token usage"
+  ],
+  "goodFor": [
+    "stopping replies while preserving partial text",
+    "local browser tests without paid requests"
+  ],
+  "notFor": [
+    "terminal interfaces",
+    "private user accounts without added authentication"
+  ]
+}

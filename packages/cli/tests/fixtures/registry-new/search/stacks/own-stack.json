@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "own-stack",
+  "source": {
+    "digest": "sha256:7b218d8f42e701909e9054f4d1466ddeffe327ad64f85e6a0d2f75be4793d5c1",
+    "by": "author",
+    "reviewedAt": "2026-10-27"
+  },
+  "summary": "A synthetic registry entry for CLI tests.",
+  "requests": ["exercise a fixture workflow", "inspect a sample project", "check a local example"],
+  "useCases": [],
+  "synonyms": [],
+  "goodFor": [],
+  "notFor": [],
+  "kind": "stack",
+  "platforms": ["cli"],
+  "productKinds": ["cli-tool"],
+  "languages": ["typescript"]
+}

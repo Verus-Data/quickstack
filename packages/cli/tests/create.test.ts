@@ -136,8 +136,26 @@ describe("create an entry", () => {
   test("reference skeletons pin today's complete validate findings [3.1b#1]", async () => {
     const home = createWorkspace();
     cpSync(createFixture, userRoot(home), { recursive: true });
-    expect((await validate(home, entryPath(home, "stack", "my-api"))).findings).toEqual([]);
-    expect((await validate(home, entryPath(home, "fragment", "my-ci"))).findings).toEqual([]);
+    expect((await validate(home, entryPath(home, "stack", "my-api"))).findings).toEqual([
+      {
+        check: "search-missing",
+        entry: "my-api",
+        file: "search/stacks/my-api.json",
+        kind: "stack",
+        message: "No search card; add a reviewed sidecar for search discovery.",
+        severity: "note",
+      },
+    ]);
+    expect((await validate(home, entryPath(home, "fragment", "my-ci"))).findings).toEqual([
+      {
+        check: "search-missing",
+        entry: "my-ci",
+        file: "search/fragments/my-ci.json",
+        kind: "fragment",
+        message: "No search card; add a reviewed sidecar for search discovery.",
+        severity: "note",
+      },
+    ]);
     const invalid = await createCli(home, [
       "validate",
       entryPath(home, "fragment", "my-app"),
@@ -168,14 +186,32 @@ describe("create an entry", () => {
     // Three real validations load the registry and run its reference checks under concurrent gates.
   }, 30_000);
 
-  test("fresh stack and fragment skeletons have exactly the measured empty finding set [3.1b#1]", async () => {
+  test("fresh stack and fragment skeletons have exactly the missing-card notes [3.1b#1]", async () => {
     const home = createWorkspace();
     await created(await createCli(home, ["create", "stack", "my-api", "--json"]));
     await created(await createCli(home, ["create", "fragment", "my-ci", "--json"]));
     const stack = entryPath(home, "stack", "my-api");
     const fragment = entryPath(home, "fragment", "my-ci");
-    expect((await validate(home, stack)).findings).toEqual([]);
-    expect((await validate(home, fragment)).findings).toEqual([]);
+    expect((await validate(home, stack)).findings).toEqual([
+      {
+        check: "search-missing",
+        entry: "my-api",
+        file: "search/stacks/my-api.json",
+        kind: "stack",
+        message: "No search card; add a reviewed sidecar for search discovery.",
+        severity: "note",
+      },
+    ]);
+    expect((await validate(home, fragment)).findings).toEqual([
+      {
+        check: "search-missing",
+        entry: "my-ci",
+        file: "search/fragments/my-ci.json",
+        kind: "fragment",
+        message: "No search card; add a reviewed sidecar for search discovery.",
+        severity: "note",
+      },
+    ]);
     const parts = metadata(join(stack, "STACK.md"));
     const meta = Schema.decodeUnknownSync(StackMeta, { onExcessProperty: "error" })(
       parts.frontmatter,
@@ -316,7 +352,16 @@ describe("create an entry", () => {
     const before = read(path);
     expect(before).toMatch(/^applies_to:\s*\[\]/m);
     writeFileSync(path, before.replace(/^applies_to:\s*\[\]/m, "applies_to: [my-api]"));
-    expect((await validate(home, dirname(path))).findings).toEqual([]);
+    expect((await validate(home, dirname(path))).findings).toEqual([
+      {
+        check: "search-missing",
+        entry: "my-app",
+        file: "search/fragments/my-app.json",
+        kind: "fragment",
+        message: "No search card; add a reviewed sidecar for search discovery.",
+        severity: "note",
+      },
+    ]);
     expect(Schema.decodeUnknownSync(FragmentMeta)(metadata(path).frontmatter).category).toBe("app");
     // Two creates and two validations cover the invalid-to-valid transition against the registry.
   }, 30_000);

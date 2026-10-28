@@ -20,6 +20,7 @@ export type View = {
   composition?: Composition & { options: ComposeOptions };
   root: string;
   bundled: boolean;
+  only?: { kind: Kind; id: string };
   entries: ReadonlyArray<Entry>;
   rejected: ReadonlyArray<RejectedEntry>;
   all: ReadonlyArray<Entry | RejectedEntry>;

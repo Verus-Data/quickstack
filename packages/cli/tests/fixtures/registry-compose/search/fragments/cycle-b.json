@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "cycle-b",
+  "source": {
+    "digest": "sha256:51b3946c0b4ce4e7cdbd6047fe758d3a6e9a41f233f42e4c76361031e1d4b775",
+    "by": "author",
+    "reviewedAt": "2026-10-27"
+  },
+  "summary": "A synthetic registry entry for CLI tests.",
+  "requests": ["exercise a fixture workflow", "inspect a sample project", "check a local example"],
+  "useCases": [],
+  "synonyms": [],
+  "goodFor": [],
+  "notFor": [],
+  "kind": "fragment",
+  "capabilities": []
+}

@@ -7,6 +7,7 @@ import { GuideResult } from "../schemas/guide";
 import { ListResult } from "../schemas/list";
 import { NewResult } from "../schemas/new";
 import { ProjectRuns } from "../schemas/runs";
+import { SearchResult } from "../schemas/search";
 import { ShowReport } from "../schemas/show";
 import { SkillResult } from "../schemas/skill";
 import { TelemetryResult } from "../schemas/telemetry";
@@ -27,6 +28,7 @@ export const RESULT_SCHEMAS = {
   list: { schema: ListResult, describes: "list --json" },
   new: { schema: NewResult, describes: "new --json" },
   runs: { schema: ProjectRuns, describes: "runs --json" },
+  search: { schema: SearchResult, describes: "search --json" },
   show: { schema: ShowReport, describes: "show --json" },
   skill: { schema: SkillResult, describes: "skill install --json" },
   telemetry: {

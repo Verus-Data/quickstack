@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "lint",
+  "source": {
+    "digest": "sha256:271022978b2000813681bf9218a1708a6c1bad4b6912eb2fe11d6a5e77d38161",
+    "by": "author",
+    "reviewedAt": "2026-10-27"
+  },
+  "summary": "A synthetic registry entry for CLI tests.",
+  "requests": ["exercise a fixture workflow", "inspect a sample project", "check a local example"],
+  "useCases": [],
+  "synonyms": [],
+  "goodFor": [],
+  "notFor": [],
+  "kind": "fragment",
+  "capabilities": []
+}

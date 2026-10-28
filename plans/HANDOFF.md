@@ -15,17 +15,22 @@ Executed: 4.0a, 4.0b, 4.0c (both repositories: `stacks-api` serves the index and
 `sha256:`-named bundles, and its API README has the by-hand deploy), 4.0d (the remote origin; no official
 index URL ships until the host exists, so `bin.ts` passes none and the origin is off unless
 `STACKS_INDEX_URL` is set), 4.4a, 4.4b, 4.4c, 4.5a, and 4.0e (`v1/names.json` here, the directory site in `stacks-api`,
-with no source link until the repository has a public URL). 4.5b is implemented with all 30
-bundled cards drafted (by Codex agents in checkouts without the golden set) and waits on a
-maintainer: `bun run decorate --approve <id>` at a terminal for each card, after reading it,
-then it merges. 4.2c's telemetry-free parts are landed: `v1/directory.json` here, and in
+with no source link until the repository has a public URL). 4.5b is landed: all 30 bundled
+cards were drafted by Codex agents in checkouts without the golden set and approved by a
+maintainer (2026-10-28). 4.2c's telemetry-free parts are landed: `v1/directory.json` here, and in
 `stacks-api` the newest, tag, fragment and removed-stack pages with the three-link nav; its
 telemetry views remain. 4.2f runs fixture-first: the provisional `StatsSummary` and
 `StatsDetail` are in `packages/format/src/stats.ts`, its data layer is landed in `stacks-api`, and
 the charts wait on OpenChart work done outside these plans (another agent owns the site and
 OpenChart). D17 is decided (opt-out, 2026-10-27) and D16 amended: telemetry storage runs on
-SQLite on the Node host now. In flight: 4.1a (CLI telemetry client) and 4.5c (search, on the 4.5b
-branch); then 4.1b, 4.1c, 4.1d, 4.2a, 4.2g and 4.5e in `stacks-api`, all AGREED. Maintainers' steps: review the 47 search
+SQLite on the Node host now. 4.5c is executed (2026-10-28): `stacks search` ranks locally, scoring
+36/36 first results and 4/4 no-match on the golden set (`plans/runs/2026-10-28-search-lexical.md`);
+the embeddings comparison waits on a maintainer's provider key. 4.1b is executed (2026-10-28):
+`stacks-api` accepts `POST /v1/events` into SQLite (development defaults to `.dev/data/`,
+production needs `STACKS_DB_PATH`, `NETWORK_HASH_KEY` and the trusted proxy headers). In flight:
+4.1a (CLI telemetry client), 4.1c (maintenance in `stacks-api`) and 4.5e's CLI side (tests
+first); then 4.1d, 4.2a and 4.2g, all AGREED. 4.5e's route in `stacks-api` imports `rank` from
+`@stacks/format`, so it waits on that package's publication. Maintainers' steps: review the 47 search
 judgments (4.5a), generate the index key and add it to `INDEX_PUBLIC_KEYS`, rerun the bench per
 stack so the index proves something (4.0c), and publish `@stacks/format` (until then the API
 copies the schemas it reads).

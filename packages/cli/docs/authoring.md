@@ -71,6 +71,39 @@ Describe the local-only setup.
 
 Other condition keys are `stack`, `tag`, `tag!=`, `mode` and `with`.
 
+## Add a search card
+
+Bundled contributions include `search/stacks/<id>.json` or
+`search/fragments/<id>.json` beside the registry's entry directories. Personal cards
+are optional. A project registry uses `.stacks/search/`. `create --from` copies a
+source card byte for byte, including its provenance; a new skeleton has no card.
+
+The JSON uses `schemaVersion: 1`, `kind`, `id`, `source`, `summary`, `requests`,
+`useCases`, `synonyms`, `goodFor` and `notFor`. A stack also requires `platforms`,
+`productKinds` and `languages`; a fragment requires `capabilities` and has none of
+those stack fields. Choose closed values from the bundled `search/vocabulary.json`.
+Other roots cannot redefine the vocabulary.
+
+Write one sentence of at most 25 words for `summary`, 3 to 5 example `requests`
+of at most 15 words each, and short phrases for `useCases` (6 maximum), `synonyms`
+(12), `goodFor` (4) and `notFor` (4). Stacks list 1 to 3 languages; fragments list
+0 to 3 capabilities. Optional `caveats` holds up to 3 platform limitations of at
+most 25 words each. Keep all free text within 150 words. Describe needs supported
+by the entry; do not guess a product domain or copy evaluation queries.
+
+`source.digest` is the `searchSourceDigest` of the entry's decoded metadata and
+body. Set `by: "author"` for a handwritten card, or `by: "drafted"` with `model`
+and `promptVersion` for a model draft. `reviewedAt` is a review date (`YYYY-MM-DD`)
+or null for an unread draft. Maintainers can compute the baseline and review stamp
+with the checkout's maintainer restamp operation after reading the card (see
+`docs/maintaining.md` in the repository).
+
+`validate` reports invalid, orphaned, missing, stale, unreviewed and oversized cards.
+Missing personal cards are notes. Missing bundled cards and stale, unreviewed or
+oversized cards are warnings; bundled contributions must have no warnings. Search
+words do not change composition fingerprints or bundle digests. Editing the entry
+text stales its card until it is drafted again or reviewed and restamped.
+
 ## Preview and remove rot
 
 ```sh

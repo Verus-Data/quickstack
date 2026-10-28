@@ -1,5 +1,6 @@
 import { afterEach, expect, test } from "vitest";
 import { findingsAre, fragment, rotWorkspace, ship, stack, validateRot } from "./helpers/rot";
+import { missingSearchNotes } from "./helpers/search-fixture";
 
 const space = rotWorkspace();
 afterEach(() => space.cleanup());
@@ -51,9 +52,11 @@ test.each(
   ship(entry, source, JSON.stringify(format.config(command)));
   if (format.state === "valid-file") ship(entry, `files/${format.script}`, "#!/bin/sh\nexit 0\n");
   const { report } = await validate(root);
-  if (format.state.startsWith("valid")) findingsAre(report.findings, []);
+  if (format.state.startsWith("valid"))
+    findingsAre(report.findings, [...missingSearchNotes({ stacks: ["sample"] })]);
   else
     findingsAre(report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"] }),
       [
         fileRef ? "ref-hook" : "ref-command",
         "error",
@@ -74,6 +77,7 @@ test.each(formats)(
     const source = `adapters/${format.agent}/${format.path}`;
     ship(entry, source, `${JSON.stringify(format.config("bun run missing")).slice(0, -1)},`);
     findingsAre((await validate(root)).report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"] }),
       [
         "ref-json",
         "error",
@@ -109,9 +113,11 @@ test.each(["malformed", "missing-file", "missing-command", "valid-file", "valid-
     if (state === "valid-file") ship(entry, "files/.codex/hooks/check.sh", "#!/bin/sh\nexit 0\n");
     const { report } = await validate(root);
     const referenceCheck = fileRef ? "ref-hook" : "ref-command";
-    if (state.startsWith("valid")) findingsAre(report.findings, []);
+    if (state.startsWith("valid"))
+      findingsAre(report.findings, [...missingSearchNotes({ stacks: ["sample"] })]);
     else
       findingsAre(report.findings, [
+        ...missingSearchNotes({ stacks: ["sample"] }),
         [
           state === "malformed" ? "ref-toml" : referenceCheck,
           "error",
@@ -141,6 +147,7 @@ test("OpenCode permission rules check project commands but leave executable name
     }),
   );
   findingsAre((await validate(root)).report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"] }),
     [
       "ref-command",
       "error",
@@ -182,7 +189,9 @@ test.each(formats)(
           : format.config("bun run audit"),
       ),
     );
-    findingsAre((await validate(root)).report.findings, []);
+    findingsAre((await validate(root)).report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"], fragments: ["tools"] }),
+    ]);
     const missing =
       format.agent === "opencode"
         ? { formatter: { audit: { command: ["bash", "hooks/missing.sh"], extensions: [".ts"] } } }
@@ -190,6 +199,8 @@ test.each(formats)(
     ship(owner, `adapters/${format.agent}/${format.path}`, JSON.stringify(missing));
     const { report } = await validate(root);
     findingsAre(report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"], fragments: ["tools"] }),
+
       [
         "ref-hook",
         "error",
@@ -200,7 +211,7 @@ test.each(formats)(
         },
       ],
     ]);
-    expect(report.findings[0]?.line).toBeGreaterThan(0);
+    expect(report.findings[1]?.line).toBeGreaterThan(0);
   },
 );
 
@@ -212,6 +223,7 @@ test.each(formats)(
     const config = format.agent === "opencode" ? { Formatter: {} } : { Hooks: {} };
     ship(entry, `adapters/${format.agent}/${format.path}`, JSON.stringify(config));
     findingsAre((await validate(root)).report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"] }),
       [
         "ref-config",
         "error",
@@ -235,6 +247,7 @@ test("OpenCode JSONC accepts comments and trailing commas while still reporting 
 }`,
   );
   findingsAre((await validate(root)).report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"] }),
     [
       "ref-command",
       "error",
@@ -263,9 +276,11 @@ test.each(["missing-file", "valid-file", "missing-command", "valid-command"])(
     );
     if (state === "valid-file") ship(entry, `files/${script}`, "#!/bin/sh\nexit 0\n");
     const { report } = await validate(root);
-    if (state.startsWith("valid")) findingsAre(report.findings, []);
+    if (state.startsWith("valid"))
+      findingsAre(report.findings, [...missingSearchNotes({ stacks: ["sample"] })]);
     else
       findingsAre(report.findings, [
+        ...missingSearchNotes({ stacks: ["sample"] }),
         [
           fileRef ? "ref-hook" : "ref-command",
           "error",

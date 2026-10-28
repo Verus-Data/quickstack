@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "notes-app",
+  "source": {
+    "digest": "sha256:1db8a457051342164a0b779bac74465e0a609a42b3ec6f33c10d08bfe7a5c8f1",
+    "by": "author",
+    "reviewedAt": "2026-10-27"
+  },
+  "summary": "A synthetic registry entry for CLI tests.",
+  "requests": ["exercise a fixture workflow", "inspect a sample project", "check a local example"],
+  "useCases": [],
+  "synonyms": [],
+  "goodFor": [],
+  "notFor": [],
+  "kind": "fragment",
+  "capabilities": []
+}

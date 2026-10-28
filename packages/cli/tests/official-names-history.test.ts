@@ -5,6 +5,7 @@ import { fixture, privateKey, proof, readBuild, serve } from "./fixtures/index/h
 import { writeLedger } from "./helpers/ledger";
 import { buildNames, readNames, renameStep, unordered } from "./helpers/official-names";
 import { minimal, writeEntry } from "./helpers/registry";
+import { reviewSearchFixture } from "./helpers/search-fixture";
 import { workspace } from "./helpers/verify";
 
 // Each case owns real builds and local HTTP servers; keep the budget per case at 30 seconds.
@@ -28,6 +29,7 @@ test("sandbox proofs publish pinned names without bundles for omitted default de
       'verify:\n  - { name: deploy-check, layer: check, run: "true" }',
     ).replace("category: tooling", "category: deploy"),
   });
+  reviewSearchFixture(f.registry);
   writeLedger(f.registry, [await proof(f.registry)]);
   await buildNames(f);
   expect(
@@ -63,6 +65,8 @@ test("published names survive re-proven steps, withdrawal and later generations 
   previous = updated;
   rmSync(join(f.registry, "stacks"), { recursive: true });
   rmSync(join(f.registry, "fragments/tools"), { recursive: true });
+  rmSync(join(f.registry, "search/stacks"), { recursive: true });
+  rmSync(join(f.registry, "search/fragments/tools.json"));
   writeFileSync(
     join(f.registry, "removed.json"),
     JSON.stringify({

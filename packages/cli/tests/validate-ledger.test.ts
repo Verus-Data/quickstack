@@ -17,6 +17,7 @@ import {
   stack,
   validateRot,
 } from "./helpers/rot";
+import { missingSearchNotes } from "./helpers/search-fixture";
 
 const space = rotWorkspace();
 afterEach(() => space.cleanup());
@@ -57,15 +58,16 @@ test("a current sandbox pass is clean, and a body edit names the affected key an
   const pass = await record(root);
   writeLedger(root, [pass]);
   const before = await validate(root);
-  findingsAre(before.report.findings, []);
+  findingsAre(before.report.findings, [...missingSearchNotes({ stacks: ["sample"] })]);
   stack(root, "sample", "", setupBody.replace("project", "application"));
   const after = await validate(root);
   findingsAre(after.report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"] }),
     ["ledger-changed", "note", { entry: "sample", text: ["sample"] }],
   ]);
   expect([after.status, after.warnings]).toEqual([before.status, before.warnings]);
   for (const value of ["sample", "sandbox", "claude", pass.date])
-    expect(after.report.findings[0]?.message).toContain(value);
+    expect(after.report.findings[1]?.message).toContain(value);
 });
 
 test("changing only a codex adapter leaves the claude ledger key current [2.2#7]", async () => {
@@ -74,12 +76,17 @@ test("changing only a codex adapter leaves the claude ledger key current [2.2#7]
   ship(entry, "adapters/claude/CLAUDE.md", "Use the brief.\n");
   const codex = ship(entry, "adapters/codex/AGENTS.md", "Use the brief.\n");
   writeLedger(root, [await record(root), await record(root, { agent: "codex" })]);
-  findingsAre((await validate(root)).report.findings, []);
+  findingsAre((await validate(root)).report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"] }),
+  ]);
   writeFileSync(codex, "Read the brief.\n");
   const { report, status, warnings } = await validate(root);
-  findingsAre(report.findings, [["ledger-changed", "note", { entry: "sample", text: ["sample"] }]]);
-  expect(report.findings[0]?.message).toContain("codex");
-  expect(report.findings[0]?.message).not.toContain("claude");
+  findingsAre(report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"] }),
+    ["ledger-changed", "note", { entry: "sample", text: ["sample"] }],
+  ]);
+  expect(report.findings[1]?.message).toContain("codex");
+  expect(report.findings[1]?.message).not.toContain("claude");
   expect([status, warnings]).toEqual([0, 0]);
 });
 
@@ -89,6 +96,7 @@ test("a default pass doesn't prove sandbox, and each preset compares its own las
   writeLedger(root, [normal]);
   const unproven = await validate(root);
   findingsAre(unproven.report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"] }),
     ["ledger-unproven", "note", { entry: "sample", text: ["sample"] }],
   ]);
   expect([unproven.status, unproven.warnings]).toEqual([0, 0]);
@@ -96,9 +104,10 @@ test("a default pass doesn't prove sandbox, and each preset compares its own las
   writeLedger(root, [normal, await record(root)]);
   const changed = await validate(root);
   findingsAre(changed.report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"] }),
     ["ledger-changed", "note", { entry: "sample", text: ["sample"] }],
   ]);
-  expect(changed.report.findings[0]?.message).toContain("default");
+  expect(changed.report.findings[1]?.message).toContain("default");
 });
 
 test("latest infra doesn't report stack failure and doesn't hide a changed last green [2.2#7]", async () => {
@@ -106,11 +115,16 @@ test("latest infra doesn't report stack failure and doesn't hide a changed last 
   const pass = await record(root, { date: "2026-10-20" });
   const infra = await record(root, { result: "infra", date: "2026-10-22" });
   writeLedger(root, [infra, pass]);
-  findingsAre((await validate(root)).report.findings, []);
+  findingsAre((await validate(root)).report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"] }),
+  ]);
   stack(root, "sample", "", `${setupBody}\nKeep it small.\n`);
   const { report, status, warnings } = await validate(root);
-  findingsAre(report.findings, [["ledger-changed", "note", { entry: "sample", text: ["sample"] }]]);
-  expect(report.findings[0]?.message).toContain(pass.date);
+  findingsAre(report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"] }),
+    ["ledger-changed", "note", { entry: "sample", text: ["sample"] }],
+  ]);
+  expect(report.findings[1]?.message).toContain(pass.date);
   expect([status, warnings]).toEqual([0, 0]);
 });
 
@@ -122,9 +136,10 @@ test.each(["fail", "partial"] as const)(
     writeLedger(root, [await record(root, { result, date: "2026-10-22" }), pass]);
     const got = await validate(root);
     findingsAre(got.report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"] }),
       ["ledger-failed", "note", { entry: "sample", text: ["sample"] }],
     ]);
-    expect(got.report.findings[0]?.message).toContain("sample");
+    expect(got.report.findings[1]?.message).toContain("sample");
     expect([got.status, got.warnings]).toEqual([0, 0]);
   },
 );
@@ -140,6 +155,7 @@ test.each(["fail", "partial"] as const)(
     writeLedger(root, [pass, failed]);
     const { report, status, warnings } = await validate(root);
     findingsAre(report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"] }),
       ["ledger-changed", "note", { entry: "sample", text: ["sandbox", "claude", pass.date] }],
       ["ledger-failed", "note", { entry: "sample", text: ["sample"] }],
     ]);
@@ -153,7 +169,10 @@ test.each(["{broken", '{"schemaVersion":2,"records":[]}', '{"schemaVersion":1,"r
     const root = registry();
     writeFileSync(join(root, "runs.json"), text);
     const { report, status } = await validate(root);
-    findingsAre(report.findings, [["ledger-schema", "error", { file: "runs.json" }]]);
+    findingsAre(report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"] }),
+      ["ledger-schema", "error", { file: "runs.json" }],
+    ]);
     expect(status).toBe(2);
   },
 );
@@ -174,20 +193,26 @@ test("an invalid v1 record makes the whole ledger unsuitable for notes even besi
   writeLedger(root, [pass, { ...pass, agent: "unknown-agent" }]);
   stack(root, "sample", "", `${setupBody}\nChanged.\n`);
   const { report } = await validate(root);
-  findingsAre(report.findings, [["ledger-schema", "error", { file: "runs.json" }]]);
+  findingsAre(report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"] }),
+    ["ledger-schema", "error", { file: "runs.json" }],
+  ]);
 });
 
 test("a missing ledger is normal, an empty one is unproven, and newer records don't hide a valid pass [2.2#14]", async () => {
   const root = registry();
-  findingsAre((await validate(root)).report.findings, []);
+  findingsAre((await validate(root)).report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"] }),
+  ]);
   writeLedger(root, []);
   const empty = await validate(root);
   findingsAre(empty.report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"] }),
     ["ledger-unproven", "note", { entry: "sample", text: ["sample"] }],
   ]);
   expect([empty.status, empty.warnings]).toEqual([0, 0]);
   writeLedger(root, [await record(root), { schemaVersion: 2, date: "2099-01-01", result: "fail" }]);
-  findingsAre((await validate(root)).report.findings, []);
+  findingsAre((await validate(root)).report.findings, missingSearchNotes({ stacks: ["sample"] }));
 });
 
 test("runs with added fragments neither prove nor dirty the default composition [2.2#14]", async () => {
@@ -197,10 +222,13 @@ test("runs with added fragments neither prove nor dirty the default composition 
   const extra = await record(root, { with: ["extra"] });
   writeLedger(root, [extra]);
   findingsAre((await validate(root)).report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"], fragments: ["extra"] }),
     ["ledger-unproven", "note", { entry: "sample", text: ["sample"] }],
   ]);
   writeLedger(root, [await record(root), { ...extra, result: "fail", date: "2099-01-01" }]);
-  findingsAre((await validate(root)).report.findings, []);
+  findingsAre((await validate(root)).report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"], fragments: ["extra"] }),
+  ]);
 });
 
 test("last pass uses date then file order, and a current green clears an earlier failed key [2.2#14]", async () => {
@@ -210,9 +238,14 @@ test("last pass uses date then file order, and a current green clears an earlier
   const current = await record(root, { date: "2026-10-22" });
   const fail = { ...current, result: "fail", date: "2026-10-21" };
   writeLedger(root, [current, fail, old]);
-  findingsAre((await validate(root)).report.findings, []);
+  findingsAre((await validate(root)).report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"] }),
+  ]);
   writeLedger(root, [current, { ...old, date: current.date }]);
   const { report } = await validate(root);
-  findingsAre(report.findings, [["ledger-changed", "note", { entry: "sample", text: ["sample"] }]]);
-  expect(report.findings[0]?.message).toContain(current.date);
+  findingsAre(report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"] }),
+    ["ledger-changed", "note", { entry: "sample", text: ["sample"] }],
+  ]);
+  expect(report.findings[1]?.message).toContain(current.date);
 });

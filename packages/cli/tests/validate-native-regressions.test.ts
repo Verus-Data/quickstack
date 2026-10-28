@@ -1,5 +1,6 @@
 import { afterEach, expect, test } from "vitest";
 import { findingsAre, fragment, rotWorkspace, ship, stack, validateRot } from "./helpers/rot";
+import { missingSearchNotes } from "./helpers/search-fixture";
 
 const space = rotWorkspace();
 afterEach(() => space.cleanup());
@@ -27,6 +28,7 @@ test.each([
     const entry = stack(root);
     ship(entry, `files/${path}`, JSON.stringify(config));
     findingsAre((await validate(root)).report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"] }),
       ["ref-config", "error", { entry: "sample", file: `stacks/sample/files/${path}` }],
     ]);
   },
@@ -55,6 +57,7 @@ test("partial merged Cursor contributors retain the missing script's owner and l
   for (const target of [root, owner]) {
     const { report } = await validate(target);
     findingsAre(report.findings, [
+      ...missingSearchNotes({ stacks: target === root ? ["sample"] : [], fragments: ["hooks"] }),
       [
         "ref-hook",
         "error",
@@ -65,7 +68,7 @@ test("partial merged Cursor contributors retain the missing script's owner and l
         },
       ],
     ]);
-    expect(report.findings[0]?.line).toBe(5);
+    expect(report.findings[target === root ? 1 : 0]?.line).toBe(5);
   }
 });
 
@@ -79,7 +82,9 @@ test.each([
     const entry = stack(root);
     ship(entry, "files/.cursor/hooks.json", JSON.stringify(cursor("preToolUse", command)));
     ship(entry, "files/.cursor/hooks/check.sh", "#!/bin/sh\nexit 0\n");
-    findingsAre((await validate(root)).report.findings, []);
+    findingsAre((await validate(root)).report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"] }),
+    ]);
   },
 );
 
@@ -90,7 +95,9 @@ test.each([
   const root = space.temp();
   const entry = stack(root, "sample", 'commands: { lint: "Lint" }');
   ship(entry, `files/${path}`, JSON.stringify(config));
-  findingsAre((await validate(root)).report.findings, []);
+  findingsAre((await validate(root)).report.findings, [
+    ...missingSearchNotes({ stacks: ["sample"] }),
+  ]);
 });
 
 test.each(["hook", "formatter"])(
@@ -105,9 +112,12 @@ test.each(["hook", "formatter"])(
         : { formatter: { check: { command: ["bash", "./missing.sh"] } } };
     ship(entry, `files/${path}`, JSON.stringify(config));
     findingsAre((await validate(root)).report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"] }),
       ["ref-hook", "error", { entry: "sample", text: ["missing.sh"] }],
     ]);
     ship(entry, "files/missing.sh", "#!/bin/sh\nexit 0\n");
-    findingsAre((await validate(root)).report.findings, []);
+    findingsAre((await validate(root)).report.findings, [
+      ...missingSearchNotes({ stacks: ["sample"] }),
+    ]);
   },
 );

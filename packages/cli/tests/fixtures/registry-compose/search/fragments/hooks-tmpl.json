@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "hooks-tmpl",
+  "source": {
+    "digest": "sha256:72157d4957c987308c333cb8d0e298fcd29ff07d8cb5d494c29718e7a1940948",
+    "by": "author",
+    "reviewedAt": "2026-10-27"
+  },
+  "summary": "A synthetic registry entry for CLI tests.",
+  "requests": ["exercise a fixture workflow", "inspect a sample project", "check a local example"],
+  "useCases": [],
+  "synonyms": [],
+  "goodFor": [],
+  "notFor": [],
+  "kind": "fragment",
+  "capabilities": []
+}

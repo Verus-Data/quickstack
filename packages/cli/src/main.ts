@@ -52,11 +52,16 @@ function rootHelp(args: readonly string[]): boolean {
 function usage(error: CliError.CliError): Usage {
   if (error._tag === "ShowHelp") {
     const nested = error.errors.find(
-      (e) => e._tag === "UnknownSubcommand" || e._tag === "InvalidValue",
+      (e) =>
+        e._tag === "UnknownSubcommand" || e._tag === "InvalidValue" || e._tag === "MissingArgument",
     );
     return nested ? usage(nested) : new Usage();
   }
   if (error._tag === "InvalidValue") return invalidValueUsage(error);
+  if (error._tag === "MissingArgument")
+    return new Usage({
+      details: { flag: error.argument, value: "", expected: "a required argument" },
+    });
   if (error._tag === "UnknownSubcommand")
     return new Usage({
       details: {

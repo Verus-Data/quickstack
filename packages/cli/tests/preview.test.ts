@@ -22,16 +22,17 @@ import { quiet, runCli, terminal } from "./helpers/cli";
 import { bundledAt, composeExit } from "./helpers/compose";
 import { spawnGit } from "./helpers/git";
 import { minimal, writeEntry } from "./helpers/registry";
+import { reviewSearchFixture } from "./helpers/search-fixture";
 import {
   failure,
   fingerprintFor,
-  fragment,
+  bundledFragment as fragment,
   previewResult,
   settings,
   shipped,
   showReport,
   snapshot,
-  stack,
+  bundledStack as stack,
   success,
 } from "./helpers/show-preview";
 import { workspace } from "./helpers/verify";
@@ -42,6 +43,7 @@ function fixture() {
   const home = space.dir();
   const registry = space.dir();
   const entry = stack(registry);
+  reviewSearchFixture(registry);
   const preview = (args: string[] = []) =>
     runCli(["validate", "--brief", "sample", ...args, "--json"], {
       home,
@@ -169,6 +171,7 @@ test.each(["show", "preview"])(
       markdown,
       readFileSync(markdown, "utf8").replaceAll('run: "true"', 'run: "entry-command"'),
     );
+    reviewSearchFixture(registry);
     const args =
       command === "show"
         ? ["show", "sample", "--json"]
@@ -204,14 +207,23 @@ test("preview finds a relative registry with spaces through a symlink from anoth
   const cwd = join(home, "café work");
   mkdirSync(cwd);
   symlinkSync(registry, join(cwd, "linked registry"));
+  const bundled = space.dir();
+  reviewSearchFixture(bundled);
   const result = await runCli(["validate", "linked registry", "--brief", "sample", "--json"], {
     home,
     env: quiet,
-    host: { cwd, registry: join(home, "absent") },
+    host: { cwd, registry: bundled },
   });
   expect(previewResult(result)).toMatchObject({
     stack: "sample",
-    findings: [],
+    findings: [
+      {
+        check: "vocabulary-ignored",
+        severity: "note",
+        file: "search/vocabulary.json",
+        message: "Only the bundled search vocabulary is used; this file is ignored.",
+      },
+    ],
     fingerprint: await fingerprintFor(registry, { preset: "default" }),
   });
 });
@@ -286,6 +298,7 @@ test("an explicitly added app gets a split brief, the 9000-word cap and a finger
     ).replace("category: tooling", "category: app"),
     body: "# APPLICATION BODY\n",
   });
+  reviewSearchFixture(registry);
   const report = previewResult(await preview(["--with", "application", "--sandbox"]));
   expect(report).toMatchObject({
     app: "application",

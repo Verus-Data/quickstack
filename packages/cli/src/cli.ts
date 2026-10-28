@@ -9,6 +9,7 @@ import { newCommand } from "./commands/new";
 import { root } from "./commands/root";
 import { runsCommand } from "./commands/runs";
 import { schemaCommand } from "./commands/schema";
+import { searchCommand } from "./commands/search";
 import { showCommand } from "./commands/show";
 import { skillCommand } from "./commands/skill";
 import { telemetryCommand } from "./commands/telemetry";
@@ -40,6 +41,7 @@ export const cli = root.pipe(
     newCommand.pipe(notify),
     runsCommand.pipe(notify),
     schemaCommand,
+    searchCommand.pipe(notify),
     showCommand.pipe(notify),
     skillCommand.pipe(notify),
     telemetryCommand,

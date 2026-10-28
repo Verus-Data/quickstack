@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
   "gate": {
-    "mrr": 0,
-    "recallAt3": 0,
-    "fragmentRecallAt5": 0
+    "mrr": 1,
+    "recallAt3": 0.98,
+    "fragmentRecallAt5": 1
   },
   "queries": [
     {

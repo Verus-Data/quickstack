@@ -6,6 +6,7 @@ import { BUDGET } from "../src/core/validate/budget";
 import { quiet, runCli, terminal } from "./helpers/cli";
 import { ledgerRecord, writeLedger } from "./helpers/ledger";
 import { minimal, writeEntry } from "./helpers/registry";
+import { reviewSearchFixture } from "./helpers/search-fixture";
 import {
   failure,
   fingerprintFor,
@@ -36,6 +37,7 @@ test("bundled stack metadata and its newest default-composition proof decode as 
     'fragments:\n  required: [required]\n  default: [helper]\n  optional: [extra]\ntools: [review-tool]\ndeps:\n  app: [toolkit]\ndecisions: [Use the small API (default)]\nenv:\n  APP_PORT: "3000"\ncommands:\n  make-check: Run all checks',
   );
   for (const id of ["required", "helper", "extra"]) fragment(registry, id);
+  reviewSearchFixture(registry);
   const record = await ledgerRecord(registry);
   writeLedger(registry, [
     record,

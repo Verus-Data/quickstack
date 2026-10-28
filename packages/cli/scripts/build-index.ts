@@ -17,7 +17,14 @@ import { mergeNames } from "./index/names";
 import { currentIndex } from "./index/proof";
 import { carryForward, publish } from "./index/publish";
 import { releaseNames } from "./index/release-names";
-import { checkHost, fetchIndex, fetchNames, fetchPreviousDirectory } from "./index/remote";
+import {
+  checkHost,
+  fetchIndex,
+  fetchNames,
+  fetchPreviousDirectory,
+  fetchSearch,
+} from "./index/remote";
+import { indexSearch } from "./index/search";
 
 const root = fileURLToPath(new URL("../registry", import.meta.url));
 const packageRoot = fileURLToPath(new URL("..", import.meta.url));
@@ -53,6 +60,10 @@ const program = Effect.gen(function* () {
     options.previous === null
       ? null
       : yield* fetchNames(new URL("names.json", options.previous).href);
+  const previousSearch =
+    options.previous === null
+      ? null
+      : yield* fetchSearch(new URL("search.json", options.previous).href);
   const previousDirectory =
     options.previous === null
       ? null
@@ -85,6 +96,12 @@ const program = Effect.gen(function* () {
     out: path.resolve(options.out),
     key: options.key,
     bundles: selected.bundles,
+    search: yield* indexSearch({
+      root,
+      entries: selected.entries,
+      bundles: selected.bundles,
+      previous: previousSearch,
+    }),
     names,
     directory,
     index: {

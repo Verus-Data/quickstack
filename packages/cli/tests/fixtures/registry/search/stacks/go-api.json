@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "go-api",
+  "source": {
+    "digest": "sha256:d2a9bf91bdac5b000d7a177909d7d6a5b472d468619ed816f9c18ec3709e2066",
+    "by": "author",
+    "reviewedAt": "2026-10-27"
+  },
+  "summary": "A synthetic registry entry for CLI tests.",
+  "requests": ["exercise a fixture workflow", "inspect a sample project", "check a local example"],
+  "useCases": [],
+  "synonyms": [],
+  "goodFor": [],
+  "notFor": [],
+  "kind": "stack",
+  "platforms": ["cli"],
+  "productKinds": ["cli-tool"],
+  "languages": ["typescript"]
+}
