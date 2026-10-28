@@ -5,13 +5,12 @@ import {
   type OfficialNames,
   type StackMeta,
 } from "@stacks/format";
-import { Console, Duration, Effect, FileSystem, Path, Schema } from "effect";
+import { Console, Effect, FileSystem, Path, Schema } from "effect";
 import { parseDocument } from "yaml";
-import { AppConfig, GIT_REPOSITORY_VARIABLES } from "../../src/config";
 import { compose } from "../../src/core/compose/compose";
 import { decodeEntry, type Entry, isStack, splitFrontmatter } from "../../src/core/registry/entry";
 import { Registry } from "../../src/core/registry/registry";
-import { Processes } from "../../src/services/processes";
+import { releaseTags, withReleaseRegistry } from "./history";
 
 type Source = OfficialNames["sources"][number];
 
@@ -105,44 +104,8 @@ const releaseSource = Effect.fn("index.releaseSource")(function* (root: string, 
 });
 
 export const releaseNames = Effect.fn("index.releaseNames")(function* (cwd: string) {
-  const fs = yield* FileSystem.FileSystem;
-  const path = yield* Path.Path;
-  const processes = yield* Processes;
-  const env = (yield* AppConfig).childEnv(GIT_REPOSITORY_VARIABLES);
-  const exec = (argv: readonly [string, ...string[]], directory = cwd) =>
-    processes
-      .exec({ argv, cwd: directory, env, timeout: Duration.seconds(30) })
-      .pipe(
-        Effect.flatMap((result) =>
-          result.exitCode === 0 && !result.timedOut && !result.truncated
-            ? Effect.succeed(result.stdout.trim())
-            : Effect.fail(
-                new Error(
-                  `Official names: ${argv.slice(0, 2).join(" ")} failed while reading release history.`,
-                ),
-              ),
-        ),
-      );
-  const tags = (yield* exec(["git", "tag", "--list", "v*"])).split("\n").filter(Boolean);
-  const checkout = yield* exec(["git", "rev-parse", "--show-toplevel"]);
   const sources: Source[] = [];
-  for (const tag of tags) {
-    const source = yield* Effect.scoped(
-      Effect.gen(function* () {
-        const temporary = yield* fs.makeTempDirectoryScoped({ prefix: "stacks-names-" });
-        const archive = path.join(temporary, "registry.tar");
-        yield* exec(
-          ["git", "archive", "--format=tar", `--output=${archive}`, tag, "packages/cli/registry/"],
-          checkout,
-        );
-        yield* exec(["tar", "-xf", archive, "-C", temporary]);
-        const root = path.join(temporary, "packages/cli/registry");
-        return yield* releaseSource(root, tag).pipe(
-          Effect.provide(Registry.layer([{ origin: "bundled", path: root }])),
-        );
-      }),
-    );
-    sources.push(source);
-  }
+  for (const tag of yield* releaseTags(cwd))
+    sources.push(yield* withReleaseRegistry(cwd, tag, (root) => releaseSource(root, tag)));
   return sources;
 });
