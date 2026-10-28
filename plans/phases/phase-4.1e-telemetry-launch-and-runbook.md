@@ -1,6 +1,6 @@
 # Phase 4.1e: Telemetry launch and runbook
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: IN PROGRESS 2026-10-28 (on the Node host, amended D16; the live launch stays the maintainers' step)
 
 | Field | Value |
 |---|---|
@@ -110,12 +110,12 @@ If the API must be rolled back or taken down after the enabling release: deploy 
 
 ## Acceptance tests
 
-Locally, under the Wrangler local runtime with local D1 and R2:
+Locally, against the Node server over a temporary SQLite file (`STACKS_DB_PATH`) and a temporary `STACKS_ARCHIVE_DIR` (amended D16; see the 2026-10-28 line below):
 
-- `smoke.ts --host http://localhost:<port>` against a migrated local database: 202, both events stored `excluded_install` with a `cliVersion` listed in `released_versions`, no `projects` row, exit 0. Against a database without the smoke-id migration: exit non-zero naming the missing exclusion. Against a Worker with no `NETWORK_HASH_KEY`: exit non-zero reporting the 503.
-- Every file in `scripts/queries/` except `test-flag.sql` parses as one `SELECT` statement (a test runs each against the local database inside a read-only check that fails on any write).
-- `test-flag.sql` followed by a scheduled run under the local runtime produces one `alert` line with a `test` flag.
-- The launch steps run in order against the local runtime by a script in the test (minus the domain and bot-challenge steps 5 and 6): every check in the table passes, including the 503 before the secret and the 202 after it.
+1. `smoke.ts --host http://localhost:<port> --db <file>` against a migrated database: 202, both events stored `excluded_install` with a `cliVersion` listed in `released_versions`, no `projects` row, exit 0. Against a database without the smoke-id migration: exit non-zero naming the missing exclusion. Against a server with no `NETWORK_HASH_KEY`: exit non-zero reporting the 503.
+2. Every file in `scripts/queries/` except `test-flag.sql` is one `SELECT` statement: a test runs each against a migrated database opened read-only, and any write fails it.
+3. `test-flag.sql` followed by one `maintain` run produces one `alert` log line with a `test` flag.
+4. The launch steps run in order against a local server by a script in the test (minus the proxy, domain and bot-challenge steps): every check in the table passes, including the 503 before the secret and the 202 after it.
 
 ## Exit criteria
 
@@ -125,6 +125,8 @@ Locally, under the Wrangler local runtime with local D1 and R2:
 - Only then is the enabling release published (step 11).
 
 ## What this plan may get wrong
+
+- 2026-10-28 (amended D16; 4.0f deferred): the host is the Node server in one Docker container on the maintainers' machine (`bun run deploy`, `docs/operations.md` in `stacks-api`), storing in SQLite at `STACKS_DB_PATH` with the archive under `STACKS_ARCHIVE_DIR`, and running `maintain` from a Node timer under 4.1c's lease. Read the launch table that way: step 1 creates the data and archive directories on the host volume (not reachable from the proxy); step 2's migrations run at server start; steps 3 and 4 deploy and then set `NETWORK_HASH_KEY` in the host's env file and redeploy; step 5 is the maintainers' proxy and domain; step 7 waits for the timer's first run. The queries run read-only with `sqlite3 -readonly "$STACKS_DB_PATH" < scripts/queries/<file>.sql` inside the container (`test-flag.sql` without `-readonly`), and `smoke.ts` takes `--db` for its read-back. Rollback is redeploying the previous image, or stopping the container. The acceptance tests are numbered and rewritten for this host.
 
 - Step 6 depends on the host's default security settings, which change. The check is the point: an HTML challenge on `/v1/events` would silently drop every client batch into backoff.
 - The acceptance run's install sends real events from a maintainer's network. Excluding its install id covers it; the network is also excluded for 30 days if the maintainer wants to be thorough.

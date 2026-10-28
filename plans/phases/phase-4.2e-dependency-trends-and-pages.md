@@ -1,6 +1,6 @@
 # Phase 4.2e: Dependency trends and pages
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: IN PROGRESS 2026-10-28 (D25 decided)
 
 | Field | Value |
 |---|---|
@@ -91,17 +91,17 @@ The routes answer the same cases: 404 `NotFound` for a name not on the allowlist
 
 ## Acceptance tests
 
-- Over seeded `project_deps`: projects using a dependency, major shares, adoption, drop and transition counts match hand computations; a project reporting the same major twice counts once.
-- A project whose first report was 120 days ago (raw events pruned) and whose latest shows a new major counts as a transition.
-- One install with 20 projects using X counts 3; a dependency with an effective sample under 5 is suppressed on every page.
-- Lift over a seeded window matches a hand computation; a pair under the sample floor is not shown.
-- The with-and-without green rate appears only when both cells pass the rate thresholds.
-- Before the publishing gate is met, the built `/deps/npm/react/` shows the fixed sentence.
-- An allowlisted dependency no project reported, after the gate is met, shows the fixed sentence; a name not on the allowlist has no page and `GET /v1/deps/npm/<name>/stats` returns 404; with `DEPS_ENABLED` off, no `/deps/` page is built, `/deps/npm/` returns the static 404, and no built page's nav links to Dependencies (4.2c's nav rule), while with it on every page's nav does; a name with `<` in a fixture is escaped; no built dependency page contains a `<script>` other than the theme toggle and the copy script (4.0e).
-- Only the `/v1/deps/.../stats` routes and `StatsDetail.deps` carry dependency numbers; every response decodes with its `packages/format` schema.
-- Under the local Workers runtime, the daily trigger writes the dependency rows and `GET /v1/deps/npm/stats` returns them with the cache header; the site built against that runtime renders them on `/deps/npm/`.
-- `GET /v1/deps/npm/react/stats?from=2026-09-01&to=2026-09-30` returns exactly the stored points with end days in September; `interval=28` returns every fourth; a span over 366 days, `from` after `to` or a malformed date is `400 BadInput`, as on 4.2a's routes.
-- Page checks, built through 4.2f's components: a dependency page shows its transitions as a `from → to` table with counts and renders no sankey; every green-rate value has its interval and `n` and every major share figure names its population (4.2f test 3's scan); Axe (through Playwright) reports no violations on `/deps/npm/` and a dependency page, in light and dark.
+1. Over seeded `project_deps`: projects using a dependency, major shares, adoption, drop and transition counts match hand computations; a project reporting the same major twice counts once.
+2. A project whose first report was 120 days ago (raw events pruned) and whose latest shows a new major counts as a transition.
+3. One install with 20 projects using X counts 3; a dependency with an effective sample under 5 is suppressed on every page.
+4. Lift over a seeded window matches a hand computation; a pair under the sample floor is not shown.
+5. The with-and-without green rate appears only when both cells pass the rate thresholds.
+6. Before the publishing gate is met, the built `/deps/npm/react/` shows the fixed sentence.
+7. An allowlisted dependency no project reported, after the gate is met, shows the fixed sentence; a name not on the allowlist has no page and `GET /v1/deps/npm/<name>/stats` returns 404; with `DEPS_ENABLED` off, no `/deps/` page is built, `/deps/npm/` returns the static 404, and no built page's nav links to Dependencies (4.2c's nav rule), while with it on every page's nav does; a name with `<` in a fixture is escaped; no built dependency page contains a `<script>` other than the theme toggle and the copy script (4.0e).
+8. Only the `/v1/deps/.../stats` routes and `StatsDetail.deps` carry dependency numbers; every response decodes with its `packages/format` schema.
+9. On the Node server over a temporary SQLite file, one `maintain` run's daily rollup step writes the dependency rows and `GET /v1/deps/npm/stats` returns them with the cache header; the site built against that server renders them on `/deps/npm/`.
+10. `GET /v1/deps/npm/react/stats?from=2026-09-01&to=2026-09-30` returns exactly the stored points with end days in September; `interval=28` returns every fourth; a span over 366 days, `from` after `to` or a malformed date is `400 BadInput`, as on 4.2a's routes.
+11. Page checks, built through 4.2f's components: a dependency page shows its transitions as a `from → to` table with counts and renders no sankey; every green-rate value has its interval and `n` and every major share figure names its population (4.2f test 3's scan); Axe (through Playwright) reports no violations on `/deps/npm/` and a dependency page, in light and dark.
 
 ## Exit criteria
 
@@ -116,3 +116,4 @@ The routes answer the same cases: 404 `NotFound` for a name not on the allowlist
 - 2026-10-27: the plan had no dependency route, because the Worker rendered the pages from `window_metrics` directly. Under D35 the pages are built by the site, which needs the numbers over HTTP, so two read routes and `StatsDetail.deps` exist with the site build as their reader.
 - 2026-10-27: the routes were `GET /v1/stats/deps/:ecosystem` and `/v1/stats/deps/:ecosystem/:name`, which end in a path param against the API's routing rule. They are now `GET /v1/deps/:ecosystem/stats` and `GET /v1/deps/:ecosystem/:name/stats`, under the resource and ending in a literal, as 4.2a's detail routes are.
 - The with-and-without green rate invites a causal reading it doesn't support. The page states it is a comparison of projects, not an effect of the dependency.
+- 2026-10-28 (execution): D25 is decided. On the Node host (amended D16) the dimensions are steps of 4.2a's daily rollup inside 4.1c's `maintain`, over SQLite, and acceptance test 9 (numbered with the rest on this date) reads that way. Under D38 every list in `StatsDeps`, `StatsDep` and `StatsDetail.deps` (dependencies, major shares, transitions, co-installed lift, per-stack cells, series) is columnar, through the format package's `Columnar` schema, and those schemas ship in `@steamfield/stacks-format` 0.3.0 with the stats changes. The site already has the dependency pages, `DEPS_ENABLED` and a provisional local copy of these schemas (`apps/web/src/data/deps-schema.ts`, the frontend work on fixtures); the format schemas start from that shape, and this sub-phase replaces the copy and points the pages at the real routes rather than building them again. The rollup reads only `project_deps`, so it is built and tested on seeded rows before 4.2d's ingest lands.

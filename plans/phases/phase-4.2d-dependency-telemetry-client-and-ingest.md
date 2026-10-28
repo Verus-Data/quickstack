@@ -1,6 +1,6 @@
 # Phase 4.2d: Dependency telemetry, client and ingest
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: IN PROGRESS 2026-10-28 (D25 decided)
 
 | Field | Value |
 |---|---|
@@ -109,19 +109,21 @@ The write-time rule is 4.1b's: an event stored with any `excluded` value writes 
 
 ## Acceptance tests
 
-- Fixture projects for each ecosystem: the reader returns exactly the allowlisted names with the expected majors; a 0.x package gives `"0.<minor>"`; a missing `node_modules` entry gives `major: null`; a non-allowlisted dependency appears nowhere in the serialized event (property test over random package names).
-- A `go.mod` requiring `github.com/a/b/v2 v2.3.1` with `github.com/a/b` allowlisted reports major `"2"`; a Poetry project's `[tool.poetry.dependencies]` names are read.
-- The build fails on a bundled entry whose `deps` names a package in no ecosystem of `allowlist.json`.
-- Ingest with an allowlist asset whose signature fails stores `verify` events with every `deps` entry dropped. 4.1c's prune of an event deletes its `event_deps` rows.
-- A symlinked `package.json` pointing outside the project is not read; a 3 MB lock file is skipped.
-- No process is spawned while reading (the test's `Processes` fake records zero calls).
-- An allowlist with a bad signature: no `deps` sent, verify output unchanged.
-- First green verify sends `deps`; a second green verify the next day doesn't; one 8 days later does. A failed verify never does.
-- A user notified under version 1: the next enabled run shows the new notice and sends no `deps`; the run after sends them. With `DO_NOT_TRACK=1`, no notice and nothing sent.
-- `verify --json` stdout and exit code are byte-identical with and without the reader, and `verify` makes no allowlist request.
-- Ingest: a v2 event with an unlisted name stores the event without that entry; a v1 event still validates; the v1 snapshot test passes unchanged.
-- Posting the same v2 event twice leaves `project_deps` unchanged. An excluded event writes no `project_deps` row; after 4.1d excludes an install and rechecks, that install's `project_deps` rows are gone.
-- A project reporting `react` major 18 and later 19 has two `project_deps` rows with ordered `first_seen_day`.
+1. Fixture projects for each ecosystem: the reader returns exactly the allowlisted names with the expected majors; a 0.x package gives `"0.<minor>"`; a missing `node_modules` entry gives `major: null`; a non-allowlisted dependency appears nowhere in the serialized event (property test over random package names).
+2. A `go.mod` requiring `github.com/a/b/v2 v2.3.1` with `github.com/a/b` allowlisted reports major `"2"`; a Poetry project's `[tool.poetry.dependencies]` names are read.
+3. The build fails on a bundled entry whose `deps` names a package in no ecosystem of `allowlist.json`.
+4. Ingest with an allowlist asset whose signature fails stores `verify` events with every `deps` entry dropped. 4.1c's prune of an event deletes its `event_deps` rows.
+5. A symlinked `package.json` pointing outside the project is not read; a 3 MB lock file is skipped.
+6. No process is spawned while reading (the test's `Processes` fake records zero calls).
+7. An allowlist with a bad signature: no `deps` sent, verify output unchanged.
+8. First green verify sends `deps`; a second green verify the next day doesn't; one 8 days later does. A failed verify never does.
+9. A user notified under version 1: the next enabled run shows the new notice and sends no `deps`; the run after sends them. With `DO_NOT_TRACK=1`, no notice and nothing sent.
+10. `verify --json` stdout and exit code are byte-identical with and without the reader, and `verify` makes no allowlist request.
+11. Ingest: a v2 event with an unlisted name stores the event without that entry; a v1 event still validates; the v1 snapshot test passes unchanged.
+12. Posting the same v2 event twice leaves `project_deps` unchanged. An excluded event writes no `project_deps` row; after 4.1d excludes an install and rechecks, that install's `project_deps` rows are gone.
+13. A project reporting `react` major 18 and later 19 has two `project_deps` rows with ordered `first_seen_day`.
+
+This repository tests 1-3 and 5-10, and the v1 snapshot half of 11 (`packages/format`); `stacks-api` tests 4, 11 and 12-13. The plan carries no `Acceptance tests: traced` line, as 4.5e doesn't, because the trace check sees one repository.
 
 ## Exit criteria
 
@@ -135,3 +137,4 @@ The write-time rule is 4.1b's: an event stored with any `excluded` value writes 
 - Only root files are read, so a monorepo stack reports only its root. If a bundled stack is a workspace, the reader needs its member list, which is a bounded extension.
 - An allowlist curated by hand drifts. Adding every name the bundled entries mention keeps the important ones in; anything else is a maintainer's choice, reviewed like code.
 - A second notice may cost users who turn telemetry off when they see it. That is the right cost for a new kind of data.
+- 2026-10-28 (execution): D25 is decided. Three corrections. First, the roadmap's "Dependency allowlist" contract owns the serving rule: `v1/allowlist.json` is a signed static file in the index tree beside `v1/names.json`, with no `GET /v1/allowlist` route; read "served at `GET /v1/allowlist`" as that file, and the site's `read-deps.ts` moves to it. Second, "refreshed only where 4.0d refreshes the index" never fires without `STACKS_INDEX_URL`, while the allowlist comes from `AppConfig.apiUrl`; the CLI refreshes it, through the cached-fetch module 4.0d's index and 4.2b's stats share, on the commands that fetch stats (`list`, `show`) and on `new`, never during `verify`. With `INDEX_PUBLIC_KEYS` still empty, no allowlist verifies outside tests, so nothing is sent until the maintainers add the key. Third, on the Node host (amended D16) "the per-event D1 batch" is 4.1b's per-event SQLite transaction, and `TelemetryEvent` stays the v1 export while v2 is exported beside it (`TELEMETRY_SCHEMA_VERSION` stays 1 until the client sends v2), both in `@steamfield/stacks-format` 0.3.0. Acceptance tests are numbered from this date.

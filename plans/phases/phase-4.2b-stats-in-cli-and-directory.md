@@ -1,6 +1,6 @@
 # Phase 4.2b: Stats in the CLI and the directory
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: IN PROGRESS 2026-10-28 (the CLI half; the site section is 4.2f's frontend work)
 
 | Field | Value |
 |---|---|
@@ -83,17 +83,17 @@ This sub-phase builds the section's data path and its three states with plain ma
 
 ## Acceptance tests
 
-- CLI against a real local stats server: `list --json` items gain `stats`, with `greenRateUpper` and `sample` equal to the summary's `greenRate.upper` and `greenRate.sample`, and both `null` when the rate is suppressed; a summary served in two pages gives the same `stats` as one page; with the server down, hanging, returning bad JSON, or under `--offline`, stdout equals the output without the feature except the absent field, and the command finishes within 1.5 s of the offline run.
-- `published: false`: no `stats` field.
-- A second `list` within 10 minutes of a failure makes no request. A failed detail fetch for one entry backs off only that entry's state file.
-- No env variable changes the stats host of a release build: with only `STACKS_API_URL`, `STACKS_DEV_API_URL` or similar set and `releaseBuild: true`, requests still go to `AppConfig.apiUrl` (4.2g tests the source-build case).
-- With `STACKS_INDEX_URL` set to a non-default host: no stats request.
-- `verify` makes no stats request.
-- `show go-cli --json` against the local server has `stats` that decodes with `StatsDetail`, including `byAgent` and the series with a seeded change marker; with the server down, `show --json` equals the output without the feature minus the field. A user-directory copy of `go-cli` makes no detail request and has no `stats`.
-- Human `show` prints the three most-failing steps and `content changed <date>` for a seeded marker inside the window.
-- Against a server reporting `population: "seeded development data"`, human and agent `list` print `green 91% (n=180, seeded)` and `show` prints `seeded` in its summary line; with `"stacks projects"`, neither prints `seeded`.
-- Site, built against a local API with seeded metrics: `/stacks/go-cli/index.html` contains the stats section, the per-step failure shares and the computed and through dates; with the gate unmet, the section is the fixed "Not enough runs yet" sentence and the rest of the page is unchanged; a stack name or step name containing `<` in a fixture is escaped; with the API down, the build fails; with `STATS_ENABLED` off, no page has a stats section and no stats request is made.
-- The island, given a response with a newer `through`, replaces the section; given an older one or a failed fetch, leaves it.
+1. CLI against a real local stats server: `list --json` items gain `stats`, with `greenRateUpper` and `sample` equal to the summary's `greenRate.upper` and `greenRate.sample`, and both `null` when the rate is suppressed; a summary served in two pages gives the same `stats` as one page; with the server down, hanging, returning bad JSON, or under `--offline`, stdout equals the output without the feature except the absent field, and the command finishes within 1.5 s of the offline run.
+2. `published: false`: no `stats` field.
+3. A second `list` within 10 minutes of a failure makes no request. A failed detail fetch for one entry backs off only that entry's state file.
+4. No env variable changes the stats host of a release build: with only `STACKS_API_URL`, `STACKS_DEV_API_URL` or similar set and `releaseBuild: true`, requests still go to `AppConfig.apiUrl` (4.2g tests the source-build case).
+5. With `STACKS_INDEX_URL` set to a non-default host: no stats request.
+6. `verify` makes no stats request.
+7. `show go-cli --json` against the local server has `stats` that decodes with `StatsDetail`, including `byAgent` and the series with a seeded change marker; with the server down, `show --json` equals the output without the feature minus the field. A user-directory copy of `go-cli` makes no detail request and has no `stats`.
+8. Human `show` prints the three most-failing steps and `content changed <date>` for a seeded marker inside the window.
+9. Against a server reporting `population: "seeded development data"`, human and agent `list` print `green 91% (n=180, seeded)` and `show` prints `seeded` in its summary line; with `"stacks projects"`, neither prints `seeded`.
+10. Site, built against a local API with seeded metrics: `/stacks/go-cli/index.html` contains the stats section, the per-step failure shares and the computed and through dates; with the gate unmet, the section is the fixed "Not enough runs yet" sentence and the rest of the page is unchanged; a stack name or step name containing `<` in a fixture is escaped; with the API down, the build fails; with `STATS_ENABLED` off, no page has a stats section and no stats request is made.
+11. The island, given a response with a newer `through`, replaces the section; given an older one or a failed fetch, leaves it.
 
 ## Exit criteria
 
@@ -106,5 +106,6 @@ This sub-phase builds the section's data path and its three states with plain ma
 
 - A stack author may want the daily series as a chart. With the site in Astro that is one more island over the detail route; it is left out until someone asks, and the series is in `show --json` for anyone who wants to plot it. 2026-10-27: the maintainers asked; [4.2f](phase-4.2f-stats-pages-and-charts.md) draws it, as a static chart with one island.
 - 2026-10-27: `stats` carried only `greenRate` and `greenRateLower`, so an agent asked to quote a stack's interval and `n` couldn't from `list --json`; `greenRateUpper` and `sample` are added. The detail routes moved to `/v1/stacks/:id/stats` and `/v1/fragments/:id/stats`, and the summary is paged (4.2a).
+- 2026-10-28 (execution): this run builds the CLI half only (tests 1-9, in this repository); the site's stats section (tests 10-11) is the frontend work in `stacks-api/apps/web` that 4.2f already carries. The routes are columnar under D38 (`@steamfield/stacks-format` 0.3.0's `Columnar` schemas decode to rows, so the cache holds decoded rows). `AppConfig.apiUrl` and the loopback `STACKS_DEV_API_URL` already exist (4.5e); this adds `DEFAULT_API_URL`, still unset until a host exists, so a release build fetches no stats yet. The fetch reuses one cached-fetch module extracted from 4.0d's remote index, shared with 4.2d's allowlist. Acceptance tests are numbered from this date; the plan carries no traced line because tests 10-11 live in `stacks-api`.
 - Agents may ignore `stats`. Test with a bench run (2.0b) where two stacks fit and see whether the pick and its explanation change before promoting it.
 - 2026-10-27: the plan rendered stats into the pages in the Worker by replacing a marker, with no client JavaScript. Under D35 the pages are an Astro site built at build time, so the Worker renders nothing and fresher numbers come from an island. A rebuild per daily rollup costs one CI run a day; if that becomes a burden, rely on the island and rebuild only after index deploys.
