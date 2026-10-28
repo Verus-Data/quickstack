@@ -38,7 +38,8 @@
     "build a terminal utility whose commands also work in scripts",
     "let users override saved settings with environment variables and flags",
     "make command failures explain how to fix the problem",
-    "give my Go tool consistent help and version output"
+    "give my Go tool consistent help and version output",
+    "run a Go binary on machines without Node installed"
   ],
   "useCases": [
     "command-line automation",

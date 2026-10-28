@@ -29,7 +29,8 @@
   ],
   "productKinds": [
     "mobile-app",
-    "fullstack"
+    "fullstack",
+    "api"
   ],
   "languages": [
     "typescript"
@@ -37,7 +38,7 @@
   "requests": [
     "build one phone app for both major mobile platforms",
     "keep my app screens and backend responses consistent through shared types",
-    "store my mobile app's data behind an API I control",
+    "store my mobile app's data behind an API I host",
     "give screens reusable hooks for loading data and handling failures"
   ],
   "useCases": [

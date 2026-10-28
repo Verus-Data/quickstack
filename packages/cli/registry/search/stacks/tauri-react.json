@@ -39,7 +39,7 @@
   ],
   "useCases": [
     "desktop interfaces",
-    "Rust applications with graphical controls"
+    "Rust applications with graphical interfaces"
   ],
   "synonyms": [
     "Tauri",

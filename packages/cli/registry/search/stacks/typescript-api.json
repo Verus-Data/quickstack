@@ -9,7 +9,7 @@
     "promptVersion": 2,
     "reviewedAt": "2026-10-28"
   },
-  "summary": "An HTTP service with validated requests, documented endpoints, consistent errors and structured request logs.",
+  "summary": "A TypeScript HTTP API with validated requests, documented endpoints, consistent errors and structured request logs.",
   "description": "Create a Node HTTP API whose Effect contract owns endpoint schemas, routing and documented errors. Thin handlers call services, and one request boundary produces safe responses and structured logs. The recipe proves startup and HTTP behavior with a health endpoint, then packages the server as one Node bundle. It does not select a database, identity provider or browser interface.",
   "seoDescription": "A Node HTTP API recipe using Effect HttpApi for typed contracts, request validation, OpenAPI documentation and structured request logs.",
   "projectExamples": [
@@ -34,7 +34,8 @@
   "requests": [
     "serve typed resources with automatically generated API documentation",
     "return consistent errors when callers send invalid requests",
-    "trace a failed HTTP call through structured logs"
+    "trace a failed HTTP call through structured logs",
+    "build a TS API with checked inputs and documented endpoints"
   ],
   "useCases": [
     "REST services",
@@ -44,7 +45,8 @@
     "Effect HttpApi",
     "Node",
     "OpenAPI",
-    "request validation"
+    "request validation",
+    "TS"
   ],
   "goodFor": [
     "one definition for routing and schemas",
