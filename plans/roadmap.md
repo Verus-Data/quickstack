@@ -599,6 +599,7 @@ names.
 
 | Contract | Symbol | Rule | Owner, then users |
 |---|---|---|---|
+| Columnar lists | `packages/format::Columnar` | A row struct or union of structs encodes as one object of equal-length arrays keyed by flattened leaf paths; decoding restores rows and runs each row check. Missing values use null, so optional nullable keys are refused at construction | D38 (Q1a); 4.2a, 4.5e |
 | Error table | `src/errors.ts::errorTable` (`ErrorSpec = { exit, retryable, keepsResult }`) | Every tag has one row. A sub-phase that adds a tag adds its row and lists it under [Error tags](#error-tags) below | 0.3a; every later sub-phase |
 | Error envelope | `errors.ts::ErrorEnvelope`, `{ error: { tag, message, retryable, next?, details? } }` | `details` is a closed `Schema.Struct` per tag, holding only CLI-produced values or arguments; `message` is fixed per tag; `next` is the action `errors.ts::failureGuide` picks, the same text as the text modes' `Next:` line, present for every tag but BrokenPipe | 0.3a; 2026-10-27 (`next`) |
 | Result schemas | `core/result-schemas.ts::RESULT_SCHEMAS`, `stacks schema [name]` | Every `--json` result, the error envelope and verify's event have a JSON Schema (draft 2020-12, closed objects) generated from their Effect Schema; a new printed shape adds an entry | 2026-10-27 |

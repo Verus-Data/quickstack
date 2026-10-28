@@ -1,6 +1,7 @@
 export { AgentId, DetectedAgent, Harness } from "./agent.js";
 export { DependencyAllowlist, Ecosystem } from "./allowlist.js";
 export { BundlePath, bundleDigest, canonicalBundle, EntryBundle } from "./bundle.js";
+export { Columnar } from "./columnar.js";
 export { DirectoryData } from "./directory.js";
 export {
   APP_TAG,
