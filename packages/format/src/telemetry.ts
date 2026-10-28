@@ -1,5 +1,6 @@
 import { Schema } from "effect";
 import { AgentId, DetectedAgent } from "./agent.js";
+import { Ecosystem, sortedUnique } from "./allowlist.js";
 import { Kebab, Kind } from "./entry.js";
 import { Digest } from "./index-schema.js";
 import { Manifest } from "./manifest.js";
@@ -134,9 +135,47 @@ export const TelemetryEvent = Schema.Union([
 ]);
 export type TelemetryEvent = typeof TelemetryEvent.Type;
 
+export const Dependency = Schema.Struct({
+  ecosystem: Ecosystem,
+  name: Schema.String,
+  major: Schema.NullOr(Schema.String.check(Schema.isPattern(/^(0\.\d+|[1-9]\d*)$/u))),
+});
+export type Dependency = typeof Dependency.Type;
+
+// NUL sorts below every name character, so the joined key orders by ecosystem, then name.
+const Dependencies = Schema.Array(Dependency)
+  .check(Schema.isMaxLength(100))
+  .check(
+    Schema.makeFilter(
+      (deps) =>
+        sortedUnique(deps.map((dep) => `${dep.ecosystem}\u0000${dep.name}`)) ||
+        "dependencies must be sorted and unique",
+    ),
+  );
+
+export const TelemetryVerifyEventV2 = Schema.Struct({
+  ...TelemetryVerifyEvent.fields,
+  schemaVersion: Schema.Literal(2),
+  deps: Schema.optionalKey(Dependencies),
+});
+export type TelemetryVerifyEventV2 = typeof TelemetryVerifyEventV2.Type;
+
+/** Version 2 preserves every v1 field and adds allowlisted dependencies to verify. */
+export const TelemetryEventV2 = Schema.Union([
+  Schema.Struct({ ...TelemetryNewEvent.fields, schemaVersion: Schema.Literal(2) }),
+  Schema.Struct({ ...TelemetryAddEvent.fields, schemaVersion: Schema.Literal(2) }),
+  TelemetryVerifyEventV2,
+  Schema.Struct({ ...TelemetryShowEvent.fields, schemaVersion: Schema.Literal(2) }),
+  Schema.Struct({ ...TelemetryErrorEvent.fields, schemaVersion: Schema.Literal(2) }),
+]);
+export type TelemetryEventV2 = typeof TelemetryEventV2.Type;
+
 /** POST /v1/events request body. */
 export const TelemetryBatch = Schema.Struct({
-  events: Schema.Array(TelemetryEvent).check(Schema.isMinLength(1), Schema.isMaxLength(50)),
+  events: Schema.Array(Schema.Union([TelemetryEvent, TelemetryEventV2])).check(
+    Schema.isMinLength(1),
+    Schema.isMaxLength(50),
+  ),
 });
 export type TelemetryBatch = typeof TelemetryBatch.Type;
 
@@ -144,13 +183,22 @@ export type TelemetryBatch = typeof TelemetryBatch.Type;
 export const TelemetryAccepted = Schema.Struct({ rejected: Schema.Array(Uuid) });
 export type TelemetryAccepted = typeof TelemetryAccepted.Type;
 
-/** Standalone draft 2020-12 document; released v1 is frozen in schemas/telemetry-event.v1.json. */
-export function telemetryEventJsonSchema(): Record<string, unknown> {
-  const document = Schema.toJsonSchemaDocument(TelemetryEvent, { onExcessProperty: "error" });
+function standaloneJsonSchema(schema: Schema.Top): Record<string, unknown> {
+  const document = Schema.toJsonSchemaDocument(schema, { onExcessProperty: "error" });
   const definitions = document.definitions ?? {};
   return {
     $schema: "https://json-schema.org/draft/2020-12/schema",
     ...document.schema,
     ...(Object.keys(definitions).length ? { $defs: definitions } : {}),
   };
+}
+
+/** Standalone draft 2020-12 document; released v1 is frozen in schemas/telemetry-event.v1.json. */
+export function telemetryEventJsonSchema(): Record<string, unknown> {
+  return standaloneJsonSchema(TelemetryEvent);
+}
+
+/** Standalone draft 2020-12 document; released v2 is frozen in schemas/telemetry-event.v2.json. */
+export function telemetryEventV2JsonSchema(): Record<string, unknown> {
+  return standaloneJsonSchema(TelemetryEventV2);
 }
