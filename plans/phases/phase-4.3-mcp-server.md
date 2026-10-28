@@ -395,6 +395,24 @@ Parked mid-conversation, pick up here:
   4.0.6 registers tools, resources and prompts only — SEP-2640's `skills/list` and `skills/get` cannot
   be served, and declaring the extension without them would be false.
 
+## Deviations from the plan as written
+
+| The plan said | What shipped | Why |
+| --- | --- | --- |
+| Three tools plus a `quickstacks://brief` resource (D-a) | Three tools plus `quickstacks://guide` and one `skill://` resource per file in `skills/` | A brief is per project and only exists after `new`. What an agent needs *before* creating anything is the manual, and the skills layer carries the authoring knowledge. |
+| Skills over MCP, following SEP-2640 | Skills as `skill://` resources, no extension declared | `effect/ai` 4.0.6 registers tools, resources and prompts only; there is no way to serve `skills/list` or `skills/get`. Declaring the extension without them would be false. |
+| Scaffold the package in place at `packages/mcp` (D-b) | Scaffolded to a sibling and copied in | `new` refuses a non-empty target and has no merge flag; `packages/mcp` already held a placeholder `package.json` and `README.md`. |
+| No `bin` or `exports` changes (D-c) | None added | Confirmed. The server creates an instance and hands off; it is not a consumer of a published package. |
+| No npm publish (D-d) | None | Release-time work. |
+| Resolver: `QUICKSTACKS_MCP_CLI`, then the sibling `../cli/src/bin.ts` | As written, no PATH lookup | The fallback chain is deliberately two steps so a misconfigured install fails loudly. |
+| The stack ships no agent adapters | `claude-harness` required, adapter settings merged, allow list for this package's scripts | `tests/registry-hooks.test.ts` requires every bundled stack to write `.claude/settings.json`; without the fragment a project from this stack got no hooks at all. |
+| Elicitation, prompts and stderr telemetry as follow-ups | Telemetry shipped as one line per tool call; elicitation and prompts not attempted | Deliberately deferred, not forgotten. |
+| The interactive wizard lets a person discover what exists | Not fixed on this branch | Found during the puppet run (DF-38); belongs to the interaction revision set, which is its own branch. |
+
+Extra documentation written with this stage: `packages/mcp/README.md` now describes the three tools with
+their real outcome vocabulary, the resource scheme, the skill file format, how to wire the server into a
+client, and the SEP-2640 limit stated plainly.
+
 ## What this plan may get wrong
 
 - **`effect/ai` is unstable.** `McpClient.ProtocolVersion` already excludes the older revisions a
