@@ -57,8 +57,10 @@ integrity (4.2g's dated lines). Nothing in this list is deployed yet. What's lef
 Cleanup for the maintainers: `stacks-api` has a leftover `.claude/worktrees/a13` (branch
 `delegate/a13`) with uncommitted edits to the smoke, deploy, help and production scripts and a
 `scripts/query.ts`; 4.1e's query tools already landed on `main`, so check it's superseded before
-removing it. m4-mini fails a different process or temp-file test on most gate runs (`kill EPERM`,
-a missing temp log); when it does, `rr check-coverage --local` is the fallback that passed.
+removing it. The m4-mini gate flakes (zombie-group `kill EPERM`, the rotated `dev.log` ENOENT,
+seed and catch-up tests over their timeouts on the loaded coverage host) were fixed on
+2026-10-28, and three consecutive stacks-api gates then passed; a new one gets a mechanism and a
+regression test, not a retry.
 
 Open questions: the index omits `lastRun` because no bundled stack has a ledger pass at its
 current fingerprint, while local search shows ledger passes without that check, so the two
