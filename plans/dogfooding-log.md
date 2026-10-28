@@ -567,6 +567,9 @@ arrives as bare text; anything else is JSON from the schema") and ends with the 
 the shape, fail with it, and assert it. Verified after: validate 0/0/0, 42 registry tests, composed
 brief 4,778 words.
 
+**Superseded by DF-34:** the branch rule written here was itself wrong — the ordinary declared failure
+never takes the branch it describes. Kept as written, because the mistake is the lesson.
+
 ## DF-33 — the MCP modules are namespaces, and the service tag is not the module name
 
 **Symptom:** a builder that imported `McpClient` from `effect/ai` and wrote `yield* McpClient` failed
@@ -579,6 +582,86 @@ and only `effect/ai` and `effect/process` resolve — there is no `effect/ai/Mcp
 
 **Fixed in:** the stack's Transport section, in the sentence that first names the modules: the namespace
 form, the tag, the "is not iterable" signature, and the absent deep paths.
+
+## DF-34 — the third correction of the same paragraph, and the reason I kept getting it wrong
+
+**Attempted:** replace the false claim that a `Schema.TaggedError` is not an `Error` instance with a
+"corrected" branch rule: an `Error` with a non-empty message arrives as bare text, anything else as JSON.
+
+**Symptom:** the next build said the payload is JSON, the error is an `Error`, and my rule matched neither.
+Observed twice under test: an ordinary declared failure returns `{isError: true, content:[{type:"text",
+text:"{\"_tag\":...,\"message\":...}"}]}`.
+
+**Cause — and this is the part worth keeping:** I verified a claim by reading one function and
+generalising to a contract. `declaredFailureResult` (McpServer.js:1519) does contain that
+`instanceof Error` branch, so the line exists and my reading of it was accurate. It is simply not on the
+path a declared failure takes. The ordinary case returns at line 1563, which builds a `CallToolResult`
+with the schema-encoded value regardless of Error-ness; line 1519 is only reached when a declared failure
+is *raised as a cause*, which `failureMode: "return"` prevents by construction.
+
+**The rule this yields:** a contract is the path a value actually takes, not the most plausible function
+in the file. Tracing one branch and finding it consistent with the claim is not verification — it is
+confirmation. Either run it, or trace every path that can reach the client.
+
+**Fixed in:** the stack, from observation rather than reading: "A declared failure arrives as a text block
+with the schema-encoded value `{"_tag":...,"message":...}`; a defect or undeclared throw arrives as a fixed
+internal error message, not that value." The old text cost a builder a failing assertion twice.
+
+**Still open:** the stack body now sits at exactly 2,000 words, the limit. There is no headroom for the
+next correction, and `validate` cannot warn about a budget it has already reached.
+
+## DF-35 — a stack built for a standalone project collides with the monorepo it is scaffolded into
+
+**Attempted:** scaffold `packages/mcp` from the stack, in place (D-b).
+
+**Symptom:** four of the brief's instructions were wrong for a workspace package, and the builder had to
+choose the repository's convention over the stack's: `.node-version` and `.bun-version` (the root owns the
+toolchain), a generated `tsconfig.json` (this repo extends `tsconfig.base.json`), `version: "0.1.0"` (the
+package is 0.0.0 and private), and a `bin` entry (excluded by D-c). It also found that
+`exactOptionalPropertyTypes` is *not* on in the root base config, so a trap the stack names was absent
+here.
+
+**Cause:** a stack is written as if it owns the repository root. That is true for `new` outside a repo
+and false for every scaffold into an existing one, which is exactly the dogfooding case the plan
+prescribes.
+
+**Proposed fix (docs):** the stack's Setup section states which settings belong to the project and which
+belong to a host repository — toolchain pins, the tsconfig base, package identity — and says the host
+wins. Better: `new` could detect a parent repository and pass that fact into the brief, which is the same
+`needs_own_repo` knowledge it already has.
+
+## DF-36 — two tools refuse to work at the boundary, and both are silent about it
+
+**Symptom, first:** `new typescript-mcp packages/mcp` exits 2 with `TargetNotEmpty`, listing the
+placeholder `README.md` and `package.json`. There is no merge flag. The plan's "scaffold in place" is only
+true for an empty directory.
+
+**Symptom, second:** OpenCode, launched in a repository, refuses to *read* anything outside it —
+`permission requested: external_directory; auto-rejecting`. A stage plan that says "read the scaffold at
+/Users/me/..." therefore produces a coder that lists its todos and stops, having done nothing, and exits
+0.
+
+**Cause:** both are correct policies enforced without a way to make progress from inside them. The
+scaffold had to be copied into the package by hand (file placement, not code), and the stage plan had to
+name only paths inside the working tree.
+
+**Proposed fix (docs):** the run log and the plan both say that an in-repo scaffold needs an empty target
+or a merge step, and that a stage plan may reference only paths inside the repository the coder is
+launched in. For `new`, a `--merge` that reports which files it would keep, add and conflict — the
+`agent-ops` fragment already has the concept for `AGENTS.md`.
+
+## DF-37 — `Effect.either` is gone in Effect 4
+
+**Symptom:** a builder reached for `Effect.either` to assert on the error channel in a test and found it
+absent; the replacement is `Effect.flip`.
+
+**Cause:** the stack and the `effect` fragment describe the module's shape from an earlier major in
+places. The fragment already warns that API names shift, which is why this cost minutes rather than an
+hour.
+
+**Proposed fix (docs):** worth a line in the stack's Tests section, since a failure-path test is exactly
+where a builder reaches for it.
+
 
 
 ---
@@ -643,3 +726,8 @@ Grouped by what it would take, not by when it was found. `Fixed in:` lines are a
   brief" stage returns success-shaped output with the work half done (DF-29).
 - Re-run the gate yourself. Never infer a project's state from a coder's exit code, and never accept its
   stated reason for an edit without measuring the thing it cites (DF-29, DF-30).
+- A contract is the path a value actually takes. Reading one function and finding it consistent with the
+  claim is confirmation, not verification — the same paragraph was wrong three times this way, and the
+  only thing that settled it was a test observing the payload (DF-34).
+- Two boundaries are silent: `new` refuses a non-empty target with no merge step, and a coder launched in
+  a repository cannot read outside it — it lists its plan, does nothing, and exits 0 (DF-36).
