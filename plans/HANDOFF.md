@@ -9,6 +9,34 @@ Start here, then read repo `AGENTS.md`, the README's
 next steps, who owns each. When it grows past a couple of screens, move the dated detail
 to `archive/` and leave a link.
 
+## Next session: the rest of the API (2026-10-28)
+
+The seeded dev API runs on a fresh checkout (the run command is under "Phase 4 in progress"), so
+the site can build against the real routes instead of fixtures. Executed on the API side: 4.0b,
+4.1b, 4.1c, 4.1d, 4.2a, 4.2g. What's left, in order:
+
+1. D38, columnar responses. Every list in an API response (the stats summary's `items`, each
+   history series, the breakdown lists) becomes one object of column arrays, defined in
+   `@steamfield/stacks-format` so TypeScript enforces it on the API, the site and the CLI. One
+   contract covers the format schemas (a 0.3.0 the maintainer publishes), the `stacks-api`
+   serializers and the `apps/web` client; the frontend agent owns `apps/web`, so agree the shape
+   with it first. Measured before: the summary is 12.8 KB for 30 items, a stack detail 12 KB.
+2. 4.2a's QA findings (its last dated line): unrounded minute medians, shares and medians
+   published on cells under the threshold, `BadInput` without details, the OpenAPI enum type
+   mismatch, and one unexplained suppressed week. A failing test first for each.
+3. 4.5e's route: `GET /v1/search` in `stacks-api`, after a maintainer publishes format 0.2.0
+   (command below) and `stacks-api` bumps to it. Fold in 0.3.0 if D38 has landed.
+4. 4.1e, telemetry launch and runbook. Small, but its first live deploy is a maintainer's step.
+5. 4.2d, dependency telemetry through the client and ingest (verify events carry `deps` at
+   schema version 2), then 4.2e, dependency trends and pages, the largest piece left.
+6. 4.2c's telemetry views need a trending dimension in the rollup; 4.2g's test 4 waits on it.
+
+Seed realism is thin (4.2g's last dated line): improve it when a page reads those fields.
+The site's own index reader (`apps/web/src/data/read-directory.ts`) still requires signatures;
+the frontend agent decides whether it follows the API's unsigned-in-development rule. 4.0f
+(Workers) stays deferred. The format 0.2.0 publish, from the prepared worktree:
+`cd .claude/worktrees/publish-format-0.2.0/packages/format && bun run pack && npm publish dist/pack/steamfield-stacks-format-0.2.0.tgz --access public`.
+
 ## Manual library QA and fixes (2026-10-27–28)
 
 QA-01 through QA-11 have CLI/recipe fixes, regression coverage and targeted
@@ -77,9 +105,10 @@ line per flagged run, and `/healthz` reports `maintenanceFresh`. 4.5e's CLI side
 a maintainer publishes it). 4.2a is executed: the rollups run in `maintain` after the integrity
 pass and serve `GET /v1/stats`, `GET /v1/stacks/{stackId}/stats` and
 `GET /v1/fragments/{fragmentId}/stats`. 4.2g is executed: `bun run seed` and `bun run dev:stats`
-build labelled history in `.dev/data/seeded.sqlite` offline (tests 4, 12, 13 and 14 deferred).
-Neither runs on a fresh checkout yet, because it needs a signed index in `STATIC_DIR` and nothing
-can sign one locally (4.2g's last dated line).
+build labelled history in `.dev/data/seeded.sqlite` offline (tests 4, 12, 13 and 14 deferred),
+and a fresh checkout runs them with no key (4.2g's last dated line):
+`bun run build:index --out <dir> --previous none --unsigned --include-unproven` in
+`packages/cli`, then `STATIC_DIR=<dir> bun run dev:stats` in `stacks-api`.
 4.5e's route in `stacks-api` waits on 0.2.0's publication. Maintainers' steps:
 review the 47 search judgments (4.5a), generate the index key and add it to `INDEX_PUBLIC_KEYS`,
 rerun the bench per stack so the index proves something (4.0c), and publish each
