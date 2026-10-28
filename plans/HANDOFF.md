@@ -11,13 +11,13 @@ to `archive/` and leave a link.
 
 ## Submission queue (2026-10-28)
 
-Use [the submission-readiness RFC](submission-readiness-rfc.md) for the proposed
-remaining order: R0 release baseline; R1 agent/search contracts, R2 seed quality,
-R3 current demo proof and R4 website closure; R5 coordinated release; R6 submission.
-R7 signed remote distribution and R8 live collection follow, with explicit gates.
-The RFC records the live QA gaps and scopes seed work to realism and quality.
-Its review record tracks the requested devil's-advocate review. This queue updates
-the ordering below; earlier dated execution notes remain historical evidence.
+Use [the submission-readiness plan](submission-readiness/README.md) for the remaining
+order. Its README is the tracker and decision log (D1 to D9 need the user); each row has
+its own file: R0 release baseline; R1 agent/search contracts, R2 seed quality, R3 current
+demo proof, R4 website closure and R10 judge access; R5 coordinated release; R6 submission
+and R11 judging-window operations. R7 signed remote distribution and R8 live collection
+follow, with explicit gates. This queue updates the ordering below; earlier dated
+execution notes remain historical evidence.
 
 ## Earlier phase 4 handoff (2026-10-28)
 

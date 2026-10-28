@@ -1,0 +1,130 @@
+# R0. Release baseline, in-flight work and demo scope
+
+Priority P0. Depends on nothing. Evidence: `baseline.md` and the first draft of
+`submission.md` in `plans/runs/2026-10-28-submission-readiness/`.
+
+## Outcome
+
+Every other task works toward the same versions, catalog and demo, and nobody repeats
+or collides with work another session already has in flight.
+
+## Read first
+
+- [README.md](README.md) in this folder, all of it.
+- `quickstack/AGENTS.md`, `stacks-api/AGENTS.md`.
+- `plans/HANDOFF.md` sections "Submission queue" and "Earlier phase 4 handoff".
+- `stacks-api/docs/operations.md` sections "Production" and "How a deploy works".
+- `product/DEMO_OUTLINE.md`, `product/PREP.md`.
+
+## Steps
+
+1. Record both repositories' state. In each:
+
+   ```sh
+   git rev-parse --short HEAD && git status --short && git worktree list
+   git branch --no-merged main
+   ```
+
+   For each worktree and unmerged branch, record its last commit date and subject
+   (`git -C <worktree> log -1 --format='%h %cr %s'`) and whether it has uncommitted changes.
+   Known on 2026-10-28 in `stacks-api`: `.claude/worktrees/a13` (stale per HANDOFF; superseded
+   by 4.1e's query tools), `.claude/worktrees/h4a` and `h4b` (created that afternoon, no changes
+   yet), `.claude/worktrees/t-4.2f` (one unmerged commit), two Codex worktrees under
+   `~/.codex/worktrees/` (`ux-browse-flow`, `ux-handoff-flow`), and unmerged branches
+   `delegate/a3`, `delegate/t-4.5e-api`, `delegate/t-4.2e-api`, `delegate/t-4.2d-api`. For each,
+   write one line: likely owner/purpose, whether it overlaps an R-row, and "leave",
+   "ask the user" or "superseded (evidence)". Do not delete any worktree or branch;
+   list removal candidates for the user.
+
+2. Record published and deployed versions:
+
+   ```sh
+   npm view @steamfield/stacks version
+   npm view @steamfield/stacks-format version
+   curl -s https://stacks.steamfield.io/healthz
+   curl -s 'https://stacks.steamfield.io/v1/search?q=go%20cli' | jq '.stacks' | head -60
+   curl -s https://stacks.steamfield.io/v1/index.json | jq -r .payload | jq '.commit, .generatedAt'
+   curl -s -o /dev/null -w '%{http_code}\n' https://stacks.steamfield.io/deps/
+   curl -s https://stacks.steamfield.io/ | grep -o '<link rel="canonical"[^>]*>'
+   ```
+
+   From `quickstack`, record `packages/cli/package.json` and `packages/format/package.json`
+   versions. From `stacks-api`, record the format version in the root `package.json` catalog
+   and `bun.lock`.
+
+3. Inventory consumers of `/v1/search` (input to D3). In a scratch directory:
+
+   ```sh
+   npm pack @steamfield/stacks@0.3.1
+   tar -xzf steamfield-stacks-0.3.1.tgz
+   grep -rl 'v1/search' package/ || echo "no /v1/search consumer in 0.3.1"
+   ```
+
+   Also check whether the site calls `/v1/search` (`grep -rn "v1/search" stacks-api/apps/web/src`).
+   Record the list. If nothing released calls it, write "D3 recommended default holds".
+
+4. Inspect the in-flight active seed without touching it (from `stacks-api`):
+
+   ```sh
+   pgrep -fl "seed/index.ts"
+   sqlite3 -readonly .dev/data/active.sqlite "select value from maintenance_state where key='seed'"
+   ```
+
+   Record pid (if any), `profileVersion`, `days`, `through`, `inputDigest` and `complete`. This
+   artifact is useful for R2's local inspection only; production will be regenerated (D7).
+
+5. Close or confirm the audit's gaps. For each row of the table below, write "still open
+   (evidence)" or "closed (evidence)":
+
+   | Gap from the 2026-10-28 audit | How to check |
+   | --- | --- |
+   | Published CLI lacks search and stats | step 2 |
+   | Live search uses older penalty encoding | step 2: penalties should be objects with `kind`, `request`, `entry` |
+   | Nonsense search returns zero-score hits | `curl -s 'https://stacks.steamfield.io/v1/search?q=!!!' \| jq` |
+   | Search omits `show`'s content comparison | `packages/cli/src/core/search/` has no `sameContent` |
+   | Guide, help footer and `guideCommands` teach different paths | `packages/cli/src/core/guide.ts` |
+   | Seed has sparse dependency evidence, install-only failures | R2 checks this; mark "R2 owns" |
+   | `/deps/` 404, canonical `example.com`, clipboard failure leaves text collapsed | step 2 and R4 |
+   | Remote index and telemetry endpoints unset, index keys empty | `bin.ts`, `packages/format/src/index-keys.ts` |
+
+6. Carry the known gate failure. The final quickstack gate failed one test:
+   `packages/cli/tests/mobile-dev-ownership.test.ts`, a `test.each` titled
+   `mobile dev cleans owned groups after %s`, in the `signal` case, with a process-cleanup
+   `EPERM`. Reproduce once from `packages/cli`:
+
+   ```sh
+   bun run test:unit tests/mobile-dev-ownership.test.ts -t "mobile dev cleans owned groups after signal"
+   ```
+
+   Record the host, result and error. HANDOFF records recurring `kill EPERM` failures on the
+   rr host `m4-mini`; note whether the failure reproduces locally, only on that host, or not
+   at all. Assign the diagnosis to the user or a named agent; R5 can't close while it's
+   unexplained. Don't weaken the assertion, and don't treat a host permission failure as a
+   recipe defect.
+
+7. Fix the demo scope and write it into `submission.md`:
+   - Composition: `python-react --sandbox` (matches the site's example and `DEMO_OUTLINE.md`).
+   - App: a React view that makes a typed request to the Python API and renders the
+     response, with one test that exercises that path end to end. No persistence, no auth,
+     no expense tracker, no transaction review.
+   - Final acceptance: `stacks verify --all` (the sandbox manifest otherwise skips the
+     production build; `--all` runs every step in that manifest and adds no fragments).
+   - Tools: from `stacks show python-react --json` (`uv`, `bun`, `make`, `git`, `jq` on
+     2026-10-28). Check each is executable (`uv --version`, and so on), not just on PATH.
+   - Agent and model: record what the demo will use.
+   - Rho: D5. Until D5 is decided, record it as excluded.
+
+8. Organizer requirements. Ask the user for the organizer's rules (or a link) and record:
+   deadline with timezone, video length and format limits, whether edited video is allowed,
+   required links, repository-access rules, sponsor eligibility, whether a live judging table
+   exists. Each unknown is a named blocker on R6 and R10, not on R1 to R4.
+
+## Done when
+
+- [ ] `baseline.md` has the repository state, worktree/branch inventory, version matrix,
+      `/v1/search` consumer list, seed status and the audit-gap table with evidence.
+- [ ] The EPERM test is reproduced (or not) with host recorded, and has an assignee.
+- [ ] `submission.md` has the demo scope from step 7 and the organizer table from step 8,
+      with unknowns marked as blockers.
+- [ ] The README's facts table is updated wherever this baseline found drift.
+- [ ] Decisions D3 and D5 have the evidence they need; tell the user.
