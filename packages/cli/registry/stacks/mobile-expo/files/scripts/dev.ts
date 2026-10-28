@@ -90,8 +90,12 @@ function signalGroup(pid: number, signal: NodeJS.Signals | 0): boolean {
     process.kill(-pid, signal);
     return true;
   } catch (error) {
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'ESRCH')
-      return false;
+    if (error && typeof error === 'object' && 'code' in error) {
+      if (error.code === 'ESRCH') return false;
+      // A macOS group with zombie members can answer EPERM. It may still be
+      // alive; keep the bounded cleanup polling until it disappears.
+      if (error.code === 'EPERM') return true;
+    }
     throw error;
   }
 }
