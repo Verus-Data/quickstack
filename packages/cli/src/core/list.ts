@@ -1,10 +1,11 @@
-import type { Manifest } from "@steamfield/stacks-format";
+import type { Manifest, StatsSummary } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { LastRun, type LedgerRecord } from "../schemas/ledger";
 import type { ListResult, ListRow } from "../schemas/list";
 import { fitsStack } from "./compose/selection";
 import { lastRun } from "./ledger";
 import { type Entry, isRejected, type RejectedEntry } from "./registry/entry";
+import { statsFields } from "./stats-text";
 
 export const groups = ["stacks", "fragments", "apps"] as const;
 export type Group = (typeof groups)[number];
@@ -36,6 +37,20 @@ export const inGroup = (row: ListRow, group: Group | undefined) =>
   (group === "stacks" && row.kind === "stack") ||
   (group === "fragments" && row.kind === "fragment" && row.category !== "app") ||
   (group === "apps" && row.category === "app");
+
+export function withStats(
+  rows: ReadonlyArray<ListRow>,
+  summary: StatsSummary | undefined,
+): ListRow[] {
+  if (!summary?.published) return [...rows];
+  const items = new Map(summary.items.map((item) => [`${item.kind}:${item.id}`, item]));
+  return rows.map((row) => {
+    if (row.origin !== "bundled" && row.origin !== "index") return row;
+    const item = items.get(`${row.kind}:${row.id}`);
+    if (!item) return row;
+    return { ...row, stats: statsFields(summary, item) };
+  });
+}
 
 /** The `list` result: entries in `group` (all when absent), and rejected entries of its kind. */
 export function listResult(

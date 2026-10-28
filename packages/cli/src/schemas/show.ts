@@ -1,4 +1,4 @@
-import { Category, VerifyStep } from "@steamfield/stacks-format";
+import { Category, StatsDetail, VerifyStep } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { LastRun } from "./ledger";
 import { ListRow } from "./list";
@@ -8,6 +8,7 @@ import { NoticeFields } from "./notice";
 export const ShowReport = Schema.Struct({
   ...NoticeFields,
   ...ListRow.fields,
+  stats: Schema.optionalKey(StatsDetail),
   path: Schema.String,
   deps: Schema.Record(Schema.String, Schema.Array(Schema.String)),
   tools: Schema.Array(Schema.String),

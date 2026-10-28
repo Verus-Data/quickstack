@@ -23,6 +23,7 @@ test("stacks with no arguments prints the agent guide, under 250 words, with the
     "- If verify reports VerifyChanged, stop and ask the user: only they can accept the change.\n",
   );
   expect(stdout).toContain("stacks new <stack> <dir> --sandbox --json");
+  expect(stdout).toContain("prefer the higher `stats.greenRateLower` and say why");
   expect(stdout).not.toContain("SUBCOMMANDS");
 });
 

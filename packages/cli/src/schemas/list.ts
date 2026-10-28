@@ -1,4 +1,4 @@
-import { Category, Kind } from "@steamfield/stacks-format";
+import { Category, Kind, StatsDay, StatsWindow } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { LastRun } from "./ledger";
 import { NoticeFields } from "./notice";
@@ -19,6 +19,20 @@ export const ListRow = Schema.Struct({
   shadows: Schema.Array(Origin),
   /** Latest bundled default-composition run, over every preset and agent. */
   lastRun: Schema.NullOr(LastRun),
+  stats: Schema.optionalKey(
+    Schema.Struct({
+      window: StatsWindow,
+      through: StatsDay,
+      population: Schema.Literals(["stacks projects", "seeded development data"]),
+      projects: Schema.NullOr(Schema.Number),
+      greenRate: Schema.NullOr(Schema.Number),
+      greenRateLower: Schema.NullOr(Schema.Number),
+      greenRateUpper: Schema.NullOr(Schema.Number),
+      sample: Schema.NullOr(Schema.Number),
+      noVerifyShare: Schema.NullOr(Schema.Number),
+      medianMinutesToGreen: Schema.NullOr(Schema.Number),
+    }),
+  ),
 });
 export type ListRow = typeof ListRow.Type;
 

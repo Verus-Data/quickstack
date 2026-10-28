@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { NodeServices } from "@effect/platform-node";
 import { Clock, Effect, type Exit, Layer, Option, type Scope, Terminal } from "effect";
 import type { HttpClient } from "effect/http";
-import { AppConfig, type Environment } from "../../src/config";
+import { AppConfig, type Environment, SOURCE_BUILD } from "../../src/config";
 import { hasFlag, main } from "../../src/main";
 import { NetLayer } from "../../src/platform/net";
 import { stringWidth } from "../../src/platform/width";
@@ -110,7 +110,15 @@ export async function runCli(
   try {
     const status = await runInvocation(
       main(args, options.program).pipe(
-        Effect.provide(Layer.provideMerge(AppLayer(output, env, options.releaseBuild), platform)),
+        Effect.provide(
+          Layer.provideMerge(
+            AppLayer(output, env, {
+              ...SOURCE_BUILD,
+              releaseBuild: options.releaseBuild ?? false,
+            }),
+            platform,
+          ),
+        ),
         Effect.scoped,
         (program) =>
           options.clock ? Effect.provideService(program, Clock.Clock, options.clock) : program,

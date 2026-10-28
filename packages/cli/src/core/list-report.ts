@@ -1,6 +1,7 @@
 import type { ListResult, ListRow } from "../schemas/list";
 import { plainStyle, type Style } from "../services/output";
 import { type Group, inGroup } from "./list";
+import { statsLine } from "./stats-text";
 import { printable } from "./text";
 import { wrapWords } from "./wrap";
 
@@ -35,6 +36,17 @@ function ledgerFields(row: ListRow, present: boolean | undefined, style: Style):
   return [
     `${style(row.lastRun.result === "pass" ? "ok" : "warn", result)} ${printable(row.lastRun.date)}`,
   ];
+}
+
+function statsLines(
+  stats: ListRow["stats"],
+  width: number,
+  measure: (text: string) => number = (text) => text.length,
+): string[] {
+  if (!stats) return [];
+  return wrapWords(statsLine(stats), width - measure("    "), measure)
+    .split("\n")
+    .map((line) => `    ${line}`);
 }
 
 /**
@@ -81,6 +93,7 @@ export function renderList(
     for (const row of members)
       out.push(
         `  ${line(row, idWidth)}`,
+        ...statsLines(row.stats, width, options.measure),
         ...descriptionLines(
           printable(row.description.replace(/\s+/g, " ")),
           width,
@@ -158,6 +171,7 @@ export function renderAddable({
     "Fragments you can add",
     ...addable.flatMap((row) => [
       `  ${printable(row.id)}${row.trusted ? "" : "  untrusted"}`,
+      ...statsLines(row.stats, width, measure),
       ...descriptionLines(printable(row.description.replace(/\s+/g, " ")), width, measure),
       `    ${style("next", `Next: ${invocation} add ${row.id}${dirFlag}`)}`,
     ]),

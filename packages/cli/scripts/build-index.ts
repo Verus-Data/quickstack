@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { NodeServices } from "@effect/platform-node";
 import { Clock, Console, Effect, Layer, Option, Path } from "effect";
-import { AppConfig } from "../src/config";
+import { AppConfig, SOURCE_BUILD } from "../src/config";
 import { Registry } from "../src/core/registry/registry";
 import { printable } from "../src/core/text";
 import { validate } from "../src/core/validate";
@@ -117,7 +117,7 @@ const program = Effect.gen(function* () {
 
 const platform = Layer.merge(NodeServices.layer, Foreground.layer(Foreground.make()));
 const layer = Processes.layer.pipe(
-  Layer.provideMerge(AppConfig.layer()),
+  Layer.provideMerge(AppConfig.layer(SOURCE_BUILD)),
   Layer.provideMerge(platform),
   Layer.provideMerge(
     Host.layer({

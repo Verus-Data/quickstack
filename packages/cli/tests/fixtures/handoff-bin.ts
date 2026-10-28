@@ -4,6 +4,7 @@
 // Usage: bun tests/fixtures/handoff-bin.ts <registry> <cli args...>
 import { NodeServices } from "@effect/platform-node";
 import { Effect, Layer, Option } from "effect";
+import { SOURCE_BUILD } from "../../src/config";
 import { hasFlag, main } from "../../src/main";
 import { NetLayer } from "../../src/platform/net";
 import { installSignalPolicy } from "../../src/platform/signals";
@@ -51,6 +52,8 @@ try {
         Layer.provideMerge(
           AppLayer(
             Output.layer(hasFlag(args, "--json"), writer(process.stdout), writer(process.stderr)),
+            undefined,
+            SOURCE_BUILD,
           ),
           platform,
         ),

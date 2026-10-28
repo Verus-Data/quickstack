@@ -95,11 +95,12 @@ const platform = Layer.mergeAll(
     invocation: invocationFor(process.argv[1] ?? ""),
   }),
 );
-const application = AppLayer(
-  output,
-  undefined,
-  typeof STACKS_RELEASE_BUILD !== "undefined" && STACKS_RELEASE_BUILD,
-);
+// No hosted API exists yet; a release build reads no stats until this names it.
+const DEFAULT_API_URL: string | undefined = undefined;
+const application = AppLayer(output, undefined, {
+  releaseBuild: typeof STACKS_RELEASE_BUILD !== "undefined" && STACKS_RELEASE_BUILD,
+  defaultApiUrl: DEFAULT_API_URL,
+});
 const remote = RemoteIndex.layer({ keys: INDEX_PUBLIC_KEYS, officialUrl: undefined }).pipe(
   Layer.provide(application),
 );

@@ -111,8 +111,12 @@ function provider(env: Environment) {
   );
 }
 const text = (key: string, fallback = "") => Config.String(key).pipe(Config.withDefault(fallback));
-export function configLayer(env: Environment = process.env, releaseBuild = false) {
-  const captured = { ...env };
+/** Facts fixed when the CLI is built: bin supplies them; source builds and tests use `SOURCE_BUILD`. */
+export type Build = { releaseBuild: boolean; defaultApiUrl: string | undefined };
+export const SOURCE_BUILD: Build = { releaseBuild: false, defaultApiUrl: undefined };
+export function configLayer(env: Environment | undefined, build: Build) {
+  const { releaseBuild, defaultApiUrl } = build;
+  const captured = { ...(env ?? process.env) };
   return Layer.effect(
     AppConfig,
     Effect.gen(function* () {
@@ -222,7 +226,7 @@ export function configLayer(env: Environment = process.env, releaseBuild = false
       const indexUrl = read(text("STACKS_INDEX_URL")).pipe(Effect.map((url) => url || undefined));
       const apiUrl = read(text("STACKS_DEV_API_URL")).pipe(
         Effect.map((value) => {
-          if (releaseBuild || !URL.canParse(value)) return undefined;
+          if (releaseBuild || !URL.canParse(value)) return defaultApiUrl;
           const url = new URL(value);
           const loopback = ["127.0.0.1", "localhost", "[::1]"].includes(url.hostname);
           return loopback &&
@@ -232,7 +236,7 @@ export function configLayer(env: Environment = process.env, releaseBuild = false
             !url.search &&
             !url.hash
             ? url.href
-            : undefined;
+            : defaultApiUrl;
         }),
       );
       return {
@@ -285,6 +289,6 @@ export class AppConfig extends Context.Service<
     ci: boolean;
   }
 >()("stacks/AppConfig") {
-  static layer = (releaseBuild = false) => configLayer(undefined, releaseBuild);
-  static memory = (env: Environment = {}, releaseBuild = false) => configLayer(env, releaseBuild);
+  static layer = (build: Build) => configLayer(undefined, build);
+  static memory = (env: Environment = {}, build: Build = SOURCE_BUILD) => configLayer(env, build);
 }

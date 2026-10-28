@@ -1,5 +1,5 @@
 import { Cause, Effect, Exit, Layer } from "effect";
-import { AppConfig, type Environment } from "./config";
+import { AppConfig, type Build, type Environment } from "./config";
 import { Logging } from "./logging";
 import type { Host } from "./services/host";
 import type { Output } from "./services/output";
@@ -10,14 +10,12 @@ import { Processes } from "./services/processes";
  */
 export const AppLayer = (
   output: Layer.Layer<Output, never, Host | AppConfig>,
-  env?: Environment,
-  releaseBuild = false,
+  env: Environment | undefined,
+  build: Build,
 ) =>
   Layer.mergeAll(Processes.layer, Logging.layer).pipe(
     Layer.provideMerge(output),
-    Layer.provideMerge(
-      env === undefined ? AppConfig.layer(releaseBuild) : AppConfig.memory(env, releaseBuild),
-    ),
+    Layer.provideMerge(env === undefined ? AppConfig.layer(build) : AppConfig.memory(env, build)),
   );
 
 // An interrupted fiber remains interrupted after main finishes its masked cleanup.

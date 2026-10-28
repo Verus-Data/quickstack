@@ -22,6 +22,20 @@ The CLI is TypeScript on Effect, bundled for Node. It executes nothing it reads:
 
 When configured, the index cache lives under `$XDG_CACHE_HOME/stacks/index/` (normally `~/.cache/stacks/index/`). It refreshes after 24 hours with a 1,500 ms request deadline, falling back to verified stale data or bundled entries. Failures back off for ten minutes, or 24 hours after a 404. Every command accepts `--offline`; `STACKS_OFFLINE=1` also prevents registry requests while retaining verified cached entries. `doctor --json` reports `remoteIndex` without refreshing, with `url: null` when the origin is off. `STACKS_INDEX_URL` requires HTTPS (HTTP is allowed on localhost and 127.0.0.1). Configured URLs are untrusted and never auto-launch an agent unless they match an official URL supplied by a future release, whose signature must verify against its compiled-in key list. See [Configuration](docs/reference/configuration.md).
 
+`list` and `show` can add published stats for bundled and index entries. `list --json` carries a summary per entry; `show --json` carries the full detail, including agent breakdowns and a weekly series. Stats are optional: a missing, unpublished or unreachable response adds no warning or exit change. The stats cache is under `$XDG_CACHE_HOME/stacks/stats/`, with a 24-hour refresh, a 1,500 ms fetch deadline, and per-resource backoff of ten minutes after a failure or 24 hours after a 404. `--offline` makes no stats request. A non-default `STACKS_INDEX_URL` disables stats, because those numbers describe a different registry. This release has no default stats API URL; source builds can use a loopback `STACKS_DEV_API_URL`.
+
+| Stats field or text | Meaning |
+| --- | --- |
+| `window`, `through`, `population` | Trailing 7 or 28 finalized UTC days, ending on `through`; the population is either stacks projects or labeled seeded development data. |
+| `projects` | Distinct mature projects in that window, counted once regardless of event count. |
+| `greenRate`, `greenRateLower`, `greenRateUpper`, `sample` | Green projects over attempted projects, its 95% Wilson interval, and the effective attempted sample used for that interval. An attempted project has a verify not blocked solely by its environment; green requires a full, unchanged verify. |
+| `noVerifyShare` | Share of projects with no verify event. It can include projects whose telemetry was blocked. |
+| `medianMinutesToGreen` | Median elapsed time from scaffold to first green verify, in minutes. |
+| `show` step failure shares | Share of failed runs before first green in which each named step failed; text shows the three largest published shares. |
+| `show` content change | Latest registry content-change marker inside the displayed window, from the weekly series. |
+
+Suppressed cells appear as `null` in `list --json` and are omitted or marked unavailable in text. Published counts are rounded to the nearest five; rates and interval bounds to whole percents. Seeded text says `seeded` beside the green-rate sample.
+
 At a human terminal, status words use color, `verify` and `new` show live progress on stderr, and guide, guidance and descriptions wrap to the terminal width. Set `NO_COLOR=1` to disable color and live redraws; nonempty `NO_COLOR` overrides `FORCE_COLOR=1`. Agent and JSON output stay plain, including when color is forced.
 
 ## Bundled stacks

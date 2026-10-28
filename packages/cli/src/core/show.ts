@@ -1,5 +1,5 @@
 import type { Kind } from "@steamfield/stacks-format";
-import { Effect, Result } from "effect";
+import { Effect, Option, Result } from "effect";
 import { AppConfig } from "../config";
 import { BadInput, NotFound } from "../errors";
 import type { LedgerRecord } from "../schemas/ledger";
@@ -14,6 +14,7 @@ import { lastDefaultRecord, latestMatchingRecord, ledgerAdapterSets, readLedger 
 import { toRow } from "./list";
 import { type CatalogEntry, type Entry, outputPath } from "./registry/entry";
 import { Registry, type RegistryRoot, type RegistryRoots, remoteRoots } from "./registry/registry";
+import { Stats } from "./stats";
 import { closest } from "./suggest";
 import { BUDGET, bodyLimit, canonicalBrief, composedLimit } from "./validate/budget";
 
@@ -35,7 +36,8 @@ export const showReport = (id: string, kind: Kind | undefined, reviewRoots?: Reg
       const all = yield* registry.catalog;
       const match = yield* findEntry(all, id, kind);
       const entry = yield* registry.get(match.kind, id);
-      const row = toRow(entry, records);
+      const { stats: _summaryStats, ...row } = toRow(entry, records);
+      const stats = yield* officialDetail(entry);
       const { meta } = entry;
       const files = (yield* registry.files(entry)).map((file) => {
         const agent = /^adapters\/([^/]+)\//.exec(file.source)?.[1];
@@ -63,6 +65,7 @@ export const showReport = (id: string, kind: Kind | undefined, reviewRoots?: Reg
           : yield* entryLastRun(entry, records, bundled);
       return {
         ...row,
+        ...stats,
         path: entry.dir,
         deps: meta.deps,
         tools: meta.tools,
@@ -81,6 +84,12 @@ export const showReport = (id: string, kind: Kind | undefined, reviewRoots?: Reg
       } satisfies ShowReport;
     }).pipe(Effect.provide(Registry.layer(roots)));
   });
+
+const officialDetail = Effect.fn("show.officialDetail")(function* (entry: Entry) {
+  if (entry.origin !== "bundled" && entry.origin !== "index") return {};
+  const detail = Option.getOrUndefined(yield* (yield* Stats).detail(entry.kind, entry.id));
+  return detail?.published ? { stats: detail } : {};
+});
 
 function selectionMetadata(entry: Entry, all: ReadonlyArray<CatalogEntry>) {
   const { meta } = entry;

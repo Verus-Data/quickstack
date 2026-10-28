@@ -3,6 +3,7 @@ import { Argument, Command, Flag } from "effect/cli";
 import { showReport } from "../core/show";
 import { renderShow } from "../core/show-report";
 import { shownPath } from "../core/shown-path";
+import { textWidth } from "../core/wrap";
 import { ShowReport } from "../schemas/show";
 import { Host } from "../services/host";
 import { Output } from "../services/output";
@@ -30,8 +31,8 @@ export const showCommand = Command.make(
         renderShow(
           { ...report, path },
           host.invocation,
-          output.audience === "human" && Option.isSome(host.columns)
-            ? { width: host.columns.value, measure: host.stringWidth }
+          output.audience === "human"
+            ? { width: textWidth(true, host.columns), measure: host.stringWidth }
             : undefined,
           output.style,
         ),
