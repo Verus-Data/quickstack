@@ -2,6 +2,7 @@ import {
   bundleDigest,
   EntryBundle,
   type IndexEntry,
+  OfficialNames,
   RegistryIndex,
   SignedIndex,
 } from "@stacks/format";
@@ -24,25 +25,52 @@ export function bundleRefs(entries: ReadonlyArray<IndexEntry>): BundleRef[] {
   return [...refs.values()].sort((a, b) => bundlePath(a).localeCompare(bundlePath(b), "en"));
 }
 
-const fetchText = (url: string) =>
+/** The file's text, or null when the host answers 404. */
+const fetchOptionalText = (url: string) =>
   Effect.tryPromise({
     try: async () => {
       const response = await fetch(url, { signal: AbortSignal.timeout(30_000) });
+      if (response.status === 404) return null;
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return await response.text();
     },
     catch: () => new Error(`${url}: could not fetch file.`),
   });
 
-export const fetchIndex = Effect.fn("index.fetchIndex")(function* (url: string) {
-  const text = yield* fetchText(url);
+const fetchText = (url: string) =>
+  fetchOptionalText(url).pipe(
+    Effect.flatMap((text) =>
+      text === null
+        ? Effect.fail(new Error(`${url}: could not fetch file.`))
+        : Effect.succeed(text),
+    ),
+  );
+
+/** A signed document's payload, verified against the maintainer keys and decoded. */
+const signedPayload = Effect.fnUntraced(function* <S extends Schema.Codec<unknown, unknown>>(
+  url: string,
+  text: string,
+  payload: { schema: S; name: string },
+) {
   const envelope = yield* Schema.decodeUnknownEffect(Schema.fromJsonString(SignedIndex))(text).pipe(
     Effect.mapError(() => new Error(`${url}: invalid SignedIndex.`)),
   );
   yield* verifySignature(envelope, url);
-  return yield* Schema.decodeUnknownEffect(Schema.fromJsonString(RegistryIndex))(
+  return yield* Schema.decodeUnknownEffect(Schema.fromJsonString(payload.schema))(
     envelope.payload,
-  ).pipe(Effect.mapError(() => new Error(`${url}: invalid RegistryIndex payload.`)));
+  ).pipe(Effect.mapError(() => new Error(`${url}: invalid ${payload.name} payload.`)));
+});
+
+export const fetchIndex = Effect.fn("index.fetchIndex")(function* (url: string) {
+  const text = yield* fetchText(url);
+  return yield* signedPayload(url, text, { schema: RegistryIndex, name: "RegistryIndex" });
+});
+
+export const fetchNames = Effect.fn("index.fetchNames")(function* (url: string) {
+  // The first names build can use an index published before names.json existed.
+  const text = yield* fetchOptionalText(url);
+  if (text === null) return null;
+  return yield* signedPayload(url, text, { schema: OfficialNames, name: "OfficialNames" });
 });
 
 export const fetchBundle = Effect.fn("index.fetchBundle")(function* (base: string, ref: BundleRef) {
@@ -92,5 +120,8 @@ export const checkHost = Effect.fn("index.checkHost")(function* (base: URL) {
   const index = yield* fetchIndex(new URL("v1/index.json", root).href);
   const refs = bundleRefs(index.entries);
   for (const ref of refs) yield* fetchBundle(root, ref);
-  return `Checked v1/index.json and ${refs.length} bundle(s).`;
+  const namesUrl = new URL("v1/names.json", root).href;
+  if ((yield* fetchNames(namesUrl)) === null)
+    return yield* Effect.fail(new Error(`${namesUrl}: could not fetch file (HTTP 404).`));
+  return `Checked v1/index.json, v1/names.json and ${refs.length} bundle(s).`;
 });
