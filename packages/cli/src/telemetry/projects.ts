@@ -1,5 +1,6 @@
-import type { RunRecord } from "@steamfield/stacks-format";
+import type { DependencyAllowlist, RunRecord } from "@steamfield/stacks-format";
 import { Clock, Effect, Option, Schema } from "effect";
+import { readDependencies } from "../core/deps";
 import { locateManifest, readManifest } from "../core/manifest";
 import { type ScaffoldFacts, scaffoldEvent, verifyEvent } from "./events";
 import { DAY, Project, read, remove, type Storage, uuid, write } from "./storage";
@@ -40,12 +41,13 @@ const linkedProject = Effect.fn("telemetry.linkedProject")(function* (store: Sto
     yield* remove(store, file);
     return undefined;
   }
-  return { file, project: saved.value };
+  return { file, root: located.value.root, project: saved.value };
 });
 export const verify = Effect.fn("telemetry.verify")(function* (input: {
   store: Storage;
   cwd: string;
   record: RunRecord;
+  cachedAllowlist: Effect.Effect<Option.Option<DependencyAllowlist>>;
 }) {
   const { store, record } = input;
   const link = yield* linkedProject(store, input.cwd);
@@ -58,5 +60,21 @@ export const verify = Effect.fn("telemetry.verify")(function* (input: {
     project = { ...project, firstTestPassAt: new Date(now).toISOString() };
     yield* write(store, link.file, project);
   }
-  return verifyEvent(record, project, now);
+  const event = verifyEvent(record, project, now);
+  if (!link || record.outcome !== "green" || !project) return event;
+  const previous = project.depsSentAt === undefined ? Number.NaN : Date.parse(project.depsSentAt);
+  if (Number.isFinite(previous) && now - previous < 7 * DAY) return event;
+  const allowlist = yield* input.cachedAllowlist;
+  if (Option.isNone(allowlist)) return event;
+  const deps = yield* readDependencies(link.root, allowlist.value);
+  return { ...event, deps };
+});
+
+export const markDepsSent = Effect.fn("telemetry.markDepsSent")(function* (
+  store: Storage,
+  cwd: string,
+  sentAt: string,
+) {
+  const link = yield* linkedProject(store, cwd);
+  if (link) yield* write(store, link.file, { ...link.project, depsSentAt: sentAt });
 });

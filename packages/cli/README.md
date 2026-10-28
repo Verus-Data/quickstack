@@ -75,9 +75,9 @@ Commands here run from `packages/cli/`; the repo root has the same names fanned 
 
 ## Telemetry
 
-There is no official telemetry endpoint configured. Source builds never collect. A release build with a configured endpoint shows a one-time notice before recording anything; that invocation queues no events. Run `stacks telemetry disable` to turn it off and delete pending events and local identities. Agents and scripts can disable or reset it; enabling requires a person with terminal stdin. `--no-telemetry` and offline runs record and send nothing while keeping pending events. `DO_NOT_TRACK`, `STACKS_TELEMETRY_DISABLED`, `"telemetry": false` in settings, and any set `CI` disable collection. See [Telemetry](docs/reference/telemetry.md) for consent precedence, commands, state, debug mode and delivery.
+There is no official telemetry endpoint configured. Source builds never collect. A release build with a configured endpoint shows a first notice before recording anything; that invocation queues no events. Users who saw the earlier notice see a second notice about dependencies on their next enabled run, which also queues no events. Run `stacks telemetry disable` to turn it off and delete pending events and local identities. Agents and scripts can disable or reset it; enabling requires a person with terminal stdin. `--no-telemetry` and offline runs record and send nothing while keeping pending events. `DO_NOT_TRACK`, `STACKS_TELEMETRY_DISABLED`, `"telemetry": false` in settings, and any set `CI` disable collection. See [Telemetry](docs/reference/telemetry.md) for consent precedence, commands, state, debug mode and delivery.
 
-Schema v1 records anonymous `new`, `add`, `show`, scaffold-error and verify events. Custom entries and steps are redacted. Install and telemetry project ids are random and separate from manifest ids; cloned projects have no telemetry link. Every field has a reader:
+Schema v2 records anonymous `new`, `add`, `show`, scaffold-error and verify events. Custom entries and steps are redacted. Install and telemetry project ids are random and separate from manifest ids; cloned projects have no telemetry link. A green verify may include `deps`: allowlisted dependency names from root manifest files and installed major versions from manifests or lock files. After queuing a report, the client skips later reports for that project for 7 days; simultaneous verifies may each report. Verify uses a previously cached, signed allowlist and never refreshes it. Every field has a reader:
 
 | Field | Reader |
 | --- | --- |
@@ -112,5 +112,6 @@ Schema v1 records anonymous `new`, `add`, `show`, scaffold-error and verify even
 | `stepsChanged` | Changed-step share (4.2a) |
 | `secondsSinceScaffold` | Time to green (4.2a) |
 | `secondsToFirstTestPass` | Time to first test (4.2a) |
+| `deps` | Allowlisted dependency trends (4.2e) |
 
-Never sent: paths, directory or project names, git remotes, usernames, hostnames, environment variable values, decision answers, brief or NOTES text, file contents, command lines, output tails, custom entry ids, or anything from offline runs. There is no dependency telemetry in v1. Collection must stay off until the privacy page, schema page and phase 4.1e launch checks are complete.
+Never sent: paths, directory or project names, git remotes, usernames, hostnames, environment variable values, decision answers, brief or NOTES text, file contents, except allowlisted dependency names and major versions from manifest and lock files, command lines, output tails, custom entry ids, or anything from offline runs. Collection must stay off until the privacy page, schema page and phase 4.1e launch checks are complete.

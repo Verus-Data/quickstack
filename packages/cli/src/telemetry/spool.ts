@@ -1,9 +1,10 @@
-import { TelemetryEvent } from "@steamfield/stacks-format";
+import { TelemetryEvent, TelemetryEventV2 } from "@steamfield/stacks-format";
 import { Clock, Effect, Option, Schema } from "effect";
 import { DAY, directory, names, read, remove, type Storage, uuid, write } from "./storage";
 
-const EventJson = Schema.fromJsonString(TelemetryEvent);
-export type Pending = { file: string; event: TelemetryEvent };
+const Event = Schema.Union([TelemetryEvent, TelemetryEventV2]);
+const EventJson = Schema.fromJsonString(Event);
+export type Pending = { file: string; event: typeof Event.Type };
 export const pending = Effect.fn("telemetry.pending")(function* (store: Storage) {
   const events: Pending[] = [];
   for (const name of yield* names(store, "spool")) {
@@ -29,7 +30,7 @@ export const trim = Effect.fn("telemetry.trim")(function* (store: Storage) {
 });
 export const enqueue = Effect.fn("telemetry.enqueue")(function* (
   store: Storage,
-  event: TelemetryEvent,
+  event: typeof Event.Type,
 ) {
   yield* write(store, store.path.join("spool", `${event.eventId}.json`), event);
   yield* trim(store);

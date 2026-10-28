@@ -45,6 +45,8 @@ export async function runCli(
   options: {
     env?: Environment;
     releaseBuild?: boolean;
+    apiUrl?: string;
+    allowlistKeys?: typeof INDEX_PUBLIC_KEYS;
     clock?: Clock.Clock;
     http?: Layer.Layer<HttpClient.HttpClient>;
     home?: string;
@@ -110,11 +112,14 @@ export async function runCli(
     Layer.merge(NetLayer, options.http ?? Layer.empty),
   );
   try {
+    // A release build's API URL is the one bin passes in; tests pass theirs the same way.
     const application = AppLayer(output, env, {
-      ...SOURCE_BUILD,
       releaseBuild: options.releaseBuild ?? false,
+      defaultApiUrl: options.apiUrl ?? SOURCE_BUILD.defaultApiUrl,
     });
-    const allowlist = Allowlist.layer({ keys: INDEX_PUBLIC_KEYS }).pipe(Layer.provide(application));
+    const allowlist = Allowlist.layer({ keys: options.allowlistKeys ?? INDEX_PUBLIC_KEYS }).pipe(
+      Layer.provide(application),
+    );
     const status = await runInvocation(
       main(args, options.program).pipe(
         Effect.provide(Layer.provideMerge(Layer.merge(application, allowlist), platform)),

@@ -9,14 +9,9 @@ import {
   TelemetryBatch,
   TelemetryEventV2,
 } from "@steamfield/stacks-format";
-import { Clock, Effect, Layer, Schema } from "effect";
-import { Command } from "effect/cli";
+import { Clock, Effect, Schema } from "effect";
 import { TestClock } from "effect/testing";
 import { afterEach, beforeEach, expect, test } from "vitest";
-import { cli } from "../src/cli";
-import { AppConfig } from "../src/config";
-import { Telemetry } from "../src/telemetry";
-import { VERSION } from "../src/version";
 import { keyId, privateKey, publicKey } from "./fixtures/index/harness";
 import { runCli, tempDir } from "./helpers/cli";
 import { registry, telemetryRoot, writeJson } from "./helpers/telemetry";
@@ -29,7 +24,6 @@ const allowlist = Schema.decodeUnknownSync(DependencyAllowlist)({
 });
 const decodeV2 = Schema.decodeUnknownSync(TelemetryEventV2, { onExcessProperty: "error" });
 const decodeBatch = Schema.decodeUnknownSync(TelemetryBatch, { onExcessProperty: "error" });
-const allowlistModule = join(import.meta.dirname, "../src/core/allowlist.ts");
 function signed(payload: DependencyAllowlist, valid = true) {
   const bytes = JSON.stringify(payload);
   return Schema.decodeUnknownSync(SignedIndex)({
@@ -117,26 +111,11 @@ async function invoke(
     stdinIsTTY?: boolean;
   } = {},
 ) {
-  const { Allowlist } = await import(allowlistModule);
-  const config = Layer.effect(
-    AppConfig,
-    Effect.map(AppConfig, (base) => ({
-      ...base,
-      apiUrl: Effect.succeed(endpoint.url),
-    })),
-  );
-  const allowlistLayer: Layer.Layer<never> = Allowlist.layer({ keys: [{ keyId, publicKey }] });
-  const telemetry = Telemetry.layer().pipe(
-    Layer.provideMerge(allowlistLayer),
-    Layer.provide(config),
-  );
-  const program = Command.runWith(cli, { version: VERSION, renderErrors: false })(args).pipe(
-    Effect.provide(telemetry),
-    Effect.provide(config),
-  );
   return runCli(args, {
     home,
     releaseBuild: true,
+    apiUrl: endpoint.url,
+    allowlistKeys: [{ keyId, publicKey }],
     host: {
       registry,
       platform: "darwin",
@@ -152,7 +131,6 @@ async function invoke(
       LOG_LEVEL: "none",
       ...(options.doNotTrack ? { DO_NOT_TRACK: "1" } : {}),
     },
-    program,
     ...(options.clock ? { clock: options.clock } : {}),
   });
 }

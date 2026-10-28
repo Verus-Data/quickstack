@@ -28,6 +28,7 @@ export const consent = Effect.fn("telemetry.consent")(function* (input: {
   );
   if (writable._tag === "Failure") return "home_not_writable";
   const notice = yield* read(store, "notice.json", Notice).pipe(Effect.option);
-  if (Option.isNone(notice) || notice.value.pending) return "not_notified";
+  if (Option.isNone(notice)) return "not_notified";
+  if (notice.value.pending && !notice.value.claimId?.startsWith("second:")) return "not_notified";
   return "enabled";
 });
