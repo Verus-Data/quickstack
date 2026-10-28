@@ -70,6 +70,15 @@ ships Claude rules for Effect HTTP APIs, REST resource naming, testing through H
 real layers, verification and TypeScript, `/add-resource` and `/add-service` commands, and
 boundary and command guards with tests.
 
+## 4.4a executed (2026-10-27)
+
+[4.4a](phases/phase-4.4a-human-styling-and-live-progress.md) landed: a person at a terminal
+gets colored status words (`Output.style`), a live stderr line for each verify step and `new`'s
+write and `git init` stages (`Output.live`), and prose wrapped to the terminal
+(`core/wrap.ts`, `Host.columns`, `Host.stringWidth` from `platform/width.ts`). A nonempty
+`NO_COLOR` turns off color and the live line; `FORCE_COLOR=1` colors human output through a
+pipe. JSON and agent bytes are unchanged. `Host.stdoutColumns` folded into `Host.columns`.
+
 ## 4.0c executed (2026-10-27)
 
 [4.0c](phases/phase-4.0c-registry-index.md) landed: `bun run build:index` in `packages/cli`
