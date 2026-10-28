@@ -2,9 +2,11 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { NodeServices } from "@effect/platform-node";
+import { INDEX_PUBLIC_KEYS } from "@steamfield/stacks-format";
 import { Clock, Effect, type Exit, Layer, Option, type Scope, Terminal } from "effect";
 import type { HttpClient } from "effect/http";
 import { AppConfig, type Environment, SOURCE_BUILD } from "../../src/config";
+import { Allowlist } from "../../src/core/allowlist";
 import { hasFlag, main } from "../../src/main";
 import { NetLayer } from "../../src/platform/net";
 import { stringWidth } from "../../src/platform/width";
@@ -108,17 +110,14 @@ export async function runCli(
     Layer.merge(NetLayer, options.http ?? Layer.empty),
   );
   try {
+    const application = AppLayer(output, env, {
+      ...SOURCE_BUILD,
+      releaseBuild: options.releaseBuild ?? false,
+    });
+    const allowlist = Allowlist.layer({ keys: INDEX_PUBLIC_KEYS }).pipe(Layer.provide(application));
     const status = await runInvocation(
       main(args, options.program).pipe(
-        Effect.provide(
-          Layer.provideMerge(
-            AppLayer(output, env, {
-              ...SOURCE_BUILD,
-              releaseBuild: options.releaseBuild ?? false,
-            }),
-            platform,
-          ),
-        ),
+        Effect.provide(Layer.provideMerge(Layer.merge(application, allowlist), platform)),
         Effect.scoped,
         (program) =>
           options.clock ? Effect.provideService(program, Clock.Clock, options.clock) : program,

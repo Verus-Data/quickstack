@@ -165,7 +165,13 @@ const readCargo = Effect.fn("deps.readCargo")(function* (
 });
 
 function sortDependencies(deps: ReadonlyArray<Dependency>): ReadonlyArray<Dependency> {
-  const unique = new Map(deps.map((dep) => [`${dep.ecosystem}\u0000${dep.name}`, dep]));
+  const unique = new Map<string, Dependency>();
+  for (const dep of deps) {
+    const key = `${dep.ecosystem}\u0000${dep.name}`;
+    const previous = unique.get(key);
+    if (previous === undefined) unique.set(key, dep);
+    else if (previous.major !== dep.major) unique.set(key, { ...dep, major: null });
+  }
   return [...unique.values()]
     .sort((a, b) => {
       const left = `${a.ecosystem}\u0000${a.name}`;

@@ -348,6 +348,24 @@ test("check verifies a good host and names an index whose payload changed [4.0c#
   }
 }, 30_000);
 
+test("check rejects a tampered signed allowlist", async () => {
+  const f = await setup();
+  await build(f);
+  const host = await serve(f.out);
+  try {
+    succeeded(await f.invoke(["--check", host.url]));
+    const file = join(f.out, "v1/allowlist.json");
+    const envelope = JSON.parse(readFileSync(file, "utf8"));
+    writeFileSync(file, JSON.stringify({ ...envelope, payload: `${envelope.payload} ` }));
+    const result = await f.invoke(["--check", host.url]);
+    failed(result);
+    expect(result.stderr).toContain("v1/allowlist.json");
+    expect(result.stderr).toContain("signature verification failed");
+  } finally {
+    await host.close();
+  }
+}, 30_000);
+
 test("generated headers declare exactly the index, bundle and search cache rules [4.0c#11]", async () => {
   const f = await setup();
   await build(f);

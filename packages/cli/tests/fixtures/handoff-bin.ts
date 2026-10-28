@@ -3,8 +3,10 @@
 // can't give the process a terminal) and the registry root from the first argument.
 // Usage: bun tests/fixtures/handoff-bin.ts <registry> <cli args...>
 import { NodeServices } from "@effect/platform-node";
+import { INDEX_PUBLIC_KEYS } from "@steamfield/stacks-format";
 import { Effect, Layer, Option } from "effect";
 import { SOURCE_BUILD } from "../../src/config";
+import { Allowlist } from "../../src/core/allowlist";
 import { hasFlag, main } from "../../src/main";
 import { NetLayer } from "../../src/platform/net";
 import { installSignalPolicy } from "../../src/platform/signals";
@@ -46,18 +48,15 @@ const platform = Layer.mergeAll(
 const controller = new AbortController();
 const dispose = installSignalPolicy(holder, () => controller.abort());
 try {
+  const application = AppLayer(
+    Output.layer(hasFlag(args, "--json"), writer(process.stdout), writer(process.stderr)),
+    undefined,
+    SOURCE_BUILD,
+  );
+  const allowlist = Allowlist.layer({ keys: INDEX_PUBLIC_KEYS }).pipe(Layer.provide(application));
   process.exitCode = await runInvocation(
     main(args).pipe(
-      Effect.provide(
-        Layer.provideMerge(
-          AppLayer(
-            Output.layer(hasFlag(args, "--json"), writer(process.stdout), writer(process.stderr)),
-            undefined,
-            SOURCE_BUILD,
-          ),
-          platform,
-        ),
-      ),
+      Effect.provide(Layer.provideMerge(Layer.merge(application, allowlist), platform)),
       Effect.scoped,
     ),
     controller.signal,

@@ -1,5 +1,6 @@
 import { Effect, Option, Schema } from "effect";
 import { Argument, Command, Flag } from "effect/cli";
+import { Allowlist } from "../core/allowlist";
 import { showReport } from "../core/show";
 import { renderShow } from "../core/show-report";
 import { shownPath } from "../core/shown-path";
@@ -21,6 +22,7 @@ export const showCommand = Command.make(
   ({ id, kind }) =>
     Effect.gen(function* () {
       const output = yield* Output;
+      yield* (yield* Allowlist).refresh;
       const host = yield* Host;
       const report = yield* showReport(id, Option.getOrUndefined(kind));
       yield* (yield* Telemetry).recordShow(report);

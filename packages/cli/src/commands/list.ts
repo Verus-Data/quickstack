@@ -1,5 +1,6 @@
 import { Effect, Option, Path, Schema } from "effect";
 import { Argument, Command, Flag } from "effect/cli";
+import { Allowlist } from "../core/allowlist";
 import { readLedger } from "../core/ledger";
 import { type Group, groups, listResult, projectChoices, toRow, withStats } from "../core/list";
 import { renderAddable, renderList } from "../core/list-report";
@@ -38,6 +39,7 @@ export const listCommand = Command.make(
   ({ group, dir }) =>
     Effect.gen(function* () {
       const typed = yield* selectedGroup(group);
+      yield* (yield* Allowlist).refresh;
       const host = yield* Host;
       const path = yield* Path.Path;
       const projectRoot = path.resolve(

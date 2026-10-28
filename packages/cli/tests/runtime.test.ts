@@ -1,7 +1,9 @@
 import { NodeServices } from "@effect/platform-node";
+import { INDEX_PUBLIC_KEYS } from "@steamfield/stacks-format";
 import { Effect, Layer } from "effect";
 import { expect, test } from "vitest";
 import { AppConfig, SOURCE_BUILD } from "../src/config";
+import { Allowlist } from "../src/core/allowlist";
 import { BrokenPipe } from "../src/errors";
 import { main } from "../src/main";
 import { NetLayer } from "../src/platform/net";
@@ -64,10 +66,19 @@ test("actual EPIPE from Output writer is quiet", async () => {
     Foreground.layer(Foreground.make()),
     NetLayer,
   );
+  const application = AppLayer(output, {}, SOURCE_BUILD);
   expect(
     await Effect.runPromise(
       main(["--version"]).pipe(
-        Effect.provide(Layer.provideMerge(AppLayer(output, {}, SOURCE_BUILD), platform)),
+        Effect.provide(
+          Layer.provideMerge(
+            Layer.merge(
+              application,
+              Allowlist.layer({ keys: INDEX_PUBLIC_KEYS }).pipe(Layer.provide(application)),
+            ),
+            platform,
+          ),
+        ),
       ),
     ),
   ).toBe(0);

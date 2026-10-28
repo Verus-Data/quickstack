@@ -38,6 +38,16 @@ test("Go v10 module suffix uses the required version", async () => {
   expect(await read(root)).toEqual([{ ecosystem: "go", name: "example.com/lib", major: "10" }]);
 });
 
+test("two Go module suffixes with different majors report an unknown major", async () => {
+  const root = project();
+  put(
+    root,
+    "go.mod",
+    "module example.com/app\nrequire (\n example.com/lib/v2 v2.3.1\n example.com/lib/v3 v3.1.0\n)\n",
+  );
+  expect(await read(root)).toEqual([{ ecosystem: "go", name: "example.com/lib", major: null }]);
+});
+
 test("an unterminated Go require block skips the whole file", async () => {
   const root = project();
   put(root, "go.mod", "module example.com/app\nrequire (\n example.com/lib v2.3.1\n");
