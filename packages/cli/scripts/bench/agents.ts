@@ -6,7 +6,7 @@ export type AgentAdapter = {
   readonly binary: string;
   readonly versionArgs: ReadonlyArray<string>;
   readonly auth: { readonly env: string; readonly obtain: string };
-  readonly headlessArgs: (prompt: string) => ReadonlyArray<string>;
+  readonly headlessArgs: (prompt: string, model?: string) => ReadonlyArray<string>;
   readonly readResult: (tail: string) => {
     ended: "exit" | "error";
     subtype?: string;
@@ -35,12 +35,13 @@ export const agents: readonly AgentAdapter[] = [
     binary: "claude",
     versionArgs: ["--version"],
     auth: { env: "CLAUDE_CODE_OAUTH_TOKEN", obtain: "claude setup-token" },
-    headlessArgs: (prompt) => [
+    headlessArgs: (prompt, model) => [
       "-p",
       prompt,
       "--output-format",
       "json",
       "--dangerously-skip-permissions",
+      ...(model === undefined ? [] : ["--model", model]),
     ],
     readResult: (tail) => {
       let buffer = "";
@@ -76,11 +77,12 @@ export const agents: readonly AgentAdapter[] = [
     binary: "codex",
     versionArgs: ["--version"],
     auth: { env: "CODEX_ACCESS_TOKEN", obtain: "codex login --with-access-token" },
-    headlessArgs: (prompt) => [
+    headlessArgs: (prompt, model) => [
       "exec",
       prompt,
       "--json",
       "--dangerously-bypass-approvals-and-sandbox",
+      ...(model === undefined ? [] : ["--model", model]),
     ],
     readResult: (tail) => {
       let ended: "exit" | "error" = "error";
