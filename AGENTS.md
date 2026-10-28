@@ -64,6 +64,7 @@ In `packages/cli/` (run there):
 | `bun run test:unit tests/cli.test.ts` | Single test file |
 | `bun run test:watch` | Watch Vitest tests |
 | `bun run pack` | Build, pack with Bun, preserve registry dotfiles, and write the tarball's sha256 under `dist/pack/` |
+| `bun run build:index --out <dir> --previous <url\|none> (--key <path> \| --unsigned)` | Build the proven registry index; `--check <base-url>` verifies a served signed index and all its bundles |
 | `bun run e2e` | Pack, install offline, then bun test ./e2e against the installed Node package |
 | `bun run human -- <args>` | The Node bundle in human mode (pseudo-terminal, agent markers removed); `new` and `add` need `--no-launch` |
 | `node dist/stacks --version` | Bundled version |
@@ -124,7 +125,7 @@ Paths below are relative to `packages/cli/`.
 - `src/errors.ts`, `logging.ts`, `runtime.ts`, `version.ts`: stable boundaries.
 - `src/schemas/add.ts::AddResult` records new files, skips, parked merges, retained commands, warnings, name provenance, tamper/state/digest status and handoff.
 - `src/schemas/`: CLI config/report schemas and their types; `origin.ts` owns the registry's `Origin`, `list.ts` the `list --json` result, `new.ts` the `new --json` result (`NewResult`), `guide.ts` the guide's `--json` result (`GuideResult`) and `verify.ts` the `verify --json` result and live events (`VerifyResult`, `StepResult`, `VerifyChange`, `VerifyEvent`). Shared contracts are imported directly from `@stacks/format`, with no CLI re-exports.
-- `packages/format/src/` (from the repo root): `agent.ts` owns `AgentId`, `DetectedAgent` and `Harness`; `entry.ts` owns entry format v1 (`StackMeta`, `FragmentMeta`, `VerifyStep`, `withStepDefaults`); `manifest.ts` owns `Manifest`, `ManifestStep`, `EntryRef` and `ProjectId` (including optional `Manifest.name`, written by `new` and `add`, inferred for older manifests); `run-record.ts` owns `RunRecord`, `RunStep`, `Outcome`, `FailureKind` and `TamperCheck`. `bundle.ts` owns `BundlePath`, `EntryBundle`, `canonicalBundle` and `bundleDigest` (Web Crypto SHA-256). `index.ts` is the public package boundary. Composition, fingerprinting and registry I/O stay in the CLI.
+- `packages/format/src/` (from the repo root): `agent.ts` owns `AgentId`, `DetectedAgent` and `Harness`; `entry.ts` owns entry format v1 (`StackMeta`, `FragmentMeta`, `VerifyStep`, `withStepDefaults`); `manifest.ts` owns `Manifest`, `ManifestStep`, `EntryRef` and `ProjectId` (including optional `Manifest.name`, written by `new` and `add`, inferred for older manifests); `run-record.ts` owns `RunRecord`, `RunStep`, `Outcome`, `FailureKind` and `TamperCheck`. `bundle.ts` owns `BundlePath`, `EntryBundle`, `canonicalBundle` and `bundleDigest` (Web Crypto SHA-256). `index-schema.ts` owns `LastRun`, `IndexEntry`, `RegistryIndex` and `SignedIndex`; `index-keys.ts` owns the maintainer public-key list `INDEX_PUBLIC_KEYS` (initially empty). `index.ts` is the public package boundary. Composition, fingerprinting and registry I/O stay in the CLI.
 - `tests/`, `e2e/`: Node programs/hook tests and Bun tests of the installed Node package.
 - `scripts/`, `biome-plugins/`: lifecycle/build and enforced boundaries.
 - Repo root: `.claude/`, `.github/`, `docs/`, `tests/hooks/`, `tests/acceptance/`: adapter, CI, harness guide, hook tests and the acceptance trace.

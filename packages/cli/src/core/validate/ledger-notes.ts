@@ -3,7 +3,7 @@ import type { LedgerRecord } from "../../schemas/ledger";
 import type { Finding } from "../../schemas/validate";
 import { compose } from "../compose/compose";
 import { fingerprint } from "../fingerprint";
-import { latestRecord, readLedger } from "../ledger";
+import { latestRecord, ledgerAdapterSets, readLedger } from "../ledger";
 import type { Entry } from "../registry/entry";
 import { type Check, entryFile, finding } from "./view";
 
@@ -59,18 +59,24 @@ const keyNotes = (stack: Entry, own: ReadonlyArray<LedgerRecord>, key: LedgerRec
       key,
     );
     if (!pass || (key.preset !== "default" && key.preset !== "sandbox")) return notes;
-    const current = yield* Effect.result(
-      compose({
-        stack: stack.id,
-        with: [],
-        without: [],
-        preset: key.preset,
-        agents: [key.agent],
-        always: [],
-        mode: "new",
-      }).pipe(Effect.flatMap(fingerprint)),
+    const preset = key.preset;
+    const currents = yield* Effect.forEach(ledgerAdapterSets(key.agent), (agents) =>
+      Effect.result(
+        compose({
+          stack: stack.id,
+          with: [],
+          without: [],
+          preset,
+          agents,
+          always: [],
+          mode: "new",
+        }).pipe(Effect.flatMap(fingerprint)),
+      ),
     );
-    if (Result.isSuccess(current) && current.success !== pass.fingerprint)
+    if (
+      currents.some(Result.isSuccess) &&
+      !currents.some((current) => Result.isSuccess(current) && current.success === pass.fingerprint)
+    )
       emit("ledger-changed", `${label} changed since its last green run (${pass.date})`);
     return notes;
   });

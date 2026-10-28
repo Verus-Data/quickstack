@@ -1,6 +1,7 @@
 # Phase 4.0c: Registry index
 
 Status: DRAFT 2026-10-26 (not agreed)
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -61,7 +62,7 @@ Carry-forward needs the previous output. The build takes `--previous <url>`, the
 ```ts
 // packages/format/src/index-schema.ts (shape)
 export const LastRun = Schema.Struct({            // projection of LedgerRecord, not a new record
-  date: Schema.String, result: Schema.Literal("pass"), agent: DetectedAgent,
+  date: Schema.String, result: Schema.Literal("pass"), agent: DetectedAgent, preset: Schema.String,
   minutesToGreen: Schema.NullOr(Schema.Number), fingerprint: Digest,
 });
 export const IndexEntry = Schema.Struct({
@@ -158,25 +159,43 @@ Documented in `stacks-api/apps/api/README.md`:
 
 Over a fixture registry, fixture ledger and, for carry-forward, a real local HTTP server serving a previous build:
 
-- The index decodes against `SignedIndex` and `RegistryIndex`; the signature verifies with the test public key; every bundle file's `bundleDigest` matches its path and its index entry.
-- A stack with a matching green ledger record gets a new entry whose `composition` equals the default fragments' current digests and whose `lastRun` is the newest matching record.
-- A matching record with `interventions: 1`, or with `tamperCheck: "manifest-only"`, does not prove the stack.
-- A matching green record whose agent is `"other"` proves the stack, and `lastRun.agent` is `"other"`.
-- A stack whose content changed since its last green run is carried forward: old digest, old `composition`, old `lastRun`, old bundle files present in the output.
-- A stack never proven is omitted.
-- A fixture entry that fails `validate` makes the build exit non-zero and leaves `--out` untouched.
-- A previous host serving a tampered bundle fails the build.
-- Neither `--key` nor `--unsigned`: exit non-zero, nothing written. `--unsigned`: every envelope has `signature: ""` and `--check` against it fails.
-- `--check` against the local server passes on a good build and fails, naming the file, when one byte of the served payload changes.
-- `_headers` has the two rules above; served by 4.0b's Node server from a static directory holding the build output, `GET /v1/index.json` and an entry file carry them (a test in `stacks-api`, over a fixture build copied from this repository's test output).
+1. The index decodes against `SignedIndex` and `RegistryIndex`; the signature verifies with the test public key; every bundle file's `bundleDigest` matches its path and its index entry.
+2. A stack with a matching green ledger record gets a new entry whose `composition` equals the default fragments' current digests and whose `lastRun` is the newest matching record.
+3. A matching record with `interventions: 1`, or with `tamperCheck: "manifest-only"`, does not prove the stack.
+4. A matching green record whose agent is `"other"` proves the stack, and `lastRun.agent` is `"other"`.
+5. A stack whose content changed since its last green run is carried forward: old digest, old `composition`, old `lastRun`, old bundle files present in the output.
+6. A stack never proven is omitted.
+7. A fixture entry that fails `validate` makes the build exit non-zero and leaves `--out` untouched.
+8. A previous host serving a tampered bundle fails the build.
+9. Neither `--key` nor `--unsigned`: exit non-zero, nothing written. `--unsigned`: every envelope has `signature: ""` and `--check` against it fails.
+10. `--check` against the local server passes on a good build and fails, naming the file, when one byte of the served payload changes.
+11. `_headers` has the two rules above.
+
+### Realistic edge cases
+
+12. Optional fragments are indexed only when a ledger record proves their current content in a composition; stale and never-proven optional fragments are excluded.
+13. An untrusted or tampered previous index is refused; `--check` rejects missing or tampered advertised bundles and names the failing file.
+14. Missing or untrusted keys, both signing modes together, and missing `--previous` fail without changing existing output.
+15. Raw bundles preserve dotfiles, binary bytes, templates, executable bits and paths with spaces, leading dashes and non-ASCII characters; a symlink inside an entry fails validation without changing output.
+16. Successful rebuilds replace existing output; a failure while fetching carried bundles preserves the entire previous output and unrelated siblings.
+17. A registry with only validation warnings fails the build and preserves existing output.
+18. A working directory outside the package, inherited git repository selectors and agent markers do not change the bundled registry or reported commit.
 
 ## Exit criteria
 
+- Served by 4.0b's Node server from a static directory holding the build output, `GET /v1/index.json` and an entry file carry the two cache rules above (tested in `stacks-api`, over a fixture build copied from this repository's test output).
 - Acceptance tests pass; `bun run check` green from the repo root.
 - A maintainer has deployed the index once by hand, and `build:index --check` passes against the live host.
 
 ## What this plan may get wrong
 
+- 2026-10-27: `INDEX_PUBLIC_KEYS` starts empty until a maintainer supplies a production key. Signing with an unlisted key fails with a maintainer-facing error; unsigned local output deliberately fails `--check`. The format test no longer requires a nonempty list; it still checks every listed key is a distinct Ed25519 key other than the fixture's.
+- 2026-10-27: against the real bundled registry and ledger the index proves no stack yet. `astro-blog`, `go-cli`, `python-react` and `typescript-cli` have green records whose fingerprints are stale; the other six stacks have no default-composition record. A bench rerun per stack (2.0b) comes before the first published index.
+- 2026-10-27: the executing ledger agent does not establish adapter targets; ledger imports can record Codex executing a Claude-targeted project. Index proof comparison tries every supported adapter subset independently of the recorded agent. For the agent widening, `show` and validation also consider every subset when the detection is `"other"` or `"none"`.
+- 2026-10-27: a cached previous index still names its old bundle URLs after a proven update, so the build retains and verifies all bundles referenced by the supplied previous index, including its pinned compositions. Bundles unreferenced by that index cannot be discovered through this contract; retaining the full archive across fresh builds needs publisher support or a signed history inventory in a later unit.
+- 2026-10-27: after several generations with shared fragments pinned at different digests, previous fragment metadata may describe a different digest from a carried stack's pin. The build decodes metadata from the verified pinned bundle when the previous metadata's digest differs.
+- 2026-10-27: replacing a nonempty output directory requires moving the old tree aside before renaming the staged tree into place. A scoped rollback restores it on failure or interruption; this is not a single atomic exchange and does not protect against process termination between renames.
+- 2026-10-27: the `LastRun` sketch left out `preset`, though the text below it says `lastRun` uses the fields `list --json` shows, which include it; the directory's stack page shows the preset of its last run too. `LastRun` now carries `preset` beside `minutesToGreen`. `LedgerRecord.agent` was `AgentId`, so a ledger could not hold the `"other"` or `"none"` records this plan says project without loss; it widens to `DetectedAgent`, and readers already skip records they can't decode.
 - Proven-only serving makes ledger runs a release gate for stack prose. Until the canary runs (5.1), proof comes from maintainers rerunning the bench (2.0b), so the index may lag `main` for weeks. That is the intended trade: stale and proven over fresh and untested.
 - A maintainer-held key is a single point of loss. Losing it means shipping a CLI release with a new key before the index can change; that's why `INDEX_PUBLIC_KEYS` is a list.
 - The 5-minute index cache delays a fix by up to five minutes plus revalidation. Acceptable for a file that changes when a maintainer deploys.

@@ -1,3 +1,4 @@
+import { AgentId } from "@stacks/format";
 import { Effect, FileSystem, Path, Result, Schema } from "effect";
 import { InvalidConfig } from "../errors";
 import { type LastRun, Ledger, LedgerRecord } from "../schemas/ledger";
@@ -9,6 +10,16 @@ export type LedgerRead = {
   readonly skipped: { readonly newer: number; readonly invalid: number };
 };
 export type LedgerKey = Pick<LedgerRecord, "stack" | "with" | "preset" | "agent">;
+
+/** Without a known target, an exact fingerprint decides between adapter candidates. */
+export function ledgerAdapterSets(
+  agent?: LedgerRecord["agent"],
+): ReadonlyArray<ReadonlyArray<AgentId>> {
+  if (Schema.is(AgentId)(agent)) return [[agent]];
+  let sets: AgentId[][] = [[]];
+  for (const id of AgentId.literals) sets = [...sets, ...sets.map((set) => [...set, id])];
+  return sets.filter((set) => set.length > 0);
+}
 
 /** Keep the raw envelope for append: records a reader skips must survive a write. */
 const readFile = (registryDir: string) =>
