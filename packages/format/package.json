@@ -13,6 +13,7 @@
   "files": [
     "dist/*.js",
     "dist/*.d.ts",
+    "schemas/",
     "LICENSE"
   ],
   "scripts": {
