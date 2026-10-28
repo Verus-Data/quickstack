@@ -1,4 +1,4 @@
-# @stacks/mcp
+# @steamfield/stacks-mcp
 
 The stacks MCP server, so agents can reach stacks as tools. Placeholder: this package has no code, scripts or dependencies yet, so the root scripts skip it.
 

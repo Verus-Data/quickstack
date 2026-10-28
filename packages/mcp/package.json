@@ -1,5 +1,5 @@
 {
-  "name": "@stacks/mcp",
+  "name": "@steamfield/stacks-mcp",
   "version": "0.0.0",
   "private": true,
   "type": "module"

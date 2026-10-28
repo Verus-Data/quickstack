@@ -4,11 +4,11 @@ Status: DRAFT 2026-10-26 (not agreed). Gated: start only when the evidence below
 
 | Field | Value |
 |---|---|
-| Goal | `@stacks/mcp` is a published stdio MCP server that exposes `search`, `list`, `show`, `new` (never launching an agent) and `verify` as tools by running the published CLI's `--json` contract, so an agent whose client prefers MCP tools, or has no shell, gets the same results and the same trust boundary as the CLI |
+| Goal | `@steamfield/stacks-mcp` is a published stdio MCP server that exposes `search`, `list`, `show`, `new` (never launching an agent) and `verify` as tools by running the published CLI's `--json` contract, so an agent whose client prefers MCP tools, or has no shell, gets the same results and the same trust boundary as the CLI |
 | Traces to | Assumption 5: "Handoff to whatever agent is on PATH is the right entry point. Confidence: Low. Validate: Watch whether people use `new` from a terminal or ask their agent to run it." The coding agent as "the CLI's main reader". D11: "an MCP server will be its own package" |
 | Depends on | 1.6c (a published `stacks` with a stable `--json` contract), 3.1a (`show --json`, which `stacks_show` wraps). Evidence: open question 15 |
 | Blocks | Nothing |
-| Decisions needed | Open question 15 (the start condition below). D9 (proposed) supplies context. The `@stacks` npm scope must be owned by the maintainers before publishing ([open question 23](../risks-and-open-questions.md#open-questions-for-the-maintainers)); if it isn't, publish as `stacks-mcp` and change nothing else |
+| Decisions needed | Open question 15 (the start condition below). D9 (proposed) supplies context. The package publishes under the maintainers' `@steamfield` scope (D36, which corrects [open question 23](../risks-and-open-questions.md#open-questions-for-the-maintainers)) |
 | Settles | How the server shares code with the CLI; packaging; tool contracts; that MCP changes nothing about what runs |
 
 ## The gate (open question 15)
@@ -26,7 +26,7 @@ In:
 
 - Filling in the `packages/mcp` placeholder: a stdio MCP server, tests, scripts the root fan-out runs, `.claude/rules/mcp/`.
 - Five tools and one resource. `stacks_search` is the entry point: an agent describing what the user wants to build starts there, as the agent guide tells a shell agent to start with `stacks search` (4.5c).
-- A manual `npm publish` of `@stacks/mcp` by a maintainer, the same way 1.6c publishes the CLI. A CI release of this package is out of scope here and owned by no sub-phase: 5.0's workflow releases only `stacks`.
+- A manual `npm publish` of `@steamfield/stacks-mcp` by a maintainer, the same way 1.6c publishes the CLI. A CI release of this package is out of scope here and owned by no sub-phase: 5.0's workflow releases only `stacks`.
 
 Out:
 
@@ -46,9 +46,9 @@ The server runs the CLI with `--json` for each tool call. The JSON contract is s
 
 ### Packaging
 
-- `@stacks/mcp` depends on `stacks` with `"stacks": "workspace:^"`, which `bun pm pack` rewrites to the released range. Its own code and `effect` are bundled the way 0.2 bundles the CLI, so `stacks` is its only runtime dependency.
-- The server finds the CLI from the dependency, never from PATH: `createRequire(import.meta.url).resolve("stacks/package.json")`, then the `bin.stacks` path from that file, run as `process.execPath <bin> ... --json`. That pins the CLI version the server was released with. If 0.2 gives `stacks` an `exports` map, it must include `"./package.json"`; the startup test catches it if not.
-- `bin`: `stacks-mcp`. A client registers it as `npx -y @stacks/mcp`.
+- `@steamfield/stacks-mcp` depends on the CLI with `"@steamfield/stacks": "workspace:^"`, which `bun pm pack` rewrites to the released range. Its own code and `effect` are bundled the way 0.2 bundles the CLI, so the CLI is its only runtime dependency.
+- The server finds the CLI from the dependency, never from PATH: `createRequire(import.meta.url).resolve("@steamfield/stacks/package.json")`, then the `bin.stacks` path from that file, run as `process.execPath <bin> ... --json`. That pins the CLI version the server was released with. If 0.2 gives the CLI package an `exports` map, it must include `"./package.json"`; the startup test catches it if not.
+- `bin`: `stacks-mcp`. A client registers it as `npx -y @steamfield/stacks-mcp`.
 
 ### Protocol
 
@@ -113,7 +113,7 @@ All against the built bundles: the package's `test` script builds the CLI (`bun 
 
 - The gate is met and the evidence that met it is recorded in this file.
 - Acceptance tests pass; `bun run check` green from the repo root, including `packages/mcp`.
-- A maintainer publishes `@stacks/mcp` by hand; `npx -y @stacks/mcp` starts from a clean directory.
+- A maintainer publishes `@steamfield/stacks-mcp` by hand; `npx -y @steamfield/stacks-mcp` starts from a clean directory.
 - One real agent client registers the server and builds a sandbox project to a green `verify` through the tools alone; run note in `plans/runs/`.
 
 ## What this plan may get wrong

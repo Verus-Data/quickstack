@@ -1,5 +1,5 @@
 {
-  "name": "@stacks/monorepo",
+  "name": "@steamfield/stacks-monorepo",
   "private": true,
   "type": "module",
   "packageManager": "bun@1.4.2",

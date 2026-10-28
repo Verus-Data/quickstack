@@ -26,7 +26,7 @@ This repository is a bun workspace. Product planning is in [plans/](plans/README
 | Path | What it is |
 | --- | --- |
 | [packages/cli](packages/cli/README.md) | `@steamfield/stacks`, the CLI (installed as `stacks`): Effect 4, a Node 22+ bundle. `new <stack>` writes a project and the brief your coding agent builds it from; the bundled stacks are listed in its README |
-| [packages/mcp](packages/mcp/README.md) | `@stacks/mcp`, the MCP server (placeholder, no code yet) |
+| [packages/mcp](packages/mcp/README.md) | `@steamfield/stacks-mcp`, the MCP server (placeholder, no code yet) |
 | `.claude/`, `docs/harness.md` | The agent harness: hooks, rules, skills and their tests in `tests/hooks/`, and the acceptance trace in `tests/acceptance/` |
 
 ## Development quick start
@@ -54,7 +54,7 @@ Dependency versions live once, in `workspaces.catalog` in the root `package.json
 
 To add a package:
 
-1. Create `packages/<name>/package.json` with a scoped name (`@stacks/<name>`), `"private": true` and `"type": "module"`, then run `bun install`.
+1. Create `packages/<name>/package.json` with a scoped name (`@steamfield/stacks-<name>`, the maintainers' npm scope), `"private": true` and `"type": "module"`, then run `bun install`.
 2. Add `tsconfig.json` extending `../../tsconfig.base.json`, which has Node types only; add `"types": ["bun", "node"]` only if the package uses Bun APIs.
 3. Define the standard scripts the package supports so the root gate runs them.
 4. If it needs lint rules of its own, add a nested `biome.json` with `"root": false, "extends": "//"`.

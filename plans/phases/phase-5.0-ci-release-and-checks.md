@@ -38,7 +38,7 @@ Out:
 - Changelog or version-bump tooling. A maintainer bumps `version` in
   `packages/cli/package.json` in a PR, merges, then tags.
 - SHA-pinned actions (deferred in `AGENTS.md`); action tags match `ci.yml`.
-- Publishing `@stacks/mcp`. 4.3 publishes it by hand; a CI release for it is out of
+- Publishing `@steamfield/stacks-mcp`. 4.3 publishes it by hand; a CI release for it is out of
   scope here and owned by no sub-phase.
 - Updating the released-versions list 4.1b's ingest checks: 4.1c reads released versions
   from npm daily; a publish-time push is an optional later speed-up.
