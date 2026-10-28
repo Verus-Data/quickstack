@@ -51,7 +51,7 @@ the network.
    - a pre-scaffolded and verified copy of the demo project, plus the uncut agent session.
    Rehearse switching to the kit in under two minutes and record the time.
 
-6. Post-window. When judging ends, lift the freeze lines and note it in HANDOFF; R7 to R9 can
+6. Post-window. When judging ends, lift the freeze lines and note it in HANDOFF; R8 and R9 can
    then deploy.
 
 ## Done when

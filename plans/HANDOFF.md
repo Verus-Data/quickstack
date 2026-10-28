@@ -15,8 +15,8 @@ Use [the submission-readiness plan](submission-readiness/README.md) for the rema
 order. Its README is the tracker and decision log (D1 to D9 need the user); each row has
 its own file: R0 release baseline; R1 agent/search contracts, R2 seed quality, R3 current
 demo proof, R4 website closure and R10 judge access; R5 coordinated release; R6 submission
-and R11 judging-window operations. R7 signed remote distribution and R8 live collection
-follow, with explicit gates. This queue updates the ordering below; earlier dated
+and R11 judging-window operations. R8 live collection follows, with explicit gates; signed
+remote distribution (formerly R7) is deferred. This queue updates the ordering below; earlier dated
 execution notes remain historical evidence.
 
 ## Earlier phase 4 handoff (2026-10-28)

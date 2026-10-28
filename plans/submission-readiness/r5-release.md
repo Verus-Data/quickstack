@@ -154,8 +154,8 @@ restarting from the step that consumed it.
 | A recipe defect appears | Back to R3; new tarball; never edit demo output |
 | Published version is broken | Publish a fixed patch version and move `latest`; never unpublish or rewrite a version |
 
-Default telemetry stays off (R8). Remote-index trust stays as it is (R7); don't accept
-unsigned remote entries to make anything work.
+Default telemetry stays off (R8). Leave the CLI's remote-index trust checks as they are
+(the remote origin stays off); don't loosen them to make anything work.
 
 ## Done when
 

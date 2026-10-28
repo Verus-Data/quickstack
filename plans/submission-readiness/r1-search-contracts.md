@@ -62,7 +62,7 @@ Format changes come first, because the API can only consume a published format v
    - API: forward `lastRun` from the index entry when present, with `sameContent` absent
      (unknown), so it gets no bonus. Never invent a run when the entry has none. Never
      compare an entry's bundle digest with a run fingerprint, and never import CLI
-     composition into the API. Publisher-attested `sameContent` is R7.
+     composition into the API. Publisher-attested `sameContent` is deferred (R9).
    - Guide: `guide.ts` line 14 says "if neither has stats, prefer the more recent `lastRun`".
      Change it to prefer a `lastRun` with `sameContent: true`, and to treat other runs as
      history. Update `packages/cli/tests/guide.test.ts`.

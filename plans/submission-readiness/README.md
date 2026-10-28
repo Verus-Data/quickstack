@@ -25,7 +25,7 @@ A judge, with no help from us, can:
 6. do all of the above during the judging window without the service being down or
    redeployed under them.
 
-Rows R0 to R6, R10 and R11 deliver that. R7 to R9 come after submission.
+Rows R0 to R6, R10 and R11 deliver that. R8 and R9 come after submission.
 
 ## How to use this folder
 
@@ -61,7 +61,7 @@ States: `Open`, `In progress`, `Blocked (<reason>)`, `Done`. Update this table i
 | [R5](r5-release.md) | P0 | Coordinated release and deployed acceptance | R1, R2, R3, R4, R10 | | Open | `release.md` |
 | [R6](r6-submission.md) | P0 | Recorded demo, reconciled plans, submission | R5 | | Open | `submission.md` |
 | [R11](r11-judging-operations.md) | P0 | Judging-window freeze, monitoring and fallback kit | R5 | | Open | `operations.md` |
-| [R7](r7-remote-distribution.md) | P1 | Signed remote-only recipe discovery | R6 | | Open | `remote-index.md` |
+| R7 | | Signed remote-only recipe discovery: dropped 2026-10-28, deferred in R9 | | | Dropped | |
 | [R8](r8-telemetry-launch.md) | P1 | Live telemetry collection | R6 | | Open | `telemetry-launch.md` |
 | [R9](r9-follow-up.md) | P1/P2 | Scheduled proof and later product work | R6 | | Open | per item |
 
@@ -74,7 +74,7 @@ R0 ──┬─> R1 ──────────────┐
      ├─> R3 ──────────────┤        └─> R11
      ├─> R4 (start) ──────┤
      └─> R10 ─────────────┘
-R6 ──> R7, R8, R9
+R6 ──> R8, R9
 ```
 
 After R0, R1, R2, R3, R4 and R10 run in parallel. R1's format publication (D2) is on the
@@ -174,7 +174,7 @@ phases whose only leftovers are below are otherwise done.
 | --- | --- |
 | 4.0b first live deploy and hosted CI run; 4.5e redeploy of `main` | R5 (deploy); CI is R9 (5.0) |
 | 4.0c "rerun the bench per stack so the index proves something" | R3 for `python-react`; other stacks R9 "Wider library proof". Judges will see no ledger run on the other stacks; the site already says so honestly |
-| 4.0c/4.0d index key and official index URL | R7 |
+| 4.0c/4.0d index key and official index URL | R9 (deferred: the CLI ships its catalog in the bundle) |
 | 4.0e no source link until a public repository | R10 step 5 |
 | 4.1a/4.1e live telemetry launch, production acceptance, alert destination | R8; the uptime half of alerts is R11 step 2 |
 | 4.2b site tests 10 and 11; 4.2c telemetry views; 4.2f stats pages (both `IN PROGRESS`, acceptance tests unmerged on `delegate/t-4.2f`) | R4 step 1a |
@@ -182,7 +182,7 @@ phases whose only leftovers are below are otherwise done.
 | 4.2d/4.2e allowlist names review | R4 step 1 (needed before `/deps/` goes live) |
 | 4.2g active seed run and its tuning | R2 |
 | HANDOFF open question: index `lastRun` and local search disagree | R1 step 2 (`sameContent`) |
-| HANDOFF: site index reader requires signatures | R4 step 5 notes it; R7 resolves |
+| HANDOFF: site index reader requires signatures | R4 step 5 notes it; production already signs with its local key, so nothing more is needed |
 | 4.4c Codex link and Copilot marker; 4.4d real `npm install -g` update | R9 |
 | 4.5a judgments review | R9 |
 | 4.0f Workers, 4.3 MCP, 4.5d embeddings (deferred or gated) | R9, P2 |
@@ -209,8 +209,12 @@ New ideas stay out of P0 unless they fix a reproduced blocker to a judge journey
 First ce:devils-advocate review (2026-10-28): API gate preceded its format dependency
 update (R1 now owns the format publication, R5 gates the API afterwards); the blanket
 no-skips rule conflicted with the sandbox build skip (R0, R3 and R6 require `verify --all`);
-API content-match had no defined source (R1 leaves it unknown with no proof bonus; R7
-defines publisher attestation).
+API content-match had no defined source (R1 leaves it unknown with no proof bonus;
+publisher attestation is deferred with remote distribution in R9).
+
+R7 (signed remote-only recipe discovery) was dropped on 2026-10-28 at the user's direction:
+the submission ships its catalog inside the CLI, so remote distribution adds key handling and
+two extra releases without changing what a judge sees.
 
 Second review (2026-10-28), resolved by restructuring into this folder:
 
