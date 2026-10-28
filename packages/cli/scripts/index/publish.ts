@@ -1,4 +1,4 @@
-import { type IndexEntry, RegistryIndex } from "@stacks/format";
+import { type IndexEntry, OfficialNames, RegistryIndex } from "@stacks/format";
 import { Console, Effect, Exit, FileSystem, Path, Schema } from "effect";
 import type { currentIndex } from "./proof";
 import { bundlePath, bundleRefs, fetchBundle, fetchFragment } from "./remote";
@@ -97,14 +97,20 @@ const replaceOutput = Effect.fn("index.replaceOutput")(function* (options: {
 export const publish = Effect.fn("index.publish")(function* (options: {
   out: string;
   index: RegistryIndex;
+  names: OfficialNames;
   bundles: ReadonlyMap<string, Uint8Array>;
   key: string | undefined;
 }) {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
   const envelope = yield* signIndex(`${JSON.stringify(options.index, null, 2)}\n`, options.key);
+  const namesEnvelope = yield* signIndex(
+    `${JSON.stringify(options.names, null, 2)}\n`,
+    options.key,
+  );
   // Encoding checks the same contract the consumer will decode before touching the output.
   yield* Schema.decodeUnknownEffect(RegistryIndex)(options.index);
+  yield* Schema.decodeUnknownEffect(OfficialNames)(options.names);
   yield* Effect.scoped(
     Effect.gen(function* () {
       yield* fs.makeDirectory(path.dirname(options.out), { recursive: true });
@@ -124,6 +130,10 @@ export const publish = Effect.fn("index.publish")(function* (options: {
         `${JSON.stringify(envelope, null, 2)}\n`,
       );
       yield* fs.writeFileString(path.join(stage, "_headers"), headers);
+      yield* fs.writeFileString(
+        path.join(stage, "v1/names.json"),
+        `${JSON.stringify(namesEnvelope, null, 2)}\n`,
+      );
       yield* replaceOutput({ stage, backup: path.join(temporary, "previous"), out: options.out });
     }),
   );
