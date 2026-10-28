@@ -19,7 +19,7 @@
     "trace a failed HTTP call through structured logs"
   ],
   "useCases": ["REST services", "HTTP backends"],
-  "synonyms": ["Effect HttpApi", "Node", "OpenAPI", "request validation", "health endpoint"],
+  "synonyms": ["Effect HttpApi", "Node", "OpenAPI", "request validation"],
   "goodFor": [
     "one definition for routing and schemas",
     "testing both HTTP listeners and web handlers"

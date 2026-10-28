@@ -26,5 +26,5 @@
     "structured error responses",
     "table-driven command tests"
   ],
-  "notFor": ["graphical interfaces"]
+  "notFor": ["graphical interfaces", "a terminal user interface"]
 }

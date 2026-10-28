@@ -17,7 +17,7 @@
     "build separate production images for my frontend and backend"
   ],
   "useCases": ["container packaging", "automated image publishing"],
-  "synonyms": ["Dockerfile", "GHCR", "Buildx", "multi-stage builds", "health checks"],
+  "synonyms": ["Dockerfile", "GHCR", "Buildx", "multi-stage builds", "HEALTHCHECK"],
   "goodFor": ["minimal runtime images", "cached builds and tagged images"],
   "notFor": ["automatic rollout to a host", "container orchestration"]
 }
