@@ -25,8 +25,10 @@ the charts wait on OpenChart work done outside these plans (another agent owns t
 OpenChart). D17 is decided (opt-out, 2026-10-27) and D16 amended: telemetry storage runs on
 SQLite on the Node host now. 4.5c is executed (2026-10-28): `stacks search` ranks locally, scoring
 36/36 first results and 4/4 no-match on the golden set (`plans/runs/2026-10-28-search-lexical.md`);
-the embeddings comparison waits on a maintainer's provider key. In flight: 4.1a (CLI telemetry
-client) and 4.1b (ingest in `stacks-api`); then 4.1c, 4.1d, 4.2a, 4.2g and 4.5e, all AGREED. Maintainers' steps: review the 47 search
+the embeddings comparison waits on a maintainer's provider key. 4.1b is executed (2026-10-28):
+`stacks-api` accepts `POST /v1/events` into SQLite (development defaults to `.dev/data/`,
+production needs `STACKS_DB_PATH`, `NETWORK_HASH_KEY` and the trusted proxy headers). In flight:
+4.1a (CLI telemetry client); then 4.1c, 4.1d, 4.2a, 4.2g and 4.5e, all AGREED. Maintainers' steps: review the 47 search
 judgments (4.5a), generate the index key and add it to `INDEX_PUBLIC_KEYS`, rerun the bench per
 stack so the index proves something (4.0c), and publish `@stacks/format` (until then the API
 copies the schemas it reads).
