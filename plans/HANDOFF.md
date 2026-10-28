@@ -27,9 +27,12 @@ SQLite on the Node host now. 4.5c is executed (2026-10-28): `stacks search` rank
 36/36 first results and 4/4 no-match on the golden set (`plans/runs/2026-10-28-search-lexical.md`);
 the embeddings comparison waits on a maintainer's provider key. 4.1b is executed (2026-10-28):
 `stacks-api` accepts `POST /v1/events` into SQLite (development defaults to `.dev/data/`,
-production needs `STACKS_DB_PATH`, `NETWORK_HASH_KEY` and the trusted proxy headers). In flight:
-4.1a (CLI telemetry client), 4.1c (maintenance in `stacks-api`) and 4.5e's CLI side (tests
-first); then 4.1d, 4.2a and 4.2g, all AGREED. 4.5e's route in `stacks-api` imports `rank` from
+production needs `STACKS_DB_PATH`, `NETWORK_HASH_KEY` and the trusted proxy headers). 4.1a is
+executed (2026-10-28): the CLI queues opt-out telemetry and shows the first-run notice, but with
+no official endpoint yet consent is `no_endpoint` unless `STACKS_TELEMETRY_URL` is set. 4.1c is
+executed (2026-10-28): `stacks-api` runs archive, pruning and refresh under a lease (production
+needs `STACKS_ARCHIVE_DIR`). In flight: 4.5e's CLI side (tests first); then 4.1d, 4.2a and
+4.2g, all AGREED. 4.5e's route in `stacks-api` imports `rank` from
 `@stacks/format`, so it waits on that package's publication. Maintainers' steps: review the 47 search
 judgments (4.5a), generate the index key and add it to `INDEX_PUBLIC_KEYS`, rerun the bench per
 stack so the index proves something (4.0c), and publish `@stacks/format` (until then the API

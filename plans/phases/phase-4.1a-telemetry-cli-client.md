@@ -1,6 +1,6 @@
 # Phase 4.1a: Usage telemetry, CLI side
 
-Status: IN PROGRESS 2026-10-27 (D17 decided: opt-out with these protections)
+Status: EXECUTED 2026-10-28 (D17 decided: opt-out with these protections)
 Acceptance tests: traced
 
 | Field | Value |
@@ -250,6 +250,7 @@ Against a real local HTTP server that records requests and can hang, return 500 
 - 2026-10-28 (implementation): the required ground rule changes canonical brief fixtures and initially made two `mobile-expo` + `rr` compositions exceed the 6,000-word budget by 8–9 words. Shortening two fixed ground rules by nine words preserves their meaning and fits the budget without changing registry content. The contract freezes the canonical snapshots and the help test's exhaustive exit table; their updates need the orchestrator/test author.
 - 2026-10-28 (implementation): locked item 7's `add` and `verify` setups send a scaffold event before their final zero-request assertion, contrary to item 3; the request assertion must measure requests after setup. The malformed-config item 28 writes a file without creating its parent directory. Both tests were corrected in review (setup requests are cleared; the directory is created).
 - 2026-10-28 (review): the notice's privacy link is `/telemetry` on the host that receives the events, built from the configured endpoint, because no site domain exists yet; item 17 checks for that URL instead of any `https` link.
+- 2026-10-28 (landing): `stacks search` arrived on main after this plan; it carries the notice like every other command, and its result schema gained the optional `notice` field.
 - 2026-10-28 (implementation): a JSON notice cannot count as shown until stdout accepts its result. `notice.json` is claimed exclusively with a pending marker and settled after output; failed first commands remove their pending notice, and concurrent invocations queue nothing while delivery is pending.
 - 2026-10-28 (implementation): custom `STACKS_REGISTRY_DIR` and unsigned index origins use the existing `bundled`/`index` origin labels but are untrusted. They must be redacted and counted under `nonOfficial.source`; origin labels alone do not prove official identity. Verify's name allowlist extends from actual official composition steps, never from an edited manifest during `add`.
 
