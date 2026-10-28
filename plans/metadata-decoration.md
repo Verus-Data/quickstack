@@ -1,6 +1,6 @@
 # Metadata decoration
 
-Status: INTEGRATED 2026-10-28 (maintainer authorized landing; final merge checks in progress)
+Status: EXECUTED 2026-10-28 (integrated with maintainer authorization; all gate partitions passed)
 
 The existing search sidecar carries directory copy and practical project ideas
 alongside its bounded discovery fields. All 30 bundled cards retain main's
@@ -98,4 +98,30 @@ search ranking. Temporarily scoring a description changed the synthetic result
 and failed the test; restoring the existing allowlist passed it. No ranking
 implementation or query fixture was changed.
 
-Final checks and merge results will be recorded here after the full gate.
+Final integration checks ran from a separate full checkout at a1853ba:
+
+| Check | Result |
+|---|---|
+| Focused editorial, decorator and card-byte regressions | 76 passed |
+| CLI suite, excluding the separate bench partition | 156 files; 2,532 passed, 3 skipped |
+| Bench partition | 47 passed |
+| Format package | 155 passed |
+| Root hooks, scripts and acceptance trace | 378 passed, 2 skipped |
+| Installed Node package | Packed, installed and ran all 35 e2e tests successfully |
+| Static partition | Lint passed across 1,127 files; root and package typechecks passed |
+| Built CLI validation, human and JSON | 10 stacks, 20 fragments; 0 errors, 0 warnings, 11 existing notes |
+| Decorator dry run for mobile-expo | No request; actual cost $0 |
+| Content preservation | All 30 discovery cards and all frozen editorial fields compared equal, excluding the documented provenance changes |
+
+The first partitioned rr run passed five partitions; the CLI partition hit 20
+five-second test watchdogs on a laptop reporting a load average above 55. It had
+no assertion failures. Rerunning the entire CLI partition through rr on m4-mini
+passed with the existing assertions and watchdogs. All six gate partitions thus
+passed for the same source tree: 3,112 tests passed, 5 skipped, plus 35 e2e tests.
+The rr log identifiers are check-20261028-014714 and check-cli-20261028-015026.
+The skips vary by host/platform; this is not a claim that skipped cases ran.
+
+The QA fixes were already on main at 2873a32. This integration adds the editorial
+schema, validation, drafting behavior and cards without changing recipe content,
+run evidence, lexical ranking or query fixtures. The session's temporary QA apps
+were removed; the merged worktrees are archived after landing.

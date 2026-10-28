@@ -45,6 +45,9 @@ for field purposes, coverage, checks and approval provenance. The maintainer
 authorized landing the prepared cards on 2026-10-28; their agent authorship and
 prompt version remain recorded. Main's reviewed discovery wording is preserved,
 with source digests aligned to the QA-fixed recipes.
+All final gate partitions passed: 3,112 tests passed/five skipped, plus 35 e2e
+tests. The CLI partition passed on a remote rerun after local test watchdogs;
+the metadata report records the runs and unchanged assertions.
 
 Executed: 4.0a, 4.0b, 4.0c (both repositories: `stacks-api` serves the index and its
 `sha256:`-named bundles, and its API README has the by-hand deploy), 4.0d (the remote origin; no official

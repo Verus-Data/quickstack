@@ -7,8 +7,9 @@ of every instruction in a brief.
 
 Input: the [original report](runs/2026-10-27-library-qa/REPORT.md), its five group
 reports and [timings](runs/2026-10-27-library-qa/timings.md). Historical evidence
-and the run ledger are unchanged. Metadata enrichment is maintained separately;
-no human review stamp was created by this work.
+and the run ledger are unchanged. This report covers QA remediation;
+[metadata enrichment](metadata-decoration.md) records its separate integration
+and the maintainer's authorization to land those cards.
 
 Current main's discovery cards had already been approved in the parallel search
 work. Thirteen became stale after these recipe edits. Their claims were checked
