@@ -27,6 +27,7 @@ export { compareSearchHits, type RankInput, type RankRecord, rank } from "./sear
 export {
   SearchEvidence,
   SearchHit,
+  SearchIndex,
   SearchMetadata,
   SearchResponse,
   SearchResult,

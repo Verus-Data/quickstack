@@ -1,10 +1,27 @@
-import type { IndexEntry } from "@steamfield/stacks-format";
+import type { IndexEntry, SearchIndex } from "@steamfield/stacks-format";
 import { Effect } from "effect";
 import { decodeEntry, markdownFile } from "../../src/core/registry/entry";
 import { searchSourceDigest } from "../../src/core/search/digest";
-import { decodeSidecar, readSearchFile, sidecarPath } from "../../src/core/search/sidecar";
-import type { SearchIndex } from "../../src/schemas/search";
+import {
+  decodeSidecar,
+  decodeVocabulary,
+  readSearchFile,
+  sidecarPath,
+} from "../../src/core/search/sidecar";
 import { readBundle } from "./bundle";
+
+const VOCABULARY_FILE = "search/vocabulary.json";
+const vocabularyError = () =>
+  new Error(`${VOCABULARY_FILE}: missing or invalid search vocabulary.`);
+
+/** The bundled vocabulary `rank` needs; the build fails without a valid one. */
+const readVocabulary = (root: string) =>
+  readSearchFile(root, VOCABULARY_FILE).pipe(
+    Effect.flatMap((bytes) =>
+      bytes === undefined ? Effect.fail(vocabularyError()) : decodeVocabulary(bytes),
+    ),
+    Effect.mapError(vocabularyError),
+  );
 
 export const indexSearch = Effect.fn("index.search")(function* (options: {
   root: string;
@@ -12,6 +29,7 @@ export const indexSearch = Effect.fn("index.search")(function* (options: {
   bundles: ReadonlyMap<string, Uint8Array>;
   previous: SearchIndex | null;
 }) {
+  const vocabulary = yield* readVocabulary(options.root);
   const entries: SearchIndex["entries"][number][] = [];
   for (const ref of options.entries) {
     const bytes = yield* readSearchFile(options.root, sidecarPath(ref));
@@ -42,5 +60,5 @@ export const indexSearch = Effect.fn("index.search")(function* (options: {
     const { stale: _stale, ...current } = { stale: false, ...card };
     entries.push({ ...current, ...(card.source.digest === digest ? {} : { stale: true }) });
   }
-  return { formatVersion: 1, entries } satisfies SearchIndex;
+  return { formatVersion: 1, entries, vocabulary } satisfies SearchIndex;
 });

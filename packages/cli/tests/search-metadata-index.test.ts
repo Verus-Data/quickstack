@@ -1,7 +1,12 @@
 import { verify } from "node:crypto";
-import { readFileSync, realpathSync } from "node:fs";
+import { readFileSync, realpathSync, rmSync } from "node:fs";
 import { join } from "node:path";
-import { SignedIndex } from "@steamfield/stacks-format";
+import {
+  SearchIndex,
+  SearchMetadata,
+  SearchVocabulary,
+  SignedIndex,
+} from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { afterEach, expect, test } from "vitest";
 import {
@@ -79,14 +84,7 @@ async function searchFile(out: string) {
       Buffer.from(envelope.signature, "base64"),
     ),
   ).toBe(true);
-  const { SearchMetadata } = await import("@steamfield/stacks-format");
-  const raw = Schema.decodeUnknownSync(
-    Schema.Struct({ formatVersion: Schema.Literal(1), entries: Schema.Array(Schema.Unknown) }),
-  )(JSON.parse(envelope.payload));
-  const payload = {
-    ...raw,
-    entries: raw.entries.map((value) => Schema.decodeUnknownSync(SearchMetadata)(value)),
-  };
+  const payload = Schema.decodeUnknownSync(SearchIndex)(JSON.parse(envelope.payload));
   return { envelope, payload };
 }
 
@@ -94,11 +92,15 @@ test("signed search metadata matches indexed entries and check detects a changed
   const f = await setup();
   const { index } = await build(f);
   const { envelope, payload } = await searchFile(f.out);
+  expect(payload.vocabulary).toEqual(
+    Schema.decodeUnknownSync(SearchVocabulary)(
+      readJson(join(f.registry, "search/vocabulary.json")),
+    ),
+  );
   expect(payload.entries.map(({ kind, id }) => `${kind}/${id}`).sort()).toEqual(
     index.entries.map(({ kind, id }) => `${kind}/${id}`).sort(),
   );
   for (const value of payload.entries) {
-    const { SearchMetadata } = await import("@steamfield/stacks-format");
     expect(value).toEqual(
       Schema.decodeUnknownSync(SearchMetadata)(readJson(cardPath(f.registry, value))),
     );
@@ -127,6 +129,24 @@ test("signed search metadata matches indexed entries and check detects a changed
     await host.close();
   }
 }, 30_000);
+
+test.each([
+  ["missing", null],
+  ["invalid", '{"schemaVersion":1}'],
+])(
+  "build:index rejects a %s bundled search vocabulary and names its file [4.5e#13]",
+  async (_state, contents) => {
+    const f = await setup();
+    const file = join(f.registry, "search/vocabulary.json");
+    if (contents === null) rmSync(file);
+    else put(file, contents);
+    const result = await f.invoke(["--out", f.out, "--previous", "none", "--key", privateKey]);
+    expect(result.status).toBeGreaterThan(0);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toContain("search/vocabulary.json");
+  },
+  30_000,
+);
 
 test("a carried-forward bundle keeps the current card marked stale against its old entry [4.5b#14]", async () => {
   const f = await setup();

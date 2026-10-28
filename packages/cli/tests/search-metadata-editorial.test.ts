@@ -1,18 +1,23 @@
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { NodeServices } from "@effect/platform-node";
-import { canonicalBundle, type IndexEntry, SearchMetadata } from "@steamfield/stacks-format";
+import {
+  canonicalBundle,
+  type IndexEntry,
+  SearchIndex,
+  SearchMetadata,
+} from "@steamfield/stacks-format";
 import { Effect, Schema } from "effect";
 import { afterEach, expect, test } from "vitest";
 import { EXAMPLE_CARDS, PROMPT_VERSION } from "../scripts/decorate/prompt";
 import { indexSearch } from "../scripts/index/search";
 import { decodeSidecar } from "../src/core/search/sidecar";
-import { SearchIndex } from "../src/schemas/search";
 import { quiet, runCli } from "./helpers/cli";
 import { copyEntry, minimal, writeEntry } from "./helpers/registry";
 import {
   card,
   cardPath,
+  copyVocabulary,
   type DecorateWorkspace,
   decorate,
   decorateWorkspace,
@@ -89,7 +94,17 @@ test.each([stack, fragment])(
     expect(Schema.encodeSync(SearchMetadata)(decoded)).toEqual(rich);
     expect(
       Schema.decodeUnknownSync(SearchIndex)(
-        { formatVersion: 1, entries: [rich] },
+        {
+          formatVersion: 1,
+          entries: [rich],
+          vocabulary: {
+            schemaVersion: 1,
+            platforms: {},
+            productKinds: {},
+            languages: {},
+            capabilities: {},
+          },
+        },
         { onExcessProperty: "error" },
       ).entries,
     ).toEqual([rich]);
@@ -356,6 +371,7 @@ test.each(["legacy", "enriched"])(
   "index assembly preserves %s cards and recalculates stale against the selected bundle [4.5b#21]",
   async (shape) => {
     const f = await setup();
+    copyVocabulary(f.root);
     const rich = shape === "legacy" ? f.value : { ...f.value, ...editorial };
     put(cardPath(f.root, stack), JSON.stringify(rich));
     const ref: IndexEntry = {
@@ -393,6 +409,21 @@ test.each(["legacy", "enriched"])(
     expect((await publish(file, stale)).entries).toEqual([rich]);
   },
 );
+
+test.each([
+  ["missing", null],
+  ["malformed", '{"schemaVersion":1}'],
+])("index assembly rejects a %s vocabulary with its path [4.5e#13]", async (_state, contents) => {
+  const root = space.dir();
+  if (contents !== null) put(join(root, "search/vocabulary.json"), contents);
+  await expect(
+    Effect.runPromise(
+      indexSearch({ root, entries: [], bundles: new Map(), previous: null }).pipe(
+        Effect.provide(NodeServices.layer),
+      ),
+    ),
+  ).rejects.toThrow("search/vocabulary.json");
+});
 
 test.each(["legacy", "enriched"])(
   "create copies %s bytes and preserves source and stale semantics [4.5b#21]",
