@@ -1,6 +1,6 @@
 import { NodeServices } from "@effect/platform-node";
 import { Console, Duration, Effect, FileSystem, Layer, Path, Schema } from "effect";
-import { AppConfig, GIT_REPOSITORY_VARIABLES } from "../src/config";
+import { AppConfig, GIT_REPOSITORY_VARIABLES, SOURCE_BUILD } from "../src/config";
 import { type ComposeOptions, compose } from "../src/core/compose/compose";
 import { fingerprint } from "../src/core/fingerprint";
 import { appendRecord, readLedger } from "../src/core/ledger";
@@ -138,7 +138,7 @@ const program = Effect.scoped(
 
 const platform = Layer.merge(NodeServices.layer, Foreground.layer(Foreground.make()));
 const layer = Processes.layer.pipe(
-  Layer.provideMerge(AppConfig.layer()),
+  Layer.provideMerge(AppConfig.layer(SOURCE_BUILD)),
   Layer.provideMerge(platform),
 );
 process.exitCode = await Effect.runPromise(

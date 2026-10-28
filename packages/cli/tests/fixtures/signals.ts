@@ -5,7 +5,7 @@ import { existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { NodeServices } from "@effect/platform-node";
 import { Duration, Effect, Layer } from "effect";
-import { AppConfig } from "../../src/config";
+import { AppConfig, SOURCE_BUILD } from "../../src/config";
 import { installSignalPolicy } from "../../src/platform/signals";
 import { runInvocation } from "../../src/runtime";
 import { Foreground, Processes } from "../../src/services/processes";
@@ -17,7 +17,7 @@ const mark = (name: string, value = "yes") =>
 const holder = Foreground.make();
 let childSigintAt = 0;
 const layer = Processes.layer.pipe(
-  Layer.provideMerge(Layer.mergeAll(AppConfig.layer(), Foreground.layer(holder))),
+  Layer.provideMerge(Layer.mergeAll(AppConfig.layer(SOURCE_BUILD), Foreground.layer(holder))),
   Layer.provideMerge(NodeServices.layer),
 );
 const program = Effect.gen(function* () {

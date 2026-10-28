@@ -1,7 +1,7 @@
 import { NodeServices } from "@effect/platform-node";
 import { Effect, Layer } from "effect";
 import { expect, test } from "vitest";
-import { AppConfig } from "../src/config";
+import { AppConfig, SOURCE_BUILD } from "../src/config";
 import { BrokenPipe } from "../src/errors";
 import { main } from "../src/main";
 import { NetLayer } from "../src/platform/net";
@@ -21,7 +21,9 @@ test("production AppLayer reads normalized environment lazily", async () => {
   const paths = await Effect.runPromise(
     Effect.gen(function* () {
       return yield* (yield* AppConfig).paths;
-    }).pipe(Effect.provide(Layer.provideMerge(AppLayer(output.layer), platform))),
+    }).pipe(
+      Effect.provide(Layer.provideMerge(AppLayer(output.layer, undefined, SOURCE_BUILD), platform)),
+    ),
   );
   expect(paths.config).toContain(process.env.HOME);
 });
@@ -64,7 +66,9 @@ test("actual EPIPE from Output writer is quiet", async () => {
   );
   expect(
     await Effect.runPromise(
-      main(["--version"]).pipe(Effect.provide(Layer.provideMerge(AppLayer(output, {}), platform))),
+      main(["--version"]).pipe(
+        Effect.provide(Layer.provideMerge(AppLayer(output, {}, SOURCE_BUILD), platform)),
+      ),
     ),
   ).toBe(0);
 });

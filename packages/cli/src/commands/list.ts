@@ -1,13 +1,14 @@
 import { Effect, Option, Path, Schema } from "effect";
 import { Argument, Command, Flag } from "effect/cli";
 import { readLedger } from "../core/ledger";
-import { type Group, groups, listResult, projectChoices, toRow } from "../core/list";
+import { type Group, groups, listResult, projectChoices, toRow, withStats } from "../core/list";
 import { renderAddable, renderList } from "../core/list-report";
 import { MANIFEST_PATH, readManifest } from "../core/manifest";
 import { type Entry, isRejected } from "../core/registry/entry";
 import { Registry, remoteRoots } from "../core/registry/registry";
 import { shellArg } from "../core/shell";
 import { shownPath } from "../core/shown-path";
+import { Stats } from "../core/stats";
 import { closest } from "../core/suggest";
 import { printable } from "../core/text";
 import { textWidth } from "../core/wrap";
@@ -74,10 +75,15 @@ export const listCommand = Command.make(
         Effect.flatMap((registry) => registry.all),
         Effect.provide(Registry.layer(roots)),
       );
-      const result = listResult(items, typed, records);
-      const all = items
-        .filter((item): item is Entry => !isRejected(item))
-        .map((entry) => toRow(entry, records));
+      const summary = Option.getOrUndefined(yield* (yield* Stats).summary);
+      const plain = listResult(items, typed, records);
+      const result = { ...plain, entries: withStats(plain.entries, summary) };
+      const all = withStats(
+        items
+          .filter((item): item is Entry => !isRejected(item))
+          .map((entry) => toRow(entry, records)),
+        summary,
+      );
       const { project, addable } = projectChoices(all, manifest);
       const agent = output.audience === "agent";
       // A human's descriptions wrap to the terminal; an agent's stay on one line each.

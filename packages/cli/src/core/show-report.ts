@@ -1,14 +1,39 @@
 import type { ShowReport } from "../schemas/show";
 import { plainStyle, type Style } from "../services/output";
+import { statsFields, statsLine } from "./stats-text";
 import { printable } from "./text";
 import { BUDGET } from "./validate/budget";
-import { wrap } from "./wrap";
+import { wrap, wrapWords } from "./wrap";
 
 const safeLine = (line: string) => line.split("\t").map(printable).join("\t");
 
 function lastRunLine(lastRun: ShowReport["lastRun"]): string {
   if (!lastRun) return "Last run: none";
   return `Last run: ${lastRun.result} ${lastRun.date}${lastRun.stack ? ` on ${lastRun.stack}` : ""}, ${lastRun.sameContent ? "same content" : "changed content"}`;
+}
+
+function statsLines(stats: ShowReport["stats"]): string[] {
+  if (!stats?.published) return [];
+  const lines = [statsLine(statsFields(stats, stats))];
+  if (stats.kind !== "stack") return lines;
+  const steps = Object.entries(stats.stepFailureShares)
+    .flatMap(([name, share]) => (share.suppressed ? [] : [{ name, value: share.value }]))
+    .sort((a, b) => b.value - a.value || a.name.localeCompare(b.name))
+    .slice(0, 3);
+  if (steps.length)
+    lines.push(
+      "Steps failing before first green:",
+      ...steps.map(({ name, value }) => `  ${name} ${Math.round(value * 100)}%`),
+    );
+  const start = new Date(Date.parse(`${stats.through}T00:00:00Z`) - (stats.window - 1) * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+  const latest = stats.series
+    .flatMap((point) => point.changes.map((change) => change.day))
+    .sort()
+    .at(-1);
+  if (latest && latest > start) lines.push(`content changed ${latest}`);
+  return lines;
 }
 
 /** Complete text review, including commands and every unfiltered guidance branch. */
@@ -74,6 +99,13 @@ export function renderShow(
       `Brief: ${report.briefWords.toLocaleString("en-US")} words with defaults (cap ${report.briefCap.toLocaleString("en-US")}; ${BUDGET.composedWithApp.toLocaleString("en-US")} with an app)`,
     );
   out.push(lastRunLine(report.lastRun));
+  out.push(
+    ...statsLines(report.stats).flatMap((line) =>
+      layout && line.startsWith("Stats:")
+        ? wrapWords(line, layout.width, layout.measure).split("\n")
+        : [line],
+    ),
+  );
   out.push(
     "",
     "--- guidance ---",

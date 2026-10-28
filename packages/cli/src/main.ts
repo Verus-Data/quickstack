@@ -4,6 +4,7 @@ import { CliConfig, CliError, CliOutput, Command, GlobalFlag, type HelpDoc } fro
 import { cli } from "./cli";
 import { AppConfig, type LogSettings } from "./config";
 import { helpFooter } from "./core/guide";
+import { Stats } from "./core/stats";
 import { closest } from "./core/suggest";
 import {
   type AppError,
@@ -201,7 +202,7 @@ export function main(
       yield* logging.flush(settings, quiet || expectedFailure(error, defect));
       return status;
     }),
-  ).pipe(Effect.provide(Telemetry.layer(telemetryOptions)));
+  ).pipe(Effect.provide(Telemetry.layer(telemetryOptions)), Effect.provide(Stats.layer));
 }
 
 function captureConsole(framework: string[]): Console.Console {

@@ -6,6 +6,7 @@ import { TestClock } from "effect/testing";
 import { afterAll, afterEach, expect, test } from "vitest";
 import { runBench } from "../scripts/bench";
 import { agents } from "../scripts/bench/agents";
+import { SOURCE_BUILD } from "../src/config";
 import { NetLayer } from "../src/platform/net";
 import { AppLayer, runInvocation } from "../src/runtime";
 import { Host } from "../src/services/host";
@@ -77,7 +78,7 @@ test("a run crossing UTC midnight retains its start date", async () => {
     program.pipe(
       Effect.tap(() => Effect.flatMap(Output, (out) => out.flush)),
       Effect.orDie,
-      Effect.provide(Layer.provideMerge(AppLayer(output.layer, f.env), platform)),
+      Effect.provide(Layer.provideMerge(AppLayer(output.layer, f.env, SOURCE_BUILD), platform)),
       Effect.scoped,
     ),
   );
