@@ -4,27 +4,27 @@ Status: DRAFT 2026-10-27 (not agreed)
 
 | Field | Value |
 |---|---|
-| Goal | An agent passes the user's own description of what they want to build to `stacks search "<request>" --json` and gets ranked stacks and fragments with a tier, the fields and words each matched on, and the evidence (green rate, last run) beside it, computed entirely on the user's machine over every entry the CLI can see, offline included, with no request text leaving the machine; "an iOS health app" returns `mobile-expo` first, and 4.5a's golden set gates every change |
+| Goal | An agent passes the user's own description of what they want to build to `stacks search "<request>" --json` and gets ranked stacks and fragments with a tier, the fields and words each matched on, and the evidence (green rate, last run) beside it, computed entirely on the user's machine over every entry the CLI can see, offline included, with no request text leaving the machine; "an iOS health app" returns `mobile-expo` first, and 4.5a's golden set gates every change. This ranking is also what the API runs: 4.5e moves `rank` to `packages/format`, serves it as `GET /v1/search`, and makes the command ask the API first with this local ranking as the fallback |
 | Traces to | The coding agent: "It runs `list --json`, picks a stack"; its frustration is "ambiguity", and today it has to map a product request onto stack ids from descriptions alone. The demo's "describe a product, have the agent compare shared stacks using fit and usage evidence" ([DEMO_OUTLINE](../../product/DEMO_OUTLINE.md)). The trust job: nothing the user describes is sent anywhere |
 | Depends on | 4.5a (the golden set and harness), 4.5b (sidecars and the vocabulary), 1.0 (`Registry`, `list`), 3.1a (`show`, `lastRun` selection), 1.4 (the agent guide), 3.4c (the agent skill). Soft: 4.2b (the cached `stats` summary; without it, only `lastRun` is shown), 4.0d (index entries) |
-| Blocks | 4.5d |
-| Decisions needed | [D36](../requirements.md#proposed-decisions) (query privacy: local ranking by default; nothing sent unless a person opts in, 4.5d) |
+| Blocks | 4.5e, 4.5d |
+| Decisions needed | [D36](../requirements.md#proposed-decisions) as amended 2026-10-27 (API-first search with a local fallback, 4.5e). This sub-phase sends nothing; 4.5e adds the call |
 | Settles | The command, its flags and `SearchResult`; the lexical ranking (fields, weights, phrase matching through the vocabulary, the platform rule, `notFor`); tiers and "nothing fits strongly"; how evidence enters ranking without letting popularity override fit; untrusted entries; explanations; the golden gate |
 
 ## Scope
 
 In:
 
-- `stacks search <request...> [--kind stack|fragment] [--limit <n>] [--json]`. `--offline` belongs to 4.0d: once 4.0d has landed, `search` takes it as every command does (it changes nothing, since `search` makes no request); until then `search` is offline by construction and has no such flag.
+- `stacks search <request...> [--kind stack|fragment] [--limit <n>] [--json]`. `--offline` belongs to 4.0d: once 4.0d has landed, `search` takes it as every command does (it changes nothing here, since `search` makes no request until 4.5e, where it skips the API call); until then `search` is offline by construction and has no such flag.
 - `bun run search:eval --embeddings`, a maintainer-only flag of the eval script that embeds the entries' cards and the golden queries through the maintainer's own provider key, outside the shipped CLI, so 4.5d's start condition is measured whatever the lexical numbers say.
-- `src/core/search/`: tokenizing, the vocabulary matcher, field-weighted BM25 over entries and their sidecars, tiers, the evidence adjustment, explanations.
+- `src/core/search/`: tokenizing, the vocabulary matcher, field-weighted BM25 over entries and their sidecars, tiers, the evidence adjustment, explanations. `rank` is a pure function over plain data (the request, the vocabulary, and one record per entry with its fields, sidecar, trust and evidence); it reads no service, file or clock, and the command builds its input from `Registry`. That is what lets 4.5e move it to `packages/format` and run it in the API unchanged.
 - `SearchResult` in `src/schemas/search.ts`, in `RESULT_SCHEMAS` as `stacks schema search`.
 - `tests/search-golden.test.ts`, the gate over 4.5a's set, and `bun run search:eval` to print the report.
 - One sentence in the agent guide and the agent skill.
 
 Out:
 
-- Embeddings, a server request, any model in the CLI (4.5d). The only model call here is the maintainer-only `search:eval --embeddings`, outside the shipped command tree.
+- The API route and the CLI's call to it (4.5e). Embeddings and any model in the CLI (4.5d). The only model call here is the maintainer-only `search:eval --embeddings`, outside the shipped command tree.
 - Search on the website.
 - A `list --query` option. One command that answers "which entries fit this" is easier for an agent to find in `--help` and in the guide than a filter on `list`, and keeps `ListResult` unchanged.
 - Telemetry about searches. No event is sent; 4.1a's never-sent list gains "search requests".
@@ -55,7 +55,8 @@ Each text-mode failure ends with a `Next:` line built from `Host.invocation`.
 {
   "request": "an iOS health app",
   "ranking": "local",
-  "understood": { "platforms": ["ios"], "productKinds": [], "unmatched": ["health"] },
+  "understood": { "platforms": ["ios"], "productKinds": [], "languages": [], "capabilities": [],
+                  "unmatched": ["health"] },
   "noStrongMatch": false,
   "stacks": [{
     "kind": "stack", "id": "mobile-expo", "name": "Expo app + Hono API",
@@ -74,7 +75,7 @@ Each text-mode failure ends with a `Next:` line built from `Host.invocation`.
 ```
 
 - `score` is the entry's absolute match strength in [0, 1] (below), not normalized to the top hit, so a weak best result reads as weak.
-- `why` lists each field and phrase that matched and the request words it came from; `penalties` lists what lowered it (`platform` mismatch, `notFor`, `untrusted`).
+- `why` lists each field and phrase that matched and the request words it came from; `penalties` lists what lowered it (`platform` or `language` mismatch, `notFor`, `untrusted`).
 - `caveats` are the sidecar's (4.5b), copied unscored and omitted when the sidecar has none, so the agent can pass a platform-capability limit to the user before `new`.
 - `evidence` is context, read from caches only (below); `stats` is absent when 4.2b's summary is unavailable or unpublished, exactly as in `list --json`.
 - `understood.unmatched` lists content words no entry's strong fields matched, so an agent can tell the user "nothing here is specific to health".
@@ -93,7 +94,7 @@ Per entry, a field-weighted BM25 score over these fields (k1 = 1.2, b = 0.75 per
 
 | Field | Weight | Notes |
 |---|---|---|
-| `platforms`, `productKinds` (matched as vocabulary phrases) | 3.0 | A request phrase maps to a vocabulary key through its alias list ("iPhone" → `ios`, "command line" → `cli`) |
+| `platforms`, `productKinds`, `languages` for stacks; `capabilities` for fragments (matched as vocabulary phrases) | 3.0 | A request phrase maps to a vocabulary key through its alias list ("iPhone" → `ios`, "command line" → `cli`, "golang" → `go`, "sign in" → `auth`) |
 | `requests` | 2.5 | Best-matching request only, so five similar requests don't count five times |
 | id, name | 2.0 | |
 | `summary`, description | 1.5 | |
@@ -101,19 +102,20 @@ Per entry, a field-weighted BM25 score over these fields (k1 = 1.2, b = 0.75 per
 | `goodFor`, tags, category | 1.0 | |
 | body | 0.15 | Only so a sidecar-less user entry can be found at all; low enough that `/healthz` in a body can't outrank a platform match |
 
-Tokenizing: lowercase, split on anything not a letter or digit, drop a short stopword list plus generic product words ("app", "project", "tool", "thing", "something", "build", "make", "want"), and strip a plural `s`. No dependency: the lists live in `core/search/tokens.ts`. Vocabulary aliases are matched as phrases before tokenizing, so "command line" is one match.
+Tokenizing: lowercase, split on anything not a letter or digit, drop a short stopword list plus generic product words ("app", "project", "tool", "thing", "something", "build", "make", "want"), and strip a plural `s`. No dependency: the lists live in `core/search/tokens.ts`. Vocabulary aliases are matched as phrases before tokenizing, so "command line" is one match. Each category (platforms, product kinds, languages, capabilities) is matched on its own, so one phrase can count in several: "go cli" names the language `go` through its alias and the platform `cli` through "cli".
 
 Adjustments, applied in order:
 
 1. Platform rule. When the request names a platform, a stack whose sidecar lists platforms that don't include it is multiplied by 0.3 (`penalties: platform`). A stack with no sidecar is left alone (unknown, not wrong). Fragments are judged by the stacks they apply to: a fragment whose `applies_to` names no stack that passes the rule gets the same factor, and one that applies to any stack is unaffected.
-2. `notFor`. A request phrase matching a `notFor` phrase multiplies by 0.5.
-3. Absolute score. The adjusted BM25 sum is mapped to [0, 1] by `s / (s + c)` with `c` fixed per field set (tuned once), so the number means the same across queries and isn't relative to the top hit.
+2. Language rule. The same as the platform rule, over `languages` (`penalties: language`): when the request names a language, a stack whose sidecar lists none of the named languages is multiplied by 0.3, a sidecar-less stack is left alone, and a fragment is judged through `applies_to`. "A command line tool in Python" therefore leaves `go-cli` and `typescript-cli` at `partial` at best, and with no Python CLI stack `noStrongMatch` is true.
+3. `notFor`. A request phrase matching a `notFor` phrase multiplies by 0.5.
+4. Absolute score. The adjusted BM25 sum is mapped to [0, 1] by `s / (s + c)` with `c` fixed per field set (tuned once), so the number means the same across queries and isn't relative to the top hit.
 
 Tiers, from the absolute score and coverage. A strong field is one with weight ≥ 1.5 in the table above (vocabulary phrases, `requests`, id, name, `summary`, description, `useCases`, `synonyms`). Coverage is the share of the request's strong-matched words that this entry matches in a strong field, where a request's strong-matched words are its content words that at least one entry matches in a strong field. A match in a weaker field (`goodFor`, tags, category, the body) never enters the denominator.
 
 | Tier | Rule |
 |---|---|
-| `strong` | Score ≥ 0.5, coverage ≥ 0.5, no platform penalty, and the entry is trusted (Trust, below) |
+| `strong` | Score ≥ 0.5, coverage ≥ 0.5, no platform, language or `notFor` penalty, and the entry is trusted (Trust, below). An entry whose own card says it isn't for the request can still be the closest fit, but it isn't a confident one |
 | `partial` | Score ≥ 0.25, or an untrusted entry that would otherwise be `strong` |
 | `weak` | The rest, returned only to fill `--limit` |
 
@@ -135,7 +137,7 @@ A sidecar is covered by its entry's trust: for a project entry, 3.2a's trust dig
 
 ### Privacy
 
-The request is read, ranked and printed. It is not written to the log file (the command's log record carries the request's length and the result counts, never its text), not cached, not put in any telemetry event, and not sent anywhere. 4.5d adds a remote leg only for a person who opts in.
+The request is read, ranked and printed. It is not written to the log file (the command's log record carries the request's length and the result counts, never its text), not cached, and not put in any telemetry event. This sub-phase sends it nowhere; 4.5e sends it to the API first under D36 as amended, and keeps every one of these rules.
 
 ### Cost
 
@@ -168,10 +170,12 @@ To show what the metadata buys, `search:eval --without-sidecars` ranks with side
 2. The golden gate passes: every first-result and no-match case, and MRR, recall@3 and fragment recall@5 at or above `gate`.
 3. "firmware for a microcontroller" returns `noStrongMatch: true` and exit 0; agent text says nothing fits strongly and ends with `Next:`.
 4. The result decodes with `SearchResult`; `stacks schema search` prints its JSON Schema; output is identical across two runs.
-5. With the API down or the network unreachable (and, once 4.0d has landed, with `--offline`), the result is byte-identical to the online run with the same caches; the command makes no network request in any case (a test with a server that records requests).
+5. With the API down or the network unreachable (and, once 4.0d has landed, with `--offline`), the result is byte-identical to the online run with the same caches; the command makes no network request in any case (a test with a server that records requests). 4.5e replaces this test with its API-first tests.
 6. With a cached published summary, hits carry `evidence.stats`; without one, `evidence.stats` is absent and nothing else changes.
 7. Two fixture stacks of equal score: the one with the higher green-rate lower bound comes first; a stack with ten times the projects but a lower score does not pass one with a higher score; no fixture moves an entry across tiers through evidence.
 8. A request naming a platform: a fixture stack with `platforms: ["desktop"]` gets `penalties: platform` and is never `strong`; a sidecar-less user stack gets no platform penalty.
+8a. "a command line tool in Python" over the bundled registry: `go-cli` and `typescript-cli` carry `penalties: language`, neither is `strong`, `understood.languages` is `["python"]`, and `noStrongMatch` is true. "sign-in for my mobile app" ranks `clerk` first in `fragments` with `why` naming `capabilities: auth`. "ready to go live with my blog" names no language.
+8b. "go cli" returns `go-cli` first, `strong`, with `why` naming both `languages: go` and `platforms: cli`. "a cli with a good TUI experience" returns `go-cli` and `typescript-cli` as the first two stacks, each carrying `penalties: notFor` (their cards list full-screen terminal UIs under `notFor`), `noStrongMatch: true`, and `tui` in `understood.unmatched`.
 9. A trusted and an untrusted entry of the same tier: the trusted one comes first and the untrusted one carries `penalties: untrusted`. An untrusted fixture stack whose score and coverage would make it `strong` is `partial`, and with no trusted strong stack `noStrongMatch` is true.
 9a. When the first hit is an untrusted project stack, agent text's `Next:` names `show` and `new` for the first trusted stack, built from `Host.invocation`, and never `new <untrusted id>`; with no trusted hit at all, `Next:` says to ask the user and names no `new` command.
 10. A whitespace-only request, or one of 501 characters, is `BadInput` with `details: { flag: "request", id: "", length }` (`length` 0 and 501), exit 2; the envelope, stderr and the log file contain no word of the request. No request words at all is `Usage`, exit 2.
@@ -207,4 +211,6 @@ To show what the metadata buys, `search:eval --without-sidecars` ranks with side
 - The generic-word list ("app", "tool") is a judgment. If a stack's real name contains one, it still matches through id and name.
 - Lexical ranking can't connect "log my workouts on my phone" to `mobile-expo` unless "phone" is an alias or a synonym. The vocabulary covers the common ones; the `paraphrase` pool says how much is left for 4.5d.
 - 2026-10-27: the first draft let an untrusted entry reach `strong` and suggested `new <first id>` whatever its trust, defined coverage against every matched word (which put "an iOS health app" exactly on the 0.5 line), and used `Usage` for a length the CLI checks itself. Untrusted hits are now capped at `partial`, `Next:` names a trusted hit, coverage counts strong-field matches only, and over-long requests are `BadInput` carrying the length, never the text.
+- 2026-10-27: the language rule and `capabilities` arrived with 4.5b's split of stack and fragment cards. Without the rule, a request's language was only a free-text word, so a Python CLI request reached `go-cli` as `strong`.
+- 2026-10-27: search became an API endpoint as well (4.5e, D36 amended). `rank` is now required to be pure so it can move to `packages/format`, a `notFor` penalty now keeps an entry out of `strong`, and vocabulary categories match independently so "go cli" counts as a language and a platform.
 - Evidence from caches means a first run with an empty cache shows no stats. That is the same as `list` and keeps `search` fast; an agent that wants fresh stats runs `list --json` first.
