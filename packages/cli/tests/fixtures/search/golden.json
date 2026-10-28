@@ -1194,7 +1194,7 @@
       "id": "product-mcp-tools-jsonrpc",
       "pool": "product",
       "split": "holdout",
-      "query": "expose typed tools to an MCP client over JSON-RPC",
+      "query": "give a coding agent typed tools over the Model Context Protocol",
       "first": {
         "kind": "stack",
         "id": "typescript-mcp"
