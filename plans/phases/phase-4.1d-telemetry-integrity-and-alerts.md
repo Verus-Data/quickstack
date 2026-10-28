@@ -1,6 +1,6 @@
 # Phase 4.1d: Telemetry integrity and alerts
 
-Status: IN PROGRESS 2026-10-28 (on SQLite on the Node host, amended D16)
+Status: EXECUTED 2026-10-28 (on SQLite on the Node host, amended D16)
 
 | Field | Value |
 |---|---|
@@ -142,3 +142,4 @@ With the in-memory stores and `TestClock`, and once under the local Workers runt
 - `daily_metrics` by `os`, `nodeMajor` and `targetAgents` is only useful if someone reads it. 4.1e's runbook lists the queries; if a quarter passes with no decision drawn from them, drop those fields from 4.1a's next schema version.
 - Thresholds were chosen before any data exists. They are config; changing them changes only future flags.
 - 2026-10-28: as in 4.1b and 4.1c, there are no in-memory stores and no local Workers run. "With the in-memory stores ... and once under the local Workers runtime" means SQLite with migrations on a fresh file per test, `TestClock`, and `maintain(now)` called directly; the four tables arrive as a migration. Events reach the store through the ingest program, so the write-time rules apply; the anomaly fixtures (`test-flag.sql` among them) are SQL applied to the test database, because they describe stored state. `/healthz`'s `maintenanceFresh` is checked over real HTTP.
+- 2026-10-28 (executed): the body's design held, with three additions the code needed. Verdicts whose evidence normalization or 30-day hash expiry erases (cap, implausible, network) are kept in `event_verdicts`, deleted with their events, so a later exclusion change can't silently undo them. Retention defers a day that still has queued pairs, so a pending correction isn't pruned before its rebuild. The daily flags keep a completed-day checkpoint, so a run at 03:00 still evaluates the whole previous day. The thresholds stay one constant in `stacks-api` (`integrity/policy.ts::INTEGRITY_POLICY`), not configuration keys, until a deployment needs to vary them.

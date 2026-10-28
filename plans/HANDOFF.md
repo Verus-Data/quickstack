@@ -70,9 +70,13 @@ executed (2026-10-28): the CLI queues opt-out telemetry and shows the first-run 
 no official endpoint yet consent is `no_endpoint` unless `STACKS_TELEMETRY_URL` is set. 4.1c is
 executed (2026-10-28): `stacks-api` runs archive, pruning and refresh under a lease (production
 needs `STACKS_ARCHIVE_DIR`). `@steamfield/stacks-format` 0.1.0 is published and `stacks-api` reads its telemetry, names and
-signed-index schemas from it. In flight (2026-10-28): 4.5e's CLI side, which bumps the package to
-0.2.0 with `rank`; 4.1d's implementation against committed tests; 4.2a's tests, written on top of
-4.1d's; then 4.2g. 4.5e's route in `stacks-api` waits on 0.2.0's publication. Maintainers' steps:
+signed-index schemas from it. 4.1d is executed (2026-10-28): maintenance judges events after arrival,
+rebuilds queued projects, keeps `installs`, `daily_metrics` and `anomaly_flags`, logs one alert
+line per flagged run, and `/healthz` reports `maintenanceFresh`. 4.5e's CLI side is on main
+(`stacks search` asks the API first; the format package is 0.2.0 with `rank`, unpublished until
+a maintainer publishes it). In flight (2026-10-28): 4.2a's implementation against committed
+tests, then 4.2g's (tests committed on top of 4.2a's; its tests 4, 12, 13 and 14 deferred).
+4.5e's route in `stacks-api` waits on 0.2.0's publication. Maintainers' steps:
 review the 47 search judgments (4.5a), generate the index key and add it to `INDEX_PUBLIC_KEYS`,
 rerun the bench per stack so the index proves something (4.0c), and publish each
 `@steamfield/stacks-format` release (`packages/format/README.md`).
