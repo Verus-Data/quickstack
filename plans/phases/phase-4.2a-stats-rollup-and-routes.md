@@ -1,6 +1,6 @@
 # Phase 4.2a: Stats rollup and routes
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: AGREED 2026-10-27 (on SQLite on the Node host, amended D16; the wire shapes are the provisional `StatsSummary` and `StatsDetail` the site builds against)
 
 | Field | Value |
 |---|---|
@@ -247,6 +247,8 @@ Summary entries also carry `previous` (`{ projects, greenRate }`, same shapes) a
 - The publishing gate is computed by the rollup, never set by hand.
 
 ## What this plan may get wrong
+
+- 2026-10-27 (maintainers: REST conventions, roadmap "API route map"): `GET /v1/stats/summary` is `GET /v1/stats`, the collection of per-entry stats, and the detail routes' params are `{stackId}` and `{fragmentId}`. The summary `sort` values are field paths with a direction: `lower` is `-greenRate.lower` (still the default), `projects` is `-projects`, `green` is `-greenRate`, `trending` is `-trending.score` and `id` stays `id`. Read every example here with those names. Storage is SQLite on the Node host (amended D16; 4.1b's dated line), and the hourly trigger is a Node timer in `apps/api/src/platform/` running the same rollup program under 4.1c's lease, so read "the local Workers runtime" in the tests as the Node server with a temporary database file.
 
 - The gate may take a long time to meet. That is information about adoption, and the ledger results still give clients something true.
 - The no-verify share still mixes people who stopped with sandboxes that blocked telemetry (4.1a). The scaffold failure share separates failed `new` runs per stack only when the failure happened after the stack resolved; earlier failures stay global.

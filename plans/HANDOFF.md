@@ -20,11 +20,15 @@ bundled cards drafted (by Codex agents in checkouts without the golden set) and 
 maintainer: `bun run decorate --approve <id>` at a terminal for each card, after reading it,
 then it merges. 4.2c's telemetry-free parts are landed: `v1/directory.json` here, and in
 `stacks-api` the newest, tag, fragment and removed-stack pages with the three-link nav; its
-telemetry views remain. 4.2f runs fixture-first ahead of D17: the provisional `StatsSummary` and
-`StatsDetail` are in `packages/format/src/stats.ts`, and its site tests (with 4.2c's stats views)
-are being written in `stacks-api`. Waiting: everything else from 4.1a on behind D17. Maintainers' steps: review the 47 search
+telemetry views remain. 4.2f runs fixture-first: the provisional `StatsSummary` and
+`StatsDetail` are in `packages/format/src/stats.ts`, its data layer is landed in `stacks-api`, and
+the charts wait on OpenChart work done outside these plans (another agent owns the site and
+OpenChart). D17 is decided (opt-out, 2026-10-27) and D16 amended: telemetry storage runs on
+SQLite on the Node host now. In flight: 4.1a (CLI telemetry client) and 4.5c (search, on the 4.5b
+branch); then 4.1b, 4.1c, 4.1d, 4.2a, 4.2g and 4.5e in `stacks-api`, all AGREED. Maintainers' steps: review the 47 search
 judgments (4.5a), generate the index key and add it to `INDEX_PUBLIC_KEYS`, rerun the bench per
-stack so the index proves something (4.0c), and publish `@stacks/format` before 4.1b.
+stack so the index proves something (4.0c), and publish `@stacks/format` (until then the API
+copies the schemas it reads).
 
 ## Demo outline (2026-10-27)
 

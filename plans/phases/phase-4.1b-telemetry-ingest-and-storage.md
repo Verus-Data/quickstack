@@ -1,6 +1,6 @@
 # Phase 4.1b: Telemetry ingest and storage
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: IN PROGRESS 2026-10-27 (D17 decided; storage on SQLite on the Node host under the amended D16, see "What this plan may get wrong")
 
 | Field | Value |
 |---|---|
@@ -194,6 +194,8 @@ Through a real local HTTP server with the in-memory store, and again under the l
 - `stacks-api/AGENTS.md` documents the ingest invariants.
 
 ## What this plan may get wrong
+
+- 2026-10-27 (maintainers, amended D16): this sub-phase no longer waits on 4.0f. It runs on the Node host with SQLite through `effect/sql`'s SQLite driver for Node, in place of D1. Read every "D1" here as "the store", reached only through `SqlClient`: `EventStore.d1` becomes `EventStore.sql`, migrations stay plain SQL files under `stacks-api/apps/api/migrations/`, applied by a small migration runner at startup and by each test file over a fresh database file, with no Wrangler. Write only SQL D1 also accepts, and keep each event's insert and project update in one batch (here a single transaction over the batch statements), so 4.0f swaps the driver and platform entry. Until `@stacks/format` is published, `TelemetryEvent` reaches the API as a copy beside the contract with a comment to replace it, as the site does for the index schemas. The database path comes from config (`STACKS_DB_PATH`), never a default next to the code. Under the roadmap's "API route map", the frozen schemas are the documents `v1/schemas/telemetry-event/v<N>.json`, not `/v1/schema/telemetry-event.v<N>.json`; `events` is its own contract group.
 
 - Caps and plausibility rules are guesses until real data exists. They are config, and changing them marks or unmarks rows rather than needing a migration.
 - Step-name checks are only as good as `v1/names.json`. A stack whose composition rules changed between releases may list names an old CLI never sent, which is harmless; one that loses a name it shipped would mark real runs implausible, which is why names are only ever added ([4.0e](phase-4.0e-official-names-and-directory.md)).

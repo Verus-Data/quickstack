@@ -1,6 +1,6 @@
 # Phase 4.5c: `stacks search` and local ranking
 
-Status: DRAFT 2026-10-27 (not agreed)
+Status: IN PROGRESS 2026-10-27 (built on the 4.5b branch's drafted cards; lands after 4.5b merges)
 
 | Field | Value |
 |---|---|

@@ -1,6 +1,6 @@
 # Phase 4.1d: Telemetry integrity and alerts
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: AGREED 2026-10-27 (on SQLite on the Node host, amended D16)
 
 | Field | Value |
 |---|---|
