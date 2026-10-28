@@ -15,7 +15,7 @@ Use [the submission-readiness plan](submission-readiness/README.md) for the rema
 order, scoped to a working, polished demo before the deadline. Its README is the tracker
 and the decisions the user owes (S1 to S8); each row has its own file: R0 baseline; R1
 search guidance, R2 seed realism, R3 demo recipe proof, R4 website polish and R10 judge
-docs; R5 release and deploy; R6 demo and submission; R11 judging-window freeze. Signed
+docs, R12 website search page and R13 search relevance tuning; R5 release and deploy; R6 demo and submission; R11 judging-window freeze. Signed
 remote distribution, the live telemetry launch and hardening work are deferred to its R9.
 This queue updates the ordering below; earlier dated execution notes remain historical
 evidence.

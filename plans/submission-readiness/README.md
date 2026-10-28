@@ -53,7 +53,9 @@ than improvising.
 | [R3](r3-recipe-proof.md) | Fresh proof for the demo recipe | R0; S5, S8 | | Open | `recipe-proof.md` |
 | [R4](r4-website.md) | Website demo polish | R0; R2 sample for the walkthrough | | Open | `web.md` |
 | [R10](r10-judge-access.md) | Judge-facing docs and source access | R0; S6 | | Open | `judge-access.md` |
-| [R5](r5-release.md) | Release and deploy | R1, R2, R3, R4, R10 | | Open | `release.md` |
+| [R12](r12-web-search.md) | Website search page | R0; R13 for the final walkthrough | | Open | `web-search.md` |
+| [R13](r13-search-relevance.md) | Search relevance tuning from manual QA | R0 | | Open | `search-relevance.md` |
+| [R5](r5-release.md) | Release and deploy | R1, R2, R3, R4, R10, R12, R13 | | Open | `release.md` |
 | [R6](r6-submission.md) | Record the demo and submit | R5 | | Open | `submission.md` |
 | [R11](r11-judging-operations.md) | Keep it up during judging | R5 | | Open | `operations.md` |
 | [R9](r9-follow-up.md) | After submission | R6 | | Open | per item |
@@ -62,15 +64,19 @@ R7 (signed remote distribution) and R8 (live telemetry launch) were dropped for 
 deadline and live in R9. IDs are kept so earlier references still make sense.
 
 ```text
-R0 ──┬─> R1 ──────────────┐
-     ├─> R2 ──> R4 (walk) ├─> R5 ──┬─> R6
-     ├─> R3 ──────────────┤        └─> R11
-     ├─> R4 (fixes) ──────┤
-     └─> R10 ─────────────┘
+R0 ──┬─> R1 ───────────────┐
+     ├─> R2 ──> R4 (walk) ─┤
+     ├─> R3 ───────────────┤
+     ├─> R4 (fixes) ───────┼─> R5 ──┬─> R6
+     ├─> R10 ──────────────┤        └─> R11
+     ├─> R13 ──> R12 (walk)┤
+     └─> R12 (build) ──────┘
 ```
 
-R1, R2, R3, R4 and R10 run in parallel after R0. R3 has the longest lead time (an agent
-build per attempt), so start it early.
+R1, R2, R3, R4, R10, R12 and R13 run in parallel after R0. R3 has the longest lead time (an
+agent build per attempt), so start it early. R13 edits cards in `packages/cli/registry/search/`,
+which is outside recipe content, so it doesn't invalidate R3's proof (R13 step 8 checks).
+If R13 changes `rank.ts`, a format patch release joins R5's order.
 
 ## Decisions for the user
 
@@ -137,7 +143,7 @@ failures), and what's left. No credentials or home paths.
 
 ## Out of scope before submission
 
-Accounts, ratings, AI chat, a comparison builder, a site search UI, seed labeling,
+Accounts, ratings, AI chat, a comparison builder, search-as-you-type, seed labeling,
 signed remote distribution, live telemetry, CI automation, error-detail and backoff
 hardening, restore tooling, Workers, MCP, embeddings. New ideas stay out unless they fix
 something a judge would see break.

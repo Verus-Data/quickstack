@@ -60,7 +60,8 @@ recipe finds the filtered list without wading through charts.
 
 5. Fix what the walkthrough found. If choosing a recipe means passing through analytics
    first, add the link from the home page's primary flow to the filtered stack list using
-   existing pages and nav (no new search UI). Each fix gets a component or browser test.
+   existing pages and nav (the search page is R12's). Each fix gets a component or browser
+   test.
 
 ## Done when
 

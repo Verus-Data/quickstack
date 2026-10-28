@@ -16,13 +16,17 @@ the live site shows the final seed and catalog.
 
 ## Steps
 
-1. quickstack candidate. R1 and R3 merged; bump `packages/cli/package.json` to the S2
+0. Format patch (only if R13 changed `rank.ts`): the user publishes the format version
+   recorded in `release.md` per `packages/format/README.md` "Publishing", then stacks-api
+   takes it with `bun install` (lockfile regenerated, not hand-edited).
+
+1. quickstack candidate. R1, R3 and R13 merged; bump `packages/cli/package.json` to the S2
    version on its own commit. Run the gate once (`rr check` or `bun run check`) and record
    counts. If the R0 EPERM test fails, rerun it alone once; if it passes alone, note it and
    continue. `bun run pack` in `packages/cli`; record the tarball's `shasum -a 256`. Confirm
    R3's proof still matches (R3 step 9).
 
-2. stacks-api candidate. R4 and R10 merged. Run `bun run check` once, record counts. Record
+2. stacks-api candidate. R4, R10 and R12 merged. Run `bun run check` once, record counts. Record
    the currently deployed commit as the rollback point.
 
 3. The deploy builds the catalog from your quickstack checkout (`$STACKS_CLI_DIR`). Before
