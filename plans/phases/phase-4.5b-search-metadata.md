@@ -1,6 +1,7 @@
 # Phase 4.5b: Search metadata
 
 Status: IN PROGRESS 2026-10-27 (acceptance tests being written, then the implementation)
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -227,6 +228,9 @@ With 4.0c, `build:index` reads each indexed entry's sidecar and writes `v1/searc
 17. A sidecar file with a byte order mark or CRLF line endings decodes the same as without.
 18. A registry root with `search/` but no `stacks/` or `fragments/` lists no entries and reports every sidecar as `search-orphan`.
 19. `create stack mobile-expo --from bundled` writes `search/stacks/mobile-expo.json` in the user root with the bundled sidecar's bytes; `validate` of the user root reports no `search-missing` for it; `create --from` an entry with no sidecar writes none; a second `create --from` into an existing target leaves both files unchanged.
+
+## Deferred acceptance coverage
+
 20. With 3.2a landed: editing the sidecar of a trusted project entry makes `list --json` report it `trusted: false`.
 
 ## Exit criteria
@@ -235,6 +239,11 @@ With 4.0c, `build:index` reads each indexed entry's sidecar and writes `v1/searc
 - Every bundled sidecar reviewed by a maintainer, and 4.5a's set run against the 4.5c ranking with and without them, the difference recorded in 4.5c.
 
 ## What this plan may get wrong
+
+- 2026-10-27: acceptance test 14 traces only the landed 4.0c build and signature checks. The 4.0d `RemoteIndex` half is outside this unit because its implementation is on another branch.
+- 2026-10-27: "stops before a request would pass `--max-usd`" didn't say how the next request's cost is known. The script estimates it as the highest per-request cost reported so far in the run (the first request always goes if any budget remains), so the cap errs toward stopping early.
+- 2026-10-27: `validate` of a root with `search/` and no `stacks/` or `fragments/` fails today with `NotFound`. Item 18 keeps the plan's rule: such a root lists no entries and reports every sidecar as `search-orphan`.
+- 2026-10-27: acceptance test 20 needs deferred 3.2a trust storage. It is moved outside the traced acceptance section into Deferred acceptance coverage, preserving its number and intent until that prerequisite lands.
 
 - Keying staleness to the body means every prose fix marks the card stale. If restamping becomes busywork, key the digest to frontmatter only and accept that a body rewrite can leave a card describing the old entry.
 - The vocabulary will be too coarse for some requests and too fine for others. It is a closed list on purpose; grow it only when a golden query needs a value no existing one covers.
