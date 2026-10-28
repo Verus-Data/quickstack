@@ -39,7 +39,7 @@ Fill a contract from `.claude/skills/delegate/contract.md` in the scratchpad. Ev
 
 Codex finishes a unit only after it has run one `code-reviewer` pass (`.claude/agents/code-reviewer.md`) on its own diff, in a fresh Codex process, and resolved every finding. You don't dispatch a reviewer for delegated work; that pass is the one rules/agent-ops.md allows.
 
-Run independent units as 2-4 delegates at once, each `scripts/delegate.sh <contract> --write --worktree <path>` with `run_in_background: true`. A unit that depends on another starts from a worktree branched after the first one is integrated.
+Run independent units as at most five delegates at once, each `scripts/delegate.sh <contract> --write --worktree <path>` with `run_in_background: true`. A unit that depends on another starts from a worktree branched after the first one is integrated.
 
 ## When a delegate hands back
 

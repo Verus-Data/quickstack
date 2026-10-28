@@ -59,11 +59,10 @@ bun run lint
 bun run typecheck
 ```
 
-Then run the gate once, as the last check before the review (`rr check`, queued on the test
-hosts; `bun run check` in a clone without rr; AGENTS.md "Test runs"). Run it again only after
-fixing what it or the review found. Never run the gate or a whole suite to check work in
-progress. If the gate fails on a lock timeout, wait and rerun it; don't fall back to a local
-whole-suite run.
+Don't run the full gate (`rr check`, `bun run check`) or a whole suite: Claude runs the gate
+once on your work after its refactor, so a run here would be repeated, and it holds a shared
+test host other agents are waiting on. Scoped tests, lint and typecheck are your checks; name in
+the hand-off any test file outside your scope that your change could affect.
 
 Then QA it as its first user, before the review. Build (`bun run build`) and run each command
 you changed on `node packages/cli/dist/stacks`, in all three audiences (`--json`, a plain run,

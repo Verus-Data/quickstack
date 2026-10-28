@@ -88,8 +88,11 @@ tasks:
   check-bench:
     hosts: [mbp, m4-mini]
     run: cd packages/cli && bun run test:unit tests/bench.test.ts
+  # The CLI suite takes m4-mini first: it is as fast as mbp idle, and mbp also runs the agents and
+  # delegates, under which the 37 s suite has taken six minutes. bench.test.ts is latency-bound,
+  # so it keeps mbp.
   check-cli:
-    hosts: [mbp, m4-mini]
+    hosts: [m4-mini, mbp]
     run: cd packages/cli && bun run test:unit --exclude tests/bench.test.ts
   # The rest go to the m1 hosts, so the fast ones start the two CLI partitions at once.
   check-e2e:
