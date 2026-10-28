@@ -1,6 +1,6 @@
 # Phase 4.5b: Search metadata
 
-Status: DRAFT 2026-10-27 (not agreed)
+Status: IN PROGRESS 2026-10-27 (acceptance tests being written, then the implementation)
 
 | Field | Value |
 |---|---|

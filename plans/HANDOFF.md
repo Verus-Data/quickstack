@@ -11,11 +11,11 @@ to `archive/` and leave a link.
 
 ## Phase 4 in progress (2026-10-27)
 
-Executed: 4.0a, 4.0b, 4.0c (this repository), 4.4a, 4.4b, 4.4c, 4.5a. In flight, as Codex
-units: 4.0d's acceptance tests; 4.0e's `v1/names.json` tests (its directory pages in
-`stacks-api` start after the next item); 4.0c's `stacks-api` half (serving the index with its
-cache rules, and the by-hand deploy procedure). Waiting: 4.5b, whose plan is being revised;
-4.2c after 4.0e; everything from 4.1a on behind D17. Maintainers' steps: review the 45 search
+Executed: 4.0a, 4.0b, 4.0c (both repositories: `stacks-api` serves the index and its
+`sha256:`-named bundles, and its API README has the by-hand deploy), 4.4a, 4.4b, 4.4c, 4.5a.
+In flight, as Codex units: 4.0d's implementation (tests landed on its branch); 4.0e's
+`v1/names.json` implementation (its directory pages in `stacks-api` start after it lands);
+4.5b's acceptance tests. Waiting: 4.2c after 4.0e; everything from 4.1a on behind D17. Maintainers' steps: review the 45 search
 judgments (4.5a), generate the index key and add it to `INDEX_PUBLIC_KEYS`, rerun the bench per
 stack so the index proves something (4.0c), and publish `@stacks/format` before 4.1b.
 
