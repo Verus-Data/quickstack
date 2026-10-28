@@ -37,7 +37,7 @@ test.each([
     response.end(
       JSON.stringify(
         Schema.encodeSync(StatsSummary)(
-          Schema.decodeUnknownSync(StatsSummary)({
+          Schema.decodeUnknownSync(Schema.toType(StatsSummary))({
             ...summary,
             ...(secondPage ? second : { population: "stacks projects" }),
             items: secondPage ? summary.items.slice(1) : summary.items.slice(0, 1),

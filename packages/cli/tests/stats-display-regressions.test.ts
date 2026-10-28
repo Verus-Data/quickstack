@@ -12,10 +12,13 @@ test("seeded text labels suppressed stats in list and show", async () => {
   statsRegistry(registry.path);
   const server = await statsServer();
   server.summary(
-    Schema.decodeUnknownSync(StatsSummary)({ ...summary, population: "seeded development data" }),
+    Schema.decodeUnknownSync(Schema.toType(StatsSummary))({
+      ...summary,
+      population: "seeded development data",
+    }),
   );
   server.detail(
-    Schema.decodeUnknownSync(StackStatsDetail)({
+    Schema.decodeUnknownSync(Schema.toType(StackStatsDetail))({
       ...detail,
       population: "seeded development data",
       greenRate: { value: null, lower: null, upper: null, sample: null, suppressed: true },
@@ -43,7 +46,9 @@ test("show rejects a detail body for another entry without caching it", async ()
   const registry = tempDir();
   statsRegistry(registry.path);
   const server = await statsServer();
-  server.detail(Schema.decodeUnknownSync(StatsDetail)({ ...detail, id: "astro-api" }));
+  server.detail(
+    Schema.decodeUnknownSync(Schema.toType(StatsDetail))({ ...detail, id: "astro-api" }),
+  );
   try {
     const result = await statsCli(["show", "go-cli", "--json"], {
       home: home.path,

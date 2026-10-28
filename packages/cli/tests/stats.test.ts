@@ -339,8 +339,12 @@ test("human show names the top three failing steps and recent content change [4.
 test.each(["seeded development data", "stacks projects"] as const)(
   "human and agent text label %s accurately [4.2b#9]",
   async (population) => {
-    server.summary(Schema.decodeUnknownSync(StatsSummary)({ ...summary, population }));
-    server.detail(Schema.decodeUnknownSync(StackStatsDetail)({ ...detail, population }));
+    server.summary(
+      Schema.decodeUnknownSync(Schema.toType(StatsSummary))({ ...summary, population }),
+    );
+    server.detail(
+      Schema.decodeUnknownSync(Schema.toType(StackStatsDetail))({ ...detail, population }),
+    );
     for (const human of [false, true]) {
       const list = await cli(["list"], { human });
       const show = await cli(["show", "go-cli"], { human });
@@ -411,7 +415,7 @@ test("an unwritable stats cache leaves list output available", async () => {
 test("CLI summary decoding accepts both older rows and rows with trending", async () => {
   const withTrending = listed(await cli(["list", "--json"]));
   if (!summary.published) throw new Error("fixture must be published");
-  const withoutTrending = Schema.decodeUnknownSync(StatsSummary)({
+  const withoutTrending = Schema.decodeUnknownSync(Schema.toType(StatsSummary))({
     ...summary,
     items: summary.items.map(({ trending: _trending, ...item }) => item),
   });

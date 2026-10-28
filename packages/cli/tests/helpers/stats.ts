@@ -27,11 +27,16 @@ export const fragmentDetail = Schema.decodeUnknownSync(Detail)(fixture("fragment
 if (!originalSummary.published || !originalDetail.published || originalDetail.kind !== "stack")
   throw new Error("stats fixtures must be published stack data");
 
-export const summary: StatsSummary = Schema.decodeUnknownSync(Summary)({
+// The fixtures are columnar on the wire (D38); values built from decoded rows are checked
+// against the row types.
+const SummaryRows = Schema.toType(Summary);
+const DetailRows = Schema.toType(Detail);
+
+export const summary: StatsSummary = Schema.decodeUnknownSync(SummaryRows)({
   ...originalSummary,
   population: "stacks projects",
 });
-export const detail: StackStatsDetail = Schema.decodeUnknownSync(StackDetail)({
+export const detail: StackStatsDetail = Schema.decodeUnknownSync(Schema.toType(StackDetail))({
   ...originalDetail,
   population: "stacks projects",
 });
@@ -52,7 +57,7 @@ export async function statsServer() {
   let releaseFirst: (() => void) | undefined;
   const summaryBody = (mode: Mode, cursor: boolean) => {
     if (mode === "unpublished")
-      return Schema.decodeUnknownSync(Summary)({
+      return Schema.decodeUnknownSync(SummaryRows)({
         generatedAt: currentSummary.generatedAt,
         through: currentSummary.through,
         population: currentSummary.population,
@@ -65,7 +70,7 @@ export async function statsServer() {
         })),
       });
     if (!pages || !currentSummary.published) return currentSummary;
-    return Schema.decodeUnknownSync(Summary)({
+    return Schema.decodeUnknownSync(SummaryRows)({
       ...currentSummary,
       items: cursor ? currentSummary.items.slice(1) : currentSummary.items.slice(0, 1),
       ...(!cursor || mode === "repeat" ? { nextCursor: "second" } : {}),
@@ -74,7 +79,7 @@ export async function statsServer() {
   const detailBody = (path: string) => {
     if (path === "/v1/fragments/lint/stats") return fragmentDetail;
     if (path === "/v1/stacks/astro-api/stats" && currentDetail.published)
-      return Schema.decodeUnknownSync(Detail)({ ...currentDetail, id: "astro-api" });
+      return Schema.decodeUnknownSync(DetailRows)({ ...currentDetail, id: "astro-api" });
     return currentDetail;
   };
   const responseBody = (url: URL, mode: Mode) => {
