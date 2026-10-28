@@ -369,6 +369,32 @@ Part 2, against the built server:
 | `plans/runs/<date>-mcp-client.md` | New: the registered-client run |
 | `AGENTS.md`, `README.md` | The new package and stack, once it exists |
 
+## Where this stage stopped (2026-10-27)
+
+Part 1 is done and pushed. Part 2 is done and pushed: `packages/mcp` serves `quickstacks_list`,
+`quickstacks_new`, `quickstacks_verify` and carries `quickstacks://guide` plus one `skill://` URI per file
+in `skills/`, all proven over stdio by `e2e/stdio.test.ts` and `e2e/dogfood.test.ts`. Branch
+`feat/phase-4.3-typescript-mcp-stack`.
+
+Parked mid-conversation, pick up here:
+
+- **An interactive run was started and not finished.** `new --wizard` was driven prompt by prompt as a
+  puppet of the operator's answers, and scaffolded `quickstacks-projects/wizard1/app` (typescript-mcp,
+  agents claude and opencode, no sandbox, no `--yes`, no launch, brief 5,514 words). Its twelve
+  `## Decisions` questions were put to the operator and are **unanswered**. Nothing has been built there.
+- **The dogfood build at `quickstacks-projects/served1/app2` is unfinished.** Dependencies and
+  `docs/harness.md` exist; `src/`, `tsconfig.json`, `biome.json`, `vitest.config.ts`, `scripts/build.ts`
+  and `e2e/` do not. Two OpenCode runs ended without touching those files (DF-41).
+- **Open, and first on the list when we resume:** the wizard cannot show what is buildable (DF-38). The
+  operator wanted an MCP server and the interactive path never revealed `typescript-mcp`; the stack had to
+  be named from memory.
+- **Budget pressure:** the full composition composes to 5,514 words against a 6,000 limit, and every
+  fragment edit is charged to this stack.
+- **Not attempted:** elicitation for the interrogation, prompts as parameterised templates, and the
+  stderr telemetry shape the other tools use. Skills ride on `skill://` resources because `effect/ai`
+  4.0.6 registers tools, resources and prompts only — SEP-2640's `skills/list` and `skills/get` cannot
+  be served, and declaring the extension without them would be false.
+
 ## What this plan may get wrong
 
 - **`effect/ai` is unstable.** `McpClient.ProtocolVersion` already excludes the older revisions a

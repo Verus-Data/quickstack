@@ -731,3 +731,71 @@ Grouped by what it would take, not by when it was found. `Fixed in:` lines are a
   only thing that settled it was a test observing the payload (DF-34).
 - Two boundaries are silent: `new` refuses a non-empty target with no merge step, and a coder launched in
   a repository cannot read outside it — it lists its plan, does nothing, and exits 0 (DF-36).
+- The wizard is not an interview. It prompts each flag in declaration order, so a user answers the
+  fragment questions before being asked which stack, and the stack itself is a free-text field with no
+  list and no validation (DF-38). Anyone opening `new --wizard` to build an MCP server has no way to
+  discover that `typescript-mcp` exists.
+
+## DF-38 — the interactive wizard cannot show you what you can build
+
+**Attempted:** `new --wizard`, answering each prompt as the product owner would.
+
+**Symptom:** eight prompts before the first useful question, and the useful one is bare. The order is
+`--with` count, `--without` count, `sandbox`, `yes`, `agents` count then each value, `scope`,
+`launch`, `--no-launch` twice, then `Stack ›` with no list, then `Dir ›`, then a final
+`Run this command? yes / no`. The stack field is an `Argument.String`, so the wizard can only ask for
+free text: it does not print the nine stacks, does not offer them, and does not reject an unknown id
+until the command runs. Its own description says "(see `list stacks`)" — advice a person inside a
+wizard cannot follow.
+
+**Why it matters:** the user who asked for this run wanted an MCP server. `typescript-mcp` is
+registered and appears in `list --json`, but nothing in the interactive path reveals that, so the
+correct answer had to come from the operator's memory rather than the tool.
+
+**Proposed fix (feature):** prompt the stack as a choice built from the registry, each option showing
+id and name, with the free-text field as a fallback for an unregistered path; and validate at prompt
+time. Same for fragments, once the stack is known. Sequence should be stack first, then the questions
+that only make sense for that stack — fragments now arrive before the stack, which is backwards.
+
+## DF-39 — the wizard asks boolean flags twice, and offers contradictory pairs
+
+**Symptom:** `Set No launch (--no-launch)? › (y/N)`, answered yes, is followed by
+`No launch (--no-launch) › (t/F)`. The same flag is asked once as presence and once as value. Both
+`--launch` and `--no-launch` are offered in the same wizard even though the CLI documents them as
+mutually exclusive.
+
+**Cause:** the wizard is generic over flag definitions; a boolean flag with a default and a negated
+twin has no single sensible prompt, and nothing special-cases it.
+
+**Proposed fix (feature):** one prompt per flag, the negated twin rendered as the "no" answer to it.
+
+## DF-40 — a per-call test passes while the success path is broken
+
+**Attempted:** a loop test through the MCP server: list, then new, then verify that new project.
+
+**Symptom:** the schemas in `packages/mcp` disagreed with the CLI's JSON on four fields — `git` is an
+enum not a boolean, `missingTools`/`untrusted`/`warnings` hold structs not strings, `handoff` is a
+union with a `reason`, and `exitCode` is absent on a skipped step. Every tool call in the earlier
+handshake test had been to the failure path (a bogus stack), so none of it had ever been encoded.
+
+**Cause:** the failure path short-circuits before the success schema is ever applied. One test of the
+happy path would have found it; the suite had none.
+
+**Fixed in:** stage C2/D, `packages/mcp`. Worth generalising: a tool surface needs one test per tool
+that succeeds, not one test that proves the tools exist.
+
+## DF-41 — two OpenCode runs into an unfinished project produced no code
+
+**Attempted:** build the project scaffolded from the stack at `quickstacks-projects/served1/app2`.
+
+**Symptom:** run one wrote `package.json`, installed dependencies, wrote `docs/harness.md`, then died
+on `external_directory` for a path it invented (`/Users/me/quickstacks-paths/...`). Run two, a
+continuation scoped to the missing files, exited 0 having only printed `node -v`, `bun -v` and
+`git log`. The project still has no `src/`, and `verify` reports eight failing steps.
+
+**Not yet explained:** neither run's transcript shows a refusal or an error for run two. Recorded as
+open rather than diagnosed, because the stage is being parked.
+
+**Proposed fix (process):** when a project run ends without touching its target files, re-issue the
+same work in the foreground so the transcript is observable, rather than a second background run.
+
