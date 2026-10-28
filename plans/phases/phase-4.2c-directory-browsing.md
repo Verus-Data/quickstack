@@ -1,6 +1,7 @@
 # Phase 4.2c: Directory browsing
 
 Status: IN PROGRESS 2026-10-27: the telemetry-free parts (`v1/directory.json`, newest, tags, fragments, removed pages, nav); the telemetry views wait on D17, 4.2b and 4.2f
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -75,7 +76,7 @@ Added 2026-10-27, so this repository's build and the site can be written at the 
                            "lastRun": { "...": "LastRun, optional" } } } ] }
 ```
 
-`entries` has one row per index entry, stacks and fragments, sorted by kind then id. `removed` is sorted by id. `replacedBy` is optional: a removed entry with no replacement omits it, and its page's notice drops the "Use <replacedBy> instead." sentence and the copy command. `last.version` is the last `v*` release tag that shipped the entry (the same tags `release-names.ts` reads); `last.steps` holds each step's `name`, `phase`, `layer` (optional, as in the entry) and `run`, with `withStepDefaults` applied. The site reads every other fact about current entries from the index and its bundles, as 4.0e's pages do. `removed.json`'s rows use the same `replacedBy` (optional), `reason`, `kind` and `removedAt` (`YYYY-MM-DD`).
+`entries` has one row per index entry, stacks and fragments, sorted by kind then id. `removed` is sorted by id. `replacedBy` is optional: a removed entry with no replacement omits it, and its page's notice drops the "Use <replacedBy> instead." sentence and the copy command. `last.version` is the last `v*` release tag that shipped the entry (the same tags `release-names.ts` reads). An entry that only ever shipped through the index takes `last` from the previous index output (`--previous`: its index entry and bundle) and omits `version`; with `--previous none` and no release, the build fails naming it, since its page would have nothing to show; `last.steps` holds each step's `name`, `phase`, `layer` (optional, as in the entry) and `run`, with `withStepDefaults` applied. The site reads every other fact about current entries from the index and its bundles, as 4.0e's pages do. `removed.json`'s rows use the same `replacedBy` (optional), `reason`, `kind` and `removedAt` (`YYYY-MM-DD`).
 
 ### Removed entries
 
@@ -152,6 +153,14 @@ Split 2026-10-27 by where each test runs: this repository's build here, the site
 3. A tag that isn't `^[a-z0-9-]+$` (one containing `<`, one with a capital) fails `build:index` naming the entry; a `reason` containing `<` is written verbatim.
 4. A shallow clone fails `build:index` before writing anything, with a message saying added dates need full history.
 5. `packages/cli/registry/removed.json` ships with empty `entries` and the bundled registry's build writes a `v1/directory.json` with `removed: []`.
+
+### Realistic edge cases
+
+6. Edits and removal/re-addition of a definition do not reset its first-add date, and unproven entries stay out of the directory.
+7. Directory history reads work from an unrelated working directory with inherited git repository selectors, through paths containing spaces and non-ASCII characters.
+8. Invalid removal records refuse publication and preserve existing output and sibling files; a failed shallow build also preserves existing output.
+9. `--check` rejects a missing, unsigned, unknown-key or correctly signed but invalid directory payload, even when the index and bundles verify.
+10. A carried-forward fragment absent from the working registry still gets its added date from its historical source path.
 
 ## Acceptance tests in stacks-api
 
