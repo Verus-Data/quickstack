@@ -2,5 +2,11 @@
   "$schema": "https://biomejs.dev/schemas/2.6.3/schema.json",
   "root": false,
   "extends": "//",
-  "plugins": ["./biome-plugins/no-platform-imports.grit"]
+  "plugins": ["./biome-plugins/no-platform-imports.grit"],
+  "overrides": [
+    {
+      "includes": ["schemas/telemetry-event.v1.json"],
+      "formatter": { "enabled": false }
+    }
+  ]
 }

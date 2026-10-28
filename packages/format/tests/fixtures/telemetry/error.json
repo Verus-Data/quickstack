@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "eventId": "449684ec-04b7-4c20-bc83-23dfe14c0395",
+  "type": "error",
+  "installId": "ad7c7211-cc24-4d18-9913-64f8a531523f",
+  "cliVersion": "0.3.1",
+  "os": "darwin",
+  "nodeMajor": 24,
+  "agent": "other",
+  "sentAt": "2026-10-27T14:03:01.000Z",
+  "command": "new",
+  "code": "TargetNotEmpty",
+  "stack": "go-cli"
+}

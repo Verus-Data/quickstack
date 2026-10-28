@@ -7,17 +7,22 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 1,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "Format and lint staged changes, enforce Conventional Commits and run project tests before pushing through local Git hooks.",
-  "capabilities": ["git-hooks"],
+  "capabilities": [
+    "git-hooks"
+  ],
   "requests": [
     "clean up staged files and restage the fixes when I commit",
     "require a consistent subject format for commit messages",
     "run our tests automatically before I push",
     "install contribution checks automatically when someone sets up a fresh clone"
   ],
-  "useCases": ["local contribution checks", "consistent commit subjects"],
+  "useCases": [
+    "local contribution checks",
+    "consistent commit subjects"
+  ],
   "synonyms": [
     "lefthook",
     "pre-commit",
@@ -26,6 +31,12 @@
     "Conventional Commits",
     "stage-fixed"
   ],
-  "goodFor": ["fast staged-file checks", "reusing the project's test and lint commands"],
-  "notFor": ["replacing hosted CI", "release publishing"]
+  "goodFor": [
+    "fast staged-file checks",
+    "reusing the project's test and lint commands"
+  ],
+  "notFor": [
+    "replacing hosted CI",
+    "release publishing"
+  ]
 }

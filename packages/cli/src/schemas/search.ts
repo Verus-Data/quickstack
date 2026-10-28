@@ -11,11 +11,13 @@ const Source = Schema.Struct({
   promptVersion: Schema.optionalKey(Schema.Int.check(Schema.isGreaterThan(0))),
   reviewedAt: Schema.NullOr(Schema.String.check(Schema.isPattern(/^\d{4}-\d{2}-\d{2}$/))),
 });
-const common = {
-  schemaVersion: Schema.Literal(1),
+// Field order is the order `decorate` writes a card in: identity, then the matched fields.
+const identity = {
   id: Schema.String.check(Schema.isPattern(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)),
   source: Source,
   summary: Schema.String,
+};
+const common = {
   requests: Words,
   useCases: Words,
   synonyms: Words,
@@ -27,13 +29,21 @@ const common = {
 /** Size limits are validation warnings; the two kinds have distinct closed fields. */
 export const SearchMetadata = Schema.Union([
   Schema.Struct({
-    ...common,
+    schemaVersion: Schema.Literal(1),
     kind: Schema.Literal("stack"),
+    ...identity,
     platforms: Words,
     productKinds: Words,
     languages: Words,
+    ...common,
   }),
-  Schema.Struct({ ...common, kind: Schema.Literal("fragment"), capabilities: Words }),
+  Schema.Struct({
+    schemaVersion: Schema.Literal(1),
+    kind: Schema.Literal("fragment"),
+    ...identity,
+    capabilities: Words,
+    ...common,
+  }),
 ]);
 export type SearchMetadata = typeof SearchMetadata.Type;
 

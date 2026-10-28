@@ -7,22 +7,34 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 1,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "Publish Go binaries for multiple operating systems from version tags, with archives, checksums, changelogs and optional Homebrew distribution.",
-  "capabilities": ["release"],
+  "capabilities": [
+    "release"
+  ],
   "requests": [
     "publish downloadable builds of my Go tool whenever I push a version tag",
     "package my executable for Linux, macOS and Windows with checksums",
     "preview release artifacts locally before making them public",
     "optionally distribute my Go binary through a Homebrew tap"
   ],
-  "useCases": ["Go binary distribution", "tag-triggered GitHub releases"],
-  "synonyms": ["GoReleaser", "cross-compilation", "release snapshots", "changelog"],
+  "useCases": [
+    "Go binary distribution",
+    "tag-triggered GitHub releases"
+  ],
+  "synonyms": [
+    "GoReleaser",
+    "cross-compilation",
+    "release snapshots",
+    "changelog"
+  ],
   "goodFor": [
     "version metadata in binaries",
     "repeatable release archives",
     "optional Homebrew publishing"
   ],
-  "notFor": ["Bun-compiled binaries"]
+  "notFor": [
+    "Bun-compiled binaries"
+  ]
 }

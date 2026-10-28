@@ -7,17 +7,22 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 1,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "Enable shared engineering skills and review agents in Claude Code, with rules that load relevant guidance for testing, debugging, errors and writing.",
-  "capabilities": ["agent-harness"],
+  "capabilities": [
+    "agent-harness"
+  ],
   "requests": [
     "give Claude reusable guidance for testing and debugging",
     "load writing advice when Claude edits documentation",
     "enable engineering skills and review agents for everyone opening this project",
     "route source files to error handling guidance automatically"
   ],
-  "useCases": ["shared Claude Code practices", "guidance matched to file paths"],
+  "useCases": [
+    "shared Claude Code practices",
+    "guidance matched to file paths"
+  ],
   "synonyms": [
     "claude-essentials",
     "ce plugin",
@@ -25,6 +30,12 @@
     "path-scoped rules",
     "code review"
   ],
-  "goodFor": ["on-demand skills", "project-wide plugin configuration"],
-  "notFor": ["agents other than Claude Code", "enforcing checks with hooks"]
+  "goodFor": [
+    "on-demand skills",
+    "project-wide plugin configuration"
+  ],
+  "notFor": [
+    "agents other than Claude Code",
+    "enforcing checks with hooks"
+  ]
 }

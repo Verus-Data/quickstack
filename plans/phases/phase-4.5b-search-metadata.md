@@ -1,6 +1,6 @@
 # Phase 4.5b: Search metadata
 
-Status: IN PROGRESS 2026-10-27 (acceptance tests being written, then the implementation)
+Status: EXECUTED 2026-10-28. All 30 bundled cards drafted, then read and approved by a maintainer.
 Acceptance tests: traced
 
 | Field | Value |
@@ -247,6 +247,7 @@ With 4.0c, `build:index` reads each indexed entry's sidecar and writes `v1/searc
 - 2026-10-27: acceptance test 14 traces only the landed 4.0c build and signature checks. The 4.0d `RemoteIndex` half is outside this unit because its implementation is on another branch.
 - 2026-10-27: "stops before a request would pass `--max-usd`" didn't say how the next request's cost is known. The script estimates it as the highest per-request cost reported so far in the run (the first request always goes if any budget remains), so the cap errs toward stopping early.
 - 2026-10-27: `validate` of a root with `search/` and no `stacks/` or `fragments/` fails today with `NotFound`. Item 18 keeps the plan's rule: such a root lists no entries and reports every sidecar as `search-orphan`.
+- 2026-10-28: 13a's "no golden query string" can't hold for a golden query that is itself a closed-vocabulary alias: "go cli" is both query `platform-go-short` and an alias of `languages.go`, and the vocabulary is in every prompt. Such a query is excluded from that check, since the vocabulary is matched literally and can't paraphrase it into a card. The card writer, not Biome, owns card bytes (`JSON.stringify` with two spaces, schema field order with `kind` beside `id`; the formatter is off for `registry/search/`), so `--approve` changes one line, and a test holds every bundled card to those bytes.
 - 2026-10-27: acceptance test 20 needs deferred 3.2a trust storage. It is moved outside the traced acceptance section into Deferred acceptance coverage, preserving its number and intent until that prerequisite lands.
 
 - Keying staleness to the body means every prose fix marks the card stale. If restamping becomes busywork, key the digest to frontmatter only and accept that a body rewrite can leave a card describing the old entry.

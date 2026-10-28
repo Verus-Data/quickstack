@@ -7,24 +7,41 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 1,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "A Go command-line tool with subcommands, configurable settings, actionable errors and human or JSON output.",
-  "platforms": ["cli"],
-  "productKinds": ["cli-tool"],
-  "languages": ["go"],
+  "platforms": [
+    "cli"
+  ],
+  "productKinds": [
+    "cli-tool"
+  ],
+  "languages": [
+    "go"
+  ],
   "requests": [
     "build a terminal utility whose commands also work in scripts",
     "let users override saved settings with environment variables and flags",
     "make command failures explain how to fix the problem",
     "give my Go tool consistent help and version output"
   ],
-  "useCases": ["command-line automation", "configurable utilities"],
-  "synonyms": ["cobra", "viper", "single binary", "subcommands"],
+  "useCases": [
+    "command-line automation",
+    "configurable utilities"
+  ],
+  "synonyms": [
+    "cobra",
+    "viper",
+    "single binary",
+    "subcommands"
+  ],
   "goodFor": [
     "configuration precedence",
     "structured error responses",
     "table-driven command tests"
   ],
-  "notFor": ["graphical interfaces", "a terminal user interface"]
+  "notFor": [
+    "graphical interfaces",
+    "a terminal user interface"
+  ]
 }

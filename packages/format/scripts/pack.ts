@@ -12,6 +12,7 @@ try {
     filter: (path) => !path.endsWith("/pack"),
   });
   cpSync("LICENSE", join(staging, "LICENSE"));
+  cpSync("schemas", join(staging, "schemas"), { recursive: true });
   const packed = {
     name: metadata.name,
     version: metadata.version,

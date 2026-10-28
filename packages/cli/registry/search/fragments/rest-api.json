@@ -7,7 +7,7 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 1,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "Give coding agents consistent HTTP resource conventions for paths, methods, status codes, response shapes, pagination and versioning.",
   "capabilities": [],
@@ -17,8 +17,23 @@
     "paginate collection responses with cursors and stable ordering",
     "document my API's version prefix and resource conventions for future changes"
   ],
-  "useCases": ["consistent HTTP resource design", "shared API guidance for coding agents"],
-  "synonyms": ["REST", "plural resource nouns", "cursor pagination", "API versioning", "CRUD"],
-  "goodFor": ["framework-neutral conventions", "one response shape per resource"],
-  "notFor": ["generating a server implementation", "choosing an application framework"]
+  "useCases": [
+    "consistent HTTP resource design",
+    "shared API guidance for coding agents"
+  ],
+  "synonyms": [
+    "REST",
+    "plural resource nouns",
+    "cursor pagination",
+    "API versioning",
+    "CRUD"
+  ],
+  "goodFor": [
+    "framework-neutral conventions",
+    "one response shape per resource"
+  ],
+  "notFor": [
+    "generating a server implementation",
+    "choosing an application framework"
+  ]
 }

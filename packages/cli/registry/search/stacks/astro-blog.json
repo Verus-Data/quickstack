@@ -7,19 +7,41 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 1,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "A static blog with file-based posts, draft and unlisted publishing, RSS and a sitemap.",
-  "platforms": ["web"],
-  "productKinds": ["blog", "content-site"],
-  "languages": ["typescript"],
+  "platforms": [
+    "web"
+  ],
+  "productKinds": [
+    "blog",
+    "content-site"
+  ],
+  "languages": [
+    "typescript"
+  ],
   "requests": [
     "write articles in local files and preview drafts before publishing",
     "publish some posts by direct link without listing them in my feed",
     "give readers an RSS feed and generate a sitemap from published articles"
   ],
-  "useCases": ["article publishing", "file-based editorial workflows"],
-  "synonyms": ["Astro", "MDX", "content collections", "React islands", "Tailwind typography"],
-  "goodFor": ["validating post metadata during builds", "optional generated social preview images"],
-  "notFor": ["request-time server rendering", "built-in HTTP backend"]
+  "useCases": [
+    "article publishing",
+    "file-based editorial workflows"
+  ],
+  "synonyms": [
+    "Astro",
+    "MDX",
+    "content collections",
+    "React islands",
+    "Tailwind typography"
+  ],
+  "goodFor": [
+    "validating post metadata during builds",
+    "optional generated social preview images"
+  ],
+  "notFor": [
+    "request-time server rendering",
+    "built-in HTTP backend"
+  ]
 }

@@ -7,7 +7,7 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 1,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "Add isolated service tests, controllable time and guidance checked against the installed Effect APIs.",
   "capabilities": [],
@@ -16,8 +16,22 @@
     "keep service state isolated between tests while using real layers",
     "document the APIs my installed dependencies actually expose for coding agents"
   ],
-  "useCases": ["Effect program testing", "maintaining installed API guidance"],
-  "synonyms": ["@effect/vitest", "TestClock", "virtual time", "service layers", "ConfigProvider"],
-  "goodFor": ["asserting typed failures and defects", "finding unintended shared test state"],
-  "notFor": ["choosing the application's runtime architecture"]
+  "useCases": [
+    "Effect program testing",
+    "maintaining installed API guidance"
+  ],
+  "synonyms": [
+    "@effect/vitest",
+    "TestClock",
+    "virtual time",
+    "service layers",
+    "ConfigProvider"
+  ],
+  "goodFor": [
+    "asserting typed failures and defects",
+    "finding unintended shared test state"
+  ],
+  "notFor": [
+    "choosing the application's runtime architecture"
+  ]
 }

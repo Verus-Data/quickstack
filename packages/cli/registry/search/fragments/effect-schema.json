@@ -7,7 +7,7 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 1,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "Validate incoming data and encode outgoing data from shared schemas that also define TypeScript types.",
   "capabilities": [],
@@ -16,7 +16,10 @@
     "reject malformed requests and external responses before they enter application logic",
     "generate JSON Schema for tools and validate their structured output"
   ],
-  "useCases": ["validating data at trust boundaries", "shared client and server schemas"],
+  "useCases": [
+    "validating data at trust boundaries",
+    "shared client and server schemas"
+  ],
   "synonyms": [
     "Effect Schema",
     "branded ids",
@@ -28,5 +31,7 @@
     "explicit decoding and encoding",
     "incremental adoption alongside existing validators"
   ],
-  "notFor": ["replacing required framework validators"]
+  "notFor": [
+    "replacing required framework validators"
+  ]
 }
