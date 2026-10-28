@@ -70,7 +70,7 @@ export class CliRunner extends Context.Service<
       options?: { readonly cwd?: string },
     ): Effect.Effect<CliOutput, never>;
   }
->()("quickstacks/mcp/CliRunner") {
+>()("stacks/mcp/CliRunner") {
   static readonly Live = Layer.effect(
     CliRunner,
     Effect.gen(function* () {

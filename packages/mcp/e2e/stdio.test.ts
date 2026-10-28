@@ -64,9 +64,9 @@ describe("stdio handshake", () => {
       const tools = yield* client.listTools();
       const toolNames = tools.map((t) => t.name).sort();
 
-      expect(toolNames).toEqual(["quickstacks_list", "quickstacks_new", "quickstacks_verify"]);
+      expect(toolNames).toEqual(["stacks_list", "stacks_new", "stacks_verify"]);
 
-      const listTool = findTool(tools, "quickstacks_list");
+      const listTool = findTool(tools, "stacks_list");
       const listResult = yield* client.callTool({ tool: listTool });
       expect(listResult.isError).toBeFalsy();
       const listText = (listResult.content[0] as { text: string }).text;
@@ -78,7 +78,7 @@ describe("stdio handshake", () => {
         expect(typeof entry.kind).toBe("string");
       }
 
-      const newTool = findTool(tools, "quickstacks_new");
+      const newTool = findTool(tools, "stacks_new");
       const newResult = yield* client.callTool({
         tool: newTool,
         arguments: { stack: "bogus-stack" },
@@ -89,11 +89,11 @@ describe("stdio handshake", () => {
 
       const resources = yield* client.listResources();
       const uris = resources.map((r) => r.uri);
-      expect(uris).toContain("quickstacks://guide");
+      expect(uris).toContain("stacks://guide");
       const skillUris = uris.filter((u) => u.startsWith("skill://"));
       expect(skillUris.length).toBeGreaterThanOrEqual(2);
 
-      const guideResult = yield* client.readResource({ uri: "quickstacks://guide" });
+      const guideResult = yield* client.readResource({ uri: "stacks://guide" });
       expect(guideResult.contents).toHaveLength(1);
       const guideContent = guideResult.contents[0] as { text: string };
       expect(guideContent.text).toContain("verify");

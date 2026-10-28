@@ -18,7 +18,13 @@ const serverPath = resolve(import.meta.dirname, "../dist/server.js");
 const serverStderr: Uint8Array[] = [];
 
 function makeClientLayer(protocol: McpProtocol.ProtocolAdapter<McpClient.ProtocolVersion>) {
-  const command = ChildProcess.make("node", [serverPath]);
+  const command = ChildProcess.make("node", [serverPath], {
+    extendEnv: true,
+    env: {
+      STACKS_DATA_DIR: projectRoot,
+      XDG_DATA_HOME: projectRoot,
+    },
+  });
   const clientLayer = McpClient.layerStdio({
     name: "e2e-client",
     version: "0.0.0",
@@ -73,7 +79,7 @@ describe("dogfood loop", () => {
 
       const tools = yield* client.listTools();
 
-      const listTool = findTool(tools, "quickstacks_list");
+      const listTool = findTool(tools, "stacks_list");
       const listResult = yield* client.callTool({
         tool: listTool,
         arguments: { kind: "stack" },
@@ -87,7 +93,7 @@ describe("dogfood loop", () => {
         expect(entry.kind).toBe("stack");
       }
 
-      const newTool = findTool(tools, "quickstacks_new");
+      const newTool = findTool(tools, "stacks_new");
       const newResult = yield* client.callTool({
         tool: newTool,
         arguments: { stack: "typescript-mcp", dir: appDir, sandbox: true },
@@ -100,7 +106,7 @@ describe("dogfood loop", () => {
       expect(existsSync(join(appDir, ".stacks", "BRIEF.md"))).toBe(true);
       expect(existsSync(join(appDir, ".stacks", "manifest.json"))).toBe(true);
 
-      const verifyTool = findTool(tools, "quickstacks_verify");
+      const verifyTool = findTool(tools, "stacks_verify");
       const verifyResult = yield* client.callTool({
         tool: verifyTool,
         arguments: { dir: appDir },

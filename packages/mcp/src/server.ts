@@ -8,7 +8,7 @@ import { CliRunner } from "./run";
 import { toolkit } from "./toolkit";
 
 const serverLayer = McpServer.layerStdio({
-  name: "quickstacks-mcp",
+  name: "stacks-mcp",
   version: "0.0.0",
   protocols: [McpProtocol.v2026_07_28, McpProtocol.v2025_11_25],
 });

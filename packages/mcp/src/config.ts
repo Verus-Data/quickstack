@@ -23,7 +23,7 @@ function parseLogLevel(raw: string | undefined): LogLevel.LogLevel {
 }
 
 function resolveCliPath(): string {
-  const envPath = process.env.QUICKSTACKS_MCP_CLI;
+  const envPath = process.env.STACKS_MCP_CLI;
   if (envPath) return envPath;
   const here = fileURLToPath(new URL(".", import.meta.url));
   return resolve(here, "../../cli/src/bin.ts");

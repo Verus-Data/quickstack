@@ -1,18 +1,18 @@
 ---
 name: reading-a-brief
-description: How to read and carry out a .stacks/BRIEF.md after quickstacks new
+description: How to read and carry out a .stacks/BRIEF.md after stacks new
 ---
 
 # Reading a brief
 
-After `quickstacks new <stack> <dir>`, the CLI writes `.stacks/BRIEF.md`
-into the project. That brief is the task: carry it out until `quickstacks
+After `stacks new <stack> <dir>`, the CLI writes `.stacks/BRIEF.md`
+into the project. That brief is the task: carry it out until `stacks
 verify` exits 0 with outcome green.
 
 ## Structure
 
 The brief names the stack, fragments, preset, target agents, and the files
-quickstacks wrote. Then comes **Your job**: a one-paragraph task statement.
+stacks wrote. Then comes **Your job**: a one-paragraph task statement.
 **Versions** says nothing is pinned — let the package manager resolve. **Ground
 rules** cover generators, git, and keeping `AGENTS.md` true. **Decisions**
 lists what to ask the user once. **Dependencies and tools** names packages by
@@ -24,7 +24,7 @@ and setup. **Definition of done** is the verify table.
 1. Read it end to end before writing code.
 2. Ask the user about the **Decisions** in one message, giving each default.
 3. Install, build, and run the dev commands yourself; fix their warnings.
-4. Run `quickstacks verify` from the project root in a loop. Read the step
+4. Run `stacks verify` from the project root in a loop. Read the step
    name and output tail it reports, fix the code, run again.
 5. If verify reports `VerifyChanged`, stop — only the user can accept that.
 6. Keep `.stacks/NOTES.md` under **Findings** for anything ambiguous.

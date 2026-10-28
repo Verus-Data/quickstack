@@ -1,9 +1,9 @@
 ---
 name: authoring-stack
-description: How to write a quickstacks stack entry that composes, validates, and scaffolds cleanly
+description: How to write a stacks stack entry that composes, validates, and scaffolds cleanly
 ---
 
-# Authoring a quickstacks stack
+# Authoring a stacks stack
 
 A stack is a directory under `stacks/<id>/` with an `entry.md` frontmatter
 file and a `files/` tree. The CLI reads the frontmatter, composes selected
@@ -36,4 +36,4 @@ the rest.
 - A stack writes files and a brief; verify runs the project's own commands.
 - Don't pin versions or freeze config formats in the CLI or in `files/`.
 - Keep the stack body under 2000 words; fragments under 1000.
-- Test with `quickstacks validate <id>` before shipping.
+- Test with `stacks validate <id>` before shipping.

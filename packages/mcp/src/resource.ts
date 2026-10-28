@@ -7,7 +7,7 @@ import { Effect } from "effect";
 import { McpServer } from "effect/ai";
 import { cliPath } from "./config";
 
-export const GUIDE_RESOURCE_URI = "quickstacks://guide";
+export const GUIDE_RESOURCE_URI = "stacks://guide";
 
 function captureGuide(): string {
   try {
@@ -86,7 +86,7 @@ export const SKILL_RESOURCES: SkillResource[] = loadSkills();
 export const guideResourceLayer = McpServer.resource({
   uri: GUIDE_RESOURCE_URI,
   name: "guide",
-  description: "The quickstacks agent guide: the list, new, verify loop and the rules.",
+  description: "The stacks agent guide: the list, new, verify loop and the rules.",
   mimeType: "text/markdown",
   content: Effect.succeed(GUIDE_TEXT),
 });

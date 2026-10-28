@@ -1,21 +1,21 @@
-# @quickstacks/mcp
+# @steamfield/stacks-mcp
 
-A stdio MCP server built on Effect's MCP modules. It wraps the quickstacks CLI,
+A stdio MCP server built on Effect's MCP modules. It wraps the stacks CLI,
 exposing three typed tools and markdown resources over newline-delimited
 JSON-RPC, launched by an agent client as a subprocess.
 
 ## Tools
 
-- **quickstacks_list** — lists available stacks and fragments. Pass `kind` to
+- **stacks_list** — lists available stacks and fragments. Pass `kind` to
   filter to `"stack"` or `"fragment"`. Returns each entry's id, kind, name,
   description, tags, origin, trusted flag, shadows and lastRun.
-- **quickstacks_new** — scaffolds a new project from a stack: writes starter
+- **stacks_new** — scaffolds a new project from a stack: writes starter
   files and `.stacks/BRIEF.md`. Runs nothing from the stack. Pass `stack`
   (required), `dir` (optional), `sandbox` (default `true`), and optional
   `with`/`without` fragment lists. Returns the project path, stack, fragments,
   agents, written files, brief word count, and handoff info. Fails with
   `CliFailure` carrying the CLI's tag, message and details verbatim.
-- **quickstacks_verify** — runs the project's verify steps. Pass `dir`
+- **stacks_verify** — runs the project's verify steps. Pass `dir`
   (optional, defaults to the server's working directory). Returns the outcome
   (`green`, `partial`, `failed`, `changed` or `interrupted`), totals, duration,
   and per-step results. A failing project is a successful call; it only fails
@@ -23,7 +23,7 @@ JSON-RPC, launched by an agent client as a subprocess.
 
 ## Resources
 
-- `quickstacks://guide` — the quickstacks agent guide, captured at startup.
+- `stacks://guide` — the stacks agent guide, captured at startup.
 - `skill://<name>` — one per file in `skills/*.md`, each a short skill document
   with frontmatter carrying `name` and `description`.
 
@@ -54,7 +54,7 @@ path to the built server:
 ```json
 {
   "mcpServers": {
-    "quickstacks": {
+    "stacks": {
       "command": "node",
       "args": ["/absolute/path/to/packages/mcp/dist/server.js"]
     }
@@ -65,6 +65,21 @@ path to the built server:
 The server then appears with three tools and reads the guide and skills as
 resources, so an agent can pick a stack, create a project and verify it without
 shell access.
+
+## Finding the CLI
+
+The server runs the CLI as a subprocess — `bun` with the resolved entry path
+and `--json` — and never imports CLI code. It resolves that path in
+`src/config.ts` from two places, in order: the `STACKS_MCP_CLI` environment
+variable, then `../../cli/src/bin.ts` relative to the config module, which lands
+at `packages/cli/src/bin.ts`. There is no PATH lookup, so an installed copy of
+the CLI outside this repo is not found by the relative path and needs
+`STACKS_MCP_CLI` set until a lookup mechanism exists.
+
+If neither resolves, the spawn fails on the first tool call. The runner catches
+it and returns exit code -1 with stderr `Failed to spawn CLI`, which the handler
+maps to a `CliFailure` — not a stack trace — and the message names the spawn
+failure.
 
 ## Known limit: skills are resources, not the skills extension
 
@@ -87,7 +102,7 @@ stdin; stdout is protocol-only. Set `MCP_LOG_LEVEL` (trace, debug, info, warn,
 error, fatal) to adjust the log threshold; logs go to stderr. An unset or
 unrecognized value defaults to info.
 
-Set `QUICKSTACKS_MCP_CLI` to an absolute path to the quickstacks CLI entry
+Set `STACKS_MCP_CLI` to an absolute path to the stacks CLI entry
 (`packages/cli/src/bin.ts`) if the default relative path does not resolve.
 
 The server advertises both protocol revisions `2026-07-28` and `2025-11-25`, so
@@ -114,7 +129,7 @@ src/toolkit.ts    Tool declarations and Toolkit (pure, no I/O)
 src/handlers.ts   one handler per tool, failure mapping
 src/run.ts        CliRunner service: spawns the CLI with bun, always --json
 src/resource.ts   guide capture and skill resource loading
-src/config.ts     the only reader of process.env (MCP_LOG_LEVEL, QUICKSTACKS_MCP_CLI)
+src/config.ts     the only reader of process.env (MCP_LOG_LEVEL, STACKS_MCP_CLI)
 src/errors.ts     tagged errors (CliFailure)
 src/schemas/      one file per shape crossing the boundary, re-exported from index.ts
 skills/           markdown skill files with frontmatter (name, description)

@@ -26,7 +26,7 @@ verify:
   - { name: stdio-handshake, layer: test, run: bun run e2e }
   - name: readme-filled
     layer: check
-    run: "test -s README.md && ! grep -n 'quickstacks:fill' README.md"
+    run: "test -s README.md && ! grep -n 'stacks:fill' README.md"
 commands:
   build: Bundle the server for the Node target with a shebang
   dev: Run the source through Bun for a quick loop
@@ -58,7 +58,7 @@ Vitest tests live in `tests/`; the stdio handshake lives in `e2e/` and runs agai
 
 ## Setup
 
-Create package metadata with `"type": "module"`, a `"version"` field for the package's release number (set in `package.json` and bumped with each release), and a `bin` entry mapping the project slug, which is the directory name, to `dist/server.js`. Write `.node-version` yourself with the Node major you target: quickstacks does not write one, and CI reads it. Set `engines.node` to match it, and record the Bun version the build needs in `.bun-version`. TypeScript starts from the compiler's own `--init` output and stays strict: no unchecked index access, verbatim module syntax, `noEmit` because Bun bundles and tsc only checks. Biome with two spaces, double quotes, width 100, and organized imports. Vitest runs on Node and excludes `e2e/`. The required `claude-harness` fragment ships an `AGENTS.md`; if this server is scaffolded into a repository that already has one, keep that one true rather than inventing a second.
+Create package metadata with `"type": "module"`, a `"version"` field for the package's release number (set in `package.json` and bumped with each release), and a `bin` entry mapping the project slug, which is the directory name, to `dist/server.js`. Write `.node-version` yourself with the Node major you target: the CLI does not write one, and CI reads it. Set `engines.node` to match it, and record the Bun version the build needs in `.bun-version`. TypeScript starts from the compiler's own `--init` output and stays strict: no unchecked index access, verbatim module syntax, `noEmit` because Bun bundles and tsc only checks. Biome with two spaces, double quotes, width 100, and organized imports. Vitest runs on Node and excludes `e2e/`. The required `claude-harness` fragment ships an `AGENTS.md`; if this server is scaffolded into a repository that already has one, keep that one true rather than inventing a second.
 
 Scripts: `build` (Bun bundles `src/server.ts` for the Node target with a shebang, output `dist/server.js`), `dev` (run the source through Bun for a quick loop), `lint`, `typecheck`, `test` (Vitest, unit only), `e2e` (build, then the handshake), `check` (lint, typecheck, test, e2e), `clean` (generated output only).
 

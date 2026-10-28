@@ -10,9 +10,9 @@ import {
   VerifySuccess,
 } from "./schemas/tools";
 
-export const quickstacksList = Tool.make("quickstacks_list", {
+export const stacksList = Tool.make("stacks_list", {
   description:
-    "List available quickstacks stacks and fragments. Returns each entry's id, kind, name, description, tags, origin, trusted flag, shadows and lastRun. Pass kind to filter to stacks or fragments only. Use this first to pick a stack.",
+    "List available stacks and fragments. Returns each entry's id, kind, name, description, tags, origin, trusted flag, shadows and lastRun. Pass kind to filter to stacks or fragments only. Use this first to pick a stack.",
   parameters: ListParams,
   success: ListSuccess,
   failure: CliFailure,
@@ -20,7 +20,7 @@ export const quickstacksList = Tool.make("quickstacks_list", {
   dependencies: [CliRunner],
 });
 
-export const quickstacksNew = Tool.make("quickstacks_new", {
+export const stacksNew = Tool.make("stacks_new", {
   description:
     "Scaffold a new project from a stack: writes starter files and .stacks/BRIEF.md into the target directory. Runs nothing from the stack; verify is the definition of done. Pass stack (required), dir (optional, defaults to ./<stack>), sandbox (default true), and optional with/without fragment lists. Returns the project path, stack, fragments, agents, written files, brief word count, and handoff info. Fails with CliFailure carrying the CLI's tag, message and details verbatim — NotFound with suggestions, TargetNotEmpty, etc.",
   parameters: NewParams,
@@ -30,7 +30,7 @@ export const quickstacksNew = Tool.make("quickstacks_new", {
   dependencies: [CliRunner],
 });
 
-export const quickstacksVerify = Tool.make("quickstacks_verify", {
+export const stacksVerify = Tool.make("stacks_verify", {
   description:
     "Run the project's verify steps from .stacks/manifest.json in the given directory (defaults to the server's working directory). Returns the outcome (green/partial/failed/changed/interrupted), totals, duration, and per-step results. A failed outcome is a successful call — do not treat it as an error. Only fails when the CLI itself cannot run. Use this in a loop after new until the outcome is green.",
   parameters: VerifyParams,
@@ -40,4 +40,4 @@ export const quickstacksVerify = Tool.make("quickstacks_verify", {
   dependencies: [CliRunner],
 });
 
-export const toolkit = Toolkit.make(quickstacksList, quickstacksNew, quickstacksVerify);
+export const toolkit = Toolkit.make(stacksList, stacksNew, stacksVerify);

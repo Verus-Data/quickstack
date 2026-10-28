@@ -53,7 +53,7 @@ export const listHandler = (
     const target = params.kind ?? "all";
     if (output.exit !== 0) {
       const failure = parseEnvelope(output.stderr, output.exit);
-      yield* logCall("quickstacks_list", target, elapsed, output.exit);
+      yield* logCall("stacks_list", target, elapsed, output.exit);
       return yield* Effect.fail(failure);
     }
     const decoded = Schema.decodeUnknownSync(ListResult)(JSON.parse(output.stdout));
@@ -61,7 +61,7 @@ export const listHandler = (
     if (params.kind !== undefined) {
       entries = entries.filter((e) => e.kind === params.kind);
     }
-    yield* logCall("quickstacks_list", target, elapsed, output.exit);
+    yield* logCall("stacks_list", target, elapsed, output.exit);
     return { entries } satisfies ListSuccess;
   });
 
@@ -96,11 +96,11 @@ export const newHandler = (params: NewParams): Effect.Effect<NewSuccess, CliFail
     const elapsed = Date.now() - start;
     if (output.exit !== 0) {
       const failure = parseEnvelope(output.stderr, output.exit);
-      yield* logCall("quickstacks_new", params.stack, elapsed, output.exit);
+      yield* logCall("stacks_new", params.stack, elapsed, output.exit);
       return yield* Effect.fail(failure);
     }
     const decoded = Schema.decodeUnknownSync(NewResult)(JSON.parse(output.stdout));
-    yield* logCall("quickstacks_new", params.stack, elapsed, output.exit);
+    yield* logCall("stacks_new", params.stack, elapsed, output.exit);
     return {
       project: decoded.project,
       stack: decoded.stack,
@@ -122,7 +122,7 @@ export const verifyHandler = (
     const output: CliOutput = yield* runner.run(["verify"], { cwd });
     const elapsed = Date.now() - start;
     if (output.exit === -1) {
-      yield* logCall("quickstacks_verify", cwd, elapsed, output.exit);
+      yield* logCall("stacks_verify", cwd, elapsed, output.exit);
       return yield* Effect.fail(
         new CliFailure({
           message: output.stderr,
@@ -134,7 +134,7 @@ export const verifyHandler = (
     }
     try {
       const decoded = Schema.decodeUnknownSync(VerifyResult)(JSON.parse(output.stdout));
-      yield* logCall("quickstacks_verify", cwd, elapsed, output.exit);
+      yield* logCall("stacks_verify", cwd, elapsed, output.exit);
       return {
         outcome: decoded.outcome,
         totals: decoded.totals,
@@ -148,13 +148,13 @@ export const verifyHandler = (
       } satisfies VerifySuccess;
     } catch {
       const failure = parseEnvelope(output.stderr, output.exit);
-      yield* logCall("quickstacks_verify", cwd, elapsed, output.exit);
+      yield* logCall("stacks_verify", cwd, elapsed, output.exit);
       return yield* Effect.fail(failure);
     }
   });
 
 export const handlerLayer = toolkit.toLayer({
-  quickstacks_list: listHandler,
-  quickstacks_new: newHandler,
-  quickstacks_verify: verifyHandler,
+  stacks_list: listHandler,
+  stacks_new: newHandler,
+  stacks_verify: verifyHandler,
 });

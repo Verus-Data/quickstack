@@ -4,7 +4,7 @@
   "extends": "//",
   "overrides": [
     {
-      "includes": [".quickstacks/**"],
+      "includes": [".stacks/**"],
       "formatter": { "enabled": false },
       "linter": { "enabled": false },
       "assist": { "enabled": false }
