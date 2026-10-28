@@ -42,7 +42,7 @@ Auth is on for every API route unless a path is named public, and the test suite
 
 - `test/setup.ts` gains `setupTestAuth()`: generate a 2048-bit RS256 keypair, set `CLERK_JWT_KEY` to the public PEM, `CLERK_TELEMETRY_DISABLED=1` (so nothing leaves the machine), a fake secret key, and a well-formed publishable key (`pk_test_` plus base64 of `<frontend-api-host>$`; Clerk parses it). Return `signSessionToken(userId, overrides?)`, which signs a Clerk-shaped session JWT (`sub`, `sid`, `iat`, `nbf`, `exp`, `azp`, and `iss` of `https://<that frontend-api-host>`) with overrides merged into the claims. `createSigner()` makes an untrusted second key. `setupApiTest` calls it and adds `t.auth` and `t.as(userId, path, init?)`, which signs a token and adds a JSON content type when there's a body.
 - Every authenticated route gets four cases: valid token, no token, a token from another key, an expired token. Write them for `/api/me` first.
-- Mobile tests stub `@clerk/expo` through one shared factory, `test/clerk-mock.ts` (`jest.mock('@clerk/expo', () => require('./clerk-mock').clerkMock())`), shaped like Clerk's real resources rather than only the methods a test calls. `renderScreen` doesn't mount `ClerkProvider`. Add it to the list of sanctioned module stubs in `docs/testing.md`.
+- Mobile tests stub `@clerk/expo` through the shared `test/clerk-mock.ts` factory, matching its resources. `renderScreen` mounts the project's real provider composition, including the SDK-boundary provider stub when enabled. Exercise keyless, signed-out/in, token refresh/failure and sign-out through real query hooks and hc; assert Authorization and cache clearing. Add the SDK stub to `docs/testing.md`'s sanctioned boundaries. Account/device flows remain external.
 
 ## Gotchas
 

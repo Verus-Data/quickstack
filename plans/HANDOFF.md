@@ -9,14 +9,27 @@ Start here, then read repo `AGENTS.md`, the README's
 next steps, who owns each. When it grows past a couple of screens, move the dated detail
 to `archive/` and leave a link.
 
-## Manual library QA (2026-10-27)
+## Manual library QA and fixes (2026-10-27–28)
+
+QA-01 through QA-11 have CLI/recipe fixes, regression coverage and targeted
+follow-up QA. The [closure report](qa-gap-closure.md) maps each fix and records
+the temporary apps' remaining implementation/coverage limits. Mobile owns its
+process groups, native guidance is portable, and the test guard follows the
+actual command directory. Historical evidence and the ledger are unchanged.
+Metadata enrichment remains a separate draft; no review stamp was created here.
+
+The app-eval follow-up adds one independent report v1 checkpoint shared through
+openrouter-ai; both app manifests use it. It rejects the retained incomplete Terra
+report and checks two local models, required cases and separate aggregates.
+See the closure note's independent-checkpoint section for verification/review;
+runner/scorer correctness and full app acceptance remain agent-owned.
 
 Three Terra 6.1 agents exercised all ten bundled stacks and both apps; the
 [report](runs/2026-10-27-library-qa/REPORT.md) records eleven CLI/recipe friction
 items, implementation gaps missed by green checks, evidence and cleanup.
 [Timings](runs/2026-10-27-library-qa/timings.md) separate CLI writes from agent
-setup and app work. Product source, registry and ledger are unchanged. Next:
-review these findings and agree an improvement plan before implementing fixes.
+setup and app work. Subsequent source/registry fixes and fresh timing/QA evidence
+are linked from the closure report; the original run remains unchanged.
 
 ## Phase 4 in progress (2026-10-27)
 
@@ -252,8 +265,8 @@ reworded for `dist/stacks` or deferred in its plan.
     guard stays looser (docs/harness.md, "Repo hooks and shipped hooks").
   - Cursor's `Write` payload for an edit to an existing file isn't recorded; the fixture
     follows the docs. Record a live payload to confirm the secrets guard sees edits.
-  - `list` still shows the three 1.6b stacks as proven while `validate` notes their
-    compositions changed since that run; rerun them with `bun run bench`.
+  - Catalog passes are now labelled historical; `show` compares current content.
+    New counting proof still comes from a fresh bench, not a relabelled old run.
 
 ## Phases 0 and 1 (2026-10-27)
 

@@ -16,7 +16,7 @@ Acceptance tests: traced
 
 In:
 
-- Color for a fixed set of human-text elements: the failure line and `Error:` prefix, warnings, step outcomes in `verify` rows (`passed`, `failed`, `skipped`), proof labels in `list` (`proven`, `unproven`), and the `Next:` line.
+- Color for a fixed set of human-text elements: the failure line and `Error:` prefix, warnings, step outcomes in `verify` rows (`passed`, `failed`, `skipped`), proof labels in `list` (`historical pass`, `unproven`), and the `Next:` line.
 - One live line on stderr for long steps: `verify`'s running step with its elapsed time, and `new`'s write and `git init` stages.
 - Wrapping human paragraphs (guide text, `show` guidance, `list` descriptions) to the terminal width, falling back to today's output when the width is unknown.
 

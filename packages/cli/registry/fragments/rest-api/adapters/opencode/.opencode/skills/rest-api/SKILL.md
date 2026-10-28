@@ -3,6 +3,8 @@ name: rest-api
 description: "Use before adding, renaming or changing an HTTP endpoint: resource naming, methods, status codes, bodies, pagination and versioning."
 ---
 
+Read [shared rest-api guidance](../../../docs/guidance/rest-api/index.md) before changes.
+
 # REST resources
 
 The path is the API's public vocabulary. Clients, docs and logs repeat it for years, so name it from the domain before writing a handler. If you can't say what the resource is in one noun, the design isn't ready: stop and ask.

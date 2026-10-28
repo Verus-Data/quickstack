@@ -31,6 +31,9 @@ verify:
   - { name: lint, layer: lint, run: bun run lint }
   - { name: typecheck, layer: typecheck, run: bun run typecheck }
   - { name: test, layer: test, run: bun run test }
+  - { name: harness-contract, layer: test, run: bun run test:api test/harness-contract.test.ts }
+  - { name: auth-provider, layer: test, run: bun run test:mobile --runInBand test/auth-provider.test.tsx }
+  - { name: ci-contract, layer: test, run: bun run test:ci }
   - { name: db-check, layer: check, run: bun run db:check }
   - { name: bundle, layer: build, run: bun run bundle }
   - { name: expo-deps, layer: check, run: bun run expo:check }
@@ -57,6 +60,7 @@ commands:
   test: Every workspace's tests (the API suite needs Postgres up)
   test:api: The API suite (bun test)
   test:mobile: The mobile suite (jest)
+  test:ci: Test path-filtered workflow contracts locally
   bundle: Expo export for iOS and Android into an ignored directory
   expo:check: Expo's own dependency check against the installed SDK, in apps/mobile
   db:up: Start Postgres and wait until healthy
@@ -76,7 +80,7 @@ Three bun workspaces: `apps/api` (Bun + Hono with `@hono/zod-openapi`, Drizzle o
 ```
 package.json        workspaces apps/*, packages/*; root scripts; bunfig.toml; biome.json; tsconfig.base.json
 compose.yaml        postgres for dev and tests
-scripts/            dev.sh, dev-logs.sh, sim-shot.sh, prepare.ts (shipped)
+scripts/            dev.sh, dev.ts, dev-logs.sh, sim-shot.sh, prepare.ts (shipped)
 docs/               api.md, mobile.md, testing.md (shipped; the conventions in detail)
 apps/api/
   src/index.ts      boot checks, Bun server export
@@ -119,7 +123,7 @@ Read `docs/api.md` before changing routes, services, or schemas, and `docs/mobil
 - **Config**: `index.ts` exits with a fix-it message when `DATABASE_URL` is missing. `db()` is lazy and cached per connection string, so importing never connects.
 - **Mobile data access** goes through hooks in `src/lib/queries/` only. `lib/api.ts` (the `hc` client) is imported by nothing else. Hooks own query keys (from one `keys.ts`), `staleTime`, and error mapping; failed responses become an `ApiError` carrying the server's message. One `QueryClient`: one query retry, no mutation retries, no refetch on focus.
 - **API URL**: `EXPO_PUBLIC_API_URL` when set, otherwise the Metro host from Expo's `hostUri` on port 3000 (the bundle can't read `PORT_API`; set the URL when the port moves), so simulators, emulators, and devices all reach the dev API. A release build throws when the URL is unset or still the `https://api.example.com` placeholder EAS profiles start with.
-- **Styling** is NativeWind utilities with tokens in `global.css`'s theme; never `StyleSheet.create`. Third-party components get `className` only through `components/styled.ts`.
+- **Styling**: follow `docs/mobile.md`'s NativeWind tokens and `components/styled.ts` boundary; never `StyleSheet.create`.
 
 ## Tool configuration
 
@@ -129,15 +133,17 @@ Read `docs/api.md` before changing routes, services, or schemas, and `docs/mobil
 
 ## Testing
 
-Read `docs/testing.md` before writing a test. Testing Trophy: mostly integration tests against real dependencies, never mocking our own code.
+Read `docs/testing.md`; use real integration tests, never own-code mocks.
 
-- **API** (bun:test): `test/setup.ts` exports `setupApiTest(label)`, the whole preamble. It migrates a template database once per run under an advisory lock, clones one database per test file from it, imports the app dynamically after the environment is set, and drops the database after. Tests dispatch with `t.app.request(...)`; no server binding. Cover `/health`, `/health/ready` against the real database, the error envelope (404, a zod 400), and a test that crawls imports from `client.ts` and fails if `bun` or Drizzle appears outside their allowed modules.
-- **Mobile** (jest-expo, Testing Library for React Native): `test/render.tsx`'s `renderScreen` mounts the root layout's providers with a fresh `QueryClient` (no retries, `gcTime: Infinity` so no garbage-collection timer outlives the test). Stub `fetch` only (`mockJsonResponse`, `mockApi`), plus module stubs for process boundaries in shared factories (`router-mock.ts` for expo-router). Cover the home screen's ok and error states through the real hook and `hc` client.
-- E2E on a simulator is out of the base; the bundle step is what proves Metro, Babel, and NativeWind compile.
+Implement `docs/acceptance/mobile-expo.md`: verify separately checks database isolation/import graphs, offline auth integration and CI filters. Real accounts, devices and hosted CI remain Pending user actions.
+
+- **API** (bun:test): use `setupApiTest(label)` from `test/setup.ts`, exactly as `docs/testing.md` prescribes (template migrations, per-file database, dynamic app import, cleanup). Dispatch with `t.app.request(...)`. Cover health/readiness with real Postgres, 404/zod-400 envelopes, and the transitive client import graph.
+- **Mobile** (jest-expo, Testing Library): use `renderScreen` from the documented harness with real providers/hooks/hc, a fresh QueryClient, no retries and no lingering GC timer. Stub only fetch/native boundaries through shared factories. Cover home success/error and the auth-provider matrix.
+- The bundle checks Metro/Babel/NativeWind compilation; simulator E2E remains external.
 
 ## Commands
 
-Root scripts call workspace scripts with `bun run --filter`. `setup` is idempotent: install, copy `.env.example` to `.env` if missing, symlink `apps/mobile/.env` to the root one (Expo only reads env from its project directory; skip the link while `apps/mobile` doesn't exist yet). `dev`, `dev:logs`, `sim:shot` run the shipped `scripts/*.sh`; `dev.sh` calls the API workspace's `dev` script and the mobile workspace's `dev` (`expo start`) or `ios` (`expo run:ios`) scripts by package name, so keep those names. `prepare` runs `scripts/prepare.ts`; `bundle` writes `dist/`. `typecheck` in mobile generates Expo's route types first, with the headless command from the installed Expo CLI's help (it must not start Metro). Mirror the table in AGENTS.md with single-file test commands for both runners (`cd apps/api && bun run test test/health.test.ts`, `cd apps/mobile && bunx jest test/home-screen.test.tsx`). Note there that `PORT_DB` and `DATABASE_URL`'s port move together, and that `verify`'s teardown stops the dev Postgres.
+Root scripts call workspace scripts with `bun run --filter`. `setup` is idempotent: install, copy `.env.example` to `.env` if missing, symlink `apps/mobile/.env` to the root one (Expo only reads env from its project directory; skip the link while `apps/mobile` doesn't exist yet). `dev.sh` records output and runs `scripts/dev.ts`, which starts the API workspace's `dev` and mobile's `dev` (`expo start`) or `ios` (`expo run:ios`). Keep those names and include scripts in typechecking. It refuses busy ports and stops only its owned process groups on failure, signal or either app's exit. Postgres stays up; `db:down` stops it without deleting data. Set `PORT_API` and `PORT_METRO` (default 8081) to move dev ports; also update `EXPO_PUBLIC_API_URL` when the API moves. `prepare` runs `scripts/prepare.ts`; `bundle` writes `dist/`. `typecheck` in mobile generates Expo's route types first, with the installed CLI's headless command. Mirror Commands and scoped tests from `docs/testing.md` in AGENTS.md. `PORT_DB` and `DATABASE_URL` move together; verify teardown stops Postgres.
 <!-- stacks:when with=git-hooks -->
 
 pre-push runs `bun run db:up` before the tests, since the API suite needs Postgres; say so in the Git hooks section.

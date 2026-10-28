@@ -31,7 +31,7 @@ function categoryFields(row: ListRow): string[] {
 function ledgerFields(row: ListRow, present: boolean | undefined, style: Style): string[] {
   if ((!present && row.origin !== "index") || row.kind !== "stack") return [];
   if (!row.lastRun) return [style("dim", "unproven")];
-  const result = row.lastRun.result === "pass" ? "proven" : row.lastRun.result;
+  const result = row.lastRun.result === "pass" ? "historical pass" : row.lastRun.result;
   return [
     `${style(row.lastRun.result === "pass" ? "ok" : "warn", result)} ${printable(row.lastRun.date)}`,
   ];

@@ -17,6 +17,8 @@ decisions:
   - "Authentication: none (default); document URL-based chat access and defer auth behind rateLimitKey and a future CurrentUser service."
 verify:
   - { name: app-e2e, layer: test, run: bun run e2e }
+  - { name: app-acceptance, layer: test, run: bun run test tests/app-acceptance.test.ts }
+  - { name: app-eval-dry-run, layer: test, run: bun scripts/check-eval-dry-run.ts }
 commands:
   e2e: Build and run the stub-backed chat browser flow
   check: Run lint, typecheck, unit tests, and app e2e
@@ -24,7 +26,15 @@ commands:
 
 # OpenRouter web chat
 
-Build this application after the base health slice passes. Read DESIGN.md and the app-owned Claude rules before implementation, and `docs/chat-turn.md` before working on the chat route. Preserve the base runtime, error contract, development scripts, and health route. Add application dependencies and scripts to shared configuration, update README/AGENTS and the stack-owned .env.example, and include the shipped styling plugin. Verify provider/AI SDK peer compatibility and use installed types for API details.
+Implement `scripts/eval.ts` with `--dry-run --models <csv> --report <path>` per
+`docs/eval-report.md`. Verify runs the shipped independent report checkpoint;
+ignore `.eval/`. Keep runner/scoring and real app calls agent-owned.
+
+Read `docs/guidance/openrouter-chat/index.md` before implementation; it supplies the shared guidance for every selected agent.
+
+Implement the assertions in `docs/acceptance/openrouter-chat.md`: verify runs the authored acceptance suite separately, plus a stub-only eval dry run. The suite must check recorder/eval no-key refusal, stub plumbing, export metadata and the route/UI state matrix. Live recording/eval remain manual; never fabricate paid fixtures.
+
+Build this application after the base health slice passes. Read DESIGN.md and the shared app guidance before implementation, and `docs/chat-turn.md` before working on the chat route. Preserve the base runtime, error contract, development scripts, and health route. Add application dependencies and scripts to shared configuration, update README/AGENTS and the stack-owned .env.example, and include the shipped styling plugin. Verify provider/AI SDK peer compatibility and use installed types for API details.
 
 ## Routes, services, and UI
 
@@ -54,7 +64,7 @@ Use `makeTools(deps)` and explicit ToolDeps captured from the runtime, with a de
 
 Extract Contact from free text using the installed SDK's structured-output API, decode the result again, and map invalid output to InvalidModelOutput. extractContact returns contact plus usage/provider/model for evals; the route returns only contact. Nonstreaming retry/timeout is bounded, retries only retryable errors, and is clock-tested.
 
-Export stored chats as Markdown with role headings, text, quoted tool calls, and reply model/tokens. Bad ids are 400; empty/missing chats 404. After a reply exists, show segmented Export download and Copy as Markdown controls, disabled while streaming. Copy fetches the same route, preserves Safari's gesture via ClipboardItem with a promise, falls back to writeText, and reports copied/failure visibly.
+Export stored chats as Markdown with role headings, text, quoted tool calls, requested/served model, provider, finish reason, input/output tokens, cost and interruption metadata. Bad ids are 400; empty/missing chats 404. After a reply exists, show segmented Export download and Copy as Markdown controls, disabled while streaming. Copy fetches the same route, preserves Safari's gesture via ClipboardItem with a promise, falls back to writeText, and reports copied/failure visibly.
 
 ## Test harness and paid tools
 
@@ -68,7 +78,7 @@ Playwright's app-e2e uses one worker and two owned servers, fixed ports 5180 for
 
 Scripts share `chatModelOptions` and a fresh script layer with terminal-only logging, no startup line, fresh ConfigProvider, and disposal. The recorder runs a local tee proxy on `OPENROUTER_BASE_URL` (the Llm layer takes no `fetch`) and keeps actual response bodies (never headers) for one plain reply and both requests of a two-step tool turn, validates successful stop/text/tool execution before replacing fixtures, and writes metadata with requested/served models and time. Replay sends fixtures whole and in yielding seven-byte chunks through the real provider and chat route; derive expected values from fixture SSE so rerecording changes no assertions. Missing fixtures produce an explicit skip and Pending user actions item, not a fabricated recording.
 
-Evals call real chat/extract programs one case/model at a time with deadlines. Include currentTime and concise-answer/extract cases; report pass/fail/error/truncated, finish reason, latency, tokens, cost, provider, served model, and per-model totals/median. Write timestamped JSON, fail on any failed/errored case or no passing cases, and unit-test pure scoring plus recording validation. Add `eval` and `record:openrouter` scripts for these. They need a key and spend money, so they are deliberately absent from the commands table and never run in check, verify, or CI; both refuse to start without a key.
+Evals call real chat/extract programs one case/model at a time with deadlines. Include currentTime and concise-answer/extract cases; report pass/fail/error/truncated, finish reason, latency, tokens, cost, provider, served model, and per-model totals/median. Write timestamped JSON, fail on any failed/errored case or no passing cases, and unit-test pure scoring plus recording validation. Add `eval` and `record:openrouter` scripts. Live eval and recording require a paid key and stay outside check, verify and CI. Only `eval --dry-run` runs automatically: it owns a local stub, needs no key, and validates the same runner/scoring/report contract before returning success.
 
 <!-- stacks:when with=ci-github -->
 CI runs the app browser flow against stubs, installs Chromium system dependencies, and uploads failure artifacts. Keep real provider credentials absent. Include scripts and eval source in typechecking without executing paid commands.

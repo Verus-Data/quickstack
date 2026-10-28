@@ -84,7 +84,7 @@ Two bench runs of the same stack (`astro-blog` is the TypeScript-capable small s
 ## Acceptance tests
 
 1. `new astro-blog --with claude-harness --no-launch --json`: composes, the merged `.claude/settings.json` wires the destructive guard only through its shell entry (no additional direct TypeScript guard hook), non-merged files have one owner, and `validate` checks the `astro-blog + claude-harness` composition in both presets with zero errors and warnings.
-2. The shipped hook suite passes when run from one scaffolded project in the e2e layer, using its existing Vitest runner on Node, and the manifest includes a harness-owned verify step with `layer: test` that passes for the shipped suite and fails verification when a copied shipped test is made to fail.
+2. The shipped hook suite passes when run from one scaffolded project in the e2e layer, using its existing Vitest runner on Node, and the manifest includes a harness-owned verify step with `layer: check` that passes for the shipped suite and fails verification when a copied shipped test is made to fail. QA-09: the command conditionally succeeds without running tests when the directory is absent, so it must not establish the test-command milestone.
 3. `block-destructive.sh` from `agent-ops` alone blocks its patterns; with the harness present it delegates and blocks the TypeScript guard's lexer cases, including a quoted command the pattern list misses; both allow `echo "rm -rf /"`.
 4. `--with claude-harness` on `go-cli`, whose tags its `applies_to` excludes, keeps the fragment with exactly one `with_not_applicable` warning, and `validate`'s per-fragment compositions don't pair it with that stack.
 

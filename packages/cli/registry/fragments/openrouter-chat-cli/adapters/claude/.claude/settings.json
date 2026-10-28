@@ -7,7 +7,7 @@
       "Bash(bun run stub)",
       "Bash(bun run stub:stop)",
       "Bash(bun run tui:capture *)",
-      "Bash(bun run eval -- --dry-run)"
+      "Bash(bun scripts/check-eval-dry-run.ts)"
     ]
   },
   "hooks": {

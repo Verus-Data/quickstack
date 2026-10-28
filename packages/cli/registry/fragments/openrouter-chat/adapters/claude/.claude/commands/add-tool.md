@@ -5,7 +5,7 @@ argument-hint: "<what the tool does>"
 
 Add a tool: $ARGUMENTS
 
-Follow `.claude/rules/openrouter-chat/ai-sdk.md`. Look at the existing example tool in `app/.server/tools/` first and match its shape.
+Follow `docs/guidance/openrouter-chat/ai-sdk.md`. Look at the existing example tool in `app/.server/tools/` first and match its shape.
 
 1. **Schema** in `app/schemas/tools.ts`: the input and output as Effect Schemas with `title`/`description` annotations on the schema and its fields (the model reads these to decide when and how to call the tool). No `identifier` annotation, annotate before any `.check(...)`, and give a custom `Schema.makeFilter` a `toJsonSchema` annotation if the model should see the constraint (`TimeZone` in `app/schemas/tools.ts` shows the annotate-then-check order). Print `toAiSchema(Input).jsonSchema` before a model sees it.
 2. **Tool** next to `currentTime` in `app/.server/tools/index.ts` (or its own file there): `tool({ description, inputSchema: toAiSchema(Input), execute })`. `toAiSchema` already does the JSON Schema and decoder-backed validation; don't hand-roll it. Dependencies come in through `ToolDeps` (built in `chat.ts` from the Effect runtime), not by providing a service layer.

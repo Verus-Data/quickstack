@@ -90,7 +90,7 @@ export function renderRuns(result: ProjectRuns): string {
     ["verifyRuns", "Verify runs"],
     ["lastOutcome", "Last outcome"],
     ["minutesToGreen", "Minutes to green"],
-    ["minutesToFirstTest", "Minutes to first test"],
+    ["minutesToFirstTest", "Minutes to first successful test command (run completion)"],
     ["interventions", "Interventions"],
     ["stateRecord", "State record"],
     ["skippedLines", "Skipped lines"],

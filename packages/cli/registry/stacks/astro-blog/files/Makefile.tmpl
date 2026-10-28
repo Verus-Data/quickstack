@@ -25,7 +25,8 @@ lint: ## Fail if Prettier would change any file
 	bunx prettier --check .
 
 check: ## Type-check and validate content (astro check)
-	bunx astro check
+	@bun --no-install -e 'require.resolve("@astrojs/check"); require.resolve("typescript")' >/dev/null 2>&1 || { echo 'Missing checker dependencies. Run bun add -d @astrojs/check typescript, then make check.' >&2; exit 1; }
+	bunx --no-install astro check
 
 test: ## Unit and component tests
 	bunx vitest run
@@ -37,7 +38,7 @@ build: ## Static production build into dist/
 	bunx astro build
 
 preview: ## Serve the production build
-	bunx astro preview --port $(PORT_WEB)
+	bunx astro preview --port $(PORT_WEB) --ignore-lock
 
 # SLUG and TITLE reach the script as env vars, so titles with quotes are safe.
 export SLUG TITLE

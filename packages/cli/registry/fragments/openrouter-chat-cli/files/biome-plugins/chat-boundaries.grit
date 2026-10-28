@@ -17,7 +17,7 @@ or {
       },
       and {
         $src <: r"[\"'](?:zod|zod/[^\"']*|@effect/schema[^\"']*)[\"']",
-        register_diagnostic(span=$src, message="Schemas are Effect Schema (Schema from effect). Zod and @effect/schema are not used here. See .claude/rules/effect.md.")
+        register_diagnostic(span=$src, message="Schemas are Effect Schema (Schema from effect). Zod and @effect/schema are not used here. See docs/guidance/effect/effect.md.")
       },
       and {
         $src <: r"[\"'](?:effect|effect/[^\"']*|@effect/[^\"']*)[\"']",

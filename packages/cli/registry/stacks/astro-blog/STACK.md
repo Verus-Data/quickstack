@@ -117,7 +117,8 @@ The shipped Makefile (`make help`): install, dev, lint, check, test, coverage (v
 
 ## Gotchas
 
-- If `astro dev` returns immediately with exit 0 when an agent runs it, Astro detected the agent and backgrounded itself. The Makefile's `dev` passes `--ignore-lock`, which keeps it in the foreground in current versions. Stop a stray background server with `bunx astro dev stop`.
+- Astro can background both dev and preview under an agent. The Makefile passes `--ignore-lock` to both to keep them foreground; stop the process you started with Ctrl+C or its owned process handle. For an Astro-managed background server from this checkout, use `bunx astro dev stop` or `bunx astro preview stop`, respectively.
+- `make check` refuses missing `@astrojs/check` or TypeScript before invoking Astro, whose install prompt can otherwise exit 0 without checking. Add both as project dev dependencies before verification; use their compatible current releases.
 - `@astrojs/check` can lag the newest TypeScript major. If `astro check` rejects the installed TypeScript, install the previous major and record it under Build workarounds.
 - Bare `vitest` is watch mode in a TTY; scripts use `vitest run`.
 - `astro.config.mjs` runs before the content layer, so it can't use `getCollection`.

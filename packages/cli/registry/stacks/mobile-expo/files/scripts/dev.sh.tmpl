@@ -1,36 +1,11 @@
 #!/usr/bin/env bash
-# The one-command dev stack: postgres (compose), migrations, the api
-# (bun --watch, prefixed [api]), and the app itself: `expo run:ios` when a
-# simulator runtime is available (incremental native build, then launch), plain
-# Metro otherwise.
-#
-# Idempotent about leftovers in both directions: anything already listening on
-# the dev ports is killed before boot (a crashed session's watcher would
-# otherwise make the new api lose the port race), and everything this script
-# starts is killed when it exits, however it exits. Postgres deliberately stays
-# up: the test suite wants it, and `bun run db:down` stops it on purpose.
+# Record the whole dev stack, preserving colours and Metro's terminal keys on
+# macOS. Process ownership and cleanup live in scripts/dev.ts.
 set -euo pipefail
 SELF="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
 cd "$(dirname "$0")/.."
 
-# The api reads PORT_API from .env (bun's env file never overrides an exported
-# value), so read it the same way here, or reap and the banner name the wrong port.
-if [[ -z "${PORT_API:-}" && -f .env ]]; then
-  PORT_API="$(sed -n 's/^PORT_API=//p' .env | tail -n 1)"
-fi
-API_PORT="${PORT_API:-3000}"
-METRO_PORT=8081
 LOG_FILE=".logs/dev.log"
-
-# Everything this stack prints (migrations, the api, the native build, Metro,
-# and the app's own console.*) lands in one file, so a failure can be read after
-# the fact instead of scrolled for.
-#
-# At a terminal on macOS, BSD `script` records through a pty so colours survive
-# and Metro keeps its interactive keys; a plain `tee` would turn stdout into a
-# pipe and lose both. With no terminal (CI, an agent's background shell)
-# `script` reads EOF on stdin and takes the stack down with it, so `tee` is used
-# instead. util-linux `script` takes different flags, so Linux always uses tee.
 if [[ -z "${{{env_prefix}}_DEV_LOG:-}" ]]; then
   mkdir -p "$(dirname "$LOG_FILE")"
   export {{env_prefix}}_DEV_LOG=1
@@ -40,91 +15,4 @@ if [[ -z "${{{env_prefix}}_DEV_LOG:-}" ]]; then
   exec > >(tee "$LOG_FILE") 2>&1
 fi
 
-# Kill whatever holds a port: politely, then hard, until the port is actually
-# empty. A process can hold it on one IP stack while another squats the other,
-# so one sweep is not proof.
-reap() {
-  local port="$1" name="$2" pids attempt
-  for attempt in 1 2 3; do
-    pids=$(lsof -ti "tcp:${port}" 2>/dev/null || true)
-    [[ -z "$pids" ]] && return 0
-    echo "[dev] killing dangling ${name} on :${port} (pid ${pids//$'\n'/ })"
-    if [[ "$attempt" -eq 1 ]]; then
-      kill ${pids} 2>/dev/null || true
-    else
-      kill -9 ${pids} 2>/dev/null || true
-    fi
-    sleep 1
-  done
-  pids=$(lsof -ti "tcp:${port}" 2>/dev/null || true)
-  if [[ -n "$pids" ]]; then
-    echo "[dev] could not free :${port} (pid ${pids//$'\n'/ }); refusing to boot ${name} behind it" >&2
-    return 1
-  fi
-  return 0
-}
-
-# Parents first, listeners second: killing only the process on the port lets its
-# `bun run --filter` parent respawn it. Filtering by workspace path keeps the
-# patterns specific to this script and independent of the package scope.
-reap_all() {
-  pkill -f 'filter ./apps/api dev' 2>/dev/null || true
-  pkill -f 'filter ./apps/mobile dev' 2>/dev/null || true
-  pkill -f 'filter ./apps/mobile ios' 2>/dev/null || true
-  reap "$API_PORT" api
-  reap "$METRO_PORT" metro
-}
-
-for arg in "$@"; do
-  echo "[dev] unknown argument: ${arg}" >&2
-  exit 2
-done
-
-reap_all
-
-echo "[dev] logging to ${LOG_FILE} (bun run dev:logs to follow it)"
-
-echo "[dev] starting postgres"
-bun run db:up
-
-echo "[dev] applying migrations"
-bun run db:migrate
-
-API_PID=""
-MOBILE_PID=""
-cleanup() {
-  trap - INT TERM EXIT
-  echo
-  echo "[dev] shutting down"
-  [[ -n "$API_PID" ]] && kill "$API_PID" 2>/dev/null || true
-  [[ -n "$MOBILE_PID" ]] && kill "$MOBILE_PID" 2>/dev/null || true
-  reap_all
-}
-trap cleanup INT TERM EXIT
-
-echo "[dev] api on :${API_PORT}, /health and /docs"
-(bun run --filter ./apps/api dev 2>&1 | sed -e 's/^/[api] /') &
-API_PID=$!
-
-# `expo run:ios` builds the native app if needed, boots the simulator, installs
-# and launches the app, and serves Metro. Without an iOS simulator runtime, fall
-# back to Metro alone rather than dying.
-if xcrun simctl list runtimes 2>/dev/null | grep -q 'iOS'; then
-  MOBILE_SCRIPT=ios
-  echo "[dev] building and launching the app in the iOS simulator"
-else
-  MOBILE_SCRIPT=dev
-  echo "[dev] no iOS simulator runtime found; starting Metro only" >&2
-fi
-
-# The mobile process runs in the background so this script blocks in `wait`,
-# where bash delivers signals to the trap immediately. `&` points stdin at
-# /dev/null, so hand the terminal back when there is one: Metro's keys still work.
-if [[ -t 0 ]]; then
-  bun run --filter ./apps/mobile "$MOBILE_SCRIPT" </dev/tty &
-else
-  bun run --filter ./apps/mobile "$MOBILE_SCRIPT" &
-fi
-MOBILE_PID=$!
-
-wait "$MOBILE_PID"
+exec bun scripts/dev.ts "$@"

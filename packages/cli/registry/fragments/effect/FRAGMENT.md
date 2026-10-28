@@ -16,6 +16,8 @@ decisions:
 
 # Effect testing and development
 
+Read `docs/guidance/effect/index.md` before implementation; it supplies the shared guidance for every selected agent.
+
 The stack owns runtime, services, errors, and logging. This fragment adds testing and development guidance.
 
 ## Testing

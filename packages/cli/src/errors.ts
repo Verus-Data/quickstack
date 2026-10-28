@@ -900,7 +900,6 @@ function notFoundNext(details: typeof NotFoundDetails.Type, invocation: string):
     return "pass a registry root (a directory holding stacks/ or fragments/) or an entry directory inside one.";
   if (details.root)
     return `${invocation} validate ${shellArg(printable(details.root))} lists the ids under that root.`;
-  if (details.suggestions.length) return "use one of the ids above.";
   return `run ${invocation} list to see every stack and fragment id.`;
 }
 

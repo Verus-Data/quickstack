@@ -4,7 +4,7 @@ This page is for maintainers: proving bundled stacks with the bench, recording r
 
 ## The bench
 
-The bench is how a bundled stack earns its "proven" label: a real coding agent builds the stack headlessly from an empty directory, and stacks verifies the result independently.
+The bench is how a bundled stack earns its historical pass: a real coding agent builds the stack headlessly from an empty directory, and stacks verifies the result independently.
 
 ```sh
 bun run bench <stack> --agent claude --keep
@@ -18,7 +18,7 @@ Auth is `CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token`, or `CODEX_ACCESS_TO
 
 ## The ledger
 
-The reviewed ledger is `registry/runs.json`. It's what `list` reads for "proven <date>". Import reviewed gate notes with:
+The reviewed ledger is `registry/runs.json`. It's what `list` reads for "historical pass <date>". Import reviewed gate notes with:
 
 ```sh
 bun run ledger:import ../../plans/runs/2026-10-27-*.md

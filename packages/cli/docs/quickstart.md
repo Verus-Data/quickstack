@@ -62,15 +62,15 @@ stacks list stacks
 
 ```text
 Stacks
-  astro-blog               proven 2026-10-27
+  astro-blog               historical pass 2026-10-27
     A static Astro blog with MDX posts in a zod-validated content collection ...
-  go-cli                   proven 2026-10-27
+  go-cli                   historical pass 2026-10-27
     A Go command-line tool with cobra commands, viper config ...
-  typescript-cli           proven 2026-10-27
+  typescript-cli           historical pass 2026-10-27
     A Bun-compiled TypeScript CLI with Effect commands and services ...
 ```
 
-"proven" means a coding agent built that stack's default setup from scratch on that date and every check passed. "unproven" means nobody has recorded such a run yet.
+"historical pass" means a coding agent built that stack's default setup from scratch on that date and every check passed. "unproven" means nobody has recorded such a run yet. The current recipe may have changed; `stacks show <id>` reports whether its content matches.
 
 Read one before you commit to it:
 

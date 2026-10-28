@@ -63,5 +63,7 @@ if (file !== undefined) {
   const written = writtenText(payload?.tool_input);
   const reasons = written ? reasonsFor(file, codeLines(written)) : [];
   if (reasons.length)
-    deny(`BLOCKED: src/${file} ${reasons.join("; ")}. See .claude/rules/src/effect-api.md.`);
+    deny(
+      `BLOCKED: src/${file} ${reasons.join("; ")}. See docs/guidance/typescript-api/effect-api.md.`,
+    );
 }
