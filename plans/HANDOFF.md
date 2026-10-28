@@ -69,12 +69,13 @@ production needs `STACKS_DB_PATH`, `NETWORK_HASH_KEY` and the trusted proxy head
 executed (2026-10-28): the CLI queues opt-out telemetry and shows the first-run notice, but with
 no official endpoint yet consent is `no_endpoint` unless `STACKS_TELEMETRY_URL` is set. 4.1c is
 executed (2026-10-28): `stacks-api` runs archive, pruning and refresh under a lease (production
-needs `STACKS_ARCHIVE_DIR`). In flight: 4.5e's CLI side (tests first); then 4.1d, 4.2a and
-4.2g, all AGREED. 4.5e's route in `stacks-api` imports `rank` from
-`@steamfield/stacks-format`, so it waits on that package's publication. Maintainers' steps: review the 47 search
-judgments (4.5a), generate the index key and add it to `INDEX_PUBLIC_KEYS`, rerun the bench per
-stack so the index proves something (4.0c), and publish `@steamfield/stacks-format` (until then the API
-copies the schemas it reads).
+needs `STACKS_ARCHIVE_DIR`). `@steamfield/stacks-format` 0.1.0 is published and `stacks-api` reads its telemetry, names and
+signed-index schemas from it. In flight (2026-10-28): 4.5e's CLI side, which bumps the package to
+0.2.0 with `rank`; 4.1d's implementation against committed tests; 4.2a's tests, written on top of
+4.1d's; then 4.2g. 4.5e's route in `stacks-api` waits on 0.2.0's publication. Maintainers' steps:
+review the 47 search judgments (4.5a), generate the index key and add it to `INDEX_PUBLIC_KEYS`,
+rerun the bench per stack so the index proves something (4.0c), and publish each
+`@steamfield/stacks-format` release (`packages/format/README.md`).
 
 ## Demo outline (2026-10-27)
 
