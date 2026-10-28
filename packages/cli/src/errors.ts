@@ -59,10 +59,13 @@ export const BadInputDetails = Schema.Struct({
     "create_shadows",
     "from",
     "confirmation",
+    "request",
+    "limit",
   ]),
   known: Schema.optionalKey(Schema.Array(Schema.String)),
   alreadyApplied: Schema.optionalKey(Schema.Array(Schema.String)),
   origins: Schema.optionalKey(Schema.Array(Origin)),
+  length: Schema.optionalKey(Schema.Int),
 });
 export class BadInput extends Schema.TaggedError<BadInput>()("BadInput", {
   details: Schema.optionalKey(BadInputDetails),
@@ -650,6 +653,13 @@ export function changeLines(change: typeof VerifyChange.Type): string[] {
 function badInputGuide(details: typeof BadInputDetails.Type, invocation: string): FailureGuide {
   const id = printable(details.id);
   switch (details.flag) {
+    case "request":
+      return guide(
+        [`Request length: ${details.length ?? 0}`],
+        `run ${invocation} search with a request of 1 to 500 characters after trimming.`,
+      );
+    case "limit":
+      return guide([`Flag: --limit ${id}`], `run ${invocation} search with --limit from 1 to 20.`);
     case "create_id":
       return guide(
         [`Id: ${id}`],

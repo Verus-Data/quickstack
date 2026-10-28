@@ -6,15 +6,16 @@ import { BRIEF_PATH, MANIFEST_PATH } from "../project-layout";
  */
 export const guideText = (cli: string) =>
   [
-    `stacks starts projects for coding agents. It writes a stack's starter files and a brief, ${BRIEF_PATH}, and verify is the definition of done: the project's own checks, run from its manifest.`,
+    `stacks starts projects for coding agents. It writes starter files and ${BRIEF_PATH}; verify runs the manifest's checks.`,
     "",
     "The loop:",
-    `1. ${cli} list --json: pick a stack (${cli} show <id> --json reviews one) and tell the user why.`,
-    `2. ${cli} new <stack> <dir> --sandbox --json: writes the project. Drop --sandbox when the user wants to make the brief's decisions or deploy.`,
+    `When the user describes what they want to build, run ${cli} search "<their words>" --json, compare the strong matches using why and evidence, and tell the user your pick and one tradeoff before ${cli} new. If noStrongMatch is true, say nothing fits well.`,
+    `1. ${cli} list --json lists entries; ${cli} show <id> --json reviews one.`,
+    `2. ${cli} new <stack> <dir> --sandbox --json writes the project. Drop --sandbox to make decisions or deploy.`,
     `3. Read <dir>/${BRIEF_PATH} and carry it out.`,
-    `4. ${cli} verify in <dir>: fix what fails and run it again until it passes.`,
+    `4. ${cli} verify in <dir>: fix failures until green.`,
     "",
-    `Existing repo: ${cli} add <fragment...> --json, then follow the add brief, merge incoming files and verify the whole project.`,
+    `Existing repo: ${cli} add <fragment...> --json; follow the brief, merge incoming files and verify.`,
     "",
     "Rules:",
     "- Never pick an entry list --json marks untrusted unless the user named it.",
@@ -24,7 +25,7 @@ export const guideText = (cli: string) =>
     "- Ask the user only what the brief says to ask.",
     "",
     `${cli} <command> --help shows each command's flags, exit codes and examples.`,
-    `On failure, do what the error's Next line (the envelope's next field with --json) says. ${cli} schema <name> prints the JSON Schema of any --json result.`,
+    `On failure, follow Next (next in --json). ${cli} schema <name> prints each result's JSON Schema.`,
     "",
     "The user's own stacks and fragments go in $XDG_CONFIG_HOME/stacks/stacks/<id>/ and fragments/<id>/ (default ~/.config/stacks/).",
   ].join("\n");

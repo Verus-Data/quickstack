@@ -1,4 +1,7 @@
+import { Kind } from "@stacks/format";
 import { Schema } from "effect";
+import { LastRun } from "./ledger";
+import { Origin } from "./origin";
 
 const Words = Schema.Array(Schema.String);
 const Source = Schema.Struct({
@@ -59,3 +62,55 @@ export const SearchIndex = Schema.Struct({
   ),
 });
 export type SearchIndex = typeof SearchIndex.Type;
+
+const Share = Schema.Number.check(Schema.isFinite(), Schema.isBetween({ minimum: 0, maximum: 1 }));
+export const SearchEvidence = Schema.Struct({
+  stats: Schema.optionalKey(
+    Schema.Struct({
+      greenRateLower: Share,
+      sample: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+      projects: Schema.Int.check(Schema.isGreaterThanOrEqualTo(0)),
+      window: Schema.Literals([7, 28]),
+    }),
+  ),
+  lastRun: Schema.optionalKey(Schema.NullOr(LastRun)),
+});
+export type SearchEvidence = typeof SearchEvidence.Type;
+export const SearchWhy = Schema.Struct({
+  field: Schema.String,
+  matched: Schema.String,
+  from: Schema.String,
+});
+export type SearchWhy = typeof SearchWhy.Type;
+export const SearchHit = Schema.Struct({
+  kind: Kind,
+  id: Schema.String,
+  name: Schema.String,
+  summary: Schema.String,
+  origin: Origin,
+  trusted: Schema.Boolean,
+  tier: Schema.Literals(["strong", "partial", "weak"]),
+  score: Share,
+  coverage: Share,
+  why: Schema.Array(SearchWhy),
+  penalties: Schema.Array(Schema.Literals(["platform", "language", "notFor", "untrusted"])),
+  caveats: Schema.optionalKey(Words),
+  appliesTo: Schema.optionalKey(Words),
+  evidence: SearchEvidence,
+});
+export type SearchHit = typeof SearchHit.Type;
+export const SearchResult = Schema.Struct({
+  request: Schema.String,
+  ranking: Schema.Literal("local"),
+  understood: Schema.Struct({
+    platforms: Words,
+    productKinds: Words,
+    languages: Words,
+    capabilities: Words,
+    unmatched: Words,
+  }),
+  noStrongMatch: Schema.Boolean,
+  stacks: Schema.Array(SearchHit),
+  fragments: Schema.Array(SearchHit),
+});
+export type SearchResult = typeof SearchResult.Type;
