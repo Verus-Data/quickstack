@@ -124,4 +124,8 @@ The skips vary by host/platform; this is not a claim that skipped cases ran.
 The QA fixes were already on main at 2873a32. This integration adds the editorial
 schema, validation, drafting behavior and cards without changing recipe content,
 run evidence, lexical ranking or query fixtures. The session's temporary QA apps
-were removed; the merged worktrees are archived after landing.
+were removed. The auxiliary metadata, metadata-check and QA-fix worktrees were
+archived after landing, with their checkout directories and Git registrations
+confirmed absent. Codex refused to archive this chat's primary QA checkout; it
+remains clean and synchronized with main. The merged auxiliary branches were
+removed.
