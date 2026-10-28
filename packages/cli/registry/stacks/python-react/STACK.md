@@ -30,6 +30,7 @@ verify:
   - { name: lint, layer: lint, run: make lint }
   - { name: typecheck, layer: typecheck, run: make typecheck }
   - { name: test, layer: test, run: make test }
+  - { name: home-route-test, layer: test, run: cd frontend && bun run test app/routes/home.test.tsx }
   - { name: api-contract, layer: check, run: make check-api }
   - { name: build, layer: build, run: make build, tags: [prod] }
   - name: api
@@ -107,13 +108,13 @@ frontend/
 
 Every generator runs in its subdirectory, never the populated root.
 
-1. **Backend.** `uv init` non-interactively in `backend/` as an unpackaged application (no `src/` layout, no build backend), so `app/` sits directly in `backend/`, with the Python version from Decisions. Make `.python-version` and `requires-python` match that version (uv may default to an older interpreter it finds). `uv add` the backend deps, `uv add --dev` the backend-dev deps, delete uv's stub `main.py`/`hello.py`, create `app/`.
+1. **Backend.** `uv init` non-interactively in `backend/` as an unpackaged application (no `src/` layout, no build backend) that writes no stub script (check `uv init --help`; the command guard refuses deleting one afterwards), so `app/` sits directly in `backend/`, with the Python version from Decisions. Make `.python-version` and `requires-python` match that version (uv may default to an older interpreter it finds). `uv add` the backend deps, `uv add --dev` the backend-dev deps, create `app/`.
 2. **Backend code** per Conventions: `GET /health` returns `{"status": "ok"}` with no dependencies. Add `scripts/dump_openapi.py`, run from `backend/` as `uv run python -m scripts.dump_openapi` so it can import `app`. Configure ruff, mypy, pytest, coverage in `pyproject.toml`; get `uv run pytest` green.
 3. **Frontend.** The official React Router generator, non-interactively, into `frontend/`, without git or install. `bun install`; set `packageManager` in `frontend/package.json` to the installed bun version (CI's bun setup reads it). SSR off; remove what only serves an SSR server (a server Dockerfile, the serve package and its `start` script). Keep one font setup; if the template and shadcn's init both add one, keep shadcn's. Add Tailwind through its Vite plugin if the template didn't.
 4. **shadcn/ui.** Run its init non-interactively in `frontend/` (check `--help`: current versions also need a style/preset and base-library flag to skip every prompt), and let it add its own utility deps; it infers aliases from tsconfig. Check that `components.json` points at `~/components`, `~/components/ui`, `~/lib`, `~/lib/utils`, `~/hooks` (`~` is `app/`) and fix only what's wrong, rather than writing it by hand. Make sure `button` exists (init may add it).
 5. **Data layer.** One `QueryClient` in `app/lib/query-client.ts`, provided in `root.tsx`; the Vite dev proxy.
 6. **Typed client.** `make generate-api`. The home route calls `/health` through a generated hook and renders it: one real UI-to-API round trip.
-7. **Frontend tooling** per Tool configuration, a component test for the home route (against MSW), one Playwright smoke spec. Fill the README's `stacks:fill` markers.
+7. **Frontend tooling** per Tool configuration, a component test for the home route in `app/routes/home.test.tsx` (against MSW; the `home-route-test` verify step runs it), one Playwright smoke spec. Fill the README's `stacks:fill` markers.
 8. Run `stacks verify` until it passes.
 
 ## Conventions
