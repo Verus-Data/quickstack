@@ -47,14 +47,14 @@ than improvising.
 
 | ID | Task | Depends on | Owner | State | Evidence |
 | --- | --- | --- | --- | --- | --- |
-| [R0](r0-baseline.md) | Baseline, in-flight work, demo scope | none | | Open | `baseline.md` |
-| [R1](r1-search-contracts.md) | Search and guidance an agent can follow | R0 | | Open | `contracts.md` |
-| [R2](r2-seed.md) | Seed data that looks right on the site | R0 | | Open | `seed-quality.md` |
-| [R3](r3-recipe-proof.md) | Fresh proof for the demo recipe | R0; S5, S8 | | Open | `recipe-proof.md` |
-| [R4](r4-website.md) | Website demo polish | R0; R2 sample for the walkthrough | | Open | `web.md` |
+| [R0](r0-baseline.md) | Baseline, in-flight work, demo scope | none | Claude | Done | `baseline.md` |
+| [R1](r1-search-contracts.md) | Search and guidance an agent can follow | R0 | Claude + Codex | In progress | `contracts.md` |
+| [R2](r2-seed.md) | Seed data that looks right on the site | R0 | Claude + Codex | In progress | `seed-quality.md` |
+| [R3](r3-recipe-proof.md) | Fresh proof for the demo recipe | R0; S5, S8 | Claude + Codex | In progress | `recipe-proof.md` |
+| [R4](r4-website.md) | Website demo polish | R0; R2 sample for the walkthrough | Claude + Codex | In progress | `web.md` |
 | [R10](r10-judge-access.md) | Judge-facing docs and source access | R0; S6 | | Open | `judge-access.md` |
 | [R12](r12-web-search.md) | Website search page | R0; R13 for the final walkthrough | | Open | `web-search.md` |
-| [R13](r13-search-relevance.md) | Search relevance tuning from manual QA | R0 | | Open | `search-relevance.md` |
+| [R13](r13-search-relevance.md) | Search relevance tuning from manual QA | R0 | Claude + Codex | In progress | `search-relevance.md` |
 | [R5](r5-release.md) | Release and deploy | R1, R2, R3, R4, R10, R12, R13 | | Open | `release.md` |
 | [R6](r6-submission.md) | Record the demo and submit | R5 | | Open | `submission.md` |
 | [R11](r11-judging-operations.md) | Keep it up during judging | R5 | | Open | `operations.md` |
@@ -88,6 +88,12 @@ If R13 changes `rank.ts`, a format patch release joins R5's order.
 | S5 | Rho sandbox example in the demo | Leave out unless organizer rules require a sponsor integration | Open |
 | S6 | How judges see the private `steamfield/stacks-app` source | Invite reviewers if the rules allow; otherwise make it public with a LICENSE | Open |
 | S8 | R3 proof run | `bun run bench` with `--keep`, then `verify --all` by hand. Needs a `CLAUDE_CODE_OAUTH_TOKEN` or `CODEX_ACCESS_TOKEN` from the user | Open |
+
+Decided by the user on 2026-10-28: agents run everything except `npm publish` (S1: that
+includes `prod:seed`, `prod:deploy` and pushing the release tag; visibility and invitations stay
+with the user); S2 0.4.0; S4 unset; S5 Rho left out; S8 the bench runs Codex through the host's
+Codex login with Terra 6.1. Organizer rules and S6 are the user's and block nothing an agent
+can do. The rules below are read with these answers.
 
 S-numbers are local to this plan, separate from the project decisions log's D-numbers.
 S3, S7 and S9 were folded in when the plan was cut: no `/v1/search` change remains,
@@ -154,6 +160,9 @@ something a judge would see break.
 - The demo may expose a recipe defect late. Go back to R3 and cut a patch release; never
   edit demo output.
 - Organizer requirements are unknown until R0 asks.
+- 2026-10-28 (R0): the bench accepted only `CODEX_ACCESS_TOKEN`, so S8's route needed a bench
+  change to use the host's Codex login; the stacks-api worktrees `h4a`, `h4b` and four of the
+  listed unmerged branches were already gone; live search already carries `evidence.stats`.
 
 ## Review record
 
