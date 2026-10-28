@@ -1,5 +1,5 @@
 import { Clock, Duration, Effect, FileSystem, Option, Path, Schema } from "effect";
-import { AppConfig } from "../../src/config";
+import { AppConfig, type Environment } from "../../src/config";
 import { type ComposeOptions, compose } from "../../src/core/compose/compose";
 import { fingerprint } from "../../src/core/fingerprint";
 import { readManifest } from "../../src/core/manifest";
@@ -41,18 +41,14 @@ export const prepare = (options: Options, adapters: readonly AgentAdapter[]) =>
     const findAgent = Effect.gen(function* () {
       const adapter = adapters.find((a) => a.id === chosen);
       if (!adapter) return yield* Effect.fail(new Error(`Unsupported agent: ${chosen}`));
-      const token = captured[adapter.auth.env];
-      if (!token?.trim())
-        return yield* Effect.fail(
-          new Error(`Set ${adapter.auth.env} using ${adapter.auth.obtain}`),
-        );
+      const credentials = yield* resolveCredentials(adapter, captured, fs, path);
       const found = yield* processes.which(adapter.binary);
       if (Option.isNone(found))
         return yield* Effect.fail(new Error(`${adapter.binary} is not on PATH`));
 
-      return { adapter, token, found };
+      return { adapter, credentials, found };
     });
-    const { adapter, token, found } = yield* findAgent;
+    const { adapter, credentials, found } = yield* findAgent;
 
     // Construct every environment through config, retaining only the explicit allowlist.
     const environment = (set: Record<string, string> = {}) =>
@@ -312,11 +308,12 @@ export const prepare = (options: Options, adapters: readonly AgentAdapter[]) =>
       repoCommit,
       registry,
       root,
+      home,
       project,
       bench,
       cli,
       env: { ...env, ...ports },
-      token,
+      credentials,
       ports,
       fixedWords,
       previousNote,
@@ -326,6 +323,28 @@ export const prepare = (options: Options, adapters: readonly AgentAdapter[]) =>
   });
 
 export type Prepared = Effect.Success<ReturnType<typeof prepare>>;
+
+type Credentials = { route: "token"; token: string } | { route: "codex login"; source: string };
+
+const resolveCredentials = (
+  adapter: AgentAdapter,
+  captured: Environment,
+  fs: FileSystem.FileSystem,
+  path: Path.Path,
+) =>
+  Effect.gen(function* () {
+    const token = captured[adapter.auth.env];
+    if (token?.trim()) return { route: "token", token } satisfies Credentials;
+    if (adapter.id === "codex" && captured.HOME) {
+      const source = path.join(captured.HOME, ".codex/auth.json");
+      if (yield* fs.exists(source)) return { route: "codex login", source } satisfies Credentials;
+    }
+    return yield* Effect.fail(
+      new Error(
+        `Set ${adapter.auth.env} using ${adapter.auth.obtain}${adapter.id === "codex" ? ", or sign in using codex login" : ""}`,
+      ),
+    );
+  });
 
 function agentChoice(explicit: Options["agent"], detected: boolean): string {
   if (explicit) return "explicit --agent";

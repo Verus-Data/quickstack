@@ -14,7 +14,9 @@ It builds the dev binary, installs it with the working registry into a throwaway
 
 The package must be clean before a run. Read every generated note under `plans/runs/` and its `registry/runs.json` record before committing; a green verify can still need relabeling as `partial` after review. The bench never commits anything.
 
-Auth is `CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token`, or `CODEX_ACCESS_TOKEN` as documented by `codex login --with-access-token`. Only the selected token reaches the agent; no credentials or settings are copied. The fresh `HOME` and project are not a security boundary: local runs give the agent full permissions. Child processes get `DO_NOT_TRACK=1`. Fake-agent tests need no account or real token.
+Auth is `CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token`, or `CODEX_ACCESS_TOKEN` as documented by `codex login --with-access-token`. Codex also accepts the invoking user's `codex login`: when no token is set, the bench copies only `$HOME/.codex/auth.json` into the fresh home with mode 0600 and removes it when the agent exits, before verification, even with `--keep` or on interruption. Global Codex settings, instructions and MCP servers are never copied. Only the selected token reaches the agent when token auth is used. The fresh `HOME` and project are not a security boundary: local runs give the agent full permissions. Child processes get `DO_NOT_TRACK=1`. Fake-agent tests need no account or real token.
+
+Use `--model <id>` with either adapter to select a model, for example `--agent codex --model gpt-6.1-terra`. The id accepts letters, digits, `.`, `-` and `_`, with no leading `-`. Without it, the agent chooses its default. Run notes record the credential route and model; ledger records keep their existing format.
 
 ## The ledger
 

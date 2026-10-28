@@ -82,6 +82,8 @@ const renderNote = ({ prepared, agent, verified, row, result }: NoteContext) =>
 | Repo commit | \`${row.repoCommit}\` |
 | CLI | Compiled dev binary stacks@${row.cli}, installed with the working registry |
 | Agent | ${row.agent === "claude" ? "Claude Code" : row.agent} ${row.agentVersion}, headless; ${prepared.agentChoice} |
+| Credentials | ${prepared.credentials.route} |
+| Model | ${prepared.options.model ?? "agent default"} |
 | Target agents | \`${row.agent}\` |
 | Brief size | \`briefWords\` ${row.briefWords}, \`fixedWords\` ${prepared.fixedWords} |
 | Times | first passing \`test\`-layer step ${minutes(row.minutesToFirstTest)} min; first green \`verify\` ${minutes(row.minutesToGreen)} min |

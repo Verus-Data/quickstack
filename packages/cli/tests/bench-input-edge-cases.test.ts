@@ -41,6 +41,9 @@ test.each(["0", "-1", "NaN", "Infinity", "", "1e999"])(
 test.each([
   { args: ["../sample"], message: "Invalid stack id" },
   { args: ["sample", "--preset", "unknown"], message: "--preset must be sandbox or default" },
+  { args: ["sample", "--model", "two models"], message: "Invalid model id" },
+  { args: ["sample", "--model=-model"], message: "Invalid model id" },
+  { args: ["sample", "--model="], message: "Invalid model id" },
   { args: ["sample", "another"], message: "Usage:" },
 ])("bench refuses $args before preflight", ({ args, message }) => {
   const result = invoke(args);
@@ -56,4 +59,7 @@ test("bench help works outside git without a token, stack or build", () => {
   expect(result.stderr).toBe("");
   expect(result.stdout).toContain("Usage: bun scripts/bench.ts <stack>");
   expect(result.stdout).toContain("--no-record");
+  expect(result.stdout).toContain("--model");
+  expect(result.stdout).toContain("CODEX_ACCESS_TOKEN");
+  expect(result.stdout).toContain("codex login");
 });
