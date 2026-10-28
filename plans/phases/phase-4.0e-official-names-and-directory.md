@@ -1,6 +1,6 @@
 # Phase 4.0e: Official names and directory
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: IN PROGRESS 2026-10-27 (`v1/names.json` tests being written here; the `stacks-api` directory half starts after 4.0c's serving unit)
 
 | Field | Value |
 |---|---|

@@ -1,6 +1,6 @@
 # Phase 4.0c: Registry index
 
-Status: EXECUTED 2026-10-27 (the `stacks-api` serving test and deploy procedure are a separate unit)
+Status: EXECUTED 2026-10-27 in this repository; the `stacks-api` serving test and deploy procedure are in progress
 Acceptance tests: traced
 
 | Field | Value |

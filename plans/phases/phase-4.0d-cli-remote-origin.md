@@ -1,6 +1,6 @@
 # Phase 4.0d: The CLI's remote origin
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: IN PROGRESS 2026-10-27 (acceptance tests being written, then the implementation)
 
 | Field | Value |
 |---|---|
