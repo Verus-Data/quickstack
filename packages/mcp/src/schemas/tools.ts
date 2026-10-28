@@ -29,13 +29,22 @@ export const NewSuccess = Schema.Struct({
   fragments: Schema.Array(Schema.String),
   agents: Schema.Array(Schema.String),
   written: Schema.Array(Schema.String),
-  briefWords: Schema.Int,
-  handoff: Schema.Struct({
-    kind: Schema.String,
-    agent: Schema.String,
-    untrusted: Schema.Boolean,
-    prompt: Schema.String,
-  }),
+  briefWords: Schema.Number,
+  handoff: Schema.Union([
+    Schema.Struct({
+      kind: Schema.Literal("inside-agent"),
+      agent: Schema.String,
+      untrusted: Schema.Array(Schema.String),
+      prompt: Schema.String,
+    }),
+    Schema.Struct({
+      kind: Schema.Literal("print"),
+      reason: Schema.String,
+      agent: Schema.optionalKey(Schema.String),
+      untrusted: Schema.Array(Schema.String),
+      prompt: Schema.String,
+    }),
+  ]),
 });
 
 export type NewSuccess = typeof NewSuccess.Type;
@@ -49,18 +58,18 @@ export type VerifyParams = typeof VerifyParams.Type;
 export const VerifyStepResult = Schema.Struct({
   name: Schema.String,
   status: Schema.String,
-  exitCode: Schema.Int,
-  durationMs: Schema.Int,
+  exitCode: Schema.optionalKey(Schema.Number),
+  durationMs: Schema.Number,
 });
 
 export const VerifySuccess = Schema.Struct({
   outcome: Schema.String,
   totals: Schema.Struct({
-    passed: Schema.Int,
-    failed: Schema.Int,
-    skipped: Schema.Int,
+    passed: Schema.Number,
+    failed: Schema.Number,
+    skipped: Schema.Number,
   }),
-  durationMs: Schema.Int,
+  durationMs: Schema.Number,
   steps: Schema.Array(VerifyStepResult),
 });
 

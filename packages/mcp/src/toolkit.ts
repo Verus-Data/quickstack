@@ -32,7 +32,7 @@ export const quickstacksNew = Tool.make("quickstacks_new", {
 
 export const quickstacksVerify = Tool.make("quickstacks_verify", {
   description:
-    "Run the project's verify steps from .quickstacks/manifest.json in the given directory (defaults to the server's working directory). Returns the outcome (green/partial/red), totals, duration, and per-step results. A red outcome is a successful call — do not treat it as an error. Only fails when the CLI itself cannot run. Use this in a loop after new until the outcome is green.",
+    "Run the project's verify steps from .quickstacks/manifest.json in the given directory (defaults to the server's working directory). Returns the outcome (green/partial/failed/changed/interrupted), totals, duration, and per-step results. A failed outcome is a successful call — do not treat it as an error. Only fails when the CLI itself cannot run. Use this in a loop after new until the outcome is green.",
   parameters: VerifyParams,
   success: VerifySuccess,
   failure: CliFailure,
