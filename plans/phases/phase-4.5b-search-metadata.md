@@ -1,6 +1,6 @@
 # Phase 4.5b: Search metadata
 
-Status: DRAFT 2026-10-27 (not agreed)
+Status: IN PROGRESS 2026-10-27 (acceptance tests being written, then the implementation)
 
 | Field | Value |
 |---|---|
@@ -38,11 +38,12 @@ Out:
 {
   "schemaVersion": 1,
   "kind": "stack", "id": "mobile-expo",
-  "source": { "digest": "sha256:…", "by": "drafted", "model": "<openrouter model id>",
+  "source": { "digest": "sha256:…", "by": "drafted", "model": "<model id>",
               "promptVersion": 1, "reviewedAt": "2026-11-02" },
   "summary": "A phone app for iOS and Android with its own API and database.",
   "platforms": ["ios", "android", "mobile"],
   "productKinds": ["mobile-app", "fullstack"],
+  "languages": ["typescript"],
   "requests": ["an iPhone app with a backend", "a React Native app that talks to my API",
                "a mobile app for iOS and Android with sign-in"],
   "useCases": ["consumer mobile apps", "apps that need their own API and Postgres"],
@@ -56,14 +57,35 @@ Out:
 | Field | Rule | Read by |
 |---|---|---|
 | `summary` | One sentence, at most 25 words, in a user's words rather than the tools' | 4.5c (lexical field, and shown with each hit); 4.5d (embedded) |
-| `platforms` | Values from the vocabulary only | 4.5c's platform match and penalty; 4.5d |
-| `productKinds` | Values from the vocabulary only | 4.5c; 4.5d |
+| `platforms` | Stacks only. Values from the vocabulary only | 4.5c's platform match and penalty; 4.5d |
+| `productKinds` | Stacks only. Values from the vocabulary only | 4.5c; 4.5d |
+| `languages` | Stacks only. 1 to 3 values from the vocabulary: the languages a person writes in the generated project, not every language a build tool happens to use | 4.5c's language match and penalty; 4.5d |
+| `capabilities` | Fragments only. 0 to 3 values from the vocabulary: the need the fragment meets ("sign-in", "a database"). A fragment with no fitting value (a library such as `effect`) leaves it empty and is found through its free-text fields | 4.5c; 4.5d |
 | `requests` | 3 to 5 requests a person might type, at most 15 words each | 4.5c (the strongest free-text field); 4.5d (one vector each, best match per entry) |
 | `useCases`, `synonyms`, `goodFor` | Short phrases; at most 6, 12 and 4 | 4.5c |
 | `notFor` | At most 4 phrases | 4.5c's penalty |
 | `caveats` | Optional; at most 3 sentences of at most 25 words, each a platform-capability limit a request can run into (an entitlement, a signing requirement, a native API the stack can't reach without extra setup) | 4.5c shows them with the hit, unscored, so the agent can tell the user before `new`. Never scored, so a caveat can't push a stack up or down |
 
 The whole sidecar is at most 150 words of text (`search-size`), so it stays an index card, not a second body.
+
+Stacks and fragments answer different requests, so their closed fields differ. A stack is a project, found by where it runs, what it is and what it's written in. A fragment is a need added to a project ("sign-in for my mobile app"), found by what it provides; where it runs comes from the stacks it applies to (`applies_to`, which 4.5c's platform and language rules already read), so a fragment card never repeats it. `SearchMetadata` is a union on `kind`: a stack card has `platforms`, `productKinds` and `languages` and no `capabilities`; a fragment card has `capabilities` and none of the other three. A fragment card for `clerk`:
+
+```json
+{
+  "schemaVersion": 1,
+  "kind": "fragment", "id": "clerk",
+  "source": { "digest": "sha256:…", "by": "drafted", "model": "<model id>",
+              "promptVersion": 1, "reviewedAt": "2026-11-02" },
+  "summary": "User sign-up, sign-in and sessions handled by Clerk instead of your own auth code.",
+  "capabilities": ["auth"],
+  "requests": ["add login to my app", "users should be able to sign up with Google",
+               "I need accounts and sessions"],
+  "useCases": ["apps with user accounts", "social sign-in"],
+  "synonyms": ["login", "sign up", "oauth", "user accounts", "sessions"],
+  "goodFor": ["auth without running your own user table"],
+  "notFor": ["self-hosted auth", "machine-to-machine API keys"]
+}
+```
 
 Domain words ("health", "fitness", "finance") are deliberately not listed per stack: no bundled stack is specific to a domain, and listing "health" under `mobile-expo` would be a guess that turns into a ranking claim. A domain word in a request is answered by the platform and product kind it comes with ("an iOS health app" is an iOS app); 4.5c treats a domain word as unmatched rather than inventing a match. What a domain needs from the platform goes in `caveats` instead, stated as a capability rather than a domain: `mobile-expo`'s card says entitlements such as HealthKit need a signed development build, which is what an agent answering "an iOS health app" should tell the user.
 
@@ -81,10 +103,24 @@ Domain words ("health", "fitness", "finance") are deliberately not listed per st
                     "api": ["api", "rest", "http service"], "web-app": ["web app", "saas", "dashboard"],
                     "mobile-app": ["mobile app", "phone app"], "desktop-app": ["desktop app"],
                     "cli-tool": ["cli tool", "command line tool"], "ai-app": ["chat", "llm", "ai"],
-                    "fullstack": ["full stack", "frontend and backend"] } }
+                    "fullstack": ["full stack", "frontend and backend"] },
+  "languages": { "typescript": ["typescript", "ts", "javascript", "js", "node"],
+                 "python": ["python"], "go": ["golang", "in go", "go cli", "go api", "go service"],
+                 "rust": ["rust"], "swift": ["swift", "swiftui"], "kotlin": ["kotlin"] },
+  "capabilities": { "auth": ["auth", "authentication", "login", "log in", "sign in", "sign-in", "sign up", "user accounts"],
+                    "database": ["database", "db", "sql", "postgres", "sqlite"],
+                    "analytics": ["analytics", "product analytics", "event tracking"],
+                    "deploy": ["deploy", "deployment", "hosting", "host it"],
+                    "ci": ["ci", "continuous integration", "github actions"],
+                    "release": ["release", "releases", "publish", "binaries"],
+                    "ai": ["llm", "ai", "chat", "model api"],
+                    "git-hooks": ["git hooks", "pre-commit", "pre-push"],
+                    "agent-harness": ["coding agent", "claude code", "codex", "agent hooks"] } }
 ```
 
 Keys are the values sidecars use; the lists are the words a request may use for them (4.5c matches them as phrases). Values are kebab-case. A sidecar value not in the vocabulary is `search-invalid`. A closed list stops drafted metadata from inventing a new category per entry, which would make the platform match meaningless. Adding a value is a reviewed change, run against 4.5a's set.
+
+An alias is unique within its category (`vocabulary-invalid` otherwise). The same phrase may appear in two categories when they rank different lists: "llm" names the product kind `ai-app` for stacks and the capability `ai` for fragments, and 4.5c ranks stacks and fragments separately. Bare "go" is not an alias of `go`, because it is an ordinary English word ("ready to go") and a false language match costs a stack its rank; the phrases cover the ways a request names the language. `swift` and `kotlin` have no bundled stack: they exist so "a native SwiftUI app" is understood as a language no stack lists, which the language rule turns into a penalty rather than a strong Expo match.
 
 ### Why a sidecar, outside the entry
 
@@ -110,7 +146,7 @@ When the entry changes, the sidecar is stale: `validate` reports `search-stale` 
 
 | Finding | Severity | When |
 |---|---|---|
-| `search-invalid` | error | The sidecar doesn't decode, a vocabulary value is unknown, or `kind`/`id` don't match its path |
+| `search-invalid` | error | The sidecar doesn't decode (including a stack card with `capabilities` or a fragment card with `platforms`, `productKinds` or `languages`), a vocabulary value is unknown, or `kind`/`id` don't match its path |
 | `search-orphan` | error | A sidecar names no entry in the same root |
 | `search-missing` | warning in the bundled registry, note elsewhere | An entry has no sidecar |
 | `search-stale` | warning | `source.digest` differs from the entry's current digest |
@@ -137,6 +173,7 @@ bun run decorate --approve <id>
 - Cost: the script reads the per-request cost OpenRouter reports, stops before a request would pass `--max-usd` (default 1.00), and prints the total. `--dry-run` prints each prompt's size and an estimate without calling anything. Dozens of entries at a few thousand tokens each cost cents.
 - Secrets: `OPENROUTER_API_KEY` is read from the maintainer's environment only, through the script's config, never written to a file, a sidecar or a log line; the request log records model, entry id, tokens and cost.
 - An author can skip the script entirely and write the sidecar by hand (`by: "author"`); `validate` treats both the same.
+- A maintainer may instead dispatch coding agents (one per entry, such as Codex delegates) to draft cards. The agent's brief is the script's prompt text and examples at the current `PROMPT_VERSION`, and its inputs are the same: the entry, the vocabulary and the two example sidecars. The agent works in a checkout without `tests/fixtures/search/golden.json` and is told not to read 4.5a's set, because an agent that can grep the golden queries will echo them, and test 13a catches only copies and five-word runs, not close paraphrases. The card records `by: "drafted"`, `model` naming the agent and its model, and the `promptVersion` it was briefed with. Review and `--approve` are unchanged: the agent leaves `reviewedAt` null, and `--approve` refuses to run under it.
 
 `create <kind> <id>` writes no sidecar skeleton: a personal registry of a few entries doesn't need search, and an empty card would be noise. `create --from <origin>` copies the origin entry's sidecar, when it has one, to `search/<kind>/<id>.json` in the user root with `source` unchanged, in the same exclusive-mode write as the entry. Without that, `create --from bundled mobile-expo` would shadow the bundled entry with a copy that has no card, and the user's own copy would rank below where the bundled one did. The copy's digest still matches until the user edits the entry; after that `validate` of the user root reports `search-stale`, a warning, which never blocks a personal registry. The authoring guide (`docs/authoring.md`) documents the file for authors contributing to the bundled registry.
 
@@ -179,6 +216,8 @@ With 4.0c, `build:index` reads each indexed entry's sidecar and writes `v1/searc
 13a. The prompt `scripts/decorate/prompt.ts` builds for every bundled entry, examples included, contains no 4.5a golden query string; no bundled sidecar's `requests` entry equals, contains or shares five consecutive words with a holdout query; a fixture sidecar copying a holdout query fails the test, naming both.
 13b. `validate` of a project registry holding `.stacks/search/vocabulary.json` reports `vocabulary-ignored` as a note, and a search over it uses the bundled aliases.
 13c. `caveats` with four items, or one of 30 words, is `search-size`; a sidecar without `caveats` decodes.
+13d. A stack card with `capabilities: ["auth"]`, a stack card without `languages`, and a fragment card with `platforms: ["ios"]` are each `search-invalid`; a fragment card with `capabilities: []` decodes.
+13e. A vocabulary where `typescript` and `python` share an alias is `vocabulary-invalid`; one where the product kind `ai-app` and the capability `ai` share `llm` is valid; no alias of `go` is the bare word `go`.
 14. With 4.0c: `build:index` writes `v1/search.json` that verifies with the test key and holds one sidecar per indexed entry; `--check` fails when one byte of it changes. With 4.0d: an index entry's sidecar comes from the cached file, and a bad signature leaves index entries without sidecars and bundled ones unchanged.
 
 ### Realistic edge cases
@@ -203,3 +242,5 @@ With 4.0c, `build:index` reads each indexed entry's sidecar and writes `v1/searc
 - 2026-10-27: the plan put `SearchMetadata` in `packages/format`, which doesn't exist before 4.0a, and tested `bundleDigest` without depending on 4.0a. The schemas now live in the CLI until 4.5d gives them a second reader (D11).
 - The request was for metadata "authored or LLM-decorated through OpenRouter on the server". This plan keeps decoration in a maintainer script and rejects the server. The cost is that entries from outside this repository (git sources, 3.2a; future community index entries) get no card unless their author writes one; open question 39 asks whether that is acceptable.
 - Leaving domain words out may lose queries where a fragment is domain-specific (a payments fragment for "a shop"). When such a fragment exists, its `useCases` say so in plain words; the rule is against guessing, not against domains.
+- 2026-10-27: the first draft gave every card `platforms` and `productKinds` and had no field for language. A fragment has no product kind of its own, so drafters would have guessed one, and nothing let a "command line tool in Python" request rule out `go-cli`: the platform matched, "python" matched `python-react`'s name, and `go-cli` reached `strong` on half the request. Cards are now a union on `kind`: stacks add `languages` (4.5c gains a language rule beside the platform rule), fragments carry `capabilities` instead of platforms and kinds. Drafting by dispatched coding agents is allowed under the same inputs and review, with the golden set kept out of their checkout.
+- Six languages and nine capabilities cover today's 10 stacks and 20 fragments. A fragment for a need outside the list (payments, email, search) adds a value in the same change, run against 4.5a's set.

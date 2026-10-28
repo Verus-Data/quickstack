@@ -1,6 +1,6 @@
 # Phase 4.0e: Official names and directory
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: IN PROGRESS 2026-10-27 (`v1/names.json` executed in this repository; the `stacks-api` directory half is next)
 Acceptance tests: traced
 
 | Field | Value |

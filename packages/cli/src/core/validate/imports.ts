@@ -9,6 +9,8 @@ type ImportFiles = {
   byPath: ReadonlyMap<string, Composed["files"][number]>;
   paths: ReadonlySet<string>;
   path: Path.Path;
+  /** One check's memo of `imports` by file text: snapshots share most of their files. */
+  scanned: Map<string, ImportRef[]>;
 };
 type ImportRef = { spec: string; line: number };
 const JS_EXT = /\.(?:ts|tsx|js|mjs)$/;
@@ -128,11 +130,14 @@ export const importChecks: Check = (view) =>
   Effect.gen(function* () {
     const path = yield* Path.Path;
     const findings: Finding[] = [];
+    const scanned = new Map<string, ImportRef[]>();
     for (const snapshot of (yield* view.composed).snapshots) {
       const byPath = new Map(snapshot.files.map((file) => [file.path, file]));
       const paths = new Set(byPath.keys());
       for (const file of snapshot.files)
-        findings.push(...fileImportFindings(view, snapshot, file, { byPath, paths, path }));
+        findings.push(
+          ...fileImportFindings(view, snapshot, file, { byPath, paths, path, scanned }),
+        );
     }
     return { findings: uniqueFindings(findings) };
   });
@@ -165,6 +170,10 @@ function fileImportFindings(
       }),
     );
   };
-  for (const ref of imports(new TextDecoder().decode(file.bytes), js)) checkImport(ref);
+  const text = new TextDecoder().decode(file.bytes);
+  const key = `${js ? "js" : "sh"}:${text}`;
+  const refs = files.scanned.get(key) ?? imports(text, js);
+  files.scanned.set(key, refs);
+  for (const ref of refs) checkImport(ref);
   return findings;
 }

@@ -58,6 +58,23 @@
       ]
     },
     {
+      "id": "platform-go-short",
+      "pool": "platform",
+      "split": "holdout",
+      "query": "go cli",
+      "first": {
+        "kind": "stack",
+        "id": "go-cli"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "go-cli",
+          "grade": 2
+        }
+      ]
+    },
+    {
       "id": "platform-typescript-terminal",
       "pool": "platform",
       "split": "holdout",
@@ -811,6 +828,25 @@
         {
           "kind": "stack",
           "id": "mobile-expo",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "nomatch-tui-cli",
+      "pool": "no-match",
+      "split": "tune",
+      "query": "a cli with a good TUI experience",
+      "noMatch": true,
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "go-cli",
+          "grade": 1
+        },
+        {
+          "kind": "stack",
+          "id": "typescript-cli",
           "grade": 1
         }
       ]
