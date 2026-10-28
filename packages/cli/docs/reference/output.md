@@ -55,6 +55,14 @@ In JSON and agent output, ancillary logs go only to the optional log file, so st
 
 `stacks schema` lists every JSON shape the CLI prints, and `stacks schema <name>` prints one as a JSON Schema (draft 2020-12, objects closed): each command's `--json` result, `error` for the envelope and `verify-event` for verify's events.
 
+An unknown flag has `Usage` details `{ flag, command, suggestions }`. `flag` keeps the parser's
+spelling, including its dashes; `command` is the command path without `stacks` (or `stacks` for
+the root). Suggestions name up to three close visible flags accepted by that command, including
+shared and built-in flags. Remaining slots can suggest positional arguments, labeled explicitly:
+`new --dir` suggests `<dir> (positional argument)`, meaning pass the directory without `--dir`.
+Text modes show the flag, command and suggestions. `next` points to that command's help, such as
+`run stacks new --help to list the flags and arguments.`
+
 ## Exit codes
 
 Each exit code means one next action, and a published code never changes meaning. A script that expects 1 for every failure gets these specific codes instead.

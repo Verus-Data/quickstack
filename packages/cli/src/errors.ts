@@ -11,8 +11,14 @@ import { VerifyChange, VerifyResult } from "./schemas/verify";
  * An unknown subcommand: what was typed and up to three close known names (`core/suggest.ts`).
  * Or two flags that can't be used together, as typed (`new --launch` with `--no-launch`, 1.4).
  * Or a parser-rejected value, with its expected input and optional close known values.
+ * Or an unknown flag, its command and close flags or labeled positional arguments.
  */
 export const UsageDetails = Schema.Union([
+  Schema.Struct({
+    flag: Schema.String,
+    command: Schema.String,
+    suggestions: Schema.Array(Schema.String),
+  }),
   Schema.Struct({ command: Schema.String, suggestions: Schema.Array(Schema.String) }),
   Schema.Struct({ flags: Schema.Tuple([Schema.String, Schema.String]) }),
   Schema.Struct({
@@ -470,6 +476,8 @@ function usageGuide(error: Usage, invocation: string): FailureGuide {
       [`${details.flags[0]} and ${details.flags[1]} can't be used together.`],
       "drop one of them.",
     );
+  if (details && "flag" in details && "command" in details)
+    return unknownFlagGuide(details, invocation);
   if (details && "flag" in details) {
     // A flag arrives with its dashes (`--agents`); a positional argument by its bare name.
     const positional = !details.flag.startsWith("-");
@@ -493,6 +501,23 @@ function usageGuide(error: Usage, invocation: string): FailureGuide {
         : []),
     ],
     `run ${invocation} --help to list the commands, or ${invocation} <command> --help for one.`,
+  );
+}
+
+function unknownFlagGuide(
+  details: Extract<typeof UsageDetails.Type, { flag: string; command: string }>,
+  invocation: string,
+): FailureGuide {
+  const command = details.command === "stacks" ? invocation : `${invocation} ${details.command}`;
+  return guide(
+    [
+      `Flag: ${printable(details.flag)}`,
+      `Command: ${printable(details.command)}`,
+      ...(details.suggestions.length
+        ? [`Did you mean: ${details.suggestions.map(printable).join(", ")}?`]
+        : []),
+    ],
+    `run ${printable(command)} --help to list the flags and arguments.`,
   );
 }
 

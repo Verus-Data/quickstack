@@ -77,7 +77,14 @@ test.each([
       tag: "Usage",
       message: "Invalid command.",
       retryable: false,
-      next: "run stacks --help to list the commands, or stacks <command> --help for one.",
+      ...(args[0] === "--unexpected"
+        ? {
+            next: "run stacks --help to list the flags and arguments.",
+            details: { flag: "--unexpected", command: "stacks", suggestions: [] },
+          }
+        : {
+            next: "run stacks --help to list the commands, or stacks <command> --help for one.",
+          }),
     },
   });
 });

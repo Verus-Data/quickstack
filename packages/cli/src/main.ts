@@ -1,6 +1,6 @@
 import { AgentId, Harness } from "@steamfield/stacks-format";
 import { Cause, Clock, Console, Effect, Exit, Logger, Random, References } from "effect";
-import { CliError, Command } from "effect/cli";
+import { CliConfig, CliError, CliOutput, Command, GlobalFlag, type HelpDoc } from "effect/cli";
 import { cli } from "./cli";
 import { AppConfig, type LogSettings } from "./config";
 import { helpFooter } from "./core/guide";
@@ -49,14 +49,18 @@ function rootHelp(args: readonly string[]): boolean {
  * A parser failure is Usage; an unknown subcommand names close known subcommands (the
  * framework's own suggestions are discarded for `closest`) and a rejected value names its flag.
  */
-function usage(error: CliError.CliError): Usage {
+function usage(error: CliError.CliError, help?: HelpDoc.HelpDoc): Usage {
   if (error._tag === "ShowHelp") {
     const nested = error.errors.find(
       (e) =>
-        e._tag === "UnknownSubcommand" || e._tag === "InvalidValue" || e._tag === "MissingArgument",
+        e._tag === "UnknownSubcommand" ||
+        e._tag === "UnrecognizedOption" ||
+        e._tag === "InvalidValue" ||
+        e._tag === "MissingArgument",
     );
-    return nested ? usage(nested) : new Usage();
+    return nested ? usage(nested, help) : new Usage();
   }
+  if (error._tag === "UnrecognizedOption") return unknownFlagUsage(error, help);
   if (error._tag === "InvalidValue") return invalidValueUsage(error);
   if (error._tag === "MissingArgument")
     return new Usage({
@@ -71,6 +75,40 @@ function usage(error: CliError.CliError): Usage {
     });
   return new Usage();
 }
+
+/** The formatter receives the parser's command-specific help, including inherited flags. */
+function unknownFlagUsage(error: CliError.UnrecognizedOption, help?: HelpDoc.HelpDoc): Usage {
+  const flags = [...(help?.flags ?? []), ...(help?.globalFlags ?? [])].flatMap((flag) => [
+    `--${flag.name}`,
+    ...flag.aliases,
+  ]);
+  const suggestions = closest(error.option, [...new Set(flags)]);
+  const arguments_ = closest(
+    error.option.replace(/^-+/, ""),
+    (help?.args ?? []).map((argument) => argument.name),
+  ).map((name) => `<${name}> (positional argument)`);
+  return new Usage({
+    details: {
+      flag: error.option,
+      command: error.command?.slice(1).join(" ") || cli.name,
+      suggestions: [...suggestions, ...arguments_].slice(0, 3),
+    },
+  });
+}
+
+/** A flag before a subcommand belongs to its ancestor, not the selected command's help. */
+const captureUnknownFlagHelp = Effect.fn("main.captureUnknownFlagHelp")(function* (error: unknown) {
+  if (CliError.isCliError(error) && error._tag === "ShowHelp") {
+    const unknown = error.errors.find((nested) => nested._tag === "UnrecognizedOption");
+    const commandPath = unknown?.command;
+    if (commandPath && commandPath.join(" ") !== error.commandPath.join(" ")) {
+      const { builtIns } = yield* CliConfig.CliConfig;
+      // Invoke the public help action with the parsed path; no arguments are parsed again.
+      yield* GlobalFlag.Help.run(true, { builtIns, command: cli, commandPath, version: VERSION });
+    }
+  }
+  return yield* Effect.fail(error);
+});
 
 function invalidValueUsage(error: CliError.InvalidValue): Usage {
   return new Usage({
@@ -110,19 +148,30 @@ export function main(
       const invocationId = `${started}-${(yield* Random.next).toString(36).slice(2, 10)}`;
       const framework: string[] = [];
       const captured = captureConsole(framework);
+      const formatter = yield* CliOutput.Formatter;
+      let help: HelpDoc.HelpDoc | undefined;
+      const captureHelp: CliOutput.Formatter = {
+        ...formatter,
+        formatHelpDoc: (doc) => {
+          help = doc;
+          return formatter.formatHelpDoc(doc);
+        },
+      };
       const reported = Invocation.make();
       const exit = yield* Effect.exit(
         restore(
           program.pipe(
+            Effect.catch(captureUnknownFlagHelp),
             Effect.provide(reported.layer),
             Effect.provideService(Console.Console, captured),
+            Effect.provideService(CliOutput.Formatter, captureHelp),
             Effect.provide(Logger.layer([logging.logger])),
             Effect.provideService(References.MinimumLogLevel, settings.level),
             Effect.annotateLogs({ invocationId }),
           ),
         ),
       );
-      const observed = observeExit(exit);
+      const observed = observeExit(exit, help);
       if (observed.error instanceof BrokenPipe) return 0;
       if (hasFrameworkOutput(observed, framework))
         yield* writeFramework({ framework, args, invocation });
@@ -185,17 +234,17 @@ function captureConsole(framework: string[]): Console.Console {
 
 type ObservedExit = { error?: AppError; defect?: string; help: boolean };
 
-function failureError(cause: Cause.Cause<unknown>): AppError {
+function failureError(cause: Cause.Cause<unknown>, help?: HelpDoc.HelpDoc): AppError {
   if (Cause.hasInterruptsOnly(cause)) return new Interrupted();
   const failure = cause.reasons.find(Cause.isFailReason);
   if (!failure) return new Defect();
   const known = knownError(failure.error);
   if (known) return known;
-  if (CliError.isCliError(failure.error)) return usage(failure.error);
+  if (CliError.isCliError(failure.error)) return usage(failure.error, help);
   return new Defect();
 }
 
-function observeExit(exit: Exit.Exit<void, unknown>): ObservedExit {
+function observeExit(exit: Exit.Exit<void, unknown>, help?: HelpDoc.HelpDoc): ObservedExit {
   if (Exit.isSuccess(exit)) return { help: false };
   const failure = exit.cause.reasons.find(Cause.isFailReason);
   if (
@@ -205,7 +254,7 @@ function observeExit(exit: Exit.Exit<void, unknown>): ObservedExit {
     failure.error.errors.length === 0
   )
     return { help: true };
-  const error = failureError(exit.cause);
+  const error = failureError(exit.cause, help);
   if (error instanceof Defect && !knownError(failure?.error))
     return { error, help: false, defect: defectTrace(Cause.squash(exit.cause)) };
   return { error, help: false };
