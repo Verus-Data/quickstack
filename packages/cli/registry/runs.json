@@ -832,6 +832,167 @@
       "interventions": 0,
       "note": "plans/runs/2026-10-28-python-react.md",
       "hooksFired": null
+    },
+    {
+      "schemaVersion": 1,
+      "date": "2026-10-28",
+      "stack": "python-react",
+      "with": [],
+      "preset": "sandbox",
+      "agent": "codex",
+      "agentVersion": "0.165.0",
+      "mode": "headless",
+      "repoCommit": "cbba4c2aa746a695d3602e5465c5960122cd0cea",
+      "cli": "0.3.1",
+      "fingerprint": "sha256:4859c7d2e27cb3834c0644ca60c36e546442aedf9d136961cf5679b669ab0aed",
+      "briefWords": 4828,
+      "result": "fail",
+      "agentEnded": "exit",
+      "run": {
+        "schemaVersion": 1,
+        "at": "2026-10-28T23:19:09.024Z",
+        "cli": "0.3.1",
+        "agent": "none",
+        "outcome": "failed",
+        "scope": "full",
+        "tamperCheck": "full",
+        "acceptedChanges": false,
+        "durationMs": 3126,
+        "secondsSinceCreated": 90,
+        "steps": [
+          {
+            "name": "install",
+            "phase": "setup",
+            "layer": "install",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 77
+          },
+          {
+            "name": "git-hooks-install",
+            "phase": "setup",
+            "layer": "install",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 30
+          },
+          {
+            "name": "lint",
+            "phase": "check",
+            "layer": "lint",
+            "status": "failed",
+            "failureKind": "step",
+            "exitCode": 2,
+            "durationMs": 43
+          },
+          {
+            "name": "typecheck",
+            "phase": "check",
+            "layer": "typecheck",
+            "status": "failed",
+            "failureKind": "step",
+            "exitCode": 2,
+            "durationMs": 135
+          },
+          {
+            "name": "test",
+            "phase": "check",
+            "layer": "test",
+            "status": "failed",
+            "failureKind": "step",
+            "exitCode": 2,
+            "durationMs": 1124
+          },
+          {
+            "name": "home-route-test",
+            "phase": "check",
+            "layer": "test",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 30
+          },
+          {
+            "name": "api-contract",
+            "phase": "check",
+            "layer": "check",
+            "status": "failed",
+            "failureKind": "step",
+            "exitCode": 2,
+            "durationMs": 270
+          },
+          {
+            "name": "build",
+            "phase": "check",
+            "layer": "build",
+            "status": "skipped",
+            "durationMs": 0
+          },
+          {
+            "name": "readme-filled",
+            "phase": "check",
+            "layer": "check",
+            "status": "failed",
+            "failureKind": "step",
+            "exitCode": 1,
+            "durationMs": 8
+          },
+          {
+            "name": "agents-md-filled",
+            "phase": "check",
+            "layer": "check",
+            "status": "failed",
+            "failureKind": "step",
+            "exitCode": 1,
+            "durationMs": 7
+          },
+          {
+            "name": "claude-readme-filled",
+            "phase": "check",
+            "layer": "check",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 4
+          },
+          {
+            "name": "git-hooks-validate",
+            "phase": "check",
+            "layer": "check",
+            "status": "passed",
+            "exitCode": 0,
+            "durationMs": 19
+          },
+          {
+            "name": "git-hooks-configured",
+            "phase": "check",
+            "layer": "check",
+            "status": "failed",
+            "failureKind": "step",
+            "exitCode": 1,
+            "durationMs": 6
+          },
+          {
+            "name": "api",
+            "phase": "serve",
+            "layer": "serve",
+            "status": "passed",
+            "durationMs": 749
+          },
+          {
+            "name": "web",
+            "phase": "serve",
+            "layer": "serve",
+            "status": "passed",
+            "durationMs": 622
+          }
+        ]
+      },
+      "verifyRuns": 1,
+      "minutesToGreen": null,
+      "minutesToFirstTest": 1.2996166666666666,
+      "agentMinutes": 1.3613833333333334,
+      "interventions": 2,
+      "note": "plans/runs/2026-10-28-python-react-2.md",
+      "hooksFired": null
     }
   ]
 }
