@@ -30,7 +30,10 @@ test("the public search schemas and pure ranker retain lexical language and TUI 
     noStrongMatch: false,
   });
   expect(go.stacks[0]).toMatchObject({ id: "go-cli", tier: "strong" });
-  expect(go.stacks[1]).toMatchObject({ id: "typescript-cli", penalties: ["language"] });
+  expect(go.stacks[1]).toMatchObject({
+    id: "typescript-cli",
+    penalties: [{ kind: "language", request: "go", entry: "typescript" }],
+  });
   for (const row of go.stacks) expect(Schema.decodeUnknownSync(SearchHit)(row)).toEqual(row);
   const tui = rank({ ...input, request: "a cli with a good TUI experience" });
   expect(tui.noStrongMatch).toBe(true);
@@ -38,7 +41,11 @@ test("the public search schemas and pure ranker retain lexical language and TUI 
   expect(tui.stacks).toHaveLength(2);
   for (const row of tui.stacks) {
     expect(row.tier).not.toBe("strong");
-    expect(row.penalties).toContain("notFor");
+    expect(row.penalties).toContainEqual({
+      kind: "notFor",
+      request: "tui experience",
+      entry: "a TUI experience",
+    });
   }
   expect(JSON.stringify(input)).toBe(before);
   expect(rank(input)).toEqual(go);
@@ -125,7 +132,7 @@ test("API hits encode to complete flattened columns and decode to rows", () => {
     score: 0.84,
     coverage: 1,
     why: [{ field: "platforms", matched: "cli", from: "cli" }],
-    penalties: ["language"],
+    penalties: [{ kind: "language", request: "go", entry: "typescript" }],
     evidence: { lastRun: null },
   };
   const run = {

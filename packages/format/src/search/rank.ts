@@ -143,16 +143,28 @@ function mismatch(
   stacks: ReadonlyArray<RankRecord>,
   category: "platforms" | "languages",
   desired: ReadonlyArray<string>,
-): boolean {
-  if (record.entry.meta.kind === "stack") return incompatible(record, category, desired);
+): ReadonlyArray<string> | undefined {
+  if (record.entry.meta.kind === "stack")
+    return incompatible(record, category, desired)
+      ? categoryValues(record.search, category)
+      : undefined;
   const applies = record.entry.meta.appliesTo;
-  if (applies.length === 0 || desired.length === 0) return false;
+  if (applies.length === 0 || desired.length === 0) return undefined;
   const targets = stacks.filter((stack) =>
     applies.some(
       (selector) => selector === stack.entry.id || stack.entry.meta.tags.includes(selector),
     ),
   );
-  return targets.length > 0 && targets.every((stack) => incompatible(stack, category, desired));
+  return targets.length > 0 && targets.every((stack) => incompatible(stack, category, desired))
+    ? [...new Set(targets.flatMap((stack) => categoryValues(stack.search, category)))]
+    : undefined;
+}
+function penaltyRequest(matches: ReadonlyArray<SearchWhy>): string {
+  return matches
+    .map((match) =>
+      match.from === match.matched ? match.from : `${match.from} (${match.matched})`,
+    )
+    .join(", ");
 }
 function penaltiesFor(
   candidate: Candidate,
@@ -165,18 +177,40 @@ function penaltiesFor(
     ["platforms", "platform"],
     ["languages", "language"],
   ] as const) {
-    if (
-      mismatch(
-        candidate.record,
-        stacks,
-        category,
-        matches.filter((match) => match.field === category).map((match) => match.matched),
-      )
-    )
-      penalties.push(penalty);
+    const requested = matches.filter((match) => match.field === category);
+    const conflicting = mismatch(
+      candidate.record,
+      stacks,
+      category,
+      requested.map((match) => match.matched),
+    );
+    if (conflicting)
+      penalties.push({
+        kind: penalty,
+        request: penaltyRequest(requested),
+        entry: conflicting.join(", ") || "(none listed)",
+      });
   }
-  if (excluded(input.request, candidate.record.search)) penalties.push("notFor");
-  if (!candidate.record.entry.trusted) penalties.push("untrusted");
+  const kinds = categoryValues(candidate.record.search, "productKinds");
+  const requested = matches.filter((match) => match.field === "productKinds");
+  if (
+    requested.length > 0 &&
+    kinds.length > 0 &&
+    !requested.some((match) => kinds.includes(match.matched))
+  )
+    penalties.push({
+      kind: "productKind",
+      request: penaltyRequest(requested),
+      entry: kinds.join(", "),
+    });
+  const exclusion = excluded(input.request, candidate.record.search);
+  if (exclusion) penalties.push({ kind: "notFor", ...exclusion });
+  if (!candidate.record.entry.trusted)
+    penalties.push({
+      kind: "untrusted",
+      request: "",
+      entry: candidate.record.entry.origin,
+    });
   return penalties;
 }
 function hitFor(
@@ -189,8 +223,8 @@ function hitFor(
   const penalties = penaltiesFor(candidate, input, matches);
   let adjusted = candidate.raw;
   for (const penalty of penalties) {
-    if (penalty === "platform" || penalty === "language") adjusted *= 0.3;
-    if (penalty === "notFor") adjusted *= 0.5;
+    if (["platform", "language", "productKind"].includes(penalty.kind)) adjusted *= 0.3;
+    if (penalty.kind === "notFor") adjusted *= 0.5;
   }
   const scale = entry.kind === "stack" ? 1 : 20;
   const score = adjusted / (adjusted + scale);

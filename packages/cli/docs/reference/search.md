@@ -34,9 +34,15 @@ unmatched content words under `understood`, `noStrongMatch`, and separate `stack
 Run `stacks schema search` for the JSON Schema.
 
 Each hit includes its origin and trust, absolute `score` from 0 to 1, strong-field `coverage`,
-`tier` (`strong`, `partial`, `weak`), matching fields and words under `why`, penalties, optional
+`tier` (`strong`, `partial`, `weak`), matching fields and words under `why`, `penalties`, optional
 caveats and cached evidence. Fragments also carry `appliesTo`. Evidence settles near-ties
 within a tier; project counts never raise a score. Untrusted entries cannot be strong.
+Each penalty is `{ kind, request, entry }`: `kind` is `platform`, `language`, `productKind`,
+`notFor` or `untrusted`; `request` names the triggering phrase (with its normalized vocabulary
+value for facet mismatches), and `entry` lists the conflicting facets or the matched `notFor`
+text. An untrusted penalty has an empty `request` and the entry's origin. Fragment platform
+and language conflicts list the facets of their applicable stacks. Penalties remain a nested
+array per hit, including in the API's single `penalties` column.
 
 Compare strong matches using `why` and `evidence`, and read caveats before choosing. When
 `noStrongMatch` is true, tell the user nothing fits well and confirm before using a weak match.

@@ -146,9 +146,13 @@ test("known incompatible platforms are penalized while absent cards remain unkno
     vocabulary: vocabulary(),
     entries: [desktop, { entry: unknown.entry }],
   });
-  expect(hit(result.stacks, "desktop").penalties).toContain("platform");
+  expect(hit(result.stacks, "desktop").penalties).toContainEqual(
+    expect.objectContaining({ kind: "platform" }),
+  );
   expect(hit(result.stacks, "desktop").tier).not.toBe("strong");
-  expect(hit(result.stacks, "unknown").penalties).not.toContain("platform");
+  expect(hit(result.stacks, "unknown").penalties).not.toContainEqual(
+    expect.objectContaining({ kind: "platform" }),
+  );
 });
 
 test("untrusted fits are capped at partial, trusted partial fits precede them [4.5c#9]", async () => {
@@ -165,7 +169,7 @@ test("untrusted fits are capped at partial, trusted partial fits precede them [4
   expect(alone.noStrongMatch).toBe(true);
   expect(hit(alone.stacks, "perfect")).toMatchObject({
     tier: "partial",
-    penalties: expect.arrayContaining(["untrusted"]),
+    penalties: expect.arrayContaining([expect.objectContaining({ kind: "untrusted" })]),
   });
   const partial = await fixtureRecord(root, "trusted", { search: { notFor: ["workout journal"] } });
   const together = rank({ request, entries: [untrusted, partial], vocabulary: vocabulary() });

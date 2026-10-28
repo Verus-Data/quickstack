@@ -1,6 +1,6 @@
 import { readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
-import type { Kind } from "@steamfield/stacks-format";
+import type { Kind, SearchHit } from "@steamfield/stacks-format";
 import { SearchMetadata, SearchVocabulary } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { expect } from "vitest";
@@ -43,7 +43,7 @@ export type Hit = {
     readonly matched: string;
     readonly from: string;
   }>;
-  readonly penalties: ReadonlyArray<string>;
+  readonly penalties: SearchHit["penalties"];
   readonly caveats?: ReadonlyArray<string>;
   readonly appliesTo?: ReadonlyArray<string>;
   readonly evidence: Evidence;

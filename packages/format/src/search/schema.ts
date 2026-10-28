@@ -130,7 +130,13 @@ export const SearchHit = Schema.Struct({
   score: Share,
   coverage: Share,
   why: Schema.Array(SearchWhy),
-  penalties: Schema.Array(Schema.Literals(["platform", "language", "notFor", "untrusted"])),
+  penalties: Schema.Array(
+    Schema.Struct({
+      kind: Schema.Literals(["platform", "language", "productKind", "notFor", "untrusted"]),
+      request: Schema.String,
+      entry: Schema.String,
+    }),
+  ),
   caveats: Schema.optionalKey(Words),
   appliesTo: Schema.optionalKey(Words),
   evidence: SearchEvidence,
