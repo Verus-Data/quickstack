@@ -9,6 +9,12 @@ the same day). The ledger (`packages/cli/registry/runs.json`, from
 [2.0c](../phases/phase-2.0c-run-ledger.md)) is the machine-readable copy;
 these notes are what a person reads.
 
+The [2026-10-27 library QA report](2026-10-27-library-qa/REPORT.md) covers all ten
+bundled stacks and both apps with Terra 6.1 agents. It includes
+[setup timings](2026-10-27-library-qa/timings.md), reproducible findings, captured
+verification results and cleanup records. These diagnostic runs were not
+imported into the release ledger.
+
 Every note records the fields below; 2.0c's ledger import skips a note that lacks a required one:
 
 | Field | What |

@@ -9,6 +9,15 @@ Start here, then read repo `AGENTS.md`, the README's
 next steps, who owns each. When it grows past a couple of screens, move the dated detail
 to `archive/` and leave a link.
 
+## Manual library QA (2026-10-27)
+
+Three Terra 6.1 agents exercised all ten bundled stacks and both apps; the
+[report](runs/2026-10-27-library-qa/REPORT.md) records eleven CLI/recipe friction
+items, implementation gaps missed by green checks, evidence and cleanup.
+[Timings](runs/2026-10-27-library-qa/timings.md) separate CLI writes from agent
+setup and app work. Product source, registry and ledger are unchanged. Next:
+review these findings and agree an improvement plan before implementing fixes.
+
 ## Phase 4 in progress (2026-10-27)
 
 Executed: 4.0a, 4.0b, 4.0c (both repositories: `stacks-api` serves the index and its
