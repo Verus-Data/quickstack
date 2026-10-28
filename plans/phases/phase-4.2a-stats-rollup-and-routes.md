@@ -4,12 +4,12 @@ Status: DRAFT 2026-10-26 (not agreed)
 
 | Field | Value |
 |---|---|
-| Goal | A scheduled rollup turns stored telemetry into per-stack and per-fragment window metrics over finalized UTC days, caps each contributor's share, suppresses small cells, holds public numbers back until enough stacks have enough projects, and serves them from `GET /v1/stats/...` with the last ledger run beside them |
+| Goal | A scheduled rollup turns stored telemetry into per-stack and per-fragment window metrics over finalized UTC days, caps each contributor's share, suppresses small cells, holds public numbers back until enough stacks have enough projects, and serves them from the stats routes (`GET /v1/stats/summary`, `GET /v1/stacks/:id/stats`, `GET /v1/fragments/:id/stats`) with the last ledger run beside them |
 | Traces to | Success table: "Fraction of `new --sandbox` runs that reach a green `verify` with no user intervention", "Median time from `new` to green `verify`", "Stacks and fragments in `~/.stacks` and third-party sources". The coding agent "runs `list --json`, picks a stack"; its frustration is "ambiguity". Assumption 5 ("Watch whether people use `new` from a terminal or ask their agent to run it"), D9 |
 | Depends on | 4.1c (the scheduled entry, `maintenance_lease`, `maintenance_state`, `registry_snapshots`), 4.0c (each index entry's `lastRun`), 4.1d (exclusions applied and `projects` rechecked before counting; `installs` for install maturity), D17 |
 | Blocks | 4.2b, 4.2c, 4.2e, 4.2f, 4.2g |
 | Decisions needed | D17. If collection is opt-in or declined, this sub-phase is skipped and 4.2b shows ledger results only. New for the maintainers: the publishing gate thresholds and the cap values below (proposed values); [open question 30](../risks-and-open-questions.md#open-questions-for-the-maintainers) (capping instead of suppressing concentrated cells) and [open question 31](../risks-and-open-questions.md#open-questions-for-the-maintainers) (per-agent green rate as a breakdown); [open question 33](../risks-and-open-questions.md#open-questions-for-the-maintainers) (rounding published counts to 5); [open question 38](../risks-and-open-questions.md#open-questions-for-the-maintainers) (no window longer than 28 days) |
-| Settles | Metric definitions, windows, the weekly series stride, time filtering and selection (`window`, `interval`, `from`, `to`, `sort`, `limit`, `kind`, `previous`), capping, suppression and rounding, the publishing gate, the `StatsSummary` and `StatsDetail` schemas, the `population` label, the routes, their caching and who reads each |
+| Settles | Metric definitions, windows, the weekly series stride, time filtering and selection (`window`, `interval`, `from`, `to`, `sort`, `limit`, `cursor`, `kind`, `previous`), capping, suppression and rounding, the publishing gate, the rule for totals and shares over suppressed cells, the `StatsSummary` and `StatsDetail` schemas, the `population` label, the routes and the summary's cursor pagination, their caching and who reads each |
 
 ## Scope
 
@@ -18,7 +18,7 @@ In:
 - An hourly and a daily rollup step in the Worker's scheduled entry writing `window_metrics`, both under 4.1c's `maintenance_lease`.
 - Wilson intervals, per-contributor caps, suppression and the publishing gate.
 - `StatsSummary` and `StatsDetail` schemas in `packages/format` (additive).
-- `GET /v1/stats/summary`, `GET /v1/stats/stacks/:id`, `GET /v1/stats/fragments/:id`.
+- `GET /v1/stats/summary`, `GET /v1/stacks/:id/stats`, `GET /v1/fragments/:id/stats`.
 
 Out:
 
@@ -37,12 +37,18 @@ Out:
 | Route or table | Read by |
 |---|---|
 | `GET /v1/stats/summary` | `list --json` and human `list` (4.2b) |
-| `GET /v1/stats/stacks/:id` | `show <stack> --json` and human `show` (4.2b) |
-| `GET /v1/stats/fragments/:id` | `show <fragment> --json` and human `show` (4.2b) |
+| `GET /v1/stacks/:id/stats` | `show <stack> --json` and human `show` (4.2b) |
+| `GET /v1/fragments/:id/stats` | `show <fragment> --json` and human `show` (4.2b) |
 | `window_metrics` | The directory stats sections (4.2b) and sorted pages (4.2c), read through the stats routes by the site build in `stacks-api/apps/web` and by its islands at view time |
 | `window`, `interval`, `from`, `to` on the detail routes | The stack page's history chart island (4.2f), which asks for 90 days, 180 days or a year of points |
 | `previous` on summary entries | The browse pages (4.2c) and any client that shows change against the last window, the way trending-data APIs report it |
 | `sort`, `limit`, `kind` on the summary | The site build's browse pages (4.2c: most used, highest success, trending) and API clients that want the top entries without sorting the whole list |
+| `cursor` and `nextCursor` on the summary | The site build, which follows `nextCursor` until the last page, and API clients reading past one page |
+| `upper` on every green-rate value | Every interval the site draws or writes (`RateMark`'s whisker, `StatLine`'s `86-95%`, 4.2f) and `list --json`'s `greenRateUpper` (4.2b) |
+| `projects` per `byPreset` cell and the weekly per-preset projects series | The stack page's weekly projects by preset and its sandbox share (4.2f) |
+| `projects` and `medianMinutesToGreen` per `byAgent` cell | The agent pages' share of that agent's projects and median time to green per stack (4.2c, 4.2f) |
+| `byComposition` cells | The stack page's composition table (4.2f) |
+| The fragment detail's weekly series, `byStack` and `oftenUsedWith` | The fragment page's weekly projects by stack, its per-stack counts, kept and attach rates and with-and-without green rates, and its "often used with" list (4.2c, 4.2f) |
 
 A route or metric with no reader in this table is not built.
 
@@ -77,8 +83,9 @@ Added 2026-10-27. Clients filter by time the way a trending-data API usually let
 | `window` | `7` or `28` (default `28`) | Which trailing window every value in the response describes, on the summary and detail routes. Anything else is `400 BadInput` |
 | `interval` | `7` or `28` days (default `7`), on the detail routes | Spacing of the series points that come back: `7` returns every stored point, `28` every fourth one (counted back from the latest), so with `window=28` the points are non-overlapping. Anything else is `400 BadInput` |
 | `from`, `to` | `YYYY-MM-DD`, inclusive, on the detail routes | Which stored series points come back: points whose end day falls in the range. Default: the 365 days ending at `through`. A span over 366 days, `from` after `to`, or a malformed date is `400 BadInput`; a range before the first stored point returns an empty series |
-| `sort` | `lower` (default: green-rate Wilson lower bound), `projects`, `green` (point estimate), `trending` (4.2c's score; `400 BadInput` until 4.2c adds it) or `id`, on the summary | Order of `entries`. Every order uses exact values and puts entries whose sort value is suppressed after the rest, by id, so the order reveals nothing about a suppressed cell beyond "suppressed"; ties break by id |
-| `limit` | 1 to 200 (default: every entry), on the summary | How many entries, after sorting |
+| `sort` | `lower` (default: green-rate Wilson lower bound), `projects`, `green` (point estimate), `trending` (4.2c's score; `400 BadInput` until 4.2c adds it) or `id`, on the summary | Order of `items`. Every order uses exact values and puts entries whose sort value is suppressed after the rest, by id, so the order reveals nothing about a suppressed cell beyond "suppressed"; ties break by id |
+| `limit` | 1 to 200 (default 200), on the summary | Page size, after sorting. Over 200 is `400 BadInput` |
+| `cursor` | The opaque `nextCursor` from the previous page, on the summary | Where the page starts. The response is `{ items, nextCursor? }`, with `nextCursor` omitted on the last page. The cursor is base64url of the last item's id and the rollup's `generatedAt`, decoded through a schema; it never carries the sort value, because an exact count or bound in a decodable cursor would undo rounding and suppression. The handler finds that id in the same stored order and resumes after it. A cursor that doesn't decode, or that was issued for an earlier rollup, is `400 BadInput`, so a client restarts from the first page rather than mixing two rollups |
 | `kind` | `stack` or `fragment` (default both), on the summary | Which entries |
 
 Decided here: no arbitrary date range is ever aggregated. A request can only choose which already-computed, already-suppressed cells it sees, and every parameter above is a selection or an ordering over stored cells. Aggregating `[from, to]` on demand would let anyone take two ranges that differ by one day and subtract them, recovering a single day's cell, often one or two projects, below every threshold; suppression would mean nothing. Selecting stored points gives a client no number it couldn't get by fetching the whole series and filtering it.
@@ -98,20 +105,20 @@ Added 2026-10-27, proposed ([open question 33](../risks-and-open-questions.md#op
 | Question | Metric | Where |
 |---|---|---|
 | Is anyone using it | Projects per window | Summary, detail |
-| Does it work | Green rate: green over attempted, with a 95% Wilson interval | Summary, detail |
+| Does it work | Green rate: green over attempted, with a 95% Wilson interval. Every green-rate value, wherever it appears (summary entries, `previous`, the detail, series points and every breakdown cell), is `{ value, lower, upper, sample, suppressed }` | Summary, detail |
 | How hard is it for the agent | Median and p75 time to green; median time to first passing test; median verify runs before first green | Summary (median to green), detail |
 | Where does it break | Share of failed runs before first green in which each step failed | Detail |
 | Is it the stack or the machine | Env-blocked share, separately | Detail |
 | How many stop before verifying | No-verify share, always beside the green rate | Summary, detail |
 | How many scaffolds fail outright | Scaffold failure share: 4.1a `error` events with `command: "new"` over `new` events plus those `error` events, by error `code`. Shown beside the no-verify share so a failed `new` isn't read as a user who stopped | Detail, per stack and in the global row (see below) |
 | Do people change the defaults | `--without` rate per default fragment; attach rate per optional fragment | Detail |
-| Does the preset matter | Green rate and median time to green per `preset` value (from `projects.preset`), as a breakdown inside one stack under the same caps and suppression; this is the `--sandbox` measure | Detail (`byPreset`) |
-| Which composition broke | Green rate per composition `fingerprint` (from the `new` event's payload; custom entries carry none), shown next to the registry-change markers so a drop can be tied to one composition | Detail (`byComposition`) |
-| Does it work with my agent | Green rate per `agent` value (from `projects.agent`), as a breakdown inside one stack, under the same caps and suppression. Never sorted or compared across stacks, and no route lists agents in order of green rate ([open question 31](../risks-and-open-questions.md#open-questions-for-the-maintainers)) | Detail |
+| Does the preset matter | Projects, green rate and median time to green per `preset` value (from `projects.preset`), as a breakdown inside one stack under the same caps and suppression; this is the `--sandbox` measure. The weekly series gains a `preset` dimension: 7-day projects per preset at each stride day, under the same caps and suppression | Detail (`byPreset`, the per-preset series) |
+| Which composition broke | One cell per composition `fingerprint` (from the `new` event's payload; custom entries carry none): `{ fingerprint, with, without, greenRate, firstSeen, lastSeen, changes }`. `with` and `without` are the fragments added to and dropped from the stack's defaults, from the same payload (`fragments` against the defaults, and `without`). `firstSeen` and `lastSeen` are the first and last stride days on which the composition had a stored cell in `window_metrics`, since raw events last only 90 days (4.1c). `changes` are the registry-change markers inside that span, so a drop can be tied to one composition | Detail (`byComposition`) |
+| Does it work with my agent | Projects, green rate and median time to green per `agent` value (from `projects.agent`), as a breakdown inside one stack, under the same caps and suppression. The values are the `DetectedAgent` ids the CLI records (roadmap, Contracts: Agent ids); an agent the CLI doesn't detect, Gemini for one, is recorded as `other`, so no other name can appear. Never sorted or compared across stacks, and no route lists agents in order of green rate ([open question 31](../risks-and-open-questions.md#open-questions-for-the-maintainers)) | Detail (`byAgent`) |
 | How do people arrive (D9) | Share of `new` events by `handoff` kind, and by `source` attribution (absent counts as `unknown`) | Detail; the global row also in the summary's `entryPoints` |
 | Does looking lead to using | Pick rate: distinct mature installs that sent a `new` for the stack within 7 days after a `show` event for it, over distinct mature installs that sent that `show` | Detail |
 
-Fragments get projects per window, attach rate per stack, and the green rate of compositions that include them.
+Fragments get projects per window, attach rate per stack, and the green rate of compositions that include them. Added 2026-10-27, for the fragment page: a weekly series of 7-day projects including the fragment, overall and per stack (a `(fragment, stack)` dimension); `byStack`, one cell per stack it applies to, `{ stack, default, projects, attachRate | keptRate, withWithout }`, where a default fragment carries `keptRate` (1 minus its `--without` rate on that stack) and an optional one `attachRate`, and `withWithout` is the green rate of that stack's projects with the fragment against those without it, published only when both cells pass the rate thresholds (4.2e's rule for dependencies). Every cell uses the same caps and suppression. 4.2c adds `oftenUsedWith` to the fragment detail with its `cooccur` dimension, as it adds `trending` to the summary.
 
 The scaffold failure share is computed per stack from 4.1a's `error` events, which carry `stack` when the stack resolved to an official id; failures that happened before a stack resolved (an unknown id, a usage error) are counted globally. Global rows use the reserved id `_all` in `window_metrics` and appear in `StatsDetail` for every stack under `global`.
 
@@ -125,10 +132,12 @@ Concentration is handled by capping each contributor's share of a cell rather th
 | Effective sample | `min(capped projects, 3 × distinct networks)` among the cell's projects. Every threshold below, and the Wilson interval's `n`, use the effective sample; the rate itself is computed over the capped projects |
 | Any count | Hidden below an effective sample of 5 projects |
 | Any rate | Hidden unless the effective attempted sample is at least 20, with at least 5 green and at least 5 not green |
-| Ordering | By default `summary.entries` is ordered by the green rate's Wilson lower bound, highest first, then entries with a suppressed rate, then by id. `sort` selects another order over the same stored values (Time filtering, above) |
+| Ordering | By default the summary's `items` are ordered by the green rate's Wilson lower bound, highest first, then entries with a suppressed rate, then by id. `sort` selects another order over the same stored values (Time filtering, above) |
 | Publishing gate | No public stats until at least 3 stacks each have an effective attempted sample of 20 in one 28-day window. Before then, `summary` returns `published: false` with ledger results only |
 
 Suppressed values come back as `null` with `suppressed: true`, so clients don't need the thresholds.
+
+Added 2026-10-27: totals and shares never reveal a suppressed cell. If a total came from the global `_all` row while one stack's cell was suppressed, the total minus the published cells would recover it. So no public total sums cells some of which are suppressed. A share, a rank or an "others" bucket is computed over the published cells only and captioned "of stacks with published counts". A true total is published only when the suppressed remainder (the total minus the published cells) is 0 or is itself at least the count threshold (an effective sample of 5). The rule applies wherever the response or a page sums cells: shares of all projects, a stack's rank by use, an agent's projects by stack, a fragment's projects by stack.
 
 Maintainer and automated traffic is kept out before capping: bench and canary runs send nothing (2.0b and 5.1 set `DO_NOT_TRACK=1`), and 4.1e's smoke install id is in `exclusions`. The cap is the backstop for anything that still gets through.
 
@@ -157,27 +166,31 @@ GET /v1/stats/summary?window=28
   "generatedAt": "...", "through": "2026-10-25", "population": "stacks projects",
   "window": 28, "published": true,
   "entryPoints": { "handoff": { "launch": 0.41, ... }, "source": { "skill": 0.22, ... } },
-  "entries": [{
+  "items": [{
     "id": "go-cli", "kind": "stack",
     "projects": { "value": 215, "suppressed": false },
-    "greenRate": { "value": 0.91, "lower": 0.86, "sample": 180, "suppressed": false },
+    "greenRate": { "value": 0.91, "lower": 0.86, "upper": 0.95, "sample": 180, "suppressed": false },
     "noVerifyShare": { "value": 0.12, "suppressed": false },
     "medianMinutesToGreen": { "value": 14, "suppressed": false },
     "lastRun": { ... }          // the index entry's lastRun (4.0c), unchanged
-  }]
+  }],
+  "nextCursor": "..."           // omitted on the last page
 }
 GET /v1/stats/summary?window=28&sort=projects&limit=10&kind=stack   -> StatsSummary
-GET /v1/stats/stacks/:id?window=28&interval=7&from=2026-04-01&to=2026-10-25  -> StatsDetail
-GET /v1/stats/fragments/:id?window=28&interval=7&from=...&to=...    -> StatsDetail (fragment fields)
+GET /v1/stats/summary?window=28&cursor=...                         -> the next page
+GET /v1/stacks/:id/stats?window=28&interval=7&from=2026-04-01&to=2026-10-25  -> StatsDetail
+GET /v1/fragments/:id/stats?window=28&interval=7&from=...&to=...    -> StatsDetail (fragment fields)
 ```
+
+No `/v1` route ends in a path param (the API's routing rule: a trailing param would capture a static document's path), so each detail route sits under its resource and ends in the literal `stats`.
 
 `population` is one of two literals: `"stacks projects"`, or `"seeded development data"` when the store holds 4.2g's seed marker (complete or not) or any `projects` row carries 4.2g's reserved seeded install-id form. `stats/encode.ts` checks both, so a store copied without its marker row still labels itself. Every client prints it, so seeded numbers label themselves wherever they appear.
 
 Summary entries also carry `previous` (`{ projects, greenRate }`, same shapes) as described under Time filtering. `GET /v1/stats/summary?window=28&sort=projects&limit=10&kind=stack` is the most-used list.
 
-`StatsDetail` for a stack: the summary row; both windows; a weekly series (7-day stride, thinned by `interval`) of the requested window's projects and green rate (with its Wilson bounds) for every computed end day between `from` and `to`, with `changes` markers; step failure shares; env-blocked share; fragment `--without` and attach rates; `byAgent` (green rate and sample per agent); `byPreset` and `byComposition` when their fields are sent; `entryPoints` for the stack; `pickRate`; the stack's scaffold failure share by code; and `global` (scaffold failure share by code, the global entry-point shares). For a fragment: projects, attach rate per stack, and the green rate of compositions including it. Every value uses the `{ value, suppressed }` shape.
+`StatsDetail` for a stack: the summary row; both windows; a weekly series (7-day stride, thinned by `interval`) of the requested window's projects and green rate (with its Wilson bounds) for every computed end day between `from` and `to`, with `changes` markers, and the 7-day projects per preset at the same points; step failure shares; env-blocked share; fragment `--without` and attach rates; `byAgent` (projects, green rate and median time to green per agent); `byPreset` (projects, green rate and median time to green per preset) and `byComposition` (the cells above) when their fields are sent; `entryPoints` for the stack; `pickRate`; the stack's scaffold failure share by code; and `global` (scaffold failure share by code, the global entry-point shares). For a fragment: projects, the weekly series overall and per stack, `byStack`, and the green rate of compositions including it. Every value uses the `{ value, suppressed }` shape, and every green rate carries `lower` and `upper`.
 
-`lastRun` is read from the static index through the assets binding, so the summary never disagrees with the index. Responses carry `Cache-Control: public, max-age=3600, stale-while-revalidate=3600` and an `ETag` over the encoded body, and answer `If-None-Match` with 304; the API's default is `no-store`, so each stats route declares this itself. The query string is part of the cache key, and only the declared parameters are accepted (an unknown parameter is `400 BadInput`, so caches can't be filled with junk variants). Unknown or malformed ids return the `NotFound` envelope. Errors use the shared envelope. No route ends in a file extension.
+`lastRun` is read from the static index through the assets binding, so the summary never disagrees with the index. Responses carry `Cache-Control: public, max-age=3600, stale-while-revalidate=3600` and an `ETag` over the encoded body, and answer `If-None-Match` with 304; the API's default is `no-store`, so each stats route declares this itself. The query string is part of the cache key, and only the declared parameters are accepted (an unknown parameter is `400 BadInput`, so caches can't be filled with junk variants). Unknown or malformed ids return the `NotFound` envelope. Errors use the shared envelope. No route ends in a path param or a file extension.
 
 ## Files and areas touched
 
@@ -194,6 +207,7 @@ Summary entries also carry `previous` (`{ projects, greenRate }`, same shapes) a
 ## Acceptance tests
 
 - Over a seeded store: green rate, Wilson bounds, median and p75 match hand-computed values; twenty verify events in one project count once.
+- Every published green-rate value (summary entries, `previous`, series points, `byPreset`, `byAgent`, `byComposition`, a fragment's `byStack`) has `upper` equal to the hand-computed Wilson upper bound, rounded to two decimals; a suppressed one has `lower` and `upper` null.
 - An effective attempted sample of 19: `greenRate: null, suppressed: true`. 4 not-green: rate suppressed.
 - One install with 30 projects in a cell of 100: it counts 3, and the cell is published, not suppressed. One network holding 40 of 50 projects across 3 networks: effective sample 9, so the rate is suppressed but the count is shown.
 - A project from an install first seen 2 hours before its scaffold is not counted; the same install's later project, scaffolded 25 hours after it was first seen, is.
@@ -201,21 +215,26 @@ Summary entries also carry `previous` (`{ projects, greenRate }`, same shapes) a
 - A `changed` or `partial` verify never makes a project green.
 - Events received today change no `window_metrics` row; the summary's `through` is yesterday.
 - No `window_metrics` row has a window other than 7 or 28.
-- `summary.entries` order: highest Wilson lower bound first, suppressed rates after, ties by id.
-- `byPreset` for a stack scaffolded with `default` and `sandbox` presets returns both under suppression rules; `without` and `source` shares match seeded `new` event payloads; the median verify runs before first green matches seeded `verify` events.
+- The summary's `items` order: highest Wilson lower bound first, suppressed rates after, ties by id.
+- Cursor pagination: with `limit=2` over five entries, following `nextCursor` returns every entry once, in the same order as one unpaged request, and the last page has no `nextCursor`; the decoded cursor holds only an id and `generatedAt`, never a count or a bound; a malformed cursor, or one issued before the latest rollup, is `400 BadInput`.
+- Totals and shares: a fixture where one of four stacks' counts is suppressed publishes no total of all projects, and every share and "others" value is over the three published cells; with that cell's remainder at 0, or at 5 or more across several suppressed cells, the true total is published.
+- `byPreset` for a stack scaffolded with `default` and `sandbox` presets returns both, each with `projects`, under suppression rules, and the series carries 7-day projects per preset at each stride day; `without` and `source` shares match seeded `new` event payloads; the median verify runs before first green matches seeded `verify` events.
 - A successful hourly run sets `maintenance_state.last_rollup`; a run that fails or can't take the lease leaves it unchanged.
-- `byAgent` for a stack with two agents returns both under suppression rules; no route returns agents sorted by green rate.
+- `byAgent` for a stack with two agents returns both, each with `projects` and `medianMinutesToGreen`, under suppression rules; no route returns agents sorted by green rate; a seeded project recorded with agent `other` appears under `other`, and no other id than a `DetectedAgent` value appears.
+- `byComposition` over seeded `new` events with the defaults, the defaults plus one optional fragment, and the defaults minus one returns three cells with the matching `with` and `without`; a composition whose stored cells span two stride days months apart has those as `firstSeen` and `lastSeen` after its raw events are pruned; a marker inside that span is in its `changes`.
+- A fragment detail over seeded projects in two stacks returns a weekly series per stack and a `byStack` cell for each, with `keptRate` where the fragment is a default and `attachRate` where it is optional; `withWithout` is published only where both cells pass the rate thresholds.
 - Seeded `error` events give the scaffold failure share by code for their stack, and events with no stack only under `global`; seeded `show` and `new` events give the expected pick rate, and a `new` 8 days after the `show` doesn't count.
 - `entryPoints` matches seeded `handoff` and `source` values, with absent `source` as `unknown`.
 - Two `registry_snapshots` rows where `go-cli` gained a step: one marker on the snapshot's day in `go-cli`'s series; none in another stack's.
 - A rollup started while a fixture holds `maintenance_lease` writes nothing and logs `lease_held`.
 - With `TestClock` moved 10 days on and hashes for the oldest days nulled, the daily step's recompute of an earlier window keeps the stored distinct-network count and its effective sample.
 - Rerunning the rollup for a day gives identical rows; after 4.1d excludes an install and rechecks, the daily step changes only the windows that install's projects fall in.
-- Under the local Workers runtime, the hourly trigger writes `window_metrics` and `GET /v1/stats/summary` and `GET /v1/stats/stacks/:id` return them with the cache header.
+- Under the local Workers runtime, the hourly trigger writes `window_metrics` and `GET /v1/stats/summary` and `GET /v1/stacks/:id/stats` return them with the cache header.
 - `window=7` returns 7-day values on the summary and a series of 7-day points on the detail route; `window=90`, `window=abc` and an unknown parameter return `400 BadInput`.
 - After the daily step, no stored row older than 56 finalized days ends on a day other than a stride day (a UTC Sunday); the detail series has one point per stride day; `interval=28` returns every fourth point counted back from the latest, and with `window=28` no two returned points overlap; `interval=14` is `400 BadInput`.
 - `previous` on a summary entry equals the stored cell for the window ending the day before the current window starts, suppressed under the same rules.
 - `sort=projects&limit=3&kind=stack` returns the three stacks with the most effective projects, exact values deciding the order, entries with a suppressed count after the rest by id; `sort=trending` before 4.2c is `400 BadInput`; `limit=0`, `limit=201` and `kind=app` are `400 BadInput`.
+- The contract has no route ending in a path param: `GET /v1/stacks/go-cli/stats` answers, and `GET /v1/stats/stacks/go-cli` is the `NotFound` envelope.
 - `from=2026-09-01&to=2026-09-30` returns exactly the stored points with end days in September; `from` after `to`, a span of 367 days and `from=2026-13-01` return `400 BadInput`; no request causes a window to be computed that the rollup didn't store (the handler reads `window_metrics` only).
 - A cell of 212 projects is published as 210 and a sample of 183 as 185; a rate of 0.9137 as 0.91; the gate and ordering use the exact values (a fixture where rounding would reorder two entries keeps the exact order).
 - A repeated request with the response's `ETag` in `If-None-Match` gets 304 with no body.
@@ -237,3 +256,6 @@ Summary entries also carry `previous` (`{ projects, greenRate }`, same shapes) a
 - 2026-10-27: the routes had no time parameters, and a request for trending-API-style filtering assumed 7-, 28- and 90-day windows existed; only 7 and 28 ever did. `window`, `interval`, `from` and `to` now select stored cells, and published counts are rounded to 5. Rounding alone didn't stop differencing between adjacent daily points, and `window=7` published a daily 7-day series of small cells, so the series is now stored and published at a 7-day stride. The summary still moves daily, so a client polling it every day can difference consecutive days' windows; rounding blunts that, and if the maintainers want it closed, the summary's `through` should advance only on stride days too, at the cost of numbers up to a week old (which would also change 4.2f's stale rule). If they reject rounding (open question 33), the residual risk is larger.
 - 2026-10-27: `stacks-api/.claude/rules/api/effect-api.md` puts each store in `api/services/<Name>Store.ts` (an in-memory layer and a SQL layer needing only `SqlClient`); `apps/api/src` has no `services/` folder yet. This plan's `stats/` and `store/` paths predate that rule ([open question 37](../risks-and-open-questions.md#open-questions-for-the-maintainers)). Follow whichever the maintainers settle when this executes.
 - 2026-10-27: the route lacked what a standard trending-data API offers (an `interval`, change against the previous window, `sort`, `limit` and `kind` on the summary). They are added as selections and orderings over stored cells; none aggregates anything new.
+- 2026-10-27: the detail routes were `GET /v1/stats/stacks/:id` and `GET /v1/stats/fragments/:id`, which end in a path param against the API's routing rule, and the summary returned `entries` with a `limit` and no cursor, against its list rule. The routes are now `GET /v1/stacks/:id/stats` and `GET /v1/fragments/:id/stats`, and the summary returns `{ items, nextCursor? }`. One difference from that rule remains: its cursor encodes the last item's sort key and id, and here it encodes the id and the rollup's `generatedAt` only, because the sort key is an exact, unrounded value. Resuming after an id costs a scan of the stored order, which is small.
+- 2026-10-27: a review of the site's design mocks found no upper interval bound (every mock draws `86-95%` and whiskers), no complement rule for totals, and breakdown cells too thin for the pages (`byPreset` and `byAgent` had no `projects`, `byComposition` no fields, the fragment detail no series or per-stack cells). Those are added above, each with its reader. Still open for the maintainers: a published count of failed runs before first green (for an `n=` on step failures) and counting `add` events into a fragment's projects.
+- 2026-10-27: the mocks show stars (counts on every row and page, a "Starred" view, an avatar). The site leaves them out, and no route counts them, per roadmap "Won't have" ("Ratings, reviews, accounts").
