@@ -37,9 +37,19 @@ Your own stacks and fragments live beside this file, in `stacks/<id>/` and `frag
 | `STACKS_LOG_FILE` | Optional JSONL file; the directory is recreated when needed |
 | `LOG_LEVEL` | trace/debug/info/warn/error/fatal/none; default and invalid-value fallback warn |
 | `STACKS_REGISTRY_DIR` | A directory used as the bundled registry instead of the one shipped with the CLI, relative to the working directory; its entries are untrusted |
+| `STACKS_INDEX_URL` | Optional remote index URL, with no default in this release. Without it or a compiled-in official URL, the remote origin is off and makes no requests. HTTPS is required except for HTTP on `localhost` or `127.0.0.1`. Invalid URLs are never fetched. URLs other than a supplied official URL skip official signature verification and their entries are untrusted |
+| `STACKS_OFFLINE` | `1` disables remote registry requests; the shared `--offline` flag does the same. Verified cached entries remain available |
 | `NO_COLOR` | Any nonempty value turns off color and the live progress line, so human output carries no ANSI escapes; it wins over `FORCE_COLOR`. JSON and agent output never carry them |
 | `FORCE_COLOR` | `1` colors human output even through a pipe (for `bun run human` and tests); it never colors JSON or agent output |
 | `HOME`, `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`, `XDG_CACHE_HOME` | Path roots; an unset `HOME` means the user's home directory. The cache is `$XDG_CACHE_HOME/stacks` (`$HOME/.cache/stacks`) |
+
+## Remote registry cache
+
+`list`, `show`, `new` and `add` read a configured index lazily. `STACKS_INDEX_URL` takes precedence over the official URL supplied by the CLI's entry point. This release supplies no official URL; with neither URL, the origin stays off, existing index caches are unused, and `doctor --json` reports `remoteIndex.url: null` and `isDefaultUrl: false`. Otherwise `isDefaultUrl` means the effective URL matches the supplied official URL, whose signature is verified against the compiled-in key list.
+
+The cache under `$XDG_CACHE_HOME/stacks/index/` holds the verified envelope (`index.json`), URL, timestamps, outcomes and request backoff (`state.json`), and verified extracted bundles (`entries/<digest>/`). A cache for another URL is ignored. Cached envelopes and bundles are checked again before use, including offline.
+
+An index younger than 24 hours needs no refresh. A request has a 1,500 ms deadline; failure retains the previous verified index or uses the bundled registry. Retries wait ten minutes, or 24 hours for a 404. A missing bundle backs off that bundle without hiding unrelated entries. Cache write failures keep the current invocation usable with temporary extracted files. `doctor --json` reports the cache timestamps and last outcome without contacting the server; `verify` never consults the remote registry.
 
 ## The development wrapper
 

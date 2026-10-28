@@ -1,6 +1,7 @@
 # Phase 4.0d: The CLI's remote origin
 
 Status: DRAFT 2026-10-26 (not agreed)
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -51,7 +52,7 @@ Entries whose `schemaVersion` is newer than the CLI supports are skipped individ
 
 ### Bundles
 
-When the loader needs an index entry that isn't cached, `RemoteIndex.bundle` checks that `id` matches `EntryId` and `digest` is 64 hex characters before building a URL (the index is signed, but a URL is never built from an unchecked string), fetches `v1/entries/<kind>/<id>/<digest>.json` under the same deadline and backoff, decodes it as `EntryBundle` (whose `BundlePath` rejects traversal, 4.0a), checks `bundleDigest` against the index digest, and extracts it to `entries/<digest>/` through a temporary directory and rename. A mismatch discards it and the bundled copy of that id is used, with one warning on stderr in human mode and none in `--json`.
+When the loader needs an index entry that isn't cached, `RemoteIndex.bundle` checks that `id` matches `EntryId` and `digest` is `sha256:` followed by 64 hex characters before building a URL (the index is signed, but a URL is never built from an unchecked string), fetches `v1/entries/<kind>/<id>/<digest>.json` under the same deadline and backoff, decodes it as `EntryBundle` (whose `BundlePath` rejects traversal, 4.0a), checks `bundleDigest` against the index digest, and extracts it to `entries/<digest>/` through a temporary directory and rename. A mismatch discards it and the bundled copy of that id is used, with one warning on stderr in human mode and none in `--json`.
 
 ### Composing an index stack
 
@@ -59,7 +60,7 @@ An index stack's default fragments come from its `composition` map: fragment id 
 
 ### Precedence, identity and trust
 
-`Origin` gains `"index"`, which the roadmap's [Entry and its listing](../roadmap.md#types-and-schemas) contract already lists as added here; if this sub-phase changes that contract in any other way, it updates the roadmap row in the same change. Order, highest first: project, user, source, index, bundled. When the index and bundled copies of an id have the same `bundleDigest` (both computed with `canonicalBundle` from `packages/format`, roadmap Contracts: Canonical bundle), the entry reports `origin: "bundled"`.
+`Origin` gains `"index"`, which the roadmap's [Entry and its listing](../roadmap.md#types-and-schemas) contract already lists as added here; if this sub-phase changes that contract in any other way, it updates the roadmap row in the same change. Order, highest first: project, user, index, bundled, then source (the roadmap's Entry contract: sources rank below every other origin). When the index and bundled copies of an id have the same `bundleDigest` (both computed with `canonicalBundle` from `packages/format`, roadmap Contracts: Canonical bundle), the entry reports `origin: "bundled"`.
 
 Trust model point 2: entries from the default URL with a verified signature are `trusted: true`. When `STACKS_INDEX_URL` is set to anything else, the signature step is skipped and every entry from it is `trusted: false`, so a test or self-hosted index never becomes trusted silently; point 3 then applies (no auto-launch, stop-and-confirm brief). `STACKS_INDEX_URL` must be `https:`, or `http:` on `127.0.0.1` or `localhost` (for tests).
 
@@ -137,19 +138,30 @@ A cache written for a different URL is ignored.
 
 Every network test runs a real local HTTP server serving fixtures built by 4.0c's script with the test key, with handlers that can delay, 404, return bad JSON, a bad signature or a wrong digest.
 
-- Fresh cache, server up: `list --json` includes an index-only stack with `origin: "index"`, `trusted: true` (default-URL path, test key) and its `lastRun`.
-- Payload changed by one byte after signing: ignored, `lastOutcome: "invalid"`, bundled entries listed.
-- `formatVersion: 2` or `minCli: "99.0.0"`: ignored, `lastOutcome: "unsupported"`.
-- Server delays 5 s: `list` returns in under 2.5 s; a second `list` within 10 minutes makes no request (server counter).
-- 404: no request for 24 hours of TestClock time; then one.
-- Same digest remote and bundled: `origin: "bundled"`.
-- Wrong bundle digest: bundled copy used; `--json` stdout identical to the offline run.
-- An index entry with id `Bad_Id` or digest `%2e%2e`: no request made for it, entry skipped.
-- A bundle with a `../` path fails decoding and is not extracted.
-- `new` with an index stack composes the fragment digests from `composition`, not newer fragment entries in the same index; with one composition bundle missing, the whole stack is the bundled one.
-- `STACKS_INDEX_URL` to the local server: entries `trusted: false`; `new` with a fake agent on PATH prints instead of launching.
-- `--offline`: zero requests. `verify` with a stale cache: zero requests.
-- e2e: the packed tarball under Node lists an index-only stack from the local server.
+1. Fresh cache, server up: `list --json` includes an index-only stack with `origin: "index"`, `trusted: true` (default-URL path, test key) and its `lastRun`.
+2. Payload changed by one byte after signing: ignored, `lastOutcome: "invalid"`, bundled entries listed.
+3. `formatVersion: 2` or `minCli: "99.0.0"`: ignored, `lastOutcome: "unsupported"`.
+4. Server delays 5 s: `list` returns in under 2.5 s; a second `list` within 10 minutes makes no request (server counter).
+5. 404: no request for 24 hours of TestClock time; then one.
+6. Same digest remote and bundled: `origin: "bundled"`.
+7. Wrong bundle digest: bundled copy used; `--json` stdout identical to the offline run.
+8. An index entry with id `Bad_Id` or digest `%2e%2e`: no request made for it, entry skipped.
+9. A bundle with a `../` path fails decoding and is not extracted.
+10. `new` with an index stack composes the fragment digests from `composition`, not newer fragment entries in the same index; with one composition bundle missing, the whole stack is the bundled one.
+11. `STACKS_INDEX_URL` to the local server: entries `trusted: false`; `new` with a fake agent on PATH prints instead of launching.
+12. `--offline`: zero requests. `verify` with a stale cache: zero requests.
+13. e2e: the packed tarball under Node lists an index-only stack from the local server.
+
+### Realistic edge cases
+
+14. A corrupted cached envelope is verified again offline and cannot override a bundled entry.
+15. A symlinked cache home, spaces and non-ASCII path names work with real filesystem paths.
+16. A file blocking cache creation does not prevent using the verified index in memory or overwrite that file.
+17. A cache written for another index URL is ignored, including offline.
+18. A newer entry schema skips only that entry, allowing supported index entries and bundled fallbacks.
+19. A network failure retains a stale verified cache and records failure backoff.
+20. Project and user entries shadow index entries, and bundled-only entries are never removed.
+21. An interrupted bundle download preserves the verified index and unrelated cached entries, leaving no partial extraction.
 
 ## Exit criteria
 
@@ -159,6 +171,12 @@ Every network test runs a real local HTTP server serving fixtures built by 4.0c'
 
 ## What this plan may get wrong
 
+- 2026-10-27: request backoff must distinguish bundle URLs. A missing composition bundle falls back that stack without suppressing unrelated optional fragments; the persisted state also holds per-request deadlines. The locked optional-add test currently removes bundled `extra` although the built index does not advertise `extra` or its digest, so that assertion cannot be satisfied by a checked fetch. A separate test advertises the optional fragment explicitly.
+- 2026-10-27: offline mode keeps the same service and disables its HTTP reads so verified cache data remains usable; it does not need a separate disabled layer. Only list/show/new/add opt into remote resolution; local validation and authoring stay local. Show's preview hint for an index stack therefore uses `new --dry-run`.
+- 2026-10-27: single-entry commands need a metadata-only registry catalog and lazy bundle resolution, or unrelated bundle deadlines accumulate. Supported historical pins must resolve independently of a newer unsupported fragment entry. Bundled fallback pins only the required/default dependency closure, so optional additions still use their own winning origin; bundled proof comparisons explicitly disable index resolution.
+- 2026-10-27: maintainers decided the CLI ships with no official index URL until its real host exists. `bin.ts` supplies `officialUrl: undefined` alongside the empty production key list; config reads only `STACKS_INDEX_URL`, with no default. `RemoteIndex.layer({ keys, officialUrl })` uses the environment URL first, then the supplied official URL; with neither it makes no requests and reports `url: null`, `isDefaultUrl: false`. Tests supply a fixed fixture official URL to retain signature verification coverage.
+
+- 2026-10-27: the plan ranked sources above the index, against the roadmap's Entry contract (sources rank below every other origin); the order now follows the contract. Sources don't exist yet (3.2a), so the tests cover project, user, index and bundled. Index digests are `sha256:<hex>` as 4.0c writes them (`bundleDigest`), not bare hex, and that full string is the bundle's filename.
 - 1.5 seconds once a day may still show up in agents running `list` in a loop on a slow network. The backoff caps it; if run notes show it, let only `new` refresh.
 - Same-digest detection depends on 4.0c and the CLI computing `bundleDigest` from the same file names (dotfiles are literal in both). If the bundled registry is ever packed differently (0.2), every entry will report `origin: "index"`; the "same digest" test catches it.
 - A compiled-in key means a lost key needs a CLI release before the index can change again (4.0c).

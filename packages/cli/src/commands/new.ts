@@ -1,7 +1,7 @@
 import { Effect, Option, Schema } from "effect";
 import { Argument, Command, Flag } from "effect/cli";
 import { pickNew, promptingAllowed, replayFlags, runningCommand } from "../core/prompting";
-import { defaultRoots, Registry } from "../core/registry/registry";
+import { Registry, remoteRoots } from "../core/registry/registry";
 import { type NewOptions, scaffold } from "../core/scaffold/new";
 import { renderNew } from "../core/scaffold/report";
 import { templateOverrides } from "../core/scaffold/values";
@@ -85,7 +85,7 @@ const resolveArguments = Effect.fn("new.resolveArguments")(function* (flags: New
     return yield* new Usage({ details: { flags: ["--sandbox", "--preset default"] } });
   if (stack !== undefined) return { ...options, stack };
   yield* templateOverrides(options);
-  const picked = yield* pickNew(options).pipe(Effect.provide(Registry.layer(yield* defaultRoots)));
+  const picked = yield* pickNew(options).pipe(Effect.provide(Registry.layer(yield* remoteRoots)));
   const resolved = { ...options, ...picked };
   yield* runningCommand(newReplay(resolved, flags));
   return resolved;
@@ -126,7 +126,7 @@ export const newCommand = Command.make("new", newFlags, (flags) =>
     const { result, decision } = yield* scaffold({
       ...options,
       handoff,
-    }).pipe(Effect.provide(Registry.layer(yield* defaultRoots)));
+    }).pipe(Effect.provide(Registry.layer(yield* remoteRoots)));
     yield* completeHandoff({
       project: result.project,
       agent: result.agents[0],

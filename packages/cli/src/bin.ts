@@ -1,6 +1,8 @@
 import { fileURLToPath } from "node:url";
 import { NodeServices } from "@effect/platform-node";
+import { INDEX_PUBLIC_KEYS } from "@stacks/format";
 import { Effect, FileSystem, Layer, Option } from "effect";
+import { RemoteIndex } from "./core/remote-index";
 import { invocationFor } from "./invocation";
 import { hasFlag, main } from "./main";
 import { NetLayer } from "./platform/net";
@@ -91,7 +93,11 @@ const platform = Layer.mergeAll(
     invocation: invocationFor(process.argv[1] ?? ""),
   }),
 );
-const layer = Layer.provideMerge(AppLayer(output), platform);
+const application = AppLayer(output);
+const remote = RemoteIndex.layer({ keys: INDEX_PUBLIC_KEYS, officialUrl: undefined }).pipe(
+  Layer.provide(application),
+);
+const layer = Layer.merge(application, remote).pipe(Layer.provideMerge(platform));
 const controller = new AbortController();
 const removeSignalPolicy = installSignalPolicy(holder, () => controller.abort());
 try {

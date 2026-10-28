@@ -7,6 +7,10 @@ import { Command, Flag } from "effect/cli";
  */
 export const root = Command.make("stacks").pipe(
   Command.withSharedFlags({
+    offline: Flag.Boolean("offline").pipe(
+      Flag.withDescription("Use cached and bundled entries without network requests."),
+      Flag.withDefault(false),
+    ),
     json: Flag.Boolean("json").pipe(
       Flag.withDescription(
         "Write one JSON result to stdout; a failure writes one JSON error envelope as the last stderr line.",
