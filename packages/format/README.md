@@ -26,6 +26,10 @@ every command from the repository root unless it says otherwise.
    release publishes the version already in the file.
 
 3. Run the gate on that commit (`rr check`, or `bun run check` without rr) and push it to `main`.
+   Pack and publish from a checkout of exactly that commit
+   (`git worktree add --detach <dir> origin/main`, then `bun install --frozen-lockfile` there),
+   not from whatever the main checkout has: a checkout behind `main` packs the old name or
+   version.
 
 4. Pack, then look at what will ship:
 

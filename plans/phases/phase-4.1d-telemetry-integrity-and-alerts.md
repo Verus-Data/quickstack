@@ -1,6 +1,6 @@
 # Phase 4.1d: Telemetry integrity and alerts
 
-Status: AGREED 2026-10-27 (on SQLite on the Node host, amended D16)
+Status: IN PROGRESS 2026-10-28 (on SQLite on the Node host, amended D16)
 
 | Field | Value |
 |---|---|
@@ -141,3 +141,4 @@ With the in-memory stores and `TestClock`, and once under the local Workers runt
 - Rebuilding `projects` from raw events only works for 90 days. An exclusion added later than that can't change what a project contributed, only what future windows count. That's stated on the privacy page as "aggregates are final after 90 days".
 - `daily_metrics` by `os`, `nodeMajor` and `targetAgents` is only useful if someone reads it. 4.1e's runbook lists the queries; if a quarter passes with no decision drawn from them, drop those fields from 4.1a's next schema version.
 - Thresholds were chosen before any data exists. They are config; changing them changes only future flags.
+- 2026-10-28: as in 4.1b and 4.1c, there are no in-memory stores and no local Workers run. "With the in-memory stores ... and once under the local Workers runtime" means SQLite with migrations on a fresh file per test, `TestClock`, and `maintain(now)` called directly; the four tables arrive as a migration. Events reach the store through the ingest program, so the write-time rules apply; the anomaly fixtures (`test-flag.sql` among them) are SQL applied to the test database, because they describe stored state. `/healthz`'s `maintenanceFresh` is checked over real HTTP.

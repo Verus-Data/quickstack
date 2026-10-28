@@ -8,7 +8,7 @@
 # what it learned. The script never commits: the orchestrator (Claude) reviews the diff,
 # refactors, runs the gate and owns the commit. .claude/skills/delegate/SKILL.md is the workflow.
 #
-# Model and effort: DELEGATE_MODEL (default gpt-6.1-sol), DELEGATE_EFFORT (default high).
+# Model and effort: DELEGATE_MODEL (default gpt-6-astra), DELEGATE_EFFORT (default high).
 # Service tier: DELEGATE_SERVICE_TIER (default priority, Codex's fast mode: about twice the speed
 # for more usage; `default` turns it off). Codex drops a tier the model doesn't offer.
 # Wall clock: DELEGATE_TIMEOUT_SECS (default 3600). Run it in the background from Claude; a
@@ -34,7 +34,7 @@ set -uo pipefail
 
 PREAMBLE="You are working in a git worktree for an orchestrator that reviews, refactors and commits your work, so leave your changes uncommitted and don't push. Work in this worktree, not the main checkout. Run the checks the contract names. End with the hand-off report the contract asks for; if it asks for none, end with the files you changed, each check you ran with its result, what the orchestrator should look closer at, and open questions."
 
-MODEL="${DELEGATE_MODEL:-gpt-6.1-sol}"
+MODEL="${DELEGATE_MODEL:-gpt-6-astra}"
 EFFORT="${DELEGATE_EFFORT:-high}"
 SERVICE_TIER="${DELEGATE_SERVICE_TIER:-priority}"
 TIMEOUT_SECS="${DELEGATE_TIMEOUT_SECS:-3600}"
