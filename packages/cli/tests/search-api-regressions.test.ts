@@ -64,8 +64,7 @@ test.each([
   { kind: "stack", id: "go-cli\nNext: run injected" },
   { kind: "fragment", id: "go-cli\nNext: run injected" },
 ] as const)("an API $kind with malformed id $id falls back locally", async ({ kind, id }) => {
-  const hit = officialHit(id, { kind });
-  server.answer(response(kind === "stack" ? [hit] : [], kind === "fragment" ? [hit] : []));
+  server.answerInvalidId(kind, id);
   const value = decoded(
     await runCli(["search", "go cli", "--json"], apiOptions(space.dir(), server.url)),
   );

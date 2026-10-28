@@ -1,5 +1,6 @@
 import { Schema } from "effect";
 import { DetectedAgent } from "../agent.js";
+import { Columnar } from "../columnar.js";
 import { Kebab, Kind } from "../entry.js";
 
 const Origin = Schema.Literals(["project", "user", "index", "bundled"]);
@@ -143,24 +144,31 @@ export const SearchResult = Schema.Struct({
 });
 export type SearchResult = typeof SearchResult.Type;
 
+const ResponseEvidence = Schema.Struct({
+  ...SearchEvidence.fields,
+  lastRun: Schema.NullOr(LastRun),
+});
+
 /** The API ranks official entries and returns no copy of the request text. */
 export const SearchResponse = Schema.Struct({
   method: Schema.Literals(["lexical", "hybrid"]),
   indexGeneratedAt: Schema.String,
   understood: SearchResult.fields.understood,
   noStrongMatch: SearchResult.fields.noStrongMatch,
-  stacks: Schema.Array(
+  stacks: Columnar(
     Schema.Struct({
       ...SearchHit.fields,
+      evidence: ResponseEvidence,
       kind: Schema.Literal("stack"),
       id: Kebab,
       origin: Schema.Literal("index"),
       trusted: Schema.Literal(true),
     }),
   ),
-  fragments: Schema.Array(
+  fragments: Columnar(
     Schema.Struct({
       ...SearchHit.fields,
+      evidence: ResponseEvidence,
       kind: Schema.Literal("fragment"),
       id: Kebab,
       origin: Schema.Literal("index"),
