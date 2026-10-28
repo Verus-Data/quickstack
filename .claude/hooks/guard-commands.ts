@@ -22,41 +22,56 @@ const DELEGATE =
 const RR_SUITES = new Set(["check", "check-serial", "test", "test-hooks", "e2e"]);
 const SUITES = new Set(["check", "test", "e2e", "coverage"]);
 const SCOPABLE = new Set(["test:hooks", "test:unit"]);
-const VALUED = new Set(["--cwd", "--filter", "-F", "--host"]);
+// Flags whose value is the next word, for bun, rr and vitest (`--project cli` runs a whole project).
+const VALUED = new Set([
+  "--cwd",
+  "--filter",
+  "-F",
+  "--host",
+  "--project",
+  "--maxWorkers",
+  "--reporter",
+  "-c",
+  "--config",
+]);
 
-/** The operands up to `--`, skipping flags and the values of `VALUED` flags. */
-function operands(args: readonly string[]): string[] {
+/** A word the shell passes through as written: a $(...), $VAR or unquoted glob can become nothing. */
+const literal = (cmd: Command, i: number) =>
+  !cmd.expands[i] && (cmd.quoted[i] || !/[*?[]/.test(cmd.argv[i] ?? ""));
+
+/** The literal operands from `from` up to `--`, skipping flags and the values of `VALUED` flags. */
+function operands(cmd: Command, from: number): string[] {
   const out: string[] = [];
-  for (let i = 0; i < args.length; i++) {
-    const arg = args[i] ?? "";
+  for (let i = from; i < cmd.argv.length; i++) {
+    const arg = cmd.argv[i] ?? "";
     if (VALUED.has(arg)) i++;
     else if (arg === "--") break;
-    else if (!arg.startsWith("-")) out.push(arg);
+    else if (!arg.startsWith("-") && literal(cmd, i)) out.push(arg);
   }
   return out;
 }
 
-function wholeSuite(argv: readonly string[]): boolean {
-  const [executable = "", sub, ...rest] = argv;
+function wholeSuite(cmd: Command): boolean {
+  const [executable = "", sub] = cmd.argv;
   const name = basename(executable);
   if (name === "bun" && sub === "run") {
-    const [script = "", ...files] = operands(rest);
+    const [script = "", ...files] = operands(cmd, 2);
     return SUITES.has(script) || (SCOPABLE.has(script) && files.length === 0);
   }
   if (name === "bun" && sub === "test")
-    return !operands(rest).some((arg) => /\.[cm]?[jt]sx?$/.test(arg));
-  if (name === "vitest") return unscopedVitest(argv.slice(1));
-  return ["npx", "bunx"].includes(name) && sub === "vitest" && unscopedVitest(rest);
+    return !operands(cmd, 2).some((arg) => /\.[cm]?[jt]sx?$/.test(arg));
+  if (name === "vitest") return unscopedVitest(cmd, 1);
+  return ["npx", "bunx"].includes(name) && sub === "vitest" && unscopedVitest(cmd, 2);
 }
 
-const unscopedVitest = (args: readonly string[]) =>
-  operands(args).filter((arg) => arg !== "run").length === 0;
+const unscopedVitest = (cmd: Command, from: number) =>
+  operands(cmd, from).filter((arg) => arg !== "run").length === 0;
 
 /** An rr task that runs a whole suite: `rr check`, or `rr test-cli` without a file. */
-function wholeRrSuite(argv: readonly string[]): boolean {
-  if (basename(argv[0] ?? "") !== "rr") return false;
-  const [task = "", ...files] = operands(argv.slice(1));
-  const filtered = files.length > 0 || argv.includes("--");
+function wholeRrSuite(cmd: Command): boolean {
+  if (basename(cmd.argv[0] ?? "") !== "rr") return false;
+  const [task = "", ...files] = operands(cmd, 1);
+  const filtered = files.length > 0 || cmd.argv.includes("--");
   return RR_SUITES.has(task) || (task === "test-cli" && !filtered);
 }
 
@@ -96,11 +111,11 @@ const localGate = /(^|[\s;&|(])STACKS_LOCAL_GATE=1\s/.test(command ?? "");
 const delegate = process.env.STACKS_DELEGATE === "1";
 for (const parsed of commands(command ?? "")) {
   const { argv, stdin } = parsed;
-  if (delegate && (wholeSuite(argv) || wholeRrSuite(argv))) {
+  if (delegate && (wholeSuite(parsed) || wholeRrSuite(parsed))) {
     deny(DELEGATE);
     break;
   }
-  if (!localGate && wholeSuite(argv) && optedIntoRr(commandDirectory(parsed, start))) {
+  if (!localGate && wholeSuite(parsed) && optedIntoRr(commandDirectory(parsed, start))) {
     deny(RR);
     break;
   }

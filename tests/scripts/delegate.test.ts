@@ -1,7 +1,15 @@
 // scripts/delegate.sh against a fake `codex` (CODEX_BIN) in a throwaway repo with a linked
 // worktree: what it refuses, the flags it passes Codex, and how it judges and digests a run.
 import { execFileSync, spawnSync } from "node:child_process";
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -9,17 +17,30 @@ import { REPO } from "../helpers/hooks";
 
 const SCRIPT = join(REPO, "scripts/delegate.sh");
 
-// Records its argv, writes one file into its cwd and reports a completed (or failed) turn.
+// Records its argv, writes one file into its cwd and reports a completed (or failed) turn. With
+// FAKE_HANDOFF set, a resume is the timeout hand-off: its argv goes to $FAKE_ARGS.handoff and it
+// writes a hand-off (written) or runs until signalled (hang). The hang modes exit on TERM.
 const FAKE_CODEX = `#!/usr/bin/env bash
-printf '%s\\n' "$@" > "$FAKE_ARGS"
+linger() { trap 'kill "$s" 2>/dev/null; exit 143' TERM; sleep 30 & s=$!; wait "$s"; }
+args_file="$FAKE_ARGS"
+[ "$1 $2" = "exec resume" ] && [ -n "$FAKE_HANDOFF" ] && args_file="$FAKE_ARGS.handoff"
+printf '%s\\n' "$@" > "$args_file"
 while [ $# -gt 0 ]; do
   case "$1" in
     --output-last-message) last="$2"; shift ;;
   esac
   shift
 done
+if [ "$args_file" != "$FAKE_ARGS" ]; then
+  [ "$FAKE_HANDOFF" = hang ] && linger
+  echo '{"type":"turn.completed"}'
+  echo "Hand-off: half done" > "$last"
+  exit 0
+fi
 echo written > src.txt
+[ "$FAKE_MODE" = silent-hang ] && linger
 echo '{"type":"thread.started","thread_id":"thread-1"}'
+[ "$FAKE_MODE" = hang ] && linger
 echo '{"type":"item.completed","item":{"type":"command_execution","command":"bun run test","exit_code":0}}'
 if [ "$FAKE_MODE" = warned ]; then
   echo '{"type":"item.completed","item":{"id":"item_0","type":"error","message":"hooks may run without review"}}'
@@ -190,5 +211,49 @@ describe("delegate.sh", () => {
     expect(result.stdout).toContain("result:    failure - turn failed");
     expect(result.stdout).toContain("at capacity");
     expect(result.stdout).toContain("transient: resume thread-1 with a short 'continue' follow-up");
+  });
+
+  describe("on a timeout", () => {
+    const capped = { DELEGATE_TIMEOUT_SECS: "1", DELEGATE_HANDOFF_SECS: "1", FAKE_MODE: "hang" };
+    const handoffArgs = () => join(root, "args.txt.handoff");
+
+    it("resumes the session read-only once for a hand-off and digests it", () => {
+      const result = run([contract, "--worktree", worktree, "--write"], {
+        ...capped,
+        FAKE_HANDOFF: "written",
+      });
+      expect(result.status).toBe(1);
+      expect(result.stdout).toContain("result:    failure - timed out after 1s (hand-off written)");
+      expect(result.stdout).toContain("session:   thread-1");
+      expect(result.stdout).toContain("  Hand-off: half done");
+      const args = readFileSync(handoffArgs(), "utf8").split("\n");
+      expect(args.slice(0, 2)).toEqual(["exec", "resume"]);
+      expect(args).toEqual(expect.arrayContaining(['sandbox_mode="read-only"', "thread-1"]));
+      expect(args).not.toContain('sandbox_mode="danger-full-access"');
+    }, 30_000);
+
+    it("reports no hand-off when the hand-off turn hits its own cap", () => {
+      const started = Date.now();
+      const result = run([contract, "--worktree", worktree, "--write"], {
+        ...capped,
+        FAKE_HANDOFF: "hang",
+      });
+      expect(result.status).toBe(1);
+      expect(result.stdout).toContain("result:    failure - timed out after 1s (no hand-off)");
+      expect(existsSync(handoffArgs())).toBe(true);
+      // Both caps plus the script's one-second mtime pause, well short of the fake's 30 s sleep.
+      expect(Date.now() - started).toBeLessThan(15_000);
+    }, 30_000);
+
+    it("doesn't resume without a session id", () => {
+      const result = run([contract, "--worktree", worktree, "--write"], {
+        ...capped,
+        FAKE_MODE: "silent-hang",
+        FAKE_HANDOFF: "written",
+      });
+      expect(result.status).toBe(1);
+      expect(result.stdout).toContain("result:    failure - timed out after 1s (no hand-off)");
+      expect(existsSync(handoffArgs())).toBe(false);
+    }, 30_000);
   });
 });

@@ -54,7 +54,7 @@ A problem bigger than a refactor goes back to the same Codex session: write a sh
 
 The digest's `result:` line says how: `timed out`, `codex exited N`, `turn failed`, or no `turn.completed` event. Partial work stays in the worktree. Before deciding anything, read `stderr.txt` and `events.jsonl` in the run's log directory, the last message if there is one, and `git -C <worktree> status`.
 
-- Timed out but on track: resume the session with "continue where you stopped; finish the hand-off". Raise `DELEGATE_TIMEOUT_SECS` if the unit is just big, or split it if it isn't converging.
+- Timed out: the script has already resumed the session once, read-only, for a hand-off, and the `result:` line says `(hand-off written)` or `(no hand-off)`. Read the hand-off and the worktree. On track: resume with "continue where you stopped; finish the hand-off", raising `DELEGATE_TIMEOUT_SECS` if the unit is just big. Not converging: split it.
 - Crashed or errored before real work: fix the cause (a missing install, a bad contract path) and rerun fresh.
 - Stuck on the same failure twice: stop and ask, as `ce:executing-plans` says.
 
@@ -66,7 +66,7 @@ Merge one unit at a time into the integration branch, and run the gate there aft
 git -C .claude/worktrees/<plan> merge --no-ff delegate/<unit>
 ```
 
-Resolve merge conflicts yourself; you have both sides' hand-off reports, and Codex has neither. A unit whose branch has fallen behind gets `git -C <unit worktree> rebase feat/<plan>` and a gate run before merging. Clean up each unit as soon as it's merged (next section), so worktrees don't pile up across a long plan.
+Resolve merge conflicts yourself; you have both sides' hand-off reports, and Codex has neither. A unit whose branch has fallen behind gets `git -C <unit worktree> rebase feat/<plan>` and a gate run before merging. Clean up each unit as soon as it's merged (next section), so worktrees don't pile up across a long plan. When units land straight on `main` instead (the user's call), each merge is that unit's finish: its plan's dated line, and its `Status:`, roadmap row and HANDOFF in the same push when it was the sub-phase's last unit.
 
 ## Cleanup
 
@@ -86,6 +86,6 @@ At the end, after main is pushed, remove the integration worktree and `feat/<pla
 
 ## Finishing the plan
 
-On the integration branch, run the gate and read its counts as rules/cli/verification.md asks, revert-verify each new regression test, and run the changed commands in all three audiences as rules/cli/cli.md "Verifying UX" describes, judging the output as the agent that will use it. Record what the plan got wrong in its "What this plan may get wrong" section, update its `Status:` line and `plans/HANDOFF.md`, and commit. Then merge `feat/<plan>` into main from the main checkout, push, and finish the cleanup above.
+On the integration branch, run the gate and read its counts as rules/cli/verification.md asks, revert-verify each new regression test, and run the changed commands in all three audiences as rules/cli/cli.md "Verifying UX" describes, judging the output as the agent that will use it. Record what the plan got wrong in its "What this plan may get wrong" section, update its `Status:` line, its row in `plans/roadmap.md` and `plans/HANDOFF.md`, and commit. A sub-phase left IN PROGRESS says why in its `Status:` line. Then merge `feat/<plan>` into main from the main checkout, push, and finish the cleanup above.
 
 Report to the user: what landed, per unit what Codex did, what its review found and how it resolved it, what you changed in refactor, and anything left open.
