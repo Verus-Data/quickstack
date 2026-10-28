@@ -3,6 +3,7 @@ import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync
 import { dirname, join } from "node:path";
 import { afterAll, beforeAll, expect, test } from "vitest";
 import { validateEvalReport } from "../registry/fragments/openrouter-ai/files/scripts/lib/eval-report";
+import { spawnGit } from "./helpers/git";
 import { adapterWorkspace, scaffoldAdapters } from "./helpers/native-adapters";
 import { readManifestAt } from "./helpers/verify";
 
@@ -33,7 +34,7 @@ function fixture(scenario = "success") {
     "OPENROUTER_API_KEY=dotenv-dummy\nOPENAI_BASE_URL=https://example.invalid\n",
   );
   writeFileSync(join(project, ".gitignore"), ".eval/\n");
-  expect(spawnSync("git", ["init", "--quiet"], { cwd: project }).status).toBe(0);
+  expect(spawnGit(["init", "--quiet"], { cwd: project }).status).toBe(0);
   const env = {
     HOME: root,
     PATH: process.env.PATH ?? "",
@@ -105,12 +106,12 @@ test("composed checkpoint calls a real application HTTP boundary, isolates env a
   expect(second.status).toBe(0);
   expect(second.stdout).not.toBe(first.stdout);
   expect(readdirSync(join(value.project, ".eval/results"))).toHaveLength(2);
-  const ignored = spawnSync("git", ["check-ignore", ".eval/results/anything.json"], {
+  const ignored = spawnGit(["check-ignore", ".eval/results/anything.json"], {
     cwd: value.project,
     encoding: "utf8",
   });
   expect(ignored.status).toBe(0);
-  expect(ignored.stdout.trim()).toBe(".eval/results/anything.json");
+  expect(ignored.stdout.toString().trim()).toBe(".eval/results/anything.json");
 });
 
 test.each([
