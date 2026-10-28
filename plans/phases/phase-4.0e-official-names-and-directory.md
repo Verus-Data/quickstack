@@ -66,12 +66,16 @@ Each stack lists the composition of its default set and one composition per opti
 
 ### Directory
 
-Astro pages with static output, generated at build time from the index entries and their bundles. `apps/web` reads the `--out` directory of a `build:index` run (its path is site build config), verifies the index signature with the published `INDEX_PUBLIC_KEYS` from `@stacks/format`, and decodes it as `RegistryIndex`; a build over an index that fails either check fails. The pages ship no island here, so no client JavaScript beyond the theme toggle's inline script (Design tokens, below). The directory ships whether or not D17 is agreed, and is rebuilt after each index deploy.
+Astro pages with static output, generated at build time from the index entries and their bundles. `apps/web` reads the `--out` directory of a `build:index` run (its path is site build config), verifies the index signature with the published `INDEX_PUBLIC_KEYS` from `@stacks/format`, and decodes it as `RegistryIndex`; a build over an index that fails either check fails. The pages ship no island here, so no client JavaScript beyond the theme toggle and the copy script (Design tokens and Copy buttons, below). The directory ships whether or not D17 is agreed, and is rebuilt after each index deploy.
 
 - `/`: each stack's name, description, tags, last ledger run (`passed <date> with <agent>` or `carried forward from <date>`), and the copy command.
 - `/stacks/<id>/`: deps by role and default and optional fragments from the stack's frontmatter, the verify steps (name, phase, layer, command), the last ledger run, a link to the entry's source in the repo, and the exact command `npx @steamfield/stacks new <id>`.
 
 The stack's prose body is not rendered here, and the source link covers it; rendering it with Astro's Markdown support is a later choice that needs no new dependency. Each stack page has one stats section component that 4.2b fills; until then it renders as nothing.
+
+### Copy buttons
+
+Added 2026-10-27. Every copy command (on `/`, on each stack page, and on the pages 4.2c and 4.2e add) is a `<pre>` or `<code>` element whose text is the whole command, with a Copy button beside it. One shared inline copy script, the same bytes on every page, finds those buttons and copies the text of the element each one names through the Clipboard API. It is progressive enhancement: with JavaScript off, or when the Clipboard API is unavailable, the buttons stay hidden and the command stays selectable text, so nothing depends on the script. It sends nothing and reads nothing but the element's text.
 
 ### Design tokens
 
@@ -90,7 +94,8 @@ Added 2026-10-27. The site uses one token set, owned here because these are the 
 - Type: Inter for text with weights 400 (reading), 510 (labels) and 590 (emphasis), never 700; JetBrains Mono with `tabular-nums` for numbers, ids and commands. Body 15-16px; captions 12-13px.
 - Spacing on an 8px base; cards `rounded-lg` (8px) with a 1px border and no shadow; badges 2px radius, monospace, 11px, for real state only.
 - Max content width 1200px; one column on phones.
-- Theme follows `prefers-color-scheme`, with a toggle whose small inline script sets `.dark` on `<html>` before first paint. It is the only script these pages carry.
+- Theme follows `prefers-color-scheme`, with a toggle whose small inline script sets `.dark` on `<html>` before first paint. An explicit choice from the toggle is persisted in `localStorage` and wins over the system preference on later visits; with no stored choice, or when storage throws, the page follows the system. The theme toggle and the copy script (above) are the only scripts these pages carry.
+- Fonts are self-hosted: the Inter and JetBrains Mono files are build-time assets of `apps/web`, served from the site's own origin. Icons are inlined as SVG at build time. No page loads anything from a third-party origin (no font, script, stylesheet or image host), so a page view sends the visitor's IP to no one but the site.
 
 4.2f adds the chart palette to the same file.
 
@@ -132,7 +137,8 @@ apps/web/dist/
 | `packages/format/src/names.ts`, `src/index.ts` | New schemas, published before the site uses them |
 | `packages/cli/tests/build-index.test.ts`, `tests/fixtures/index/` | Names cases, a fixture repo with tags |
 | `stacks-api/apps/web/src/pages/index.astro`, `src/pages/stacks/[id]/index.astro`, `src/lib/index-data.ts` | New: the directory pages and the build-time index reader |
-| `stacks-api/apps/web/src/styles/global.css`, `src/layouts/` | Design tokens, light and dark; the theme toggle |
+| `stacks-api/apps/web/src/styles/global.css`, `src/layouts/` | Design tokens, light and dark; the theme toggle and its persisted choice; the copy script |
+| `stacks-api/apps/web/src/assets/fonts/`, `src/components/CopyCommand.astro` | Self-hosted font files; the command element with its Copy button |
 | `stacks-api/apps/web/tests/directory.test.ts` | New, over a fixture index output |
 | `stacks-api/apps/api/README.md` | Review step for names and pages |
 
@@ -144,7 +150,10 @@ Over 4.0c's fixtures plus a fixture git repo with tags:
 - A tag whose registry fails today's decode still contributes its ids, and the build prints a warning naming the tag.
 - `--check` against the local server fails, naming `v1/names.json`, when one byte of its payload changes, and passes on a good build.
 - `--unsigned`: `v1/names.json` has `signature: ""`.
-- In `stacks-api`, the site built over a fixture index output has one directory page per indexed stack, containing the exact string `npx @steamfield/stacks new <id>` and no `<script>` other than the inline theme script; a fixture index with a bad signature fails the site build.
+- In `stacks-api`, the site built over a fixture index output has one directory page per indexed stack, containing the exact string `npx @steamfield/stacks new <id>` and no `<script>` other than the theme toggle and the copy script; a fixture index with a bad signature fails the site build.
+- The copy script, run in Playwright, puts a page's exact command on the clipboard; with JavaScript disabled the command is in a `<pre>` or `<code>` as selectable text and no Copy button is visible.
+- The theme toggle set to dark persists across a reload with the system preference light, and the reverse; with nothing stored, the page follows `prefers-color-scheme`; with `localStorage` throwing, the toggle still switches the page.
+- A scan of every built HTML file finds no `src`, `href`, `srcset` or CSS `url()` pointing at a host other than the site's own (relative URLs and the page's origin only; outbound links in `<a href>` to the entry's source in the repo are the one allowed exception, as navigation rather than a load), and the font files are present in the build output.
 - Every text token pair passes WCAG AA (4.5:1) against `background` and `card` in both themes, and no component under `src/components/` uses a hex color (a scan).
 - `_headers` has the rules above; served by 4.0b's Node server, `GET /v1/names.json` and `GET /stacks/<id>/` carry them.
 
@@ -158,4 +167,6 @@ Over 4.0c's fixtures plus a fixture git repo with tags:
 - Composing old tags with today's `compose` may disagree with what that release composed if composition rules changed. Step names are what 4.1b checks, and those come from verify sections, which compose by concatenation; if a rule change ever alters step names, the build should run the tag's own CLI instead.
 - 2026-10-27: the directory pages were planned as plain template strings in `packages/cli/scripts/site/`. Under D35 the visualization layer moved to `stacks-api/apps/web` as an Astro site, so that directory is no longer planned here; only the signed files are built in this repository.
 - 2026-10-27: the design tokens were first planned in 4.2f, which is D17-gated. They moved here so the directory has them whether or not telemetry is agreed; the theme toggle's inline script replaces "no `<script>`" on these pages.
+- 2026-10-27: a review of the site's design mocks found they load their fonts and icons from third-party hosts at view time, need copy buttons on every list row and page, and persist the theme choice. Fonts are now self-hosted and icons inlined, with a scan for third-party origins; one shared copy script joins the theme toggle as the only scripts; an explicit theme choice persists, while this plan's `.dark` class and system default stay (the mocks are dark-first with a `.light` class).
+- 2026-10-27: the mocks show stars (counts on every list row and stack page, a "Starred" view, an avatar in the nav). The site leaves them out, per roadmap "Won't have" ("Ratings, reviews, accounts").
 - Reading every tag with `git archive` grows with the number of releases. At a release a week that is years before it matters; cache per tag in the build's temporary directory if it ever does.

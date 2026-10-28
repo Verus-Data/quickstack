@@ -131,7 +131,7 @@ Tests 1-8 and 12 call `simulate.ts` in process over a temporary local D1 or an i
 10. A static scan of `scripts/seed/` finds no `fetch`, `HttpClient` or URL literal other than loopback.
 11. An event with a seeded install id posted to the real ingest route is listed in `rejected` and not stored.
 12. A site build with the production flag against the seeded API fails; without the flag it succeeds and every page carries 4.2f's banner.
-13. With 4.2d landed: seeded verify events carry `deps` with only allowlisted names, and one dependency shows a major transition in `GET /v1/stats/deps/npm/:name`.
+13. With 4.2d landed: seeded verify events carry `deps` with only allowlisted names, and one dependency shows a major transition in `GET /v1/deps/npm/:name/stats`.
 14. In this repository: a source build with `STACKS_DEV_API_URL` set to a loopback URL fetches stats from it; the same variable with a non-loopback host is ignored; a release build (`releaseBuild: true` in the test helper) ignores it.
 14a. A store holding seeded `projects` rows but no `maintenance_state.seed` row (the marker deleted by hand) still reports `population: "seeded development data"`.
 
