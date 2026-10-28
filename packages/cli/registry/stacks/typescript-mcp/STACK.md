@@ -4,7 +4,7 @@ id: typescript-mcp
 kind: stack
 name: TypeScript MCP server with Effect
 description: A stdio MCP server on Effect's MCP modules, serving typed tools and a resource over newline-delimited JSON-RPC, with Vitest unit tests and a real client handshake against the built server.
-tags: [typescript, mcp, effect, node, ai, scripts]
+tags: [typescript, mcp, effect, bun, node, ai, scripts]
 deps:
   app: [effect, "@effect/platform-node"]
   dev: [typescript, "@biomejs/biome", vitest, "@vitest/coverage-v8", "@types/node"]
@@ -14,7 +14,9 @@ decisions:
   - "Runtime: Node runs the built server (default), because an MCP client spawns node, not bun; Bun builds and runs the build script."
   - "Protocol revisions: 2026-07-28 and 2025-11-25 (default: both, in that order); the server advertises both, so a client that lags behind still connects."
   - "Dependencies: bundled into the server (default), so it needs nothing installed beside it; a server that wraps another program adds that program as its one runtime dependency."
+merge: [.claude/settings.json]
 fragments:
+  required: [claude-harness]
   default: [git-hooks, ci-github, effect]
 verify:
   - { name: install, phase: setup, layer: install, run: bun install }
@@ -47,7 +49,7 @@ Vitest tests live in `tests/`; the stdio handshake lives in `e2e/` and runs agai
 
 ## Setup
 
-Create package metadata with `"type": "module"`, `"version": "0.1.0"`, and a `bin` entry mapping the project slug, which is the directory name, to `dist/server.js`. Write `.node-version` yourself with the Node major you target: quickstacks does not write one, and CI reads it. Set `engines.node` to match it, and record the Bun version the build needs in `.bun-version`. TypeScript starts from the compiler's own `--init` output and stays strict: no unchecked index access, verbatim module syntax, `noEmit` because Bun bundles and tsc only checks. Biome with two spaces, double quotes, width 100, and organized imports. Vitest runs on Node and excludes `e2e/`. A composition that includes the `agent-ops` fragment ships an `AGENTS.md`; if yours has one, keep it true as you build. This stack does not ship one, because an MCP server is often scaffolded into a directory of a repository that already has one, so do not invent a second.
+Create package metadata with `"type": "module"`, `"version": "0.1.0"`, and a `bin` entry mapping the project slug, which is the directory name, to `dist/server.js`. Write `.node-version` yourself with the Node major you target: quickstacks does not write one, and CI reads it. Set `engines.node` to match it, and record the Bun version the build needs in `.bun-version`. TypeScript starts from the compiler's own `--init` output and stays strict: no unchecked index access, verbatim module syntax, `noEmit` because Bun bundles and tsc only checks. Biome with two spaces, double quotes, width 100, and organized imports. Vitest runs on Node and excludes `e2e/`. The required `claude-harness` fragment ships an `AGENTS.md`; if this server is scaffolded into a repository that already has one, keep that one true rather than inventing a second.
 
 Scripts: `build` (Bun bundles `src/server.ts` for the Node target with a shebang, output `dist/server.js`), `dev` (run the source through Bun for a quick loop), `lint`, `typecheck`, `test` (Vitest, unit only), `e2e` (build, then the handshake), `check` (lint, typecheck, test, e2e), `clean` (generated output only).
 
