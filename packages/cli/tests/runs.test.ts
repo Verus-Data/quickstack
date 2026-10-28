@@ -242,7 +242,10 @@ test("human and agent text include the project's run numbers [2.0c#3]", async ()
       { label: /^\s*\|?\s*verify\s+runs\b/i, value: /^1$/ },
       { label: /^\s*\|?\s*last\s+outcome\b/i, value: "green" },
       { label: /^\s*\|?\s*minutes\s+to\s+green\b/i, value: /^10(?:\.0+)?(?:\s+min(?:utes)?)?$/i },
-      { label: /^\s*\|?\s*minutes\s+to\s+first\s+test\b/i, value: /^4\.5(?:\s+min(?:utes)?)?$/i },
+      {
+        label: /^\s*\|?\s*minutes to first successful test command \(run completion\)/i,
+        value: /^4\.5(?:\s+min(?:utes)?)?$/i,
+      },
       { label: /^\s*\|?\s*interventions\b/i, value: /^2$/ },
       { label: /^\s*\|?\s*state\s+record\b/i, value: /^(?:true|yes|present|available)$/i },
       { label: /^\s*\|?\s*skipped\s+lines\b/i, value: /^0$/ },

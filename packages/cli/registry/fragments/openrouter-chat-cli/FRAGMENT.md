@@ -20,20 +20,28 @@ verify:
   - { name: app-tui-entry, layer: check, run: test -f src/tui/launch.tsx }
   - { name: app-tui-test, layer: test, run: bun run test:tui }
   - { name: app-tui-smoke, layer: test, run: bun run tui:capture -- --smoke }
-  - { name: app-eval-dry-run, layer: test, run: bun run eval -- --dry-run }
+  - { name: app-eval-dry-run, layer: test, run: bun scripts/check-eval-dry-run.ts }
   - { name: app-e2e, layer: test, run: bun run app:e2e }
+  - { name: app-acceptance, layer: test, run: bun run test:unit tests/app-acceptance.test.ts }
 commands:
   test: Run unit and TUI test suites
   test:tui: Run isolated OpenTUI renderer tests with Bun
   app:e2e: Build and run stub-backed compiled application and PTY tests
   tui:capture: Capture a scripted TUI session through a pseudo-terminal; --smoke walks the chat UI against its own stub
-  eval: Run paid live model evaluations explicitly; --dry-run runs every case against a local stub with no key
   check: Run lint, typecheck, unit/TUI tests, base binary checks, and app e2e
 ---
 
 # OpenRouter CLI chat
 
-Build after the base doctor/version slice passes. Keep the stdout/error/runtime contract. Read DESIGN.md, the TUI skill, and app rules, and `docs/ask-turn.md` before working on the turn loop. Add ask, chat, models, extract, chats, export, and mcp. Distribution remains optional; no installer/update/release server is required by this app.
+Implement `scripts/eval.ts` with `--dry-run --models <csv> --report <path>` per
+`docs/eval-report.md`. Verify runs the shipped independent report checkpoint;
+ignore `.eval/`. Keep runner/scoring and real app calls agent-owned.
+
+Read `docs/guidance/openrouter-chat-cli/index.md` before implementation; it supplies the shared guidance for every selected agent.
+
+Implement `docs/acceptance/openrouter-chat-cli.md`: the focused acceptance suite, PTY smoke and dry-run eval must assert search/filter/selection and complete reports/deadlines. Opening a screen or exit 0 alone is insufficient.
+
+Build after the base doctor/version slice passes. Keep the stdout/error/runtime contract. Read DESIGN.md, the TUI skill and shared app guidance, and `docs/ask-turn.md` before working on the turn loop. Add ask, chat, models, extract, chats, export, and mcp. Distribution remains optional; no installer/update/release server is required by this app.
 
 ## Commands and storage
 
@@ -59,13 +67,13 @@ Only src/tui/launch.tsx imports Effect inside the TUI: capture runtime context a
 
 Acquire/release the renderer as an Effect resource; Effect owns signals and exit status. Configure renderer Ctrl+C/exit signal/console interception off and pin those options in a test. Raw-mode Ctrl+C stops the reply, quits, and exits zero. Every component-started promise handles rejection in the UI. Colors come from theme.ts only. Follow DESIGN: header, message list, bordered one-line composer, footer hints; Enter send, Esc stop/close, Ctrl+P model picker, Ctrl+E export, Ctrl+C quit. Cover empty, streaming, tool, complete, interrupted, error, and models-unavailable states. Show usage/cost/model, correct focus, and terminal-size behavior.
 
-Use the app-owned `chat-boundaries.grit` in place of the base `boundaries.grit` plugin entry; it retains base rules while adding TUI boundaries. The base guard reads the app-owned platform-paths declaration; the app guard enforces the narrower TUI bridge and dynamic-import requirements. Keep each guard wired once. Write an opentui skill against installed types covering renderer lifecycle, test renderer, keys, layout, text, native packages, and known workarounds (start from the traps in `tui.md`); keep changing API guidance out of shipped reference docs.
+Use the app-owned `chat-boundaries.grit` in place of the base `boundaries.grit` plugin entry; it retains base rules while adding TUI boundaries. With Claude selected, the base write guard reads the app-owned platform-paths declaration and the app write guard enforces the narrower TUI bridge and dynamic imports; wire each once. Other adapters rely on Grit and the required tests unless their native config explicitly installs an equivalent guard. Write an opentui skill against installed types covering renderer lifecycle, test renderer, keys, layout, text, native packages, and known workarounds (start from the traps in `tui.md`); keep changing API guidance out of shipped reference docs.
 
 ## Stubs, capture, recording, evals
 
 The shipped stub controller and pid helper own only checkout-local processes; wire them as `stub` (start or reuse the checkout's stub and print shell exports) and `stub:stop` scripts. They are developer conveniences, not deliverables, so they stay out of the commands table and verify. Implement scripts/stub-server.ts using startStubOpenRouter at prefixed STUB_PORT (default 5190), writing `logs/stub.pid` as pid/provider-port and removing it on shutdown. Shell exports are safely quoted; data stays in .dev/data. Never require a release port or release helper unless bun-release is selected. Reuse a matching live process, ignore stale unrelated pids, and stop only the tracked process.
 
-Write `scripts/tui-capture.ts` and `lib/pty.ts` with Bun's installed PTY API and xterm/headless. Support typed key tokens (enter/escape/tab/arrows/control/wait), cols/rows, wait-for text, alternate binary, no-quit, and CLI flags after `--`. Print settled screen text, send Ctrl+C when appropriate, report exit code, and reuse spawnPty in app e2e. `--smoke` is the TUI's verify step: it starts its own stub on an ephemeral port, runs `chat` from source, sends a message and waits for the reply, opens and closes the model picker (Ctrl+P, Esc), exports (Ctrl+E) and waits for the confirmation, quits with Ctrl+C, and exits nonzero unless every screen appeared and the app exited 0. Dev preserves real terminal stderr for interactive runs while structured logs remain available.
+Write `scripts/tui-capture.ts` and `lib/pty.ts` with Bun's installed PTY API and xterm/headless. Support typed key tokens (enter/escape/tab/arrows/control/wait), cols/rows, wait-for text, alternate binary, no-quit, and CLI flags after `--`. Print settled screen text, send Ctrl+C when appropriate, report exit code, and reuse spawnPty in app e2e. `--smoke` is the TUI's verify step: it starts its own stub on an ephemeral port, runs `chat` from source, sends a message and waits for the reply, opens the model picker (Ctrl+P), types a search and checks filtering, selects a non-default model, sends again and asserts that model in the stub request and reply metadata, exports (Ctrl+E) and waits for the confirmation, quits with Ctrl+C, and exits nonzero unless every screen appeared and the app exited 0. Dev preserves real terminal stderr for interactive runs while structured logs remain available.
 
 A script layer uses fresh ConfigProvider/state, optional provider fetch, terminal-only logging, and guaranteed disposal. Recorder runs the app's real programs for plain and two-step tool turns, tees only completion response bodies, validates successful stop/text/tool use before replacing fixture files, and writes model/time metadata. Replay feeds exact bodies whole and in yielding seven-byte chunks through the real provider; derive expectations from SSE fixtures. Expose it as a `record:openrouter` script that refuses to start without a key; it spends money, so it stays out of the commands table, check, verify, and CI. With no recordings, skip explicitly with the recording command and a Pending user actions item.
 

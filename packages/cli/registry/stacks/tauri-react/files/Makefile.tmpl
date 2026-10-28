@@ -23,7 +23,7 @@ help: ## List targets
 
 install: ## JS deps (frozen when CI is set), the pinned Rust toolchain and crates, Playwright's Chromium
 	bun install $(if $(CI),--frozen-lockfile)
-	rustup toolchain install
+	rustup toolchain install --no-self-update
 	cargo fetch
 	bunx playwright install $(if $(CI),--with-deps) chromium
 

@@ -3,11 +3,11 @@
   "kind": "stack",
   "id": "astro-api",
   "source": {
-    "digest": "sha256:6e6f49aa30b09a876b612af2906f7fef610329cd0dfb1861173c078f054beeb0",
+    "digest": "sha256:545edda04561d4c79caeaebfd7beedf756498da7c1ec9ab37d440a5c5fc55645",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 2,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "A static website with interactive components and a separate HTTP API sharing one typed contract.",
   "description": "Start with pages built ahead of time and add React islands where the page needs fresh API data. A Bun workspace keeps the Astro site, Node API and shared Effect HTTP contract separate, while the typed client catches contract changes on both sides. The base proves the connection with a health-status island. Product resources, authentication and storage are work you add after that slice.",
@@ -22,16 +22,40 @@
       "description": "Publish explanatory pages beside interactive filters backed by custom API resources. The shared contract keeps the filters and responses aligned."
     }
   ],
-  "platforms": ["web", "server"],
-  "productKinds": ["content-site", "api", "fullstack"],
-  "languages": ["typescript"],
+  "platforms": [
+    "web",
+    "server"
+  ],
+  "productKinds": [
+    "content-site",
+    "api",
+    "fullstack"
+  ],
+  "languages": [
+    "typescript"
+  ],
   "requests": [
     "build static pages with interactive widgets that fetch fresh data",
     "catch API response changes in the browser code during type checking",
     "serve my website and backend from one process and origin"
   ],
-  "useCases": ["static sites with live data", "shared frontend and backend contracts"],
-  "synonyms": ["Astro", "React islands", "Effect HttpApi", "typed client", "Bun workspace"],
-  "goodFor": ["builds without a running API", "one contract for client and server"],
-  "notFor": ["server-rendered pages by default", "browser-only projects"]
+  "useCases": [
+    "static sites with live data",
+    "shared frontend and backend contracts"
+  ],
+  "synonyms": [
+    "Astro",
+    "React islands",
+    "Effect HttpApi",
+    "typed client",
+    "Bun workspace"
+  ],
+  "goodFor": [
+    "builds without a running API",
+    "one contract for client and server"
+  ],
+  "notFor": [
+    "server-rendered pages by default",
+    "browser-only projects"
+  ]
 }

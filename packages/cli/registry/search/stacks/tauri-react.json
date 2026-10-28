@@ -7,7 +7,7 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 2,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "A desktop app with a React interface and Rust logic connected through generated TypeScript bindings.",
   "description": "Give Rust application logic a React desktop interface through generated TypeScript bindings. A thin Tauri shell exposes typed commands and live channels, while a transport facade lets the same interface run against browser fixtures. Tests cover Rust logic, bindings and the mocked interface. The starting app shows application information and a live tick; filesystem workflows, persistence and other desktop behavior are features you implement.",
@@ -22,21 +22,41 @@
       "description": "Replace the demonstration tick channel with application measurements and charts. Platform integrations, permissions and data retention remain product work."
     }
   ],
-  "platforms": ["desktop"],
-  "productKinds": ["desktop-app"],
-  "languages": ["typescript", "rust"],
+  "platforms": [
+    "desktop"
+  ],
+  "productKinds": [
+    "desktop-app"
+  ],
+  "languages": [
+    "typescript",
+    "rust"
+  ],
   "requests": [
     "build desktop windows that call my Rust code with checked types",
     "preview my desktop interface in a browser using sample data",
     "show live updates from Rust in my app window"
   ],
-  "useCases": ["desktop interfaces", "Rust applications with graphical controls"],
-  "synonyms": ["Tauri", "React", "webview", "typed IPC", "native windows", "live channels"],
+  "useCases": [
+    "desktop interfaces",
+    "Rust applications with graphical controls"
+  ],
+  "synonyms": [
+    "Tauri",
+    "React",
+    "webview",
+    "typed IPC",
+    "native windows",
+    "live channels"
+  ],
   "goodFor": [
     "sharing types between Rust and TypeScript",
     "testing interfaces through a mock transport"
   ],
-  "notFor": ["server-rendered websites", "browser-only products"],
+  "notFor": [
+    "server-rendered websites",
+    "browser-only products"
+  ],
   "caveats": [
     "Browser previews and Playwright use a mock transport; the packaged webview needs a manual check.",
     "App bundles target the developer's OS; Linux shell builds require WebKitGTK system packages."

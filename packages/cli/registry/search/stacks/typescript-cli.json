@@ -3,11 +3,11 @@
   "kind": "stack",
   "id": "typescript-cli",
   "source": {
-    "digest": "sha256:67ca2c0fe142fdc3552457da3b37db91b96c1bec61613c555bb12aee301f3ef1",
+    "digest": "sha256:bf08451299ea2f5c7261815fb4667b214a5f45b5f638560ecb09acbbad538d43",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 2,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "A compiled command-line tool with subcommands, JSON results, lazy configuration and structured logs.",
   "description": "Create a TypeScript command-line utility compiled with Bun. Effect owns commands, services, configuration and errors; results stay on stdout while diagnostics use stderr. Help, version and doctor work independently of optional application configuration. Tests exercise the command tree and compiled binary. Add your own commands after the base passes, then select bun-release for distribution or openrouter-chat-cli for the terminal chat application.",
@@ -20,18 +20,29 @@
     {
       "title": "Terminal model notebook",
       "description": "Select openrouter-chat-cli for saved chat, scriptable model commands and a terminal interface. Add bun-release separately if you also want installation and update workflows.",
-      "withFragments": ["openrouter-chat-cli"]
+      "withFragments": [
+        "openrouter-chat-cli"
+      ]
     }
   ],
-  "platforms": ["cli"],
-  "productKinds": ["cli-tool"],
-  "languages": ["typescript"],
+  "platforms": [
+    "cli"
+  ],
+  "productKinds": [
+    "cli-tool"
+  ],
+  "languages": [
+    "typescript"
+  ],
   "requests": [
     "build a terminal utility I can distribute as an executable",
     "let scripts consume results while diagnostics go to stderr",
     "keep help and diagnostics working when configuration is broken"
   ],
-  "useCases": ["shell automation", "diagnostic utilities"],
+  "useCases": [
+    "shell automation",
+    "diagnostic utilities"
+  ],
   "synonyms": [
     "Effect commands",
     "Bun executable",
@@ -39,6 +50,12 @@
     "doctor",
     "machine-readable output"
   ],
-  "goodFor": ["stable exit codes and safe errors", "testing commands before and after compilation"],
-  "notFor": ["a terminal user interface", "built-in installation and update workflows"]
+  "goodFor": [
+    "stable exit codes and safe errors",
+    "testing commands before and after compilation"
+  ],
+  "notFor": [
+    "a terminal user interface",
+    "built-in installation and update workflows"
+  ]
 }

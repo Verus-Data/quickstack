@@ -7,7 +7,7 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 2,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "Track browser pageviews and typed product events through PostHog, with buffered initialization and analytics disabled when no key is configured.",
   "description": "Collect browser pageviews and explicitly named product events through one typed analytics module. Events can queue while PostHog initializes, and an empty key makes analytics silent in development and tests. Session recording and autocapture are off by default; consent and persistence are explicit choices. The guidance excludes user-entered text, email addresses and tokens. It does not establish legal compliance or provide server-side analytics.",
@@ -24,15 +24,31 @@
       "stack": "python-react"
     }
   ],
-  "capabilities": ["analytics"],
+  "capabilities": [
+    "analytics"
+  ],
   "requests": [
     "record page visits and product interactions from my web interface",
     "keep analytics silent in tests when credentials are absent",
     "queue browser events while the analytics library loads",
     "identify signed-in users by internal id and reset tracking on sign-out"
   ],
-  "useCases": ["web product analytics", "pageview tracking across client routes"],
-  "synonyms": ["PostHog", "event catalog", "pageviews", "pre-init buffer"],
-  "goodFor": ["one typed tracking module", "development without an analytics account"],
-  "notFor": ["server-side event collection", "collecting user-entered text or emails"]
+  "useCases": [
+    "web product analytics",
+    "pageview tracking across client routes"
+  ],
+  "synonyms": [
+    "PostHog",
+    "event catalog",
+    "pageviews",
+    "pre-init buffer"
+  ],
+  "goodFor": [
+    "one typed tracking module",
+    "development without an analytics account"
+  ],
+  "notFor": [
+    "server-side event collection",
+    "collecting user-entered text or emails"
+  ]
 }

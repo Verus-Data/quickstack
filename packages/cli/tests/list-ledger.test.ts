@@ -1,8 +1,9 @@
-import { writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { Schema } from "effect";
 import { afterEach, expect, test } from "vitest";
 import { ListResult } from "../src/schemas/list";
+import { ShowReport } from "../src/schemas/show";
 import { quiet, runCli, terminal } from "./helpers/cli";
 import { ledgerRecord, ledgerRegistry, writeLedger } from "./helpers/ledger";
 import { minimal, writeEntry } from "./helpers/registry";
@@ -154,12 +155,55 @@ test("human and agent list label passing, failed and unproven stacks [2.0c#4]", 
     expect(result.stderr).toBe("");
     const lines = result.stdout.split("\n");
     expect(lines.find((line) => /^\s+sample(?:\s|$)/.test(line))).toMatch(
-      /\bproven\s+2026-10-27\b/,
+      /\bhistorical pass\s+2026-10-27\b/,
     );
     expect(lines.find((line) => /^\s+failed(?:\s|$)/.test(line))).toMatch(/\bfail\s+2026-10-27\b/);
     expect(lines.find((line) => /^\s+unproven(?:\s|$)/.test(line))).toMatch(
       /\bunproven\b.*\bunproven\b/,
     );
+  }
+});
+
+test("catalog passes remain explicitly historical after content changes", async () => {
+  const home = space.dir();
+  const registry = ledgerRegistry(space.dir());
+  const record = await ledgerRecord(registry);
+  writeLedger(registry, [record]);
+  const original = readFileSync(join(registry, "stacks/sample/files/README.md.tmpl"), "utf8");
+  for (const content of [original, "# changed after the pass\n"]) {
+    writeFileSync(join(registry, "stacks/sample/files/README.md.tmpl"), content);
+    for (const host of [terminal, { stdoutIsTTY: false }]) {
+      const result = await runCli(["list", "stacks"], {
+        home,
+        env: quiet,
+        host: { ...host, registry },
+      });
+      expect(result.status).toBe(0);
+      expect(result.stderr).toBe("");
+      expect(result.stdout).toContain("historical pass 2026-10-27");
+      expect(result.stdout).not.toMatch(/\bproven\b/);
+    }
+    const json = await runCli(["list", "stacks", "--json"], {
+      home,
+      env: quiet,
+      host: { registry },
+    });
+    expect(json.status).toBe(0);
+    expect(json.stderr).toBe("");
+    expect(decode(json.stdout).entries[0]?.lastRun).toMatchObject({
+      result: "pass",
+      fingerprint: record.fingerprint,
+    });
+    const shown = await runCli(["show", "sample", "--json"], {
+      home,
+      env: quiet,
+      host: { registry },
+    });
+    expect(shown.status).toBe(0);
+    expect(shown.stderr).toBe("");
+    expect(
+      Schema.decodeUnknownSync(ShowReport)(JSON.parse(shown.stdout)).lastRun?.sameContent,
+    ).toBe(content === original);
   }
 });
 

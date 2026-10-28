@@ -2,6 +2,8 @@
 
 Every command, its flags and what it does. `stacks <command> --help` prints the same flags with examples and exit codes, and every command takes `--json` for one machine-readable result. Exit codes and the error envelope are in [Output and errors](output.md).
 
+Every command also accepts `--offline` to disable remote registry requests while using verified cached entries. `STACKS_OFFLINE=1` has the same effect. See [the cache and trust rules](configuration.md#remote-registry-cache).
+
 | Command | Does |
 | --- | --- |
 | [`list`](#list) | List the stacks, fragments and apps you can build from |
@@ -28,14 +30,15 @@ stacks list --dir ../app    # list from another project directory
 
 `list` reads the manifest in the current directory (or `--dir`). Its default text view inside a project shows fitting, unapplied fragments with their add commands; explicit groups keep their usual view. JSON keeps the full registry and adds optional `project: { stack, applied, addable }`. A corrupt, newer or unreadable manifest warns and falls back to the full view.
 
-Each bundled stack in `list --json` carries `lastRun: { date, result, agent, preset, fingerprint } | null`, the latest run of its default composition across agents and presets. When the registry has a ledger, text output labels it `proven <date>` for a pass, `<result> <date>` otherwise, or `unproven`. Other origins and fragments have no proof. The label describes the recorded run; it doesn't claim the current stack still has that fingerprint.
+Each bundled or index stack in `list --json` carries `lastRun: { date, result, agent, preset, fingerprint } | null`. Bundled stacks use the latest default-composition ledger run; index stacks use the index's proof with the same output fields. Text output labels it `historical pass <date>` for a pass, `<result> <date>` otherwise, or `unproven`. Local origins and fragments have no proof. The catalog does not compare current content; use `show <id>` for the fingerprint comparison. Historical passes remain historical even when the current composition matches.
 
-Entries come from three roots, highest precedence first:
+Entries come from these origins, highest precedence first:
 
 | Origin | Root | Trusted |
 | --- | --- | --- |
 | `project` | `./.stacks/` in the working directory | No: a cloned repository can ship these |
 | `user` | `$XDG_CONFIG_HOME/stacks/` (`~/.config/stacks/`), beside `config.json` | Yes |
+| `index` | Verified cached bundles from the remote index | Yes for a signed default index; no for another `STACKS_INDEX_URL` |
 | `bundled` | The registry shipped with the CLI (`packages/cli/registry/` in this repo; `STACKS_REGISTRY_DIR` replaces it) | Yes, unless `STACKS_REGISTRY_DIR` set it |
 
 Each root holds `stacks/<id>/STACK.md` and `fragments/<id>/FRAGMENT.md`, each with optional `files/` (copied into every project) and `adapters/<agent>/` (copied when that agent is a target; agents are `claude`, `codex`, `opencode`, `cursor`). An app is a fragment with `category: app`. Files are stored under their real names, dotfiles included: `files/.gitignore` is written as `.gitignore`. An entry directory may not be or contain a symlink, and nothing past one is read. The project root and its `stacks/` and `fragments/` must be real directories (a symlinked one is skipped with a warning); the user and bundled roots may be symlinks.
@@ -52,7 +55,7 @@ stacks show postgres --json         # ShowReport
 stacks show effect --kind fragment  # look among fragments only, for an id a stack also uses
 ```
 
-`show <id>` reviews a stack or fragment without starting a process: metadata, every guidance branch, commands, verify steps and shipped output paths, including adapters for every agent. `--json` returns `ShowReport`. Only bundled entries receive ledger evidence; `sameContent` compares the current composition fingerprint with the recorded run. Non-bundled entries get `lastRun: null`.
+`show <id>` reviews a stack or fragment without starting a process: metadata, every guidance branch, commands, verify steps and shipped output paths, including adapters for every agent. `--json` returns `ShowReport`. Bundled and index stacks receive recorded run evidence; `sameContent` compares the current composition fingerprint with that run. Other origins get `lastRun: null`.
 
 ## new
 
@@ -154,7 +157,7 @@ Before running anything, `verify` checks the steps against the copies recorded b
 - With no state record on this machine (a fresh clone, or a state directory `new` couldn't write), only the manifest's copy is checked and the result says `tamperCheck: "manifest-only"`, which never counts for the MVP gate. An unreadable record counts as missing; one a newer stacks wrote fails `InvalidConfig` (3).
 - `verify --accept-changes` is for a person who changed the steps on purpose. It is refused with `PermissionDenied` (6) when an agent is detected (`reason: "agent"`) or stdin isn't a terminal (`no-tty`), and then changes nothing. Otherwise its report names what changed, it writes the new digest to the state record (creating it on a fresh clone) and then to the manifest, keeps the project's timing fields, and runs the steps. A state record it can't write fails `PermissionDenied` (`state-unwritable`) with the manifest untouched.
 - Every run that gets past the manifest (`changed`, `failed` and interrupted ones included) appends one `RunRecord` line to `.stacks/state/runs.jsonl`, which the project's `.gitignore` ignores: `schemaVersion`, start time, CLI version, detected agent, outcome, scope, `tamperCheck`, `acceptedChanges`, durations and each step's name, phase, layer, status, failure kind and exit code. No commands, output, paths or environment values, so it is safe to attach to a bug report.
-- The state record's `firstGreenAt` is set by the first green run and `firstTestPassAt` by the first run, of any scope, in which a `test`-layer step passed; neither is overwritten. The result's `firstGreen` is true on the run that set it, and `stateRecord` is false when there was no record to update or it couldn't be written. A run record or state record that can't be written is one logged warning; the outcome and exit don't change.
+- The state record's `firstGreenAt` is set by the first green run and `firstTestPassAt` by completion of the first run, of any scope, in which a `test`-layer command succeeded; neither is overwritten. This is an exit-status proxy: verify does not observe runner counts or parse arbitrary stdout. Shipped conditional hook-directory checks use the `check` layer so their absent-directory success cannot set it. The result's `firstGreen` is true on the run that set it, and `stateRecord` is false when there was no record to update or it couldn't be written. A run record or state record that can't be written is one logged warning; the outcome and exit don't change.
 
 ## runs
 
@@ -229,7 +232,7 @@ stacks doctor
 stacks doctor --json
 ```
 
-`doctor` reports version, platform, executable, config, data and working paths, the user entry directory, the bundled registry and skill paths (and whether each exists), and safe configuration errors. A missing configuration file is fine. A malformed optional file is reported in `configErrors` while doctor exits successfully; help and version don't open that file.
+`doctor` reports version, platform, executable, config, data and working paths, the user entry directory, the bundled registry and skill paths (and whether each exists), safe configuration errors, and `remoteIndex` with its URL, trust mode, offline flag, cache timestamp, last attempt, last outcome and backoff deadline. It never refreshes the index. A missing configuration file is fine. A malformed optional file is reported in `configErrors` while doctor exits successfully; help and version don't open that file.
 
 ## schema
 

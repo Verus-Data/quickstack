@@ -39,6 +39,7 @@ export async function scaffoldAdapters(options: {
   agents: readonly AgentId[];
   stack?: string;
   fragments?: readonly string[];
+  without?: readonly string[];
   name?: string;
   env?: Record<string, string>;
 }) {
@@ -52,6 +53,7 @@ export async function scaffoldAdapters(options: {
       "--no-launch",
       "--json",
       ...(options.fragments ?? []).flatMap((id) => ["--with", id]),
+      ...(options.without ?? []).flatMap((id) => ["--without", id]),
     ],
     {
       home: options.home,

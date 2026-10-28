@@ -1,6 +1,6 @@
 # Phase 4.5e: Search endpoint and API-first search
 
-Status: DRAFT 2026-10-27 (not agreed)
+Status: AGREED 2026-10-27 (starts after 4.5c; the rate limit can use 4.1b's `RateLimiter` on the Node store, amended D16)
 
 | Field | Value |
 |---|---|
@@ -148,6 +148,7 @@ In `packages/cli`, against a local server:
 
 ## What this plan may get wrong
 
+- 2026-10-27: 4.1b's `RateLimiter` now runs on the Node store (amended D16), so the route takes it once 4.1b lands; `search` is its own contract group and the one query route in the roadmap's "API route map".
 - No rate limit until 4.1b's `RateLimiter`, which needs D1 and so arrives after 4.0f. A ranking over a few dozen entries costs well under a millisecond, so the route is cheaper than the static files beside it; if abuse shows up on the Node host before then, an in-process token bucket per client network in the Node platform layer is the stopgap.
 - While both sides rank lexically, the API mostly duplicates the local result, and the 800 ms wait buys only fresher cards. That is the price of having the server in place when 4.5d's semantic leg starts; if 4.5d is never started, the call can be dropped from the CLI (keeping the route for the site and MCP) by making `--local` the default.
 - The 800 ms deadline is a guess for an interactive command an agent waits on. Measure the route's p95 from a few regions after deploy and set the deadline to about twice it.

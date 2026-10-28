@@ -7,7 +7,7 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 2,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "Publish Go binaries for multiple operating systems from version tags, with archives, checksums, changelogs and optional Homebrew distribution.",
   "description": "Turn version tags into Go release archives with matching binary version metadata, checksums and a commit-based changelog. A local snapshot build exercises release packaging without publishing. The default targets include Linux, macOS and Windows on Intel and ARM; optional Homebrew publishing needs its own tap and credentials. This fragment extends a Go binary project rather than providing installer or self-update behavior.",
@@ -24,19 +24,31 @@
       "stack": "go-cli"
     }
   ],
-  "capabilities": ["release"],
+  "capabilities": [
+    "release"
+  ],
   "requests": [
     "publish downloadable builds of my Go tool whenever I push a version tag",
     "package my executable for Linux, macOS and Windows with checksums",
     "preview release artifacts locally before making them public",
     "optionally distribute my Go binary through a Homebrew tap"
   ],
-  "useCases": ["Go binary distribution", "tag-triggered GitHub releases"],
-  "synonyms": ["GoReleaser", "cross-compilation", "release snapshots", "changelog"],
+  "useCases": [
+    "Go binary distribution",
+    "tag-triggered GitHub releases"
+  ],
+  "synonyms": [
+    "GoReleaser",
+    "cross-compilation",
+    "release snapshots",
+    "changelog"
+  ],
   "goodFor": [
     "version metadata in binaries",
     "repeatable release archives",
     "optional Homebrew publishing"
   ],
-  "notFor": ["Bun-compiled binaries"]
+  "notFor": [
+    "Bun-compiled binaries"
+  ]
 }

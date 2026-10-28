@@ -4,7 +4,7 @@ This page is for maintainers: proving bundled stacks with the bench, recording r
 
 ## The bench
 
-The bench is how a bundled stack earns its "proven" label: a real coding agent builds the stack headlessly from an empty directory, and stacks verifies the result independently.
+The bench is how a bundled stack earns its historical pass: a real coding agent builds the stack headlessly from an empty directory, and stacks verifies the result independently.
 
 ```sh
 bun run bench <stack> --agent claude --keep
@@ -18,7 +18,7 @@ Auth is `CLAUDE_CODE_OAUTH_TOKEN` from `claude setup-token`, or `CODEX_ACCESS_TO
 
 ## The ledger
 
-The reviewed ledger is `registry/runs.json`. It's what `list` reads for "proven <date>". Import reviewed gate notes with:
+The reviewed ledger is `registry/runs.json`. It's what `list` reads for "historical pass <date>". Import reviewed gate notes with:
 
 ```sh
 bun run ledger:import ../../plans/runs/2026-10-27-*.md
@@ -39,13 +39,26 @@ bun run build:index -- --out <output> --previous <live-index-url|none> --key <pr
 bun run build:index -- --check <base-url>
 ```
 
-The output includes `v1/index.json`, its immutable bundles and `v1/names.json`. Both JSON files use the `SignedIndex` envelope and the same signing key. `--unsigned` writes both with empty signatures for local inspection; `--check` rejects unsigned files.
+The output includes `v1/index.json`, its immutable bundles, `v1/names.json` and `v1/directory.json`. All three JSON files use the `SignedIndex` envelope and the same signing key. `--unsigned` writes them with empty signatures for local inspection; `--check` rejects unsigned files. Directory added dates come from each definition file's first addition in git, using the committer date. Builds require full git history and refuse shallow clones before touching output.
 
 Official names include every release's stack and fragment ids, each stack's default composition and each default composition plus one optional fragment. Release registries are read with `git archive` into temporary directories and composed with today's code. A release that no longer decodes or composes prints a warning naming its tag and retains recoverable frontmatter ids; unavailable composition details stay empty. Review those warnings before publishing. The index source takes each published stack's exact composition and step names from its pinned bundles, including carried-forward content and sandbox proofs that omit default deploy fragments.
 
 With `--previous <url>`, the build also verifies and merges the previous `v1/names.json`, keeping names from earlier published compositions after steps change or entries are withdrawn. A missing names file (HTTP 404) bootstraps from the previous index's pinned bundles, for an index published before names existed. Other fetch failures, invalid payloads and invalid signatures stop the build. `--previous none` starts with release history and the current index only; use the live index URL to retain names from unreleased index publications.
 
-Review `v1/names.json` alongside the index before deploying. `--check` verifies both signatures, decodes both payloads and checks the immutable bundles. The deploy host must serve `/v1/names.json` with `Cache-Control: public, max-age=300, stale-while-revalidate=3600`; the hosting setup lives in `stacks-api`.
+Review `v1/names.json` and `v1/directory.json` alongside the index before deploying. `--check` verifies all three signatures, decodes their payloads and checks the immutable bundles. The deploy host must serve `/v1/names.json` and `/v1/directory.json` with `Cache-Control: public, max-age=300, stale-while-revalidate=3600`; the hosting setup lives in `stacks-api`.
+
+When removing a published stack or fragment, add its id to `packages/cli/registry/removed.json` in the same change:
+
+```json
+{ "schemaVersion": 1, "entries": {
+  "old-stack": { "kind": "stack", "removedAt": "2026-10-27",
+    "reason": "Merged into new-stack", "replacedBy": "new-stack" }
+} }
+```
+
+Use a calendar date (`YYYY-MM-DD`) and a plain-text reason. Omit `replacedBy` when there is no replacement; otherwise it must name a current registry or index entry. Remove the definition before adding the row: an entry retained by a carried-forward composition is still current. The build checks every official name against the current registry, selected index and removal rows, and rejects tags outside `^[a-z0-9-]+$`, naming the entry.
+
+Removed content comes from the highest `v*` release tag that shipped the entry, including its static metadata, defaulted verify steps and last successful ledger run. An entry published only through the index uses its previous index entry and bundle and omits `last.version`; supply the live `--previous` URL so that content can be recovered. Later builds retain that content from the previous signed directory after the entry leaves the index. Keep removal rows for those later builds. Without release content or previous published content the build refuses publication, preserving existing output.
 
 ## Search judgments and baseline
 
@@ -132,7 +145,8 @@ rules without rendering their files.
 The richer fields stay optional in schema version 1 for existing author cards
 and carried-forward index data. Bundled cards should have complete editorial
 coverage. See `docs/authoring.md` for field budgets and description precedence.
-The current 30-card agent draft is still awaiting human review; a successful
+The bundled 30-card enrichment was approved for landing by the maintainer on
+2026-10-28. Future drafts still need explicit maintainer approval; a successful
 draft or validation run does not authorize `--approve` under an agent.
 
 `build:index` publishes signed `v1/search.json` beside the index and names file.

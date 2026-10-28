@@ -5,7 +5,7 @@ argument-hint: "<service name and responsibility>"
 
 Add a service: $ARGUMENTS
 
-Follow `.claude/rules/api/effect-api.md`, and read an existing service in `apps/api/src/services/` first.
+Follow `docs/guidance/astro-api/effect-api.md`, and read an existing service in `apps/api/src/services/` first.
 
 1. **Interface.** A `Context` service class (the installed release's form; the `effect` skill names it) in `apps/api/src/services/<Name>.ts` with a namespaced key and a small interface of Effect-returning methods whose requirements are `never`. Failures a client can see are tagged errors in `packages/contract/src/errors.ts`, each with its `apiErrorTable` row; failures only the API sees stay in the API.
 2. **Layers.** A `static readonly layer` built from an effectful `make`, yielding its dependencies and Config once in `make`. If it keeps state, add `static readonly layerMemory` with fresh state per build. New env vars go in `apps/api/src/config.ts`, `.env.example` and README.

@@ -3,11 +3,11 @@
   "kind": "stack",
   "id": "astro-blog",
   "source": {
-    "digest": "sha256:0397e0f3851594c9ecca35ebb065e0a291c1f1de24ee52dae36375a9ed4fd37e",
+    "digest": "sha256:1c7c933c4e16c6fc3257c3fda284a28e3d29c3c286cad49153268708c18dcf4d",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 2,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "A static blog with file-based posts, draft and unlisted publishing, RSS and a sitemap.",
   "description": "Publish articles as MDX files with checked metadata and explicit draft, published and unlisted states. Astro builds the reading pages, RSS feed and sitemap; React islands handle the interactions you choose to add. The recipe includes post scaffolding and optional generated social images. Hosting is separate: select cloudflare-pages if you want its deployment workflow.",
@@ -20,19 +20,43 @@
     {
       "title": "Project journal on Cloudflare Pages",
       "description": "Publish a file-based development journal with production and preview deployments by adding cloudflare-pages. Create the Pages project and configure deployment credentials separately.",
-      "withFragments": ["cloudflare-pages"]
+      "withFragments": [
+        "cloudflare-pages"
+      ]
     }
   ],
-  "platforms": ["web"],
-  "productKinds": ["blog", "content-site"],
-  "languages": ["typescript"],
+  "platforms": [
+    "web"
+  ],
+  "productKinds": [
+    "blog",
+    "content-site"
+  ],
+  "languages": [
+    "typescript"
+  ],
   "requests": [
     "write articles in local files and preview drafts before publishing",
     "publish some posts by direct link without listing them in my feed",
     "give readers an RSS feed and generate a sitemap from published articles"
   ],
-  "useCases": ["article publishing", "file-based editorial workflows"],
-  "synonyms": ["Astro", "MDX", "content collections", "React islands", "Tailwind typography"],
-  "goodFor": ["validating post metadata during builds", "optional generated social preview images"],
-  "notFor": ["request-time server rendering", "built-in HTTP backend"]
+  "useCases": [
+    "article publishing",
+    "file-based editorial workflows"
+  ],
+  "synonyms": [
+    "Astro",
+    "MDX",
+    "content collections",
+    "React islands",
+    "Tailwind typography"
+  ],
+  "goodFor": [
+    "validating post metadata during builds",
+    "optional generated social preview images"
+  ],
+  "notFor": [
+    "request-time server rendering",
+    "built-in HTTP backend"
+  ]
 }

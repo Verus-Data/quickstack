@@ -42,9 +42,11 @@ export const stubEnv = (stub: RunningStub) => ({
   OPENROUTER_API_KEY: "sk-or-stub",
   OPENROUTER_BASE_URL: `http://127.0.0.1:${stub.openRouterPort}/api/v1`,
   OPENROUTER_MODEL: "openai/gpt-test",
-  ...(stub.releasesPort ? {
-    {{env_prefix}}_INSTALL_DIR: resolve(".dev/bin"),
-    {{env_prefix}}_RELEASES_URL: `http://127.0.0.1:${stub.releasesPort}`,
-    {{env_prefix}}_RELEASES_REPO: STUB_REPO,
-  } : {}),
+  ...(stub.releasesPort
+    ? {
+        {{env_prefix}}_INSTALL_DIR: resolve(".dev/bin"),
+        {{env_prefix}}_RELEASES_URL: `http://127.0.0.1:${stub.releasesPort}`,
+        {{env_prefix}}_RELEASES_REPO: STUB_REPO,
+      }
+    : {}),
 });

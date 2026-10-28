@@ -7,7 +7,7 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 2,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "Distribute compiled Bun binaries for macOS and glibc Linux with checksum-verified installation, atomic self-update and a release workflow.",
   "description": "Add distribution to a Bun-compiled command-line tool: target builds, checksum files, a shell installer and an atomic update command. The release workflow checks and smoke-tests artifacts before publishing a tagged GitHub release. The default targets cover macOS and glibc Linux on Intel and ARM. Repository setup and publishing credentials remain maintainer actions; Windows and musl builds are deferred.",
@@ -22,22 +22,38 @@
       "title": "Updatable terminal chat app",
       "description": "Combine this release fragment with openrouter-chat-cli to distribute the terminal application. Native TUI packages need target-specific build and smoke checks.",
       "stack": "typescript-cli",
-      "withFragments": ["openrouter-chat-cli"]
+      "withFragments": [
+        "openrouter-chat-cli"
+      ]
     }
   ],
-  "capabilities": ["release"],
+  "capabilities": [
+    "release"
+  ],
   "requests": [
     "let people install my Bun tool without installing its runtime",
     "add an update command that preserves the working binary when a download fails",
     "check release checksums before replacing an installed executable",
     "build and smoke-test release binaries for both Intel and ARM machines"
   ],
-  "useCases": ["standalone Bun executable distribution", "installed binary updates"],
-  "synonyms": ["SHA256SUMS", "shell installer", "GitHub releases", "self-update"],
+  "useCases": [
+    "standalone Bun executable distribution",
+    "installed binary updates"
+  ],
+  "synonyms": [
+    "SHA256SUMS",
+    "shell installer",
+    "GitHub releases",
+    "self-update"
+  ],
   "goodFor": [
     "atomic binary replacement",
     "update availability checks",
     "tag-triggered publishing"
   ],
-  "notFor": ["Windows binaries", "musl Linux targets", "self-update when running from source"]
+  "notFor": [
+    "Windows binaries",
+    "musl Linux targets",
+    "self-update when running from source"
+  ]
 }

@@ -1,4 +1,4 @@
-import { readFileSync, symlinkSync } from "node:fs";
+import { readFileSync, rmSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, expect, test } from "vitest";
 import { quiet, runCli } from "./helpers/cli";
@@ -26,6 +26,9 @@ const sample = { kind: "stack", id: "sample" } as const;
 
 test("draft prompts include reviewed registry cards when they are available", async () => {
   const f = decorateWorkspace(space.dir());
+  // The copied bundled cards are reviewed too; leave only this test's two as examples.
+  for (const dir of ["stacks", "fragments"])
+    rmSync(join(f.registry, "search", dir), { recursive: true });
   const summaries = ["Reviewed second example fixture.", "Reviewed third example fixture."];
   for (const [index, id] of ["second", "third"].entries()) {
     const ref = { kind: "stack", id } as const;
@@ -163,4 +166,17 @@ test("validating one entry does not enumerate another kind's unreadable cards", 
     searchFindings(Schema.decodeUnknownSync(ValidateReport)(JSON.parse(result.stdout))),
   ).toEqual([expect.objectContaining({ check: "vocabulary-ignored" })]);
   expect(readJson(cardPath(root, sample))).toMatchObject({ id: sample.id });
+});
+
+test("every bundled card is byte for byte what decorate writes, so approving changes one line", async () => {
+  const { readdirSync } = await import("node:fs");
+  const { Schema } = await import("effect");
+  const { SearchMetadata } = await import("../src/schemas/search");
+  for (const kind of ["stack", "fragment"] as const) {
+    for (const name of readdirSync(join(bundled, "search", `${kind}s`))) {
+      const text = readFileSync(join(bundled, "search", `${kind}s`, name), "utf8");
+      const decoded = Schema.decodeUnknownSync(SearchMetadata)(JSON.parse(text));
+      expect(text, name).toBe(`${JSON.stringify(decoded, null, 2)}\n`);
+    }
+  }
 });

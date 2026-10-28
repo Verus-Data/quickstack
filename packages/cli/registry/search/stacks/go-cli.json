@@ -7,7 +7,7 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 2,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "A Go command-line tool with subcommands, configurable settings, actionable errors and human or JSON output.",
   "description": "Write a Go utility with Cobra subcommands and Viper settings layered from defaults, files, environment and flags. Results have human and JSON forms, while structured failures explain the next action. The first command exercises those boundaries, and the Makefile covers building, tests and checks. Add your utility's behavior; select goreleaser separately for tag-driven distribution.",
@@ -20,24 +20,43 @@
     {
       "title": "Release artifact checker",
       "description": "Implement local archive and checksum checks, then add goreleaser to distribute the utility through tagged GitHub releases.",
-      "withFragments": ["goreleaser"]
+      "withFragments": [
+        "goreleaser"
+      ]
     }
   ],
-  "platforms": ["cli"],
-  "productKinds": ["cli-tool"],
-  "languages": ["go"],
+  "platforms": [
+    "cli"
+  ],
+  "productKinds": [
+    "cli-tool"
+  ],
+  "languages": [
+    "go"
+  ],
   "requests": [
     "build a terminal utility whose commands also work in scripts",
     "let users override saved settings with environment variables and flags",
     "make command failures explain how to fix the problem",
     "give my Go tool consistent help and version output"
   ],
-  "useCases": ["command-line automation", "configurable utilities"],
-  "synonyms": ["cobra", "viper", "single binary", "subcommands"],
+  "useCases": [
+    "command-line automation",
+    "configurable utilities"
+  ],
+  "synonyms": [
+    "cobra",
+    "viper",
+    "single binary",
+    "subcommands"
+  ],
   "goodFor": [
     "configuration precedence",
     "structured error responses",
     "table-driven command tests"
   ],
-  "notFor": ["graphical interfaces"]
+  "notFor": [
+    "graphical interfaces",
+    "a terminal user interface"
+  ]
 }

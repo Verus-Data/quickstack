@@ -1,6 +1,7 @@
 # Phase 4.2c: Directory browsing
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: IN PROGRESS 2026-10-27: the telemetry-free parts are executed (`v1/directory.json`, newest, tags, fragments, removed pages, nav); the telemetry views are being built on fixtures with 4.2f
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -8,7 +9,7 @@ Status: DRAFT 2026-10-26 (not agreed)
 | Traces to | The developer who starts projects often: "a stack that matches how they'd build it". The coding agent "runs `list --json`, picks a stack" (the directory is where a person checks that pick). Success row 5, "Stacks and fragments in `~/.stacks` and third-party sources" made visible. "Stacks don't rot" (a removed stack's page says so rather than vanishing) |
 | Depends on | Every part: 4.0c (the index build), 4.0e (the directory pages in `apps/web`, the stack pages, `OfficialNames`, the site's design tokens). The telemetry views only (the stats-ordered pages, stats cells, "often used with", trending): D17, 4.2b (the build-time stats fetch, the stats section and the `STATS_ENABLED` switch), 4.2f (the stats components, states and charts they render through), 4.1d (`installs`, for install maturity in trending). The telemetry-free parts (the newest view, tag pages, fragment pages without stats, category alternatives, removed-stack pages, `v1/directory.json`) can execute as soon as 4.0e has landed |
 | Blocks | Nothing. 4.2e adds dependency pages beside these |
-| Decisions needed | D17. If declined, only the telemetry-free parts ship: the newest view, tag pages, fragment pages without stats, and removed-stack pages. [Open question 31](../risks-and-open-questions.md#open-questions-for-the-maintainers) (agent pages list stacks for one agent and never compare agents) |
+| Decisions needed | D17. If declined, only the telemetry-free parts ship: the newest view, tag pages, fragment pages without stats, and removed-stack pages |
 | Settles | The directory's views and their orderings; the fragment index; the nav's rule for unbuilt views; the trending score; `trending` in `StatsSummary`; co-installed fragment lift; category alternatives on fragment pages; how removed stacks are recorded and shown |
 
 ## Scope
@@ -19,7 +20,7 @@ In:
 - `packages/cli/registry/removed.json`, the maintainers' record of removed entries, checked by the build.
 - New Astro pages in `stacks-api/apps/web`, built from the index output and `v1/directory.json`: `/browse/newest/`, `/tags/<tag>/`, `/fragments/` (the fragment index), `/fragments/<id>/`, removed-stack pages at `/stacks/<id>/`.
 - The site nav, listing only the views that were built.
-- Stats-ordered pages built from the stats routes behind `STATS_ENABLED`: `/` reordered by default sort, `/browse/most-used/`, `/browse/highest-success/`, `/browse/trending/`, `/agents/<agent>/`.
+- Stats-ordered pages built from the stats routes behind `STATS_ENABLED`: `/` reordered by default sort, `/browse/most-used/`, `/browse/highest-success/`, `/browse/trending/`.
 - A trending score and an additive `trending` field in `StatsSummary`.
 - A co-installed fragment dimension in 4.2a's daily rollup step, shown on fragment pages as "often used with".
 
@@ -28,7 +29,7 @@ Out:
 - Search, client-side filters, pagination beyond one page per view (the catalog is small; revisit past 200 entries). Astro islands make these cheap later; nothing reads them yet. Natural-language search is the CLI's `stacks search` (4.5c), for agents.
 - Directory visit analytics of any kind (roadmap, Won't have).
 - Dependency pages (4.2e).
-- Any ordering of agents against each other: an agent page lists stacks for that agent only.
+- Agent pages, and any ordering of agents against each other (dropped 2026-10-27).
 
 ## Design
 
@@ -48,17 +49,33 @@ Out:
 | `/tags/<tag>/` | Index output; stats cells from the summary | By name | Built without stats cells |
 | `/fragments/` | Index output | By category, then by name | Built (it never carries stats) |
 | `/fragments/<id>/` | Index output; stats section from `/v1/fragments/:id/stats` | n/a | Built without stats |
-| `/agents/<agent>/` | Stats detail per stack (`byAgent`) | Stacks by that agent's green rate Wilson lower bound (4.2a's `byAgent`), unsuppressed only | Not built (static 404) |
 
 Every view links to every other that was built, so no page is a dead end. Ties break by id. The stats-ordered views are behind the `STATS_ENABLED` site switch (roadmap, Contracts: Site feature switches; on only on the D17 path, after 4.2a's tables exist). When it is off, `/browse/most-used/`, `/browse/highest-success/`, `/browse/trending/` and `/agents/*` are not built, so they return the static 404 on Node and on Workers alike, and `/`, tag and fragment pages are built without stats. 4.2e's dependency pages use a second switch, `DEPS_ENABLED`, the same way.
 
 The site nav follows the same rule, so it never links to a static 404: it leaves out Trending when `STATS_ENABLED` is off and Dependencies when `DEPS_ENABLED` is off, and it always has the stack directory and `/fragments/`. The nav reads the switches from `site-config.ts`, like the pages, so a page and its nav entry can't disagree.
 
-An agent page answers "which stacks work with the agent I use", which is a ranking of stacks for one agent. Each row also carries that agent's median time to green on the stack and its projects there (4.2a's `byAgent` cells), and a share of the agent's projects by stack follows 4.2a's rule for totals and shares. Agent pages exist only for the `DetectedAgent` ids the CLI records (`claude`, `codex`, `opencode`, `cursor`, `other`); an agent the CLI doesn't detect, such as Gemini, is counted under `other` and has no page of its own. It never shows two agents' numbers side by side, and no page lists agents in order of anything ([open question 31](../risks-and-open-questions.md#open-questions-for-the-maintainers)). The stack page's per-agent breakdown is 4.2b's section, listed alphabetically by agent.
+There are no agent pages. The stack page's per-agent breakdown is 4.2b's section, listed alphabetically by agent, and no page lists agents in order of anything ([open question 31](../risks-and-open-questions.md#open-questions-for-the-maintainers)).
 
 ### When an entry was added
 
 `build:index` takes an entry's added date from git: the commit date of the first commit that added its definition file (`git log --diff-filter=A --format=%cI -- <entry>/STACK.md`), run through `Processes` like the build's other git reads. An index-only entry uses the same rule on its source path. The dates go into `v1/directory.json`, signed in the same envelope as the index; the site verifies it with `INDEX_PUBLIC_KEYS` like the index and fails its build on a bad signature. The date is the content's age, not its popularity, so the newest view needs no telemetry and no `installs` table.
+
+### `v1/directory.json`
+
+Added 2026-10-27, so this repository's build and the site can be written at the same time. `packages/format/src/directory.ts::DirectoryData` is the payload, signed in the same `SignedIndex` envelope (same key, same verification) and written beside `v1/index.json` and `v1/names.json`:
+
+```json
+{ "formatVersion": 1, "generatedAt": "<ISO>", "commit": "<sha>",
+  "entries": [ { "id": "astro-api", "kind": "stack", "addedAt": "<ISO commit date>" } ],
+  "removed": [ { "id": "old-stack", "kind": "stack", "removedAt": "2027-03-01",
+                 "replacedBy": "new-stack", "reason": "Merged into new-stack",
+                 "last": { "version": "v0.3.1", "name": "Old stack", "description": "...",
+                           "tags": ["api"],
+                           "steps": [ { "name": "test", "phase": "check", "layer": "test", "run": "bun run test" } ],
+                           "lastRun": { "...": "LastRun, optional" } } } ] }
+```
+
+`entries` has one row per index entry, stacks and fragments, sorted by kind then id. `removed` is sorted by id. `replacedBy` is optional: a removed entry with no replacement omits it, and its page's notice drops the "Use <replacedBy> instead." sentence and the copy command. `last.version` is the last `v*` release tag that shipped the entry (the same tags `release-names.ts` reads). An entry that only ever shipped through the index takes `last` from the previous index output (`--previous`: its index entry and bundle) and omits `version`; with `--previous none` and no release, the build fails naming it, since its page would have nothing to show. Later builds keep an already removed entry's `last` from the previous verified `v1/directory.json`, since the entry has left the previous index too; a previous publication without a directory file (404) is accepted, and any other fetch error, a bad signature or a payload that doesn't decode fails the build; `last.steps` holds each step's `name`, `phase`, `layer` (optional, as in the entry) and `run`, with `withStepDefaults` applied. The site reads every other fact about current entries from the index and its bundles, as 4.0e's pages do. `removed.json`'s rows use the same `replacedBy` (optional), `reason`, `kind` and `removedAt` (`YYYY-MM-DD`).
 
 ### Removed entries
 
@@ -119,7 +136,7 @@ A tag page lists every current stack and fragment carrying that tag, by name, wi
 | `packages/cli/scripts/build-index.ts` | Writes and signs `v1/directory.json` (added dates, removed entries); checks `removed.json` against `OfficialNames`; rejects bad tags |
 | `packages/format/src/directory.ts`, `src/stats.ts` | `DirectoryData` schema for `v1/directory.json`; `trending` (with `last7` and `prior28`) on summary entries and `oftenUsedWith` on the fragment detail (all additive, published before the site uses them) |
 | `packages/cli/registry/removed.json` | New, empty `entries` |
-| `stacks-api/apps/web/src/pages/browse/`, `tags/`, `fragments/` (with its index page), `agents/`, `stacks/[id]/` | The new pages and the removed-stack variant |
+| `stacks-api/apps/web/src/pages/browse/`, `tags/`, `fragments/` (with its index page), `stacks/[id]/` | The new pages and the removed-stack variant |
 | `stacks-api/apps/web/src/components/SiteNav.astro` | The nav, built from the site switches |
 | `stacks-api/apps/api/src/stats/trending.ts`, `src/stats/cooccur.ts` | Score and lift |
 | `stacks-api/apps/api/src/stats/rollup.ts` | The `cooccur` dimension in the daily step |
@@ -128,25 +145,49 @@ A tag page lists every current stack and fragment carrying that tag, by name, wi
 
 ## Acceptance tests
 
-- `build:index` over a fixture registry writes a `v1/directory.json` that verifies with the test key and carries the fixture repo's commit dates; the site built over that output has `/browse/newest/` in that order, a tag page per tag, a fragment page per fragment, and a `/fragments/` page listing every fixture fragment by category and name and linking to each fragment page, each with no `<script>` other than the theme toggle and the copy script (4.0e), and the expected copy commands.
-- A fixture where `OfficialNames` holds `old-stack` and the registry doesn't: `build:index` fails naming it; with a `removed.json` row it succeeds, the site's `/stacks/old-stack/` carries the notice and the replacement's copy command, and no page contains `new old-stack`. A `replacedBy` naming a missing id fails the build.
+Split 2026-10-27 by where each test runs: this repository's build here, the site's pages under "Acceptance tests in stacks-api", and the telemetry views under "Deferred acceptance tests (telemetry)", written when D17, 4.2b and 4.2f have landed.
+
+1. `build:index` over a fixture registry in a fixture git repository writes a `v1/directory.json` that verifies with the test key, decodes as `DirectoryData`, and carries each entry's first-add commit date for every stack and fragment in the index, sorted by kind then id; `build:index --check` verifies it against the served copy and fails on a changed byte.
+2. A fixture where `OfficialNames` holds `old-stack` and the registry doesn't: `build:index` fails naming it; with a `removed.json` row it succeeds and `removed` carries the row and `last` taken from the last `v*` tag that shipped `old-stack` (its name, description, tags, steps with defaults and last ledger run). A `replacedBy` naming an id that isn't current fails the build naming it; a row without `replacedBy` is accepted and written without it.
+3. A tag that isn't `^[a-z0-9-]+$` (one containing `<`, one with a capital) fails `build:index` naming the entry; a `reason` containing `<` is written verbatim.
+4. A shallow clone fails `build:index` before writing anything, with a message saying added dates need full history.
+5. `packages/cli/registry/removed.json` ships with empty `entries` and the bundled registry's build writes a `v1/directory.json` with `removed: []`.
+
+### Realistic edge cases
+
+6. Edits and removal/re-addition of a definition do not reset its first-add date, and unproven entries stay out of the directory.
+7. Directory history reads work from an unrelated working directory with inherited git repository selectors, through paths containing spaces and non-ASCII characters.
+8. Invalid removal records refuse publication and preserve existing output and sibling files; a failed shallow build also preserves existing output.
+9. `--check` rejects a missing, unsigned, unknown-key or correctly signed but invalid directory payload, even when the index and bundles verify.
+10. A carried-forward fragment absent from the working registry still gets its added date from its historical source path.
+
+## Acceptance tests in stacks-api
+
+Numbered for `stacks-api`'s own tags (`[4.2c-site#N]`); this repository's trace doesn't count them.
+
+1. The site built over a signed fixture index output with its `v1/directory.json` has `/browse/newest/` in added-date order, newest first, ties by id; a tag page per tag listing every stack and fragment carrying it by name; a fragment page per fragment (name, description, the stacks it applies to and whether each includes it by default, its files by path, its verify steps, its last ledger run through a stack, its source link and `npx @steamfield/stacks new <stack> --with <id>` per stack); and `/fragments/` listing every fragment grouped by category, then by name, linking to each fragment page.
+2. `/stacks/old-stack/` opens with "Removed from the registry on <date>: <reason>. Use <replacedBy> instead." and the replacement's copy command, shows the `last` content, and no built page contains `new old-stack`; a removed entry without `replacedBy` has the notice without the last sentence and no copy command.
+3. With `STATS_ENABLED` and `DEPS_ENABLED` off, every built page's nav links the directory, `/browse/newest/` and `/fragments/`, none links `/browse/trending/` or `/deps/`, and every nav link on every built page resolves to a built page.
+4. A fixture where `cloudflare-pages` and `docker-deploy` share `category: deploy` and one stack: `/fragments/cloudflare-pages/` lists `docker-deploy` under "Alternatives in deploy", alphabetically; a fragment alone in its category has no such section.
+5. With `STATS_ENABLED` off the build writes no `/browse/trending/`, `/browse/most-used/`, `/browse/highest-success/` or `/agents/*` page (agent pages are never built) and makes no stats request, and those paths return the static 404 from the Node server.
+6. A `reason`, name or description containing `<` renders escaped.
+7. A `v1/directory.json` with one changed byte, or a payload that doesn't decode, fails the site build.
+8. The newest view, a tag page, `/fragments/`, a fragment page and a removed page contain no `<script>` other than 4.0e's theme toggle and copy script, and Axe (through Playwright) reports no violations on each in light and dark.
+
+## Deferred acceptance tests (telemetry)
+
 - Seeded `window_metrics`: `/` orders stacks by Wilson lower bound with suppressed ones after by name; `/browse/most-used/`, `/browse/highest-success/` match hand-sorted fixtures; ties break by id.
 - Trending: `last7 = 12`, `prior28 = 8` gives score `17 / 7`, about 2.43, listed, with `last7` and `prior28` published as rounded counts; `last7 = 9` with a published `prior28` is not listed and comes back `value: false` with its score and `suppressed: false`; `last7 = 4` comes back `{ value: null, suppressed: true }` with no score; 12 projects from one install count 3 and don't qualify.
 - Lift over a seeded window matches a hand computation; a pair with an effective sample of 4 is not shown; a pair where one fragment `requires` the other is not shown whatever its lift; the fragment detail's `oftenUsedWith` equals the list the page shows.
-- Nav: with both switches on, every page's nav links to Trending and Dependencies; with `STATS_ENABLED` off no built page's nav links to `/browse/trending/`; with `DEPS_ENABLED` off none links to `/deps/`; every nav link on every built page resolves to a built page.
-- The `/fragments/cloudflare-pages/` page lists `docker-deploy` under "Alternatives in deploy" only if a fixture registry has both applying to one stack, alphabetically, with no telemetry; a fragment alone in its category has no such section.
-- `/agents/claude/` lists only stacks with an unsuppressed `claude` breakdown, with each row's median time to green and projects, and contains no other agent's numbers; seeded runs recorded as `other` produce no page for any agent name outside `DetectedAgent`.
-- With `STATS_ENABLED` off: the site build writes no `/browse/trending/` or `/agents/claude/` page and makes no stats request, the served paths return the static 404, and `/browse/newest/`, tag, fragment and removed pages are built.
-- A `reason` or tag containing `<` in a fixture is escaped or rejected.
+- Nav: with both switches on, every page's nav links to Trending and Dependencies.
 - 4.2b's CLI decodes a summary with and without `trending`.
-- Page checks, with the stats built through 4.2f's components: every green-rate value on `/`, the browse pages, tag, fragment and agent pages has its interval and `n` (4.2f test 3's scan); those pages contain no `<script>` other than 4.0e's theme toggle and copy script; Axe (through Playwright) reports no violations on `/browse/highest-success/`, a fragment page and an agent page, in light and dark; no page lists agents in rate order.
-- Telemetry-free build: with `STATS_ENABLED` off and no 4.2b or 4.2f code paths reached, the newest view, tag, fragment and removed pages build and pass the same script and Axe checks.
+- Page checks, with the stats built through 4.2f's components: every green-rate value on `/`, the browse pages, tag and fragment pages has its interval and `n` (4.2f test 3's scan); those pages contain no `<script>` other than 4.0e's theme toggle and copy script; Axe (through Playwright) reports no violations on `/browse/highest-success/` and a fragment page, in light and dark; no page lists agents in rate order.
 
 ## Exit criteria
 
 - Acceptance tests pass; `bun run check` green from this repository's root and in `stacks-api`.
 - One manual deploy (4.0e's deploy procedure) shows every view, and `build:index --check` passes, now covering `v1/directory.json`.
-- A maintainer reviews a browse page, a fragment page and an agent page in both themes and on a phone width (as 4.2f's exit criteria do for the stack page), and `/stats/about/` gains the trending score and lift in the words above.
+- A maintainer reviews a browse page and a fragment page in both themes and on a phone width (as 4.2f's exit criteria do for the stack page), and `/stats/about/` gains the trending score and lift in the words above.
 - The telemetry-free parts may be marked executed on their own, with the telemetry views recorded as deferred until D17 and 4.2f.
 
 ## What this plan may get wrong
@@ -159,4 +200,6 @@ A tag page lists every current stack and fragment carrying that tag, by name, wi
 - 2026-10-27: a review of the site's design mocks found a nav entry for a fragment index the plan didn't have, a nav that would link to unbuilt views, a trending field that mixed "doesn't qualify" with "too few to publish" and had no inputs to draw, and a lift list that would rank a required fragment. `/fragments/`, the nav rule, `last7` and `prior28` with the split, the `requires` exclusion and `oftenUsedWith` on the fragment detail are added above.
 - 2026-10-27: the mocks show stars (counts on list rows and fragment pages, a "Starred" browse view, an avatar in the nav). The site leaves them out, per roadmap "Won't have" ("Ratings, reviews, accounts"); a local-only saved list would be a new proposal in `requirements.md`.
 - 2026-10-27: the mocks' agent breakdown lists `gemini`, which the CLI can't record: an agent it doesn't detect is `other` (roadmap, Contracts: Agent ids). Agent pages and rows show only `DetectedAgent` values.
-- An agent page is a ranking of stacks per agent, which some readers will still read as agents compared. Open question 31 is the maintainers' call; if they say no, drop `/agents/*` and keep the stack page breakdown.
+- 2026-10-27: execution splits the telemetry-free parts into this repository's `v1/directory.json` build and the site's pages, written in parallel against the `DirectoryData` shape above; the site's test fixture is regenerated from the real build before its pages merge. `replacedBy` became optional, since a stack can be retired with nothing to replace it. The nav, with both switches off, links the directory, `/browse/newest/` and `/fragments/`; tag pages are reached from the tags on each row and stack page.
+- 2026-10-27, the site test author's questions: `/browse/newest/` lists stacks only (fragments are on `/fragments/`); fragment pages have no source link, as 4.0e; a fragment's files show as project paths (the bundle path without `files/`); its copy command is `new <stack>` where it is a default and `new <stack> --with <id>` where it is optional; a fragment applying to no indexed stack names its `applies_to` as text with "No indexed stacks yet" and no command; its last ledger run is the newest pinned run of an indexed stack that includes it, since the index records no optional-fragment proof; the nav is exactly the directory, `/browse/newest/` and `/fragments/` in that order, on every page but 4.0b's `/status/`; with `STATS_ENABLED` unset or `false` the stats views are off; a configured `STACKS_INDEX_DIR` without a valid signed `v1/directory.json` fails the site build, and 4.0e's fixtures gain one.
+- 2026-10-27: the maintainers dropped agent pages ([open question 31](../risks-and-open-questions.md#open-questions-for-the-maintainers)): no `/agents/*`, and the per-agent breakdown stays on each stack page (4.2b), alphabetical by agent. The `/agents/claude/` acceptance item is removed.

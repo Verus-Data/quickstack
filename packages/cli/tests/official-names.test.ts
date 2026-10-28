@@ -108,6 +108,20 @@ test("an undecodable release retains frontmatter ids and warns with its tag [4.0
   release(f, "v0.0.1");
   rmSync(join(f.registry, "stacks/old-stack-directory"), { recursive: true });
   rmSync(join(f.registry, "fragments/old-fragment-directory"), { recursive: true });
+  writeFileSync(
+    join(f.registry, "removed.json"),
+    JSON.stringify({
+      schemaVersion: 1,
+      entries: {
+        "legacy-stack": { kind: "stack", removedAt: "2026-10-27", reason: "Retired legacy stack" },
+        "legacy-fragment": {
+          kind: "fragment",
+          removedAt: "2026-10-27",
+          reason: "Retired legacy fragment",
+        },
+      },
+    }),
+  );
   git(f, "add", "packages/cli/registry");
   git(f, "commit", "--quiet", "-m", "fixture: remove legacy entries");
   const result = await f.invoke(["--out", f.out, "--previous", "none", "--key", privateKey]);

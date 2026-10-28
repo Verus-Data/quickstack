@@ -188,7 +188,7 @@ the same failure rule as the run record.
 |---|---|---|
 | A record found only by path | `changed` | An edited `projectId` is the cheapest way to dodge the second copy |
 | Accept on a fresh clone | Creates the state record | A person at a terminal has confirmed the steps; later runs can be `full` |
-| `firstTestPassAt` scope | Any scope | It measures the first passing test, not the definition of done |
+| `firstTestPassAt` scope | Any scope | It records completion of the first run with a successful test-layer command. It cannot observe test counts or distinguish arbitrary no-ops; shipped conditional hook checks use the check layer (QA-09). |
 | Reasons and output in records | Never | Records must be safe to share and to send later |
 
 ## Files and areas touched

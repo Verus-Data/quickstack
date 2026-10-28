@@ -5,7 +5,7 @@ argument-hint: "<service name and responsibility>"
 
 Add a service: $ARGUMENTS
 
-Follow `.claude/rules/src/effect-api.md`, and read an existing service in `src/services/` first.
+Follow `docs/guidance/typescript-api/effect-api.md`, and read an existing service in `src/services/` first.
 
 1. **Interface.** A `Context` service class (the installed release's form; the `effect` skill names it) in `src/services/<Name>.ts` with a namespaced key and a small interface of Effect-returning methods whose requirements are `never`. Failures it can produce are tagged errors in `errors.ts`, each with its `apiErrorTable` row.
 2. **Layers.** A `static readonly layer` built from an effectful `make`, yielding its dependencies and Config once in `make`. If it keeps state, add `static readonly layerMemory` with fresh state per build. New env vars go in `config.ts`, `.env.example` and README.

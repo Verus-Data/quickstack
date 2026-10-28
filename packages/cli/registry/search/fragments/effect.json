@@ -3,11 +3,11 @@
   "kind": "fragment",
   "id": "effect",
   "source": {
-    "digest": "sha256:f2da7e10fe08fbde279e6ff2e8bbf4785eabbfa0635d8ea84add3c8123b8dbe6",
+    "digest": "sha256:a578c0289ed0aac3c6b3e88c29cf4add8a0f971bcc0f70ecc63c86b405afd383",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 2,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "Add isolated service tests, controllable time and guidance checked against the installed Effect APIs.",
   "description": "Add Effect-focused testing practices and guidance checked against installed APIs. Tests use real service layers with fresh state, controlled clocks and explicit assertions for failures and defects. The generated skill records the installed release's service, schema and runtime conventions. The stack still owns application architecture, services, configuration and logging; this fragment supports developing and testing them.",
@@ -30,8 +30,22 @@
     "keep service state isolated between tests while using real layers",
     "document the APIs my installed dependencies actually expose for coding agents"
   ],
-  "useCases": ["Effect program testing", "maintaining installed API guidance"],
-  "synonyms": ["@effect/vitest", "TestClock", "virtual time", "service layers", "ConfigProvider"],
-  "goodFor": ["asserting typed failures and defects", "finding unintended shared test state"],
-  "notFor": ["choosing the application's runtime architecture"]
+  "useCases": [
+    "Effect program testing",
+    "maintaining installed API guidance"
+  ],
+  "synonyms": [
+    "@effect/vitest",
+    "TestClock",
+    "virtual time",
+    "service layers",
+    "ConfigProvider"
+  ],
+  "goodFor": [
+    "asserting typed failures and defects",
+    "finding unintended shared test state"
+  ],
+  "notFor": [
+    "choosing the application's runtime architecture"
+  ]
 }

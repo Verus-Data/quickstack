@@ -22,6 +22,7 @@ verify:
   - { name: lint, layer: lint, run: bun run lint }
   - { name: typecheck, layer: typecheck, run: bun run typecheck }
   - { name: test, layer: test, run: bun run test }
+  - { name: config-logging, layer: test, run: bun run test:unit tests/config-logging.test.ts }
   - { name: binary, layer: test, run: bun run e2e }
   - name: readme-filled
     layer: check
@@ -43,6 +44,10 @@ commands:
 ---
 
 # TypeScript CLI with Effect
+
+Read `docs/guidance/typescript-cli/index.md` before implementation; it supplies the shared guidance for every selected agent.
+
+Implement `docs/acceptance/typescript-cli.md`; verify separately runs its config/logging regression, asserting emitted records and file/env/default precedence rather than only accepting a logLevel field.
 
 One CLI compiled with `bun build --compile`. Effect owns commands, services, errors, configuration, and logging; Effect's CLI module defines the command tree. `doctor` and `--version` are the proving slice. The base has no model provider, TUI, installer, update command, or release workflow.
 

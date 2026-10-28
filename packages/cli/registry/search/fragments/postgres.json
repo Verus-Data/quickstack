@@ -7,7 +7,7 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 2,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "Add local PostgreSQL services, explicit schema migrations and a private database for each test file cloned from a migrated template.",
   "description": "Add local Postgres development and test services, SQLAlchemy/Alembic integration for python-react, and explicit migration commands. The test harness clones a migrated template so each test file has a private database. Readiness checks distinguish API health from database availability. Product tables, queries and access rules are your work. Production hosting is separate, and migrations run as a release step rather than at application startup.",
@@ -24,16 +24,30 @@
       "stack": "python-react"
     }
   ],
-  "capabilities": ["database"],
+  "capabilities": [
+    "database"
+  ],
   "requests": [
     "give my backend a local SQL database with persistent development data",
     "isolate each test file's database without rebuilding its schema every time",
     "manage schema changes through migrations and check them against my models",
     "run a separate fast database service for tests"
   ],
-  "useCases": ["local database development", "parallel database integration tests"],
-  "synonyms": ["Postgres", "Docker Compose", "SQLAlchemy", "Alembic", "template database"],
-  "goodFor": ["migrations as the schema source", "async Python database sessions"],
+  "useCases": [
+    "local database development",
+    "parallel database integration tests"
+  ],
+  "synonyms": [
+    "Postgres",
+    "Docker Compose",
+    "SQLAlchemy",
+    "Alembic",
+    "template database"
+  ],
+  "goodFor": [
+    "migrations as the schema source",
+    "async Python database sessions"
+  ],
   "notFor": [
     "managed production database provisioning",
     "automatic migrations on application startup"

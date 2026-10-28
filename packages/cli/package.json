@@ -10,6 +10,7 @@
     "human": "bun scripts/human.ts",
     "build": "bun scripts/build.ts",
     "build:index": "bun scripts/build-index.ts",
+    "search:eval": "bun scripts/search-eval.ts",
     "decorate": "bun scripts/decorate.ts",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.registry.json",
     "lint": "biome check .",
@@ -63,7 +64,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tryopendata/quickstack.git",
+    "url": "git+https://github.com/steamfield/stacks.git",
     "directory": "packages/cli"
   }
 }

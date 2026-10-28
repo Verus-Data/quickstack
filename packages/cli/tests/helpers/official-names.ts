@@ -79,6 +79,20 @@ export async function taggedFixture(temporary: string) {
   rmSync(entryPath(f.registry, "fragment", "retired-tool"), { recursive: true });
   rmSync(join(f.registry, "search/stacks/retired.json"));
   rmSync(join(f.registry, "search/fragments/retired-tool.json"));
+  writeFileSync(
+    join(f.registry, "removed.json"),
+    JSON.stringify({
+      schemaVersion: 1,
+      entries: {
+        retired: { kind: "stack", removedAt: "2026-10-27", reason: "Retired fixture stack" },
+        "retired-tool": {
+          kind: "fragment",
+          removedAt: "2026-10-27",
+          reason: "Retired fixture tool",
+        },
+      },
+    }),
+  );
   renameStep(f, "lint-v1", "lint-v2");
   release(f, "v0.2.0");
   renameStep(f, "lint-v2", "lint-index");

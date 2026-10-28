@@ -3,11 +3,11 @@
   "kind": "stack",
   "id": "typescript-api",
   "source": {
-    "digest": "sha256:bb547eca8c56ffada0159d288df055140b8fe8f254efdc7a6e6e0ff366d87102",
+    "digest": "sha256:0781323224f911b24a697216e9d9dd97255a0209852c88b033a15fa3f4afc13c",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 2,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "An HTTP service with validated requests, documented endpoints, consistent errors and structured request logs.",
   "description": "Create a Node HTTP API whose Effect contract owns endpoint schemas, routing and documented errors. Thin handlers call services, and one request boundary produces safe responses and structured logs. The recipe proves startup and HTTP behavior with a health endpoint, then packages the server as one Node bundle. It does not select a database, identity provider or browser interface.",
@@ -22,19 +22,36 @@
       "description": "Wrap selected upstream APIs in typed resources with consistent errors and logs. Implement the provider clients, credentials and access rules for those integrations."
     }
   ],
-  "platforms": ["server"],
-  "productKinds": ["api"],
-  "languages": ["typescript"],
+  "platforms": [
+    "server"
+  ],
+  "productKinds": [
+    "api"
+  ],
+  "languages": [
+    "typescript"
+  ],
   "requests": [
     "serve typed resources with automatically generated API documentation",
     "return consistent errors when callers send invalid requests",
     "trace a failed HTTP call through structured logs"
   ],
-  "useCases": ["REST services", "HTTP backends"],
-  "synonyms": ["Effect HttpApi", "Node", "OpenAPI", "request validation", "health endpoint"],
+  "useCases": [
+    "REST services",
+    "HTTP backends"
+  ],
+  "synonyms": [
+    "Effect HttpApi",
+    "Node",
+    "OpenAPI",
+    "request validation"
+  ],
   "goodFor": [
     "one definition for routing and schemas",
     "testing both HTTP listeners and web handlers"
   ],
-  "notFor": ["graphical interfaces", "a preconfigured database or authentication system"]
+  "notFor": [
+    "graphical interfaces",
+    "a preconfigured database or authentication system"
+  ]
 }

@@ -7,7 +7,7 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 2,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "Package deployable services as production container images and publish them to GitHub Container Registry after CI passes.",
   "description": "Package each deployable part as a multi-stage, non-root image with a healthcheck, then publish versioned images to GitHub Container Registry after CI. The instructions adapt to the selected stack, including an API and static site in one image for astro-api. Local verification builds images. Choosing a host, configuring runtime secrets and rolling out containers remain separate deployment work.",
@@ -24,14 +24,31 @@
       "stack": "astro-api"
     }
   ],
-  "capabilities": ["deploy"],
+  "capabilities": [
+    "deploy"
+  ],
   "requests": [
     "package my API in a small container that runs without root",
     "publish versioned service images when checks pass or I tag a release",
     "build separate production images for my frontend and backend"
   ],
-  "useCases": ["container packaging", "automated image publishing"],
-  "synonyms": ["Dockerfile", "GHCR", "Buildx", "multi-stage builds", "health checks"],
-  "goodFor": ["minimal runtime images", "cached builds and tagged images"],
-  "notFor": ["automatic rollout to a host", "container orchestration"]
+  "useCases": [
+    "container packaging",
+    "automated image publishing"
+  ],
+  "synonyms": [
+    "Dockerfile",
+    "GHCR",
+    "Buildx",
+    "multi-stage builds",
+    "HEALTHCHECK"
+  ],
+  "goodFor": [
+    "minimal runtime images",
+    "cached builds and tagged images"
+  ],
+  "notFor": [
+    "automatic rollout to a host",
+    "container orchestration"
+  ]
 }

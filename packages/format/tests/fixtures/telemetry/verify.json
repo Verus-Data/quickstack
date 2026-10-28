@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "eventId": "ac0a74dd-05eb-484c-a49b-b42264042190",
+  "type": "verify",
+  "installId": "ad7c7211-cc24-4d18-9913-64f8a531523f",
+  "projectId": "4b4bce19-dd67-4358-a490-02846b30b228",
+  "cliVersion": "0.3.1",
+  "os": "linux",
+  "nodeMajor": 24,
+  "agent": "claude",
+  "sentAt": "2026-10-27T14:07:01.000Z",
+  "scope": "full",
+  "outcome": "failed",
+  "tamperCheck": "full",
+  "steps": [
+    {
+      "name": "lint",
+      "phase": "check",
+      "layer": "lint",
+      "status": "passed",
+      "duration": "5s"
+    },
+    {
+      "name": "test",
+      "phase": "check",
+      "layer": "test",
+      "status": "failed",
+      "failureKind": "step",
+      "duration": "30s"
+    },
+    {
+      "name": "custom",
+      "phase": "teardown",
+      "status": "passed",
+      "duration": "5s"
+    }
+  ],
+  "stepsChanged": 1,
+  "secondsSinceScaffold": 300,
+  "secondsToFirstTestPass": 120
+}

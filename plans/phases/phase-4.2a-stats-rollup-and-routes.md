@@ -1,6 +1,6 @@
 # Phase 4.2a: Stats rollup and routes
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: AGREED 2026-10-27 (on SQLite on the Node host, amended D16; the wire shapes are the provisional `StatsSummary` and `StatsDetail` the site builds against)
 
 | Field | Value |
 |---|---|
@@ -248,6 +248,8 @@ Summary entries also carry `previous` (`{ projects, greenRate }`, same shapes) a
 
 ## What this plan may get wrong
 
+- 2026-10-27 (maintainers: REST conventions, roadmap "API route map"): `GET /v1/stats/summary` is `GET /v1/stats`, the collection of per-entry stats, and the detail routes' params are `{stackId}` and `{fragmentId}`. The summary `sort` values are field paths with a direction: `lower` is `-greenRate.lower` (still the default), `projects` is `-projects`, `green` is `-greenRate`, `trending` is `-trending.score` and `id` stays `id`. Read every example here with those names. Storage is SQLite on the Node host (amended D16; 4.1b's dated line), and the hourly trigger is a Node timer in `apps/api/src/platform/` running the same rollup program under 4.1c's lease, so read "the local Workers runtime" in the tests as the Node server with a temporary database file.
+
 - The gate may take a long time to meet. That is information about adoption, and the ledger results still give clients something true.
 - The no-verify share still mixes people who stopped with sandboxes that blocked telemetry (4.1a). The scaffold failure share separates failed `new` runs per stack only when the failure happened after the stack resolved; earlier failures stay global.
 - Capping at 3 projects per install and `3 × networks` are guesses. They are config: changing them recomputes windows on the next daily step.
@@ -259,3 +261,5 @@ Summary entries also carry `previous` (`{ projects, greenRate }`, same shapes) a
 - 2026-10-27: the detail routes were `GET /v1/stats/stacks/:id` and `GET /v1/stats/fragments/:id`, which end in a path param against the API's routing rule, and the summary returned `entries` with a `limit` and no cursor, against its list rule. The routes are now `GET /v1/stacks/:id/stats` and `GET /v1/fragments/:id/stats`, and the summary returns `{ items, nextCursor? }`. One difference from that rule remains: its cursor encodes the last item's sort key and id, and here it encodes the id and the rollup's `generatedAt` only, because the sort key is an exact, unrounded value. Resuming after an id costs a scan of the stored order, which is small.
 - 2026-10-27: a review of the site's design mocks found no upper interval bound (every mock draws `86-95%` and whiskers), no complement rule for totals, and breakdown cells too thin for the pages (`byPreset` and `byAgent` had no `projects`, `byComposition` no fields, the fragment detail no series or per-stack cells). Those are added above, each with its reader. Still open for the maintainers: a published count of failed runs before first green (for an `n=` on step failures) and counting `add` events into a fragment's projects.
 - 2026-10-27: the mocks show stars (counts on every row and page, a "Starred" view, an avatar). The site leaves them out, and no route counts them, per roadmap "Won't have" ("Ratings, reviews, accounts").
+- 2026-10-27: `StatsSummary` and `StatsDetail` are written ahead of this sub-phase, provisionally, so 4.2f's pages can be built on fixtures (4.2f, 2026-10-27). When this sub-phase executes, its routes encode those schemas; a change to them updates the site's fixtures and tests in the same change.
+- 2026-10-27: the provisional schemas settle what the prose left open. A suppressed cell's `value` is `null`, and a suppressed green rate nulls `lower`, `upper` and `sample`. An unpublished response carries the header and ledger identities with no metrics. `previous` is required. The detail echoes `interval`, `from` and `to` and carries both windows under `windows["7"]` and `windows["28"]`. Breakdowns are keyed arrays, required and possibly empty; step-failure and error-code shares are records. A fragment's `withWithout` cells publish together or not at all, and a default fragment carries `keptRate` where an optional one carries `attachRate`. One difference from the prose: `entryPoints` follows the route example's plain share maps, with suppressed categories omitted, not `{ value, suppressed }` cells.

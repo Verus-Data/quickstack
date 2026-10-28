@@ -29,6 +29,27 @@ import { workspace } from "./helpers/verify";
 
 const space = workspace();
 afterEach(() => space.release());
+
+test("editorial descriptions and project ideas do not change lexical ranking", async () => {
+  const { fixtureRecord, loadRank, vocabulary } = await import("./helpers/search-command");
+  const rank = await loadRank();
+  const record = await fixtureRecord(space.dir(), "editorial-only");
+  if (!record.search) throw new Error("fixture needs search metadata");
+  const options = { request: "quartz workbench", vocabulary: vocabulary(), entries: [record] };
+  const enriched = {
+    ...record,
+    search: {
+      ...record.search,
+      description: "Quartz workbench. ".repeat(10),
+      seoDescription: "Build a quartz workbench.",
+      projectExamples: [
+        { title: "Quartz workbench", description: "An illustrative quartz workbench." },
+      ],
+    },
+  };
+  expect(rank({ ...options, entries: [enriched] })).toEqual(rank(options));
+});
+
 const stack = { kind: "stack", id: "sample" } as const;
 const fragment = { kind: "fragment", id: "tools" } as const;
 const example = {

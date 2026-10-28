@@ -45,7 +45,7 @@ First release, as the npm package `@steamfield/stacks` installed as `stacks` (No
 - Commands: `list`, `show`, `new`, `add`, `create`, `validate`, `verify`, `runs`, `schema`, `guide`, `skill` and `doctor`, each with `--json` output, fixed exit codes and error envelopes with a next action.
 - Bundled stacks: `astro-blog`, `cloudflare-react-router`, `go-cli`, `mobile-expo`, `python-react`, `react-router`, `tauri-react` and `typescript-cli`, with 19 fragments.
 
-[0.3.1]: https://github.com/tryopendata/quickstack/compare/v0.3.0...v0.3.1
-[0.3.0]: https://github.com/tryopendata/quickstack/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/tryopendata/quickstack/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/tryopendata/quickstack/releases/tag/v0.1.0
+[0.3.1]: https://github.com/steamfield/stacks/compare/v0.3.0...v0.3.1
+[0.3.0]: https://github.com/steamfield/stacks/compare/v0.2.0...v0.3.0
+[0.2.0]: https://github.com/steamfield/stacks/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/steamfield/stacks/releases/tag/v0.1.0

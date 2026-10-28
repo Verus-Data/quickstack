@@ -7,7 +7,7 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 2,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "Publish a static site to Cloudflare Pages with production deploys, pull request previews, caching headers and redirects.",
   "description": "Publish a static build to Cloudflare Pages using project-local Wrangler. The recipe covers production and pull-request preview deployments, plus caching headers and redirects. Direct upload from GitHub Actions is the default; git integration is another documented choice. Creating the Pages project, setting credentials and attaching a domain remain explicit user actions. It does not provide a backend server.",
@@ -24,14 +24,30 @@
       "stack": "astro-blog"
     }
   ],
-  "capabilities": ["deploy"],
+  "capabilities": [
+    "deploy"
+  ],
   "requests": [
     "publish my built site after the checks pass",
     "give each pull request a preview URL for review",
     "configure redirects and caching when hosting my static pages"
   ],
-  "useCases": ["static site hosting", "previewing site changes"],
-  "synonyms": ["wrangler", "direct upload", "preview deploys", "Cloudflare Pages"],
-  "goodFor": ["deploying existing build output", "production and branch previews"],
-  "notFor": ["running a backend server", "container image hosting"]
+  "useCases": [
+    "static site hosting",
+    "previewing site changes"
+  ],
+  "synonyms": [
+    "wrangler",
+    "direct upload",
+    "preview deploys",
+    "Cloudflare Pages"
+  ],
+  "goodFor": [
+    "deploying existing build output",
+    "production and branch previews"
+  ],
+  "notFor": [
+    "running a backend server",
+    "container image hosting"
+  ]
 }

@@ -9,6 +9,7 @@ flowchart LR
   subgraph Roots["Registry roots"]
     P["project<br/>untrusted"]
     U["user"]
+    I["index<br/>when configured"]
     B["bundled"]
   end
   subgraph CLI["stacks new: reads and writes, runs nothing it read"]
@@ -29,7 +30,7 @@ flowchart LR
   classDef agent fill:#581c87,stroke:#c084fc,stroke-width:2px,color:#f3e8ff
   classDef done fill:#065f46,stroke:#10b981,stroke-width:2px,color:#d1fae5
   class P untrusted
-  class U,B root
+  class U,I,B root
   class C,R,W,H stage
   class A,V agent
   class D done
@@ -39,7 +40,11 @@ Blue stages are the CLI writing files; purple is the agent's loop, where the onl
 
 Each stage is a separate module with one job, and the first four are pure in the sense that matters here: they read files and write files, and never run anything they read.
 
-Compose (`src/core/compose/`) resolves the stack id across the three roots, applies `required`, `default`, `--with` and `--without`, follows `requires` and checks `conflicts` and `applies_to`. Its output, a `Composition`, lists every entry with its decisions, dependencies, commands, environment defaults and verify steps, in a fixed order.
+Compose (`src/core/compose/`) resolves the stack id across project, user, index and bundled origins, applies `required`, `default`, `--with` and `--without`, follows `requires` and checks `conflicts` and `applies_to`. Its output, a `Composition`, lists every entry with its decisions, dependencies, commands, environment defaults and verify steps, in a fixed order.
+
+`core/remote-index.ts::RemoteIndex` owns bounded HTTP reads, signature and digest verification, freshness and failure backoff. The registry preserves local precedence and bundled identity for equal digests. An index stack carries the exact fragment snapshot named in its proof; an unavailable bundle falls back to the complete bundled composition. `doctor` inspects cache state without refreshing, and `verify` never reads the index. Remote data cannot start a process.
+
+`bin.ts` supplies the optional official index URL alongside its key list. Production currently supplies no URL. Config reads only `STACKS_INDEX_URL`, which overrides the supplied URL; with neither, the origin is off, returns no index, and makes no HTTP requests. Doctor reports `url: null` and `isDefaultUrl: false` when off. Only an effective URL matching the supplied official URL takes the signature-checked trust path; other URLs are untrusted.
 
 Render turns a composition into bytes. One function, `composeFiles`, renders every planned file (copying, filling `.tmpl` templates, deep-merging JSON files that several entries ship), and `renderBrief` writes the brief. Because rendering is deterministic, stacks can fingerprint a composition: the same stack, fragments and preset always hash the same, which is how the bundled ledger knows whether a recorded run still describes the current stack.
 

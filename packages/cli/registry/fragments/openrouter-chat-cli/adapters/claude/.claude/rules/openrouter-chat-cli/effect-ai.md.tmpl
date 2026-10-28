@@ -10,24 +10,4 @@ paths:
   - "src/commands/mcp.ts"
 ---
 
-# Effect AI behavior
-
-Use Effect AI with the OpenRouter provider. Before writing code, read the installed packages' exports and follow those paths to their type declarations. CLI, AI, and HTTP module locations and call signatures can change between releases. Keep verified imports, constructors, stream parts, schema helpers, and provider metadata shapes in the project's generated Effect skill, not this reference. Do not substitute another SDK's streaming protocol.
-
-## Turn ownership
-
-The application owns the multi-step tool loop in runTurn. Append a completed step's response parts to the prompt, continue after tool calls, and enforce the configured step cap. Emit typed text/tool events and exactly one final event with the complete reply; aggregate usage and cost over all steps from metadata confirmed against installed types.
-
-Retry a step only before it emits any part, only for retryable errors, with bounded exponential delay. Never replay a partially consumed stream. A duration limit must report a timeout rather than silently end. Finalize once for success, failure, cancellation, or early consumer return: save the observed partial reply, mark it interrupted unless the final event occurred, and log one call outcome. A successful stream exit alone does not prove that the consumer read everything.
-
-Map provider failures once to safe application errors and explicit retryability. Preserve bounded upstream reason text where actionable; never expose raw bodies, headers, or stack traces. Log private details at the handling boundary once.
-
-## Tools and output
-
-Define tools from project schemas, compose them into the chat toolkit, and expose those same tools through MCP. Handlers obtain services from the runtime so tests control time and storage. Input failures intended for model correction must return tool results rather than crash the turn. Add MCP-only tools explicitly.
-
-Inspect the actual JSON Schema sent by the installed provider for each supported model family, including any closing/rewrite behavior. Use descriptive schemas without unsupported references and pin the wire shape in tests. Structured model output is untrusted: decode it again, return InvalidModelOutput on failure, and retain usage/model metadata for evals. Nonstreaming retry and timeout remain bounded and retry only retryable failures.
-
-## Verification
-
-Run the real provider against the local stub through runCli; script HTTP responses rather than mocking project modules. Cover a plain turn, tool follow-up, step cap, retry before output, no retry after output, timeout with partial persistence, early consumer return, usage/cost totals, each upstream error's code and retryability, and MCP protocol/EOF handling. Replay fixtures through whole and split chunks; do not fabricate recordings. Keep live recording/evaluation outside automated checks.
+Read [Effect AI behavior](../../../docs/guidance/openrouter-chat-cli/effect-ai.md). This is the shared authoritative guidance for every selected agent.

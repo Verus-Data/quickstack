@@ -1,0 +1,172 @@
+{
+  "generatedAt": "2026-10-26T01:00:00Z",
+  "through": "2026-10-25",
+  "population": "seeded development data",
+  "window": 28,
+  "published": true,
+  "interval": 7,
+  "from": "2026-10-01",
+  "to": "2026-10-25",
+  "id": "lint",
+  "kind": "fragment",
+  "projects": {
+    "value": 250,
+    "suppressed": false
+  },
+  "greenRate": {
+    "value": 0.9,
+    "lower": 0.85,
+    "upper": 0.94,
+    "sample": 210,
+    "suppressed": false
+  },
+  "windows": {
+    "7": {
+      "projects": {
+        "value": 70,
+        "suppressed": false
+      },
+      "greenRate": {
+        "value": 0.9,
+        "lower": 0.79,
+        "upper": 0.96,
+        "sample": 50,
+        "suppressed": false
+      }
+    },
+    "28": {
+      "projects": {
+        "value": 250,
+        "suppressed": false
+      },
+      "greenRate": {
+        "value": 0.9,
+        "lower": 0.85,
+        "upper": 0.94,
+        "sample": 210,
+        "suppressed": false
+      }
+    }
+  },
+  "series": [
+    {
+      "day": "2026-10-18",
+      "projects": {
+        "value": 50,
+        "suppressed": false
+      }
+    },
+    {
+      "day": "2026-10-25",
+      "projects": {
+        "value": 70,
+        "suppressed": false
+      }
+    }
+  ],
+  "byStack": [
+    {
+      "stack": "go-cli",
+      "default": true,
+      "projects": {
+        "value": 200,
+        "suppressed": false
+      },
+      "keptRate": {
+        "value": 0.92,
+        "suppressed": false
+      },
+      "withWithout": {
+        "with": {
+          "value": 0.91,
+          "lower": 0.84,
+          "upper": 0.96,
+          "sample": 100,
+          "suppressed": false
+        },
+        "without": {
+          "value": 0.8,
+          "lower": 0.63,
+          "upper": 0.9,
+          "sample": 30,
+          "suppressed": false
+        }
+      }
+    },
+    {
+      "stack": "astro-api",
+      "default": false,
+      "projects": {
+        "value": 50,
+        "suppressed": false
+      },
+      "attachRate": {
+        "value": 0.25,
+        "suppressed": false
+      },
+      "withWithout": {
+        "with": {
+          "value": null,
+          "lower": null,
+          "upper": null,
+          "sample": null,
+          "suppressed": true
+        },
+        "without": {
+          "value": null,
+          "lower": null,
+          "upper": null,
+          "sample": null,
+          "suppressed": true
+        }
+      }
+    }
+  ],
+  "seriesByStack": [
+    {
+      "stack": "go-cli",
+      "series": [
+        {
+          "day": "2026-10-18",
+          "projects": {
+            "value": 50,
+            "suppressed": false
+          }
+        },
+        {
+          "day": "2026-10-25",
+          "projects": {
+            "value": 55,
+            "suppressed": false
+          }
+        }
+      ]
+    },
+    {
+      "stack": "astro-api",
+      "series": [
+        {
+          "day": "2026-10-18",
+          "projects": {
+            "value": null,
+            "suppressed": true
+          }
+        },
+        {
+          "day": "2026-10-25",
+          "projects": {
+            "value": 15,
+            "suppressed": false
+          }
+        }
+      ]
+    }
+  ],
+  "oftenUsedWith": [
+    {
+      "id": "docker",
+      "stack": "go-cli",
+      "lift": 1.8
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 import { Effect } from "effect";
 import { Command } from "effect/cli";
 import { doctor } from "../core/doctor";
+import type { RemoteStatus } from "../schemas/remote-index";
 import { Output } from "../services/output";
 export const doctorCommand = Command.make("doctor", {}, () =>
   Effect.gen(function* () {
@@ -8,7 +9,7 @@ export const doctorCommand = Command.make("doctor", {}, () =>
     const output = yield* Output;
     yield* output.result(
       report,
-      `stacks ${report.version}\nPlatform: ${report.platform}\nConfig: ${report.paths.config}\nData: ${report.paths.data}\nUser entries: ${report.paths.user}\nRegistry: ${report.registry.path}${report.registry.found ? "" : " (not found)"}\nSkill: ${report.skill.path}${report.skill.found ? "" : " (not found)"}\n${report.configErrors.length ? report.configErrors.join("\n") : "Configuration: ok"}`,
+      `stacks ${report.version}\nPlatform: ${report.platform}\nConfig: ${report.paths.config}\nData: ${report.paths.data}\nUser entries: ${report.paths.user}\nRegistry: ${report.registry.path}${report.registry.found ? "" : " (not found)"}\nSkill: ${report.skill.path}${report.skill.found ? "" : " (not found)"}\nRemote index: ${remoteMode(report.remoteIndex)}; ${report.remoteIndex.lastOutcome ?? "not fetched"}\nIndex cached: ${report.remoteIndex.cachedAt ?? "never"}\n${report.configErrors.length ? report.configErrors.join("\n") : "Configuration: ok"}`,
     );
   }),
 ).pipe(
@@ -21,3 +22,8 @@ export const doctorCommand = Command.make("doctor", {}, () =>
     { command: `${commandPath.join(" ")} --json`, description: "Get one DoctorReport object" },
   ]),
 );
+
+function remoteMode(status: RemoteStatus): string {
+  if (status.url === null) return "off";
+  return status.offline ? "offline" : "enabled";
+}

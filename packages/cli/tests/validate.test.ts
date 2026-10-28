@@ -1366,10 +1366,10 @@ test("an unknown --brief id under a root list doesn't read points at validate fo
   expect(human.stderr).toBe(
     `Not found.\n  Stack: typscript-cli\n  Did you mean: typescript-cli?\n  Next: stacks validate ${root} lists the ids under that root.\n`,
   );
-  // The bundled registry is what `list` shows, so a close match is the next step rather than `list`.
+  // The bundled registry is what `list` shows, so its command can recover this typo.
   const bundled = await run(["--brief", "typscript-cli"], { registry: realRegistry });
   expect(bundled.stderr).toBe(
-    "Not found.\n  Stack: typscript-cli\n  Did you mean: typescript-cli?\n  Next: use one of the ids above.\n",
+    "Not found.\n  Stack: typscript-cli\n  Did you mean: typescript-cli?\n  Next: run stacks list to see every stack and fragment id.\n",
   );
 });
 

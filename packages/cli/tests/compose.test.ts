@@ -470,7 +470,7 @@ test("the NotFound envelope carries its suggestions and the id and kind it didn'
   const human = await runCli([], { program: close, env: quiet, host: terminal });
   expect(human.status).toBe(2);
   expect(human.stderr).toBe(
-    "Not found.\n  Stack: web-stakc\n  Did you mean: web-stack?\n  Next: use one of the ids above.\n",
+    "Not found.\n  Stack: web-stakc\n  Did you mean: web-stack?\n  Next: run stacks list to see every stack and fragment id.\n",
   );
 });
 

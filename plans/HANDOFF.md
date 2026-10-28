@@ -9,24 +9,66 @@ Start here, then read repo `AGENTS.md`, the README's
 next steps, who owns each. When it grows past a couple of screens, move the dated detail
 to `archive/` and leave a link.
 
+## Manual library QA and fixes (2026-10-27–28)
+
+QA-01 through QA-11 have CLI/recipe fixes, regression coverage and targeted
+follow-up QA. The [closure report](qa-gap-closure.md) maps each fix and records
+the temporary apps' remaining implementation/coverage limits. Mobile owns its
+process groups, native guidance is portable, and the test guard follows the
+actual command directory. Historical evidence and the ledger are unchanged.
+Metadata enrichment is integrated below, with the maintainer's approval to land it.
+The merged-tree rr gate passed six partitions: 3,056 tests passed/four skipped,
+plus 35 installed-package end-to-end tests. Existing approved discovery cards
+received digest-only refreshes; copy and review dates were preserved.
+
+The app-eval follow-up adds one independent report v1 checkpoint shared through
+openrouter-ai; both app manifests use it. It rejects the retained incomplete Terra
+report and checks two local models, required cases and separate aggregates.
+See the closure note's independent-checkpoint section for verification/review;
+runner/scorer correctness and full app acceptance remain agent-owned.
+
+Three Terra 6.1 agents exercised all ten bundled stacks and both apps; the
+[report](runs/2026-10-27-library-qa/REPORT.md) records eleven CLI/recipe friction
+items, implementation gaps missed by green checks, evidence and cleanup.
+[Timings](runs/2026-10-27-library-qa/timings.md) separate CLI writes from agent
+setup and app work. Subsequent source/registry fixes and fresh timing/QA evidence
+are linked from the closure report; the original run remains unchanged.
+
 ## Phase 4 in progress (2026-10-27)
 
-Metadata decoration: 4.5b's implementation is prepared with additive optional
+Metadata decoration extends the landed 4.5b implementation with additive optional
 directory `description`, `seoDescription` and illustrative `projectExamples`,
-plus 30 enriched agent drafts (10 stacks, 18 other fragments, 2 app fragments).
+plus 30 enriched cards (10 stacks, 18 other fragments, 2 app fragments).
 The richer copy is outside ranking and embeddings; the existing search budget
 and recipe proof digests stay unchanged. See [metadata-decoration.md](metadata-decoration.md)
-for field purposes, coverage, checks and the remaining human approval gate.
-These are proposed schema details, not a new settled decision.
+for field purposes, coverage, checks and approval provenance. The maintainer
+authorized landing the prepared cards on 2026-10-28; their agent authorship and
+prompt version remain recorded. Main's reviewed discovery wording is preserved,
+with source digests aligned to the QA-fixed recipes.
 
 Executed: 4.0a, 4.0b, 4.0c (both repositories: `stacks-api` serves the index and its
-`sha256:`-named bundles, and its API README has the by-hand deploy), 4.4a, 4.4b, 4.4c, 4.5a, and 4.0e's
-signed `v1/names.json` here (its directory pages in `stacks-api` are next; the deploy's
-`_headers` needs a names cache rule there). In flight, as Codex units: 4.0d's implementation
-(tests landed on its branch). 4.5b's implementation and drafts are prepared above;
-human card review remains. Waiting: 4.2c after 4.0e; everything from 4.1a on behind D17. Maintainers' steps: review the 47 search
+`sha256:`-named bundles, and its API README has the by-hand deploy), 4.0d (the remote origin; no official
+index URL ships until the host exists, so `bin.ts` passes none and the origin is off unless
+`STACKS_INDEX_URL` is set), 4.4a, 4.4b, 4.4c, 4.5a, and 4.0e (`v1/names.json` here, the directory site in `stacks-api`,
+with no source link until the repository has a public URL). 4.5b is landed: all 30 bundled
+cards were drafted by Codex agents in checkouts without the golden set and approved by a
+maintainer (2026-10-28). 4.2c's telemetry-free parts are landed: `v1/directory.json` here, and in
+`stacks-api` the newest, tag, fragment and removed-stack pages with the three-link nav; its
+telemetry views remain. 4.2f runs fixture-first: the provisional `StatsSummary` and
+`StatsDetail` are in `packages/format/src/stats.ts`, its data layer is landed in `stacks-api`, and
+the charts wait on OpenChart work done outside these plans (another agent owns the site and
+OpenChart). D17 is decided (opt-out, 2026-10-27) and D16 amended: telemetry storage runs on
+SQLite on the Node host now. 4.5c is executed (2026-10-28): `stacks search` ranks locally, scoring
+36/36 first results and 4/4 no-match on the golden set (`plans/runs/2026-10-28-search-lexical.md`);
+the embeddings comparison waits on a maintainer's provider key. 4.1b is executed (2026-10-28):
+`stacks-api` accepts `POST /v1/events` into SQLite (development defaults to `.dev/data/`,
+production needs `STACKS_DB_PATH`, `NETWORK_HASH_KEY` and the trusted proxy headers). In flight:
+4.1a (CLI telemetry client), 4.1c (maintenance in `stacks-api`) and 4.5e's CLI side (tests
+first); then 4.1d, 4.2a and 4.2g, all AGREED. 4.5e's route in `stacks-api` imports `rank` from
+`@stacks/format`, so it waits on that package's publication. Maintainers' steps: review the 47 search
 judgments (4.5a), generate the index key and add it to `INDEX_PUBLIC_KEYS`, rerun the bench per
-stack so the index proves something (4.0c), and publish `@stacks/format` before 4.1b.
+stack so the index proves something (4.0c), and publish `@stacks/format` (until then the API
+copies the schemas it reads).
 
 ## Demo outline (2026-10-27)
 
@@ -245,8 +287,8 @@ reworded for `dist/stacks` or deferred in its plan.
     guard stays looser (docs/harness.md, "Repo hooks and shipped hooks").
   - Cursor's `Write` payload for an edit to an existing file isn't recorded; the fixture
     follows the docs. Record a live payload to confirm the secrets guard sees edits.
-  - `list` still shows the three 1.6b stacks as proven while `validate` notes their
-    compositions changed since that run; rerun them with `bun run bench`.
+  - Catalog passes are now labelled historical; `show` compares current content.
+    New counting proof still comes from a fresh bench, not a relabelled old run.
 
 ## Phases 0 and 1 (2026-10-27)
 

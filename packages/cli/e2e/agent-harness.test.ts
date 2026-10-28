@@ -29,7 +29,7 @@ const SuiteReport = Schema.Struct({
   testResults: Schema.Array(Schema.Struct({ name: Schema.String, status: Schema.String })),
 });
 
-test("the compiled binary ships a runnable hook suite and a harness-owned test step [3.4a#2]", async () => {
+test("the compiled binary ships a runnable hook suite and a harness-owned check step [3.4a#2]", async () => {
   const root = mkdtempSync(join(tmpdir(), "stacks-harness-"));
   try {
     const home = join(root, "home");
@@ -126,7 +126,8 @@ test("the compiled binary ships a runnable hook suite and a harness-owned test s
       JSON.parse(readFileSync(join(project, ".stacks/manifest.json"), "utf8")),
     );
     const steps = manifest.verify.filter(
-      (step) => step.owner === "claude-harness" && step.layer === "test",
+      (step) =>
+        step.owner === "claude-harness" && step.name === "harness-hooks" && step.layer === "check",
     );
     expect(steps.length).toBeGreaterThan(0);
     const selection = [

@@ -3,7 +3,7 @@ schema_version: 1
 id: typescript-api
 kind: stack
 name: TypeScript HTTP API with Effect
-description: A Node HTTP API on Effect's HttpApi, with schema-first REST resources, tagged errors mapped through one status table, structured request logs, a platform-free core that also runs as a web fetch handler, Vitest through real HTTP, and a health-route proving slice.
+description: A Node HTTP API on Effect's HttpApi, with schema-first REST resources, tagged errors mapped through one status table, structured request logs, a platform-free core that also runs as a web fetch handler, Vitest through real HTTP, and a one-route proving slice.
 tags: [typescript, api, effect, node, bun, scripts]
 deps:
   app: [effect, "@effect/platform-node"]
@@ -23,6 +23,7 @@ verify:
   - { name: lint, layer: lint, run: bun run lint }
   - { name: typecheck, layer: typecheck, run: bun run typecheck }
   - { name: test, layer: test, run: bun run test }
+  - { name: http-contract, layer: test, run: bun run test tests/http-contract.test.ts }
   - { name: build, layer: build, run: bun run build }
   - name: api
     phase: serve
@@ -54,6 +55,8 @@ commands:
 
 # TypeScript HTTP API with Effect
 
+Read `docs/guidance/typescript-api/index.md` before implementation; it supplies the shared guidance for every selected agent.
+
 One HTTP API served by Node. Effect owns the API definition, handlers, services, errors, configuration and logging: endpoints are declared once with Effect's `HttpApi` modules, and that declaration is the router, the request decoder, the response encoder and the OpenAPI document. The base proving slice is `GET /healthz` through config, logging, a service and the error table. No database, vendor account, auth scheme or deploy target is assumed; fragments add them.
 
 The core never knows its runtime. Only `src/platform/` imports Node, so the same app also runs as a web fetch handler (Effect's web-handler adapter for the router) for a serverless or edge host later, by adding one platform entry.
@@ -81,7 +84,7 @@ Read environment only in `config.ts` through Effect Config, over the `ConfigProv
 
 ## HTTP API
 
-Every endpoint is declared in a group with its path params, query, payload, success and error schemas, so decoding and encoding happen in the framework and handlers receive typed values. Handlers stay thin: they call a domain program and return its result. Resources live under `/v1` unless the project chose no prefix; `/healthz` and `/openapi.json` stay outside it. `.claude/rules/src/effect-api.md` names the helpers for create responses and unknown query params.
+Every endpoint is declared in a group with its path params, query, payload, success and error schemas, so decoding and encoding happen in the framework and handlers receive typed values. Handlers stay thin: they call a domain program and return its result. Resources live under `/v1` unless the project chose no prefix; `/healthz` and `/openapi.json` stay outside it. `docs/guidance/typescript-api/effect-api.md` names the helpers for create responses and unknown query params.
 
 Expected failures are `Schema.TaggedError` classes in `errors.ts` with fixed safe messages. `apiErrorTable` maps every tag exhaustively to one status and one `retryable`, and each error schema carries its status annotation from that table, so no handler picks a status. Every error body is `{ "error": { "tag", "message", "retryable" } }`; causes stay in logs. The base rows are `BadInput` (400), `NotFound` (404), `Unavailable` (503, retryable) and `Defect` (generic 500); add `UnsupportedMediaType` (415) with the first endpoint that takes a body, and other rows when an endpoint needs them.
 
@@ -101,7 +104,7 @@ Biome starts from its current generated config: recommended rules as `"rules": {
 
 TypeScript is two projects, both strict with unchecked index access, verbatim module syntax, erasable syntax only and no emit, and `typecheck` runs both. `tsconfig.json` covers `src/` and `tests/` (minus `tests/hooks/`) with `nodenext` resolution, relative imports with `.ts` extensions (`allowImportingTsExtensions`) and no path aliases, because Node runs the source as written. `tsconfig.tools.json` covers `scripts/`, `.claude/hooks/`, `tests/hooks/` and `tests/helpers/hooks.ts` with `bundler` resolution and Bun's types, because the shipped scripts and hooks import without extensions.
 
-Vitest runs on Node in the `node` environment and needs no `.env`, network or credentials; setup clears credentials before app modules load. Tests follow `.claude/rules/src/testing.md`: most tests go through the HTTP surface with real in-memory layers, either Effect's in-process test client or a real server on an ephemeral port. Cover `/healthz`, startup failing on invalid config, the 404 envelope, every `apiErrorTable` row's status and `retryable`, a decode failure (`?limit=abc` style) as the 400 envelope, a wrong method as the 404 envelope, a defect as a generic 500 logged once with its stack frames and no message, request ids, exactly one request log line per call (a route miss included), and the same `/healthz` response through the web handler with platform-free server services, not Node's. Run hook tests for every target agent.
+Vitest runs on Node without `.env`, external network or credentials; clear credentials before imports. Implement `docs/acceptance/typescript-api.md`: verify independently runs `tests/http-contract.test.ts`, the full error/request/logging matrix through both Node and platform-free web transports. Use real layers and HTTP boundaries per `docs/guidance/typescript-api/testing.md`. Run hook tests for every target agent.
 
 <!-- stacks:when with=ci-github -->
 CI sets up Bun from packageManager and Node from .node-version, installs frozen dependencies, then runs lint, typecheck, coverage and the build. Upload logs and coverage on failure. No external credentials are needed.

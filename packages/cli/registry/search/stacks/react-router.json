@@ -3,11 +3,11 @@
   "kind": "stack",
   "id": "react-router",
   "source": {
-    "digest": "sha256:eebd77b99c359c34493851019e7e255fe4a4683c438a49d5ce4fbcaf92b41dfa",
+    "digest": "sha256:03d27002614997a5bdf03ca9ab507f443cf033d3f169969bfc3548a2454fa676",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 2,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "A server-rendered React app with page loaders, form actions and shared backend services with typed errors and structured logs.",
   "description": "Build server-rendered React pages with loaders, form actions and JSON resource routes in one application. Server programs share an Effect runtime, typed error handling and request logs, with a boundary that keeps server code out of components. A health route and browser smoke test establish the base. Data storage and accounts are not included; the optional openrouter-chat app adds the reference browser chat experience.",
@@ -20,20 +20,44 @@
     {
       "title": "Browser model comparison notebook",
       "description": "Select openrouter-chat for streaming chat, model choice and Markdown export. Live requests need a key; private access and durable history require further work.",
-      "withFragments": ["openrouter-chat"]
+      "withFragments": [
+        "openrouter-chat"
+      ]
     }
   ],
-  "platforms": ["web", "server"],
-  "productKinds": ["web-app", "fullstack"],
-  "languages": ["typescript"],
+  "platforms": [
+    "web",
+    "server"
+  ],
+  "productKinds": [
+    "web-app",
+    "fullstack"
+  ],
+  "languages": [
+    "typescript"
+  ],
   "requests": [
     "render my React pages on the server and load their data there",
     "handle form submissions alongside page routes in one application",
     "share backend services across requests with consistent errors and request logs",
-    "keep server code out of my browser components"
+    "keep server code out of my browser components",
+    "build an AI chat assistant into my web app"
   ],
-  "useCases": ["server-rendered web applications", "page and resource routes in one project"],
-  "synonyms": ["React Router framework mode", "SSR", "Effect runtime", "loaders and actions"],
-  "goodFor": ["typed server boundaries", "local request diagnostics"],
-  "notFor": ["static SPA hosting without a server"]
+  "useCases": [
+    "server-rendered web applications",
+    "page and resource routes in one project"
+  ],
+  "synonyms": [
+    "React Router framework mode",
+    "SSR",
+    "Effect runtime",
+    "loaders and actions"
+  ],
+  "goodFor": [
+    "typed server boundaries",
+    "local request diagnostics"
+  ],
+  "notFor": [
+    "static SPA hosting without a server"
+  ]
 }

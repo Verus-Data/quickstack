@@ -7,7 +7,7 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 2,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "A server-rendered web app with JSON endpoints, typed runtime bindings and local tests on Cloudflare Workers.",
   "description": "Build an application whose React pages and JSON resource routes run in Cloudflare Workers. Development and integration tests use the local Workers runtime, and generated types describe runtime bindings. The initial slice is a page, health route and harmless scheduled-handler slot. Storage is absent until you add it; cloudflare-d1 supplies the compatible SQL binding and migration workflow. Cloud deployment still needs your account and credentials.",
@@ -16,23 +16,48 @@
     {
       "title": "Directory with saved listings",
       "description": "Add cloudflare-d1 for SQL storage, then implement listing records, editing screens and queries. Authentication and moderation remain separate product decisions.",
-      "withFragments": ["cloudflare-d1"]
+      "withFragments": [
+        "cloudflare-d1"
+      ]
     },
     {
       "title": "Public lookup application",
       "description": "Build server-rendered result pages and JSON lookup routes around a data source you choose. Add scheduled refresh logic only after deciding its data source and schedule."
     }
   ],
-  "platforms": ["web", "server"],
-  "productKinds": ["web-app", "fullstack"],
-  "languages": ["typescript"],
+  "platforms": [
+    "web",
+    "server"
+  ],
+  "productKinds": [
+    "web-app",
+    "fullstack"
+  ],
+  "languages": [
+    "typescript"
+  ],
   "requests": [
     "render pages on the server and handle JSON requests in one app",
     "develop and test my web app locally without cloud credentials",
     "give my app a testable entry point for scheduled work"
   ],
-  "useCases": ["server-rendered React applications", "web apps with resource routes"],
-  "synonyms": ["React Router", "Cloudflare Workers", "SSR", "Wrangler", "scheduled handler"],
-  "goodFor": ["testing against the local Workers runtime", "typed access to runtime bindings"],
-  "notFor": ["Node HTTP servers", "built-in application storage"]
+  "useCases": [
+    "server-rendered React applications",
+    "web apps with resource routes"
+  ],
+  "synonyms": [
+    "React Router",
+    "Cloudflare Workers",
+    "SSR",
+    "Wrangler",
+    "scheduled handler"
+  ],
+  "goodFor": [
+    "testing against the local Workers runtime",
+    "typed access to runtime bindings"
+  ],
+  "notFor": [
+    "Node HTTP servers",
+    "built-in application storage"
+  ]
 }

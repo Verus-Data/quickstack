@@ -40,7 +40,7 @@ test('reports ready when the database answers', async () => {
 
 Why it's shaped this way:
 
-- The template database is migrated once per run, under a Postgres advisory lock (parallel runs serialize), from the real `drizzle/` migrations, so a newly generated migration is picked up with no extra step. Stale `<prefix>_test_*` databases from crashed runs are dropped first.
+- Each run owns a uniquely named template database, migrated once under a Postgres advisory lock from the real `drizzle/` migrations. Cleanup drops only exact database names this run created. Never infer ownership or staleness from a prefix; leftovers from earlier runs require explicit review, not automatic deletion.
 - Each file gets `CREATE DATABASE ... TEMPLATE <template>`, which fails if anything is connected to the template, so the harness closes that connection before cloning. Each file's database is always dropped after.
 - `../src/app` is imported dynamically inside `beforeAll`, after `DATABASE_URL` is set. A static import captures the wrong environment. Get the type statically with `type App = (typeof import('../src/app'))['app']`, which is erased at compile time; the same trick works for any late import.
 - Requests go through `t.app.request(path, init)`: no supertest, no port, no server lifecycle.

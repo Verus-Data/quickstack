@@ -253,7 +253,7 @@ test.each([
   [
     "NotFound naming the fragment id it didn't find",
     new NotFound({ details: { suggestions: ["lint"], id: "lnt\u001b", kind: "fragment" } }),
-    "Not found.\n  Fragment: lnt\\u001b\n  Did you mean: lint?\n  Next: use one of the ids above.\n",
+    "Not found.\n  Fragment: lnt\\u001b\n  Did you mean: lint?\n  Next: run stacks list to see every stack and fragment id.\n",
   ],
   [
     "EntryInvalid for an unknown template variable",

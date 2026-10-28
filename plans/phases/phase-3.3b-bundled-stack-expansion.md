@@ -143,6 +143,15 @@ they are listed so no one rediscovers them.
   require maintainer bench runs; they are exit criteria outside the traced numbers.
   Brief digests freeze today's canonical output, not evidence of a successful bench.
   Regenerate a gate stack's digests only after an intentional brief change is proved.
+- 2026-10-28: QA-05/QA-11 intentionally change Astro checker/lifecycle guidance;
+  QA-07 aligns Python wire casing and its acceptance tests. Refresh those four
+  canonical brief digests after their focused regressions pass. They freeze prose,
+  not runtime proof; do not update the historical ledger.
+- 2026-10-28: The follow-up app eval checkpoint replaces direct dry-run commands
+  in both app manifests. openrouter-ai owns dependency-free report v1 validation
+  and the process/file checkpoint; vendor-only compositions gain no verify step.
+  This independently checks report completeness and aggregates, while app
+  runners, stubs and scorers stay agent-owned. See plans/qa-gap-closure.md.
 - 2026-10-27: No packed tarball exists until 0.2. Existing coverage is
   `e2e/binary.test.ts` (the compiled binary reads a trusted registry from its installed
   prefix), `tests/bench.test.ts` (the fresh prefix contains the dev binary and registry),

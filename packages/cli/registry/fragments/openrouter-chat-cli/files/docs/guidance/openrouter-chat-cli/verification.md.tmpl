@@ -1,0 +1,12 @@
+# Before calling work done
+
+Run `bun run check` (lint, typecheck, vitest, TUI tests, then base e2e and app:e2e, which build the binary) and read the output. app:e2e tests the application in a real PTY; base e2e retains doctor/version checks. CI also runs coverage. Only when bun-release is selected does it install all native targets and run build:all. `stacks verify` also runs `test:tui`, `tui:capture -- --smoke`, and `bun scripts/check-eval-dry-run.ts` (no key, no spend; report protocol in `docs/eval-report.md`), so each fails until its piece exists.
+
+- A clean exit code isn't a pass. Read the counts from both runners: a `-t` filter that matches nothing exits 0 with every test skipped, and `bun run test` prints vitest's summary and then bun's.
+- Run the real CLI, not only the tests. With no key and no spend: `bun run stub`, export the env it prints, then `bun run dev -- ask "hi"`, `bun run dev -- ask "what time is it in Paris" --json`, `bun run dev -- models gpt`. Each run appends to `logs/cli.jsonl` (one `command` line, and an `llm call` line per turn) and tees stderr to `logs/cli.log`. `bun run stub:stop` when done, if you started it.
+- Check the contract by hand when a command changed: stdout holds only the result (`bun run dev -- ask hi --json | jq`), a bad flag leaves stdout empty and exits 2 (`echo $?`), no key exits 3.
+- TUI changes: `bun run tui:capture -- chat --keys "hi<enter>"` prints the rendered screen as text, including the streamed reply and the usage line. Check the states the change touches (`tui.md`).
+- Distribution changes: `bun run build`, then `./dist/{{project_slug}} --version`, `./dist/{{project_slug}} doctor --tui`, and the affected command against the stubs. When bun-release is selected, run build:all for build/native-plugin changes.
+- For any failure, read `logs/cli.jsonl` (structured; `jq -c 'select(.level == "error" or .level == "warn")' logs/cli.jsonl`) and `logs/cli.log` (the whole stderr) before guessing.
+- A green commit isn't a complete one: after a hook-running commit, check `git status` for files a hook rewrote and left unstaged.
+- Don't report a cause you didn't observe. Quote the error output you're basing it on.

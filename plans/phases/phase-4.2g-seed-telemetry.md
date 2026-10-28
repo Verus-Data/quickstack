@@ -1,6 +1,6 @@
 # Phase 4.2g: Seed telemetry for development
 
-Status: DRAFT 2026-10-27 (not agreed)
+Status: AGREED 2026-10-27 (into a local SQLite file instead of local D1, amended D16)
 
 | Field | Value |
 |---|---|

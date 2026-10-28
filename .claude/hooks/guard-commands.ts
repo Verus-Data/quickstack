@@ -1,7 +1,7 @@
 import { spawnSync } from "node:child_process";
-import { basename } from "node:path";
-import { deny, readPayload, text } from "./_lib";
-import { commands } from "./_shell";
+import { basename, resolve } from "node:path";
+import { deny, isDir, readPayload, text } from "./_lib";
+import { type Command, commands } from "./_shell";
 
 // In-place edits from the shell skip every Edit/Write hook (lint, typecheck, boundary and secret
 // guards, format-on-stop), so the Edit and Write tools are the only way to change a file.
@@ -38,7 +38,8 @@ function wholeSuite(argv: readonly string[]): boolean {
     const [script = "", ...files] = operands(rest);
     return SUITES.has(script) || (SCOPABLE.has(script) && files.length === 0);
   }
-  if (name === "bun" && sub === "test") return !operands(rest).some((arg) => arg.endsWith(".ts"));
+  if (name === "bun" && sub === "test")
+    return !operands(rest).some((arg) => /\.[cm]?[jt]sx?$/.test(arg));
   if (name === "vitest") return unscopedVitest(argv.slice(1));
   return ["npx", "bunx"].includes(name) && sub === "vitest" && unscopedVitest(rest);
 }
@@ -46,15 +47,42 @@ function wholeSuite(argv: readonly string[]): boolean {
 const unscopedVitest = (args: readonly string[]) =>
   operands(args).filter((arg) => arg !== "run").length === 0;
 
-const optedIntoRr = () =>
-  spawnSync("git", ["config", "--type=bool", "--get", "stacks.rr"], {
-    encoding: "utf8",
-  }).stdout.trim() === "true";
+function bunDirectory(argv: readonly string[]): string | undefined {
+  for (let index = 1; index < argv.length; index++) {
+    const arg = argv[index];
+    if (arg === "--") return undefined;
+    if (arg === "--cwd") return argv[index + 1];
+    if (arg?.startsWith("--cwd=")) return arg.slice("--cwd=".length);
+  }
+  return undefined;
+}
 
-const command = text(readPayload()?.tool_input?.command);
+function commandDirectory(command: Command, start: string): string {
+  if (command.remote || command.dir === null) return start;
+  let directory = resolve(start, command.dir ?? ".");
+  if (basename(command.argv[0] ?? "") === "bun") {
+    const selected = bunDirectory(command.argv);
+    if (selected !== undefined) directory = resolve(directory, selected);
+  }
+  return isDir(directory) ? directory : start;
+}
+
+function optedIntoRr(cwd: string): boolean {
+  const result = spawnSync("git", ["config", "--type=bool", "--get", "stacks.rr"], {
+    cwd,
+    encoding: "utf8",
+  });
+  return result.status === 0 && result.stdout.trim() === "true";
+}
+
+const payload = readPayload();
+const requestedDirectory = text(payload?.tool_input?.working_directory) || text(payload?.cwd);
+const start = isDir(requestedDirectory) ? requestedDirectory : process.cwd();
+const command = text(payload?.tool_input?.command);
 const localGate = /(^|[\s;&|(])STACKS_LOCAL_GATE=1\s/.test(command ?? "");
-for (const { argv, stdin } of commands(command ?? "")) {
-  if (!localGate && wholeSuite(argv) && optedIntoRr()) {
+for (const parsed of commands(command ?? "")) {
+  const { argv, stdin } = parsed;
+  if (!localGate && wholeSuite(argv) && optedIntoRr(commandDirectory(parsed, start))) {
     deny(RR);
     break;
   }

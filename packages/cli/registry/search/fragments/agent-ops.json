@@ -7,7 +7,7 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 2,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "Give coding agents shared project instructions, with Claude Code hooks for destructive commands, secrets, lint feedback and formatting.",
   "description": "Give coding assistants one project guide for commands, architecture and unfinished work. AGENTS.md is shared across agents; the Claude Code adapter adds hooks for command and secret guards, lint feedback and formatting the current session's edits. Fill the guide from the project as built. These hooks guide local agent work and do not sandbox code or replace project tests.",
@@ -24,15 +24,32 @@
       "stack": "python-react"
     }
   ],
-  "capabilities": ["agent-harness"],
+  "capabilities": [
+    "agent-harness"
+  ],
   "requests": [
     "help different coding assistants follow the same project instructions",
     "document commands and architecture so agents can work in this repository",
     "stop Claude from writing credentials or running destructive commands",
     "show lint errors after edits and format the agent's changed files"
   ],
-  "useCases": ["repositories using coding assistants", "shared agent onboarding"],
-  "synonyms": ["AGENTS.md", "CLAUDE.md", "agent instructions", "secret guards", "lint on write"],
-  "goodFor": ["one canonical project guide", "session-specific formatting in Claude Code"],
-  "notFor": ["sandboxing untrusted code", "hosted continuous integration"]
+  "useCases": [
+    "repositories using coding assistants",
+    "shared agent onboarding"
+  ],
+  "synonyms": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "agent instructions",
+    "secret guards",
+    "lint on write"
+  ],
+  "goodFor": [
+    "one canonical project guide",
+    "session-specific formatting in Claude Code"
+  ],
+  "notFor": [
+    "sandboxing untrusted code",
+    "hosted continuous integration"
+  ]
 }

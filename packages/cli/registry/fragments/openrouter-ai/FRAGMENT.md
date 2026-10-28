@@ -42,4 +42,10 @@ Use real HTTP clients against this server, never module mocks. Cover model pagin
 
 ## Gotchas
 
+App evals implement report v1 from `docs/eval-report.md` and use the shipped
+independent `scripts/check-eval-dry-run.ts` checkpoint. It checks two local models,
+required cases, explicit metadata and per-model aggregates. Keep `.eval/` ignored.
+Vendor-only projects get these developer helpers without a new verify step or
+dependency; apps still own their runner, stub and pure scorers.
+
 Verify provider and SDK peer ranges against installed packages. Some SDKs inspect their own environment variables despite explicit constructor options; normalize invalid empty options at that boundary and record the workaround with a regression test. A provider's transitive validator dependency does not change the project's schema conventions.

@@ -3,11 +3,11 @@
   "kind": "fragment",
   "id": "openrouter-chat-cli",
   "source": {
-    "digest": "sha256:bcda573956c6ddc5e241c0438bc77963eb271ca2a36aa17fe2026576526f4022",
+    "digest": "sha256:70ee0730ea9c07daac93351b9a1dce08ca6cbecf85217a54523d5963c2b12eaa",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 2,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "Add terminal chat and scriptable model commands with saved conversations, tool calls, structured extraction and Markdown export.",
   "description": "Add an OpenRouter terminal application to typescript-cli. Scriptable commands and an OpenTUI interface share chat, tools, contact extraction and Markdown export; MCP exposes the tools over stdio. Conversations are saved as local JSON files, with partial replies retained on interruption. Local stubs, capture and replay support testing without paid calls. Live use needs a key; installer and update workflows require the separate bun-release fragment.",
@@ -24,17 +24,32 @@
       "stack": "typescript-cli"
     }
   ],
-  "caveats": [
-    "Saved chats use JSON files without concurrent-write locking; live model calls require an OpenRouter key."
+  "capabilities": [
+    "ai"
   ],
-  "capabilities": ["ai"],
   "requests": [
     "pipe text into a model command and consume structured events in scripts",
     "resume a saved conversation in a keyboard-driven terminal interface",
     "expose my chat tools to an MCP client over standard input and output"
   ],
-  "useCases": ["interactive terminal conversations", "shell pipelines", "contact extraction"],
-  "synonyms": ["OpenRouter", "OpenTUI", "NDJSON", "MCP", "model picker"],
-  "goodFor": ["local conversation files", "usage and cost reporting"],
-  "notFor": ["browser chat interfaces", "concurrent edits to one saved chat"]
+  "useCases": [
+    "interactive terminal conversations",
+    "shell pipelines",
+    "contact extraction"
+  ],
+  "synonyms": [
+    "OpenRouter",
+    "OpenTUI",
+    "NDJSON",
+    "MCP",
+    "model picker"
+  ],
+  "goodFor": [
+    "local conversation files",
+    "usage and cost reporting"
+  ],
+  "notFor": [
+    "browser chat interfaces",
+    "concurrent edits to one saved chat"
+  ]
 }

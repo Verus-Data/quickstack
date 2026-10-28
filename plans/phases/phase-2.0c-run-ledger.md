@@ -222,7 +222,7 @@ Human output is a short table with the same fields. No manifest found is `NotFou
 
 `list --json` gains `lastRun: { date, result, agent, preset, fingerprint } | null` per
 stack: the latest record for that stack with `with: []`, over every agent and preset.
-Human `list` shows `proven <date>` for `pass`, `<result> <date>` otherwise, or `unproven`.
+Human and agent `list` show `historical pass <date>` for `pass`, `<result> <date>` otherwise, or `unproven`. QA-03: the catalog does not compare current fingerprints; `show` owns that comparison. Historical data and JSON fields stay unchanged.
 `list` doesn't compose, so it doesn't say whether the stack changed since; that is 2.2's
 `ledger-changed` note. Only the bundled registry has a ledger; other origins show
 `lastRun: null`.

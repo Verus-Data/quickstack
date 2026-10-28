@@ -1,6 +1,6 @@
 # Phase 4.0e: Official names and directory
 
-Status: IN PROGRESS 2026-10-27 (`v1/names.json` executed in this repository; the `stacks-api` directory half is next)
+Status: EXECUTED 2026-10-27 (`v1/names.json` here; the directory site in `stacks-api`, whose build-time decoder copies the format v1 schemas until `@stacks/format` is published)
 Acceptance tests: traced
 
 | Field | Value |
@@ -186,6 +186,14 @@ These are traced by `stacks-api`'s own tests, not by this repository's trace che
 ## What this plan may get wrong
 
 - 2026-10-27: this repository's existing 4.0c test fixes the generated `_headers` to exactly its two index/bundle rules. This unit preserves that output; `stacks-api` must add the names cache rule when assembling the deployed static directory.
+- 2026-10-27, settled for the `stacks-api` site half from its test author's questions:
+  - The site build reads the index output from `STACKS_INDEX_DIR` and the trusted keys from `STACKS_INDEX_PUBLIC_KEYS` (JSON `[{ keyId, publicKey }]`), set only for the build. Production keys will come from `@stacks/format`'s `INDEX_PUBLIC_KEYS` once it is published; until then a deploy supplies them through the variable.
+  - The deploy assembler rejects colliding paths. `_headers` is the one allowed overlap: the assembled file is the site's rules followed by the index output's, plus the names rule, with a test.
+  - The plan's `CopyCommand.astro` follows the site rule for reusable components instead: a server-rendered `.tsx` component in `components/` with a colocated test.
+  - The directory takes over `/`, so 4.0b's `ApiStatus` island moves to `/status/`, and test `[4.0b#9]` checks that page instead. The directory pages keep only the theme toggle and the copy script.
+  - The proposed light `primary` (3.53:1 on `background`, 3.68:1 on `card`) fails item 9. The token gets darker, keeping its hue, until it passes 4.5:1 on both.
+  - Dates show as ISO dates (`YYYY-MM-DD`) in a `<time>`. There is no source link until the repository has a public URL; item 8's exception allows one and doesn't require it. Carried-forward state isn't shown, because the index doesn't record it.
+  - Ids have no maximum length in the schema; the 255-character case is a filesystem boundary and stays.
 - 2026-10-27: indexed optional fragment bundles need not have been published, so the index source can reconstruct only each stack's pinned composition. Release sources supply the default-plus-optional compositions from complete historical registries. The build is a maintainer script with text output and no audience or `--json` flag; its QA uses that interface.
 - 2026-10-27: release tags and the selected index alone do not preserve names from an index composition updated or withdrawn between releases. The build verifies and merges the previous names payload too. HTTP 404 bootstraps from the previous index's pinned bundles; other fetch, signature and payload failures stop publication. Pinned step names concatenate the bundled verify sections directly, since today's composer requires metadata for default fragments even when a sandbox proof omitted their unpublished bundles.
 - Composing old tags with today's `compose` may disagree with what that release composed if composition rules changed. Step names are what 4.1b checks, and those come from verify sections, which compose by concatenation; if a rule change ever alters step names, the build should run the tag's own CLI instead.
