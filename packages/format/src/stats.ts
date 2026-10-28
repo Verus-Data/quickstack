@@ -1,5 +1,6 @@
 import { Schema } from "effect";
 import { DetectedAgent } from "./agent.js";
+import { Ecosystem } from "./allowlist.js";
 import { Columnar } from "./columnar.js";
 import { Kebab, Kind } from "./entry.js";
 import { Digest, LastRun } from "./index-schema.js";
@@ -207,6 +208,19 @@ const DetailMetrics = Schema.Struct({
   windows: Schema.Struct({ "7": Metrics, "28": Metrics }),
 });
 
+export const MajorShare = Schema.Struct({ major: Schema.String, share: ShareCell });
+export type MajorShare = typeof MajorShare.Type;
+
+export const StackDependency = Schema.Struct({
+  ecosystem: Ecosystem,
+  name: Schema.String,
+  projects: CountCell,
+  share: ShareCell,
+  majors: Schema.Array(MajorShare),
+  withWithout: WithWithout,
+});
+export type StackDependency = typeof StackDependency.Type;
+
 export const StackStatsDetail = Schema.Struct({
   ...DetailFields.fields,
   kind: Schema.Literal("stack"),
@@ -226,6 +240,7 @@ export const StackStatsDetail = Schema.Struct({
   byComposition: Columnar(CompositionStats),
   seriesByPreset: Columnar(Schema.Struct({ preset: Kebab, series: Columnar(ProjectsPoint) })),
   entryPoints: EntryPoints,
+  deps: Schema.optionalKey(Columnar(StackDependency)),
   pickRate: ShareCell,
   scaffoldFailureShares: Schema.Record(Schema.String, ShareCell),
   global: Schema.Struct({
@@ -254,3 +269,91 @@ export const StatsDetail = Schema.Union([
   Schema.Struct({ ...DetailFields.fields, published: Schema.Literal(false) }),
 ]);
 export type StatsDetail = typeof StatsDetail.Type;
+
+const Transition = Schema.Struct({
+  from: Schema.String,
+  to: Schema.String,
+  projects: CountCell,
+});
+
+export const DependencySummary = Schema.Struct({
+  name: Schema.String,
+  projects: CountCell,
+  majors: Schema.Array(MajorShare),
+});
+export type DependencySummary = typeof DependencySummary.Type;
+
+const DependencyHeader = Schema.Struct({
+  ...Header.fields,
+  window: Schema.Literal(28),
+  ecosystem: Ecosystem,
+});
+const DependencySelection = Schema.Struct({
+  ...DependencyHeader.fields,
+  name: Schema.String,
+  interval: StatsWindow,
+  from: StatsDay,
+  to: StatsDay,
+});
+const DependencyMetrics = Schema.Struct({
+  projects: CountCell,
+  adoptions: CountCell,
+  drops: CountCell,
+  majors: Columnar(MajorShare),
+  series: Columnar(Schema.Struct({ day: StatsDay, majors: Schema.Array(MajorShare) })),
+  transitions: Columnar(Transition),
+  oftenUsedWith: Columnar(
+    Schema.Struct({
+      ecosystem: Ecosystem,
+      name: Schema.String,
+      lift: Schema.Number.check(Schema.isFinite(), Schema.isGreaterThan(1)),
+    }),
+  ),
+  byStack: Columnar(
+    Schema.Struct({
+      stack: Kebab,
+      projects: CountCell,
+      share: ShareCell,
+      majors: Schema.Array(MajorShare),
+      withWithout: WithWithout,
+    }),
+  ),
+});
+export const StatsDep = Schema.Union([
+  Schema.Struct({
+    ...DependencySelection.fields,
+    published: Schema.Literal(true),
+    ...DependencyMetrics.fields,
+  }),
+  Schema.Struct({
+    ...DependencySelection.fields,
+    published: Schema.Literal(false),
+    projects: Schema.optionalKey(Schema.Never),
+    adoptions: Schema.optionalKey(Schema.Never),
+    drops: Schema.optionalKey(Schema.Never),
+    majors: Schema.optionalKey(Schema.Never),
+    series: Schema.optionalKey(Schema.Never),
+    transitions: Schema.optionalKey(Schema.Never),
+    oftenUsedWith: Schema.optionalKey(Schema.Never),
+    byStack: Schema.optionalKey(Schema.Never),
+  }),
+]);
+export type StatsDep = typeof StatsDep.Type;
+
+export const StatsDeps = Schema.Union([
+  Schema.Struct({
+    ...DependencyHeader.fields,
+    published: Schema.Literal(true),
+    projects: CountCell,
+    items: Columnar(DependencySummary),
+    transitions: Columnar(Schema.Struct({ name: Schema.String, ...Transition.fields })),
+  }),
+  Schema.Struct({
+    ...DependencyHeader.fields,
+    published: Schema.Literal(false),
+    projects: Schema.optionalKey(Schema.Never),
+    items: Schema.optionalKey(Schema.Never),
+    transitions: Schema.optionalKey(Schema.Never),
+  }),
+]);
+export type StatsDeps = typeof StatsDeps.Type;
