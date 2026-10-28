@@ -17,14 +17,64 @@ JSON-RPC, launched by an agent client as a subprocess.
   `CliFailure` carrying the CLI's tag, message and details verbatim.
 - **quickstacks_verify** — runs the project's verify steps. Pass `dir`
   (optional, defaults to the server's working directory). Returns the outcome
-  (`green`/`partial`/`red`), totals, duration, and per-step results. A red
-  outcome is a successful call; it only fails when the CLI cannot run.
+  (`green`, `partial`, `failed`, `changed` or `interrupted`), totals, duration,
+  and per-step results. A failing project is a successful call; it only fails
+  when the CLI itself cannot run.
 
 ## Resources
 
 - `quickstacks://guide` — the quickstacks agent guide, captured at startup.
 - `skill://<name>` — one per file in `skills/*.md`, each a short skill document
   with frontmatter carrying `name` and `description`.
+
+## Skill documents
+
+A skill is a markdown file in `skills/`. The frontmatter gives its name and the
+description a client shows before reading it; the body is served unchanged.
+
+```
+---
+name: authoring-stack
+description: How a stack, its fragments and its verify steps fit together.
+---
+
+# Authoring a stack
+
+...
+```
+
+Resources are registered when the server starts, so a new skill file needs a
+restart, not a reload. Two ship today: `authoring-stack` and `reading-a-brief`.
+
+## Wiring into a client
+
+Any MCP client that spawns a stdio server works; the only thing it needs is the
+path to the built server:
+
+```json
+{
+  "mcpServers": {
+    "quickstacks": {
+      "command": "node",
+      "args": ["/absolute/path/to/packages/mcp/dist/server.js"]
+    }
+  }
+}
+```
+
+The server then appears with three tools and reads the guide and skills as
+resources, so an agent can pick a stack, create a project and verify it without
+shell access.
+
+## Known limit: skills are resources, not the skills extension
+
+MCP's skills extension (SEP-2640) defines `skills/list` and `skills/get` on top
+of protocol `2026-07-28`. The server advertises that revision, but `effect/ai`
+4.0.6 can register tools, resources and prompts only — there is no way to serve
+an arbitrary method. So skills ride on `skill://` resources, which every client
+can read, and the extension is not declared. Declaring it without serving its
+two methods would be false.
+
 
 ## Running
 
