@@ -6,6 +6,7 @@ import { renderNew } from "../core/scaffold/report";
 import { Usage } from "../errors";
 import { BRIEF_PATH } from "../project-layout";
 import { NewResult } from "../schemas/new";
+import { Output } from "../services/output";
 import { completeHandoff, prepareHandoff, projectFlags, splitValues } from "./handoff";
 import { root } from "./root";
 
@@ -63,6 +64,7 @@ export const newCommand = Command.make(
   (flags) =>
     Effect.gen(function* () {
       const { json } = yield* root;
+      const output = yield* Output;
       const preset = Option.getOrUndefined(flags.preset);
       if (flags.sandbox && preset === "default")
         return yield* new Usage({ details: { flags: ["--sandbox", "--preset default"] } });
@@ -88,7 +90,11 @@ export const newCommand = Command.make(
         untrusted: result.untrusted,
         decision,
         preview: result.dryRun,
-        render: (context) => renderNew({ ...result, untrusted: context.untrusted }, context),
+        render: (context) =>
+          renderNew(
+            { ...result, untrusted: context.untrusted },
+            { ...context, style: output.style },
+          ),
         encode: (handoff) => Schema.encodeSync(NewResult)({ ...result, handoff }),
       });
     }),

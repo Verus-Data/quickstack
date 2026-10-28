@@ -13,6 +13,7 @@ import {
 } from "../../project-layout";
 import type { NewResult } from "../../schemas/new";
 import { Host } from "../../services/host";
+import { Output } from "../../services/output";
 import { type GitState, renderBrief } from "../brief/render";
 import { targetAgents } from "../compose/agents";
 import { type Composition, compose, dropFlags } from "../compose/compose";
@@ -89,6 +90,7 @@ const checkOwnRepo = (composition: Composition, git: GitProbe) =>
 export const scaffold = (options: NewOptions) =>
   Effect.gen(function* () {
     const host = yield* Host;
+    const output = yield* Output;
     const path = yield* Path.Path;
     const fs = yield* FileSystem.FileSystem;
     const settings = yield* (yield* AppConfig).get;
@@ -166,38 +168,41 @@ export const scaffold = (options: NewOptions) =>
       { path: NOTES_PATH, bytes: encoder.encode(NOTES), executable: false },
     ];
     const manifestBytes = encoder.encode(encodeManifest(manifest));
-    const initializeGit = (writer: ProjectWriter) =>
-      Effect.gen(function* () {
-        // Adopted first, so an interrupt while git runs also takes its `.git` away; but only a
-        // `.git` that wasn't there before git ran is ours to take.
-        const dotGit = path.join(writer.root, ".git");
-        const ours = Option.isNone(yield* Effect.option(fs.lstat(dotGit)));
-        if (ours) yield* writer.adopt(".git");
-        const code = yield* gitInit(writer.root);
-        if (code !== 0) {
-          // Whatever part of a `.git` the failed init left is no repository.
-          if (ours) yield* writer.discard(".git");
-          gitState = { kind: "none" };
-          warnings.push({ code: "git_init_failed", id: "git", exitCode: code });
-          rendered = brief(gitState);
-          yield* writer.replace(BRIEF_PATH, encoder.encode(rendered.text));
-          // Only the count changed; the digest, and so the state record, stay as written.
-          yield* writer.replace(
-            MANIFEST_PATH,
-            encoder.encode(encodeManifest({ ...manifest, briefWords: rendered.briefWords })),
-          );
-        }
-      });
+    const writeFiles = Effect.fn("scaffold.writeFiles")(function* (writer: ProjectWriter) {
+      yield* output.live("Writing files");
+      for (const file of plannedFiles) yield* writer.write(file.path, file.bytes, file.executable);
+      yield* writer.directory(STATE_DIR);
+      yield* writer.write(MANIFEST_PATH, manifestBytes);
+    }, Effect.scoped);
+    const initializeGit = Effect.fn("scaffold.initializeGit")(function* (writer: ProjectWriter) {
+      yield* output.live("git init");
+      // Adopted first, so an interrupt while git runs also takes its `.git` away; but only a
+      // `.git` that wasn't there before git ran is ours to take.
+      const dotGit = path.join(writer.root, ".git");
+      const ours = Option.isNone(yield* Effect.option(fs.lstat(dotGit)));
+      if (ours) yield* writer.adopt(".git");
+      const code = yield* gitInit(writer.root);
+      if (code !== 0) {
+        // Whatever part of a `.git` the failed init left is no repository.
+        if (ours) yield* writer.discard(".git");
+        gitState = { kind: "none" };
+        warnings.push({ code: "git_init_failed", id: "git", exitCode: code });
+        rendered = brief(gitState);
+        yield* writer.replace(BRIEF_PATH, encoder.encode(rendered.text));
+        // Only the count changed; the digest, and so the state record, stay as written.
+        yield* writer.replace(
+          MANIFEST_PATH,
+          encoder.encode(encodeManifest({ ...manifest, briefWords: rendered.briefWords })),
+        );
+      }
+    }, Effect.scoped);
     // A preview stops at the writer boundary, after the same composition and rendering.
     const state = options.dryRun
       ? { written: false }
       : yield* Effect.scoped(
           Effect.gen(function* () {
             const writer = yield* openProject(dir);
-            for (const file of plannedFiles)
-              yield* writer.write(file.path, file.bytes, file.executable);
-            yield* writer.directory(STATE_DIR);
-            yield* writer.write(MANIFEST_PATH, manifestBytes);
+            yield* writeFiles(writer);
             // Outside the project, so the writer doesn't track it: its own release undoes it on a
             // failure or interruption from here on. Acquiring is uninterruptible, so a written record
             // always has its release.

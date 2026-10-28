@@ -1,5 +1,6 @@
 import { cpSync, mkdirSync, readFileSync, realpathSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { Option } from "effect";
 import { afterEach, describe, expect, test } from "vitest";
 import { ndjson, quiet, runCli, tempDir, terminal } from "./helpers/cli";
 import { minimal, newRegistry, smallRegistry, writeEntry } from "./helpers/registry";
@@ -315,7 +316,7 @@ describe("list for an agent", () => {
       dir: "long",
       frontmatter: minimal("stack", "long").replace("long description.", description),
     });
-    for (const host of [{}, { stdoutIsTTY: true, stdoutColumns: 50 }]) {
+    for (const host of [{}, { stdoutIsTTY: true, columns: Option.some(50) }]) {
       const agent = await runCli(["list", "stacks"], {
         home,
         env: { ...quiet, ...agentShell },

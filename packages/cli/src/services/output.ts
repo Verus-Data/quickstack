@@ -1,5 +1,6 @@
+import { styleText } from "node:util";
 import type { DetectedAgent } from "@stacks/format";
-import { Context, Effect, Layer } from "effect";
+import { Clock, Context, Effect, Layer, Option, type Scope, Semaphore } from "effect";
 import { AppConfig } from "../config";
 import {
   type AppError,
@@ -10,7 +11,7 @@ import {
   PermissionDenied,
   retryable,
 } from "../errors";
-import { Host } from "./host";
+import { Host, type HostInfo } from "./host";
 /**
  * Who reads this invocation's output. `json`: `--json` was given. `human`: stdout is a terminal
  * and no agent is detected. `agent`: everything else (an agent's shell, a pipe, CI). The three
@@ -26,6 +27,19 @@ export function resolveAudience(
   return stdoutIsTTY && agent === "none" ? "human" : "agent";
 }
 export type Writer = (text: string) => Promise<void>;
+export type StyleKind = "error" | "warn" | "ok" | "skip" | "dim" | "next";
+export type Style = (kind: StyleKind, text: string) => string;
+export const plainStyle: Style = (_kind, text) => text;
+const formats = {
+  error: "red",
+  warn: "yellow",
+  ok: "green",
+  skip: "gray",
+  dim: "dim",
+  next: "cyan",
+} as const;
+const makeStyle = (enabled: boolean): Style =>
+  enabled ? (kind, text) => styleText(formats[kind], text, { validateStream: false }) : plainStyle;
 function write(writer: Writer, text: string) {
   return Effect.tryPromise({
     try: () => writer(text),
@@ -40,6 +54,9 @@ export class Output extends Context.Service<
   {
     /** Resolved once when the layer is built; commands pick their text rendering by it. */
     audience: Audience;
+    style: Style;
+    /** Clears on scope close; the caller renders completion through normal output. */
+    live: (label: string) => Effect.Effect<void, never, Scope.Scope>;
     /** `value` in JSON mode; otherwise `text`, the rendering for this audience. */
     result: (value: unknown, text: string) => Effect.Effect<void>;
     note: (text: string) => Effect.Effect<void, BrokenPipe | PermissionDenied>;
@@ -76,8 +93,18 @@ export class Output extends Context.Service<
       Output,
       Effect.gen(function* () {
         const host = yield* Host;
-        const agent = yield* (yield* AppConfig).agent;
-        return make(resolveAudience(json, host.stdoutIsTTY, agent), stdout, stderr);
+        const config = yield* AppConfig;
+        const agent = yield* config.agent;
+        const color = yield* config.color;
+        const audience = resolveAudience(json, host.stdoutIsTTY, agent);
+        const enabled = audience === "human" && !color.noColor;
+        const stderrTTY = host.stderrIsTTY;
+        return make(audience, stdout, stderr, {
+          stdout: enabled && (host.stdoutIsTTY || color.forceColor),
+          stderr: enabled && (stderrTTY || color.forceColor),
+          live: enabled && stderrTTY,
+          layout: host,
+        });
       }),
     );
   /** An Output for a fixed audience, for tests that bypass the resolution. */
@@ -106,12 +133,13 @@ type ErrorView = {
   details: unknown;
   guide: ReturnType<typeof failureGuide>;
   json: boolean;
+  style: Style;
 };
 /**
  * The envelope (`errors.ts::ErrorEnvelope`) in JSON mode; otherwise the message, the guide's
  * lines and its `Next:` line. A keeps-result failure's report already ends with that `Next:` line.
  */
-function renderError({ error, details, guide, json }: ErrorView): string {
+function renderError({ error, details, guide, json, style }: ErrorView): string {
   if (json)
     return `${JSON.stringify({
       error: {
@@ -122,51 +150,65 @@ function renderError({ error, details, guide, json }: ErrorView): string {
         ...(details === undefined ? {} : { details }),
       },
     })}\n`;
-  const next = guide.next === undefined || keepsResult(error) ? [] : [`Next: ${guide.next}`];
-  return `${[error.message, ...[...guide.lines, ...next].map((line) => `  ${line}`)].join("\n")}\n`;
+  const next =
+    guide.next === undefined || keepsResult(error) ? [] : [style("next", `Next: ${guide.next}`)];
+  return `${[style("error", error.message), ...[...guide.lines, ...next].map((line) => `  ${line}`)].join("\n")}\n`;
 }
-function make(audience: Audience, stdout: Writer, stderr: Writer): Output["Service"] {
+function make(
+  audience: Audience,
+  stdout: Writer,
+  stderr: Writer,
+  color: { stdout: boolean; stderr: boolean; live: boolean; layout?: LiveLayout } = {
+    stdout: false,
+    stderr: false,
+    live: false,
+  },
+): Output["Service"] {
   const json = audience === "json";
   const results: string[] = [];
-  // Live stderr lines (progress for a human, events otherwise) stop after the first failed write.
-  let liveOpen = true;
-  const live = (text: string) =>
-    Effect.suspend(() =>
-      liveOpen
-        ? write(stderr, `${text}\n`).pipe(
-            Effect.catch(() =>
-              Effect.sync(() => {
-                liveOpen = false;
-              }),
-            ),
-          )
-        : Effect.void,
-    );
+  const terminal = makeLive(stderr, color.live, color.layout);
+  const style = makeStyle(color.stdout);
+  const errorStyle = makeStyle(color.stderr);
   const flush = Effect.suspend(() => {
     if (!results.length) return Effect.void;
     const text = `${results.join("\n")}\n`;
     results.length = 0;
-    return write(stdout, text);
+    return terminal.around(write(stdout, text));
   });
   return {
     audience,
+    style,
+    live: terminal.live,
     result: (value, text) =>
       Effect.sync(() => {
         results.push(json ? JSON.stringify(value) : text);
       }),
-    note: (text) => write(stderr, `${text}\n`),
-    progress: (text) => (audience === "human" ? live(text) : Effect.void),
+    note: (text) =>
+      terminal.around(
+        write(stderr, `${text.startsWith("Warning:") ? errorStyle("warn", text) : text}\n`),
+      ),
+    progress: (text) => (audience === "human" ? terminal.line(text) : Effect.void),
     event: (value, agentText) => {
-      if (json) return live(JSON.stringify(value));
-      return audience === "agent" && agentText !== undefined ? live(agentText) : Effect.void;
+      if (json) return terminal.line(JSON.stringify(value));
+      return audience === "agent" && agentText !== undefined
+        ? terminal.line(agentText)
+        : Effect.void;
     },
     error: (error, invocation) =>
       encodeDetails(error).pipe(
         Effect.orDie,
         Effect.flatMap((details) =>
-          write(
-            stderr,
-            renderError({ error, details, guide: failureGuide(error, invocation), json }),
+          terminal.around(
+            write(
+              stderr,
+              renderError({
+                error,
+                details,
+                guide: failureGuide(error, invocation),
+                json,
+                style: errorStyle,
+              }),
+            ),
           ),
         ),
       ),
@@ -175,5 +217,94 @@ function make(audience: Audience, stdout: Writer, stderr: Writer): Output["Servi
     clear: Effect.sync(() => {
       results.length = 0;
     }),
+  };
+}
+
+/** Serialize redraws and normal writes so a frame cannot split a child's output row. */
+type LiveLayout = Pick<HostInfo, "columns" | "stringWidth">;
+
+function fitLiveFrame(text: string, layout: LiveLayout | undefined, tail: string): string {
+  if (!layout || Option.isNone(layout.columns)) return text + tail;
+  const width = Math.max(0, layout.columns.value - 1);
+  const suffix = layout.stringWidth(tail) <= width ? tail : "";
+  if (layout.stringWidth(text + suffix) <= width) return text + suffix;
+  let fitted = "";
+  for (const { segment } of new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(
+    text,
+  )) {
+    if (layout.stringWidth(`${fitted}${segment}…${suffix}`) > width) break;
+    fitted += segment;
+  }
+  return layout.stringWidth(`…${suffix}`) <= width ? `${fitted}…${suffix}` : suffix;
+}
+
+function makeLive(stderr: Writer, enabled: boolean, layout?: LiveLayout) {
+  const lock = Semaphore.makeUnsafe(1);
+  let open = true;
+  let active = false;
+  const erase = "\r\u001b[2K";
+  const bestEffort = (text: string) =>
+    Effect.suspend(() =>
+      open
+        ? write(stderr, text).pipe(
+            Effect.catch(() =>
+              Effect.sync(() => {
+                open = false;
+              }),
+            ),
+            Effect.onInterrupt(() =>
+              Effect.sync(() => {
+                open = false;
+              }),
+            ),
+          )
+        : Effect.void,
+    );
+  const around = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
+    enabled
+      ? lock.withPermit(
+          Effect.gen(function* () {
+            if (active) yield* bestEffort(erase);
+            return yield* effect;
+          }),
+        )
+      : effect;
+  const live = Effect.fn("Output.live")(function* (label: string) {
+    if (!enabled) return;
+    const started = yield* Clock.currentTimeMillis;
+    active = true;
+    yield* Effect.addFinalizer(() =>
+      lock.withPermit(
+        Effect.gen(function* () {
+          active = false;
+          yield* bestEffort(erase);
+        }),
+      ),
+    );
+    const draw = Effect.gen(function* () {
+      yield* Effect.sleep("100 millis");
+      yield* lock
+        .withPermitsIfAvailable(1)(
+          Effect.gen(function* () {
+            const elapsed = (yield* Clock.currentTimeMillis) - started;
+            const frame = "|/-\\"[Math.floor(elapsed / 100) % 4] ?? "|";
+            const text = fitLiveFrame(
+              `${frame} ${label}`,
+              layout,
+              ` ${(elapsed / 1000).toFixed(1)}s`,
+            );
+            yield* bestEffort(`${erase}${text}`);
+          }),
+        )
+        .pipe(Effect.forkChild);
+    });
+    // Registered after the clear finalizer, so drawing stops before the line clears.
+    yield* draw.pipe(Effect.forever, Effect.forkScoped);
+  });
+  return {
+    live,
+    around,
+    line: (text: string) =>
+      lock.withPermit(Effect.suspend(() => bestEffort(`${active ? erase : ""}${text}\n`))),
   };
 }

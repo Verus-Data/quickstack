@@ -16,6 +16,8 @@ Run `stacks update` to upgrade a global npm install, or `stacks update --check` 
 
 The CLI is TypeScript on Effect, bundled for Node. It executes nothing it reads: `verify` runs only the steps in a project's own manifest; `update` runs only npm's global prefix lookup and a version-pinned install. [How stacks works](docs/architecture.md) explains the design, and the [docs index](docs/README.md) lists everything else: concepts, agents, authoring, and the command, output, configuration and validation references.
 
+At a human terminal, status words use color, `verify` and `new` show live progress on stderr, and guide, guidance and descriptions wrap to the terminal width. Set `NO_COLOR=1` to disable color and live redraws; nonempty `NO_COLOR` overrides `FORCE_COLOR=1`. Agent and JSON output stay plain, including when color is forced.
+
 ## Bundled stacks
 
 | Stack | What it builds | App (`--with`) |

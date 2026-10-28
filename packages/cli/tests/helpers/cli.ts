@@ -2,11 +2,12 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { NodeServices } from "@effect/platform-node";
-import { Effect, type Exit, Layer, type Scope, Terminal } from "effect";
+import { Effect, type Exit, Layer, Option, type Scope, Terminal } from "effect";
 import type { HttpClient } from "effect/http";
 import { AppConfig, type Environment } from "../../src/config";
 import { hasFlag, main } from "../../src/main";
 import { NetLayer } from "../../src/platform/net";
+import { stringWidth } from "../../src/platform/width";
 import { AppLayer, runInvocation } from "../../src/runtime";
 import { Host, type HostInfo } from "../../src/services/host";
 import { Output, type Writer } from "../../src/services/output";
@@ -96,6 +97,8 @@ export async function runCli(
       cwd: home,
       packageRoot: join(import.meta.dirname, "..", ".."),
       authoring: guide,
+      columns: Option.none(),
+      stringWidth,
       ...options.host,
     }),
     Foreground.layer(Foreground.make()),

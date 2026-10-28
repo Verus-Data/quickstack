@@ -78,6 +78,12 @@ Output exposes `style(kind, text)` where `kind` is a closed union (`error`, `war
 
 ## What this plan may get wrong
 
+- 2026-10-27: renderer integration also needs the `guide`, `list`, `show`, `new` and `verify` command handlers to pass terminal layout and styling values, plus the shared handoff renderer for `new`'s `Next:` line. Existing `stdoutColumns` remains for compatibility with the earlier list layout; `columns` supplies the new optional width contract. A PTY can report zero columns, which bin treats as unknown.
+- 2026-10-27: asynchronous stderr writes can outlast a redraw interval. The scoped ticker starts a child redraw only when the writer lock is available, skipping busy frames instead of queuing them; normal output rows share the lock. This also lets TestClock advance the ticker independently of a writer promise.
+- 2026-10-27: setting both `NO_COLOR` and `FORCE_COLOR` makes Node 24 print its own precedence warning before the CLI starts. The CLI still honors `NO_COLOR` and writes no escapes; human QA without `FORCE_COLOR` has no runtime warning.
+- 2026-10-27: review found that descriptions need plain-word wrapping rather than Markdown block detection, and `show` must escape entry text before measuring it. `wrapWords` shares the word-breaking implementation while preserving the existing description normalization. Fences retain their opening character and length. Live frames also need a measured width bound, keeping elapsed time and truncating the label by grapheme to avoid stale rows on narrow terminals.
+- 2026-10-27: the new Host fields also affect `tests/fixtures/handoff-bin.ts`, outside this contract's allowed files; it needs explicit `stderrIsTTY`, `columns` and `stringWidth` values. The configuration reference and roadmap shared-contract table also need follow-up edits outside this scope. Regression tests from the required review are in a separate unlocked file.
+
 - `Bun.stringWidth` is documented; `Bun.wrapAnsi` was not verified, which is why wrapping is a small pure function here instead.
 - Bun's `node:util` `styleText` may differ from Node's in the codes it emits; acceptance test 7 runs the compiled binary for that reason.
 - Redrawing a line while a child writes to the same terminal can still interleave if the child writes to the tty directly rather than through our pipes. If that shows up, drop the live line for steps that inherit the terminal.
