@@ -28,7 +28,7 @@ This repository is a bun workspace. Product planning is in [plans/](plans/README
 | Path | What it is |
 | --- | --- |
 | [packages/cli](packages/cli/README.md) | `@steamfield/stacks`, the CLI (installed as `stacks`): Effect 4, a Node 22+ bundle. `new <stack>` writes a project and the brief your coding agent builds it from; the bundled stacks are listed in its README |
-| [packages/mcp](packages/mcp/README.md) | `@steamfield/stacks-mcp`, the MCP server (placeholder, no code yet) |
+| [packages/mcp](packages/mcp/README.md) | `@steamfield/stacks-mcp`, the MCP server: a stdio server on Effect's MCP modules that wraps the CLI's `--json` contract as typed tools and resources, so an agent whose client prefers MCP tools gets the same results and trust boundary |
 | `.claude/`, `docs/harness.md` | The agent harness: hooks, rules, skills and their tests in `tests/hooks/`, and the acceptance trace in `tests/acceptance/` |
 
 ## Development quick start
