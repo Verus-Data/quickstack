@@ -50,7 +50,7 @@ If `--version` prints a version, you're set. `stacks doctor` shows where it look
 
 The rest of this guide writes `stacks <command>`. With `npx`, use `npx @steamfield/stacks` in its place: `npx @steamfield/stacks new typescript-cli my-cli`. Every command works the same either way, and the brief records the exact command your agent should use for `verify`.
 
-Want to run it from source instead, to try a change or write a stack against an unreleased version? Clone [the repository](https://github.com/tryopendata/quickstack) and follow its development quick start.
+Want to run it from source instead, to try a change or write a stack against an unreleased version? Clone [the repository](https://github.com/steamfield/stacks) and follow its development quick start.
 
 ## Pick a stack
 
