@@ -10,7 +10,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
-import { Category, FragmentMeta, StackMeta } from "@stacks/format";
+import { Category, FragmentMeta, StackMeta } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { afterEach, describe, expect, test, vi } from "vitest";
 import { parseDocument } from "yaml";

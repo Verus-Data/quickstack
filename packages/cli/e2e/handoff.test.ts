@@ -2,7 +2,7 @@ import { expect, test } from "bun:test";
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { Manifest } from "@stacks/format";
+import { Manifest } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 
 import { binary, scratchPath } from "./package";

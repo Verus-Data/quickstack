@@ -11,7 +11,7 @@ import {
 } from "node:fs";
 import { join, relative } from "node:path";
 import { NodeServices } from "@effect/platform-node";
-import { APP_TAG, Manifest } from "@stacks/format";
+import { APP_TAG, Manifest } from "@steamfield/stacks-format";
 import { Effect, Exit, Schema } from "effect";
 import { afterEach, describe, expect, test } from "vitest";
 import { MANIFEST_PATH } from "../src/core/manifest";

@@ -1,4 +1,4 @@
-import type { Manifest } from "@stacks/format";
+import type { Manifest } from "@steamfield/stacks-format";
 import { Effect, FileSystem, Path } from "effect";
 import { PermissionDenied } from "../../errors";
 import {

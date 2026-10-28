@@ -1,4 +1,4 @@
-import type { AgentId, Manifest } from "@stacks/format";
+import type { AgentId, Manifest } from "@steamfield/stacks-format";
 import { Effect, Exit, FileSystem, Option, Path } from "effect";
 import { AppConfig } from "../../config";
 import { BadInput, ComposeConflict } from "../../errors";

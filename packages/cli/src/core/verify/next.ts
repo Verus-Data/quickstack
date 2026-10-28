@@ -1,4 +1,4 @@
-import type { FailureKind, Outcome } from "@stacks/format";
+import type { FailureKind, Outcome } from "@steamfield/stacks-format";
 import { BRIEF_PATH } from "../../project-layout";
 import type { VerifyResult } from "../../schemas/verify";
 

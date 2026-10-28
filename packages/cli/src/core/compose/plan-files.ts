@@ -1,4 +1,4 @@
-import type { AgentId } from "@stacks/format";
+import type { AgentId } from "@steamfield/stacks-format";
 import { Effect, Result } from "effect";
 import { EntryInvalid } from "../../errors";
 import { METADATA_DIR } from "../../project-layout";

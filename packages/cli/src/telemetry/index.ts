@@ -1,6 +1,6 @@
 // Telemetry is best effort: failures and defects are swallowed only at this boundary, because
 // collection must never change a command's output or exit. Debug logs omit error messages.
-import { type RunRecord, TelemetryEvent } from "@stacks/format";
+import { type RunRecord, TelemetryEvent } from "@steamfield/stacks-format";
 import { Cause, Context, Effect, FileSystem, Layer, Option, Path, Schema } from "effect";
 import { HttpClient } from "effect/http";
 import { AppConfig } from "../config";

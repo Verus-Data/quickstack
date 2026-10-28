@@ -1,4 +1,4 @@
-import type { RunRecord } from "@stacks/format";
+import type { RunRecord } from "@steamfield/stacks-format";
 import { Clock, Effect, Option, Schema } from "effect";
 import { locateManifest, readManifest } from "../core/manifest";
 import { type ScaffoldFacts, scaffoldEvent, verifyEvent } from "./events";

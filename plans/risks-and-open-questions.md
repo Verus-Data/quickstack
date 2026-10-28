@@ -130,7 +130,9 @@ say so and keep their numbers, because plans link to them by number.
 23. Do the maintainers own, or want to reserve, the `@stacks` npm scope? The MCP
     server ([4.3](phases/phase-4.3-mcp-server.md)) publishes as `@stacks/mcp`, with
     `stacks-mcp` as the fallback name. Answered 2026-10-27: a maintainer reserved the
-    `@stacks` scope.
+    `@stacks` scope. Corrected 2026-10-28: the npm `@stacks` scope belongs to an unrelated
+    project; the maintainers own `@steamfield`, where the CLI and the format package publish
+    (D36). 4.3 picks its published name under `@steamfield` before it publishes.
 
 Questions 24-31 are behavior the plan chose on purpose where a gentler option exists. The
 plan keeps its choice in each case; the maintainers confirm or change it.

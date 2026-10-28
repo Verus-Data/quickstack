@@ -6,7 +6,7 @@ import {
   OfficialNames,
   RegistryIndex,
   SignedIndex,
-} from "@stacks/format";
+} from "@steamfield/stacks-format";
 import { Effect, Schema } from "effect";
 import { decodeEntry } from "../../src/core/registry/entry";
 import { SearchIndex } from "../../src/schemas/search";

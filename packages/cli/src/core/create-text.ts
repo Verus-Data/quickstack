@@ -1,4 +1,4 @@
-import type { Category, Kind } from "@stacks/format";
+import type { Category, Kind } from "@steamfield/stacks-format";
 
 /** Fixed entry-format-v1 scaffolding; rendered only after the id has been validated. */
 export function skeleton(kind: Kind, id: string, category: Category): string {

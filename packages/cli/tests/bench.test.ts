@@ -12,7 +12,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, isAbsolute, join, relative } from "node:path";
-import { Manifest } from "@stacks/format";
+import { Manifest } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { afterAll, test as baseTest, describe, expect, vi } from "vitest";
 import type { AgentAdapter } from "../scripts/bench/agents";

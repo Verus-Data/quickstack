@@ -1,4 +1,4 @@
-import type { AgentId, DetectedAgent, Harness } from "@stacks/format";
+import type { AgentId, DetectedAgent, Harness } from "@steamfield/stacks-format";
 import { BRIEF_PATH } from "../project-layout";
 import { type Audience, plainStyle, type Style } from "../services/output";
 import { shellArg } from "./shell";

@@ -4,7 +4,7 @@ import {
   type Kind,
   type ResolvedStep,
   withStepDefaults,
-} from "@stacks/format";
+} from "@steamfield/stacks-format";
 import { Effect } from "effect";
 import {
   type BadInput,

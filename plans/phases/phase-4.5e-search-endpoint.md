@@ -96,11 +96,11 @@ The site's privacy page gets a "Search" section: what `stacks search` sends and 
 | Path | Change |
 |---|---|
 | `packages/format/src/search/` | `SearchMetadata`, `SearchVocabulary`, `SearchResult`, `SearchHit`, `SearchResponse`, `rank` and its helpers, moved from the CLI; exported from the package index |
-| `packages/cli/src/core/search/` | `input.ts` (build `RankInput` from `Registry`), `remote.ts` (the call and backoff), `merge.ts`; imports `rank` from `@stacks/format` |
+| `packages/cli/src/core/search/` | `input.ts` (build `RankInput` from `Registry`), `remote.ts` (the call and backoff), `merge.ts`; imports `rank` from `@steamfield/stacks-format` |
 | `packages/cli/src/commands/search.ts`, `src/schemas/search.ts` | `--local`; `ranking`, `remote`, `remoteReason`, `method` |
 | `packages/cli/src/config.ts`, `src/bin.ts` | `AppConfig.apiUrl`, if 4.2b hasn't added it |
 | `packages/cli/scripts/search-eval.ts` | `--remote <url>`: the set through the real route |
-| `stacks-api/packages/contract/src/` | `SearchGroup` with `GET /v1/search`; `SearchResponse` reaches the contract from `@stacks/format` |
+| `stacks-api/packages/contract/src/` | `SearchGroup` with `GET /v1/search`; `SearchResponse` reaches the contract from `@steamfield/stacks-format` |
 | `stacks-api/apps/api/src/handlers/search.ts`, `services/Search.ts`, `services/IndexAssets.ts` | Handler and services with their layers |
 | `stacks-api/apps/api/src/platform/node.ts` | The Node `IndexAssets` layer over the static directory |
 | `stacks-api/apps/web/src/pages/` | The privacy page's "Search" section |
@@ -126,7 +126,7 @@ In `packages/cli`, against a local server:
 10. `--local`, `--offline`, `STACKS_OFFLINE=1` and `DO_NOT_TRACK=1` each make no request and report `remote: "off"` with their reason.
 11. The CLI's log file after an API-ranked search contains the request's length, the counts and `remote: "used"`, and not the text.
 12. With the local server running the real route over the bundled index, every 4.5a query gives the same stacks and fragments in the same order with `ranking: "api"` as with `--local`.
-13. The packed `@stacks/format` imports `rank` under Node with no TypeScript transform, and 4.5c's gate passes unchanged after the move.
+13. The packed `@steamfield/stacks-format` imports `rank` under Node with no TypeScript transform, and 4.5c's gate passes unchanged after the move.
 
 ### Realistic edge cases
 
@@ -147,4 +147,4 @@ In `packages/cli`, against a local server:
 - While both sides rank lexically, the API mostly duplicates the local result, and the 800 ms wait buys only fresher cards. That is the price of having the server in place when 4.5d's semantic leg starts; if 4.5d is never started, the call can be dropped from the CLI (keeping the route for the site and MCP) by making `--local` the default.
 - The 800 ms deadline is a guess for an interactive command an agent waits on. Measure the route's p95 from a few regions after deploy and set the deadline to about twice it.
 - `q` in a GET URL can be logged by infrastructure outside the API's code. The runbook covers the proxy this repository's maintainers control; a corporate proxy on the user's side is out of reach, which the privacy page says.
-- Merging on one score scale assumes the server and the CLI run the same `rank` version. A CLI on an older `@stacks/format` sees server scores from a newer ranking; the merge still orders by tier first, so a mismatch shifts order within a tier at worst. `SearchResponse` carries no ranking version until that shows up in practice.
+- Merging on one score scale assumes the server and the CLI run the same `rank` version. A CLI on an older `@steamfield/stacks-format` sees server scores from a newer ranking; the merge still orders by tier first, so a mismatch shifts order within a tier at worst. `SearchResponse` carries no ranking version until that shows up in practice.

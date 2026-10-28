@@ -1,4 +1,4 @@
-import type { EntryRef } from "@stacks/format";
+import type { EntryRef } from "@steamfield/stacks-format";
 import { Effect } from "effect";
 import { compose } from "../core/compose/compose";
 import { fingerprint } from "../core/fingerprint";

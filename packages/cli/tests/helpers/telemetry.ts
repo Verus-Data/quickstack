@@ -11,7 +11,7 @@ import {
 import { createServer, type ServerResponse } from "node:http";
 import { dirname, join } from "node:path";
 import { NodeServices } from "@effect/platform-node";
-import { TelemetryAccepted, TelemetryBatch, TelemetryEvent } from "@stacks/format";
+import { TelemetryAccepted, TelemetryBatch, TelemetryEvent } from "@steamfield/stacks-format";
 import { type Clock, Effect, type FileSystem, Layer, type Path, Schema } from "effect";
 import type { HttpClient } from "effect/http";
 import { expect } from "vitest";

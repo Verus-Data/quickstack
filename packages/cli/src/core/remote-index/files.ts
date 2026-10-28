@@ -1,4 +1,4 @@
-import { bundleDigest, type EntryBundle, type IndexEntry } from "@stacks/format";
+import { bundleDigest, type EntryBundle, type IndexEntry } from "@steamfield/stacks-format";
 import { Effect, FileSystem, Path } from "effect";
 
 export const directoryBundle = Effect.fn("remoteIndex.directoryBundle")(function* (

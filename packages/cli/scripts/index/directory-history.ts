@@ -6,7 +6,7 @@ import {
   type OfficialNames,
   VerifyStep,
   withStepDefaults,
-} from "@stacks/format";
+} from "@steamfield/stacks-format";
 import { Effect, FileSystem, Path, Schema } from "effect";
 import { parseDocument } from "yaml";
 import { compose } from "../../src/core/compose/compose";

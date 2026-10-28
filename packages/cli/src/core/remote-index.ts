@@ -4,7 +4,7 @@ import {
   type INDEX_PUBLIC_KEYS,
   type IndexEntry,
   RegistryIndex,
-} from "@stacks/format";
+} from "@steamfield/stacks-format";
 import { Clock, Context, Effect, FileSystem, Layer, Option, Path, Schema, Scope } from "effect";
 import { HttpClient } from "effect/http";
 import { AppConfig } from "../config";

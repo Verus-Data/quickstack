@@ -1,4 +1,4 @@
-import { TelemetryNewEvent } from "@stacks/format";
+import { TelemetryNewEvent } from "@steamfield/stacks-format";
 import { Cause, Effect, Option, Schema } from "effect";
 import { Flag } from "effect/cli";
 import type { Composition } from "../core/compose/compose";

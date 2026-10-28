@@ -38,7 +38,7 @@ Each question gets a short answer and the evidence (commands run, versions) in a
 | Open question 17: does the Workers Vitest pool run with the API's Vitest major on Node? | Add `@cloudflare/vitest-pool-workers` and `wrangler` as dev dependencies of `apps/api` on a scratch branch; run one test that calls the Worker's fetch handler in workerd. Record the pool version and whether it accepts that Vitest |
 | If not, what harness? | Node tests that start the Worker with Wrangler's local runtime (`wrangler dev`, or its programmatic API) and call it with `fetch`. Record start-up time per test file |
 | Does Effect's HTTP stack run in workerd? | Serve 4.0b's `app.ts` through `HttpRouter.toWebHandler` under `wrangler dev`. Record bundle size against the Workers script limit |
-| Does `@stacks/format` run there? | Decode a fixture entry and compute a `bundleDigest` inside the Worker, from the published package |
+| Does `@steamfield/stacks-format` run there? | Decode a fixture entry and compute a `bundleDigest` inside the Worker, from the published package |
 | Do static assets get cache headers from `_headers`, and do directory indexes resolve? | Check `Cache-Control` on a fixture `v1/index.json` file and that `/stacks/x/` serves `stacks/x/index.html` under `wrangler dev`, and that the routes still claim their paths first (the assets layer's `run_worker_first` for `/healthz` and `/v1/*`) |
 | Can a scheduled handler call an Effect program? | A no-op `scheduled` export run with Wrangler's scheduled-test mode |
 | Is there an `effect/sql` D1 driver compatible with the installed `effect`? | Check npm. If not, write a small `SqlClient` adapter over the D1 binding; record which, so 4.1b starts from it |

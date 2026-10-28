@@ -132,8 +132,8 @@ export function decorateWorkspace(temporary: string) {
   symlinkSync(join(cliRoot, "../../node_modules"), join(root, "node_modules"));
   linkDependencies(cliRoot, cli);
   linkDependencies(join(cliRoot, "../format"), join(root, "packages/format"));
-  mkdirSync(join(cli, "node_modules/@stacks"), { recursive: true });
-  symlinkSync(join(root, "packages/format"), join(cli, "node_modules/@stacks/format"));
+  mkdirSync(join(cli, "node_modules/@steamfield"), { recursive: true });
+  symlinkSync(join(root, "packages/format"), join(cli, "node_modules/@steamfield/stacks-format"));
   const registry = join(cli, "registry");
   cpSync(bundled, registry, { recursive: true });
   for (const id of ["second", "third"]) seed(registry, { kind: "stack", id });
@@ -142,7 +142,7 @@ export function decorateWorkspace(temporary: string) {
 function linkDependencies(source: string, target: string) {
   mkdirSync(join(target, "node_modules"), { recursive: true });
   for (const name of readdirSync(join(source, "node_modules"))) {
-    if (!["@stacks", ".bin", ".vite-temp"].includes(name))
+    if (!["@steamfield", ".bin", ".vite-temp"].includes(name))
       symlinkSync(join(source, "node_modules", name), join(target, "node_modules", name));
   }
 }

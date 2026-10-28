@@ -1,4 +1,4 @@
-import { AgentId, Harness } from "@stacks/format";
+import { AgentId, Harness } from "@steamfield/stacks-format";
 import { Effect, FileSystem, Option, Path, Schema, Terminal } from "effect";
 import { CliError, Flag } from "effect/cli";
 import { AppConfig } from "../config";

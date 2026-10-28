@@ -13,7 +13,7 @@ import {
 import { createServer } from "node:http";
 import { join } from "node:path";
 import { NodeServices } from "@effect/platform-node";
-import type { IndexEntry, RegistryIndex, SignedIndex } from "@stacks/format";
+import type { IndexEntry, RegistryIndex, SignedIndex } from "@steamfield/stacks-format";
 import { Effect, type FileSystem, Layer, type Path } from "effect";
 import { Command } from "effect/cli";
 import { HttpClient, HttpClientRequest } from "effect/http";

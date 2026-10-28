@@ -10,7 +10,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import type { AgentId } from "@stacks/format";
+import type { AgentId } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { expect } from "vitest";
 import { NewResult } from "../../src/schemas/new";

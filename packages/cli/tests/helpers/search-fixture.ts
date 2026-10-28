@@ -8,7 +8,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import type { Kind } from "@stacks/format";
+import type { Kind } from "@steamfield/stacks-format";
 import { Effect, Schema } from "effect";
 import { decodeEntry } from "../../src/core/registry/entry";
 import { searchSourceDigest } from "../../src/core/search/digest";

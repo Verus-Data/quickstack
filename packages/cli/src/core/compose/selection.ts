@@ -1,4 +1,4 @@
-import type { Category, FragmentMeta, Kind, StackMeta } from "@stacks/format";
+import type { Category, FragmentMeta, Kind, StackMeta } from "@steamfield/stacks-format";
 import { Effect } from "effect";
 import {
   BadInput,

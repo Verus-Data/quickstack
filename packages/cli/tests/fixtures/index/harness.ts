@@ -14,7 +14,7 @@ import {
 import { createServer } from "node:http";
 import { dirname, join, relative } from "node:path";
 import { NodeServices } from "@effect/platform-node";
-import { bundleDigest, EntryBundle, type IndexEntry, type Kind } from "@stacks/format";
+import { bundleDigest, EntryBundle, type IndexEntry, type Kind } from "@steamfield/stacks-format";
 import { Effect, Exit, Schema } from "effect";
 import { expect } from "vitest";
 import { fingerprint } from "../../../src/core/fingerprint";
@@ -97,7 +97,7 @@ export function snapshot(root: string): Record<string, string> {
   return files;
 }
 
-/** Independent raw-file oracle; canonicalization and digests belong to @stacks/format. */
+/** Independent raw-file oracle; canonicalization and digests belong to @steamfield/stacks-format. */
 export function rawBundle(registry: string, kind: Kind, id: string) {
   const root = entryPath(registry, kind, id);
   const files: EntryBundle["files"][number][] = [];
@@ -160,7 +160,7 @@ function linkPackageModules(target: string, name: string) {
   const modules = join(repo, "packages", name, "node_modules");
   mkdirSync(join(target, "node_modules"), { recursive: true });
   for (const dep of existsSync(modules) ? readdirSync(modules) : []) {
-    if (dep !== "@stacks" && dep !== ".bin" && dep !== ".vite-temp")
+    if (dep !== "@steamfield" && dep !== ".bin" && dep !== ".vite-temp")
       symlinkSync(join(modules, dep), join(target, "node_modules", dep));
   }
 }
@@ -184,8 +184,8 @@ export async function fixture(temporary: string) {
   }
   symlinkSync(join(repo, "node_modules"), join(root, "node_modules"));
   for (const name of ["cli", "format"]) linkPackageModules(join(root, "packages", name), name);
-  mkdirSync(join(cli, "node_modules/@stacks"), { recursive: true });
-  symlinkSync(format, join(cli, "node_modules/@stacks/format"));
+  mkdirSync(join(cli, "node_modules/@steamfield"), { recursive: true });
+  symlinkSync(format, join(cli, "node_modules/@steamfield/stacks-format"));
   writeFileSync(
     join(format, "src/index-keys.ts"),
     `export const INDEX_PUBLIC_KEYS = ${JSON.stringify([{ keyId, publicKey }])};\n`,
@@ -257,7 +257,7 @@ export async function fixture(temporary: string) {
 }
 
 export async function readBuild(out: string) {
-  const { SignedIndex, RegistryIndex } = await import("@stacks/format");
+  const { SignedIndex, RegistryIndex } = await import("@steamfield/stacks-format");
   const envelope = Schema.decodeUnknownSync(SignedIndex)(
     JSON.parse(readFileSync(join(out, "v1/index.json"), "utf8")),
   );

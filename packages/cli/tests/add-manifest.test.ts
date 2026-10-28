@@ -1,4 +1,4 @@
-import type { DetectedAgent } from "@stacks/format";
+import type { DetectedAgent } from "@steamfield/stacks-format";
 import { expect, test } from "vitest";
 import { mergeAddManifest } from "../src/core/add/manifest";
 import { digestSteps } from "../src/core/manifest";

@@ -1,4 +1,4 @@
-import { EntryBundle } from "@stacks/format";
+import { EntryBundle } from "@steamfield/stacks-format";
 import { Effect, Schema } from "effect";
 import { type BundleRef, bundlePath } from "./remote";
 

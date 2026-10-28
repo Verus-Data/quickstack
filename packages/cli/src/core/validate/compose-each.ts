@@ -1,4 +1,4 @@
-import { AgentId, type FragmentMeta, type StackMeta } from "@stacks/format";
+import { AgentId, type FragmentMeta, type StackMeta } from "@steamfield/stacks-format";
 import { Effect, Result } from "effect";
 import type { Finding } from "../../schemas/validate";
 import { type ComposeOptions, compose } from "../compose/compose";

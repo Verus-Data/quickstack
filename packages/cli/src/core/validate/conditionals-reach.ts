@@ -1,4 +1,4 @@
-import type { FragmentMeta } from "@stacks/format";
+import type { FragmentMeta } from "@steamfield/stacks-format";
 import { Effect } from "effect";
 import type { Finding } from "../../schemas/validate";
 import { scanConditionals } from "../compose/conditionals";

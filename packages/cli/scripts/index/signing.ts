@@ -1,4 +1,4 @@
-import { INDEX_PUBLIC_KEYS, type SignedIndex } from "@stacks/format";
+import { INDEX_PUBLIC_KEYS, type SignedIndex } from "@steamfield/stacks-format";
 import { Effect, FileSystem } from "effect";
 
 const bytes = (pem: string) =>

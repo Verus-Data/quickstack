@@ -1,4 +1,4 @@
-import { Category, type Kind } from "@stacks/format";
+import { Category, type Kind } from "@steamfield/stacks-format";
 import { Effect, Option, Schema } from "effect";
 import { Argument, CliError, Command, Flag } from "effect/cli";
 import { type CreateOptions, createEntry } from "../core/create";

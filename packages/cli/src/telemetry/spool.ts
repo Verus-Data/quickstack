@@ -1,4 +1,4 @@
-import { TelemetryEvent } from "@stacks/format";
+import { TelemetryEvent } from "@steamfield/stacks-format";
 import { Clock, Effect, Option, Schema } from "effect";
 import { DAY, directory, names, read, remove, type Storage, uuid, write } from "./storage";
 

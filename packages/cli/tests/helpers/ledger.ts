@@ -1,7 +1,7 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { NodeServices } from "@effect/platform-node";
-import type { RunRecord } from "@stacks/format";
+import type { RunRecord } from "@steamfield/stacks-format";
 import { Effect, Exit } from "effect";
 import { fingerprint } from "../../src/core/fingerprint";
 import type { LedgerRecord } from "../../src/schemas/ledger";

@@ -1,4 +1,4 @@
-import { APP_TAG, type FragmentMeta, type StackMeta } from "@stacks/format";
+import { APP_TAG, type FragmentMeta, type StackMeta } from "@steamfield/stacks-format";
 import { Effect, Result } from "effect";
 import type {
   BadInput,

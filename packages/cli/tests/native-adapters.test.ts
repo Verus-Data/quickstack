@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { basename, dirname, join, matchesGlob, normalize } from "node:path";
-import { AgentId } from "@stacks/format";
+import { AgentId } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { parse } from "smol-toml";
 import { afterEach, expect, test } from "vitest";

@@ -6,7 +6,7 @@ Status: EXECUTED 2026-10-27 in `stacks-api` (gate and `stacks verify` green; the
 |---|---|
 | Goal | The private `stacks-api` repository is a bun workspace (`apps/api`, `apps/web`, `packages/contract`) whose Effect HTTP program serves only `GET /healthz`, `GET /openapi.json` (generated from the contract), the signed static index files and a minimal built Astro site, runs as a Node server on a host the maintainers control, and keeps the runtime and static serving behind `apps/api/src/platform/` so 4.0f can move it to Workers without touching routes or domain code |
 | Traces to | "no public registry exists yet" (assumption 6, which phase 4 replaces with a real host). D35 (a private repository, Node first, portable core). D16 (Workers is the production target) |
-| Depends on | D35, and the bundled `astro-api` stack, released in 0.3.1: the repository is scaffolded with the installed CLI, `stacks new astro-api <path>`. Nothing else here: `/healthz` and static files need no shared schema, so `@stacks/format` (4.0a) is first needed by 4.1b |
+| Depends on | D35, and the bundled `astro-api` stack, released in 0.3.1: the repository is scaffolded with the installed CLI, `stacks new astro-api <path>`. Nothing else here: `/healthz` and static files need no shared schema, so `@steamfield/stacks-format` (4.0a) is first needed by 4.1b |
 | Blocks | 4.0c (the static directory it deploys into), 4.0e (the site the directory pages join), 4.0f (what it migrates), and through 4.0f, 4.1b (the platform layer and test harness) |
 | Decisions needed | None |
 | Settles | The API's program structure and workspace layout; how it is tested; which Effect HTTP exports it uses; how static files are served on Node; how the Node host is run and deployed by hand |

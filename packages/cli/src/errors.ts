@@ -1,4 +1,4 @@
-import { FailureKind, Kind } from "@stacks/format";
+import { FailureKind, Kind } from "@steamfield/stacks-format";
 import { Effect, Schema } from "effect";
 import { TEMPLATE_VARIABLES } from "./core/scaffold/template";
 import { shellArg } from "./core/shell";

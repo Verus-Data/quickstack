@@ -1,4 +1,4 @@
-import type { DirectoryData, IndexEntry } from "@stacks/format";
+import type { DirectoryData, IndexEntry } from "@steamfield/stacks-format";
 import { Effect, Path } from "effect";
 import { markdownFile } from "../../src/core/registry/entry";
 import { historyExec } from "./history";

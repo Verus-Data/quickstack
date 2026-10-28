@@ -1,4 +1,4 @@
-import type { NamedComposition, OfficialNames } from "@stacks/format";
+import type { NamedComposition, OfficialNames } from "@steamfield/stacks-format";
 
 type Source = OfficialNames["sources"][number];
 type Stack = Source["stacks"][number];

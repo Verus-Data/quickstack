@@ -1,4 +1,4 @@
-import { type Kind, StatsSummary } from "@stacks/format";
+import { type Kind, StatsSummary } from "@steamfield/stacks-format";
 import { Effect, FileSystem, Path, Schema } from "effect";
 import { AppConfig } from "../config";
 import type { SearchEvidence } from "../schemas/search";

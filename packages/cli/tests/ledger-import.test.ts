@@ -1,7 +1,7 @@
 import { execFile, execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { RunRecord } from "@stacks/format";
+import { RunRecord } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { afterEach, expect, test } from "vitest";
 import { projectFiles } from "./fixtures/composed-files";

@@ -1,5 +1,5 @@
 import { it } from "@effect/vitest";
-import { AgentId, DetectedAgent, Harness } from "@stacks/format";
+import { AgentId, DetectedAgent, Harness } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { describe, expect, test } from "vitest";
 import {

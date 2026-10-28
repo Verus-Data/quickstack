@@ -15,7 +15,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { Manifest } from "@stacks/format";
+import { Manifest } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { version } from "../package.json";
 import { cli } from "../src/cli";

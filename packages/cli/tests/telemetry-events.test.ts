@@ -19,7 +19,7 @@ import {
   TelemetryShowEvent,
   TelemetryVerifyEvent,
   telemetryEventJsonSchema,
-} from "@stacks/format";
+} from "@steamfield/stacks-format";
 import { Clock, Effect, Schema } from "effect";
 import { afterEach, beforeEach, expect, test } from "vitest";
 import { AddResult } from "../src/schemas/add";

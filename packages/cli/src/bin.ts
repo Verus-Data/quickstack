@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { NodeServices } from "@effect/platform-node";
-import { INDEX_PUBLIC_KEYS } from "@stacks/format";
+import { INDEX_PUBLIC_KEYS } from "@steamfield/stacks-format";
 import { Effect, FileSystem, Layer, Option } from "effect";
 import { RemoteIndex } from "./core/remote-index";
 import { invocationFor } from "./invocation";

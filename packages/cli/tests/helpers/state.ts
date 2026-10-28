@@ -1,5 +1,5 @@
 import { NodeServices } from "@effect/platform-node";
-import type { Manifest } from "@stacks/format";
+import type { Manifest } from "@steamfield/stacks-format";
 import { Effect, Exit, type FileSystem, type Path, References } from "effect";
 import { AppConfig, type Environment } from "../../src/config";
 import type { Composition } from "../../src/core/compose/compose";

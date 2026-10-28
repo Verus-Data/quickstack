@@ -1,7 +1,7 @@
 import { verify } from "node:crypto";
 import { readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
-import { SignedIndex } from "@stacks/format";
+import { SignedIndex } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { afterEach, expect, test } from "vitest";
 import {

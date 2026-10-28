@@ -1,4 +1,9 @@
-import { bundleDigest, canonicalBundle, type EntryBundle, type IndexEntry } from "@stacks/format";
+import {
+  bundleDigest,
+  canonicalBundle,
+  type EntryBundle,
+  type IndexEntry,
+} from "@steamfield/stacks-format";
 import { Effect } from "effect";
 import { type Composition, compose } from "../../src/core/compose/compose";
 import { fingerprint } from "../../src/core/fingerprint";

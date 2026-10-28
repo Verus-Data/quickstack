@@ -1,4 +1,4 @@
-import { AgentId, Harness } from "@stacks/format";
+import { AgentId, Harness } from "@steamfield/stacks-format";
 import { Cause, Clock, Console, Effect, Exit, Logger, Random, References } from "effect";
 import { CliError, Command } from "effect/cli";
 import { cli } from "./cli";

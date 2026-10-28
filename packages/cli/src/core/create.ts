@@ -1,4 +1,4 @@
-import type { Category, Kind } from "@stacks/format";
+import type { Category, Kind } from "@steamfield/stacks-format";
 import { Effect, FileSystem, Option, Path, Schema, Terminal } from "effect";
 import { AppConfig } from "../config";
 import { BadInput, Interrupted, NotFound, PermissionDenied } from "../errors";

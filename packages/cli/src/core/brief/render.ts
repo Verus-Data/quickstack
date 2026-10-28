@@ -1,5 +1,5 @@
-import type { Manifest } from "@stacks/format";
-import { APP_TAG, DEFAULT_STEP_TIMEOUT, withStepDefaults } from "@stacks/format";
+import type { Manifest } from "@steamfield/stacks-format";
+import { APP_TAG, DEFAULT_STEP_TIMEOUT, withStepDefaults } from "@steamfield/stacks-format";
 import { METADATA_DIR } from "../../project-layout";
 import type { ComposedStep, Composition, MissingTool } from "../compose/compose";
 import type { Entry } from "../registry/entry";

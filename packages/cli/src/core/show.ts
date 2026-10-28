@@ -1,4 +1,4 @@
-import type { Kind } from "@stacks/format";
+import type { Kind } from "@steamfield/stacks-format";
 import { Effect, Result } from "effect";
 import { AppConfig } from "../config";
 import { BadInput, NotFound } from "../errors";

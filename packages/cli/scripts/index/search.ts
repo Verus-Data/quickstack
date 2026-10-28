@@ -1,4 +1,4 @@
-import type { IndexEntry } from "@stacks/format";
+import type { IndexEntry } from "@steamfield/stacks-format";
 import { Effect } from "effect";
 import { decodeEntry, markdownFile } from "../../src/core/registry/entry";
 import { searchSourceDigest } from "../../src/core/search/digest";

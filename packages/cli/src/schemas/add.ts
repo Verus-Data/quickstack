@@ -1,4 +1,4 @@
-import { TamperCheck } from "@stacks/format";
+import { TamperCheck } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { BRIEF_PATH } from "../project-layout";
 import { NewResult } from "./new";

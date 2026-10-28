@@ -16,13 +16,13 @@ Acceptance tests: traced
 
 In:
 
-- A new workspace package `packages/format` (`@stacks/format`). Amended 2026-10-27 under D35: it was private and never published, but the API now lives in its own repository and can only depend on it through a registry, so it is published (under the CLI's npm scope; the name is decided at publish time, like D34's). The CLI still links it through the workspace and bundles it.
+- A new workspace package `packages/format` (`@steamfield/stacks-format`). Amended 2026-10-27 under D35: it was private and never published, but the API now lives in its own repository and can only depend on it through a registry, so it is published (under the CLI's npm scope; the name is decided at publish time, like D34's). The CLI still links it through the workspace and bundles it.
 - A build for the published copy: `dist/` JavaScript plus `.d.ts` declarations. Exports conditions give the workspace the source and npm consumers `dist/` (below).
 - A pack test that installs the packed tarball into a temporary project and imports it under Node 22 with no TypeScript transform.
 - Publishing by hand: a maintainer packs and publishes it, as with the CLI's 0.1.0, until 5.0's release workflow takes over. The contract is the roadmap's "Published format package" row.
 - Moving the contracts the roadmap marks "moves in 4.0a" (see roadmap, [Contracts: Types and schemas](../roadmap.md#types-and-schemas)): `AgentId` and `DetectedAgent`; Entry format v1 (`StackMeta`, `FragmentMeta`, `VerifyStep`, `Probe`, `Check`); `Manifest`, `ManifestStep`, `EntryRef`; `RunRecord`. Same names, same behavior. `RunRecord` moves carrying 3.5b's optional `stages` field.
 - New: `EntryBundle` schema, `canonicalBundle` and `bundleDigest` (roadmap, Contracts: Canonical bundle).
-- Rewriting every CLI import of the moved code to `@stacks/format` in this one change, and deleting the old files.
+- Rewriting every CLI import of the moved code to `@steamfield/stacks-format` in this one change, and deleting the old files.
 - A Grit boundary in the format package banning platform imports.
 
 Out:
@@ -35,13 +35,13 @@ Out:
 
 ### Where this fits
 
-4.0a is a pure refactor plus two small new functions and a build for the published copy. The API (`stacks-api`, D35) first imports `@stacks/format` in 4.1b, which starts after 4.0f, so 4.1b's tests are the first to run it inside the Workers runtime. The API depends on it through an npm alias (`"@stacks/format": "npm:<published name>@^<version>"`), so its source imports `@stacks/format` whatever the published name turns out to be. 4.0c uses `canonicalBundle` and `bundleDigest` to publish bundles, 4.0e uses the signed envelope 4.0c adds for the official-names file, and 4.0d uses the same two functions to compare remote and bundled copies. Once this lands, `packages/format` changes only by adding files (4.0c, 4.0e, 4.1a, 4.2a), never by changing what it exports.
+4.0a is a pure refactor plus two small new functions and a build for the published copy. The API (`stacks-api`, D35) first imports `@steamfield/stacks-format` in 4.1b, which starts after 4.0f, so 4.1b's tests are the first to run it inside the Workers runtime. The API depends on it through an npm alias (`"@steamfield/stacks-format": "npm:<published name>@^<version>"`), so its source imports `@steamfield/stacks-format` whatever the published name turns out to be. 4.0c uses `canonicalBundle` and `bundleDigest` to publish bundles, 4.0e uses the signed envelope 4.0c adds for the official-names file, and 4.0d uses the same two functions to compare remote and bundled copies. Once this lands, `packages/format` changes only by adding files (4.0c, 4.0e, 4.1a, 4.2a), never by changing what it exports.
 
 ### Package shape
 
 ```
 packages/format/
-  package.json     name @stacks/format, type module,
+  package.json     name @steamfield/stacks-format, type module,
                    exports { ".": { "bun": "./src/index.ts", "types": "./dist/index.d.ts",
                    "default": "./dist/index.js" } },
                    scripts build/typecheck/test/coverage/check/clean/pack
@@ -59,7 +59,7 @@ The package needs `typecheck`, `test` and `coverage` scripts so the root fan-out
 
 ### How the CLI depends on it
 
-`packages/cli/package.json` lists `"@stacks/format": "workspace:*"` in `devDependencies`, next to the other packages 0.2's build inlines. The published tarball's `package.json` then names no runtime dependency on a package that doesn't exist on npm. There are no re-exports left in `packages/cli/src/schemas/`: every import moves in this change, so there is one name for each symbol from the day the package exists (the roadmap contracts table already says "moves in 4.0a"). A stale import is a compile error, not a silent second copy.
+`packages/cli/package.json` lists `"@steamfield/stacks-format": "workspace:*"` in `devDependencies`, next to the other packages 0.2's build inlines. The published tarball's `package.json` then names no runtime dependency on a package that doesn't exist on npm. There are no re-exports left in `packages/cli/src/schemas/`: every import moves in this change, so there is one name for each symbol from the day the package exists (the roadmap contracts table already says "moves in 4.0a"). A stale import is a compile error, not a silent second copy.
 
 ### Canonical bundle
 
@@ -93,8 +93,8 @@ Rules (roadmap, Contracts: Canonical bundle): files sorted by path using byte or
 |---|---|
 | `packages/format/` | New package as above, with its `build` and `pack` scripts and a pack test under `packages/format/tests/` |
 | `packages/cli/src/schemas/entry.ts`, `manifest.ts`, `verify.ts` (the `RunRecord` part) | Moved into `packages/format/src/`; removed from the CLI. `src/core/fingerprint.ts` and `src/core/compose/` stay |
-| `packages/cli/src/**`, `tests/**` | Imports rewritten to `@stacks/format` |
-| `packages/cli/package.json` | `@stacks/format: workspace:*` in `devDependencies` |
+| `packages/cli/src/**`, `tests/**` | Imports rewritten to `@steamfield/stacks-format` |
+| `packages/cli/package.json` | `@steamfield/stacks-format: workspace:*` in `devDependencies` |
 | Root `package.json` catalog | Nothing new; the package uses `effect` and Vitest through `catalog:` |
 | `.claude/rules/format/` | New rule file scoped to `packages/format/` (no platform imports, additive changes only after this sub-phase) |
 | `AGENTS.md` | Architecture map gains `packages/format`; Overview no longer says only `packages/cli` has code |
@@ -105,7 +105,7 @@ Rules (roadmap, Contracts: Canonical bundle): files sorted by path using byte or
 2. `packages/format` typechecks with `types: []`; adding `import "node:fs"` to a probe file fails lint (Grit probe on a real temporary file, as the CLI's boundary tests do).
 3. `canonicalBundle`: the same files in a different order give identical bytes; a CRLF file and its LF copy give different digests; a binary file round-trips through `base64`; property test over random file sets that decode-then-canonicalize is stable.
 4. `BundlePath` rejects `../x`, `/x`, `a/../../x`, `a\\b` and an empty string.
-5. The packed `@stacks/format` tarball holds only `dist/`, `package.json` and the license; installed into a temporary project under Node 22 with no TypeScript loader, `import { bundleDigest, Manifest } from "@stacks/format"` runs and decodes a fixture manifest, and the declarations typecheck a consumer file with `tsc`.
+5. The packed `@steamfield/stacks-format` tarball holds only `dist/`, `package.json` and the license; installed into a temporary project under Node 22 with no TypeScript loader, `import { bundleDigest, Manifest } from "@steamfield/stacks-format"` runs and decodes a fixture manifest, and the declarations typecheck a consumer file with `tsc`.
 
 ### Realistic edge cases
 
@@ -121,7 +121,7 @@ Rules (roadmap, Contracts: Canonical bundle): files sorted by path using byte or
 
 - Acceptance tests pass; `bun run check` green from the repo root, now including `packages/format`.
 - The CLI suite passes with no test file changed except import lines (`bun run test`, `bun run coverage` and `bun run e2e` in `packages/cli`); a diff of `packages/cli/tests/` and `e2e/` shows only import changes.
-- The CLI's packed tarball names `@stacks/format` in no runtime field of its `package.json` (`dependencies`, `peerDependencies`, `optionalDependencies`), and 0.2's existing packed-tarball e2e (installs it and runs `list --json`) passes unchanged.
+- The CLI's packed tarball names `@steamfield/stacks-format` in no runtime field of its `package.json` (`dependencies`, `peerDependencies`, `optionalDependencies`), and 0.2's existing packed-tarball e2e (installs it and runs `list --json`) passes unchanged.
 - No file under `packages/cli/src/` defines a symbol that `packages/format` exports.
 - `AGENTS.md` describes the package.
 

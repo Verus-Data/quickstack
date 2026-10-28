@@ -6,7 +6,7 @@ import type {
   TelemetryEvent,
   TelemetryNewEvent,
   TelemetryVerifyEvent,
-} from "@stacks/format";
+} from "@steamfield/stacks-format";
 import type { Entry } from "../core/registry/entry";
 import type { Project } from "./storage";
 

@@ -1,5 +1,5 @@
 import { styleText } from "node:util";
-import type { DetectedAgent } from "@stacks/format";
+import type { DetectedAgent } from "@steamfield/stacks-format";
 import { Clock, Context, Effect, Layer, Option, type Scope, Semaphore } from "effect";
 import { AppConfig } from "../config";
 import {

@@ -1,4 +1,9 @@
-import { DirectoryData, type IndexEntry, OfficialNames, RegistryIndex } from "@stacks/format";
+import {
+  DirectoryData,
+  type IndexEntry,
+  OfficialNames,
+  RegistryIndex,
+} from "@steamfield/stacks-format";
 import { Console, Effect, Exit, FileSystem, Path, Schema } from "effect";
 import { SearchIndex } from "../../src/schemas/search";
 import type { currentIndex } from "./proof";

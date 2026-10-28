@@ -8,7 +8,7 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { NodeServices } from "@effect/platform-node";
-import type { AgentId } from "@stacks/format";
+import type { AgentId } from "@steamfield/stacks-format";
 import { Effect, Exit, Schema } from "effect";
 import { expect } from "vitest";
 import { fingerprint } from "../../src/core/fingerprint";

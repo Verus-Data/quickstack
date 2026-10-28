@@ -1,4 +1,4 @@
-import { AgentId } from "@stacks/format";
+import { AgentId } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 
 /** An npm scope, with or without its leading `@`: lowercase and URL-safe, no `/`. */

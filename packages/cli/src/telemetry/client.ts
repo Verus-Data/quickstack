@@ -1,4 +1,4 @@
-import { TelemetryAccepted, type TelemetryEvent } from "@stacks/format";
+import { TelemetryAccepted, type TelemetryEvent } from "@steamfield/stacks-format";
 import { Clock, Effect, Option, Schema } from "effect";
 import { type HttpClient, HttpClientRequest } from "effect/http";
 import type { TelemetryFlush } from "../schemas/telemetry";

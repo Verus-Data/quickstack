@@ -1,4 +1,4 @@
-import { RunRecord } from "@stacks/format";
+import { RunRecord } from "@steamfield/stacks-format";
 import { Duration, Effect, FileSystem, Path, Schema } from "effect";
 import { countAsked } from "../../src/core/runs";
 import { ProjectRuns } from "../../src/schemas/runs";

@@ -1,4 +1,4 @@
-import type { Kind } from "@stacks/format";
+import type { Kind } from "@steamfield/stacks-format";
 import { Effect, FileSystem, Path, Schema } from "effect";
 import { PermissionDenied } from "../../errors";
 import { SEARCH_DIRECTORY } from "../../project-layout";

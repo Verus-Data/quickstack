@@ -2,7 +2,7 @@ import { execFileSync } from "node:child_process";
 import { verify } from "node:crypto";
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { type IndexEntry, SignedIndex } from "@stacks/format";
+import { type IndexEntry, SignedIndex } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { expect } from "vitest";
 import {
@@ -62,7 +62,7 @@ export async function readDirectory(out: string) {
       Buffer.from(envelope.signature, "base64"),
     ),
   ).toBe(true);
-  const { DirectoryData } = await import("@stacks/format");
+  const { DirectoryData } = await import("@steamfield/stacks-format");
   return Schema.decodeUnknownSync(DirectoryData)(JSON.parse(envelope.payload));
 }
 

@@ -1,5 +1,5 @@
 import { homedir } from "node:os";
-import { AgentId, type DetectedAgent } from "@stacks/format";
+import { AgentId, type DetectedAgent } from "@steamfield/stacks-format";
 import { Config, ConfigProvider, Context, Effect, FileSystem, Layer, Path, Schema } from "effect";
 import { InvalidConfig } from "./errors";
 import { Settings } from "./schemas";

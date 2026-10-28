@@ -1,4 +1,4 @@
-import { AgentId, Harness, Kind } from "@stacks/format";
+import { AgentId, Harness, Kind } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { BRIEF_PATH } from "../project-layout";
 import { NoticeFields } from "./notice";

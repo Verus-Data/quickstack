@@ -1,4 +1,4 @@
-import { DetectedAgent, RunRecord } from "@stacks/format";
+import { DetectedAgent, RunRecord } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 
 export const LedgerResult = Schema.Literals(["pass", "partial", "fail", "infra"]);

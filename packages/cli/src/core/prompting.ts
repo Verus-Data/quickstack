@@ -1,4 +1,4 @@
-import type { Kind } from "@stacks/format";
+import type { Kind } from "@steamfield/stacks-format";
 import { Effect, Path, Terminal } from "effect";
 import { AppConfig } from "../config";
 import { BrokenPipe, Interrupted, PermissionDenied, Usage } from "../errors";

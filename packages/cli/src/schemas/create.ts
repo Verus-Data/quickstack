@@ -1,4 +1,4 @@
-import { Kind } from "@stacks/format";
+import { Kind } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { NoticeFields } from "./notice";
 

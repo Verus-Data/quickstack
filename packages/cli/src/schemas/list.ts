@@ -1,4 +1,4 @@
-import { Category, Kind } from "@stacks/format";
+import { Category, Kind } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { LastRun } from "./ledger";
 import { NoticeFields } from "./notice";

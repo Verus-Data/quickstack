@@ -1,4 +1,4 @@
-import type { IndexEntry, OfficialNames } from "@stacks/format";
+import type { IndexEntry, OfficialNames } from "@steamfield/stacks-format";
 import { Effect } from "effect";
 import { decodeEntry, markdownFile } from "../../src/core/registry/entry";
 import { readBundle } from "./bundle";

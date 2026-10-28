@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { Manifest } from "@stacks/format";
+import { Manifest } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { afterEach, expect, test } from "vitest";
 import * as T from "../src/core/brief/text";

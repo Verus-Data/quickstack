@@ -1,4 +1,4 @@
-import type { FailureKind } from "@stacks/format";
+import type { FailureKind } from "@steamfield/stacks-format";
 import { changeLines } from "../../errors";
 import type { StepResult, VerifyResult } from "../../schemas/verify";
 import { type Audience, plainStyle, type Style } from "../../services/output";
