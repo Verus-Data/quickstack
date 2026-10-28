@@ -9,7 +9,7 @@ import type {
   SearchVocabulary,
   SearchWhy,
 } from "./schema.js";
-import { tokens } from "./tokens.js";
+import { surfaceForms, tokens } from "./tokens.js";
 import { type Category, categories, matchedWords, vocabularyMatches } from "./vocabulary.js";
 
 export type RankRecord = {
@@ -85,6 +85,7 @@ function categoryValues(
   return category === "capabilities" ? [] : card[category];
 }
 function prepare(input: RankInput, query: string[], matches: SearchWhy[]): Candidate[] {
+  const forms = surfaceForms(input.request);
   return input.entries.map((record) => {
     const why = matches.filter((match) =>
       categories.some(
@@ -97,8 +98,10 @@ function prepare(input: RankInput, query: string[], matches: SearchWhy[]): Candi
     const fields = fieldsFor(record, query);
     for (const f of fields) {
       const matched = query.filter((word) => f.words.includes(word));
-      if (matched.length)
-        why.push({ field: f.name, matched: matched.join(" "), from: matched.join(" ") });
+      if (matched.length) {
+        const from = matched.flatMap((word) => forms.get(word) ?? []).join(" ");
+        why.push({ field: f.name, matched: from, from });
+      }
       if (f.weight >= 1.5) for (const word of matched) covered.add(word);
     }
     return { record, fields, why, covered, raw: 0 };
@@ -260,7 +263,9 @@ export function rank(input: RankInput): SearchResult {
     productKinds: [],
     languages: [],
     capabilities: [],
-    unmatched: query.filter((word) => !strongWords.has(word)),
+    unmatched: [...surfaceForms(request)]
+      .filter(([word]) => !strongWords.has(word))
+      .map(([, surface]) => surface),
   } satisfies SearchResult["understood"];
   return {
     request,

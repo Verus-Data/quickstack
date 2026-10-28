@@ -11,6 +11,21 @@ export const tokens = (text: string): string[] =>
   words(text)
     .filter((word) => !STOP.has(word))
     .map(stem);
+/** First request spelling for each content stem; matching still uses tokens. */
+export function surfaceForms(text: string): Map<string, string> {
+  const forms = new Map<string, string>();
+  const normalized = text.toLowerCase();
+  let offset = 0;
+  // Lowercase the whole request for contextual casing, then map its spans back to the
+  // original words. A lowercase character can expand (İ becomes i plus a combining dot).
+  for (const [surface] of text.matchAll(/[\p{L}\p{N}]+|[^\p{L}\p{N}]+/gu)) {
+    const end = offset + surface.toLowerCase().length;
+    for (const key of tokens(normalized.slice(offset, end)))
+      if (!forms.has(key)) forms.set(key, surface);
+    offset = end;
+  }
+  return forms;
+}
 export function phraseFrom(text: string, phrase: string): string | undefined {
   const needle = words(phrase);
   if (needle.length === 0) return undefined;

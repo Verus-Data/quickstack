@@ -113,7 +113,7 @@ test("overlapping vocabulary categories and TUI exclusions remain visible [4.5c#
     expect(row.tier).not.toBe("strong");
   }
   expect(tui.noStrongMatch).toBe(true);
-  expect(tui.understood.unmatched).toContain("tui");
+  expect(tui.understood.unmatched).toContain("TUI");
 });
 
 test.each([
