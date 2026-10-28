@@ -1,11 +1,11 @@
 ---
-description: Execute a plan as the orchestrator, delegating the coding to Codex (gpt-6.1-sol, high effort)
+description: Execute a plan as the orchestrator, delegating the coding to Codex (gpt-6.1-sol, high effort, fast mode)
 argument-hint: <plan file, e.g. plans/phases/phase-2.0a-composed-files-and-fingerprint.md>
 ---
 
 # Execute a plan with Codex
 
-Load `ce:executing-plans`, then the `delegate` skill, then `ce:architecting-systems` (rules/architecture.md asks for it before executing any file in `plans/phases/`). Execute $ARGUMENTS as `ce:executing-plans` describes, with these changes: you are the orchestrator and never the implementer, its sub-agents are Codex delegates run through `scripts/delegate.sh` (model and effort default to `gpt-6.1-sol` and `high`), and where it differs from this repo, the repo wins. A plan's `##` sections and its acceptance tests are the units to group.
+Load `ce:executing-plans`, then the `delegate` skill, then `ce:architecting-systems` (rules/architecture.md asks for it before executing any file in `plans/phases/`). Execute $ARGUMENTS as `ce:executing-plans` describes, with these changes: you are the orchestrator and never the implementer, its sub-agents are Codex delegates run through `scripts/delegate.sh` (model, effort and service tier default to `gpt-6.1-sol`, `high` and `priority`, Codex's fast mode), and where it differs from this repo, the repo wins. A plan's `##` sections and its acceptance tests are the units to group.
 
 ## Before any code
 

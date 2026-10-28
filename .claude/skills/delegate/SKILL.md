@@ -1,6 +1,6 @@
 ---
 name: delegate
-description: Hand a coding task to a Codex delegate (gpt-6.1-sol, high effort) in its own worktree, then review its diff, refactor it to this repo's standard, run the gate and commit it yourself. The default for implementation, tests and refactors whose contract you can write down. Not for design, plans or harness changes.
+description: Hand a coding task to a Codex delegate (gpt-6.1-sol, high effort, fast mode) in its own worktree, then review its diff, refactor it to this repo's standard, run the gate and commit it yourself. The default for implementation, tests and refactors whose contract you can write down. Not for design, plans or harness changes.
 ---
 
 # Delegating to Codex
@@ -55,6 +55,8 @@ faster than you could write the contract, or when you can't yet say what done lo
    investigation only: Vitest writes `node_modules/.vite-temp`, so no test runs without `--write`. Independent units run as
    2-4 delegates at once, one worktree each. The digest (result, commands run, files written,
    last message) is the command's output; full logs stay under `$TMPDIR/stacks-delegate/`.
+   Runs use Codex's fast mode (`service_tier="priority"`: about twice the speed, more usage);
+   `DELEGATE_SERVICE_TIER=default` turns it off for a run.
 
 4. Review. `success` only means the turn finished. Codex has already run one
    `code-reviewer` pass (`.claude/agents/code-reviewer.md`) on its own diff in a fresh Codex process and resolved the findings
