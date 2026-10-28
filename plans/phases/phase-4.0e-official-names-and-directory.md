@@ -1,6 +1,7 @@
 # Phase 4.0e: Official names and directory
 
 Status: DRAFT 2026-10-26 (not agreed)
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -146,16 +147,27 @@ apps/web/dist/
 
 Over 4.0c's fixtures plus a fixture git repo with tags:
 
-- `v1/names.json` verifies with the test key; over a fixture repo with tags `v0.1.0` and `v0.2.0`, it lists a stack that exists only at `v0.1.0`, a never-proven bundled stack and a bundle-only optional fragment, and each stack's compositions carry the step names their verify sections define (default set and each optional fragment).
-- A tag whose registry fails today's decode still contributes its ids, and the build prints a warning naming the tag.
-- `--check` against the local server fails, naming `v1/names.json`, when one byte of its payload changes, and passes on a good build.
-- `--unsigned`: `v1/names.json` has `signature: ""`.
-- In `stacks-api`, the site built over a fixture index output has one directory page per indexed stack, containing the exact string `npx @steamfield/stacks new <id>` and no `<script>` other than the theme toggle and the copy script; a fixture index with a bad signature fails the site build.
-- The copy script, run in Playwright, puts a page's exact command on the clipboard; with JavaScript disabled the command is in a `<pre>` or `<code>` as selectable text and no Copy button is visible.
-- The theme toggle set to dark persists across a reload with the system preference light, and the reverse; with nothing stored, the page follows `prefers-color-scheme`; with `localStorage` throwing, the toggle still switches the page.
-- A scan of every built HTML file finds no `src`, `href`, `srcset` or CSS `url()` pointing at a host other than the site's own (relative URLs and the page's origin only; outbound links in `<a href>` to the entry's source in the repo are the one allowed exception, as navigation rather than a load), and the font files are present in the build output.
-- Every text token pair passes WCAG AA (4.5:1) against `background` and `card` in both themes, and no component under `src/components/` uses a hex color (a scan).
-- `_headers` has the rules above; served by 4.0b's Node server, `GET /v1/names.json` and `GET /stacks/<id>/` carry them.
+1. `v1/names.json` verifies with the test key; over a fixture repo with tags `v0.1.0` and `v0.2.0`, it lists a stack that exists only at `v0.1.0`, a never-proven bundled stack and a bundle-only optional fragment, and each stack's compositions carry the step names their verify sections define (default set and each optional fragment).
+2. A tag whose registry fails today's decode still contributes its ids, and the build prints a warning naming the tag.
+3. `--check` against the local server fails, naming `v1/names.json`, when one byte of its payload changes, and passes on a good build.
+4. `--unsigned`: `v1/names.json` has `signature: ""`.
+
+### Realistic edge cases
+
+11. Release discovery from an unrelated working directory with inherited git selectors still reads the build checkout's tags, including paths with spaces and non-ASCII characters.
+12. With no release tags, a carried-forward index composition contributes the step names in its pinned bundles, not changed working files.
+13. `--check` rejects a missing or unsigned names file and a correctly signed payload that fails `OfficialNames`, naming `v1/names.json` while the index and bundles remain valid.
+
+## Acceptance tests in stacks-api
+
+These are traced by `stacks-api`'s own tests, not by this repository's trace check, and keep their numbers so tags stay stable.
+
+5. In `stacks-api`, the site built over a fixture index output has one directory page per indexed stack, containing the exact string `npx @steamfield/stacks new <id>` and no `<script>` other than the theme toggle and the copy script; a fixture index with a bad signature fails the site build.
+6. The copy script, run in Playwright, puts a page's exact command on the clipboard; with JavaScript disabled the command is in a `<pre>` or `<code>` as selectable text and no Copy button is visible.
+7. The theme toggle set to dark persists across a reload with the system preference light, and the reverse; with nothing stored, the page follows `prefers-color-scheme`; with `localStorage` throwing, the toggle still switches the page.
+8. A scan of every built HTML file finds no `src`, `href`, `srcset` or CSS `url()` pointing at a host other than the site's own (relative URLs and the page's origin only; outbound links in `<a href>` to the entry's source in the repo are the one allowed exception, as navigation rather than a load), and the font files are present in the build output.
+9. Every text token pair passes WCAG AA (4.5:1) against `background` and `card` in both themes, and no component under `src/components/` uses a hex color (a scan).
+10. `_headers` has the rules above; served by 4.0b's Node server, `GET /v1/names.json` and `GET /stacks/<id>/` carry them.
 
 ## Exit criteria
 
@@ -169,4 +181,5 @@ Over 4.0c's fixtures plus a fixture git repo with tags:
 - 2026-10-27: the design tokens were first planned in 4.2f, which is D17-gated. They moved here so the directory has them whether or not telemetry is agreed; the theme toggle's inline script replaces "no `<script>`" on these pages.
 - 2026-10-27: a review of the site's design mocks found they load their fonts and icons from third-party hosts at view time, need copy buttons on every list row and page, and persist the theme choice. Fonts are now self-hosted and icons inlined, with a scan for third-party origins; one shared copy script joins the theme toggle as the only scripts; an explicit theme choice persists, while this plan's `.dark` class and system default stay (the mocks are dark-first with a `.light` class).
 - 2026-10-27: the mocks show stars (counts on every list row and stack page, a "Starred" view, an avatar in the nav). The site leaves them out, per roadmap "Won't have" ("Ratings, reviews, accounts").
+- 2026-10-27: items 5–10 are `stacks-api`'s and can have no tagged test here, so they moved under "Acceptance tests in stacks-api", outside this repository's trace check, with their numbers kept. The schemas' `EntryId` is `entry.ts::Kebab`, the existing kebab-case id schema; no new id export is needed.
 - Reading every tag with `git archive` grows with the number of releases. At a release a week that is years before it matters; cache per tag in the build's temporary directory if it ever does.
