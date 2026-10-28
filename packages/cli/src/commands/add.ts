@@ -3,7 +3,9 @@ import { Argument, Command, Flag } from "effect/cli";
 import { add } from "../core/add";
 import { renderAdd } from "../core/add/report";
 import { MANIFEST_PATH, readManifest } from "../core/manifest";
+import { pickAdd, promptingAllowed, replayFlags, runningCommand } from "../core/prompting";
 import { defaultRoots, Registry } from "../core/registry/registry";
+import { Usage } from "../errors";
 import { INCOMING, METADATA_DIR } from "../project-layout";
 import { AddResult } from "../schemas/add";
 import { Host } from "../services/host";
@@ -15,7 +17,7 @@ export const addCommand = Command.make(
   {
     fragments: Argument.String("fragment").pipe(
       Argument.withDescription("One or more fragments to apply (see `list fragments`)."),
-      Argument.atLeast(1),
+      Argument.atLeast(0),
     ),
     dir: Flag.String("dir").pipe(
       Flag.withDescription("Existing project directory. Defaults to the current directory."),
@@ -28,6 +30,7 @@ export const addCommand = Command.make(
       const host = yield* Host;
       const path = yield* Path.Path;
       const { json } = yield* root;
+      if (!flags.fragments.length && !(yield* promptingAllowed)) return yield* new Usage();
       const handoff = yield* prepareHandoff(flags, json);
       const project = path.resolve(
         host.cwd,
@@ -36,9 +39,26 @@ export const addCommand = Command.make(
       const roots = (yield* defaultRoots).map((entry) =>
         entry.origin === "project" ? { ...entry, path: path.join(project, METADATA_DIR) } : entry,
       );
+      const fragments = flags.fragments.length
+        ? flags.fragments
+        : yield* pickAdd(project).pipe(Effect.provide(Registry.layer(roots)));
+      if (!fragments.length) return;
+      if (!flags.fragments.length)
+        yield* runningCommand([
+          "add",
+          ...fragments,
+          ...replayFlags({
+            dir: Option.getOrUndefined(flags.dir),
+            sandbox: flags.sandbox,
+            yes: flags.yes,
+            agents: flags.agents,
+            launch: Option.getOrUndefined(flags.launch),
+            "no-launch": flags.noLaunch,
+          }),
+        ]);
       const { result, decision } = yield* add({
         root: project,
-        fragments: flags.fragments,
+        fragments,
         sandbox: flags.sandbox,
         yes: flags.yes,
         agents: flags.agents.length ? flags.agents : undefined,

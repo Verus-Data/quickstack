@@ -1,6 +1,7 @@
 # Phase 4.4b: Interactive pickers
 
 Status: DRAFT 2026-10-27 (not agreed). Human cohort only; agents, `--json`, CI and pipes keep today's behavior.
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -53,6 +54,12 @@ Pickers are built with effect/cli's `Prompt` (`Select`, `MultiSelect`, `AutoComp
 5. Ctrl+C at any prompt exits 130 and leaves the target directory absent.
 6. A picked untrusted fragment produces the same untrusted-entry confirmation as naming it on the command line.
 
+### Realistic edge cases
+
+7. CI with terminal streams, agent markers, JSON and pipes never read the terminal for missing `new`, `add` or `create` arguments and preserve each command's current result.
+8. A picked directory with spaces, quotes, a leading dash and non-ASCII text through a symlinked parent replays from the printed command with identical files and manifest content apart from invocation ids and timestamps.
+9. Picking an occupied target reports the existing target error and preserves all existing files.
+
 ## Exit criteria
 
 - Acceptance tests pass; the gate is green.
@@ -60,6 +67,10 @@ Pickers are built with effect/cli's `Prompt` (`Select`, `MultiSelect`, `AutoComp
 
 ## What this plan may get wrong
 
+- 2026-10-27: Bare `create` currently prints help and succeeds outside the human terminal cohort, rather than failing Usage. Preserve that behavior. Its first menu combines stack skeleton, fragment skeleton and copy; copying then picks a kind/id/origin together, excluding user-origin sources because `create --from user` is refused.
+- 2026-10-27: Numbered line input supports neither arrow-key selection nor filtering. QA uses numbers and comma-separated selections, as the settled contract requires, without terminal redraws.
+- 2026-10-27: `add` needs a nonempty selection: blank input retries, while an empty addable set prints that no fragments are available and exits without prompting or writing. The command echo escapes terminal controls, and `new` validates explicit template values before collecting picks or printing the echo.
+- 2026-10-27: `resolveAudience` did not fold CI into the audience, though AGENTS.md lists CI as an `agent` audience. A set `CI` now resolves to `agent` in `services/output.ts::resolveAudience`, so `canPrompt` keeps its three inputs and CI at a terminal gets agent output and no prompts.
 - effect/cli's `Prompt` inside the Bun-compiled binary hasn't been tried; `create`'s confirmation shows `Terminal` works, but the richer prompts redraw more. Run the compiled binary early.
 - People may expect `new` with no arguments to show the agent guide or help instead. If manual QA finds that confusing, print the picker's first line as "No stack given; pick one (Ctrl+C to quit)".
 - The `Running:` echo assumes every pick maps to a flag. If a pick ever doesn't, that pick is the bug, not the echo.
