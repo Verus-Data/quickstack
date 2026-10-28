@@ -33,6 +33,25 @@ closes on a local production-like build; the deployed smoke is R5's.
    production has dependency pages. Add or extend a test in `tests/deploy.test.ts` that
    asserts the stats pass sets `DEPS_ENABLED`.
 
+   The dependency pages publish the package names in the signed allowlist
+   (`quickstack/packages/cli/registry/allowlist.json`). Phase 4.2e left reviewing those names to
+   the maintainers, and it hasn't happened. Ask the user to review the list before R5 deploys
+   with `DEPS_ENABLED`; record the review date in `web.md`. Changes to the list are a quickstack
+   commit that must land before the R5 release commit.
+
+1a. Close 4.2f and 4.2c's stats views. Both phases are still `IN PROGRESS`. Their browser
+   acceptance tests (`apps/web/tests/browser/stats.spec.ts` and the fixtures under
+   `apps/web/tests/fixtures/stats/`, 4.2b's site tests 10 and 11 among them) exist only on the
+   unmerged branch `delegate/t-4.2f` (commit `0b6c6e5`, written before the forest-and-lime
+   redesign). On a branch from `main`, bring them over (`git checkout delegate/t-4.2f -- <paths>`)
+   and run `bun run test:browser apps/web/tests/browser/stats.spec.ts`. For each failure, decide
+   one of three: the page is wrong (fix the page), the selector or copy moved in the redesign
+   (update the test's expectation, keeping the behavior it checks), or the accepted design
+   superseded the item (cite the commit or spec and drop that case, listing it in `web.md`).
+   Never weaken an assertion to pass. Once it's green, add dated lines to
+   `plans/phases/phase-4.2f-stats-pages-and-charts.md`, `phase-4.2c-directory-browsing.md` and
+   `phase-4.2b-stats-in-cli-and-directory.md`, and set 4.2f and 4.2c to `EXECUTED`.
+
 2. Canonical origin. Change `site` in `apps/web/astro.config.mjs:135` to
    `https://stacks.steamfield.io`. This reverses the "Deferred" note in
    `stacks-api/AGENTS.md` ("The canonical site URL stays `https://example.com` until a domain is
@@ -94,6 +113,9 @@ closes on a local production-like build; the deployed smoke is R5's.
 ## Done when
 
 - [ ] Steps 1 to 4 landed with tests; scoped web tests and the touched browser specs pass.
+- [ ] The user reviewed the allowlist names (date recorded).
+- [ ] `stats.spec.ts` is on `main` and green, every dropped case is listed with its reason,
+      and phases 4.2f and 4.2c are marked `EXECUTED`.
 - [ ] The local build has `/deps/` and the selected detail pages, and the R2 scenarios
       render (expected versus observed recorded).
 - [ ] Every row of the spec's acceptance table is recorded as pass with how it was checked.

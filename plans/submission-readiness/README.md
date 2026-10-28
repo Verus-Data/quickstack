@@ -165,6 +165,29 @@ Omit credentials, tokens and home-directory paths (write `~/` instead).
 | Bench runs `verify --json` without `--all` | `packages/cli/scripts/bench/verify.ts:26-30` |
 | API search answers any bad `q` with an empty `BadInput({})` | `stacks-api/apps/api/src/handlers/search.ts:13` |
 
+## Where unfinished phase 4 and 5 work lands
+
+Checked 2026-10-28 against every phase file's status line and dated notes. Executed
+phases whose only leftovers are below are otherwise done.
+
+| Phase item not yet shipped | Row |
+| --- | --- |
+| 4.0b first live deploy and hosted CI run; 4.5e redeploy of `main` | R5 (deploy); CI is R9 (5.0) |
+| 4.0c "rerun the bench per stack so the index proves something" | R3 for `python-react`; other stacks R9 "Wider library proof". Judges will see no ledger run on the other stacks; the site already says so honestly |
+| 4.0c/4.0d index key and official index URL | R7 |
+| 4.0e no source link until a public repository | R10 step 5 |
+| 4.1a/4.1e live telemetry launch, production acceptance, alert destination | R8; the uptime half of alerts is R11 step 2 |
+| 4.2b site tests 10 and 11; 4.2c telemetry views; 4.2f stats pages (both `IN PROGRESS`, acceptance tests unmerged on `delegate/t-4.2f`) | R4 step 1a |
+| 4.2d production rerun | R8 step 4 |
+| 4.2d/4.2e allowlist names review | R4 step 1 (needed before `/deps/` goes live) |
+| 4.2g active seed run and its tuning | R2 |
+| HANDOFF open question: index `lastRun` and local search disagree | R1 step 2 (`sameContent`) |
+| HANDOFF: site index reader requires signatures | R4 step 5 notes it; R7 resolves |
+| 4.4c Codex link and Copilot marker; 4.4d real `npm install -g` update | R9 |
+| 4.5a judgments review | R9 |
+| 4.0f Workers, 4.3 MCP, 4.5d embeddings (deferred or gated) | R9, P2 |
+| 5.0 CI release, 5.1 canary, 5.2 CI index build (drafts, not agreed) | R9 |
+
 ## Out of scope
 
 Accounts, ratings, AI recommendation chat, automatic agent execution, a comparison

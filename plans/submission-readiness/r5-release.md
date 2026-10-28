@@ -40,7 +40,8 @@ restarting from the step that consumed it.
 
 ## Steps
 
-1. quickstack candidate. All R1 and R3 changes merged; `packages/cli/package.json` bumped
+1. quickstack candidate. All R1 and R3 changes merged, and the allowlist review from R4
+   step 1 landed (the dependency pages publish those names); `packages/cli/package.json` bumped
    to the CLI version on its own commit. Run the quickstack gate once (`rr check` or
    `bun run check`), record counts. Reuse an earlier gate only if the commit is identical.
    Then `bun run pack` in `packages/cli` and record the tarball digest. The R3 proof must
