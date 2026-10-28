@@ -73,6 +73,8 @@ In `packages/cli/` (run there):
 
 ## Test runs
 
+Iterate on scoped tests: the test files or `-t` filter covering what you changed (`bun run test:unit tests/<file>.test.ts` in `packages/cli`, `bun run test` in `packages/format`), plus lint and typecheck. Run the full gate once, as the last check before handing back or committing, and again only after a change made to fix what it found. Never run the full gate or a whole suite to check work in progress: each run holds a host for minutes and delays every other agent's gate.
+
 Several agents and delegates often work at once, and parallel gates on one laptop starve each other into timeouts. A clone that has test hosts runs the full gate and whole test suites through [rr](https://github.com/rileyhilliard/rr): `.rr.yaml` runs the task on the first free host (the dev machine in place, or a synced remote) under a per-host lock, so concurrent runs queue. All worktrees share one remote copy per host.
 
 rr is opt-in per clone and off by default: `git config stacks.rr true` turns it on (stored in the clone's `.git/config`, so every worktree of the clone shares it and nothing is committed), and `git config --unset stacks.rr` turns it off. Check with `git config --get stacks.rr`. Opted in, the command guard denies local whole-suite runs and names the rr task; opted out, run the `bun run` commands above. "The gate" in contracts and skills means `rr check` in an opted-in clone and `bun run check` otherwise.
