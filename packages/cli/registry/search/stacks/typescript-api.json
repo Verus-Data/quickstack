@@ -6,10 +6,22 @@
     "digest": "sha256:bb547eca8c56ffada0159d288df055140b8fe8f254efdc7a6e6e0ff366d87102",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
-    "promptVersion": 1,
+    "promptVersion": 2,
     "reviewedAt": null
   },
   "summary": "An HTTP service with validated requests, documented endpoints, consistent errors and structured request logs.",
+  "description": "Create a Node HTTP API whose Effect contract owns endpoint schemas, routing and documented errors. Thin handlers call services, and one request boundary produces safe responses and structured logs. The recipe proves startup and HTTP behavior with a health endpoint, then packages the server as one Node bundle. It does not select a database, identity provider or browser interface.",
+  "seoDescription": "A Node HTTP API recipe using Effect HttpApi for typed contracts, request validation, OpenAPI documentation and structured request logs.",
+  "projectExamples": [
+    {
+      "title": "Configuration validation service",
+      "description": "Add an endpoint that validates submitted configuration and returns structured findings. Authentication, rate limits and storage need explicit design if the service is exposed."
+    },
+    {
+      "title": "Internal integration gateway",
+      "description": "Wrap selected upstream APIs in typed resources with consistent errors and logs. Implement the provider clients, credentials and access rules for those integrations."
+    }
+  ],
   "platforms": ["server"],
   "productKinds": ["api"],
   "languages": ["typescript"],

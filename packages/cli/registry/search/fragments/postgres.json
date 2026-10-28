@@ -6,10 +6,24 @@
     "digest": "sha256:b01c691fd7050d408e798ed32f99b6b45e5002adbe3b7ea32109cd401bf746da",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
-    "promptVersion": 1,
+    "promptVersion": 2,
     "reviewedAt": null
   },
   "summary": "Add local PostgreSQL services, explicit schema migrations and a private database for each test file cloned from a migrated template.",
+  "description": "Add local Postgres development and test services, SQLAlchemy/Alembic integration for python-react, and explicit migration commands. The test harness clones a migrated template so each test file has a private database. Readiness checks distinguish API health from database availability. Product tables, queries and access rules are your work. Production hosting is separate, and migrations run as a release step rather than at application startup.",
+  "seoDescription": "Postgres for Python and React projects, with Docker Compose, SQLAlchemy, Alembic migrations and isolated databases for integration tests.",
+  "projectExamples": [
+    {
+      "title": "Persistent inventory workbench",
+      "description": "Store custom equipment records through SQLAlchemy models and Alembic migrations. Build the API resources, screens and permissions on that foundation.",
+      "stack": "python-react"
+    },
+    {
+      "title": "Import review database",
+      "description": "Persist imported rows and review decisions in custom tables. Use private test databases to exercise migrations and queries without touching development data.",
+      "stack": "python-react"
+    }
+  ],
   "capabilities": ["database"],
   "requests": [
     "give my backend a local SQL database with persistent development data",

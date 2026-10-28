@@ -6,10 +6,23 @@
     "digest": "sha256:00d5de59ec134db5f7acee786d6d51e4ef62bb14f7378bd1239b41534ab5784a",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
-    "promptVersion": 1,
+    "promptVersion": 2,
     "reviewedAt": null
   },
   "summary": "A Go command-line tool with subcommands, configurable settings, actionable errors and human or JSON output.",
+  "description": "Write a Go utility with Cobra subcommands and Viper settings layered from defaults, files, environment and flags. Results have human and JSON forms, while structured failures explain the next action. The first command exercises those boundaries, and the Makefile covers building, tests and checks. Add your utility's behavior; select goreleaser separately for tag-driven distribution.",
+  "seoDescription": "A Go CLI recipe with Cobra subcommands, layered Viper configuration, actionable errors and human or JSON output.",
+  "projectExamples": [
+    {
+      "title": "Configuration inspector",
+      "description": "Add commands that explain effective settings and show where overrides came from. Reuse the configuration precedence and JSON output contract."
+    },
+    {
+      "title": "Release artifact checker",
+      "description": "Implement local archive and checksum checks, then add goreleaser to distribute the utility through tagged GitHub releases.",
+      "withFragments": ["goreleaser"]
+    }
+  ],
   "platforms": ["cli"],
   "productKinds": ["cli-tool"],
   "languages": ["go"],

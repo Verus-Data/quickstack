@@ -6,10 +6,24 @@
     "digest": "sha256:6aeef66a5e32d0461c51b02a7fce1408aca30d14b8aa5f7dc95522258c1dfeff",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
-    "promptVersion": 1,
+    "promptVersion": 2,
     "reviewedAt": null
   },
   "summary": "Add a typed SQL database binding with checked-in migrations and isolated local tests before provisioning production.",
+  "description": "Add Drizzle access to a typed Cloudflare D1 binding, checked-in SQL migrations and isolated database tests. Development and verify use local D1 without a cloud account, and the health route proves a real query through the framework. Production provisioning and reviewed remote migrations are separate steps. This is a storage foundation; it does not add a product data model or authentication.",
+  "seoDescription": "Cloudflare D1 with Drizzle, typed Worker bindings, checked-in SQL migrations and isolated local database tests without a cloud account.",
+  "projectExamples": [
+    {
+      "title": "Saved resource directory",
+      "description": "Create listing tables, search queries and editing routes on local D1. Add authentication before exposing private edits or records.",
+      "stack": "cloudflare-react-router"
+    },
+    {
+      "title": "Scheduled snapshot archive",
+      "description": "Store results from custom scheduled work in D1. Implement the data collection and schedule; the base scheduled handler is a no-op.",
+      "stack": "cloudflare-react-router"
+    }
+  ],
   "capabilities": ["database"],
   "requests": [
     "store records from my Worker through a typed database client",

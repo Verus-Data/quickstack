@@ -6,10 +6,22 @@
     "digest": "sha256:f10dddd5843a5b5110a6edabd0d2ea4b02829d64bfb1930e6a3d175c0f0dc5cf",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
-    "promptVersion": 1,
+    "promptVersion": 2,
     "reviewedAt": null
   },
   "summary": "A desktop app with a React interface and Rust logic connected through generated TypeScript bindings.",
+  "description": "Give Rust application logic a React desktop interface through generated TypeScript bindings. A thin Tauri shell exposes typed commands and live channels, while a transport facade lets the same interface run against browser fixtures. Tests cover Rust logic, bindings and the mocked interface. The starting app shows application information and a live tick; filesystem workflows, persistence and other desktop behavior are features you implement.",
+  "seoDescription": "A Tauri desktop app recipe with React, Rust library crates, generated IPC types and a mock transport for browser development and tests.",
+  "projectExamples": [
+    {
+      "title": "Local file inspection tool",
+      "description": "Implement Rust file parsing behind typed commands and display the results in React. Add explicit filesystem permissions and handling for large or invalid files."
+    },
+    {
+      "title": "Desktop process monitor",
+      "description": "Replace the demonstration tick channel with application measurements and charts. Platform integrations, permissions and data retention remain product work."
+    }
+  ],
   "platforms": ["desktop"],
   "productKinds": ["desktop-app"],
   "languages": ["typescript", "rust"],

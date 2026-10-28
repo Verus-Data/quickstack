@@ -97,10 +97,16 @@ Per entry, a field-weighted BM25 score over these fields (k1 = 1.2, b = 0.75 per
 | `platforms`, `productKinds`, `languages` for stacks; `capabilities` for fragments (matched as vocabulary phrases) | 3.0 | A request phrase maps to a vocabulary key through its alias list ("iPhone" → `ios`, "command line" → `cli`, "golang" → `go`, "sign in" → `auth`) |
 | `requests` | 2.5 | Best-matching request only, so five similar requests don't count five times |
 | id, name | 2.0 | |
-| `summary`, description | 1.5 | |
+| `summary`, entry frontmatter `description` | 1.5 | Sidecar `description` is display-only |
 | `useCases`, `synonyms` | 1.5 | |
 | `goodFor`, tags, category | 1.0 | |
 | body | 0.15 | Only so a sidecar-less user entry can be found at all; low enough that `/healthz` in a body can't outrank a platform match |
+
+The field list is an allowlist. The optional editorial `SearchMetadata.description`,
+`seoDescription` and `projectExamples` from 4.5b do not contribute tokens, score
+or coverage. Keep entry frontmatter `description` distinct from the richer
+sidecar field. The editorial fields support directory details and comparisons;
+they do not change `SearchHit` in this phase.
 
 Tokenizing: lowercase, split on anything not a letter or digit, drop a short stopword list plus generic product words ("app", "project", "tool", "thing", "something", "build", "make", "want"), and strip a plural `s`. No dependency: the lists live in `core/search/tokens.ts`. Vocabulary aliases are matched as phrases before tokenizing, so "command line" is one match. Each category (platforms, product kinds, languages, capabilities) is matched on its own, so one phrase can count in several: "go cli" names the language `go` through its alias and the platform `cli` through "cli".
 

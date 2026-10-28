@@ -74,6 +74,15 @@ Astro pages with static output, generated at build time from the index entries a
 
 The stack's prose body is not rendered here, and the source link covers it; rendering it with Astro's Markdown support is a later choice that needs no new dependency. Each stack page has one stats section component that 4.2b fills; until then it renders as nothing.
 
+When 4.5b's signed `v1/search.json` is available, directory copy can use its
+optional editorial fields under the `SearchMetadata` contract. Detail pages
+prefer reviewed sidecar `description` over entry frontmatter description; page
+meta descriptions prefer reviewed `seoDescription`, then reviewed `summary`,
+then entry description. An illustrative “What you could build” section uses
+`projectExamples` and labels its host and extra `withFragments` selections.
+Preserve stale labels, and keep drafts out of public copy until reviewed. This
+is a downstream consumer contract, not directory implementation in 4.5b.
+
 ### Copy buttons
 
 Added 2026-10-27. Every copy command (on `/`, on each stack page, and on the pages 4.2c and 4.2e add) is a `<pre>` or `<code>` element whose text is the whole command, with a Copy button beside it. One shared inline copy script, the same bytes on every page, finds those buttons and copies the text of the element each one names through the Clipboard API. It is progressive enhancement: with JavaScript off, or when the Clipboard API is unavailable, the buttons stay hidden and the command stays selectable text, so nothing depends on the script. It sends nothing and reads nothing but the element's text.

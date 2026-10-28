@@ -9,7 +9,7 @@ import type { SearchMetadata } from "../../src/schemas/search";
 import type { Options } from "./arguments";
 import { type Budget, draft } from "./client";
 import { type DecorateConfig, estimateUsd } from "./config";
-import { buildPrompt, EXAMPLE_CARDS, PROMPT_VERSION } from "./prompt";
+import { buildPrompt, EXAMPLE_CARDS, PROMPT_VERSION, recipeReferences } from "./prompt";
 
 const save = Effect.fn("decorate.save")(function* (root: string, card: SearchMetadata) {
   const fs = yield* FileSystem.FileSystem;
@@ -163,11 +163,14 @@ export const run = Effect.fn("decorate.run")(function* (
     return yield* Effect.fail(new Error("Bundled search vocabulary is missing."));
   const vocabulary = yield* decodeVocabulary(bytes);
   const examples = yield* promptExamples();
+  const references = recipeReferences(
+    (yield* (yield* Registry).all).filter((entry): entry is Entry => !isRejected(entry)),
+  );
   if (!flags.dryRun && !config.key)
     return yield* Effect.fail(new Error("Set OPENROUTER_API_KEY to draft search cards."));
   const budget: Budget = { total: 0, highest: 0, max: flags.maxUsd };
   for (const entry of entries) {
-    const prompt = buildPrompt({ entry, vocabulary, examples });
+    const prompt = buildPrompt({ entry, vocabulary, examples, references });
     yield* draftEntry({ root, entry, prompt, config, flags, budget }).pipe(
       Effect.catch((error) =>
         Console.log(

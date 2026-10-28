@@ -6,10 +6,22 @@
     "digest": "sha256:882eafd76d893581e61c32e59cd803106d5970a41c58b580fd64c527244ff9d2",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
-    "promptVersion": 1,
+    "promptVersion": 2,
     "reviewedAt": null
   },
   "summary": "An iOS and Android app sharing TypeScript schemas with its own API and Postgres database.",
+  "description": "Build an Expo Router phone app and a Bun/Hono API together, sharing Zod schemas across the mobile screens and backend. Postgres and Drizzle are part of the base, with database-backed API tests and hooks that own client data access. The default Clerk fragment adds sign-in when configured. The first screen proves API connectivity; your screens, data model and authorization rules come next.",
+  "seoDescription": "An Expo app for iOS and Android with a Hono API, shared TypeScript schemas and Postgres, plus Clerk sign-in in the default composition.",
+  "projectExamples": [
+    {
+      "title": "Personal reading log",
+      "description": "Build book records and reading screens on the included API and Postgres. Configure default Clerk sign-in and enforce record ownership in your routes."
+    },
+    {
+      "title": "Field observation notebook",
+      "description": "Add observation forms and API-backed records for iOS and Android. Photos, location access and offline synchronization need additional implementation and platform permissions."
+    }
+  ],
   "platforms": ["ios", "android", "mobile"],
   "productKinds": ["mobile-app", "fullstack"],
   "languages": ["typescript"],

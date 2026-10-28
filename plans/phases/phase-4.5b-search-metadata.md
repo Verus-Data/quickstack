@@ -1,22 +1,22 @@
 # Phase 4.5b: Search metadata
 
-Status: IN PROGRESS 2026-10-27 (acceptance tests being written, then the implementation)
+Status: IN PROGRESS 2026-10-27 (infrastructure implemented; enriched schema and 30 drafted cards prepared for maintainer review)
 Acceptance tests: traced
 
 | Field | Value |
 |---|---|
-| Goal | Every bundled stack and fragment carries reviewed search metadata (what you'd build with it, which platforms and product kinds, example requests, use cases, synonyms, good for and not for) in a sidecar file next to the registry, outside the entry, keyed to the entry's content digest and checked by `stacks validate`; a maintainer-only script drafts it with an OpenRouter model, and the CLI only ever reads the reviewed file |
+| Goal | Every bundled stack and fragment carries reviewed discovery and directory metadata (bounded search phrases and facets, a fuller description, SEO prose and illustrative project examples) in one sidecar outside the entry, keyed to its content digest and checked by `stacks validate`; a maintainer-only script or isolated drafting agent prepares it, and a person reviews it |
 | Traces to | The coding agent asked for a product rather than a stack id ("ambiguity"). An entry's frontmatter says what it is made of (`astro`, `make`, `bun`); a request says what it is for ("a blog", "an iPhone app"). Metadata bridges the two. Golden set pools `platform`, `paraphrase` and `trap` (4.5a) |
 | Depends on | 4.5a (the set that measures whether metadata helps), 1.5 (`validate` and its findings), 3.1b (the authoring guide, `create --from`), 2.0a (the per-entry inputs of `fingerprint`, which the digest reuses). Soft: 4.0a (with it, test 3 also checks `bundleDigest`), 4.0c (the signed `v1/search.json` for index entries), 4.0d (the CLI reads it), 3.2a (a project entry's trust digest covers its sidecar) |
 | Blocks | 4.5c |
 | Decisions needed | [D37](../requirements.md#proposed-decisions) (search metadata is a reviewed sidecar outside the entry, drafted by a maintainer script, never by the CLI or the server). [Open question 39](../risks-and-open-questions.md#open-questions-for-the-maintainers) (no server-side decoration, so entries outside this repository get no card unless their author writes one). The vocabulary's first values are a proposal for the maintainers |
-| Settles | `SearchMetadata` and `SearchVocabulary` (in the CLI until 4.5d), where sidecars live and why, the content digest and staleness, the `validate` findings, the drafting script (prompt versioning, model, cost cap, failures, review stamp), and where the D2 boundary sits |
+| Settles | `SearchMetadata` and `SearchVocabulary` (in the CLI until 4.5e), where sidecars live and why, the content digest and staleness, the `validate` findings, the drafting script (prompt versioning, model, cost cap, failures, review stamp), and where the D2 boundary sits |
 
 ## Scope
 
 In:
 
-- `SearchMetadata` and `SearchVocabulary` in `packages/cli/src/schemas/search.ts`, and `packages/cli/registry/search/vocabulary.json`. Under D11 a schema moves to a shared package only when a second package reads it: `packages/format` doesn't exist until 4.0a, and the first other reader is the API in 4.5d, which moves both schemas to `packages/format` (additive) and publishes them before the API uses them.
+- `SearchMetadata` and `SearchVocabulary` in `packages/cli/src/schemas/search.ts`, and `packages/cli/registry/search/vocabulary.json`. Under D11 a schema moves to a shared package only when a second package reads it: `packages/format` doesn't exist until 4.0a, and the first other reader is the API in 4.5e, which moves both schemas to `packages/format` (additive) and publishes them before the API uses them.
 - Sidecars at `<registry root>/search/<kind>/<id>.json`, read from every origin root the `Registry` service reads, so a user or project registry may carry them too. For a project that is `.stacks/search/` (roadmap, Contracts: Project metadata).
 - The vocabulary is read from the bundled registry only. A `search/vocabulary.json` in a user, project or source root is never read, and `validate` of that root reports it as the note `vocabulary-ignored`, so no root a cloned repository controls can redefine aliases.
 - `validate` findings `search-invalid`, `search-orphan`, `search-missing`, `search-stale`, `search-unreviewed`, `search-size`.
@@ -65,9 +65,68 @@ Out:
 | `requests` | 3 to 5 requests a person might type, at most 15 words each | 4.5c (the strongest free-text field); 4.5d (one vector each, best match per entry) |
 | `useCases`, `synonyms`, `goodFor` | Short phrases; at most 6, 12 and 4 | 4.5c |
 | `notFor` | At most 4 phrases | 4.5c's penalty |
-| `caveats` | Optional; at most 3 sentences of at most 25 words, each a platform-capability limit a request can run into (an entitlement, a signing requirement, a native API the stack can't reach without extra setup) | 4.5c shows them with the hit, unscored, so the agent can tell the user before `new`. Never scored, so a caveat can't push a stack up or down |
+| `caveats` | Optional; at most 3 sentences of at most 25 words, stating material platform or operating limits such as signing, memory-only history or access without authentication | 4.5c shows them with the hit, unscored, so the agent can tell the user before `new`. Never scored, so a caveat can't push a stack up or down |
+| `description` | Optional nonblank prose, at most 120 words. Explains the recipe's shape, what its first working slice proves and the work needed for a product | Directory detail copy and agent comparison; unscored and unembedded |
+| `seoDescription` | Optional nonblank prose, at most 160 Unicode code points. A distinct, useful sentence rather than a keyword list | Directory page meta description only; unscored and unembedded |
+| `projectExamples` | Optional list of 1 to 3 illustrative possible projects. Each closed object has nonblank `title` (8 words maximum), nonblank `description` (35 words), optional `stack` id and optional `withFragments` (at most 3 distinct fragment ids) | Directory's “What you could build” section and agent comparisons; unscored and unembedded |
 
-The whole sidecar is at most 150 words of text (`search-size`), so it stays an index card, not a second body.
+The existing search text (`summary`, `requests`, `useCases`, `synonyms`, `goodFor`,
+`notFor` and `caveats`) stays within 150 words (`search-size`). The three editorial
+fields have their own limits and do not spend that budget. A longer description
+must not gain search weight simply because it repeats more terms. Facet values
+and provenance do not count as free text.
+
+### Proposed editorial enrichment
+
+These additive choices extend D37's proposal; they are prepared for maintainer
+review, not new settled decisions. The fields remain optional in schema version 1
+so existing author cards, carried-forward publications and fixtures decode without
+a migration. All 30 bundled draft cards include them. New drafting prompts ask for
+them, using prompt version 2.
+
+The three descriptions have separate jobs. Entry frontmatter `description` stays
+the authoritative technical recipe synopsis and the existing CLI fallback.
+`summary` is the short search-hit sentence. On a directory detail page, prefer
+a reviewed sidecar `description` when present and fall back to the entry
+description. An unreviewed card needs a draft label and must not replace reviewed
+public copy silently. A stale card retains its staleness label rather than
+claiming to describe the current recipe. No CLI result changes in this amendment;
+the directory and comparison consumers use this contract when implemented.
+
+For page metadata, use reviewed `seoDescription` when available, then reviewed
+`summary`, then the entry description. The 160-character limit is an editorial
+budget, not a search-engine rule or a promise that a snippet will be shown.
+[Google's snippet guidance](https://developers.google.com/search/docs/appearance/snippet)
+allows other page content and device-dependent truncation.
+
+Examples are ideas for products to build with a recipe, not delivered product
+features. For a stack card, its own id is the host; an explicit `stack` must match
+it. A fragment example must name a real host `stack`. `withFragments` names
+additional selections beyond the entry and host's default composition. For example:
+
+```json
+{
+  "title": "Equipment inventory",
+  "description": "Add postgres for persistent equipment records, then build FastAPI resources and browser editing screens. User accounts and permissions need a separate implementation.",
+  "withFragments": ["postgres"]
+}
+```
+
+This example belongs to `python-react`. The same example on the `postgres`
+fragment names `"stack": "python-react"`; that fragment is already implicit and
+need not name itself in `withFragments`. Validation uses existing fragment
+selection rules on that concrete host with the default preset and no personal
+always-fragments. Missing references, applicability warnings, dependencies,
+conflicts and multiple apps are `search-invalid`. Selection checks metadata;
+they never render or traverse every entry's files for each example.
+
+Examples and descriptions must identify extra product work such as tables,
+ownership rules, provider clients and native permissions. Auth, payments,
+persistence or AI features cannot be implied by a generic product idea. Apps
+remain fragments with `category: app`; category, compatibility, requirements,
+tools and dependency roles come from frontmatter rather than duplicated sidecar
+facets. Runtime/proof status, license and origin come from their existing sources.
+No guessed domain, difficulty, readiness, price or compliance fields are added.
 
 Stacks and fragments answer different requests, so their closed fields differ. A stack is a project, found by where it runs, what it is and what it's written in. A fragment is a need added to a project ("sign-in for my mobile app"), found by what it provides; where it runs comes from the stacks it applies to (`applies_to`, which 4.5c's platform and language rules already read), so a fragment card never repeats it. `SearchMetadata` is a union on `kind`: a stack card has `platforms`, `productKinds` and `languages` and no `capabilities`; a fragment card has `capabilities` and none of the other three. A fragment card for `clerk`:
 
@@ -147,12 +206,12 @@ When the entry changes, the sidecar is stale: `validate` reports `search-stale` 
 
 | Finding | Severity | When |
 |---|---|---|
-| `search-invalid` | error | The sidecar doesn't decode (including a stack card with `capabilities` or a fragment card with `platforms`, `productKinds` or `languages`), a vocabulary value is unknown, or `kind`/`id` don't match its path |
+| `search-invalid` | error | The sidecar doesn't decode (including wrong-kind fields or malformed editorial objects), a vocabulary value is unknown, `kind`/`id` don't match its path, or a project example's host and fragment selections are invalid |
 | `search-orphan` | error | A sidecar names no entry in the same root |
 | `search-missing` | warning in the bundled registry, note elsewhere | An entry has no sidecar |
 | `search-stale` | warning | `source.digest` differs from the entry's current digest |
 | `search-unreviewed` | warning | `source.reviewedAt` is null |
-| `search-size` | warning | Over 150 words, or a field over its count |
+| `search-size` | warning | Search text exceeds 150 words, or a field exceeds its own editorial or count limit |
 | `vocabulary-invalid` | error | The bundled vocabulary doesn't decode, or two values share an alias |
 | `vocabulary-ignored` | note | A non-bundled root holds `search/vocabulary.json`, which is never read |
 
@@ -168,13 +227,20 @@ bun run decorate --restamp <id>
 bun run decorate --approve <id>
 ```
 
-- Input per entry: its frontmatter (id, name, description, tags, category, `applies_to`, dependency role names), its body, the vocabulary, and two reviewed sidecars as examples. The prompt is fixed text in `scripts/decorate/prompt.ts` with `PROMPT_VERSION`; changing the text bumps it. No 4.5a golden query may appear in the prompt text or its examples, and a drafted or hand-written `requests` entry may not equal, contain, or share a run of five consecutive words with any holdout query (both compared lowercased with punctuation stripped). The same people write the cards and the set, and a card that repeats the holdout split would pass the gate without searching better (4.5a, Format).
+- Input per entry: its frontmatter (id, name, description, tags, category, `applies_to`, dependency role names), its body, the vocabulary, two reviewed sidecars as examples, and compact recipe identity/compatibility context for selecting real example hosts and additions. The prompt is fixed text in `scripts/decorate/prompt.ts` with `PROMPT_VERSION`; changing the text bumps it. No 4.5a golden query may appear in the prompt text or its examples, and a drafted or hand-written `requests` entry may not equal, contain, or share a run of five consecutive words with any holdout query (both compared lowercased with punctuation stripped). The same people write the cards and the set, and a card that repeats the holdout split would pass the gate without searching better (4.5a, Format).
 - The model is called through OpenRouter's chat completions API with JSON output requested. The default model is a mid-priced current model named in `scripts/decorate/config.ts`; `--model` overrides it; the sidecar records both the model id and `promptVersion`. Output is decoded with `SearchMetadata`; a decode failure gets one retry with the decode error appended, then the entry is skipped and listed. Transport failures (408, 429, 5xx) are retried up to three times with backoff; nothing else is retried, since the same prompt returns the same shape.
+- New prompt-version-2 responses also require all three editorial fields:
+  nonblank `description`, nonblank `seoDescription` and nonempty
+  `projectExamples` with the schema's nonblank nested text. This requirement is
+  enforced at the drafting response boundary, not merely written in the prompt.
+  An old-shaped response is a correction failure even though an old stored card
+  remains valid. The same single correction retry applies; two invalid responses
+  write nothing and preserve any existing card. All reported costs still count.
 - A draft is written with `by: "drafted"` and `reviewedAt: null`, so `search-unreviewed` holds it out of a merge until a person reads it. `--approve <id>` sets `reviewedAt`; it refuses with `PermissionDenied` under a detected agent (`AppConfig.agent` not `"none"`, reason `agent`) or without a TTY on stdin (`Host.stdinIsTTY` false, reason `no-tty`), the same rule as other confirmations (roadmap, Trust model, point 4), because the point is that a person read it.
 - Cost: the script reads the per-request cost OpenRouter reports, stops before a request would pass `--max-usd` (default 1.00), and prints the total. `--dry-run` prints each prompt's size and an estimate without calling anything. Dozens of entries at a few thousand tokens each cost cents.
 - Secrets: `OPENROUTER_API_KEY` is read from the maintainer's environment only, through the script's config, never written to a file, a sidecar or a log line; the request log records model, entry id, tokens and cost.
 - An author can skip the script entirely and write the sidecar by hand (`by: "author"`); `validate` treats both the same.
-- A maintainer may instead dispatch coding agents (one per entry, such as Codex delegates) to draft cards. The agent's brief is the script's prompt text and examples at the current `PROMPT_VERSION`, and its inputs are the same: the entry, the vocabulary and the two example sidecars. The agent works in a checkout without `tests/fixtures/search/golden.json` and is told not to read 4.5a's set, because an agent that can grep the golden queries will echo them, and test 13a catches only copies and five-word runs, not close paraphrases. The card records `by: "drafted"`, `model` naming the agent and its model, and the `promptVersion` it was briefed with. Review and `--approve` are unchanged: the agent leaves `reviewedAt` null, and `--approve` refuses to run under it.
+- A maintainer may instead dispatch coding agents (one per entry, such as Codex delegates) to draft cards. The agent's brief is the script's prompt text and examples at the current `PROMPT_VERSION`, and its inputs are the same: the entry, vocabulary, two example sidecars and compact recipe references. The agent works in a checkout without `tests/fixtures/search/golden.json` and is told not to read 4.5a's set, because an agent that can grep the golden queries will echo them, and test 13a catches only copies and five-word runs, not close paraphrases. The card records `by: "drafted"`, `model` naming the agent and its model, and the `promptVersion` it was briefed with. Review and `--approve` are unchanged: the agent leaves `reviewedAt` null, and `--approve` refuses to run under it.
 
 `create <kind> <id>` writes no sidecar skeleton: a personal registry of a few entries doesn't need search, and an empty card would be noise. `create --from <origin>` copies the origin entry's sidecar, when it has one, to `search/<kind>/<id>.json` in the user root with `source` unchanged, in the same exclusive-mode write as the entry. Without that, `create --from bundled mobile-expo` would shadow the bundled entry with a copy that has no card, and the user's own copy would rank below where the bundled one did. The copy's digest still matches until the user edits the entry; after that `validate` of the user root reports `search-stale`, a warning, which never blocks a personal registry. The authoring guide (`docs/authoring.md`) documents the file for authors contributing to the bundled registry.
 
@@ -186,7 +252,7 @@ With 4.0c, `build:index` reads each indexed entry's sidecar and writes `v1/searc
 
 | Path | Change |
 |---|---|
-| `packages/cli/src/schemas/search.ts` | `SearchMetadata`, `SearchVocabulary` (4.5d moves them to `packages/format`; 4.5c adds `SearchResult` to this file) |
+| `packages/cli/src/schemas/search.ts` | `SearchMetadata`, `SearchVocabulary` (4.5e moves them to `packages/format`; 4.5c adds `SearchResult` to this file) |
 | `packages/cli/src/project-layout.ts` | The project's `.stacks/search/` path |
 | `packages/cli/src/core/create.ts` | `create --from` copies the origin's sidecar |
 | `packages/cli/registry/search/vocabulary.json`, `registry/search/{stacks,fragments}/<id>.json` | New: the vocabulary and one reviewed sidecar per bundled entry |
@@ -228,6 +294,8 @@ With 4.0c, `build:index` reads each indexed entry's sidecar and writes `v1/searc
 17. A sidecar file with a byte order mark or CRLF line endings decodes the same as without.
 18. A registry root with `search/` but no `stacks/` or `fragments/` lists no entries and reports every sidecar as `search-orphan`.
 19. `create stack mobile-expo --from bundled` writes `search/stacks/mobile-expo.json` in the user root with the bundled sidecar's bytes; `validate` of the user root reports no `search-missing` for it; `create --from` an entry with no sidecar writes none; a second `create --from` into an existing target leaves both files unchanged.
+21. Optional `description`, `seoDescription` and closed `projectExamples` objects round-trip for both kinds and through index/copy paths; older cards decode unchanged. Editorial text has separate size warnings and does not consume the 150-word search budget. Example host and fragment references must compose without applicability warnings, missing dependencies, conflicts or multiple apps; valid optional additions pass.
+22. Prompt version 2 distinguishes short search copy, fuller description, SEO prose and illustrative projects, carries real recipe reference context, and retains honest draft provenance and the human approval guard. Its new-response boundary requires all three editorial fields, nonblank text and nonempty examples. Missing/blank editorial data gets exactly one correction retry; a corrected complete reply writes one unreviewed v2 draft, while two invalid replies write nothing and preserve an existing card. Legacy stored/copied/index cards still decode unchanged. Mock new-draft success responses carry editorial fields without changing the original retry, budget, secret or provenance assertions.
 
 ## Deferred acceptance coverage
 
@@ -239,6 +307,12 @@ With 4.0c, `build:index` reads each indexed entry's sidecar and writes `v1/searc
 - Every bundled sidecar reviewed by a maintainer, and 4.5a's set run against the 4.5c ranking with and without them, the difference recorded in 4.5c.
 
 ## What this plan may get wrong
+
+- 2026-10-27: one 150-word budget cannot also carry useful directory descriptions and practical projects. The proposed optional editorial fields have separate caps and explicit consumers. Ranking and embeddings use their existing allowlist; they must not flatten every string in an enriched card. A draft card is reviewable output, not proof of a finished application. All 30 enriched cards remain unreviewed until a maintainer approves them.
+- 2026-10-27: optional storage fields do not enforce a new draft's completeness.
+  The drafting client adds that response-boundary check so a legacy-shaped model
+  reply cannot be written with a version-2 provenance stamp. Draft-only test
+  responses migrate to the new contract; legacy storage fixtures remain intact.
 
 - 2026-10-27: restamping must refuse a card whose `reviewedAt` is null, otherwise an agent can use it to bypass the human-only approval guard. Restamp refreshes an existing review; initial approval still requires a person.
 
@@ -252,7 +326,7 @@ With 4.0c, `build:index` reads each indexed entry's sidecar and writes `v1/searc
 - Keying staleness to the body means every prose fix marks the card stale. If restamping becomes busywork, key the digest to frontmatter only and accept that a body rewrite can leave a card describing the old entry.
 - The vocabulary will be too coarse for some requests and too fine for others. It is a closed list on purpose; grow it only when a golden query needs a value no existing one covers.
 - A model drafting cards from bodies written by the same maintainers may echo the bodies' tool names instead of users' words. The prompt asks for users' words and the two examples show them; the review is the real check.
-- 2026-10-27: the plan put `SearchMetadata` in `packages/format`, which doesn't exist before 4.0a, and tested `bundleDigest` without depending on 4.0a. The schemas now live in the CLI until 4.5d gives them a second reader (D11).
+- 2026-10-27: the plan put `SearchMetadata` in `packages/format`, which doesn't exist before 4.0a, and tested `bundleDigest` without depending on 4.0a. The schemas now live in the CLI until 4.5e gives them a second reader (D11).
 - The request was for metadata "authored or LLM-decorated through OpenRouter on the server". This plan keeps decoration in a maintainer script and rejects the server. The cost is that entries from outside this repository (git sources, 3.2a; future community index entries) get no card unless their author writes one; open question 39 asks whether that is acceptable.
 - Leaving domain words out may lose queries where a fragment is domain-specific (a payments fragment for "a shop"). When such a fragment exists, its `useCases` say so in plain words; the rule is against guessing, not against domains.
 - 2026-10-27: the first draft gave every card `platforms` and `productKinds` and had no field for language. A fragment has no product kind of its own, so drafters would have guessed one, and nothing let a "command line tool in Python" request rule out `go-cli`: the platform matched, "python" matched `python-react`'s name, and `go-cli` reached `strong` on half the request. Cards are now a union on `kind`: stacks add `languages` (4.5c gains a language rule beside the platform rule), fragments carry `capabilities` instead of platforms and kinds. Drafting by dispatched coding agents is allowed under the same inputs and review, with the golden set kept out of their checkout.

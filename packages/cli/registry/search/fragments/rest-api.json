@@ -6,10 +6,24 @@
     "digest": "sha256:6ff9aa2b4f7a57ec67ba52b004689bc2f1b863964adbfb642a37f44e82ef0ba2",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
-    "promptVersion": 1,
+    "promptVersion": 2,
     "reviewedAt": null
   },
   "summary": "Give coding agents consistent HTTP resource conventions for paths, methods, status codes, response shapes, pagination and versioning.",
+  "description": "Give coding agents framework-neutral rules for HTTP resource design. Paths use resource nouns, methods carry the action, response shapes stay consistent and collections use cursor pagination. The project's own error table and framework decide exact statuses and behavior. Document those choices alongside an existing resource to copy. This fragment supplies conventions and agent guidance, not generated endpoints or a running server.",
+  "seoDescription": "Framework-neutral REST guidance for coding agents: resource paths, methods, status codes, response shapes, cursor pagination and versioning.",
+  "projectExamples": [
+    {
+      "title": "Consistent inventory API",
+      "description": "Apply the resource conventions while implementing custom item endpoints in an Effect API. The stack owns contracts, handlers and the error envelope.",
+      "stack": "typescript-api"
+    },
+    {
+      "title": "Mobile backend resource guide",
+      "description": "Keep new Hono resources consistent as the Expo application's API grows. Record the router's actual status and pagination behavior in project instructions.",
+      "stack": "mobile-expo"
+    }
+  ],
   "capabilities": [],
   "requests": [
     "keep endpoint names consistent as agents add resources",

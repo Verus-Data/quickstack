@@ -8,6 +8,7 @@ import type { Entry } from "../registry/entry";
 import { Registry } from "../registry/registry";
 import { searchSourceDigest } from "../search/digest";
 import { decodeSidecar, decodeVocabulary, readSearchFile, sidecarPath } from "../search/sidecar";
+import { exampleProblems } from "./search-examples";
 import { type Check, finding, type View } from "./view";
 
 function aliasProblems(vocabulary: SearchVocabulary): string[] {
@@ -64,6 +65,7 @@ function sizeProblems(card: SearchMetadata): string[] {
   if (card.caveats?.some((text) => countWords(text) > 25))
     problems.push("caveats: at most 25 words each");
   problems.push(...kindSizeProblems(card));
+  problems.push(...editorialSizeProblems(card));
   const text = [
     card.summary,
     ...card.requests,
@@ -74,6 +76,25 @@ function sizeProblems(card: SearchMetadata): string[] {
     ...(card.caveats ?? []),
   ].join(" ");
   if (countWords(text) > 150) problems.push("card: at most 150 words of text");
+  return problems;
+}
+
+function editorialSizeProblems(card: SearchMetadata): string[] {
+  const problems: string[] = [];
+  if (card.description !== undefined && countWords(card.description) > 120)
+    problems.push("description: at most 120 words");
+  if (card.seoDescription !== undefined && [...card.seoDescription].length > 160)
+    problems.push("seoDescription: at most 160 Unicode code points");
+  const examples = card.projectExamples;
+  if (examples === undefined) return problems;
+  if (examples.length < 1 || examples.length > 3) problems.push("projectExamples: 1 to 3 items");
+  for (const [index, example] of examples.entries()) {
+    const at = `projectExamples[${index + 1}]`;
+    if (countWords(example.title) > 8) problems.push(`${at}.title: at most 8 words`);
+    if (countWords(example.description) > 35) problems.push(`${at}.description: at most 35 words`);
+    if ((example.withFragments?.length ?? 0) > 3)
+      problems.push(`${at}.withFragments: at most 3 items`);
+  }
   return problems;
 }
 
@@ -165,7 +186,11 @@ const inspectCard = Effect.fn("validate.searchCard")(function* (options: {
   if (problems.length) return [issue("search-invalid", "error", problems.join("; "))];
   if (entry === undefined)
     return [issue("search-orphan", "error", `No ${ref.kind}/${ref.id} entry in this root.`)];
-  return cardWarnings(card, entry).map(([check, message]) => issue(check, "warning", message));
+  const examples = yield* exampleProblems(card, view);
+  return [
+    ...(examples.length ? [issue("search-invalid", "error", examples.join("; "))] : []),
+    ...cardWarnings(card, entry).map(([check, message]) => issue(check, "warning", message)),
+  ];
 });
 
 function cardWarnings(card: SearchMetadata, entry: Entry): Array<[string, string]> {

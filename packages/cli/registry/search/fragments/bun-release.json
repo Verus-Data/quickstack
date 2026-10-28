@@ -6,10 +6,25 @@
     "digest": "sha256:0329a5ea41b53b36b65008592f1e5615eb7da7a49a1aed79f5c7da33716ca012",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
-    "promptVersion": 1,
+    "promptVersion": 2,
     "reviewedAt": null
   },
   "summary": "Distribute compiled Bun binaries for macOS and glibc Linux with checksum-verified installation, atomic self-update and a release workflow.",
+  "description": "Add distribution to a Bun-compiled command-line tool: target builds, checksum files, a shell installer and an atomic update command. The release workflow checks and smoke-tests artifacts before publishing a tagged GitHub release. The default targets cover macOS and glibc Linux on Intel and ARM. Repository setup and publishing credentials remain maintainer actions; Windows and musl builds are deferred.",
+  "seoDescription": "Release Bun-compiled CLI binaries with target builds, checksums, a shell installer, atomic self-update and a tagged GitHub release workflow.",
+  "projectExamples": [
+    {
+      "title": "Installable diagnostics tool",
+      "description": "Distribute a TypeScript diagnostics utility as downloadable executables with checksum verification. Implement the diagnostics commands in the base CLI.",
+      "stack": "typescript-cli"
+    },
+    {
+      "title": "Updatable terminal chat app",
+      "description": "Combine this release fragment with openrouter-chat-cli to distribute the terminal application. Native TUI packages need target-specific build and smoke checks.",
+      "stack": "typescript-cli",
+      "withFragments": ["openrouter-chat-cli"]
+    }
+  ],
   "capabilities": ["release"],
   "requests": [
     "let people install my Bun tool without installing its runtime",

@@ -6,10 +6,23 @@
     "digest": "sha256:d11f0301685a560444ea42c1bb4f431a913eedacab30e4a718aea2be4283df06",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
-    "promptVersion": 1,
+    "promptVersion": 2,
     "reviewedAt": null
   },
   "summary": "A browser app backed by a Python API, with generated frontend types, query hooks and test mocks.",
+  "description": "Keep Python business logic in FastAPI and build the browser interface as a React single-page app. OpenAPI generates the frontend's types, query hooks and test handlers, with a drift check for the committed API contract. Both halves have their own tests behind one Makefile. The base has no database or authentication; postgres is the compatible persistence add-on, while account handling remains your work.",
+  "seoDescription": "A FastAPI backend and React SPA with an OpenAPI-generated client, query hooks and test handlers, checked through one Makefile.",
+  "projectExamples": [
+    {
+      "title": "Dataset review workbench",
+      "description": "Add Python analysis endpoints and React tables for inspecting results. File ingestion, background jobs and access control are features you implement."
+    },
+    {
+      "title": "Equipment inventory",
+      "description": "Add postgres for persistent equipment records, then build FastAPI resources and browser editing screens. User accounts and permissions need a separate implementation.",
+      "withFragments": ["postgres"]
+    }
+  ],
   "platforms": ["web", "server"],
   "productKinds": ["web-app", "fullstack", "api"],
   "languages": ["python", "typescript"],

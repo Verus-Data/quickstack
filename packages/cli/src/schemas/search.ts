@@ -1,6 +1,20 @@
+import { Kebab } from "@stacks/format";
 import { Schema } from "effect";
 
 const Words = Schema.Array(Schema.String);
+const Prose = Schema.String.check(Schema.isPattern(/\S/u));
+const ProjectExample = Schema.Struct({
+  title: Prose,
+  description: Prose,
+  stack: Schema.optionalKey(Kebab),
+  withFragments: Schema.optionalKey(
+    Schema.Array(Kebab).check(
+      Schema.makeFilter(
+        (ids) => new Set(ids).size === ids.length || "fragment selections must be unique",
+      ),
+    ),
+  ),
+});
 const Source = Schema.Struct({
   digest: Schema.String.check(Schema.isPattern(/^sha256:[a-f0-9]{64}$/)),
   by: Schema.Literals(["author", "drafted"]),
@@ -13,6 +27,10 @@ const common = {
   id: Schema.String.check(Schema.isPattern(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)),
   source: Source,
   summary: Schema.String,
+  description: Schema.optionalKey(Prose),
+  /** Display copy only; excluded from ranking and embeddings. */
+  seoDescription: Schema.optionalKey(Prose),
+  projectExamples: Schema.optionalKey(Schema.Array(ProjectExample)),
   requests: Words,
   useCases: Words,
   synonyms: Words,

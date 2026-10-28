@@ -25,6 +25,19 @@ afterEach(() => space.release());
 const mobile = { kind: "stack", id: "mobile-expo" } as const;
 const sentinel = "test-openrouter-secret-4-5b-never-persist";
 const model = "fixture/model";
+function draftCard(ref: Ref) {
+  return {
+    ...card(ref),
+    description: "Guidance and starter files for building the requested project.",
+    seoDescription: "Build a project from the selected recipe.",
+    projectExamples: [
+      {
+        title: "Illustrative project",
+        description: "An illustrative project built from the selected recipe.",
+      },
+    ],
+  };
+}
 function setup() {
   const f = decorateWorkspace(space.dir());
   rmSync(cardPath(f.registry, mobile), { force: true });
@@ -43,10 +56,10 @@ async function drafted(f: DecorateWorkspace, ref: Ref = mobile) {
     by: "drafted",
     model,
     reviewedAt: null,
-    promptVersion: expect.any(Number),
+    promptVersion: 2,
   });
   expect(value.source.promptVersion).toBeGreaterThan(0);
-  expect(value).toEqual({ ...card(ref), source: value.source });
+  expect(value).toEqual({ ...draftCard(ref), source: value.source });
   return value;
 }
 function requestText(body: unknown) {
@@ -123,7 +136,7 @@ test("dry-run prints prompt sizes without contacting OpenRouter [4.5b#8]", async
 test("drafts through the real HTTP boundary and keeps credentials out of all writes [4.5b#8] [4.5b#12]", async () => {
   const f = setup();
   const response = {
-    ...card(mobile),
+    ...draftCard(mobile),
     source: { ...card(mobile).source, reviewedAt: "2020-01-01", by: "author" },
   };
   const server = await openRouter([{ content: JSON.stringify(response) }]);
@@ -162,7 +175,9 @@ test.each([
   {
     label: "missing languages",
     content: JSON.stringify(
-      Object.fromEntries(Object.entries(card(mobile)).filter(([name]) => name !== "languages")),
+      Object.fromEntries(
+        Object.entries(draftCard(mobile)).filter(([name]) => name !== "languages"),
+      ),
     ),
     diagnostic: /languages/i,
   },
@@ -194,10 +209,10 @@ test.each([
 
 test("a schema decode retry can recover and write the corrected card [4.5b#9]", async () => {
   const f = setup();
-  const invalid = { ...card(mobile), languages: "typescript" };
+  const invalid = { ...draftCard(mobile), languages: "typescript" };
   const server = await openRouter([
     { content: JSON.stringify(invalid) },
-    { content: JSON.stringify(card(mobile)) },
+    { content: JSON.stringify(draftCard(mobile)) },
   ]);
   try {
     success(
@@ -220,7 +235,7 @@ test("429 retries the same entry and writes exactly one draft [4.5b#9]", async (
   const f = setup();
   const server = await openRouter([
     { status: 429, content: "rate limit" },
-    { content: JSON.stringify(card(mobile)) },
+    { content: JSON.stringify(draftCard(mobile)) },
   ]);
   try {
     const result = await decorate(f, [mobile.id, "--model", model], {
@@ -246,7 +261,7 @@ test("a cap prevents the next paid request and reports the actual total [4.5b#10
     ),
   );
   // At 0.006 per request a similarly sized prompt exceeds the remaining 0.004 budget.
-  const server = await openRouter([{ content: JSON.stringify(card(mobile)), cost: 0.006 }]);
+  const server = await openRouter([{ content: JSON.stringify(draftCard(mobile)), cost: 0.006 }]);
   try {
     const result = await decorate(
       f,
@@ -269,8 +284,8 @@ test("a sufficient budget drafts both selected entries and totals their cost [4.
   const f = setup();
   const second = { kind: "stack", id: "second" } as const;
   const server = await openRouter([
-    { content: JSON.stringify(card(mobile)), cost: 0.002 },
-    { content: JSON.stringify(card(second)), cost: 0.003 },
+    { content: JSON.stringify(draftCard(mobile)), cost: 0.002 },
+    { content: JSON.stringify(draftCard(second)), cost: 0.003 },
   ]);
   try {
     const result = await decorate(

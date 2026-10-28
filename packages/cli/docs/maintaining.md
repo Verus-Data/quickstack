@@ -100,7 +100,14 @@ The prompt lives in `scripts/decorate/prompt.ts`, with `PROMPT_VERSION` and two
 teaching cards derived from entry bodies. Bump the version when changing the text
 or examples. The script uses two reviewed registry cards when available, falling
 back to the teaching cards before reviewed cards have landed. Inputs are decoded frontmatter, dependency roles, body, vocabulary
-and the two examples. A malformed or schema-invalid card gets one correction
+and the two examples, plus compact recipe references for example hosts and
+fragment selections. Prompt version 2 asks for a fuller `description`,
+`seoDescription` and illustrative `projectExamples`, while retaining the
+150-word search budget. The editorial fields have separate caps and are excluded
+from ranking and embeddings. A new response must contain all three editorial
+fields, with nonblank text and at least one project example. Existing stored
+cards keep those fields optional. A malformed, incomplete or schema-invalid new
+response gets one correction
 retry; HTTP 408, 429 and 5xx get up to three retries with backoff. Other failures
 skip the entry and are listed. A failed draft preserves an existing card.
 
@@ -115,7 +122,18 @@ Restamping an unread draft is refused; use the guarded approval operation first.
 When dispatching agents to draft cards, provide the same prompt and examples at
 the current version in a checkout without the golden evaluation set. Do not read
 that set while drafting: requests must not echo holdout queries or five-word runs.
-Keep agent drafts unreviewed for a person to approve.
+Keep agent drafts unreviewed for a person to approve. Before approval, check
+examples against the named host and additions: a recipe's health slice is not a
+finished product, optional fragments are not included by implication, and a
+product idea cannot establish authentication, persistence or compliance.
+`stacks validate` checks example selections with the existing metadata selection
+rules without rendering their files.
+
+The richer fields stay optional in schema version 1 for existing author cards
+and carried-forward index data. Bundled cards should have complete editorial
+coverage. See `docs/authoring.md` for field budgets and description precedence.
+The current 30-card agent draft is still awaiting human review; a successful
+draft or validation run does not authorize `--approve` under an agent.
 
 `build:index` publishes signed `v1/search.json` beside the index and names file.
 Each indexed entry has a card; a card whose baseline differs from a carried-forward

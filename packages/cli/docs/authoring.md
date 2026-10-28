@@ -87,9 +87,40 @@ Other roots cannot redefine the vocabulary.
 Write one sentence of at most 25 words for `summary`, 3 to 5 example `requests`
 of at most 15 words each, and short phrases for `useCases` (6 maximum), `synonyms`
 (12), `goodFor` (4) and `notFor` (4). Stacks list 1 to 3 languages; fragments list
-0 to 3 capabilities. Optional `caveats` holds up to 3 platform limitations of at
-most 25 words each. Keep all free text within 150 words. Describe needs supported
-by the entry; do not guess a product domain or copy evaluation queries.
+0 to 3 capabilities. Optional `caveats` holds up to 3 platform or operating limits
+of at most 25 words each. Keep these search fields together within 150 words.
+Describe needs supported by the entry; do not guess a product domain or copy
+evaluation queries.
+
+Bundled cards also include three optional editorial fields. They have separate
+budgets and are excluded from search ranking and embeddings:
+
+| Field | Purpose and limit |
+|---|---|
+| `description` | Directory detail and agent comparison prose, at most 120 words |
+| `seoDescription` | Plain page-meta copy, at most 160 Unicode characters; this is an editorial limit, not a search-engine guarantee |
+| `projectExamples` | 1 to 3 illustrative project ideas, each with a `title` (8 words maximum) and `description` (35 words) |
+
+All editorial strings must be nonblank. An example on a fragment card also names
+its host `stack`; on a stack card, that host is the card itself. Optional
+`withFragments` lists up to 3 distinct additions needed beyond that entry and
+the host's defaults. Validation checks the same selection rules as composition,
+including compatibility, dependencies and conflicts.
+
+Explain what the recipe establishes and what a product still needs. A project
+idea is illustrative, not an included feature. Name optional additions for
+persistence or AI, and call out custom work such as authorization or native
+permissions. Do not invent compliance, readiness, pricing or timing claims.
+Apps are still fragments with `category: app`; tools, requirements and
+compatibility stay in entry frontmatter.
+
+The recipe's frontmatter `description` remains the technical synopsis.
+`summary` is the short search-hit sentence. A directory can prefer reviewed
+sidecar `description` on its detail page and fall back to the recipe description.
+Page metadata can prefer reviewed `seoDescription`, then reviewed `summary`,
+then the recipe description. Preserve draft and stale labels when displaying
+sidecar copy; neither a richer description nor a recent edit proves the recipe
+works.
 
 `source.digest` is the `searchSourceDigest` of the entry's decoded metadata and
 body. Set `by: "author"` for a handwritten card, or `by: "drafted"` with `model`

@@ -6,10 +6,23 @@
     "digest": "sha256:eebd77b99c359c34493851019e7e255fe4a4683c438a49d5ce4fbcaf92b41dfa",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
-    "promptVersion": 1,
+    "promptVersion": 2,
     "reviewedAt": null
   },
   "summary": "A server-rendered React app with page loaders, form actions and shared backend services with typed errors and structured logs.",
+  "description": "Build server-rendered React pages with loaders, form actions and JSON resource routes in one application. Server programs share an Effect runtime, typed error handling and request logs, with a boundary that keeps server code out of components. A health route and browser smoke test establish the base. Data storage and accounts are not included; the optional openrouter-chat app adds the reference browser chat experience.",
+  "seoDescription": "A server-rendered React Router app with Effect services, typed errors, request logs and tests through a health-route proving slice.",
+  "projectExamples": [
+    {
+      "title": "Request review console",
+      "description": "Build server-loaded request pages and form actions around your own service. Add persistence, identity and access rules to suit the records being reviewed."
+    },
+    {
+      "title": "Browser model comparison notebook",
+      "description": "Select openrouter-chat for streaming chat, model choice and Markdown export. Live requests need a key; private access and durable history require further work.",
+      "withFragments": ["openrouter-chat"]
+    }
+  ],
   "platforms": ["web", "server"],
   "productKinds": ["web-app", "fullstack"],
   "languages": ["typescript"],

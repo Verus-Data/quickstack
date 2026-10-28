@@ -6,10 +6,24 @@
     "digest": "sha256:ca8f8100406654dc78bb352067ca258a17b932b07cd8d61a4a80bd49271e0d8f",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
-    "promptVersion": 1,
+    "promptVersion": 2,
     "reviewedAt": null
   },
   "summary": "Publish Go binaries for multiple operating systems from version tags, with archives, checksums, changelogs and optional Homebrew distribution.",
+  "description": "Turn version tags into Go release archives with matching binary version metadata, checksums and a commit-based changelog. A local snapshot build exercises release packaging without publishing. The default targets include Linux, macOS and Windows on Intel and ARM; optional Homebrew publishing needs its own tap and credentials. This fragment extends a Go binary project rather than providing installer or self-update behavior.",
+  "seoDescription": "GoReleaser configuration for tagged Go releases, target archives, checksums, version metadata, local snapshots and optional Homebrew publishing.",
+  "projectExamples": [
+    {
+      "title": "Downloadable operator utility",
+      "description": "Distribute a custom Go command-line tool as release archives for the configured targets. Implement its operator commands in the base stack.",
+      "stack": "go-cli"
+    },
+    {
+      "title": "Homebrew-installed developer tool",
+      "description": "Enable the optional Homebrew publisher for a Go utility. Supply the tap repository and token, then test the chosen publishing configuration.",
+      "stack": "go-cli"
+    }
+  ],
   "capabilities": ["release"],
   "requests": [
     "publish downloadable builds of my Go tool whenever I push a version tag",

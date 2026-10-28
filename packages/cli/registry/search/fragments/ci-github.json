@@ -6,10 +6,24 @@
     "digest": "sha256:94c47e10d9d39d5f833323086b95800fd7c039904f88cf6dae6be9a4e5387677",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
-    "promptVersion": 1,
+    "promptVersion": 2,
     "reviewedAt": null
   },
   "summary": "Run the project's existing checks on GitHub pushes and pull requests, with a single required result and selective jobs for monorepos.",
+  "description": "Run the project's existing checks on GitHub pushes and pull requests. The workflow reads tool versions from project files and gives branch protection one aggregate result; monorepos can filter work by affected area. Default-preset guidance includes SHA-pinned actions and limited permissions. The fragment defines CI configuration, while deployment and release publishing belong to separate fragments.",
+  "seoDescription": "GitHub Actions CI that reuses project commands, filters monorepo jobs and exposes one required check with limited workflow permissions.",
+  "projectExamples": [
+    {
+      "title": "API pull request checks",
+      "description": "Run the API's lint, typecheck, tests and build before changes merge. Configure branch protection to require the aggregate result.",
+      "stack": "typescript-api"
+    },
+    {
+      "title": "Split frontend and backend checks",
+      "description": "Run checks for changed Python and React areas while including shared-contract changes in the frontend filter. Reuse the Makefile targets.",
+      "stack": "python-react"
+    }
+  ],
   "capabilities": ["ci"],
   "requests": [
     "run our existing checks whenever someone opens a pull request",

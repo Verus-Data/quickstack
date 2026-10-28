@@ -6,10 +6,23 @@
     "digest": "sha256:636c881686b8957b40eb3e8c7155091f2e8588b91a5381c6f154aac3e64f3840",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
-    "promptVersion": 1,
+    "promptVersion": 2,
     "reviewedAt": null
   },
   "summary": "A server-rendered web app with JSON endpoints, typed runtime bindings and local tests on Cloudflare Workers.",
+  "description": "Build an application whose React pages and JSON resource routes run in Cloudflare Workers. Development and integration tests use the local Workers runtime, and generated types describe runtime bindings. The initial slice is a page, health route and harmless scheduled-handler slot. Storage is absent until you add it; cloudflare-d1 supplies the compatible SQL binding and migration workflow. Cloud deployment still needs your account and credentials.",
+  "seoDescription": "A React Router app on Cloudflare Workers with server rendering, JSON routes, typed bindings and local integration tests.",
+  "projectExamples": [
+    {
+      "title": "Directory with saved listings",
+      "description": "Add cloudflare-d1 for SQL storage, then implement listing records, editing screens and queries. Authentication and moderation remain separate product decisions.",
+      "withFragments": ["cloudflare-d1"]
+    },
+    {
+      "title": "Public lookup application",
+      "description": "Build server-rendered result pages and JSON lookup routes around a data source you choose. Add scheduled refresh logic only after deciding its data source and schedule."
+    }
+  ],
   "platforms": ["web", "server"],
   "productKinds": ["web-app", "fullstack"],
   "languages": ["typescript"],

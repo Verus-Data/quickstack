@@ -6,10 +6,27 @@
     "digest": "sha256:89412086282e5ed5c97280b86f9770d82e2bd88326226191564683771ee90c3e",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
-    "promptVersion": 1,
+    "promptVersion": 2,
     "reviewedAt": null
   },
   "summary": "Add browser chat with streaming replies, model selection, server history, tool calls, usage costs and Markdown export.",
+  "description": "Add the reference browser chat application to react-router. It includes streamed replies, model selection, a deterministic time tool, contact extraction and Markdown export, with usage metadata and local browser tests. History lives on the server in memory by default; SQLite is an implementation choice for restart persistence. There is no authentication: possessing a chat URL grants access. Configure an OpenRouter key for live requests.",
+  "seoDescription": "A streaming OpenRouter browser chat app for React Router, with model selection, tools, contact extraction, usage details and Markdown export.",
+  "projectExamples": [
+    {
+      "title": "Model exploration notebook",
+      "description": "Use the reference chat to compare model replies and export conversations. Add private accounts and durable storage before treating it as a personal hosted notebook.",
+      "stack": "react-router"
+    },
+    {
+      "title": "Contact extraction workbench",
+      "description": "Start with the included contact extraction form and extend its validation and review interface. New extraction schemas or integrations are application work.",
+      "stack": "react-router"
+    }
+  ],
+  "caveats": [
+    "Default history is in memory, and a chat URL grants access; add authentication and durable storage for private hosted use."
+  ],
   "capabilities": ["ai"],
   "requests": [
     "let visitors choose a model and watch replies arrive in the browser",

@@ -6,10 +6,24 @@
     "digest": "sha256:0ca4f2a8175bc994d60a5f27f140c96eb2cd1ef7a44d8055951e5b9c4390072c",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
-    "promptVersion": 1,
+    "promptVersion": 2,
     "reviewedAt": null
   },
   "summary": "Configure OpenRouter access, discover available models, handle provider failures safely and test requests against a local server.",
+  "description": "Add the provider boundary for an OpenRouter-backed feature: optional secret configuration, model discovery, routing controls and safe upstream errors. A scriptable local HTTP server lets tests inspect real requests and exercise failures without paid credentials. The application still owns its client integration, streaming, tools and interface. Live provider calls require a key and credit limits; startup and automated tests must work without one.",
+  "seoDescription": "OpenRouter configuration, model discovery, routing controls and local HTTP stubs for testing provider integration without paid requests.",
+  "projectExamples": [
+    {
+      "title": "Structured text helper API",
+      "description": "Use the provider configuration and stub server while implementing a custom extraction endpoint. Add schemas, prompts and output validation in the application.",
+      "stack": "typescript-api"
+    },
+    {
+      "title": "Model-aware command",
+      "description": "Add a command that uses the discovered model list and safe provider errors. Implement its client and output behavior, or select the full chat app separately.",
+      "stack": "typescript-cli"
+    }
+  ],
   "capabilities": ["ai"],
   "requests": [
     "let my app discover models and configure provider routing",

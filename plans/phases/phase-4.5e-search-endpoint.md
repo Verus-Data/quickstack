@@ -69,6 +69,12 @@ GET was chosen over POST because search is a read and callers expect a linkable 
 
 `Search` holds one `RankInput` built from the signed `v1/index.json`, each indexed entry's bundle and `v1/search.json`, each read through `IndexAssets` and verified with `INDEX_PUBLIC_KEYS` before use. It is built on the first request and rebuilt only when the index's `generatedAt` changes, once per process on Node and once per isolate on Workers. A few dozen entries make this a few hundred kilobytes and a ranking takes well under a millisecond, so nothing per query is cached.
 
+The additive editorial fields of `SearchMetadata` survive signed asset decoding
+and the move to `packages/format`. They do not change `SearchHit` or the ranking
+allowlist: sidecar `description`, `seoDescription` and `projectExamples` are
+directory/comparison data, not search tokens. The separately owned entry
+frontmatter description retains its existing ranking role.
+
 Bodies are included so the server ranks exactly as the CLI does over the same entries. Every official entry has a reviewed card (4.5b's zero-warning rule), so the body's 0.15 weight rarely decides anything, but parity is what lets the CLI merge server and local hits on one score scale.
 
 Evidence: `lastRun` from the index. Once 4.2a's rollup exists, the route fills `evidence.stats` from it directly, the same values 4.2b's summary publishes.

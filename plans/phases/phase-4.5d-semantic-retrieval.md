@@ -43,8 +43,12 @@ Out:
 
 Per official entry, from its reviewed sidecar:
 
-- One card vector over `name. summary. description. Platforms: …. Kinds: …. Languages: …. Use cases: …. Good for: ….` for a stack, with `Provides: ….` (its `capabilities`) in place of platforms, kinds and languages for a fragment (not the body: bodies are tool instructions, and embedding them pulls requests toward whatever technical words they share, the same trap 4.5a's `trap` pool tests).
+- One card vector over `name. summary. entryDescription. Platforms: …. Kinds: …. Languages: …. Use cases: …. Good for: ….` for a stack, with `Provides: ….` (its `capabilities`) in place of platforms, kinds and languages for a fragment. `entryDescription` is the recipe frontmatter description, not 4.5b's richer sidecar `description`. The body stays excluded because it is tool guidance.
 - One vector per example request in `requests`.
+
+Use only these named inputs. Sidecar `description`, `seoDescription`,
+`projectExamples` and `caveats` are unembedded. Illustrative product ideas and
+SEO wording must not become semantic capability claims or alter `docDigest`.
 
 An entry's semantic similarity to a request is the larger of its card similarity and its best request similarity, so five near-identical requests count once.
 

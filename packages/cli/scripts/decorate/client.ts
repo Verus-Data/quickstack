@@ -1,6 +1,6 @@
-import { Console, Duration, Effect, Schema } from "effect";
+import { Console, Duration, Effect, Schema, SchemaIssue } from "effect";
 import { decodeSidecar } from "../../src/core/search/sidecar";
-import type { SearchMetadata } from "../../src/schemas/search";
+import { SearchMetadata } from "../../src/schemas/search";
 import type { DecorateConfig } from "./config";
 
 const Response = Schema.Struct({
@@ -8,6 +8,45 @@ const Response = Schema.Struct({
   usage: Schema.Struct({ total_tokens: Schema.Number, cost: Schema.Number }),
 });
 export type Budget = { total: number; highest: number; max: number };
+
+/** Keep provider-controlled values, property names and parser messages out of corrections. */
+function draftSchemaError(error: Schema.SchemaError): Error {
+  const issues = SchemaIssue.makeFormatterStandardSchemaV1({
+    leafHook: () => "invalid",
+    checkHook: () => "invalid",
+  })(error.issue).issues;
+  const fields = [
+    ...new Set(
+      issues.flatMap(({ path }) => {
+        const key = path?.[0];
+        return typeof key === "string" &&
+          SearchMetadata.members.some(({ fields }) => Object.hasOwn(fields, key))
+          ? [key]
+          : [];
+      }),
+    ),
+  ];
+  return new Error(`Invalid JSON/schema${fields.length ? ` at ${fields.join(", ")}` : ""}.`);
+}
+
+/** Stored cards remain backward compatible; new drafts must include the editorial copy. */
+const decodeDraft = Effect.fn("decorate.decodeDraft")(function* (content: string) {
+  const card = yield* decodeSidecar(new TextEncoder().encode(content)).pipe(
+    Effect.mapError(draftSchemaError),
+  );
+  const missing = (["description", "seoDescription", "projectExamples"] as const).filter(
+    (field) =>
+      card[field] === undefined ||
+      (field === "projectExamples" && card.projectExamples?.length === 0),
+  );
+  if (missing.length)
+    return yield* Effect.fail(
+      new Error(
+        `New drafts require ${missing.join(", ")}; projectExamples must contain at least one example.`,
+      ),
+    );
+  return card;
+});
 
 const request = Effect.fn("decorate.request")(function* (options: {
   config: DecorateConfig;
@@ -79,7 +118,7 @@ export const draft = Effect.fn("decorate.draft")(function* (options: {
       `${options.id}: model=${options.model} tokens=${response.usage.total_tokens} cost=$${cost.toFixed(6)}`,
     );
     const content = response.choices[0]?.message.content ?? "";
-    const decoded = yield* Effect.result(decodeSidecar(new TextEncoder().encode(content)));
+    const decoded = yield* Effect.result(decodeDraft(content));
     if (decoded._tag === "Success") return decoded.success;
     // Never echo provider content: schema diagnostics may include credentials supplied by a provider.
     const diagnostic = String(decoded.failure).replaceAll(

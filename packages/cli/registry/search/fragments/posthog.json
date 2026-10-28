@@ -6,10 +6,24 @@
     "digest": "sha256:6189bc5e1f9181f097c8212bf783a177d9ab9a756f358ce20220689584de4c88",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
-    "promptVersion": 1,
+    "promptVersion": 2,
     "reviewedAt": null
   },
   "summary": "Track browser pageviews and typed product events through PostHog, with buffered initialization and analytics disabled when no key is configured.",
+  "description": "Collect browser pageviews and explicitly named product events through one typed analytics module. Events can queue while PostHog initializes, and an empty key makes analytics silent in development and tests. Session recording and autocapture are off by default; consent and persistence are explicit choices. The guidance excludes user-entered text, email addresses and tokens. It does not establish legal compliance or provide server-side analytics.",
+  "seoDescription": "PostHog browser analytics with typed events, buffered initialization and a silent no-key state for development and tests.",
+  "projectExamples": [
+    {
+      "title": "Article interaction measurement",
+      "description": "Track explicit article-sharing or navigation events in an Astro blog. Choose consent behavior and configure the PostHog project before collecting data.",
+      "stack": "astro-blog"
+    },
+    {
+      "title": "Dashboard workflow measurement",
+      "description": "Instrument custom React interactions through the typed event catalog. Record internal identifiers only where appropriate, and keep form contents out of events.",
+      "stack": "python-react"
+    }
+  ],
   "capabilities": ["analytics"],
   "requests": [
     "record page visits and product interactions from my web interface",
