@@ -34,15 +34,11 @@ test("mixed case and punctuation preserve ranks and scores [4.5c#15]", async () 
   expect(mixed.stacks[0]?.id).toBe("mobile-expo");
 });
 
-test("stopwords yield weak candidates without a confident fit [4.5c#16]", async () => {
+test("stopwords return empty lists without a confident fit [4.5c#16]", async () => {
   const { value } = await searched("I want to build something", options(space.dir()));
   expect(value.noStrongMatch).toBe(true);
-  expect(value.stacks.length).toBeGreaterThan(0);
-  expect(
-    [...value.stacks, ...value.fragments].every(
-      ({ tier, score }) => tier === "weak" && score === 0,
-    ),
-  ).toBe(true);
+  expect(value.stacks).toEqual([]);
+  expect(value.fragments).toEqual([]);
 });
 
 test("either named platform satisfies the platform rule [4.5c#17]", async () => {

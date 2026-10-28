@@ -231,6 +231,18 @@ export function compareSearchHits(a: SearchHit, b: SearchHit): number {
     a.id.localeCompare(b.id)
   );
 }
+function selectHits(hits: ReadonlyArray<SearchHit>, limit: number): SearchHit[] {
+  const matched = hits
+    .map((hit) => ({
+      ...hit,
+      score: Number(hit.score.toFixed(3)),
+      coverage: Number(hit.coverage.toFixed(3)),
+    }))
+    .filter((hit) => hit.score > 0 && hit.why.length > 0);
+  const weakLimit = matched.some((hit) => hit.tier !== "weak") ? 2 : limit;
+  let weakCount = 0;
+  return matched.filter((hit) => hit.tier !== "weak" || weakCount++ < weakLimit).slice(0, limit);
+}
 /** Pure, invocation-independent ranking over plain data; no service, file, network or clock. */
 export function rank(input: RankInput): SearchResult {
   const request = input.request.trim();
@@ -263,10 +275,13 @@ export function rank(input: RankInput): SearchResult {
       ),
     },
     noStrongMatch: !stacks.some((hit) => hit.tier === "strong"),
-    stacks: input.kind === "fragment" ? [] : stacks.slice(0, input.limit ?? 5),
+    stacks: input.kind === "fragment" ? [] : selectHits(stacks, input.limit ?? 5),
     fragments:
       input.kind === "stack"
         ? []
-        : hits.filter((hit) => hit.kind === "fragment").slice(0, input.limit ?? 5),
+        : selectHits(
+            hits.filter((hit) => hit.kind === "fragment"),
+            input.limit ?? 5,
+          ),
   };
 }

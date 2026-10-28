@@ -127,7 +127,7 @@ test("Next uses the first trusted hit and never offers new for an untrusted hit 
       requests: [],
       useCases: [],
       synonyms: [],
-      goodFor: [],
+      goodFor: ["workout"],
     },
   });
   await fixtureRecord(join(home, ".stacks"), "untrusted-journal");

@@ -61,7 +61,7 @@ test.each(["id", "kind"] as const)(
     const fragment = await fixtureRecord(registry, "neutral", { kind: "fragment" });
     const card = field === "id" ? { ...record.search, id: "other" } : fragment.search;
     put(cardPath(registry, { id: "neutral", kind: "stack" }), JSON.stringify(card));
-    const result = await searched("iOS journal", options(home, registry));
+    const result = await searched("neutral iOS journal", options(home, registry));
     const neutral = hit(result.value.stacks, "neutral");
     expect(neutral.summary).toBe(record.entry.meta.description);
     expect(neutral.why.some((reason) => reason.field === "platforms")).toBe(false);

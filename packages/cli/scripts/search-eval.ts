@@ -90,17 +90,18 @@ function cosine(a: ReadonlyArray<number>, b: ReadonlyArray<number>): number {
   const norm = (v: ReadonlyArray<number>) => Math.sqrt(v.reduce((sum, x) => sum + x * x, 0));
   return dot / (norm(a) * norm(b) || 1);
 }
+type EvaluationHit = Pick<SearchHit, "kind" | "id" | "tier" | "score">;
 /** Reciprocal rank fusion within kind. Zero lexical scores and nonpositive cosine give no vote. */
 function fuse(
-  hits: ReadonlyArray<SearchHit>,
+  hits: ReadonlyArray<EvaluationHit>,
   similarities: ReadonlyMap<string, number>,
-): SearchHit[] {
+): EvaluationHit[] {
   const semantic = [...hits].sort(
     (a, b) =>
       (similarities.get(`${b.kind}:${b.id}`) ?? 0) - (similarities.get(`${a.kind}:${a.id}`) ?? 0) ||
       a.id.localeCompare(b.id),
   );
-  const vote = (hit: SearchHit) => {
+  const vote = (hit: EvaluationHit) => {
     const lexicalRank = hits.filter((row) => row.kind === hit.kind).indexOf(hit);
     const semanticRank = semantic.filter((row) => row.kind === hit.kind).indexOf(hit);
     return (
@@ -110,7 +111,7 @@ function fuse(
   };
   return [...hits].sort((a, b) => vote(b) - vote(a) || a.id.localeCompare(b.id));
 }
-type Ranking = (request: string) => ReadonlyArray<SearchHit>;
+type Ranking = (request: string) => ReadonlyArray<EvaluationHit>;
 function report(label: string, golden: GoldenSet, ranking: Ranking): string {
   const metrics = (set: GoldenSet) => {
     const value = evaluate(ranking, set).total;
@@ -192,7 +193,19 @@ const program = Effect.gen(function* () {
         cosine(vector, vectors[i] ?? []),
       ]),
     );
-    return fuse(lexical(request), similarities);
+    const ranked = lexical(request);
+    const keys = new Set(ranked.map((hit) => `${hit.kind}:${hit.id}`));
+    const unranked = entries
+      .filter(({ entry }) => !keys.has(`${entry.kind}:${entry.id}`))
+      .map(
+        ({ entry }): EvaluationHit => ({
+          kind: entry.kind,
+          id: entry.id,
+          tier: "weak",
+          score: 0,
+        }),
+      );
+    return fuse([...ranked, ...unranked], similarities);
   };
   yield* Console.log("\nFused ranks use RRF (k=60); tiers remain lexical for this experiment.");
   yield* Console.log(report("Fused", golden, fused));
