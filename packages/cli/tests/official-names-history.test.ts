@@ -67,6 +67,16 @@ test("published names survive re-proven steps, withdrawal and later generations 
   rmSync(join(f.registry, "fragments/tools"), { recursive: true });
   rmSync(join(f.registry, "search/stacks"), { recursive: true });
   rmSync(join(f.registry, "search/fragments/tools.json"));
+  writeFileSync(
+    join(f.registry, "removed.json"),
+    JSON.stringify({
+      schemaVersion: 1,
+      entries: {
+        sample: { kind: "stack", removedAt: "2026-10-27", reason: "Retired index stack" },
+        tools: { kind: "fragment", removedAt: "2026-10-27", reason: "Retired index fragment" },
+      },
+    }),
+  );
   writeLedger(f.registry, []);
   for (const name of ["withdrawn", "later"]) {
     const server = await serve(previous);

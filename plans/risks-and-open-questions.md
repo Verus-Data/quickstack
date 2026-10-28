@@ -181,6 +181,8 @@ plan keeps its choice in each case; the maintainers confirm or change it.
     page and detail route and never as a ranking of agents across stacks
     ([4.2a](phases/phase-4.2a-stats-rollup-and-routes.md)). Is a per-stack breakdown
     acceptable to publish, given it lets readers compare agents on one stack? Blocks 4.2a.
+    Settled in part 2026-10-27: there are no per-agent pages (4.2c dropped `/agents/*`);
+    the per-stack breakdown is still open.
 
 32. How does a change to a stack or fragment get accepted? The plan supplies the
     mechanical proof (`validate`, a green bench run of the affected compositions, "changed

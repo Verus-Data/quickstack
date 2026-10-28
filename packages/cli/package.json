@@ -63,7 +63,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/tryopendata/quickstack.git",
+    "url": "git+https://github.com/steamfield/stacks.git",
     "directory": "packages/cli"
   }
 }

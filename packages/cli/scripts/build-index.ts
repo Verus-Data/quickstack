@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
 import { NodeServices } from "@effect/platform-node";
-import { Clock, Console, Duration, Effect, Layer, Option, Path } from "effect";
-import { AppConfig, GIT_REPOSITORY_VARIABLES } from "../src/config";
+import { Clock, Console, Effect, Layer, Option, Path } from "effect";
+import { AppConfig } from "../src/config";
 import { Registry } from "../src/core/registry/registry";
 import { printable } from "../src/core/text";
 import { validate } from "../src/core/validate";
@@ -10,12 +10,20 @@ import { Host } from "../src/services/host";
 import { Foreground, Processes } from "../src/services/processes";
 import { VERSION } from "../src/version";
 import { argumentsFor } from "./index/arguments";
+import { buildDirectory } from "./index/directory";
+import { historyExec, requireFullHistory } from "./index/history";
 import { indexNames } from "./index/index-names";
 import { mergeNames } from "./index/names";
 import { currentIndex } from "./index/proof";
 import { carryForward, publish } from "./index/publish";
 import { releaseNames } from "./index/release-names";
-import { checkHost, fetchIndex, fetchNames, fetchSearch } from "./index/remote";
+import {
+  checkHost,
+  fetchIndex,
+  fetchNames,
+  fetchPreviousDirectory,
+  fetchSearch,
+} from "./index/remote";
 import { indexSearch } from "./index/search";
 
 const root = fileURLToPath(new URL("../registry", import.meta.url));
@@ -39,26 +47,13 @@ const validateRegistry = Effect.fn("index.validateRegistry")(function* () {
     );
 });
 
-const commit = Effect.fn("index.commit")(function* () {
-  const processes = yield* Processes;
-  const env = (yield* AppConfig).childEnv(GIT_REPOSITORY_VARIABLES);
-  const result = yield* processes.exec({
-    argv: ["git", "rev-parse", "HEAD"],
-    cwd: packageRoot,
-    env,
-    timeout: Duration.seconds(30),
-  });
-  if (result.exitCode !== 0 || result.timedOut || result.truncated)
-    return yield* Effect.fail(new Error("Could not determine the registry checkout's commit."));
-  return result.stdout.trim();
-});
-
 const program = Effect.gen(function* () {
   const options = yield* argumentsFor(process.argv.slice(2));
   if (options.mode === "check") {
     yield* Console.log(yield* checkHost(options.base));
     return;
   }
+  yield* requireFullHistory(packageRoot);
   yield* validateRegistry();
   const previous = options.previous === null ? null : yield* fetchIndex(options.previous.href);
   const previousNames =
@@ -69,17 +64,34 @@ const program = Effect.gen(function* () {
     options.previous === null
       ? null
       : yield* fetchSearch(new URL("search.json", options.previous).href);
+  const previousDirectory =
+    options.previous === null
+      ? null
+      : yield* fetchPreviousDirectory(new URL("directory.json", options.previous).href);
   const base = options.previous === null ? "" : new URL("../", options.previous).href;
   const current = yield* currentIndex(root);
   const selected = yield* carryForward(current, previous, base);
   const path = yield* Path.Path;
   const generatedAt = new Date(yield* Clock.currentTimeMillis).toISOString();
-  const checkoutCommit = yield* commit();
+  const checkoutCommit = yield* historyExec(packageRoot, ["git", "rev-parse", "HEAD"]);
   const bootstrapEntries = previousNames === null ? (previous?.entries ?? []) : [];
   const sources = [
     ...(yield* releaseNames(packageRoot)),
     yield* indexNames([...selected.entries, ...bootstrapEntries], selected.bundles),
   ];
+  const names = mergeNames(
+    { formatVersion: 1, generatedAt, commit: checkoutCommit, sources },
+    previousNames,
+  );
+  const directory = yield* buildDirectory({
+    cwd: packageRoot,
+    root,
+    names,
+    entries: selected.entries,
+    previous,
+    previousDirectory,
+    bundles: selected.bundles,
+  });
   yield* publish({
     out: path.resolve(options.out),
     key: options.key,
@@ -90,10 +102,8 @@ const program = Effect.gen(function* () {
       bundles: selected.bundles,
       previous: previousSearch,
     }),
-    names: mergeNames(
-      { formatVersion: 1, generatedAt, commit: checkoutCommit, sources },
-      previousNames,
-    ),
+    names,
+    directory,
     index: {
       formatVersion: 1,
       minCli: VERSION,

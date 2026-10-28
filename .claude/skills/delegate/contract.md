@@ -103,7 +103,7 @@ body() { awk 'NR==1&&/^---$/{f=1;next} f&&/^---$/{f=0;next} !f' "$1"; }  # witho
   cat "{THIS CONTRACT'S PATH}"
 } > "$review/prompt.md"
 codex exec --ephemeral --sandbox read-only -m gpt-6.1-sol -c 'model_reasoning_effort="high"' \
-  -o "$review/review.md" - < "$review/prompt.md"
+  -c 'service_tier="priority"' -o "$review/review.md" - < "$review/prompt.md"
 ```
 
 Fix every finding in `review.md` (its list has no optional tier), or say in the hand-off why a

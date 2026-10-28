@@ -1,5 +1,6 @@
 import type { Manifest } from "@stacks/format";
-import type { LedgerRecord } from "../schemas/ledger";
+import { Schema } from "effect";
+import { LastRun, type LedgerRecord } from "../schemas/ledger";
 import type { ListResult, ListRow } from "../schemas/list";
 import { fitsStack } from "./compose/selection";
 import { lastRun } from "./ledger";
@@ -21,9 +22,13 @@ export function toRow(entry: Entry, records: ReadonlyArray<LedgerRecord> = []): 
     origin: entry.origin,
     trusted: entry.trusted,
     shadows: entry.shadows,
-    lastRun:
-      entry.kind === "stack" && entry.origin === "bundled" ? lastRun(records, entry.id) : null,
+    lastRun: rowLastRun(entry, records),
   };
+}
+
+function rowLastRun(entry: Entry, records: ReadonlyArray<LedgerRecord>) {
+  if (entry.indexEntry?.lastRun) return Schema.decodeUnknownSync(LastRun)(entry.indexEntry.lastRun);
+  return entry.kind === "stack" && entry.origin === "bundled" ? lastRun(records, entry.id) : null;
 }
 
 export const inGroup = (row: ListRow, group: Group | undefined) =>

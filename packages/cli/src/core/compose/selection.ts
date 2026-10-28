@@ -7,7 +7,7 @@ import {
   NotFound,
   type PermissionDenied,
 } from "../../errors";
-import { type Entry, isFragment, isRejected, isStack } from "../registry/entry";
+import { type CatalogEntry, type Entry, isFragment, isStack } from "../registry/entry";
 import type { Registry } from "../registry/registry";
 import { closest } from "../suggest";
 import type { ComposeOptions, ComposeWarning, Via } from "./compose";
@@ -40,19 +40,45 @@ export function fitsStack(
 const fits = (fragment: Fragment, stack: Stack) =>
   fitsStack(fragment.meta.appliesTo, { id: stack.id, tags: stack.meta.tags });
 
+function compositionFragment(
+  registry: Registry["Service"],
+  options: {
+    stack: Stack | null;
+    catalog: ReadonlyArray<CatalogEntry>;
+    id: string;
+  },
+) {
+  const { stack, catalog, id } = options;
+  const current = catalog.find((entry) => entry.kind === "fragment" && entry.id === id);
+  const pinned = stack?.composition?.find((entry) => entry.id === id);
+  if (pinned && current?.origin !== "project" && current?.origin !== "user")
+    return Effect.succeed(pinned);
+  return registry.get("fragment", id);
+}
+
 export function selectFragments(
   registry: Registry["Service"],
   options: ComposeOptions<"new" | "add">,
 ) {
   return Effect.gen(function* () {
-    const listed = yield* registry.all;
+    const listed = yield* registry.catalog;
     const known = (kind: Kind) =>
       listed.filter((item) => item.kind === kind).map((item) => item.id);
     const usable = (kind: Kind) =>
-      listed.filter((item) => item.kind === kind && !isRejected(item)).map((item) => item.id);
+      listed.filter((item) => item.kind === kind && !item.rejected).map((item) => item.id);
     const fragmentIds = new Set(known("fragment"));
     const missing = (id: string, kind: Kind) =>
       new NotFound({ details: { suggestions: closest(id, usable(kind)), id, kind } });
+
+    const loadStack = Effect.gen(function* () {
+      if (options.stack === null) return null;
+      if (!known("stack").includes(options.stack)) return yield* missing(options.stack, "stack");
+      const entry = yield* registry.get("stack", options.stack);
+      if (!isStack(entry)) return yield* Effect.die(new Error("Registry returned a non-stack"));
+      return entry;
+    });
+    const stack = yield* loadStack;
+    for (const pinned of stack?.composition ?? []) fragmentIds.add(pinned.id);
 
     const checkRequestedFragment = (id: string) =>
       Effect.gen(function* () {
@@ -63,9 +89,7 @@ export function selectFragments(
         }
       });
     const validateRequested = Effect.gen(function* () {
-      // Ids the user typed are checked before anything is selected.
-      if (options.stack !== null && !known("stack").includes(options.stack))
-        return yield* missing(options.stack, "stack");
+      // Historical pins are valid fragment ids even when the current schema is unsupported.
       for (const id of [...options.with, ...options.without]) yield* checkRequestedFragment(id);
       const without = new Set(options.without);
       const withIds = [...new Set(options.with)].sort(byId);
@@ -77,10 +101,6 @@ export function selectFragments(
     });
     const { without, withIds } = yield* validateRequested;
 
-    const stackEntry = options.stack === null ? null : yield* registry.get("stack", options.stack);
-    if (stackEntry !== null && !isStack(stackEntry))
-      return yield* Effect.die(new Error("Registry returned a non-stack"));
-    const stack = stackEntry;
     const existing = new Set(options.existing ?? []);
     const applied = withIds.filter((id) => existing.has(id));
     if (applied.length)
@@ -102,7 +122,7 @@ export function selectFragments(
         if (cached) return cached;
         if (!fragmentIds.has(id))
           return yield* conflict({ reason: "requires", ...edge(requirer, id) });
-        const entry = yield* registry.get("fragment", id);
+        const entry = yield* compositionFragment(registry, { stack, catalog: listed, id });
         if (!isFragment(entry))
           return yield* Effect.die(new Error("Registry returned a non-fragment"));
         loaded.set(id, entry);

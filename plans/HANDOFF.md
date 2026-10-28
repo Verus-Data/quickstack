@@ -12,12 +12,23 @@ to `archive/` and leave a link.
 ## Phase 4 in progress (2026-10-27)
 
 Executed: 4.0a, 4.0b, 4.0c (both repositories: `stacks-api` serves the index and its
-`sha256:`-named bundles, and its API README has the by-hand deploy), 4.4a, 4.4b, 4.4c, 4.5a, and 4.0e's
-signed `v1/names.json` here (its directory pages in `stacks-api` are next; the deploy's
-`_headers` needs a names cache rule there). In flight, as Codex units: 4.0d's implementation
-(tests landed on its branch); 4.5b's acceptance tests. Waiting: 4.2c after 4.0e; everything from 4.1a on behind D17. Maintainers' steps: review the 47 search
+`sha256:`-named bundles, and its API README has the by-hand deploy), 4.0d (the remote origin; no official
+index URL ships until the host exists, so `bin.ts` passes none and the origin is off unless
+`STACKS_INDEX_URL` is set), 4.4a, 4.4b, 4.4c, 4.5a, and 4.0e (`v1/names.json` here, the directory site in `stacks-api`,
+with no source link until the repository has a public URL). 4.5b is implemented with all 30
+bundled cards drafted (by Codex agents in checkouts without the golden set) and waits on a
+maintainer: `bun run decorate --approve <id>` at a terminal for each card, after reading it,
+then it merges. 4.2c's telemetry-free parts are landed: `v1/directory.json` here, and in
+`stacks-api` the newest, tag, fragment and removed-stack pages with the three-link nav; its
+telemetry views remain. 4.2f runs fixture-first: the provisional `StatsSummary` and
+`StatsDetail` are in `packages/format/src/stats.ts`, its data layer is landed in `stacks-api`, and
+the charts wait on OpenChart work done outside these plans (another agent owns the site and
+OpenChart). D17 is decided (opt-out, 2026-10-27) and D16 amended: telemetry storage runs on
+SQLite on the Node host now. In flight: 4.1a (CLI telemetry client) and 4.5c (search, on the 4.5b
+branch); then 4.1b, 4.1c, 4.1d, 4.2a, 4.2g and 4.5e in `stacks-api`, all AGREED. Maintainers' steps: review the 47 search
 judgments (4.5a), generate the index key and add it to `INDEX_PUBLIC_KEYS`, rerun the bench per
-stack so the index proves something (4.0c), and publish `@stacks/format` before 4.1b.
+stack so the index proves something (4.0c), and publish `@stacks/format` (until then the API
+copies the schemas it reads).
 
 ## Demo outline (2026-10-27)
 

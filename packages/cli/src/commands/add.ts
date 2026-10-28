@@ -4,7 +4,7 @@ import { add } from "../core/add";
 import { renderAdd } from "../core/add/report";
 import { MANIFEST_PATH, readManifest } from "../core/manifest";
 import { pickAdd, promptingAllowed, replayFlags, runningCommand } from "../core/prompting";
-import { defaultRoots, Registry } from "../core/registry/registry";
+import { Registry, remoteRoots } from "../core/registry/registry";
 import { Usage } from "../errors";
 import { INCOMING, METADATA_DIR } from "../project-layout";
 import { AddResult } from "../schemas/add";
@@ -36,7 +36,7 @@ export const addCommand = Command.make(
         host.cwd,
         Option.getOrElse(flags.dir, () => "."),
       );
-      const roots = (yield* defaultRoots).map((entry) =>
+      const roots = (yield* remoteRoots).map((entry) =>
         entry.origin === "project" ? { ...entry, path: path.join(project, METADATA_DIR) } : entry,
       );
       const fragments = flags.fragments.length

@@ -1,6 +1,6 @@
 # Phase 4.1a: Usage telemetry, CLI side
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: IN PROGRESS 2026-10-27 (D17 decided: opt-out with these protections)
 
 | Field | Value |
 |---|---|

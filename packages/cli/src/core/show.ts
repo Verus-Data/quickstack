@@ -12,15 +12,15 @@ import { fitsStack } from "./compose/selection";
 import { fingerprint } from "./fingerprint";
 import { lastDefaultRecord, latestMatchingRecord, ledgerAdapterSets, readLedger } from "./ledger";
 import { toRow } from "./list";
-import { type Entry, isStack, outputPath, type RejectedEntry } from "./registry/entry";
-import { defaultRoots, Registry, type RegistryRoot, type RegistryRoots } from "./registry/registry";
+import { type CatalogEntry, type Entry, outputPath } from "./registry/entry";
+import { Registry, type RegistryRoot, type RegistryRoots, remoteRoots } from "./registry/registry";
 import { closest } from "./suggest";
 import { BUDGET, bodyLimit, canonicalBrief, composedLimit } from "./validate/budget";
 
 /** Full review data; neither entries nor tools are executed. */
 export const showReport = (id: string, kind: Kind | undefined, reviewRoots?: RegistryRoots) =>
   Effect.gen(function* () {
-    const roots = reviewRoots ?? (yield* defaultRoots);
+    const roots = reviewRoots ?? (yield* remoteRoots);
     const settings = yield* (yield* AppConfig).get;
     const output = yield* Output;
     const bundled = roots.find((root) => root.origin === "bundled");
@@ -32,7 +32,7 @@ export const showReport = (id: string, kind: Kind | undefined, reviewRoots?: Reg
     const records = ledger?.records ?? [];
     return yield* Effect.gen(function* () {
       const registry = yield* Registry;
-      const all = yield* registry.all;
+      const all = yield* registry.catalog;
       const match = yield* findEntry(all, id, kind);
       const entry = yield* registry.get(match.kind, id);
       const row = toRow(entry, records);
@@ -57,7 +57,10 @@ export const showReport = (id: string, kind: Kind | undefined, reviewRoots?: Reg
               mode: "new",
             })
           : null;
-      const lastRun = yield* entryLastRun(entry, records, bundled);
+      const lastRun =
+        entry.indexEntry?.lastRun && row.lastRun
+          ? { ...row.lastRun, sameContent: yield* indexSameContent(entry) }
+          : yield* entryLastRun(entry, records, bundled);
       return {
         ...row,
         path: entry.dir,
@@ -79,7 +82,7 @@ export const showReport = (id: string, kind: Kind | undefined, reviewRoots?: Reg
     }).pipe(Effect.provide(Registry.layer(roots)));
   });
 
-function selectionMetadata(entry: Entry, all: ReadonlyArray<Entry | RejectedEntry>) {
+function selectionMetadata(entry: Entry, all: ReadonlyArray<CatalogEntry>) {
   const { meta } = entry;
   return meta.kind === "stack"
     ? { fragments: meta.fragments }
@@ -91,13 +94,35 @@ function selectionMetadata(entry: Entry, all: ReadonlyArray<Entry | RejectedEntr
         requiresTools: meta.requiresTools,
         needsOwnRepo: meta.needsOwnRepo,
         fits: all
-          .filter(isStack)
-          .filter((stack) => fitsStack(meta.appliesTo, { id: stack.id, tags: stack.meta.tags }))
+          .filter((entry) => entry.kind === "stack" && !entry.rejected)
+          .filter((stack) => fitsStack(meta.appliesTo, stack))
           .map((stack) => stack.id),
       };
 }
 
-const findEntry = (all: ReadonlyArray<Entry | RejectedEntry>, id: string, kind: Kind | undefined) =>
+const indexSameContent = Effect.fn("show.indexSameContent")(function* (entry: Entry) {
+  const proof = entry.indexEntry?.lastRun;
+  if (!proof || (proof.preset !== "default" && proof.preset !== "sandbox")) return false;
+  const preset = proof.preset;
+  const currents = yield* Effect.forEach(ledgerAdapterSets(proof.agent), (agents) =>
+    Effect.result(
+      compose({
+        stack: entry.id,
+        with: [],
+        without: [],
+        preset,
+        agents,
+        always: [],
+        mode: "new",
+      }).pipe(Effect.flatMap(fingerprint)),
+    ),
+  );
+  return currents.some(
+    (current) => Result.isSuccess(current) && current.success === proof.fingerprint,
+  );
+});
+
+const findEntry = (all: ReadonlyArray<CatalogEntry>, id: string, kind: Kind | undefined) =>
   Effect.gen(function* () {
     const matches = all.filter(
       (entry) => entry.id === id && (kind === undefined || entry.kind === kind),
@@ -193,5 +218,7 @@ const entryLastRun = (
 ) =>
   entry.origin === "bundled" && bundled
     ? // A bundled run is compared only to bundled inputs, never a local shadow of a fragment.
-      bundledLastRun(entry, records).pipe(Effect.provide(Registry.layer([bundled])))
+      bundledLastRun(entry, records).pipe(
+        Effect.provide(Registry.layer([{ ...bundled, remote: false }])),
+      )
     : Effect.succeed(null);

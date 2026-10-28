@@ -101,7 +101,7 @@ describe("delegate.sh", () => {
     expect(result.status, result.stderr).toBe(0);
   });
 
-  it("runs Codex unsandboxed on sol 6.1 at high effort and digests a completed turn", () => {
+  it("runs Codex unsandboxed on sol 6.1 at high effort in fast mode and digests a completed turn", () => {
     const result = run([contract, "--worktree", worktree, "--write"]);
     expect(result.status, result.stderr).toBe(0);
     const args = readFileSync(join(root, "args.txt"), "utf8").split("\n");
@@ -110,9 +110,11 @@ describe("delegate.sh", () => {
         'sandbox_mode="danger-full-access"',
         "gpt-6.1-sol",
         'model_reasoning_effort="high"',
+        'service_tier="priority"',
         'approval_policy="never"',
       ]),
     );
+    expect(result.stdout).toContain("delegate:  codex gpt-6.1-sol (high, priority, write)");
     expect(args).not.toContain("--ephemeral");
     expect(args.join("\n")).toContain("Do the thing.");
     expect(result.stdout).toContain("result:    success - turn completed");
@@ -120,6 +122,16 @@ describe("delegate.sh", () => {
     expect(result.stdout).toContain("  [0] bun run test");
     expect(result.stdout).toContain("  ?? src.txt");
     expect(result.stdout).toContain("  Changed src.txt");
+  });
+
+  it("takes the service tier from DELEGATE_SERVICE_TIER", () => {
+    const result = run([contract, "--worktree", worktree, "--write"], {
+      DELEGATE_SERVICE_TIER: "default",
+    });
+    expect(result.status, result.stderr).toBe(0);
+    const args = readFileSync(join(root, "args.txt"), "utf8").split("\n");
+    expect(args).toContain('service_tier="default"');
+    expect(args).not.toContain('service_tier="priority"');
   });
 
   it("lists changed paths outside the contract's May change entries", () => {

@@ -197,13 +197,34 @@ export function configLayer(env: Environment = process.env) {
         noColor: Boolean(captured.NO_COLOR),
         forceColor: captured.FORCE_COLOR === "1",
       });
-      return { get, paths, logging, childEnv, agent, color, ci: captured.CI !== undefined };
+      let offlineFlag = false;
+      const offline = Effect.sync(() => offlineFlag || captured.STACKS_OFFLINE === "1");
+      const setOffline = (value: boolean) =>
+        Effect.sync(() => {
+          offlineFlag = value;
+        });
+      const indexUrl = read(text("STACKS_INDEX_URL")).pipe(Effect.map((url) => url || undefined));
+      return {
+        get,
+        paths,
+        logging,
+        childEnv,
+        agent,
+        color,
+        ci: captured.CI !== undefined,
+        indexUrl,
+        offline,
+        setOffline,
+      };
     }),
   );
 }
 export class AppConfig extends Context.Service<
   AppConfig,
   {
+    indexUrl: Effect.Effect<string | undefined>;
+    offline: Effect.Effect<boolean>;
+    setOffline: (value: boolean) => Effect.Effect<void>;
     get: Effect.Effect<Settings, InvalidConfig>;
     paths: Effect.Effect<Paths>;
     logging: Effect.Effect<LogSettings>;

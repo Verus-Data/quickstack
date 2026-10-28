@@ -1,4 +1,4 @@
-import { FragmentMeta, type Kind, StackMeta } from "@stacks/format";
+import { FragmentMeta, type IndexEntry, type Kind, StackMeta } from "@stacks/format";
 import { Effect, Result, Schema, SchemaIssue } from "effect";
 import { parseDocument } from "yaml";
 import type { Origin } from "../../schemas/origin";
@@ -16,6 +16,14 @@ export type Entry = {
   shadows: ReadonlyArray<Origin>;
   meta: StackMeta | FragmentMeta;
   body: string;
+  /** Index proof and the exact default fragment snapshot, including bundled fallback. */
+  indexEntry?: IndexEntry;
+  composition?: ReadonlyArray<Entry>;
+};
+/** Names and tags used for selection without downloading unrelated entry bundles. */
+export type CatalogEntry = Pick<Entry, "id" | "kind" | "origin"> & {
+  tags: ReadonlyArray<string>;
+  rejected: boolean;
 };
 /** The kind and id identify an entry even when a stack and fragment share an id. */
 export const entryRef = (entry: Entry) => ({ kind: entry.kind, id: entry.id });

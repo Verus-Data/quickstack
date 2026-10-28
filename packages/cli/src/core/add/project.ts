@@ -4,7 +4,6 @@ import { BadInput, VerifyChanged } from "../../errors";
 import type { AddResult } from "../../schemas/add";
 import type { AddOptions } from "../add";
 import { MANIFEST_PATH, readManifest } from "../manifest";
-import { type Entry, isRejected } from "../registry/entry";
 import { Registry } from "../registry/registry";
 import { checkTamper } from "../verify/tamper";
 import { checkAddRoot } from "./plan";
@@ -30,11 +29,8 @@ export const readAddProject = (options: AddOptions) =>
       [...new Set(options.agents)].sort().join(",") !== [...previous.agents].sort().join(",")
     )
       return yield* new BadInput({ details: { id: options.agents.join(","), flag: "agents" } });
-    const all = yield* (yield* Registry).all;
-    const stack = all.find(
-      (entry): entry is Entry =>
-        !isRejected(entry) && entry.kind === "stack" && entry.id === previous?.stack?.id,
-    );
+    const registry = yield* Registry;
+    const stack = yield* projectStack(registry, previous?.stack?.id);
     const warnings: Array<AddResult["warnings"][number]> =
       previous?.stack && !stack ? [{ code: "stack_unknown", id: previous.stack.id }] : [];
     return {
@@ -47,3 +43,8 @@ export const readAddProject = (options: AddOptions) =>
     };
   });
 export type AddProject = Effect.Success<ReturnType<typeof readAddProject>>;
+
+function projectStack(registry: Registry["Service"], id: string | undefined) {
+  if (id === undefined) return Effect.succeed(undefined);
+  return registry.get("stack", id).pipe(Effect.orElseSucceed(() => undefined));
+}

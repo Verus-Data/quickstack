@@ -9,6 +9,8 @@
 # refactors, runs the gate and owns the commit. .claude/skills/delegate/SKILL.md is the workflow.
 #
 # Model and effort: DELEGATE_MODEL (default gpt-6.1-sol), DELEGATE_EFFORT (default high).
+# Service tier: DELEGATE_SERVICE_TIER (default priority, Codex's fast mode: about twice the speed
+# for more usage; `default` turns it off). Codex drops a tier the model doesn't offer.
 # Wall clock: DELEGATE_TIMEOUT_SECS (default 3600). Run it in the background from Claude; a
 # foreground Bash call is capped at 10 minutes.
 #
@@ -34,6 +36,7 @@ PREAMBLE="You are working in a git worktree for an orchestrator that reviews, re
 
 MODEL="${DELEGATE_MODEL:-gpt-6.1-sol}"
 EFFORT="${DELEGATE_EFFORT:-high}"
+SERVICE_TIER="${DELEGATE_SERVICE_TIER:-priority}"
 TIMEOUT_SECS="${DELEGATE_TIMEOUT_SECS:-3600}"
 LOG_ROOT="${DELEGATE_LOG_ROOT:-${TMPDIR:-/tmp}/stacks-delegate}"
 LAST_MESSAGE_LINES=60
@@ -206,6 +209,7 @@ run_capped "$TIMEOUT_SECS" "$CODEX" "${SUBCOMMAND[@]}" \
     --model "$MODEL" \
     -c "sandbox_mode=\"$SANDBOX\"" \
     -c "model_reasoning_effort=\"$EFFORT\"" \
+    -c "service_tier=\"$SERVICE_TIER\"" \
     -c 'approval_policy="never"' \
     --json \
     --output-last-message "$LAST_FILE" \
@@ -234,7 +238,7 @@ else
 fi
 
 # --- digest --------------------------------------------------------------------
-echo "delegate:  codex $MODEL ($EFFORT, $([ "$WRITE" = 1 ] && echo write || echo read-only))"
+echo "delegate:  codex $MODEL ($EFFORT, $SERVICE_TIER, $([ "$WRITE" = 1 ] && echo write || echo read-only))"
 echo "worktree:  $WT"
 echo "exit:      $RC  (${ELAPSED}s)"
 echo "result:    $STATUS - $REASON"

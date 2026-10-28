@@ -1,6 +1,6 @@
 # Phase 4.1c: Telemetry maintenance and retention
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: AGREED 2026-10-27 (on SQLite on the Node host, amended D16)
 
 | Field | Value |
 |---|---|
@@ -146,6 +146,8 @@ export const maintain: (now: Date) => Effect.Effect<MaintenanceReport, never,
 - After the first deploy, one scheduled run has completed, `official_names` and `released_versions` are filled and `last_success` is set before any CLI release turns collection on (checked by 4.1e's procedure).
 
 ## What this plan may get wrong
+
+- 2026-10-27 (amended D16): runs on the Node host's SQLite store (4.1b's dated line). The scheduled entry is a Node timer in `apps/api/src/platform/` that runs the same `maintain` program on the planned schedule under its lease; Workers' cron trigger replaces it at 4.0f. The archive goes to a local directory from config until object storage exists.
 
 - Reading npm from the scheduled job adds an outside dependency to the server. It's one request a day; a publish-time push is an optional later speed-up.
 - Count matching proves the archive has the right number of rows, not the right rows. A digest of the day's rows would be stronger; add it if the archive is ever used for more than recomputing aggregates.
