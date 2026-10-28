@@ -17,7 +17,7 @@ index URL ships until the host exists, so `bin.ts` passes none and the origin is
 `STACKS_INDEX_URL` is set), 4.4a, 4.4b, 4.4c, 4.5a, and 4.0e's signed `v1/names.json`. In
 flight, as Codex units: 4.0e's directory site in `stacks-api`; 4.5b's implementation (the
 bundled cards follow, drafted in a checkout without the golden set, then approved by a
-maintainer at a terminal before 4.5b merges). Waiting: 4.2c after 4.0e; everything from 4.1a on behind D17. Maintainers' steps: review the 47 search
+maintainer at a terminal before 4.5b merges). Also in flight: 4.2c's telemetry-free parts, `v1/directory.json` here and its pages in `stacks-api` (the pages merge after 4.0e's). Waiting: everything from 4.1a on behind D17. Maintainers' steps: review the 47 search
 judgments (4.5a), generate the index key and add it to `INDEX_PUBLIC_KEYS`, rerun the bench per
 stack so the index proves something (4.0c), and publish `@stacks/format` before 4.1b.
 

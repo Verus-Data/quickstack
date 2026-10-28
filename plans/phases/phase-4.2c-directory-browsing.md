@@ -1,6 +1,6 @@
 # Phase 4.2c: Directory browsing
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: IN PROGRESS 2026-10-27: the telemetry-free parts (`v1/directory.json`, newest, tags, fragments, removed pages, nav); the telemetry views wait on D17, 4.2b and 4.2f
 
 | Field | Value |
 |---|---|
@@ -59,6 +59,23 @@ An agent page answers "which stacks work with the agent I use", which is a ranki
 ### When an entry was added
 
 `build:index` takes an entry's added date from git: the commit date of the first commit that added its definition file (`git log --diff-filter=A --format=%cI -- <entry>/STACK.md`), run through `Processes` like the build's other git reads. An index-only entry uses the same rule on its source path. The dates go into `v1/directory.json`, signed in the same envelope as the index; the site verifies it with `INDEX_PUBLIC_KEYS` like the index and fails its build on a bad signature. The date is the content's age, not its popularity, so the newest view needs no telemetry and no `installs` table.
+
+### `v1/directory.json`
+
+Added 2026-10-27, so this repository's build and the site can be written at the same time. `packages/format/src/directory.ts::DirectoryData` is the payload, signed in the same `SignedIndex` envelope (same key, same verification) and written beside `v1/index.json` and `v1/names.json`:
+
+```json
+{ "formatVersion": 1, "generatedAt": "<ISO>", "commit": "<sha>",
+  "entries": [ { "id": "astro-api", "kind": "stack", "addedAt": "<ISO commit date>" } ],
+  "removed": [ { "id": "old-stack", "kind": "stack", "removedAt": "2027-03-01",
+                 "replacedBy": "new-stack", "reason": "Merged into new-stack",
+                 "last": { "version": "v0.3.1", "name": "Old stack", "description": "...",
+                           "tags": ["api"],
+                           "steps": [ { "name": "test", "phase": "check", "layer": "test", "run": "bun run test" } ],
+                           "lastRun": { "...": "LastRun, optional" } } } ] }
+```
+
+`entries` has one row per index entry, stacks and fragments, sorted by kind then id. `removed` is sorted by id. `replacedBy` is optional: a removed entry with no replacement omits it, and its page's notice drops the "Use <replacedBy> instead." sentence and the copy command. `last.version` is the last `v*` release tag that shipped the entry (the same tags `release-names.ts` reads); `last.steps` holds each step's `name`, `phase`, `layer` (optional, as in the entry) and `run`, with `withStepDefaults` applied. The site reads every other fact about current entries from the index and its bundles, as 4.0e's pages do. `removed.json`'s rows use the same `replacedBy` (optional), `reason`, `kind` and `removedAt` (`YYYY-MM-DD`).
 
 ### Removed entries
 
@@ -159,4 +176,5 @@ A tag page lists every current stack and fragment carrying that tag, by name, wi
 - 2026-10-27: a review of the site's design mocks found a nav entry for a fragment index the plan didn't have, a nav that would link to unbuilt views, a trending field that mixed "doesn't qualify" with "too few to publish" and had no inputs to draw, and a lift list that would rank a required fragment. `/fragments/`, the nav rule, `last7` and `prior28` with the split, the `requires` exclusion and `oftenUsedWith` on the fragment detail are added above.
 - 2026-10-27: the mocks show stars (counts on list rows and fragment pages, a "Starred" browse view, an avatar in the nav). The site leaves them out, per roadmap "Won't have" ("Ratings, reviews, accounts"); a local-only saved list would be a new proposal in `requirements.md`.
 - 2026-10-27: the mocks' agent breakdown lists `gemini`, which the CLI can't record: an agent it doesn't detect is `other` (roadmap, Contracts: Agent ids). Agent pages and rows show only `DetectedAgent` values.
+- 2026-10-27: execution splits the telemetry-free parts into this repository's `v1/directory.json` build and the site's pages, written in parallel against the `DirectoryData` shape above; the site's test fixture is regenerated from the real build before its pages merge. `replacedBy` became optional, since a stack can be retired with nothing to replace it. The nav, with both switches off, links the directory, `/browse/newest/` and `/fragments/`; tag pages are reached from the tags on each row and stack page.
 - An agent page is a ranking of stacks per agent, which some readers will still read as agents compared. Open question 31 is the maintainers' call; if they say no, drop `/agents/*` and keep the stack page breakdown.
