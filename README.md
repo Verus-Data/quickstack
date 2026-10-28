@@ -1,24 +1,26 @@
 # stacks
 
-stacks starts projects for coding agents. To use it, follow the [quick start](packages/cli/docs/quickstart.md); the [docs index](packages/cli/docs/README.md) has everything else.
+stacks starts projects for coding agents: it writes starter files and a build brief, then runs the project's declared checks. Browse the catalog at [stacks.steamfield.io](https://stacks.steamfield.io), or follow the [quick start](packages/cli/docs/quickstart.md); the [docs index](packages/cli/docs/README.md) has everything else.
 
 ## Install
 
 stacks needs Node 22 or newer, on macOS or Linux. The npm package is `@steamfield/stacks`; run it with `npx`, no install step:
 
 ```sh
-npx @steamfield/stacks list stacks                # see what you can build
-npx @steamfield/stacks new typescript-cli my-cli  # write a project and hand it to your coding agent
-npx @steamfield/stacks skill install              # or let your agent drive: install the Claude Code skill
+npx @steamfield/stacks@latest search "TypeScript command line tool"
+npx @steamfield/stacks@latest show typescript-cli
+npx @steamfield/stacks@latest new typescript-cli my-cli --sandbox
+cd my-cli
+# Have your coding agent read .stacks/BRIEF.md and build the project, then:
+npx @steamfield/stacks@latest verify --all
 ```
+
+`search` finds recipes in plain words; `show` lets you inspect the choice before writing anything. `new` writes the brief and hands it to your coding agent. The agent builds and fixes failures with `verify`; run `verify --all` before calling it done. `--sandbox` keeps the project local and uses default decisions.
 
 Or install it globally. The package is `@steamfield/stacks`, but the command it puts on your PATH is `stacks`:
 
 ```sh
-npm install -g @steamfield/stacks
-stacks --version
-stacks list stacks
-stacks new typescript-cli my-cli
+npm install -g @steamfield/stacks@latest
 ```
 
 This repository is a bun workspace. Product planning is in [plans/](plans/README.md) and [product/](product/PROBLEM_STATEMENT.md).

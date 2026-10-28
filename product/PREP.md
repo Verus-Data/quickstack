@@ -73,7 +73,7 @@ stacks new python-react stacks-demo --sandbox --no-launch --json
 From the generated project:
 
 ```sh
-stacks verify
+stacks verify --all
 stacks runs
 ```
 
