@@ -16,6 +16,7 @@ import {
 import { writeLedger } from "./ledger";
 import { git, type NamesFixture, succeeded } from "./official-names";
 import { minimal, writeEntry } from "./registry";
+import { reviewSearchFixture } from "./search-fixture";
 
 export async function buildDirectory(f: NamesFixture, out = f.out, previous = "none") {
   succeeded(await f.invoke(["--out", out, "--previous", previous, "--key", privateKey]));
@@ -71,6 +72,7 @@ export function writeRemoved(f: NamesFixture, entries: Record<string, unknown>) 
 
 /** The committer date is the oracle's input; git's author date deliberately differs. */
 export function commitAt(f: NamesFixture, date: string, message: string) {
+  reviewSearchFixture(f.registry);
   git(f, "add", "packages/cli/registry");
   execFileSync("git", ["commit", "--quiet", "-m", message], {
     cwd: f.root,
@@ -130,6 +132,8 @@ export async function removedFixture(temporary: string) {
   git(f, "tag", "v0.10.0");
   rmSync(join(f.registry, "stacks/old-stack"), { recursive: true });
   rmSync(join(f.registry, "fragments/aaa-old-tool"), { recursive: true });
+  rmSync(join(f.registry, "search/stacks/old-stack.json"));
+  rmSync(join(f.registry, "search/fragments/aaa-old-tool.json"));
   writeLedger(f.registry, [f.record]);
   commitAt(f, "2026-11-04T09:00:00Z", "fixture: remove entries");
   git(f, "tag", "v0.11.0");
