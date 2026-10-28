@@ -1,6 +1,6 @@
 # stacks
 
-stacks starts projects for coding agents. You pick a stack, it writes a few starter files and a brief, your coding agent builds the project from the brief, and `stacks verify` says when it's done. To try it, follow the [quick start](docs/quickstart.md).
+stacks starts projects for coding agents. You pick a stack, it writes a few starter files and a brief, your coding agent builds the project from the brief, and `stacks verify --all` runs the checks that define done. Browse the catalog at [stacks.steamfield.io](https://stacks.steamfield.io), or follow the [quick start](docs/quickstart.md).
 
 At a terminal, `new` and `add` launch an available configured agent, or ask you to pick when several harnesses are found. The order is Claude Code, Codex CLI, OpenCode, Cursor CLI, Copilot CLI, then the Codex app on macOS. Use `--launch claude|codex|opencode|cursor|copilot|codex-app` to choose explicitly, or `--no-launch` to print the prompt. A single harness launches without asking; a pick isn't saved. See [agents](docs/agents.md) for detection, adapter targets and launch behavior.
 
@@ -9,10 +9,15 @@ With missing arguments, `new`, `add` and `create` offer numbered choices only in
 The npm package is `@steamfield/stacks`; the command it installs is `stacks`. It needs Node 22 or newer, on macOS or Linux.
 
 ```sh
-npx @steamfield/stacks list stacks  # no install step
-npm install -g @steamfield/stacks   # or install it, then run it as `stacks`
-stacks new typescript-cli my-cli
+npx @steamfield/stacks@latest search "TypeScript command line tool"
+npx @steamfield/stacks@latest show typescript-cli
+npx @steamfield/stacks@latest new typescript-cli my-cli --sandbox
+cd my-cli
+# Have your coding agent read .stacks/BRIEF.md and build the project, then:
+npx @steamfield/stacks@latest verify --all
 ```
+
+Search in plain words, inspect the recipe, then scaffold it. `--sandbox` keeps the project local and uses default decisions. The agent follows the brief and loops on `verify` until green; use `verify --all` for the final acceptance run. For a global install, run `npm install -g @steamfield/stacks@latest` and use `stacks` in place of `npx @steamfield/stacks@latest`.
 
 Run `stacks update` to upgrade a global npm install, or `stacks update --check` to report versions without installing. Other installs get the command to run; agents may check but cannot install. Each invocation makes one request to the npm registry, with no background checks.
 
@@ -22,7 +27,7 @@ The CLI is TypeScript on Effect, bundled for Node. It executes nothing it reads:
 
 When configured, the index cache lives under `$XDG_CACHE_HOME/stacks/index/` (normally `~/.cache/stacks/index/`). It refreshes after 24 hours with a 1,500 ms request deadline, falling back to verified stale data or bundled entries. Failures back off for ten minutes, or 24 hours after a 404. Every command accepts `--offline`; `STACKS_OFFLINE=1` also prevents registry requests while retaining verified cached entries. `doctor --json` reports `remoteIndex` without refreshing, with `url: null` when the origin is off. `STACKS_INDEX_URL` requires HTTPS (HTTP is allowed on localhost and 127.0.0.1). Configured URLs are untrusted and never auto-launch an agent unless they match an official URL supplied by a future release, whose signature must verify against its compiled-in key list. See [Configuration](docs/reference/configuration.md).
 
-`list` and `show` can add published stats for bundled and index entries. `list --json` carries a summary per entry; `show --json` carries the full detail, including agent breakdowns and a weekly series. Stats are optional: a missing, unpublished or unreachable response adds no warning or exit change. The stats cache is under `$XDG_CACHE_HOME/stacks/stats/`, with a 24-hour refresh, a 1,500 ms fetch deadline, and per-resource backoff of ten minutes after a failure or 24 hours after a 404. `--offline` makes no stats request. A non-default `STACKS_INDEX_URL` disables stats, because those numbers describe a different registry. This release has no default stats API URL; source builds can use a loopback `STACKS_DEV_API_URL`.
+`list` and `show` can add published stats for bundled and index entries. `list --json` carries a summary per entry; `show --json` carries the full detail, including agent breakdowns and a weekly series. Stats are optional: a missing, unpublished or unreachable response adds no warning or exit change. The stats cache is under `$XDG_CACHE_HOME/stacks/stats/`, with a 24-hour refresh, a 1,500 ms fetch deadline, and per-resource backoff of ten minutes after a failure or 24 hours after a 404. `--offline` makes no stats request. A non-default `STACKS_INDEX_URL` disables stats, because those numbers describe a different registry. The release uses `https://stacks.steamfield.io` for search and stats; search falls back to local ranking if the API is unavailable. No API configuration is needed.
 
 | Stats field or text | Meaning |
 | --- | --- |
@@ -71,7 +76,7 @@ bun run check                 # this package's gate
 
 `bun run check` runs Biome (including the boundary plugin), TypeScript, Vitest on Node, then the package e2e checks, which pack the npm tarball, install it offline and run it under Node. `bun run coverage` measures application code. Tests isolate HOME/XDG and clear credentials; e2e tests create their environment from scratch. No `.env`, credentials or external services are needed.
 
-Commands here run from `packages/cli/`; the repo root has the same names fanned out to every package. See [AGENTS.md](../../AGENTS.md), [the harness guide](../../docs/harness.md), and [the installed Effect guide](../../.claude/skills/effect/SKILL.md). CI reads Bun from packageManager through [setup-bun](https://github.com/oven-sh/setup-bun). Maintainer tasks (the bench, the ledger, publishing the plugin) are in [Maintaining the bundled registry](docs/maintaining.md).
+Commands here run from `packages/cli/`; the repo root has the same names fanned out to every package. See [AGENTS.md](../../AGENTS.md), [the harness guide](../../docs/harness.md), and [the installed Effect guide](../../.claude/skills/effect/SKILL.md). CI reads Bun from packageManager. Maintainer tasks (the bench, the ledger, publishing the plugin) are in [Maintaining the bundled registry](docs/maintaining.md).
 
 ## Telemetry
 

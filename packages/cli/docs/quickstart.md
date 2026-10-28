@@ -1,15 +1,15 @@
 # Quick start
 
-This guide takes you from nothing to a project your coding agent is building, in about five minutes. You'll install the CLI, pick a stack, preview it, write the project, and run the check that says when it's done.
+stacks writes starter files and a build brief for your coding agent, then runs the project's declared checks. Browse the catalog at [stacks.steamfield.io](https://stacks.steamfield.io). This guide walks through finding a stack, inspecting it, writing the project, and verifying what the agent builds.
 
 stacks does the setup work that's easy to get subtly wrong: picking the pieces, laying out the project, and writing down what "working" means. Your coding agent (Claude Code, Codex, OpenCode or Cursor) does the building. The CLI never writes application code and never runs an install script; it writes a few starter files and a brief, and the agent takes it from there.
 
 ```mermaid
 flowchart LR
-  L["list / show<br/>pick a stack"] --> D["new --dry-run<br/>preview"]
+  L["search / show<br/>pick a stack"] --> D["new --dry-run<br/>preview"]
   D --> N["new<br/>write the project"]
   N --> A(["Agent builds<br/>from the brief"])
-  A --> V{"verify"}
+  A --> V{"verify --all"}
   V -- "failed" --> A
   V ==>|green| G(("Done"))
 
@@ -35,42 +35,39 @@ The blue steps are yours, and this guide walks through each one. The purple loop
 stacks is on npm as `@steamfield/stacks`, so there's nothing to clone or build. The quickest way in is `npx`, which downloads the package on first use and runs it:
 
 ```sh
-npx @steamfield/stacks --version
-npx @steamfield/stacks list stacks
+npx @steamfield/stacks@latest search "TypeScript command line tool"
 ```
 
-If you'll use it more than once, install it globally. You install the package `@steamfield/stacks`, but the command it puts on your PATH is `stacks`, so you type `stacks list`, not `@steamfield/stacks list`:
+If you'll use it more than once, install it globally. You install the package `@steamfield/stacks`, but the command it puts on your PATH is `stacks`:
 
 ```sh
-npm install -g @steamfield/stacks
-stacks --version
+npm install -g @steamfield/stacks@latest
 ```
 
-If `--version` prints a version, you're set. `stacks doctor` shows where it looks for everything, if you ever need to check.
+`stacks doctor` shows where it looks for everything, if you ever need to check.
 
-The rest of this guide writes `stacks <command>`. With `npx`, use `npx @steamfield/stacks` in its place: `npx @steamfield/stacks new typescript-cli my-cli`. Every command works the same either way, and the brief records the exact command your agent should use for `verify`.
-
-Want to run it from source instead, to try a change or write a stack against an unreleased version? Clone [the repository](https://github.com/steamfield/stacks) and follow its development quick start.
+The rest of this guide writes `stacks <command>`. With `npx`, use `npx @steamfield/stacks@latest` in its place: `npx @steamfield/stacks@latest new typescript-cli my-cli --sandbox`. Every command works the same either way, and the brief records the exact command your agent should use for `verify`.
 
 ## Pick a stack
 
-A stack is a recipe for one kind of project: a Go CLI, an Astro blog, a FastAPI backend with a React frontend. List them:
+A stack is a recipe for one kind of project: a Go CLI, an Astro blog, a FastAPI backend with a React frontend. Search for what you want in plain words:
 
 ```sh
-stacks list stacks
+stacks search "TypeScript command line tool"
 ```
+
+One local search returned the following (trimmed). The release tries hosted search first and falls back to local ranking when it is unavailable:
 
 ```text
-Stacks
-  astro-blog               historical pass 2026-10-27
-    A static Astro blog with MDX posts in a zod-validated content collection ...
-  go-cli                   historical pass 2026-10-27
-    A Go command-line tool with cobra commands, viper config ...
-  typescript-cli           historical pass 2026-10-27
-    A Bun-compiled TypeScript CLI with Effect commands and services ...
+Ranked locally: API unavailable.
+
+stack typescript-cli (strong)
+A compiled command-line tool with subcommands, JSON results, lazy configuration and structured logs.
+Why: cli (platforms); cli-tool (productKinds); typescript (languages); TypeScript (id, name, tags); TypeScript command (description); TypeScript command line (body); command line (summary); command (synonyms, goodFor)
+Evidence: last run 2026-10-27: pass
 ```
 
-"historical pass" means a coding agent built that stack's default setup from scratch on that date and every check passed. "unproven" means nobody has recorded such a run yet. The current recipe may have changed; `stacks show <id>` reports whether its content matches.
+The evidence line records a dated agent build that passed its checks. The current recipe may have changed; `stacks show <id>` reports whether its content matches. Use `stacks list stacks` to browse the full catalog.
 
 Read one before you commit to it:
 
@@ -80,7 +77,7 @@ stacks show typescript-cli
 
 `show` prints everything the stack would tell your agent: the layout it wants, the decisions it will ask about, the checks that define done, and the files it ships. It only reads; nothing runs.
 
-This guide uses `typescript-cli`. Swap in any stack id.
+This guide uses `typescript-cli`. It fits a command-line tool with Effect services; it requires Bun as well as Node. Swap in any stack id that fits your project.
 
 ## Preview the project
 
@@ -90,18 +87,18 @@ Ask for a dry run first. It does everything except write:
 stacks new typescript-cli my-cli --sandbox --dry-run
 ```
 
+The output below is trimmed; file counts and brief length can change with the recipe:
+
 ```text
 Planned my-cli from typescript-cli (sandbox).
 Fragments: agent-ops, ci-github, claude-harness, effect-schema, effect, git-hooks
 Agents: claude
 Git: would create a new repository
-Would write 58 files:
+Would write 68 files:
   ...
-Brief: .stacks/BRIEF.md (4666 words)
+Brief: .stacks/BRIEF.md (4767 words)
 Dry run: nothing was written.
 ```
-
-Two things in that output are worth understanding.
 
 The `Fragments:` line lists the add-ons this stack pulls in. A fragment is one capability, such as CI, git hooks or a database, that several stacks can share. `typescript-cli` includes some by default; `list fragments` shows the rest, and `--with` and `--without` change the set.
 
@@ -117,12 +114,13 @@ stacks new typescript-cli my-cli --sandbox
 
 stacks writes the starter files, creates a git repository, and then starts your coding agent in `my-cli/` with one instruction: read the brief and carry it out. You'll be talking to the agent from here on.
 
-If you'd rather start the agent yourself, add `--no-launch`. stacks then prints the prompt to give it:
+If you'd rather start the agent yourself, add `--no-launch`:
 
-```text
-Next: open /path/to/my-cli in your coding agent and give it this prompt:
-  Read .stacks/BRIEF.md and carry it out. It's your full task for this project; you're done when stacks verify passes.
+```sh
+stacks new typescript-cli my-cli --sandbox --no-launch
 ```
+
+Use this instead of the previous command, with a fresh destination. Open `my-cli/` in your agent and ask it to read `.stacks/BRIEF.md` and carry it out, then run `verify --all` before handing back.
 
 ## What landed in your project
 
@@ -139,27 +137,27 @@ The brief is long (thousands of words) because it's written for the agent, which
 
 ## Run verify
 
-`verify` is the definition of done. It runs the checks listed in the manifest (install, lint, typecheck, tests, and whatever else the stack and its fragments require) and reports which pass:
+`verify` runs the checks listed in the manifest (install, lint, typecheck, tests, and whatever else the stack and its fragments require) and reports which pass. Use `--all` for final acceptance so steps skipped by default in the sandbox preset run too:
 
 ```sh
 cd my-cli
-stacks verify
+stacks verify --all
 ```
 
-Run it straight after `new`, before the agent has built anything, and it fails at the first step, which is expected:
+Run it straight after `new`, before the agent has built anything, and it fails at the first step, which is expected (output trimmed):
 
 ```text
-verify: failed (full run; 0 passed, 1 failed, 12 skipped; 0.0s)
+verify: failed (full run; 0 passed, 1 failed, 13 skipped; 0.0s)
 
   failed   setup     install               (exit 1, 0.0s)  exited with status 1
       | error: Bun could not find a package.json file to install from
-  skipped  check     lint                  an earlier setup step failed
+  skipped  setup     git-hooks-install     an earlier setup step failed
   ...
 
 Next: fix the code or config these steps exercise, not the steps, then run stacks verify again.
 ```
 
-The agent runs this same command in a loop: fix what failed, run again. When every step passes, verify prints `verify: green` and exits 0, and the project is done.
+The agent loops on `verify`: fix what failed, run again. Before calling the project done, run `verify --all` and check that every required step passed. A partial run can also exit 0.
 
 Two rules keep that honest. The agent may not edit the steps, and verify checks this itself: before running anything, it compares the steps against a copy recorded when the project was made, and refuses to run if they differ. If you change a step on purpose, accept the change from your own terminal:
 
@@ -213,7 +211,7 @@ New files are written. When a file already exists, stacks leaves it alone and pa
 Everything above also works the other way round: you ask your agent for a project and it runs stacks. Install the skill once:
 
 ```sh
-stacks skill install        # or: npx @steamfield/stacks skill install
+stacks skill install        # or: npx @steamfield/stacks@latest skill install
 ```
 
 That puts a short skill file where Claude Code finds it (`~/.claude/skills/stacks/SKILL.md`). Then, in any Claude Code session, ask for something like "start me a Go CLI with tests and CI". The agent picks a stack, tells you which and why, writes the project and builds it until verify passes. [Using stacks with an agent](agents.md) covers other agents and what the agent sees.

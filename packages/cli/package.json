@@ -42,7 +42,14 @@
     "yaml": "catalog:",
     "@steamfield/stacks-format": "workspace:*"
   },
-  "description": "Compose project guidance and verify agent-built projects.",
+  "description": "Start projects for coding agents with starter files, a build brief and verification checks.",
+  "homepage": "https://stacks.steamfield.io",
+  "keywords": [
+    "cli",
+    "scaffolding",
+    "coding-agents",
+    "project-setup"
+  ],
   "bin": {
     "stacks": "dist/stacks"
   },
@@ -64,7 +71,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/steamfield/stacks.git",
+    "url": "https://github.com/steamfield/stacks",
     "directory": "packages/cli"
   }
 }

@@ -8,15 +8,15 @@ Status: DRAFT 2026-10-28 — a produced 4:45 video backed by an actual agent-bui
 
 Carry one stack's identity through the live catalog, search, project brief, build, and outcome. The viewer should leave knowing what to try, why the recipe fits, and what passing verification establishes.
 
-Use a small Python API and React dashboard. Rho is an optional minimal read-only sandbox connection, not a transaction-review feature. End at a working local starter; application deployment is outside this recording.
+Use a small Python API and React dashboard. End at a working local starter; application deployment is outside this recording.
 
 Positioning: [PITCH.md](PITCH.md). Rehearsal: [PREP.md](PREP.md).
 
 ## The request
 
-> I want a small web tool with a Python API and a React dashboard. Find a suitable stack, explain the choice and tradeoffs, then build a working local starter with tests. If the Rho sandbox connection is ready, include one small read-only example. Show me the declared checks and run them before handing back.
+> I want a small web tool with a Python API and a React dashboard. Find a suitable stack, explain the choice and tradeoffs, then build a working local starter with tests. Show me the declared checks and run them before handing back.
 
-Keep the language and product requirements visible. A Rho integration is work for the coding agent, not a claim that a Rho fragment ships in the catalog.
+Keep the language and product requirements visible.
 
 ## Shot list and narration
 
@@ -67,7 +67,7 @@ Follow one requirement into implementation and a meaningful test, such as the ty
 From the generated project:
 
 ```sh
-stacks verify
+stacks verify --all
 stacks runs
 ```
 
@@ -77,7 +77,7 @@ For the safeguard scene, change one recorded verification command in a disposabl
 
 Command integrity does not guarantee assertion quality. Inspect the test and confirm checks were not weakened or replaced by no-ops.
 
-Show one actual read-only Rho sandbox request if ready. Otherwise show the starter's local API-to-UI interaction and identify Rho as a next step. No charge threshold, duplicate detector, payments, or application deployment.
+Show the starter's local API-to-UI interaction. No charge threshold, duplicate detector, payments, or application deployment.
 
 ## Website: inspect the evidence
 
@@ -106,7 +106,6 @@ Keep the source recording distinct from the site's scripted walkthrough, which u
 | Compatible hosted search with evidence | Actual API-ranked response and explained choice |
 | Local fallback | Local ranking and recipe inspection; website sample analytics separately |
 | Missing current-recipe evidence | Say it is unavailable; identify any historical evidence used |
-| Rho unavailable | Working local starter; Rho as a next step |
 | Seeded metrics | Persistent sample-data labeling |
 | Build incomplete | Working portion and remaining failures; reduce completion claims |
 
@@ -118,4 +117,4 @@ Show technical execution through the fresh build, technical depth through compos
 
 Confirm video length, edited-upload acceptance, and account upload support before export. Check captions, audio, processing time, and share permissions. Provide reproduction commands and access to private hosted implementation through the accepted judging route if needed.
 
-Existing event notes record a GitHub link, description, and Loom video due at 5 pm Thursday, October 29. Confirm the deadline, event timezone, submission time allowance, and Rho eligibility with the organizer. Keep a local recording for connectivity failures.
+Existing event notes record a GitHub link, description, and Loom video due at 5 pm Thursday, October 29. Confirm the deadline, event timezone, and submission time allowance with the organizer. Keep a local recording for connectivity failures.
