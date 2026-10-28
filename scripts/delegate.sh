@@ -104,6 +104,8 @@ if [ $? -eq 2 ] && command -v launchctl >/dev/null; then
         awk '/SSH_AUTH_SOCK =>/ { print $3; exit }')"
     [ -S "$sock" ] && export SSH_AUTH_SOCK="$sock"
 fi
+# The command guard denies a delegate the full gate; Claude runs it after review.
+export STACKS_DELEGATE=1
 
 # A resumed session already has the preamble.
 PROMPT="$(cat "$CONTRACT")"

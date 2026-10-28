@@ -73,7 +73,7 @@ In `packages/cli/` (run there):
 
 ## Test runs
 
-Iterate on scoped tests: the test files or `-t` filter covering what you changed (`bun run test:unit tests/<file>.test.ts` in `packages/cli`, `bun run test` in `packages/format`), plus lint and typecheck. Run the full gate once, as the last check before handing back or committing, and again only after a change made to fix what it found. Never run the full gate or a whole suite to check work in progress: each run holds a host for minutes and delays every other agent's gate. A delegate runs no gate at all; Claude runs it once on the delegate's work after the refactor.
+Iterate on scoped tests: the test files or `-t` filter covering what you changed (`bun run test:unit tests/<file>.test.ts` in `packages/cli`, `bunx vitest run tests/<file>.test.ts` in `packages/format`), plus lint and typecheck. Run the full gate once, as the last check before handing back or committing, and again only after a change made to fix what it found. Never run the full gate or a whole suite to check work in progress: each run holds a host for minutes and delays every other agent's gate. A delegate runs no gate at all; Claude runs it once on the delegate's work after the refactor, and the command guard denies a delegate (`STACKS_DELEGATE=1`, set by `scripts/delegate.sh`) every whole-suite run, local or rr.
 
 Several agents and delegates often work at once, and parallel gates on one laptop starve each other into timeouts. A clone that has test hosts runs the full gate and whole test suites through [rr](https://github.com/rileyhilliard/rr): `.rr.yaml` runs the task on the first free host (the dev machine in place, or a synced remote) under a per-host lock, so concurrent runs queue. All worktrees share one remote copy per host.
 
@@ -183,7 +183,7 @@ After two unsuccessful fixes with no new diagnostic, stop and investigate other 
 
 ## Git hooks
 
-Install lefthook on PATH (e.g. brew install lefthook), then bun install. Pre-commit formats/checks staged code/config and restages safe fixes. Commit-msg requires Conventional Commits, allowing merge/revert/fixup/squash forms. Pre-push runs lint, typecheck and tests in parallel. Never bypass hooks with --no-verify.
+Install lefthook on PATH (e.g. brew install lefthook), then bun install. Pre-commit formats/checks staged code/config and restages safe fixes. Commit-msg requires Conventional Commits, allowing merge/revert/fixup/squash forms. Pre-push runs lint and typecheck in parallel; tests are left to the gate and CI while development moves fast. Never bypass hooks with --no-verify.
 
 ## CI
 

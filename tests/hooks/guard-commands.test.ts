@@ -18,8 +18,13 @@ describe("shared package manager guard", () => {
 });
 
 /** A clone's rr opt-in (`git config stacks.rr`), set through git's env config so it wins. */
-const rrOptIn = (value: string) => ({
-  env: { GIT_CONFIG_COUNT: "1", GIT_CONFIG_KEY_0: "stacks.rr", GIT_CONFIG_VALUE_0: value },
+const rrOptIn = (value: string, delegate?: "1") => ({
+  env: {
+    GIT_CONFIG_COUNT: "1",
+    GIT_CONFIG_KEY_0: "stacks.rr",
+    GIT_CONFIG_VALUE_0: value,
+    STACKS_DELEGATE: delegate,
+  },
 });
 
 describe("whole test suites run through rr in a clone that opts in", () => {
@@ -66,6 +71,42 @@ describe("whole test suites run through rr in a clone that opts in", () => {
       expect(
         denyReason(await runHook("PreToolUse", "guard-commands", bash(command), rrOptIn(value))),
       ).toBeUndefined();
+  });
+});
+
+describe("a delegate runs no full gate", () => {
+  it.each([
+    "rr check",
+    "rr check 2>&1 | tail -1",
+    "rr --host m4-mini check",
+    "rr check-serial",
+    "rr test",
+    "rr test-cli",
+    "rr test-hooks",
+    "rr e2e",
+    "bun run check",
+    "STACKS_LOCAL_GATE=1 bun run check",
+    "cd packages/cli && bun run test:unit",
+  ])("denies %s", async (command) => {
+    expect(
+      denyReason(
+        await runHook("PreToolUse", "guard-commands", bash(command), rrOptIn("true", "1")),
+      ),
+    ).toContain("Delegates run no full gate");
+  });
+  it.each([
+    "rr test-cli tests/cli.test.ts",
+    "rr test-cli -- -t 'a name'",
+    "bun run --cwd packages/cli test:unit tests/cli.test.ts",
+    "cd packages/format && bunx vitest run tests/stats.test.ts",
+    "bun run lint",
+    "bun run typecheck",
+  ])("allows %s", async (command) => {
+    expect(
+      denyReason(
+        await runHook("PreToolUse", "guard-commands", bash(command), rrOptIn("true", "1")),
+      ),
+    ).toBeUndefined();
   });
 });
 
