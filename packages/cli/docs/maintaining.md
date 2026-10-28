@@ -29,6 +29,24 @@ The script discovers the repo from the working directory, archives only the regi
 
 It records only added fragments in `with`, removing fragments already selected by the default composition at that commit. Existing `(repoCommit, stack, date)` records are skipped. Incomplete notes are reported, other notes continue, and any failure exits 1. `--dry-run` prints a JSON array and writes no ledger; `--` ends options. Bun consumes an initial `--` before passing arguments to a script, so single-dash note names are also accepted directly. Use `./` for a note name that collides with a long option.
 
+## Building the index and official names
+
+Fetch the release tags before building. The build reads this checkout's `v*` tags, regardless of the shell's working directory or inherited git selectors:
+
+```sh
+git fetch --tags
+bun run build:index -- --out <output> --previous <live-index-url|none> --key <private-key>
+bun run build:index -- --check <base-url>
+```
+
+The output includes `v1/index.json`, its immutable bundles and `v1/names.json`. Both JSON files use the `SignedIndex` envelope and the same signing key. `--unsigned` writes both with empty signatures for local inspection; `--check` rejects unsigned files.
+
+Official names include every release's stack and fragment ids, each stack's default composition and each default composition plus one optional fragment. Release registries are read with `git archive` into temporary directories and composed with today's code. A release that no longer decodes or composes prints a warning naming its tag and retains recoverable frontmatter ids; unavailable composition details stay empty. Review those warnings before publishing. The index source takes each published stack's exact composition and step names from its pinned bundles, including carried-forward content and sandbox proofs that omit default deploy fragments.
+
+With `--previous <url>`, the build also verifies and merges the previous `v1/names.json`, keeping names from earlier published compositions after steps change or entries are withdrawn. A missing names file (HTTP 404) bootstraps from the previous index's pinned bundles, for an index published before names existed. Other fetch failures, invalid payloads and invalid signatures stop the build. `--previous none` starts with release history and the current index only; use the live index URL to retain names from unreleased index publications.
+
+Review `v1/names.json` alongside the index before deploying. `--check` verifies both signatures, decodes both payloads and checks the immutable bundles. The deploy host must serve `/v1/names.json` with `Cache-Control: public, max-age=300, stale-while-revalidate=3600`; the hosting setup lives in `stacks-api`.
+
 ## Search judgments and baseline
 
 `tests/fixtures/search/golden.json` records requests and relevance judgments for the bundled registry. `tests/helpers/search-golden.ts` owns its `GoldenSet` schema; `tests/helpers/search-eval.ts` evaluates any synchronous ranking function without calling a model or shipping code in the CLI.
