@@ -1,4 +1,5 @@
 export { AgentId, DetectedAgent, Harness } from "./agent.js";
+export { DependencyAllowlist, Ecosystem } from "./allowlist.js";
 export { BundlePath, bundleDigest, canonicalBundle, EntryBundle } from "./bundle.js";
 export { DirectoryData } from "./directory.js";
 export {
@@ -54,14 +55,18 @@ export {
   ValueCell,
 } from "./stats.js";
 export {
+  Dependency,
   TELEMETRY_SCHEMA_VERSION,
   TelemetryAccepted,
   TelemetryAddEvent,
   TelemetryBatch,
   TelemetryErrorEvent,
   TelemetryEvent,
+  TelemetryEventV2,
   TelemetryNewEvent,
   TelemetryShowEvent,
   TelemetryVerifyEvent,
+  TelemetryVerifyEventV2,
   telemetryEventJsonSchema,
+  telemetryEventV2JsonSchema,
 } from "./telemetry.js";
