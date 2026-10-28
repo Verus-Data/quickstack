@@ -31,6 +31,30 @@ test("destructive shell hook denies actual reset and allows status", async () =>
     ).stdout,
   ).toBe("");
 });
+test("destructive shell hook judges a force push by the push's own arguments", async () => {
+  const decide = async (command: string) =>
+    (
+      await runHook(
+        "PreToolUse",
+        "block-destructive",
+        { tool_name: "Bash", tool_input: { command } },
+        options(),
+      )
+    ).stdout;
+  for (const command of [
+    "git push --force origin main",
+    "git push -f origin main",
+    "git push origin +feature:main",
+    "git push origin feature:main && git push -f origin other",
+  ])
+    expect(await decide(command), command).toContain('"deny"');
+  for (const command of [
+    'git push origin feature:main 2>&1 | grep -E "Tests +[0-9]"',
+    "git push origin feature:main; grep -f patterns.txt log",
+    "git push --force-with-lease origin feature",
+  ])
+    expect(await decide(command), command).toBe("");
+});
 test("destructive shell hook asks the user before a publish instead of denying it", async () => {
   for (const command of ["npm publish ./pkg.tgz --access public", "bun publish"]) {
     const result = await runHook(

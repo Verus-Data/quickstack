@@ -143,8 +143,9 @@ is_destructive() {
   fi
 
   # --- Git: rewriting shared history (--force-with-lease is allowed) ----------
-  if m "git[[:space:]]+push[[:space:]](.*[[:space:]])?(-f|--force|-[a-zA-Z]*f[a-zA-Z]*)([[:space:]]|$)" ||
-    m "git[[:space:]]+push[[:space:]](.*[[:space:]])?\+[^[:space:]]+"; then
+  # Only the push's own arguments count: the match stops at the next | ; or &.
+  if m "git[[:space:]]+push[[:space:]]([^|;&]*[[:space:]])?(-f|--force|-[a-zA-Z]*f[a-zA-Z]*)([[:space:]]|[|;&]|$)" ||
+    m "git[[:space:]]+push[[:space:]]([^|;&]*[[:space:]])?\+[^[:space:]]+"; then
     hit "Force push rewrites remote history." "Ask the user first. If it is needed, use --force-with-lease."
     return 0
   fi
