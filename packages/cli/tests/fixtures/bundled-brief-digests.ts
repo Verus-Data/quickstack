@@ -3,16 +3,17 @@
  * version (the brief names `npx -y @steamfield/stacks@<version>`), the checkout-local notes rule,
  * and the telemetry notice-relay rule with two shortened ground rules. python-react changed on
  * 2026-10-28 for its home-route-test step and stub-free uv init (proven in R3's bench run).
+ * The 0.4.0 version in the brief changed all six digests on 2026-10-28.
  * After proving an intentional brief change, regenerate each
  * key from `bun run dev validate --brief <stack> [--sandbox] --json` at the repo root:
  * parse stdout as JSON and sha256 its `brief` string as UTF-8, with no added newline.
  * Both presets use validate's canonical context, not new's machine-dependent brief.
  */
 export const briefDigests: Readonly<Record<string, string>> = {
-  "astro-blog:default": "sha256:48ae31c89c7453e2ed1f3cfc644036f2035436faf48cb1add5eae34f638a8ba1",
-  "astro-blog:sandbox": "sha256:869d0559efa656e0cc1ae078d44c4770b65f853805b619aaeec6482a2b047214",
-  "go-cli:default": "sha256:272cd192439e0b8036f58fc66ab8d133c7d1b940057c357db3a1e64cfe37aa7d",
-  "go-cli:sandbox": "sha256:0e18911cf1274502c62a6c04d31852e8f882a1992f4e7080008e862dcafec268",
-  "python-react:default": "sha256:fe2c937d22084a0d0fbe7d8838946c0d3873091faa4645f742a32b4e9545acff",
-  "python-react:sandbox": "sha256:c9a40f1617b7dda4141fd493e49de4457f37b7dd201f05054f78642e8c68c4b7",
+  "astro-blog:default": "sha256:d88ad5087619b3cfd40e5d40c2337235beb6ecca4acd0b1b7a7dbe9b13960795",
+  "astro-blog:sandbox": "sha256:ca0668224f5078bdaa8d2d82ac96c544c8dd3f98f07a8168d1679a4c6d7c7436",
+  "go-cli:default": "sha256:78994241a7f8d59e315714598afe5264dcd636118d48a4eef73a202e66eecaed",
+  "go-cli:sandbox": "sha256:e91727184709b9612fa30527c4211aa5ec9613c44b2025fef74cd52a1101ebf4",
+  "python-react:default": "sha256:a64c12cb15db8ba72147173602467a278f93dceadcb475d162ecb19ad7817d1e",
+  "python-react:sandbox": "sha256:269c63666d11f7ff80f5ff72ee6921da600347f81a95ddcd4b398c25925122cb",
 };
