@@ -22,7 +22,7 @@ export const quickstacksList = Tool.make("quickstacks_list", {
 
 export const quickstacksNew = Tool.make("quickstacks_new", {
   description:
-    "Scaffold a new project from a stack: writes starter files and .quickstacks/BRIEF.md into the target directory. Runs nothing from the stack; verify is the definition of done. Pass stack (required), dir (optional, defaults to ./<stack>), sandbox (default true), and optional with/without fragment lists. Returns the project path, stack, fragments, agents, written files, brief word count, and handoff info. Fails with CliFailure carrying the CLI's tag, message and details verbatim — NotFound with suggestions, TargetNotEmpty, etc.",
+    "Scaffold a new project from a stack: writes starter files and .stacks/BRIEF.md into the target directory. Runs nothing from the stack; verify is the definition of done. Pass stack (required), dir (optional, defaults to ./<stack>), sandbox (default true), and optional with/without fragment lists. Returns the project path, stack, fragments, agents, written files, brief word count, and handoff info. Fails with CliFailure carrying the CLI's tag, message and details verbatim — NotFound with suggestions, TargetNotEmpty, etc.",
   parameters: NewParams,
   success: NewSuccess,
   failure: CliFailure,
@@ -32,7 +32,7 @@ export const quickstacksNew = Tool.make("quickstacks_new", {
 
 export const quickstacksVerify = Tool.make("quickstacks_verify", {
   description:
-    "Run the project's verify steps from .quickstacks/manifest.json in the given directory (defaults to the server's working directory). Returns the outcome (green/partial/failed/changed/interrupted), totals, duration, and per-step results. A failed outcome is a successful call — do not treat it as an error. Only fails when the CLI itself cannot run. Use this in a loop after new until the outcome is green.",
+    "Run the project's verify steps from .stacks/manifest.json in the given directory (defaults to the server's working directory). Returns the outcome (green/partial/failed/changed/interrupted), totals, duration, and per-step results. A failed outcome is a successful call — do not treat it as an error. Only fails when the CLI itself cannot run. Use this in a loop after new until the outcome is green.",
   parameters: VerifyParams,
   success: VerifySuccess,
   failure: CliFailure,

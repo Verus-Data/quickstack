@@ -10,7 +10,7 @@ JSON-RPC, launched by an agent client as a subprocess.
   filter to `"stack"` or `"fragment"`. Returns each entry's id, kind, name,
   description, tags, origin, trusted flag, shadows and lastRun.
 - **quickstacks_new** — scaffolds a new project from a stack: writes starter
-  files and `.quickstacks/BRIEF.md`. Runs nothing from the stack. Pass `stack`
+  files and `.stacks/BRIEF.md`. Runs nothing from the stack. Pass `stack`
   (required), `dir` (optional), `sandbox` (default `true`), and optional
   `with`/`without` fragment lists. Returns the project path, stack, fragments,
   agents, written files, brief word count, and handoff info. Fails with

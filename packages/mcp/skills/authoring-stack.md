@@ -20,11 +20,11 @@ words. List optional fragments in `with` and default-excluded ones in
 Every file is a template rendered with `composeFiles`. Use `{{variable}}`
 placeholders for values the CLI supplies (project name, scope, agents).
 Mark executable files with a frontmatter `executable: true` line. Never
-put `.quickstacks/` or `.git/` paths in a stack — the CLI owns those.
+put `.stacks/` or `.git/` paths in a stack — the CLI owns those.
 
 ## Verify steps
 
-The stack's `files/.quickstacks/manifest.json` template carries the verify
+The stack's `files/.stacks/manifest.json` template carries the verify
 steps: install, lint, typecheck, test, and anything project-specific. Each
 step has a `run` command, a `phase` (setup, check, serve, teardown), a
 `layer`, and a `timeout`. The CLI runs them in order; a setup failure skips

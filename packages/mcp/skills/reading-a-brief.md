@@ -1,11 +1,11 @@
 ---
 name: reading-a-brief
-description: How to read and carry out a .quickstacks/BRIEF.md after quickstacks new
+description: How to read and carry out a .stacks/BRIEF.md after quickstacks new
 ---
 
 # Reading a brief
 
-After `quickstacks new <stack> <dir>`, the CLI writes `.quickstacks/BRIEF.md`
+After `quickstacks new <stack> <dir>`, the CLI writes `.stacks/BRIEF.md`
 into the project. That brief is the task: carry it out until `quickstacks
 verify` exits 0 with outcome green.
 
@@ -27,11 +27,11 @@ and setup. **Definition of done** is the verify table.
 4. Run `quickstacks verify` from the project root in a loop. Read the step
    name and output tail it reports, fix the code, run again.
 5. If verify reports `VerifyChanged`, stop — only the user can accept that.
-6. Keep `.quickstacks/NOTES.md` under **Findings** for anything ambiguous.
+6. Keep `.stacks/NOTES.md` under **Findings** for anything ambiguous.
 
 ## What not to do
 
-- Don't edit `.quickstacks/manifest.json`.
+- Don't edit `.stacks/manifest.json`.
 - Don't weaken verify steps or skip tests to get green.
 - Don't pin versions from memory; check installed types and docs.
 - Don't run a generator into the populated project root.
