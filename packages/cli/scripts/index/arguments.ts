@@ -2,7 +2,13 @@ import { parseArgs } from "node:util";
 import { Effect } from "effect";
 
 const usage =
-  "Usage: build:index --out <dir> --previous <url|none> (--key <path> | --unsigned), or --check <base-url>";
+  "Usage: build:index --out <dir> --previous <url|none> (--key <path> | --unsigned [--include-unproven]), or --check <base-url>";
+
+export class IncludeUnprovenUsage extends Error {
+  constructor() {
+    super("--include-unproven requires --unsigned and cannot be used with --key or --check.");
+  }
+}
 
 function httpUrl(value: string): URL {
   const url = new URL(value);
@@ -20,9 +26,15 @@ export const argumentsFor = (args: string[]) =>
           previous: { type: "string" },
           key: { type: "string" },
           unsigned: { type: "boolean" },
+          "include-unproven": { type: "boolean" },
           check: { type: "string" },
         },
       });
+      if (
+        values["include-unproven"] &&
+        (!values.unsigned || values.key !== undefined || values.check !== undefined)
+      )
+        throw new IncludeUnprovenUsage();
       if (values.check !== undefined) {
         if (Object.keys(values).length !== 1) throw new Error(usage);
         return { mode: "check", base: httpUrl(values.check) } as const;
@@ -34,7 +46,8 @@ export const argumentsFor = (args: string[]) =>
         out: values.out,
         previous: values.previous === "none" ? null : httpUrl(values.previous),
         key: values.key,
+        includeUnproven: values["include-unproven"] ?? false,
       } as const;
     },
-    catch: () => new Error(usage),
+    catch: (error) => (error instanceof IncludeUnprovenUsage ? error : new Error(usage)),
   });

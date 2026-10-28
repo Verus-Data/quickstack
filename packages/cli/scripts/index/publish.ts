@@ -27,7 +27,11 @@ function selectStacks(
   for (const id of current.stacks) {
     const old = previous?.entries.find((entry) => entry.kind === "stack" && entry.id === id);
     const fresh = entries.get(`stack/${id}`);
-    if (fresh !== undefined) {
+    if (fresh !== undefined && fresh.lastRun === undefined) {
+      lines.push(
+        `Included stack/${id} unproven: no matching pass with zero interventions and full tamper check.`,
+      );
+    } else if (fresh !== undefined) {
       lines.push(
         `${old === undefined ? "Added" : "Updated"} stack/${id}: current default composition proven (${fresh.lastRun?.date}, ${fresh.lastRun?.preset}, ${fresh.lastRun?.agent}).`,
       );

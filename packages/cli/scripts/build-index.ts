@@ -9,7 +9,7 @@ import { stringWidth } from "../src/platform/width";
 import { Host } from "../src/services/host";
 import { Foreground, Processes } from "../src/services/processes";
 import { VERSION } from "../src/version";
-import { argumentsFor } from "./index/arguments";
+import { argumentsFor, IncludeUnprovenUsage } from "./index/arguments";
 import { buildDirectory } from "./index/directory";
 import { historyExec, requireFullHistory } from "./index/history";
 import { indexNames } from "./index/index-names";
@@ -69,7 +69,7 @@ const program = Effect.gen(function* () {
       ? null
       : yield* fetchPreviousDirectory(new URL("directory.json", options.previous).href);
   const base = options.previous === null ? "" : new URL("../", options.previous).href;
-  const current = yield* currentIndex(root);
+  const current = yield* currentIndex(root, options.includeUnproven);
   const selected = yield* carryForward(current, previous, base);
   const path = yield* Path.Path;
   const generatedAt = new Date(yield* Clock.currentTimeMillis).toISOString();
@@ -147,7 +147,7 @@ process.exitCode = await Effect.runPromise(
         error instanceof Error
           ? error.message.split("\n").map(printable).join("\n")
           : "Index build failed.",
-      ).pipe(Effect.as(1)),
+      ).pipe(Effect.as(error instanceof IncludeUnprovenUsage ? 2 : 1)),
     ),
     Effect.provide(layer),
   ),

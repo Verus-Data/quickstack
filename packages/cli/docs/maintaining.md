@@ -41,6 +41,14 @@ bun run build:index -- --check <base-url>
 
 The output includes `v1/index.json`, its immutable bundles, `v1/names.json` and `v1/directory.json`. All three JSON files use the `SignedIndex` envelope and the same signing key. `--unsigned` writes them with empty signatures for local inspection; `--check` rejects unsigned files. Directory added dates come from each definition file's first addition in git, using the committer date. Builds require full git history and refuse shallow clones before touching output.
 
+For a development index that also includes stacks without a qualifying ledger pass:
+
+```sh
+bun run build:index -- --out <output> --previous none --unsigned --include-unproven
+```
+
+`--include-unproven` requires `--unsigned` and cannot be used with `--key` or `--check`; those combinations exit 2. Unproven stacks have no `lastRun` and pin their current default composition, including required fragments and transitive dependencies. Every bundled fragment is published, including optional fragments outside those compositions. Proven stacks retain their proof and pinned composition. Without the flag, the proof gate and carry-forward behavior are unchanged, including for signed builds.
+
 Official names include every release's stack and fragment ids, each stack's default composition and each default composition plus one optional fragment. Release registries are read with `git archive` into temporary directories and composed with today's code. A release that no longer decodes or composes prints a warning naming its tag and retains recoverable frontmatter ids; unavailable composition details stay empty. Review those warnings before publishing. The index source takes each published stack's exact composition and step names from its pinned bundles, including carried-forward content and sandbox proofs that omit default deploy fragments.
 
 With `--previous <url>`, the build also verifies and merges the previous `v1/names.json`, keeping names from earlier published compositions after steps change or entries are withdrawn. A missing names file (HTTP 404) bootstraps from the previous index's pinned bundles, for an index published before names existed. Other fetch failures, invalid payloads and invalid signatures stop the build. `--previous none` starts with release history and the current index only; use the live index URL to retain names from unreleased index publications.

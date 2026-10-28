@@ -64,7 +64,7 @@ In `packages/cli/` (run there):
 | `bun run test:unit tests/cli.test.ts` | Single test file |
 | `bun run test:watch` | Watch Vitest tests |
 | `bun run pack` | Build, pack with Bun, preserve registry dotfiles, and write the tarball's sha256 under `dist/pack/` |
-| `bun run build:index --out <dir> --previous <url\|none> (--key <path> \| --unsigned)` | Build the proven registry index; `--check <base-url>` verifies a served signed index and all its bundles |
+| `bun run build:index --out <dir> --previous <url\|none> (--key <path> \| --unsigned [--include-unproven])` | Build the proven registry index; unsigned development builds may include unproven stacks and every bundled fragment. `--check <base-url>` verifies a served signed index and all its bundles |
 | `bun run e2e` | Pack, install offline, then bun test ./e2e against the installed Node package |
 | `bun run human -- <args>` | The Node bundle in human mode (pseudo-terminal, agent markers removed); `new` and `add` need `--no-launch` |
 | `node dist/stacks --version` | Bundled version |

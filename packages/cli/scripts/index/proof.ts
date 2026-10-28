@@ -8,7 +8,7 @@ import { Effect } from "effect";
 import { type Composition, compose } from "../../src/core/compose/compose";
 import { fingerprint } from "../../src/core/fingerprint";
 import { latestMatchingRecord, ledgerAdapterSets, readLedger } from "../../src/core/ledger";
-import { type Entry, isRejected, isStack } from "../../src/core/registry/entry";
+import { type Entry, isFragment, isRejected, isStack } from "../../src/core/registry/entry";
 import { Registry } from "../../src/core/registry/registry";
 import type { LedgerRecord } from "../../src/schemas/ledger";
 import { bundlePath } from "./remote";
@@ -70,6 +70,15 @@ const rawEntry = Effect.fn("index.rawEntry")(function* (entry: Entry) {
 type Proven = { record: LedgerRecord; composition: Composition };
 type Raw = ReadonlyMap<string, Effect.Success<ReturnType<typeof rawEntry>>>;
 
+function fragmentDigests(fragments: Composition["fragments"], raw: Raw) {
+  const composition: Record<string, string> = {};
+  for (const fragment of fragments) {
+    const value = raw.get(`fragment/${fragment.id}`);
+    if (value !== undefined) composition[fragment.id] = value.metadata.digest;
+  }
+  return composition;
+}
+
 function stackEntry(stack: Entry, proven: ReadonlyArray<Proven>, raw: Raw): IndexEntry | null {
   const own = proven.filter(({ record }) => record.stack === stack.id && record.with.length === 0);
   const newest = latestMatchingRecord(
@@ -79,15 +88,10 @@ function stackEntry(stack: Entry, proven: ReadonlyArray<Proven>, raw: Raw): Inde
   const proof = own.find(({ record }) => record === newest);
   const value = raw.get(`stack/${stack.id}`);
   if (proof === undefined || value === undefined) return null;
-  const composition: Record<string, string> = {};
-  for (const fragment of proof.composition.fragments) {
-    const fragmentValue = raw.get(`fragment/${fragment.id}`);
-    if (fragmentValue !== undefined) composition[fragment.id] = fragmentValue.metadata.digest;
-  }
   const record = proof.record;
   return {
     ...value.metadata,
-    composition,
+    composition: fragmentDigests(proof.composition.fragments, raw),
     lastRun: {
       date: record.date,
       result: "pass",
@@ -99,33 +103,61 @@ function stackEntry(stack: Entry, proven: ReadonlyArray<Proven>, raw: Raw): Inde
   };
 }
 
-function publicationEntries(
+const unprovenStack = Effect.fn("index.unprovenStack")(function* (stack: Entry, raw: Raw) {
+  const value = raw.get(`stack/${stack.id}`);
+  if (value === undefined) return null;
+  const composition = yield* compose({
+    stack: stack.id,
+    with: [],
+    without: [],
+    preset: "default",
+    agents: [],
+    always: [],
+    mode: "new",
+  });
+  return { ...value.metadata, composition: fragmentDigests(composition.fragments, raw) };
+});
+
+function addFragments(ids: ReadonlyArray<string>, raw: Raw, published: Map<string, IndexEntry>) {
+  for (const id of ids) {
+    const value = raw.get(`fragment/${id}`);
+    if (value !== undefined) published.set(`fragment/${id}`, value.metadata);
+  }
+}
+
+const publicationEntries = Effect.fn("index.publicationEntries")(function* (
   entries: ReadonlyArray<Entry>,
   proven: ReadonlyArray<Proven>,
   raw: Raw,
+  includeUnproven: boolean,
 ) {
   const published = new Map<string, IndexEntry>();
-  const add = (metadata: IndexEntry) => {
-    published.set(`${metadata.kind}/${metadata.id}`, metadata);
-  };
   for (const stack of entries.filter(isStack)) {
-    const metadata = stackEntry(stack, proven, raw);
+    const metadata =
+      stackEntry(stack, proven, raw) ?? (includeUnproven ? yield* unprovenStack(stack, raw) : null);
     if (metadata === null) continue;
-    add(metadata);
-    for (const id of Object.keys(metadata.composition ?? {})) {
-      const value = raw.get(`fragment/${id}`);
-      if (value !== undefined) add(value.metadata);
-    }
+    published.set(`stack/${stack.id}`, metadata);
+    addFragments(Object.keys(metadata.composition ?? {}), raw, published);
   }
   for (const proof of proven.filter(({ record }) => record.with.length > 0))
-    for (const fragment of proof.composition.fragments) {
-      const value = raw.get(`fragment/${fragment.id}`);
-      if (value !== undefined) add(value.metadata);
-    }
+    addFragments(
+      proof.composition.fragments.map((fragment) => fragment.id),
+      raw,
+      published,
+    );
+  if (includeUnproven)
+    addFragments(
+      entries.filter(isFragment).map((fragment) => fragment.id),
+      raw,
+      published,
+    );
   return [...published.values()];
-}
+});
 
-export const currentIndex = Effect.fn("index.currentIndex")(function* (root: string) {
+export const currentIndex = Effect.fn("index.currentIndex")(function* (
+  root: string,
+  includeUnproven = false,
+) {
   const registry = yield* Registry;
   const entries = (yield* registry.all).filter((entry): entry is Entry => !isRejected(entry));
   const ledger = yield* readLedger(root);
@@ -136,7 +168,7 @@ export const currentIndex = Effect.fn("index.currentIndex")(function* (root: str
   }
   const raw = new Map<string, Effect.Success<ReturnType<typeof rawEntry>>>();
   for (const entry of entries) raw.set(`${entry.kind}/${entry.id}`, yield* rawEntry(entry));
-  const published = publicationEntries(entries, proven, raw);
+  const published = yield* publicationEntries(entries, proven, raw, includeUnproven);
   const bundles = new Map<string, Uint8Array>();
   for (const metadata of published) {
     const value = raw.get(`${metadata.kind}/${metadata.id}`);
