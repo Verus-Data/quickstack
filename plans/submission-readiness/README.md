@@ -49,13 +49,13 @@ than improvising.
 | --- | --- | --- | --- | --- | --- |
 | [R0](r0-baseline.md) | Baseline, in-flight work, demo scope | none | Claude | Done | `baseline.md` |
 | [R1](r1-search-contracts.md) | Search and guidance an agent can follow | R0 | Claude + Codex | In progress | `contracts.md` |
-| [R2](r2-seed.md) | Seed data that looks right on the site | R0 | Claude + Codex | In progress | `seed-quality.md` |
-| [R3](r3-recipe-proof.md) | Fresh proof for the demo recipe | R0; S5, S8 | Claude + Codex | In progress | `recipe-proof.md` |
-| [R4](r4-website.md) | Website demo polish | R0; R2 sample for the walkthrough | Claude + Codex | In progress | `web.md` |
-| [R10](r10-judge-access.md) | Judge-facing docs and source access | R0; S6 | | Open | `judge-access.md` |
-| [R12](r12-web-search.md) | Website search page | R0; R13 for the final walkthrough | | Open | `web-search.md` |
-| [R13](r13-search-relevance.md) | Search relevance tuning from manual QA | R0 | Claude + Codex | In progress | `search-relevance.md` |
-| [R5](r5-release.md) | Release and deploy | R1, R2, R3, R4, R10, R12, R13 | | Open | `release.md` |
+| [R2](r2-seed.md) | Seed data that looks right on the site | R0 | Claude + Codex | Done | `seed-quality.md` |
+| [R3](r3-recipe-proof.md) | Fresh proof for the demo recipe | R0; S5, S8 | Claude + Codex | Done | `recipe-proof.md` |
+| [R4](r4-website.md) | Website demo polish | R0; R2 sample for the walkthrough | Claude + Codex | Done (production walkthrough in R5) | `web.md` |
+| [R10](r10-judge-access.md) | Judge-facing docs and source access | R0; S6 | Claude + Codex | Done except S6 (user's) | `judge-access.md` |
+| [R12](r12-web-search.md) | Website search page | R0; R13 for the final walkthrough | Claude + Codex | Done | `web-search.md` |
+| [R13](r13-search-relevance.md) | Search relevance tuning from manual QA | R0 | Claude + Codex | Done (4 queries need `rank.ts`) | `search-relevance.md` |
+| [R5](r5-release.md) | Release and deploy | R1, R2, R3, R4, R10, R12, R13 | Claude; npm publish user | In progress | `release.md` |
 | [R6](r6-submission.md) | Record the demo and submit | R5 | | Open | `submission.md` |
 | [R11](r11-judging-operations.md) | Keep it up during judging | R5 | | Open | `operations.md` |
 | [R9](r9-follow-up.md) | After submission | R6 | | Open | per item |
@@ -163,6 +163,11 @@ something a judge would see break.
 - 2026-10-28 (R0): the bench accepted only `CODEX_ACCESS_TOKEN`, so S8's route needed a bench
   change to use the host's Codex login; the stacks-api worktrees `h4a`, `h4b` and four of the
   listed unmerged branches were already gone; live search already carries `evidence.stats`.
+- 2026-10-28 (R4): S4 says stats keep the seeded-data label, but stacks-api `f29dc79` removed
+  the label from the site on purpose (a test asserts it stays off); the API still reports
+  `population: "seeded development data"`. R12's `/browse/` fallback doesn't exist; the links
+  use `/browse/newest/`. A release build ignores `STACKS_DEV_API_URL`, so R1's API-ranked check
+  runs from source or against production.
 
 ## Review record
 
