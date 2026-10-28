@@ -33,6 +33,9 @@ unmatched content words under `understood`, `noStrongMatch`, and separate `stack
 `method` (`lexical` or `hybrid`). Text output says when ranking ran locally.
 Run `stacks schema search` for the JSON Schema.
 
+`understood.unmatched` lists request words no entry's strong metadata fields matched. A word
+listed here may still appear in entry bodies, which provide weaker evidence of a fit.
+
 Each hit includes its origin and trust, absolute `score` from 0 to 1, strong-field `coverage`,
 `tier` (`strong`, `partial`, `weak`), matching fields and words under `why`, penalties, optional
 caveats and cached evidence. Fragments also carry `appliesTo`. Evidence settles near-ties

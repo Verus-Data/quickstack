@@ -34,7 +34,7 @@ test("the public search schemas and pure ranker retain lexical language and TUI 
   for (const row of go.stacks) expect(Schema.decodeUnknownSync(SearchHit)(row)).toEqual(row);
   const tui = rank({ ...input, request: "a cli with a good TUI experience" });
   expect(tui.noStrongMatch).toBe(true);
-  expect(tui.understood.unmatched).toContain("tui");
+  expect(tui.understood.unmatched).toContain("TUI");
   expect(tui.stacks).toHaveLength(2);
   for (const row of tui.stacks) {
     expect(row.tier).not.toBe("strong");

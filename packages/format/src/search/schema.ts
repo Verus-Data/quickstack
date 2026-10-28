@@ -150,7 +150,10 @@ export const SearchResult = Schema.Struct({
     productKinds: Words,
     languages: Words,
     capabilities: Words,
-    unmatched: Words,
+    unmatched: Words.annotate({
+      description:
+        "Request words no entry's strong metadata fields matched; these words may still appear in entry bodies.",
+    }),
   }),
   noStrongMatch: Schema.Boolean,
   stacks: Schema.Array(SearchHit),
