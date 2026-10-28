@@ -145,19 +145,36 @@ A tag page lists every current stack and fragment carrying that tag, by name, wi
 
 ## Acceptance tests
 
-- `build:index` over a fixture registry writes a `v1/directory.json` that verifies with the test key and carries the fixture repo's commit dates; the site built over that output has `/browse/newest/` in that order, a tag page per tag, a fragment page per fragment, and a `/fragments/` page listing every fixture fragment by category and name and linking to each fragment page, each with no `<script>` other than the theme toggle and the copy script (4.0e), and the expected copy commands.
-- A fixture where `OfficialNames` holds `old-stack` and the registry doesn't: `build:index` fails naming it; with a `removed.json` row it succeeds, the site's `/stacks/old-stack/` carries the notice and the replacement's copy command, and no page contains `new old-stack`. A `replacedBy` naming a missing id fails the build.
+Split 2026-10-27 by where each test runs: this repository's build here, the site's pages under "Acceptance tests in stacks-api", and the telemetry views under "Deferred acceptance tests (telemetry)", written when D17, 4.2b and 4.2f have landed.
+
+1. `build:index` over a fixture registry in a fixture git repository writes a `v1/directory.json` that verifies with the test key, decodes as `DirectoryData`, and carries each entry's first-add commit date for every stack and fragment in the index, sorted by kind then id; `build:index --check` verifies it against the served copy and fails on a changed byte.
+2. A fixture where `OfficialNames` holds `old-stack` and the registry doesn't: `build:index` fails naming it; with a `removed.json` row it succeeds and `removed` carries the row and `last` taken from the last `v*` tag that shipped `old-stack` (its name, description, tags, steps with defaults and last ledger run). A `replacedBy` naming an id that isn't current fails the build naming it; a row without `replacedBy` is accepted and written without it.
+3. A tag that isn't `^[a-z0-9-]+$` (one containing `<`, one with a capital) fails `build:index` naming the entry; a `reason` containing `<` is written verbatim.
+4. A shallow clone fails `build:index` before writing anything, with a message saying added dates need full history.
+5. `packages/cli/registry/removed.json` ships with empty `entries` and the bundled registry's build writes a `v1/directory.json` with `removed: []`.
+
+## Acceptance tests in stacks-api
+
+Numbered for `stacks-api`'s own tags (`[4.2c-site#N]`); this repository's trace doesn't count them.
+
+1. The site built over a signed fixture index output with its `v1/directory.json` has `/browse/newest/` in added-date order, newest first, ties by id; a tag page per tag listing every stack and fragment carrying it by name; a fragment page per fragment (name, description, the stacks it applies to and whether each includes it by default, its files by path, its verify steps, its last ledger run through a stack, its source link and `npx @steamfield/stacks new <stack> --with <id>` per stack); and `/fragments/` listing every fragment grouped by category, then by name, linking to each fragment page.
+2. `/stacks/old-stack/` opens with "Removed from the registry on <date>: <reason>. Use <replacedBy> instead." and the replacement's copy command, shows the `last` content, and no built page contains `new old-stack`; a removed entry without `replacedBy` has the notice without the last sentence and no copy command.
+3. With `STATS_ENABLED` and `DEPS_ENABLED` off, every built page's nav links the directory, `/browse/newest/` and `/fragments/`, none links `/browse/trending/` or `/deps/`, and every nav link on every built page resolves to a built page.
+4. A fixture where `cloudflare-pages` and `docker-deploy` share `category: deploy` and one stack: `/fragments/cloudflare-pages/` lists `docker-deploy` under "Alternatives in deploy", alphabetically; a fragment alone in its category has no such section.
+5. With `STATS_ENABLED` off the build writes no `/browse/trending/`, `/browse/most-used/`, `/browse/highest-success/` or `/agents/*` page and makes no stats request, and those paths return the static 404 from the Node server.
+6. A `reason`, name or description containing `<` renders escaped.
+7. A `v1/directory.json` with one changed byte, or a payload that doesn't decode, fails the site build.
+8. The newest view, a tag page, `/fragments/`, a fragment page and a removed page contain no `<script>` other than 4.0e's theme toggle and copy script, and Axe (through Playwright) reports no violations on each in light and dark.
+
+## Deferred acceptance tests (telemetry)
+
 - Seeded `window_metrics`: `/` orders stacks by Wilson lower bound with suppressed ones after by name; `/browse/most-used/`, `/browse/highest-success/` match hand-sorted fixtures; ties break by id.
 - Trending: `last7 = 12`, `prior28 = 8` gives score `17 / 7`, about 2.43, listed, with `last7` and `prior28` published as rounded counts; `last7 = 9` with a published `prior28` is not listed and comes back `value: false` with its score and `suppressed: false`; `last7 = 4` comes back `{ value: null, suppressed: true }` with no score; 12 projects from one install count 3 and don't qualify.
 - Lift over a seeded window matches a hand computation; a pair with an effective sample of 4 is not shown; a pair where one fragment `requires` the other is not shown whatever its lift; the fragment detail's `oftenUsedWith` equals the list the page shows.
-- Nav: with both switches on, every page's nav links to Trending and Dependencies; with `STATS_ENABLED` off no built page's nav links to `/browse/trending/`; with `DEPS_ENABLED` off none links to `/deps/`; every nav link on every built page resolves to a built page.
-- The `/fragments/cloudflare-pages/` page lists `docker-deploy` under "Alternatives in deploy" only if a fixture registry has both applying to one stack, alphabetically, with no telemetry; a fragment alone in its category has no such section.
+- Nav: with both switches on, every page's nav links to Trending and Dependencies.
 - `/agents/claude/` lists only stacks with an unsuppressed `claude` breakdown, with each row's median time to green and projects, and contains no other agent's numbers; seeded runs recorded as `other` produce no page for any agent name outside `DetectedAgent`.
-- With `STATS_ENABLED` off: the site build writes no `/browse/trending/` or `/agents/claude/` page and makes no stats request, the served paths return the static 404, and `/browse/newest/`, tag, fragment and removed pages are built.
-- A `reason` or tag containing `<` in a fixture is escaped or rejected.
 - 4.2b's CLI decodes a summary with and without `trending`.
 - Page checks, with the stats built through 4.2f's components: every green-rate value on `/`, the browse pages, tag, fragment and agent pages has its interval and `n` (4.2f test 3's scan); those pages contain no `<script>` other than 4.0e's theme toggle and copy script; Axe (through Playwright) reports no violations on `/browse/highest-success/`, a fragment page and an agent page, in light and dark; no page lists agents in rate order.
-- Telemetry-free build: with `STATS_ENABLED` off and no 4.2b or 4.2f code paths reached, the newest view, tag, fragment and removed pages build and pass the same script and Axe checks.
 
 ## Exit criteria
 
