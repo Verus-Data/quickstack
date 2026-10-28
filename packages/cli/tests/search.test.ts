@@ -180,7 +180,8 @@ test.each([
   const text = await runCli(["search", ios, flag, value], opts);
   expect(text.status).toBe(2);
   expect(text.stdout).toBe("");
-  expect(text.stderr.trim().split("\n").at(-1)).toMatch(/^Next: /);
+  // failureGuide indents its lines, Next: included, under the message.
+  expect(text.stderr.trim().split("\n").at(-1)).toMatch(/^ {2}Next: /);
 });
 
 test("kind and per-list limits filter real hits [4.5c#11]", async () => {
