@@ -43,3 +43,15 @@ export {
   Trending,
   ValueCell,
 } from "./stats.js";
+export {
+  TELEMETRY_SCHEMA_VERSION,
+  TelemetryAccepted,
+  TelemetryAddEvent,
+  TelemetryBatch,
+  TelemetryErrorEvent,
+  TelemetryEvent,
+  TelemetryNewEvent,
+  TelemetryShowEvent,
+  TelemetryVerifyEvent,
+  telemetryEventJsonSchema,
+} from "./telemetry.js";

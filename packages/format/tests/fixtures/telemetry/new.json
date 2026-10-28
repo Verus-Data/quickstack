@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "eventId": "e9fd9f8a-3b88-4c19-8b31-46e227e9390b",
+  "type": "new",
+  "installId": "ad7c7211-cc24-4d18-9913-64f8a531523f",
+  "projectId": "4b4bce19-dd67-4358-a490-02846b30b228",
+  "cliVersion": "0.3.1",
+  "os": "darwin",
+  "nodeMajor": 24,
+  "agent": "codex",
+  "sentAt": "2026-10-27T14:02:01.000Z",
+  "stack": "go-cli",
+  "fragments": ["agent-ops", "git-hooks", "ci-github"],
+  "without": [],
+  "preset": "default",
+  "targetAgents": ["claude", "codex"],
+  "handoff": "inside-agent",
+  "source": "skill",
+  "origin": "bundled",
+  "nonOfficial": { "user": 0, "project": 0, "source": 0 },
+  "fingerprint": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+}

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "eventId": "3315addf-fe04-437a-ab34-3665bfb4bb27",
+  "type": "show",
+  "installId": "ad7c7211-cc24-4d18-9913-64f8a531523f",
+  "cliVersion": "0.3.1",
+  "os": "other",
+  "nodeMajor": 24,
+  "agent": "none",
+  "sentAt": "2026-10-27T14:01:01.000Z",
+  "kind": "stack",
+  "id": "go-cli"
+}
