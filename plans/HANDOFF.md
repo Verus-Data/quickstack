@@ -9,26 +9,55 @@ Start here, then read repo `AGENTS.md`, the README's
 next steps, who owns each. When it grows past a couple of screens, move the dated detail
 to `archive/` and leave a link.
 
-## Next session: finish phase 4, then the demo host (2026-10-28)
+## Submission queue (2026-10-28)
+
+Use [the submission-readiness RFC](submission-readiness-rfc.md) for the proposed
+remaining order: R0 release baseline; R1 agent/search contracts, R2 seed quality,
+R3 current demo proof and R4 website closure; R5 coordinated release; R6 submission.
+R7 signed remote distribution and R8 live collection follow, with explicit gates.
+The RFC records the live QA gaps and scopes seed work to realism and quality.
+Its review record tracks the requested devil's-advocate review. This queue updates
+the ordering below; earlier dated execution notes remain historical evidence.
+
+## Earlier phase 4 handoff (2026-10-28)
 
 Executed this batch: D38 (columnar lists, format 0.3.0), 4.2a's QA fixes, 4.1e, 4.2b's CLI
 half, 4.2d, 4.2e, 4.2c's trending, 4.2g's test 4, the v2 deps seed and the active-scale profile,
 and 4.5e: search is deployed at `https://stacks.steamfield.io` and `bin.ts::DEFAULT_API_URL`
 names it, so the CLI's search, stats and allowlist use the hosted API. The search QA fixes
-(4.5e's last dated line) are on `main` in format 0.4.0. What's left, in order:
+(4.5e's dated lines) are in format 0.4.0, published, and `stacks-api` `main` takes it; API
+search hits now carry stats evidence; the seed has an active-scale profile and incremental
+integrity (4.2g's dated lines). Nothing in this list is deployed yet. What's left, in order:
 
-1. Publish format 0.4.0 (maintainer):
-   `cd packages/format && npm publish dist/pack/steamfield-stacks-format-0.4.0.tgz --access public`.
-   Until `stacks-api` takes it and redeploys, a CLI built from `main` can't decode the deployed
-   API's 0.3.0 penalties and ranks locally.
-2. `stacks-api`: bump to 0.4.0, land the API search evidence (S4: API hits carry `lastRun` and
-   stats evidence instead of nulls), gate, `prod:deploy`, re-QA search.
-3. Seed throughput (`maintain`'s integrity pass dominates the active profile's run), then run
-   `--profile active` and judge it against what a healthy CLI would show.
-4. The Docker stack locally with the active store, then the demo host deploy with
-   `STACKS_DEMO=true` and manual QA. Production still serves the small default seed with the
-   seeded label.
+1. Redeploy `stacks-api` `main` (`prod:deploy`), then re-QA search against the hosted API with a
+   CLI built from `main`: "go cli", "postgres auth for a saas", "!!!" and an iOS request in
+   all three audiences; `--json` hits should show stats evidence and structured penalties,
+   and `remote` should be `"ok"`. Until this deploy, the hosted API serves 0.3.0 penalties, which
+   a CLI built from `main` can't decode, so it falls back to local ranking.
+2. The active seed store. A full run was started at the end of the 2026-10-28 session into
+   `.dev/data/active.sqlite` in the `stacks-api` checkout (about 46 minutes). If its seed marker
+   says `complete: true` for profile `active`, use it; otherwise rerun: build the index here
+   (`bun run build:index --out <dir> --previous none --unsigned --include-unproven` in
+   `packages/cli`), then in `stacks-api`
+   `STATIC_DIR=<dir> STACKS_DB_PATH=.dev/data/active.sqlite STACKS_ARCHIVE_DIR=.dev/data/active-archive bun run seed --profile active`.
+   Judge it with `STACKS_DEMO=true`: `curl` the summary and a few details, read the site's home,
+   a stack page, `/deps/` and `/telemetry`, and tune the profile until it reads like an active
+   user base (hundreds of thousands of projects and events, rising/falling/launched stacks, a
+   suppressed tail, deps cells, trending, no anomaly flag).
+3. The Docker stack locally (`bun run deploy`, `docker compose up --build`) with the active
+   store in the `/data` volume and `STACKS_DEMO=true`: `/healthz`, every stats, deps and search
+   route, `POST /v1/events`, the site pages, `maintain` on its timer, data surviving a restart.
+4. The demo host deploy: copy the active store into the host's data volume, deploy with
+   `STACKS_DEMO=true`, generate secrets on the host only, look at what's already running there
+   first, then manual QA over the LAN (every route, the site in a browser, a source-build CLI
+   through an ssh tunnel). Production still serves the small default seed with the seeded label.
 5. 4.2f's stats pages and charts and 4.2c's telemetry views: the frontend agent's work.
+
+Cleanup for the maintainers: `stacks-api` has a leftover `.claude/worktrees/a13` (branch
+`delegate/a13`) with uncommitted edits to the smoke, deploy, help and production scripts and a
+`scripts/query.ts`; 4.1e's query tools already landed on `main`, so check it's superseded before
+removing it. m4-mini fails a different process or temp-file test on most gate runs (`kill EPERM`,
+a missing temp log); when it does, `rr check-coverage --local` is the fallback that passed.
 
 Open questions: the index omits `lastRun` because no bundled stack has a ledger pass at its
 current fingerprint, while local search shows ledger passes without that check, so the two
