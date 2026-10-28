@@ -19,7 +19,7 @@ test("SaaS with Postgres and auth ranks a web app ahead of the mobile stack", as
   expect(hit(value.stacks, "mobile-expo").penalties).toContainEqual({
     kind: "productKind",
     request: "saas (web-app)",
-    entry: "mobile-app, fullstack",
+    entry: "mobile-app, fullstack, api",
   });
 });
 

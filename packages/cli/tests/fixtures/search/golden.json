@@ -876,6 +876,278 @@
       "query": "train a neural network on a GPU cluster",
       "noMatch": true,
       "relevant": []
+    },
+    {
+      "id": "r13-r05",
+      "pool": "product",
+      "split": "tune",
+      "query": "an iPhone habit tracker with an API I own",
+      "first": {
+        "kind": "stack",
+        "id": "mobile-expo"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "mobile-expo",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "r13-r07",
+      "pool": "combined",
+      "split": "tune",
+      "query": "next.js with postgres",
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "react-router",
+          "grade": 1
+        },
+        {
+          "kind": "stack",
+          "id": "cloudflare-react-router",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "r13-r16",
+      "pool": "combined",
+      "split": "tune",
+      "query": "a CLI in Go that does not need Node installed",
+      "first": {
+        "kind": "stack",
+        "id": "go-cli"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "go-cli",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "r13-r35",
+      "pool": "paraphrase",
+      "split": "tune",
+      "query": "postgress migrations for fastapi",
+      "first": {
+        "kind": "fragment",
+        "id": "postgres"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "postgres",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "r13-r36",
+      "pool": "paraphrase",
+      "split": "tune",
+      "query": "ts api",
+      "first": {
+        "kind": "stack",
+        "id": "typescript-api"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "typescript-api",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "r13-r37",
+      "pool": "paraphrase",
+      "split": "tune",
+      "query": "rn app",
+      "first": {
+        "kind": "stack",
+        "id": "mobile-expo"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "mobile-expo",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "r13-r39",
+      "pool": "no-match",
+      "split": "tune",
+      "query": "firmware to control a drone",
+      "noMatch": true,
+      "relevant": []
+    },
+    {
+      "id": "r13-h01",
+      "pool": "platform",
+      "query": "ship a Windows utility with React views and native Rust commands",
+      "first": {
+        "kind": "stack",
+        "id": "tauri-react"
+      },
+      "split": "holdout",
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "tauri-react",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "r13-h02",
+      "pool": "product",
+      "query": "start a backend in TypeScript with validated HTTP inputs",
+      "first": {
+        "kind": "stack",
+        "id": "typescript-api"
+      },
+      "split": "holdout",
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "typescript-api",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "r13-h03",
+      "pool": "fragment",
+      "query": "automate our pull request checks on GitHub",
+      "first": {
+        "kind": "fragment",
+        "id": "ci-github"
+      },
+      "split": "holdout",
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "ci-github",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "r13-h04",
+      "pool": "combined",
+      "query": "use an Android and iOS client sharing schemas with Hono",
+      "first": {
+        "kind": "stack",
+        "id": "mobile-expo"
+      },
+      "split": "holdout",
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "mobile-expo",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "r13-h05",
+      "pool": "paraphrase",
+      "query": "draft articles locally, hide unfinished posts and emit RSS",
+      "first": {
+        "kind": "stack",
+        "id": "astro-blog"
+      },
+      "split": "holdout",
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "astro-blog",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "r13-h06",
+      "pool": "no-match",
+      "query": "a Fortran fluid dynamics solver",
+      "noMatch": true,
+      "split": "holdout",
+      "relevant": []
+    },
+    {
+      "id": "r13-review-pages-migration",
+      "pool": "combined",
+      "split": "tune",
+      "query": "publish my static site to Cloudflare Pages instead of Fly.io",
+      "first": {
+        "kind": "fragment",
+        "id": "cloudflare-pages"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "cloudflare-pages",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "r13-review-desktop-firmware",
+      "pool": "product",
+      "split": "tune",
+      "query": "a desktop firmware updater with React and Rust",
+      "first": {
+        "kind": "stack",
+        "id": "tauri-react"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "tauri-react",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "r13-review-phone-firmware",
+      "pool": "product",
+      "split": "tune",
+      "query": "a React Native phone app for installing firmware updates",
+      "first": {
+        "kind": "stack",
+        "id": "mobile-expo"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "mobile-expo",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "r13-review-python-frontend",
+      "pool": "combined",
+      "split": "tune",
+      "query": "a Python API with TypeScript only on the frontend",
+      "first": {
+        "kind": "stack",
+        "id": "python-react"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "python-react",
+          "grade": 2
+        }
+      ]
     }
   ]
 }

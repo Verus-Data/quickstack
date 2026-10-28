@@ -42,7 +42,9 @@
     "Docker Compose",
     "SQLAlchemy",
     "Alembic",
-    "template database"
+    "template database",
+    "FastAPI",
+    "postgress"
   ],
   "goodFor": [
     "migrations as the schema source",
