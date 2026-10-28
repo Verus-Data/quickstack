@@ -1,6 +1,6 @@
 # Phase 4.4b: Interactive pickers
 
-Status: DRAFT 2026-10-27 (not agreed). Human cohort only; agents, `--json`, CI and pipes keep today's behavior.
+Status: EXECUTED 2026-10-27. Human cohort only; agents, `--json`, CI and pipes keep today's behavior.
 Acceptance tests: traced
 
 | Field | Value |

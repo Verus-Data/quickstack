@@ -70,6 +70,14 @@ ships Claude rules for Effect HTTP APIs, REST resource naming, testing through H
 real layers, verification and TypeScript, `/add-resource` and `/add-service` commands, and
 boundary and command guards with tests.
 
+## 4.4b executed (2026-10-27)
+
+[4.4b](phases/phase-4.4b-interactive-pickers.md) landed: at a person's terminal, `new`, `add`
+and `create` with missing arguments offer numbered pickers (`core/prompting.ts`, built on the
+agent picker's `Terminal.readLine`) and print the `Running:` command the picks stand for. A set
+`CI` now resolves to the agent audience. There is no arrow-key selection or filtering; long
+menus are plain numbered lists.
+
 ## 4.0a executed (2026-10-27)
 
 [4.0a](phases/phase-4.0a-format-package.md) landed: the entry, manifest and run-record
