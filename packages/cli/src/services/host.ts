@@ -1,5 +1,7 @@
 import { Context, Layer, Option } from "effect";
 export type HostInfo = {
+  /** Node line, supplied by the platform boundary. */
+  nodeMajor: number;
   platform: string;
   executable: string;
   cwd: string;
@@ -28,6 +30,7 @@ export class Host extends Context.Service<Host, HostInfo>()("stacks/Host") {
   static layer = (value: HostInfo) => Layer.succeed(Host, value);
   static memory = (overrides: Partial<HostInfo> = {}) =>
     Host.layer({
+      nodeMajor: 24,
       platform: "test",
       executable: "/test/cli",
       cwd: "/test",

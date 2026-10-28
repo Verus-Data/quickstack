@@ -43,6 +43,7 @@ export const BadInputDetails = Schema.Struct({
   id: Schema.String,
   flag: Schema.Literals([
     "scope",
+    "source",
     "with_without",
     "dir",
     "brief",
@@ -687,6 +688,8 @@ function badInputGuide(details: typeof BadInputDetails.Type, invocation: string)
         [`Flag: --scope ${id}`],
         "pass an npm scope such as acme or @acme: lowercase, URL-safe, no /.",
       );
+    case "source":
+      return guide(["Flag: --source"], "pass web, docs, skill, cli or other.");
     case "with_without":
       return guide(
         [`Id: ${id}`, "Flags: --with and --without"],

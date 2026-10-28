@@ -39,6 +39,7 @@ const result = await Bun.build({
   format: "esm",
   packages: "bundle",
   define: {
+    STACKS_RELEASE_BUILD: "true",
     PACKAGED_GITIGNORES: JSON.stringify(
       readdirSync("registry", { recursive: true, encoding: "utf8" })
         .filter((file) => file.endsWith("/.gitignore"))

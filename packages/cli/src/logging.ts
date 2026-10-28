@@ -95,7 +95,8 @@ export class Logging extends Context.Service<
         flush: (settings, quiet = false) =>
           Effect.gen(function* () {
             for (const record of records.splice(0)) {
-              if (!quiet) yield* output.note(logLine(record, settings)).pipe(Effect.ignoreCause);
+              if (!quiet && record.telemetry !== true)
+                yield* output.note(logLine(record, settings)).pipe(Effect.ignoreCause);
               if (settings.file) {
                 yield* appendRecord(settings.file, record, quiet);
               }

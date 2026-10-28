@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { NodeServices } from "@effect/platform-node";
-import { Effect, type Exit, Layer, Option, type Scope, Terminal } from "effect";
+import { Clock, Effect, type Exit, Layer, Option, type Scope, Terminal } from "effect";
 import type { HttpClient } from "effect/http";
 import { AppConfig, type Environment } from "../../src/config";
 import { hasFlag, main } from "../../src/main";
@@ -42,6 +42,8 @@ export async function runCli(
   args: readonly string[],
   options: {
     env?: Environment;
+    releaseBuild?: boolean;
+    clock?: Clock.Clock;
     http?: Layer.Layer<HttpClient.HttpClient>;
     home?: string;
     program?: Parameters<typeof main>[1];
@@ -93,6 +95,7 @@ export async function runCli(
   const platform = Layer.mergeAll(
     terminal,
     Host.memory({
+      nodeMajor: Number(process.versions.node.split(".")[0]),
       platform: "test-node",
       cwd: home,
       packageRoot: join(import.meta.dirname, "..", ".."),
@@ -107,8 +110,10 @@ export async function runCli(
   try {
     const status = await runInvocation(
       main(args, options.program).pipe(
-        Effect.provide(Layer.provideMerge(AppLayer(output, env), platform)),
+        Effect.provide(Layer.provideMerge(AppLayer(output, env, options.releaseBuild), platform)),
         Effect.scoped,
+        (program) =>
+          options.clock ? Effect.provideService(program, Clock.Clock, options.clock) : program,
       ),
       options.signal,
     );

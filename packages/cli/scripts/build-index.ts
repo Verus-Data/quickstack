@@ -104,6 +104,7 @@ const layer = Processes.layer.pipe(
   Layer.provideMerge(platform),
   Layer.provideMerge(
     Host.layer({
+      nodeMajor: Number(process.versions.node.split(".")[0]),
       platform: process.platform,
       executable: process.execPath,
       cwd: packageRoot,

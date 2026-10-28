@@ -1,5 +1,6 @@
-import { Effect, Option, Schema } from "effect";
+import { Effect, Layer, Option, Schema } from "effect";
 import { Argument, Command, Flag } from "effect/cli";
+import { handoffRecord } from "../core/handoff";
 import { pickNew, promptingAllowed, replayFlags, runningCommand } from "../core/prompting";
 import { Registry, remoteRoots } from "../core/registry/registry";
 import { type NewOptions, scaffold } from "../core/scaffold/new";
@@ -9,8 +10,10 @@ import { Usage } from "../errors";
 import { BRIEF_PATH } from "../project-layout";
 import { NewResult } from "../schemas/new";
 import { Output } from "../services/output";
+import { Telemetry } from "../telemetry";
 import { completeHandoff, prepareHandoff, projectFlags, splitValues } from "./handoff";
 import { root } from "./root";
+import { officialSteps, recordCommandError, sourceFlag, sourceValue } from "./telemetry-hooks";
 
 const ids = (name: string, description: string) =>
   Flag.String(name).pipe(Flag.withDescription(description), Flag.atLeast(0), Flag.map(splitValues));
@@ -18,6 +21,7 @@ const ids = (name: string, description: string) =>
 const { launch, noLaunch, ...sharedFlags } = projectFlags("new");
 
 const newFlags = {
+  source: sourceFlag,
   stack: Argument.String("stack").pipe(
     Argument.withDescription("The stack to start from (see `list stacks`)."),
     Argument.optional,
@@ -85,7 +89,7 @@ const resolveArguments = Effect.fn("new.resolveArguments")(function* (flags: New
     return yield* new Usage({ details: { flags: ["--sandbox", "--preset default"] } });
   if (stack !== undefined) return { ...options, stack };
   yield* templateOverrides(options);
-  const picked = yield* pickNew(options).pipe(Effect.provide(Registry.layer(yield* remoteRoots)));
+  const picked = yield* pickNew(options);
   const resolved = { ...options, ...picked };
   yield* runningCommand(newReplay(resolved, flags));
   return resolved;
@@ -121,23 +125,43 @@ export const newCommand = Command.make("new", newFlags, (flags) =>
   Effect.gen(function* () {
     const { json } = yield* root;
     const output = yield* Output;
+    const source = yield* sourceValue(flags.source);
     const options = yield* resolveArguments(flags);
     const handoff = yield* prepareHandoff(flags, json);
-    const { result, decision } = yield* scaffold({
-      ...options,
-      handoff,
-    }).pipe(Effect.provide(Registry.layer(yield* remoteRoots)));
+    const { result, decision, manifest, composition } = yield* scaffold({ ...options, handoff });
+    const telemetry = yield* Telemetry;
+    const registry = yield* Registry;
     yield* completeHandoff({
       project: result.project,
       agent: result.agents[0],
       untrusted: result.untrusted,
       decision,
       preview: result.dryRun,
+      beforeHandoff: (settled) =>
+        Effect.gen(function* () {
+          if (result.dryRun || (yield* telemetry.consent) !== "enabled") return;
+          const without = yield* Effect.forEach(options.without, (id) =>
+            registry
+              .get("fragment", id)
+              .pipe(Effect.orElseSucceed(() => ({ id, origin: "unknown", trusted: false }))),
+          );
+          yield* telemetry.recordScaffold({
+            type: "new",
+            manifest: { ...manifest, handoff: handoffRecord(settled, manifest.createdAt) },
+            without,
+            source,
+            steps: officialSteps(composition),
+          });
+          yield* telemetry.flush;
+        }),
       render: (context) =>
         renderNew({ ...result, untrusted: context.untrusted }, { ...context, style: output.style }),
       encode: (handoff) => Schema.encodeSync(NewResult)({ ...result, handoff }),
     });
-  }),
+  }).pipe(
+    recordCommandError("new", Option.getOrUndefined(flags.stack)),
+    Effect.provide(Layer.unwrap(Effect.map(remoteRoots, Registry.layer))),
+  ),
 ).pipe(
   Command.withDescription(
     `Start a project from a stack: write its starter files and ${BRIEF_PATH}, the task for your coding agent. Runs nothing from the stack; verify is the definition of done. Exits 0 on success, 2 on bad input, an unknown entry, a non-empty target (TargetNotEmpty) or conflicting fragments (ComposeConflict), 3 on bad configuration, 6 when a write is refused, 130 when interrupted; after launching a terminal agent, the agent's own status; an app launch exits 0.`,

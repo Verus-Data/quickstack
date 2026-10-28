@@ -1,5 +1,5 @@
 import { chmodSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 import type { Environment } from "../src/config";
 import { runCli } from "./helpers/cli";
@@ -315,6 +315,7 @@ test.each([
 test("malformed JSON config prevents sending but preserves pending events [4.1a#28]", async () => {
   await notified(home, server.url);
   await queue(home, server.url);
+  mkdirSync(dirname(configFile(home)), { recursive: true });
   writeFileSync(configFile(home), "{half-edited");
   expect((await status()).reason).toBe("config_invalid");
   expect(spooled(home)).toHaveLength(1);

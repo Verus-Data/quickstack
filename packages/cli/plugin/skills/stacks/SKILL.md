@@ -13,9 +13,11 @@ A stack is a recipe: dependencies by role, starter files, agent guidance and a d
 
 ## How to run it
 
-Use `stacks` if it is on PATH, otherwise `npx -y @steamfield/stacks@latest`. Below, `<cli>` means that command. After `new`, use exactly the command the brief gives for verify: it is the same version that wrote the project. `<cli> <command> --help` lists a command's flags, exit codes and examples.
+Use `stacks` on PATH, otherwise `npx -y @steamfield/stacks@latest`; `<cli>` means that command. After `new`, use the brief's verify command, which preserves its version. `<cli> <command> --help` lists flags, exits and examples.
 
 With `--json`, a command writes one result to stdout. On failure the last stderr line is `{ "error": { "tag", "message", "retryable", "next", "details" } }`: branch on the exit code (2 fix the input, 3 fix the config, 5 read the verify report on stdout, 6 ask the user) and do what `next` (in text output, the `Next:` line) says. `<cli> schema <name>` prints the JSON Schema of a `--json` result.
+
+Relay a telemetry `notice` once, including `<cli> telemetry disable`; never enable it for the user. Attribute `new` and `add` with `--source skill`.
 
 ## Pick a stack
 

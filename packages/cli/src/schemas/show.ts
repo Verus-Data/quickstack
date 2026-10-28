@@ -2,9 +2,11 @@ import { Category, VerifyStep } from "@stacks/format";
 import { Schema } from "effect";
 import { LastRun } from "./ledger";
 import { ListRow } from "./list";
+import { NoticeFields } from "./notice";
 
 /** An entry's complete review surface, with canonical sizes and bundled run evidence. */
 export const ShowReport = Schema.Struct({
+  ...NoticeFields,
   ...ListRow.fields,
   path: Schema.String,
   deps: Schema.Record(Schema.String, Schema.Array(Schema.String)),

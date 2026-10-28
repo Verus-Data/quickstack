@@ -1,6 +1,8 @@
 import { Schema } from "effect";
+import { NoticeFields } from "./notice";
 
 export const ProjectRuns = Schema.Struct({
+  ...NoticeFields,
   /** Null for a project `add` created without a stack. */
   stack: Schema.NullOr(Schema.String),
   fingerprint: Schema.NullOr(Schema.String),

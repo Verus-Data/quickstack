@@ -1,6 +1,7 @@
 import { Kind } from "@stacks/format";
 import { Schema } from "effect";
 import { ConditionalProblem } from "../errors";
+import { NoticeFields } from "./notice";
 
 /** `error` exits 2; `warning` fails only the bundled registry's zero-warning gate; `note` never fails. */
 export const Severity = Schema.Literals(["error", "warning", "note"]);
@@ -42,6 +43,7 @@ export const SizeRow = Schema.Struct({
 export type SizeRow = typeof SizeRow.Type;
 
 export const ValidateReport = Schema.Struct({
+  ...NoticeFields,
   /** The registry root, absolute. */
   root: Schema.String,
   /** True when the root is the bundled registry: every reference must resolve inside it. */
@@ -58,6 +60,7 @@ export type ValidateReport = typeof ValidateReport.Type;
 
 /** `validate --brief`: the brief `new` would render, with the canonical context, and its counts. */
 export const BriefPreview = Schema.Struct({
+  ...NoticeFields,
   stack: Schema.String,
   preset: Schema.Literals(["default", "sandbox"]),
   /** Fragments in composition order, the app included. */

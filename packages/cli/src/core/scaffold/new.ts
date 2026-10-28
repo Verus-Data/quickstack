@@ -1,4 +1,4 @@
-import type { AgentId } from "@stacks/format";
+import type { AgentId, Manifest } from "@stacks/format";
 import { Effect, Exit, FileSystem, Option, Path } from "effect";
 import { AppConfig } from "../../config";
 import { BadInput, ComposeConflict } from "../../errors";
@@ -53,7 +53,12 @@ export type NewOptions = {
 };
 
 /** What `new` wrote or planned, and the handoff the command carries out next. */
-export type Scaffolded = { result: Omit<NewResult, "handoff">; decision: HandoffDecision };
+export type Scaffolded = {
+  result: Omit<NewResult, "handoff">;
+  decision: HandoffDecision;
+  manifest: Manifest;
+  composition: Composition;
+};
 
 function scaffoldPreset(options: NewOptions, setting: NewOptions["preset"]) {
   return options.preset ?? (options.sandbox ? "sandbox" : (setting ?? "default"));
@@ -237,5 +242,5 @@ export const scaffold = (options: NewOptions) =>
       git: gitState.kind,
       stateRecord: state.written,
     } satisfies Scaffolded["result"];
-    return { result, decision } satisfies Scaffolded;
+    return { result, decision, manifest, composition } satisfies Scaffolded;
   });

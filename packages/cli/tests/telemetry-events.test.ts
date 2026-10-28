@@ -109,6 +109,8 @@ it.effect.each(["new", "add", "show", "verify"])(
         const project = join(home, "project");
         if (command === "add" || command === "verify") {
           await scaffold();
+          // The setup scaffold's own delivery isn't the run under test.
+          server.requests.length = 0;
         }
         const commands = new Map([
           ["new", ["new", "go-cli", "project", "--json"]],
@@ -500,7 +502,8 @@ test.each(["human", "json"])(
             ).notice,
           )
         : result.stderr;
-    expect(notice).toMatch(/https:\/\/\S+\/telemetry/);
+    // The privacy page is `/telemetry` on the endpoint's host, here the local recording server.
+    expect(notice).toContain(`${new URL("/telemetry", server.url).href}`);
     expect(notice).toContain("telemetry disable");
     expect(notice).toMatch(/anonymous|usage/i);
     if (mode === "json") {

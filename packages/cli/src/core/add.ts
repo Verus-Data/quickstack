@@ -94,5 +94,5 @@ export const add = (options: AddOptions) =>
       briefWords: brief.briefWords,
       untrusted: [...composition.untrusted],
     };
-    return { result, decision };
+    return { result, decision, manifest, composition };
   });

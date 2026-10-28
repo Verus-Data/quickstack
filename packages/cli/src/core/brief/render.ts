@@ -121,7 +121,7 @@ export function renderBrief(composition: Composition<Entry | null>, context: Bri
   gap();
   fixed(T.ground.heading, "", T.ground.generators, T.ground.git(context.git));
   if (context.written.length) fixed(T.ground.written);
-  fixed(T.ground.agentsMd, ...T.ground.notes);
+  fixed(T.ground.agentsMd, T.ground.telemetry, ...T.ground.notes);
   if (context.missing.length) fixed(T.ground.missing);
 
   // 6. Decisions.
@@ -414,6 +414,7 @@ function renderAddBrief(
     "",
     T.add.git,
     T.ground.agentsMd,
+    T.ground.telemetry,
     ...T.ground.notes,
   );
   if (context.missing.length) fixed(T.ground.missing);

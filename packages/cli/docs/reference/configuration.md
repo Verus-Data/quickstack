@@ -24,6 +24,7 @@ Optional configuration is `$XDG_CONFIG_HOME/stacks/config.json`, defaulting to `
 | `author` | Author name for templates |
 | `package_scope` | npm scope for templates, such as `@acme` |
 | `preset` | `default` or `sandbox` for `new`; `--preset` and `--sandbox` override it |
+| `telemetry` | `false` disables anonymous usage collection. Prefer `stacks telemetry disable`, which also removes pending events and identity |
 
 Your own stacks and fragments live beside this file, in `stacks/<id>/` and `fragments/<id>/`.
 
@@ -39,6 +40,10 @@ Your own stacks and fragments live beside this file, in `stacks/<id>/` and `frag
 | `STACKS_REGISTRY_DIR` | A directory used as the bundled registry instead of the one shipped with the CLI, relative to the working directory; its entries are untrusted |
 | `STACKS_INDEX_URL` | Optional remote index URL, with no default in this release. Without it or a compiled-in official URL, the remote origin is off and makes no requests. HTTPS is required except for HTTP on `localhost` or `127.0.0.1`. Invalid URLs are never fetched. URLs other than a supplied official URL skip official signature verification and their entries are untrusted |
 | `STACKS_OFFLINE` | `1` disables remote registry requests; the shared `--offline` flag does the same. Verified cached entries remain available |
+| `DO_NOT_TRACK`, `STACKS_TELEMETRY_DISABLED` | Any value except empty, `0` or `false` disables telemetry |
+| `STACKS_TELEMETRY_URL` | Optional telemetry server URL; no official URL is configured. Source builds never collect |
+| `STACKS_TELEMETRY_DEBUG` | `1` prints schema-valid events to stderr instead of queuing or sending; consent still applies |
+| `CI` | Any set value, including empty, disables telemetry |
 | `NO_COLOR` | Any nonempty value turns off color and the live progress line, so human output carries no ANSI escapes; it wins over `FORCE_COLOR`. JSON and agent output never carry them |
 | `FORCE_COLOR` | `1` colors human output even through a pipe (for `bun run human` and tests); it never colors JSON or agent output |
 | `HOME`, `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`, `XDG_CACHE_HOME` | Path roots; an unset `HOME` means the user's home directory. The cache is `$XDG_CACHE_HOME/stacks` (`$HOME/.cache/stacks`) |
@@ -52,6 +57,8 @@ The cache under `$XDG_CACHE_HOME/stacks/index/` holds the verified envelope (`in
 An index younger than 24 hours needs no refresh. A request has a 1,500 ms deadline; failure retains the previous verified index or uses the bundled registry. Retries wait ten minutes, or 24 hours for a 404. A missing bundle backs off that bundle without hiding unrelated entries. Cache write failures keep the current invocation usable with temporary extracted files. `doctor --json` reports the cache timestamps and last outcome without contacting the server; `verify` never consults the remote registry.
 
 ## The development wrapper
+
+Every command accepts `--no-telemetry` to skip collection for one invocation, retaining pending events. Offline invocations also record and send nothing. See [Telemetry](telemetry.md) for consent precedence, state files, privacy and commands.
 
 `bun run dev` runs the CLI from source. It sets info logging, appends `logs/cli.jsonl` (the info records land there whoever reads the output; on stderr only for a human), copies noninteractive stderr to `logs/cli.log`, and uses `.dev/data` and `.dev/state`. Logs rotate above 5 MiB. It forwards arguments, terminal behavior, signals and the child's exit status. `.env` is optional for source development. The published package is a Node bundle and reads no `.env` file.
 

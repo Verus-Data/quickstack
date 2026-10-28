@@ -4,6 +4,7 @@ import { Clock, Effect, FileSystem, Option, Path, type PlatformError, Schema } f
 import { AppConfig } from "../../config";
 import { METADATA_DIR, RUNS_PATH, STATE_DIR } from "../../project-layout";
 import type { VerifyResult } from "../../schemas/verify";
+import { Telemetry } from "../../telemetry";
 import { VERSION } from "../../version";
 import { findProjectState, saveProjectState, warnUnwritten } from "../project-state";
 import { printable } from "../text";
@@ -115,7 +116,10 @@ export const recordRun = (
     };
     yield* appendRunRecord(context.root, record);
 
-    return yield* settleTimings(context, result, now);
+    const facts = yield* settleTimings(context, result, now);
+    const telemetry = yield* Effect.serviceOption(Telemetry);
+    if (Option.isSome(telemetry)) yield* telemetry.value.recordVerify(record);
+    return facts;
   });
 
 const settleTimings = (context: RecordContext, result: Finished, now: number) =>

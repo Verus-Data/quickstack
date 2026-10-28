@@ -58,3 +58,45 @@ bun run check                 # this package's gate
 `bun run check` runs Biome (including the boundary plugin), TypeScript, Vitest on Node, then the package e2e checks, which pack the npm tarball, install it offline and run it under Node. `bun run coverage` measures application code. Tests isolate HOME/XDG and clear credentials; e2e tests create their environment from scratch. No `.env`, credentials or external services are needed.
 
 Commands here run from `packages/cli/`; the repo root has the same names fanned out to every package. See [AGENTS.md](../../AGENTS.md), [the harness guide](../../docs/harness.md), and [the installed Effect guide](../../.claude/skills/effect/SKILL.md). CI reads Bun from packageManager through [setup-bun](https://github.com/oven-sh/setup-bun). Maintainer tasks (the bench, the ledger, publishing the plugin) are in [Maintaining the bundled registry](docs/maintaining.md).
+
+## Telemetry
+
+There is no official telemetry endpoint configured. Source builds never collect. A release build with a configured endpoint shows a one-time notice before recording anything; that invocation queues no events. Run `stacks telemetry disable` to turn it off and delete pending events and local identities. Agents and scripts can disable or reset it; enabling requires a person with terminal stdin. `--no-telemetry` and offline runs record and send nothing while keeping pending events. `DO_NOT_TRACK`, `STACKS_TELEMETRY_DISABLED`, `"telemetry": false` in settings, and any set `CI` disable collection. See [Telemetry](docs/reference/telemetry.md) for consent precedence, commands, state, debug mode and delivery.
+
+Schema v1 records anonymous `new`, `add`, `show`, scaffold-error and verify events. Custom entries and steps are redacted. Install and telemetry project ids are random and separate from manifest ids; cloned projects have no telemetry link. Every field has a reader:
+
+| Field | Reader |
+| --- | --- |
+| `schemaVersion` | Ingest schema selection (4.1b) |
+| `eventId` | Ingest idempotency (4.1b) |
+| `type` | Event routing (4.1b) |
+| `installId` | Distinct installs and per-install caps (4.1b, 4.2a) |
+| `projectId` | Distinct projects (4.2a) |
+| `cliVersion` | Released-version check and release counts (4.1b, 4.1d) |
+| `os` | Platform failure counts (4.1d) |
+| `nodeMajor` | Node line failure counts (4.1d) |
+| `agent` | Per-agent green rate (4.2a) |
+| `sentAt` | Event retention windows (4.1b, 4.2a) |
+| `stack` | Stack projects and green rate (4.2a) |
+| `fragments` | Fragment attach rate (4.2a) |
+| `without` | Without rate (4.2a) |
+| `preset` | Per-preset green rate (4.2a) |
+| `targetAgents` | Adapter target share (4.1d) |
+| `handoff` | Entry-point share (4.2a) |
+| `source` | Entry-point share (4.2a) |
+| `origin` | Index reach (4.1d) |
+| `nonOfficial` | Non-official use counts (4.1d) |
+| `fingerprint` | Per-composition green rate (4.2a) |
+| `kind` | Show pick rate (4.2a) |
+| `id` | Show pick rate (4.2a) |
+| `command` | Failed scaffold share (4.2a) |
+| `code` | Failure spikes per release (4.1d) |
+| `scope` | Verify scope (4.2a) |
+| `outcome` | Green rate (4.2a) |
+| `tamperCheck` | Verify trust coverage (4.2a) |
+| `steps` | Step failures and environment blockage (4.2a) |
+| `stepsChanged` | Changed-step share (4.2a) |
+| `secondsSinceScaffold` | Time to green (4.2a) |
+| `secondsToFirstTestPass` | Time to first test (4.2a) |
+
+Never sent: paths, directory or project names, git remotes, usernames, hostnames, environment variable values, decision answers, brief or NOTES text, file contents, command lines, output tails, custom entry ids, or anything from offline runs. There is no dependency telemetry in v1. Collection must stay off until the privacy page, schema page and phase 4.1e launch checks are complete.

@@ -1,6 +1,7 @@
 import { Schema } from "effect";
+import { NoticeFields } from "./notice";
 
-const Versions = { current: Schema.String, latest: Schema.String };
+const Versions = { ...NoticeFields, current: Schema.String, latest: Schema.String };
 export const UpdateResult = Schema.Union([
   Schema.Struct({ status: Schema.Literals(["up-to-date", "ahead"]), ...Versions }),
   Schema.Struct({
