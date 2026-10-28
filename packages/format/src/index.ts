@@ -1,5 +1,6 @@
 export { AgentId, DetectedAgent, Harness } from "./agent.js";
 export { BundlePath, bundleDigest, canonicalBundle, EntryBundle } from "./bundle.js";
+export { DirectoryData } from "./directory.js";
 export {
   APP_TAG,
   Category,

@@ -1,5 +1,6 @@
 import {
   bundleDigest,
+  DirectoryData,
   EntryBundle,
   type IndexEntry,
   OfficialNames,
@@ -73,6 +74,14 @@ export const fetchNames = Effect.fn("index.fetchNames")(function* (url: string) 
   return yield* signedPayload(url, text, { schema: OfficialNames, name: "OfficialNames" });
 });
 
+export const fetchPreviousDirectory = Effect.fn("index.fetchPreviousDirectory")(function* (
+  url: string,
+) {
+  const text = yield* fetchOptionalText(url);
+  if (text === null) return null;
+  return yield* signedPayload(url, text, { schema: DirectoryData, name: "DirectoryData" });
+});
+
 export const fetchBundle = Effect.fn("index.fetchBundle")(function* (base: string, ref: BundleRef) {
   const url = new URL(bundlePath(ref), base).href;
   const text = yield* fetchText(url);
@@ -123,5 +132,8 @@ export const checkHost = Effect.fn("index.checkHost")(function* (base: URL) {
   const namesUrl = new URL("v1/names.json", root).href;
   if ((yield* fetchNames(namesUrl)) === null)
     return yield* Effect.fail(new Error(`${namesUrl}: could not fetch file (HTTP 404).`));
-  return `Checked v1/index.json, v1/names.json and ${refs.length} bundle(s).`;
+  const directoryUrl = new URL("v1/directory.json", root).href;
+  if ((yield* fetchPreviousDirectory(directoryUrl)) === null)
+    return yield* Effect.fail(new Error(`${directoryUrl}: could not fetch file (HTTP 404).`));
+  return `Checked v1/index.json, v1/names.json, v1/directory.json and ${refs.length} bundle(s).`;
 });
