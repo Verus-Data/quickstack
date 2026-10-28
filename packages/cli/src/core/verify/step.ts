@@ -66,45 +66,48 @@ function progressLines(name: string, progress: (text: string) => Effect.Effect<v
  * the project, or (serve) whose probe URL is wrong or whose port is taken, fails without running.
  */
 export const runStep = (step: PlannedStep, context: StepContext) =>
-  Effect.gen(function* () {
-    const fs = yield* FileSystem.FileSystem;
-    const path = yield* Path.Path;
-    const output = yield* Output;
-    const started = yield* Clock.currentTimeMillis;
-    const base = {
-      name: step.name,
-      phase: step.phase,
-      ...(step.layer ? { layer: step.layer } : {}),
-      command: step.run,
-    };
-    const result = (fields: Partial<StepResult> & Pick<StepResult, "status">) =>
-      Effect.map(
-        Clock.currentTimeMillis,
-        (now): StepResult => ({ ...base, ...fields, durationMs: now - started }),
-      );
-    const fail = (failureKind: FailureKind, reason: string, extra: Partial<StepResult> = {}) =>
-      result({ status: "failed", failureKind, reason, ...extra });
+  Effect.scoped(
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const path = yield* Path.Path;
+      const output = yield* Output;
+      const started = yield* Clock.currentTimeMillis;
+      const base = {
+        name: step.name,
+        phase: step.phase,
+        ...(step.layer ? { layer: step.layer } : {}),
+        command: step.run,
+      };
+      const result = (fields: Partial<StepResult> & Pick<StepResult, "status">) =>
+        Effect.map(
+          Clock.currentTimeMillis,
+          (now): StepResult => ({ ...base, ...fields, durationMs: now - started }),
+        );
+      const fail = (failureKind: FailureKind, reason: string, extra: Partial<StepResult> = {}) =>
+        result({ status: "failed", failureKind, reason, ...extra });
 
-    yield* output.progress(`> ${printable(step.name)}: ${printable(step.run)}`);
-    const cwdText = step.cwd ?? ".";
-    const dir = path.resolve(context.root, cwdText);
-    const real = yield* Effect.option(fs.realPath(dir));
-    if (real._tag === "None") return yield* fail("env", `working directory ${cwdText} not found`);
-    const inside =
-      real.value === context.realRoot || real.value.startsWith(`${context.realRoot}${path.sep}`);
-    if (!inside)
-      return yield* fail("env", `working directory ${cwdText} resolves outside the project`);
-    const spec = { command: step.run, cwd: real.value, env: context.env };
-    return yield* step.phase === "serve" && step.expect
-      ? serve({ step, spec, expect: step.expect, fail, result })
-      : command({
-          step,
-          spec: { ...spec, timeout: parseDuration(step.timeout) },
-          cwdText,
-          fail,
-          result,
-        });
-  });
+      yield* output.progress(`> ${printable(step.name)}: ${printable(step.run)}`);
+      yield* output.live(printable(step.name));
+      const cwdText = step.cwd ?? ".";
+      const dir = path.resolve(context.root, cwdText);
+      const real = yield* Effect.option(fs.realPath(dir));
+      if (real._tag === "None") return yield* fail("env", `working directory ${cwdText} not found`);
+      const inside =
+        real.value === context.realRoot || real.value.startsWith(`${context.realRoot}${path.sep}`);
+      if (!inside)
+        return yield* fail("env", `working directory ${cwdText} resolves outside the project`);
+      const spec = { command: step.run, cwd: real.value, env: context.env };
+      return yield* step.phase === "serve" && step.expect
+        ? serve({ step, spec, expect: step.expect, fail, result })
+        : command({
+            step,
+            spec: { ...spec, timeout: parseDuration(step.timeout) },
+            cwdText,
+            fail,
+            result,
+          });
+    }),
+  );
 
 type Report = (
   failureKind: FailureKind,

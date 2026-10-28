@@ -1,7 +1,7 @@
 import type { FailureKind } from "@stacks/format";
 import { changeLines } from "../../errors";
 import type { StepResult, VerifyResult } from "../../schemas/verify";
-import type { Audience } from "../../services/output";
+import { type Audience, plainStyle, type Style } from "../../services/output";
 import { printable } from "../text";
 import { nextLine } from "./next";
 
@@ -9,7 +9,7 @@ const seconds = (ms: number) => `${(ms / 1000).toFixed(1)}s`;
 /** One line of step output, safe for a terminal; tabs become spaces rather than escapes. */
 export const outputLine = (line: string) => printable(line.replaceAll("\t", "  "));
 
-function stepLines(step: StepResult, width: number, partial: boolean): string[] {
+function stepLines(step: StepResult, width: number, partial: boolean, style: Style): string[] {
   const facts = [
     ...(step.exitCode !== undefined && step.status === "failed" ? [`exit ${step.exitCode}`] : []),
     ...(step.status === "skipped" ? [] : [seconds(step.durationMs)]),
@@ -23,7 +23,8 @@ function stepLines(step: StepResult, width: number, partial: boolean): string[] 
   ]
     .filter(Boolean)
     .join("; ");
-  const head = `  ${step.status.padEnd(7)}  ${step.phase.padEnd(8)}  ${printable(step.name).padEnd(width)}`;
+  const kind = { passed: "ok", failed: "error", skipped: "skip" } as const;
+  const head = `  ${style(kind[step.status], step.status.padEnd(7))}  ${step.phase.padEnd(8)}  ${printable(step.name).padEnd(width)}`;
   const line = [head, facts && `(${facts})`, why && printable(why)].filter(Boolean).join("  ");
   const tail = step.outputTail
     ? step.outputTail.split("\n").map((text) => `      | ${outputLine(text)}`)
@@ -46,9 +47,10 @@ function visibleSteps(result: VerifyResult, audience: Audience) {
  */
 export function renderVerify(
   result: VerifyResult,
-  context: { invocation: string; audience: Audience },
+  context: { invocation: string; audience: Audience; style?: Style },
 ): string {
   const { invocation } = context;
+  const style = context.style ?? plainStyle;
   const steps = visibleSteps(result, context.audience);
   // Aligned over every step, so a row reads the same whichever rows are shown.
   const width = Math.max(0, ...result.steps.map((step) => printable(step.name).length));
@@ -76,7 +78,9 @@ export function renderVerify(
           ...changeLines(result.changed).map((line) => `  ${line}`),
         ]
       : []),
-    ...(steps.length ? ["", ...steps.flatMap((step) => stepLines(step, width, partial))] : []),
-    ...(next ? ["", next] : []),
+    ...(steps.length
+      ? ["", ...steps.flatMap((step) => stepLines(step, width, partial, style))]
+      : []),
+    ...(next ? ["", style("next", next)] : []),
   ].join("\n");
 }

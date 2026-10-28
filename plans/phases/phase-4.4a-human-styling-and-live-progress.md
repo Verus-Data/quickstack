@@ -1,6 +1,7 @@
 # Phase 4.4a: Human styling and live progress
 
 Status: DRAFT 2026-10-27 (not agreed). Human cohort only; nothing here changes json or agent output.
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -62,6 +63,13 @@ Output exposes `style(kind, text)` where `kind` is a closed union (`error`, `war
 6. `wrap` property test: joining the wrapped lines with spaces gives back the input words in order, no line is wider than `width` unless it's a single word, and escape sequences are never split.
 7. Compiled binary under `bun run human -- verify` shows a colored summary; `NO_COLOR=1 bun run human -- verify` shows none.
 
+### Realistic edge cases
+
+8. Inherited agent markers override forced color; empty `NO_COLOR` allows color, nonempty `NO_COLOR` wins over `FORCE_COLOR`, and fresh invocations do not share the color decision.
+9. Wrapping preserves ANSI sequences, wide and combining characters, indentation, list items, code fences and paragraph breaks; empty text and overlong words remain intact.
+10. Human `guide`, `show` guidance and `list` descriptions honor injected terminal columns and display width; unknown width retains current output and agent output ignores columns.
+11. Closing a live scope after failure or interruption clears its line and stops its fiber; a fresh invocation still draws after an earlier stderr failure.
+
 ## Exit criteria
 
 - Acceptance tests pass; the gate is green.
@@ -70,7 +78,15 @@ Output exposes `style(kind, text)` where `kind` is a closed union (`error`, `war
 
 ## What this plan may get wrong
 
+- 2026-10-27: renderer integration also needs the `guide`, `list`, `show`, `new` and `verify` command handlers to pass terminal layout and styling values, plus the shared handoff renderer for `new`'s `Next:` line. Existing `stdoutColumns` remains for compatibility with the earlier list layout; `columns` supplies the new optional width contract. A PTY can report zero columns, which bin treats as unknown.
+- 2026-10-27: asynchronous stderr writes can outlast a redraw interval. The scoped ticker starts a child redraw only when the writer lock is available, skipping busy frames instead of queuing them; normal output rows share the lock. This also lets TestClock advance the ticker independently of a writer promise.
+- 2026-10-27: setting both `NO_COLOR` and `FORCE_COLOR` makes Node 24 print its own precedence warning before the CLI starts. The CLI still honors `NO_COLOR` and writes no escapes; human QA without `FORCE_COLOR` has no runtime warning.
+- 2026-10-27: review found that descriptions need plain-word wrapping rather than Markdown block detection, and `show` must escape entry text before measuring it. `wrapWords` shares the word-breaking implementation while preserving the existing description normalization. Fences retain their opening character and length. Live frames also need a measured width bound, keeping elapsed time and truncating the label by grapheme to avoid stale rows on narrow terminals.
+- 2026-10-27: the new Host fields also affect `tests/fixtures/handoff-bin.ts`, outside this contract's allowed files; it needs explicit `stderrIsTTY`, `columns` and `stringWidth` values. The configuration reference and roadmap shared-contract table also need follow-up edits outside this scope. Regression tests from the required review are in a separate unlocked file.
+
 - `Bun.stringWidth` is documented; `Bun.wrapAnsi` was not verified, which is why wrapping is a small pure function here instead.
 - Bun's `node:util` `styleText` may differ from Node's in the codes it emits; acceptance test 7 runs the compiled binary for that reason.
 - Redrawing a line while a child writes to the same terminal can still interleave if the child writes to the tty directly rather than through our pipes. If that shows up, drop the live line for steps that inherit the terminal.
 - People may not want color at all in a tool they mostly see through an agent. If manual QA says the plain output already reads well, shrink this to the live line only.
+- 2026-10-27: acceptance tests 2 and 7 require no ESC byte at all under `NO_COLOR`, and the live line's redraw and clear are escape sequences. A nonempty `NO_COLOR` therefore turns off the live line too (it falls back to today's `Output.progress` lines), so one decision gates every escape the CLI writes.
+- 2026-10-27: the CLI runs under Node, where `Bun.stringWidth` doesn't exist. `bin.ts` supplies `Host.stringWidth` from `node:util` `stripVTControlCharacters` and `Intl.Segmenter` graphemes (wide East Asian and emoji graphemes count 2, combining marks 0), with no new dependency.

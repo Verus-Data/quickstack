@@ -3,10 +3,11 @@
 // can't give the process a terminal) and the registry root from the first argument.
 // Usage: bun tests/fixtures/handoff-bin.ts <registry> <cli args...>
 import { NodeServices } from "@effect/platform-node";
-import { Effect, Layer } from "effect";
+import { Effect, Layer, Option } from "effect";
 import { hasFlag, main } from "../../src/main";
 import { NetLayer } from "../../src/platform/net";
 import { installSignalPolicy } from "../../src/platform/signals";
+import { stringWidth } from "../../src/platform/width";
 import { AppLayer, runInvocation } from "../../src/runtime";
 import { Host } from "../../src/services/host";
 import { Output, type Writer } from "../../src/services/output";
@@ -30,6 +31,9 @@ const platform = Layer.mergeAll(
     cwd: process.cwd(),
     stdinIsTTY: true,
     stdoutIsTTY: true,
+    stderrIsTTY: true,
+    columns: Option.none(),
+    stringWidth,
     registry,
     packageRoot: "/test/package",
     skill: "",

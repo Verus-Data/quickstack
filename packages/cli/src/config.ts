@@ -193,7 +193,11 @@ export function configLayer(env: Environment = process.env) {
         return { ...env, ...set };
       };
       const agent = Effect.sync(() => detectAgent(captured));
-      return { get, paths, logging, childEnv, agent };
+      const color = Effect.succeed({
+        noColor: Boolean(captured.NO_COLOR),
+        forceColor: captured.FORCE_COLOR === "1",
+      });
+      return { get, paths, logging, childEnv, agent, color };
     }),
   );
 }
@@ -203,6 +207,7 @@ export class AppConfig extends Context.Service<
     get: Effect.Effect<Settings, InvalidConfig>;
     paths: Effect.Effect<Paths>;
     logging: Effect.Effect<LogSettings>;
+    color: Effect.Effect<{ noColor: boolean; forceColor: boolean }>;
     /**
      * The whole environment for a child process, built from the environment this layer captured
      * (including its `PATH`): every captured name except `remove`, then `set` on top.

@@ -7,7 +7,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import { Schema } from "effect";
+import { Option, Schema } from "effect";
 import { afterEach, expect, test } from "vitest";
 import { ListResult } from "../src/schemas/list";
 import { ndjson, quiet, runCli, tempDir, terminal } from "./helpers/cli";
@@ -368,8 +368,8 @@ test("a long description wraps at 80 columns, or a narrower terminal, without sp
   // Only a human's terminal wraps (an agent's output keeps each description on one line).
   for (const [host, width] of [
     [{ stdoutIsTTY: true }, 80],
-    [{ stdoutIsTTY: true, stdoutColumns: 50 }, 50],
-    [{ stdoutIsTTY: true, stdoutColumns: 200 }, 80],
+    [{ stdoutIsTTY: true, columns: Option.some(50) }, 50],
+    [{ stdoutIsTTY: true, columns: Option.some(200) }, 80],
   ] as const) {
     const result = await list(["stacks"], { home, host });
     const lines = result.stdout.split("\n");

@@ -330,6 +330,7 @@ export const completeHandoff = (input: {
       invocation: host.invocation,
       audience: output.audience,
       agent: input.agent,
+      style: output.style,
     };
     const prefix = choosing ? "" : `${summary}\n\n`;
     if (decision.kind !== "launch") {

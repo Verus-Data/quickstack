@@ -68,7 +68,11 @@ export const verifyCommand = Command.make(
       const write = (result: VerifyResult) =>
         output.result(
           Schema.encodeSync(VerifyResult)(result),
-          renderVerify(result, { invocation: host.invocation, audience: output.audience }),
+          renderVerify(result, {
+            invocation: host.invocation,
+            audience: output.audience,
+            style: output.style,
+          }),
         );
 
       const { changed } = tamper;

@@ -1,10 +1,11 @@
 import { fileURLToPath } from "node:url";
 import { NodeServices } from "@effect/platform-node";
-import { Effect, FileSystem, Layer } from "effect";
+import { Effect, FileSystem, Layer, Option } from "effect";
 import { invocationFor } from "./invocation";
 import { hasFlag, main } from "./main";
 import { NetLayer } from "./platform/net";
 import { installSignalPolicy } from "./platform/signals";
+import { stringWidth } from "./platform/width";
 import { AppLayer, runInvocation } from "./runtime";
 import { Host } from "./services/host";
 import { Output, type Writer } from "./services/output";
@@ -78,9 +79,11 @@ const platform = Layer.mergeAll(
     cwd: process.cwd(),
     stdinIsTTY: process.stdin.isTTY === true,
     stdoutIsTTY: process.stdout.isTTY === true,
-    ...(process.stdout.isTTY && process.stdout.columns
-      ? { stdoutColumns: process.stdout.columns }
-      : {}),
+    stderrIsTTY: process.stderr.isTTY === true,
+    columns: Option.fromUndefinedOr(process.stdout.columns).pipe(
+      Option.filter((width) => process.stdout.isTTY && width > 0),
+    ),
+    stringWidth,
     registry,
     packageRoot: fileURLToPath(new URL("../", import.meta.url)),
     skill: fileURLToPath(new URL("../skill/", import.meta.url)),

@@ -1,6 +1,6 @@
 import type { AgentId, DetectedAgent, Harness } from "@stacks/format";
 import { BRIEF_PATH } from "../project-layout";
-import type { Audience } from "../services/output";
+import { type Audience, plainStyle, type Style } from "../services/output";
 import { shellArg } from "./shell";
 import { printable } from "./text";
 
@@ -201,7 +201,13 @@ const quote = (text: string) =>
  */
 export function renderHandoff(
   decision: Exclude<HandoffDecision, { kind: "launch" | "choose" }>,
-  context: { shown: string; invocation: string; audience: Audience; agent: AgentId | undefined },
+  context: {
+    shown: string;
+    invocation: string;
+    audience: Audience;
+    agent: AgentId | undefined;
+    style?: Style;
+  },
 ): string {
   const ids = decision.untrusted.map(printable).join(", ");
   const where = context.shown === "." ? "the current directory" : printable(context.shown);
@@ -231,7 +237,11 @@ export function renderHandoff(
         return launcher.via === "terminal" ? [launcher.bin] : [];
       }).join(", ")}).`,
     );
-  lines.push(`Next: open ${dir} in your coding agent and give it this prompt:`, `  ${prompt}`);
+  const { style = plainStyle } = context;
+  lines.push(
+    style("next", `Next: open ${dir} in your coding agent and give it this prompt:`),
+    `  ${prompt}`,
+  );
   if (context.audience === "human")
     lines.push(
       `For example: ${context.shown === "." ? "" : `cd ${dir} && `}${[example.bin, ...example.args(prompt).map(quote)].join(" ")}`,
