@@ -26,14 +26,17 @@ function input() {
 }
 
 test("facet penalties name the request phrase and conflicting entry values", () => {
-  const result = rank({ ...input(), request: "iPhone saas in Go" });
-  const hit = result.stacks.find(({ id }) => id === "typescript-cli");
-  expect(hit?.penalties).toEqual([
-    { kind: "platform", request: "iPhone (ios)", entry: "cli" },
-    { kind: "language", request: "Go (go)", entry: "typescript" },
-    { kind: "productKind", request: "saas (web-app)", entry: "cli-tool" },
-  ]);
-  expect(hit?.tier).not.toBe("strong");
+  // One facet per request: rank drops a hit whose penalties round its score to zero, and
+  // "command" (description, summary and body) keeps typescript-cli's score above it.
+  for (const [request, penalty] of [
+    ["iPhone command", { kind: "platform", request: "iPhone (ios)", entry: "cli" }],
+    ["command in Go", { kind: "language", request: "Go (go)", entry: "typescript" }],
+    ["saas command", { kind: "productKind", request: "saas (web-app)", entry: "cli-tool" }],
+  ] as const) {
+    const hit = rank({ ...input(), request }).stacks.find(({ id }) => id === "typescript-cli");
+    expect(hit?.penalties, request).toEqual([penalty]);
+    expect(hit?.tier, request).not.toBe("strong");
+  }
 });
 
 test("one matching product kind suffices and absent facets or cards stay unknown", () => {
