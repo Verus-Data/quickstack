@@ -2,6 +2,39 @@
 
 All notable changes to `@steamfield/stacks`. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html); before 1.0.0 a minor release may break compatibility.
 
+## [0.4.0] - 2026-10-28
+
+### Added
+
+- `stacks search "<what you want to build>"` ranks stacks and fragments with match explanations, caveats and cached run evidence; `--kind` and `--limit` narrow the results. It asks the hosted API first and falls back to local ranking; `--local`, `--offline` and `DO_NOT_TRACK` keep the request on this machine.
+- `list` and `show` report published project statistics when available, including green rates and time to green; `show` also reports common failing steps and the latest content change.
+- Remote registry entries through `STACKS_INDEX_URL`, with checked bundles, a cache that works offline and status in `doctor --json`. No official registry URL is configured in this release; custom index entries are untrusted.
+- `validate` checks search metadata and vocabulary, and `create --from` copies an entry's search metadata with its files.
+- `stacks telemetry status|enable|disable|reset|flush` and the shared `--no-telemetry` flag control anonymous usage reporting, including allowlisted dependency names and installed major versions after a green verify. No default telemetry endpoint is configured in this release; collection requires an endpoint and a delivered notice, and agents cannot enable it.
+- At a terminal, `new`, `add` and `create` offer numbered pickers when required arguments are missing and print the command they will run.
+- Human output has color, terminal-width wrapping and live progress for scaffolding and verify; `NO_COLOR` disables color and live progress.
+- `typescript-api` and `astro-api` projects gain queryable development logs, `dev:status`, log rotation and a server-status hook for Claude and Codex.
+
+### Changed
+
+- The guide, help footer and installed skill lead with search, review the choice with `show`, and require `verify --all` before calling a project done; when nothing fits, they point back to `list`.
+- Bundled entries have search descriptions and examples, with vocabulary for requests such as Go command-line tools, terminal interfaces and mobile apps; ranking accounts for platform, language and product-kind mismatches and explains them in the request's words.
+- `typescript-api`, `astro-api`, `typescript-cli`, `openrouter-chat`, `openrouter-chat-cli`, `rest-api` and `effect` ship shared guidance under `docs/guidance/` for every selected agent, with explicit acceptance documents for the stacks and chat fragments.
+- Verify separately checks the API stacks' HTTP contracts, `typescript-cli`'s config and logging, `mobile-expo`'s database and auth-provider contracts, and `python-react`'s home-route component test.
+- `openrouter-ai` ships an eval report contract and an independent local dry-run checkpoint; the chat fragments require it before paid evaluation.
+- `list` labels a recorded pass as historical, and `runs` labels its first-test timing as the first successful test command at run completion.
+
+### Fixed
+
+- Unknown flags, invalid flag values and missing arguments name the command's help and offer close matches where available.
+- Search returns only matching hits, says when nothing matched and retains local statistics and run evidence when an API hit has none.
+- The brief keeps ignored `BRIEF.md` and `NOTES.md` in the project checkout, and partial verify failures explain that setup always runs.
+- Bun-based stacks no longer declare an `install` package script that would recurse during `bun install`; `tauri-react` installs its Rust toolchain without trying to update rustup itself.
+- `astro-blog` keeps both dev and preview in the foreground under agents, and `make check` refuses missing checker dependencies instead of accepting Astro's install prompt as a successful check.
+- `mobile-expo`'s dev launcher refuses busy ports and stops only the processes it started, including during macOS zombie-group cleanup; auth tests use the real provider composition with SDK-boundary stubs.
+- `python-react` initializes its backend without a stub script that its command guard would refuse to delete, and consistently uses camelCase `requestId` in error responses.
+- Codex projects from the API stacks receive their command guards and server-status wiring, and the Effect skill lands where the selected agent can find it.
+
 ## [0.3.1] - 2026-10-27
 
 ### Added
@@ -45,6 +78,7 @@ First release, as the npm package `@steamfield/stacks` installed as `stacks` (No
 - Commands: `list`, `show`, `new`, `add`, `create`, `validate`, `verify`, `runs`, `schema`, `guide`, `skill` and `doctor`, each with `--json` output, fixed exit codes and error envelopes with a next action.
 - Bundled stacks: `astro-blog`, `cloudflare-react-router`, `go-cli`, `mobile-expo`, `python-react`, `react-router`, `tauri-react` and `typescript-cli`, with 19 fragments.
 
+[0.4.0]: https://github.com/steamfield/stacks/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/steamfield/stacks/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/steamfield/stacks/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/steamfield/stacks/compare/v0.1.0...v0.2.0
