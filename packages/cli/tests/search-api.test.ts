@@ -40,6 +40,28 @@ const lists = (value: ReturnType<typeof decoded>) => ({
   fragments: value.fragments,
 });
 
+test("API column decoding preserves the search JSON bytes for a hit without a run", async () => {
+  const body = response([officialHit("go-cli")]);
+  server.answer(body);
+  const options = { ...opts, host: { ...opts.host, registry: emptyRegistry } };
+  const result = await runCli(["search", "go cli", "--json"], options);
+  expect(result.status).toBe(0);
+  expect(result.stderr).toBe("");
+  expect(result.stdout).toBe(
+    `${JSON.stringify({
+      request: "go cli",
+      ranking: "api",
+      remote: "used",
+      method: "lexical",
+      understood: body.understood,
+      noStrongMatch: false,
+      stacks: body.stacks,
+      fragments: [],
+    })}\n`,
+  );
+  expect(body.stacks[0]?.evidence).toEqual({});
+});
+
 test("API hits replace official copies while user and project entries keep their local rank [4.5e#8]", async () => {
   const home = opts.home ?? "";
   const user = join(home, "config/stacks");

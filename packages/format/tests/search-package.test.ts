@@ -117,11 +117,11 @@ const input = {
 };
 const result = Schema.decodeUnknownSync(SearchResult)(rank(input));
 const hit = Schema.decodeUnknownSync(SearchHit)(result.stacks[0]);
-const response = Schema.decodeUnknownSync(SearchResponse)({
+const response = Schema.decodeUnknownSync(SearchResponse)(Schema.encodeUnknownSync(SearchResponse)({
   method: "lexical", indexGeneratedAt: "2026-10-28T10:00:00Z",
   understood: result.understood, noStrongMatch: result.noStrongMatch,
-  stacks: result.stacks.map(hit => ({ ...hit, origin: "index", trusted: true })), fragments: [],
-});
+  stacks: result.stacks.map(hit => ({ ...hit, origin: "index", trusted: true, evidence: { ...hit.evidence, lastRun: null } })), fragments: [],
+}));
 console.log(JSON.stringify({ result, hit, response, resolved: import.meta.resolve("@steamfield/stacks-format") }));
 `,
   );

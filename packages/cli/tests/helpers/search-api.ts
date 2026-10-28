@@ -49,15 +49,35 @@ export function response(
   };
 }
 
+function responseRows(value: ReturnType<typeof response>) {
+  return {
+    ...value,
+    stacks: value.stacks.map((hit) => ({
+      ...hit,
+      evidence: { ...hit.evidence, lastRun: hit.evidence.lastRun ?? null },
+    })),
+    fragments: value.fragments.map((hit) => ({
+      ...hit,
+      evidence: { ...hit.evidence, lastRun: hit.evidence.lastRun ?? null },
+    })),
+  };
+}
+
+function encodeResponse(value: ReturnType<typeof response>) {
+  return Schema.encodeUnknownSync(SearchResponse)(responseRows(value));
+}
+
 /** Check successful fixtures against the shared route contract, without recreating its schema. */
 export async function validResponse(value: ReturnType<typeof response>) {
-  expect(Schema.decodeUnknownSync(SearchResponse)(value)).toEqual(value);
+  expect(Schema.decodeUnknownSync(SearchResponse)(encodeResponse(value))).toEqual(
+    responseRows(value),
+  );
 }
 
 /** A held response has no timer; the client's TestClock owns the deadline. */
 export async function searchServer() {
   const requests: { method: string | undefined; url: URL; raw: string }[] = [];
-  let body: unknown = response();
+  let body: unknown = encodeResponse(response());
   let mode: "ok" | "hold" | "partial" | "500" | "invalid" | "disconnect" = "ok";
   const server = createServer((request, reply) => {
     const raw = request.url ?? "/";
@@ -88,7 +108,20 @@ export async function searchServer() {
     url: `http://127.0.0.1:${address.port}`,
     requests,
     answer(value: ReturnType<typeof response>) {
-      body = value;
+      body = encodeResponse(value);
+      mode = "ok";
+    },
+    answerInvalidId(kind: "stack" | "fragment", id: string) {
+      const wire = encodeResponse(
+        response(
+          kind === "stack" ? [officialHit("go-cli")] : [],
+          kind === "fragment" ? [officialHit("go-cli", { kind: "fragment" })] : [],
+        ),
+      );
+      body =
+        kind === "stack"
+          ? { ...wire, stacks: { ...wire.stacks, id: [id] } }
+          : { ...wire, fragments: { ...wire.fragments, id: [id] } };
       mode = "ok";
     },
     mode(value: typeof mode) {

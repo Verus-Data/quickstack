@@ -62,10 +62,141 @@ test("the shared HTTP schema accepts the route response without request text [4.
       ...hit,
       origin: "index",
       trusted: true,
+      evidence: { ...hit.evidence, lastRun: null },
     })),
     fragments: [],
   };
-  expect(Schema.decodeUnknownSync(SearchResponse)(body)).toEqual(body);
-  expect(() => Schema.decodeUnknownSync(SearchResponse)({ ...body, stacks: "invalid" })).toThrow();
-  expect(() => Schema.decodeUnknownSync(SearchResponse)({ ...body, method: "unknown" })).toThrow();
+  const wire = Schema.encodeUnknownSync(SearchResponse)(body);
+  expect(Schema.decodeUnknownSync(SearchResponse)(wire)).toEqual(body);
+  expect(() => Schema.decodeUnknownSync(SearchResponse)({ ...wire, stacks: "invalid" })).toThrow();
+  expect(() => Schema.decodeUnknownSync(SearchResponse)({ ...wire, method: "unknown" })).toThrow();
+});
+
+const columns = [
+  "kind",
+  "id",
+  "name",
+  "summary",
+  "origin",
+  "trusted",
+  "tier",
+  "score",
+  "coverage",
+  "why",
+  "penalties",
+  "caveats",
+  "appliesTo",
+  "evidence.stats.greenRateLower",
+  "evidence.stats.sample",
+  "evidence.stats.projects",
+  "evidence.stats.window",
+  "evidence.lastRun.date",
+  "evidence.lastRun.result",
+  "evidence.lastRun.agent",
+  "evidence.lastRun.preset",
+  "evidence.lastRun.fingerprint",
+];
+
+test("API hits encode to complete flattened columns and decode to rows", () => {
+  const hit = {
+    kind: "stack",
+    id: "go-cli",
+    name: "Go CLI",
+    summary: "A CLI stack",
+    origin: "index",
+    trusted: true,
+    tier: "strong",
+    score: 0.84,
+    coverage: 1,
+    why: [{ field: "platforms", matched: "cli", from: "cli" }],
+    penalties: ["language"],
+    evidence: { lastRun: null },
+  };
+  const run = {
+    date: "2026-10-28",
+    result: "pass",
+    agent: "codex",
+    preset: "default",
+    fingerprint: "sha256:sample",
+  };
+  const body = {
+    method: "lexical",
+    indexGeneratedAt: "2026-10-28T10:00:00Z",
+    understood: {
+      platforms: ["cli"],
+      productKinds: [],
+      languages: [],
+      capabilities: [],
+      unmatched: [],
+    },
+    noStrongMatch: false,
+    stacks: [
+      hit,
+      {
+        ...hit,
+        id: "typescript-cli",
+        evidence: {
+          stats: { greenRateLower: 0.8, sample: 10, projects: 8, window: 28 },
+          lastRun: run,
+        },
+      },
+    ],
+    fragments: [{ ...hit, kind: "fragment", id: "lint" }],
+  };
+  const wire = Schema.encodeUnknownSync(SearchResponse)(body);
+  expect(Object.keys(wire.stacks)).toEqual(columns);
+  expect(Object.keys(wire.fragments)).toEqual(columns);
+  expect(Object.values(wire.stacks).every((column) => column.length === 2)).toBe(true);
+  expect(Object.values(wire.fragments).every((column) => column.length === 1)).toBe(true);
+  expect(wire.stacks.id).toEqual(["go-cli", "typescript-cli"]);
+  expect(wire.stacks.score).toEqual([0.84, 0.84]);
+  expect(wire.stacks.why).toEqual([hit.why, hit.why]);
+  expect(wire.stacks.penalties).toEqual([hit.penalties, hit.penalties]);
+  expect(wire.stacks["evidence.lastRun.date"]).toEqual([null, run.date]);
+  expect(wire.stacks["evidence.stats.sample"]).toEqual([null, 10]);
+  expect(Schema.decodeUnknownSync(SearchResponse)(wire)).toEqual(body);
+});
+
+test("empty API hit lists encode every column and decode to empty rows", () => {
+  const body = {
+    method: "lexical",
+    indexGeneratedAt: "2026-10-28T10:00:00Z",
+    understood: { platforms: [], productKinds: [], languages: [], capabilities: [], unmatched: [] },
+    noStrongMatch: true,
+    stacks: [],
+    fragments: [],
+  };
+  const wire = Schema.encodeUnknownSync(SearchResponse)(body);
+  for (const list of [wire.stacks, wire.fragments]) {
+    expect(Object.keys(list)).toEqual(columns);
+    expect(Object.values(list).every((column) => column.length === 0)).toBe(true);
+  }
+  expect(Schema.decodeUnknownSync(SearchResponse)(wire)).toEqual(body);
+});
+
+test("API hit rows require evidence.lastRun even when no run exists", () => {
+  const body = {
+    method: "lexical",
+    indexGeneratedAt: "2026-10-28T10:00:00Z",
+    understood: { platforms: [], productKinds: [], languages: [], capabilities: [], unmatched: [] },
+    noStrongMatch: false,
+    stacks: [
+      {
+        kind: "stack",
+        id: "go-cli",
+        name: "Go CLI",
+        summary: "A CLI stack",
+        origin: "index",
+        trusted: true,
+        tier: "strong",
+        score: 0.84,
+        coverage: 1,
+        why: [],
+        penalties: [],
+        evidence: {},
+      },
+    ],
+    fragments: [],
+  };
+  expect(() => Schema.encodeUnknownSync(SearchResponse)(body)).toThrow();
 });
