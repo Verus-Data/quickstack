@@ -18,8 +18,11 @@ index URL ships until the host exists, so `bin.ts` passes none and the origin is
 with no source link until the repository has a public URL). 4.5b is implemented with all 30
 bundled cards drafted (by Codex agents in checkouts without the golden set) and waits on a
 maintainer: `bun run decorate --approve <id>` at a terminal for each card, after reading it,
-then it merges. In flight, as Codex units: 4.2c's telemetry-free parts, `v1/directory.json`
-here and its pages in `stacks-api`. Waiting: everything from 4.1a on behind D17. Maintainers' steps: review the 47 search
+then it merges. 4.2c's telemetry-free parts are landed: `v1/directory.json` here, and in
+`stacks-api` the newest, tag, fragment and removed-stack pages with the three-link nav; its
+telemetry views remain. 4.2f runs fixture-first ahead of D17: the provisional `StatsSummary` and
+`StatsDetail` are in `packages/format/src/stats.ts`, and its site tests (with 4.2c's stats views)
+are being written in `stacks-api`. Waiting: everything else from 4.1a on behind D17. Maintainers' steps: review the 47 search
 judgments (4.5a), generate the index key and add it to `INDEX_PUBLIC_KEYS`, rerun the bench per
 stack so the index proves something (4.0c), and publish `@stacks/format` before 4.1b.
 
