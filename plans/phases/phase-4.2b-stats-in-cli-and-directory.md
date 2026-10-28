@@ -1,6 +1,6 @@
 # Phase 4.2b: Stats in the CLI and the directory
 
-Status: IN PROGRESS 2026-10-28 (the CLI half; the site section is 4.2f's frontend work)
+Status: IN PROGRESS 2026-10-28 (the CLI half, tests 1-9, is executed; the site section, tests 10-11, is 4.2f's frontend work)
 
 | Field | Value |
 |---|---|
@@ -107,5 +107,6 @@ This sub-phase builds the section's data path and its three states with plain ma
 - A stack author may want the daily series as a chart. With the site in Astro that is one more island over the detail route; it is left out until someone asks, and the series is in `show --json` for anyone who wants to plot it. 2026-10-27: the maintainers asked; [4.2f](phase-4.2f-stats-pages-and-charts.md) draws it, as a static chart with one island.
 - 2026-10-27: `stats` carried only `greenRate` and `greenRateLower`, so an agent asked to quote a stack's interval and `n` couldn't from `list --json`; `greenRateUpper` and `sample` are added. The detail routes moved to `/v1/stacks/:id/stats` and `/v1/fragments/:id/stats`, and the summary is paged (4.2a).
 - 2026-10-28 (execution): this run builds the CLI half only (tests 1-9, in this repository); the site's stats section (tests 10-11) is the frontend work in `stacks-api/apps/web` that 4.2f already carries. The routes are columnar under D38 (`@steamfield/stacks-format` 0.3.0's `Columnar` schemas decode to rows, so the cache holds decoded rows). `AppConfig.apiUrl` and the loopback `STACKS_DEV_API_URL` already exist (4.5e); this adds `DEFAULT_API_URL`, still unset until a host exists, so a release build fetches no stats yet. The fetch reuses one cached-fetch module extracted from 4.0d's remote index, shared with 4.2d's allowlist. Acceptance tests are numbered from this date; the plan carries no traced line because tests 10-11 live in `stacks-api`.
+- 2026-10-28 (landed): the CLI half is on `main`. `core/stats.ts` owns the summary paging, the per-entry detail cache and backoff, and `--offline`. `core/stats-text.ts` renders the one stats line that `list` and `show` share. Build-time facts reach config as one `Build` value (`releaseBuild`, `defaultApiUrl`) from `bin.ts`, and tests and scripts use `SOURCE_BUILD`. The stats test fixtures are columnar on the wire, so test values built from rows are checked with `Schema.toType`.
 - Agents may ignore `stats`. Test with a bench run (2.0b) where two stacks fit and see whether the pick and its explanation change before promoting it.
 - 2026-10-27: the plan rendered stats into the pages in the Worker by replacing a marker, with no client JavaScript. Under D35 the pages are an Astro site built at build time, so the Worker renders nothing and fresher numbers come from an island. A rebuild per daily rollup costs one CI run a day; if that becomes a burden, rely on the island and rebuild only after index deploys.
