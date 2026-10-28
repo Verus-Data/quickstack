@@ -74,8 +74,12 @@ signed-index schemas from it. 4.1d is executed (2026-10-28): maintenance judges 
 rebuilds queued projects, keeps `installs`, `daily_metrics` and `anomaly_flags`, logs one alert
 line per flagged run, and `/healthz` reports `maintenanceFresh`. 4.5e's CLI side is on main
 (`stacks search` asks the API first; the format package is 0.2.0 with `rank`, unpublished until
-a maintainer publishes it). In flight (2026-10-28): 4.2a's implementation against committed
-tests, then 4.2g's (tests committed on top of 4.2a's; its tests 4, 12, 13 and 14 deferred).
+a maintainer publishes it). 4.2a is executed: the rollups run in `maintain` after the integrity
+pass and serve `GET /v1/stats`, `GET /v1/stacks/{stackId}/stats` and
+`GET /v1/fragments/{fragmentId}/stats`. 4.2g is executed: `bun run seed` and `bun run dev:stats`
+build labelled history in `.dev/data/seeded.sqlite` offline (tests 4, 12, 13 and 14 deferred).
+Neither runs on a fresh checkout yet, because it needs a signed index in `STATIC_DIR` and nothing
+can sign one locally (4.2g's last dated line).
 4.5e's route in `stacks-api` waits on 0.2.0's publication. Maintainers' steps:
 review the 47 search judgments (4.5a), generate the index key and add it to `INDEX_PUBLIC_KEYS`,
 rerun the bench per stack so the index proves something (4.0c), and publish each

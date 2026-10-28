@@ -1,6 +1,6 @@
 # Phase 4.2a: Stats rollup and routes
 
-Status: IN PROGRESS 2026-10-28 (on SQLite on the Node host, amended D16; the wire shapes are the provisional `StatsSummary` and `StatsDetail` the site builds against)
+Status: EXECUTED 2026-10-28 (on SQLite on the Node host, amended D16; the wire shapes are the provisional `StatsSummary` and `StatsDetail` the site builds against)
 
 | Field | Value |
 |---|---|
