@@ -1,71 +1,91 @@
-# Pitch
+# stacks — pitch
 
-Status: DRAFT 2026-10-26 — product positioning and proposed demo; not a release announcement.
+Status: DRAFT 2026-10-28 — aligned with the current CLI and live directory. Recheck the deployed dataset and installed release before recording.
 
-## One sentence
+## The promise
 
-**stacks gives your coding agent a reusable project blueprint and a verifiable definition of done, so every new project starts with your standards already written down.**
+**Find a tech stack that works. Have your agent build it.**
 
-## Elevator pitch — 30 seconds
+stacks gives your coding agent a reusable project recipe, a clear build brief, and checks that define a finished setup. Describe what you need or browse the catalog, inspect the fit, then let the agent you already use build the project and work toward green verification.
 
-Every new project starts with the same tax: dependencies, tests, lint, CI, and explaining your preferences to a coding agent again.
+## The problem
 
-Templates freeze yesterday's setup. A bare prompt leaves the agent guessing what complete means.
+Your next idea needs a foundation: frameworks, structure, tests, lint, CI, and instructions for your agent. Those decisions are familiar, but every project makes you assemble and explain them again.
 
-stacks separates the durable decisions from the details that change. You describe the stack and the checks that must pass; your coding agent handles current versions and configuration.
+Templates preserve a snapshot of yesterday's files. A bare prompt makes the agent choose everything again. stacks preserves the engineering decisions while the agent resolves current versions and configuration.
 
-Write your setup once. Reuse it. Start on the actual product sooner.
+## Thirty-second pitch
 
-## Opening hook
+> Someone has already worked through the setup your next project needs. stacks makes those project recipes discoverable and gives your coding agent a clear target. Find a suitable stack, inspect its tools and checks, and have your agent build from the brief. Then stacks verify runs the declared checks so you can see what passed and what needs work. Start with a foundation you can inspect, and spend your time on the product.
 
-“Your agent can write the app. Why are you still explaining how to set up the project?”
+## Sixty-second demo pitch
 
-## Demo pitch — 60 seconds
+> I want a small Python API and React dashboard, with a simple Rho sandbox example. My agent searches for a suitable foundation and explains the choice. We inspect its requirements and available evidence before starting.
+>
+> stacks combines the recipe with reusable fragments and writes a build brief. My coding agent handles current dependencies and implementation. We follow one requirement from the brief into the code and a meaningful test, then run the declared checks.
+>
+> The website lets me inspect the same stack and its outcome views. Usage, successful verification, and time to green answer different questions; the sample and data source matter.
+>
+> The result is a useful local starter I can change. stacks provides the foundation. My agent builds the project.
 
-Suppose you want an agent that reviews Rho sandbox transactions and flags charges above $500.
+Keep Rho to a minimal read-only sandbox connection if ready. Otherwise demonstrate the starter's local API-to-UI example. Transaction thresholds, duplicate detection, and application deployment are outside this demo.
 
-Before you can test that idea, you need a project foundation: structure, dependencies, tests, lint, and clear instructions for your coding agent.
+## What the developer gets
 
-stacks captures that foundation in a reusable stack. It prepares a build brief and a definition of done. Your existing coding agent implements the project, resolves current tooling, and works toward passing verification.
-
-Then we test the actual use case: a transaction is flagged with an explanation. We change the requirements to detect possible duplicates within seven days, update the tests, and demonstrate the result again.
-
-The product is stacks. The Rho agent is the example it helps us build.
-
-## What makes it different
-
-| Approach | What it preserves | What still needs attention |
+| Stage | Product contribution | Visible result |
 | --- | --- | --- |
-| Static template | A snapshot of project files | Updating dependencies and configuration |
-| Bare agent prompt | Flexibility to generate current code | Consistent decisions and a complete definition of done |
-| stacks design | Reusable intent, stable files, and verification requirements | The coding agent implements and verifies current tooling |
+| Find | Searchable stack and fragment metadata, with local fallback | An explained recommendation grounded in the request |
+| Inspect | Recipe requirements, tools, declared checks, and available evidence | A starting point the developer can review |
+| Compose | A stack plus reusable fragments | Stable starter files and a project brief |
+| Build | A concrete task for the existing coding agent | Current dependencies and an implemented starter |
+| Verify | Checks from the project's manifest and run history | Passing and failing steps the agent can act on |
 
-The core design choice: **humans own the standards; agents handle the details that age.**
+Search matches requests against metadata without calling a model. Fit and conflicts determine relevance; evidence can settle near-ties within a tier. Project counts do not raise search scores. The coding agent explains the recommendation to the developer.
 
-## Audience and adoption
+The CLI writes context and stable starter files. The coding agent writes the application. Only verification executes the commands declared in the project's own manifest; scaffolding does not execute commands supplied by entries.
 
-Start with developers who repeatedly build projects using coding agents and already have a setup they trust. Their first reason to adopt is saving repeated setup work while preserving their standards.
+## Why it matters
 
-The first useful adoption loop is: capture one trusted stack → use it for a real project → improve the brief from the run → reuse it on the next project.
+- Reuse layout, tooling expectations, and verification requirements across projects.
+- Let the agent resolve current versions instead of freezing a generated application.
+- Inspect a recipe before creating a project.
+- Finish against declared checks instead of stopping at a dev server.
+- Add fragments to an existing project, parking conflicts for review rather than overwriting files.
 
-Community distribution and hosted services are later opportunities, not evidence of current traction or a settled pricing model.
+Start with developers who repeatedly build with coding agents, teams that need consistent foundations, and builders under time pressure. Using a bundled recipe does not require authoring one first.
 
-## What the demo must prove
+Shared recipes are central to the story. Show an actual source or contribution route before inviting submissions; the maintained directory alone does not establish an open third-party marketplace.
 
-- The brief contains useful project decisions that the developer did not have to repeat.
-- The coding agent receives explicit acceptance checks.
-- The resulting project passes meaningful checks without weakening them.
-- The Rho example produces an understandable result using clearly identified data.
-- Any claimed speed improvement has a comparable measured baseline.
+## What the website adds
 
-## Claims discipline
+The [live directory](https://stacks.steamfield.io/) connects the promise to specific stacks, tools, fragments, verification commands, and outcome views. The homepage's interactive walkthrough is scripted and runs no commands; record a separate real agent build.
 
-Current repository state: CLI foundation with doctor and version support; the product loop is planned. See [the handoff](../plans/HANDOFF.md) and [the problem statement](PROBLEM_STATEMENT.md).
+The [Python + React page](https://stacks.steamfield.io/stacks/python-react/) exposes outcomes, time to green, failure categories, and composition breakdowns. Its ledger panel displayed “No ledger run recorded” during the October 28 inspection. Aggregate outcomes and current-recipe bench evidence are different signals.
 
-Do not announce shipping integrations, deployment automation, npm availability, or measured speedups without checking the implementation and evidence. A goal such as “10× faster” is a hypothesis until measured.
+**Data qualification:** the current [handoff](../plans/HANDOFF.md) says production serves seeded history. Treat displayed counts, rates, and timings as sample analytics until deployed provenance is confirmed. The site's four-hour self-setup baseline is illustrative, not a measured control run.
 
-The repository's settled design says the CLI does not call an LLM or execute commands supplied by stack entries. Attribute implementation and application deployment to the coding agent and the configured tools.
+Keep the time window, sample, uncertainty interval, and dataset label visible. Time to green is conditional on projects that reached green; it is not a completion promise.
 
-## Closing line
+## Claims we can support
 
-**Stop rebuilding your starting point. Write it once, give it to your agent, and verify the result.**
+| Claim | Basis and boundary |
+| --- | --- |
+| A published CLI and documented quickstart exist | Package `@steamfield/stacks`; rehearse the exact release used |
+| Search, scaffolding, composition, and verification exist | Current CLI and [command reference](../packages/cli/docs/reference/commands.md) |
+| A live directory and outcome interface exist | Observed October 28; qualify the seeded metrics |
+| A recipe has been exercised | Cite its dated run, configuration, and fingerprint |
+| This demo reached green | Show a full recorded run and inspect meaningful assertions |
+
+The handoff records an API/format transition affecting hosted search decoding and incomplete API evidence fields. Rehearse the installed client against the deployed API. If it falls back locally or evidence is absent, show that behavior honestly.
+
+## Closing and next step
+
+**Find your starting point. Give your agent a clear target. Verify what it builds.**
+
+Browse [stacks.steamfield.io](https://stacks.steamfield.io/), then inspect the catalog:
+
+```sh
+npx @steamfield/stacks list stacks
+```
+
+See [DEMO_OUTLINE.md](DEMO_OUTLINE.md) for the recording and [PREP.md](PREP.md) for rehearsal.

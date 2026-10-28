@@ -1,234 +1,121 @@
-# Demo outline
+# stacks — demo outline
 
-Status: DRAFT 2026-10-27. A produced Loom video targeting 4:45. Shared-stack discovery leads the story; Rho is the example starter. Scenes depend on what works at rehearsal.
+Status: DRAFT 2026-10-28 — a produced 4:45 video backed by an actual agent-build recording. Confirm the event's limit and submission rules before export.
 
 ## The story
 
-Tell your agent what you want to build, and let it find a suitable starting point that someone else has already worked through.
+**Describe a project → find a suitable stack → inspect the brief → let the agent build → verify the result.**
 
-stacks brings shared project recipes together with evidence about their use. Developers can contribute their setups; other people and their agents can inspect the catalog, compare candidates and build from one. Stack usage and dependency trends help with that choice. Recorded verification results show what actually passed.
+Carry one stack's identity through the live catalog, search, project brief, build, and outcome. The viewer should leave knowing what to try, why the recipe fits, and what passing verification establishes.
 
-This is familiar behavior: people look at a GitHub project's usage and stars when deciding whether to adopt it. stacks applies that idea to project foundations, with evidence about how projects built from them turn out. Popularity is one signal alongside suitability and successful runs.
+Use a small Python API and React dashboard. Rho is an optional minimal read-only sandbox connection, not a transaction-review feature. End at a working local starter; application deployment is outside this recording.
 
-The selected stack gives the agent reusable engineering decisions and checks that define done. The agent handles current dependencies and configuration. Saving your own setup is one way to contribute to this shared catalog; someone starting a project should also benefit without ever writing a stack.
+Positioning: [PITCH.md](PITCH.md). Rehearsal: [PREP.md](PREP.md).
 
-The video follows a product request through discovery to a working starter, then opens the website to inspect the evidence behind the choice. Keep the Rho result small: one working connection and a place to start experimenting.
+## The request
 
-The [problem statement](PROBLEM_STATEMENT.md) covers setup consistency and reuse. This outline brings collaborative discovery to the front of the pitch. Implementation gaps are listed under “What must work for this story.”
+> I want a small web tool with a Python API and a React dashboard. Find a suitable stack, explain the choice and tradeoffs, then build a working local starter with tests. If the Rho sandbox connection is ready, include one small read-only example. Show me the declared checks and run them before handing back.
 
-## Video sequence
+Keep the language and product requirements visible. A Rho integration is work for the coding agent, not a claim that a Rho fragment ships in the catalog.
 
-Target 4:45, leaving 15 seconds below the submission limit. The quoted passages are draft narration. Graphics and transitions are included in these timings, not added afterward.
+## Shot list and narration
 
-### 0:00–0:20 · Start with someone else's experience
-
-**Screen:** Open with a six-second Claude Motion animation. A product request appears beside a small set of stack cards from different contributors. One card becomes a project folder. Cut to the actual catalog for the rest of the introduction.
-
-**Narration:**
-
-> Someone has already worked through the setup your next project needs. stacks makes those starting points discoverable, with evidence you and your agent can use to choose one.
-
-**Graphic direction:** Use simple labels: “What I want to build,” “Shared stacks,” and “My project.” No invented author names, adoption counts or success badges. This is a concept illustration; the real catalog follows immediately.
-
-### 0:20–0:45 · Ask for a product foundation
-
-**Screen:** Enter the request in the coding agent. Show the agent inspecting the available stacks.
-
-> I want to build a small web tool using Rho. Find a suitable stack, explain your choice, then get me to a working local starter with a simple Rho example.
-
-**Narration:**
-
-> I'm describing what I want to build. The agent can look for a stack that fits, including setups contributed by other developers.
-
-Use the catalog that actually exists. If the entries are maintainer-authored, identify them that way. The demo establishes the workflow; it does not need invented community activity.
-
-**Transition:** Carry the phrase “small web tool using Rho” into a small caption beside the shortlist. Keep the requirement visible while the agent compares options.
-
-### 0:45–1:25 · Show why the agent chose this stack
-
-**Screen:** The agent compares genuinely suitable candidates. Show their purpose and requirements, then the relevant usage or run evidence. Hold its recommendation on screen.
-
-**Narration:**
-
-> These are the candidates that fit the project. The agent can weigh how much they're used, what their dependencies look like, and the evidence that they build successfully. It explains the choice before starting.
-
-Capture the actual recommendation, including one reason to prefer the chosen stack and one tradeoff. Compare popularity and successful builds as separate signals. Only show a dependency trend influencing the recommendation if the agent actually read that data.
-
-If only one entry fits, say so and inspect its evidence. Do not stage a false competition or force the agent to select Rho despite its findings.
-
-**Transition:** Highlight the chosen entry. Match-cut its name in the recommendation to the same name in the scaffold command.
-
-### 1:25–1:45 · Turn the choice into a build brief
-
-**Screen:** Run the tested scaffold command in a fresh directory. Open the generated brief beside its verification steps.
-
-**Narration:**
-
-> stacks combines this recipe with shared pieces like CI and agent tooling. It gives my agent the build instructions and the checks the finished project has to pass.
-
-Follow one requirement from the selected stack or fragment into the brief. Keep its name visible so the viewer can recognize its implementation later.
-
-**Transition:** Use a two-second overlay showing the stack and selected fragments feeding into the brief, then land on the agent reading that real file.
-
-### 1:45–2:40 · Watch the agent build
-
-**Screen:** The agent reads the brief, installs dependencies and implements the starter. Accelerate waiting, then return to normal speed for a useful decision or result.
-
-**Narration:**
-
-> My coding agent handles the current tooling and implementation. Here is the requirement from the brief, now in the project and covered by a test.
-
-If the recorded run contains a failure, show the cause, fix and rerun. Otherwise show the clean run. Keep elapsed build time visible during accelerated footage.
-
-**Transition:** Follow the real verification command into its output. A small “Building” caption can change to “Checking”; hold the result before cutting away.
-
-### 2:40–3:15 · Show what passing means
-
-**Screen:** Required checks pass. Inspect the test from the previous scene, then cut to a labeled controlled demonstration: change a verify command in a disposable copy and show stacks refusing to run it.
-
-**Narration:**
-
-> These checks were declared before the build. If I change a verification command, stacks detects it and stops. The agent has to meet the declared checks.
-
-Return to the completed project. Show actual scaffold duration and total time to green, plus the agent/model and manual interventions. Record warm or cold cache conditions. Use measured numbers in the voiceover.
-
-Changed-command detection protects the declared commands. It does not establish that test assertions are complete or prevent an agent from weakening application tests.
-
-**Transition:** Cut from the passing result to the running example. Use the same project name in both shots.
-
-### 3:15–3:30 · Run the Rho example
-
-**Screen:** Execute one sandbox request, show its response, then open the example source.
-
-**Narration:**
-
-> The Rho connection works. I can start changing this example, with the project setup and tests already in place.
-
-Keep the sandbox label visible. Stop at the starter; there is no transaction-review feature to build.
-
-### 3:30–4:30 · Inspect the evidence yourself
-
-**Screen:** Open the website on the selected stack. Show its source or contribution history, usage evidence and one relevant dependency trend. If a different stack has the needed history, identify the switch.
-
-**Narration:**
-
-> I can inspect the same choice on the website. Here is where the stack came from, how it's being used, and what happened when people built with it. I can also see which dependencies are gaining use when I'm deciding what to build on.
-
-Spend this minute on one decision, not a tour of charts. For example, show why a frequently used candidate fits the requested project, or why stronger verification evidence makes another suitable candidate worth considering. Use the finding the records support.
-
-Trace one displayed metric to its source records. Keep its sample and time window visible. Dependency trends describe the reporting stacks projects, not the whole software industry.
-
-**Transition:** Match-cut the selected entry's name on the website back to the working project. This connects discovery to the result without another explanatory graphic.
-
-### 4:30–4:45 · Leave a usable next step
-
-**Screen:** The working starter beside the exact tested quickstart. Show where to find the catalog and the demonstrated stack.
-
-**Narration:**
-
-> Tell your agent what you want to build. It can find a shared starting point, explain why it fits, and get you to a project you can work on.
-
-Hold the command and link long enough to read. Mention contributing a stack only if there is a usable contribution route to show.
-
-## Motion graphics and transitions
-
-Keep the motion graphics brief enough that most of the video is visibly working software. The six-second opener and two-second composition overlay are the only standalone explanatory animations planned. Other transitions connect recorded screens.
-
-| Transition | Treatment | Purpose |
+| Time | Recorded screen | Draft narration |
 | --- | --- | --- |
-| Product request to shortlist | Carry the request into a small caption | Keep the selection grounded in what the user asked for |
-| Recommendation to scaffold command | Match the selected stack name across the cut | Make it clear the agent builds the stack it chose |
-| Stack and fragments to brief | Two-second overlay over real files | Explain composition without scrolling through every file |
-| Build to verification | Change a small state caption; show real output | Distinguish implementation from passing checks |
-| Verification to Rho example | Direct cut with the project name retained | Connect a passing check to a runnable result |
-| Website to finished project | Match the stack name again | Show the outcome of discovery |
+| 0:00–0:20 | Live homepage headline, then a real stack detail | “Every new project needs a foundation. stacks makes those starting points discoverable and gives your coding agent a clear target.” |
+| 0:20–0:55 | Request, actual search response, agent recommendation | “My agent finds a suitable recipe and explains why it fits before creating anything.” |
+| 0:55–1:20 | Requirements, tools, fragments, and declared checks | “I can inspect the setup and what working will mean before the build starts.” |
+| 1:20–1:45 | Fresh scaffold, real brief and manifest | “stacks composes the recipe into a build brief. The checks are declared before implementation.” |
+| 1:45–2:35 | Agent builds; trace one requirement into code and a test | “The agent handles current dependencies and configuration. This requirement is now implemented and tested.” |
+| 2:35–3:10 | Full verify output, assertion, labeled command-change refusal | “stacks runs the declared checks and detects changed commands. Passing still depends on meaningful tests.” |
+| 3:10–3:35 | Working local example and run report | “Here is the working starter and the measured time this run took to reach green.” |
+| 3:35–4:20 | Same stack's website outcomes and one useful comparison | “Usage, successful verification, and time to green answer different questions. These displayed metrics use sample data for this demonstration.” |
+| 4:20–4:45 | Starter beside catalog URL and tested quickstart | “Find your starting point. Give your agent a clear target. Verify what it builds.” |
 
-For Claude Motion, prepare the intro and composition overlay as separate clips. Use the actual product typography and colors where available, with large text and quiet movement. Keep captions in the same positions across clips. Avoid spinning terminals, simulated typing and animated charts that could be mistaken for recorded results.
+Keep the sample-data sentence while the deployed dataset is seeded. Do not imply the site's scripted homepage interaction performed the recorded build.
 
-Cut on an action or result. Let important text settle before the next cut, and leave terminal output at normal speed when the viewer needs to read it. Music, if used, should stay below narration and never carry information the screen omits.
+## Discovery: show the choice
 
-## What the agent should weigh
+Rehearse the selected CLI release with:
 
-Start with fit: the kind of product, language or runtime constraints, required integrations and the developer's preferences. Then compare the evidence for the candidates that remain.
+```sh
+stacks search "Python API and React dashboard" --kind stack --limit 3 --json
+stacks show python-react --json
+```
 
-| Signal | How it helps |
+Capture the agent reading the response and explaining one fit reason and one tradeoff. Inspect `ranking`, `remote`, caveats, matching fields, and available evidence. Search relevance comes from fit; project counts do not raise scores. Evidence can distinguish near-ties within a tier.
+
+If only one entry fits, inspect it rather than staging competition. If hosted search fails or is incompatible, show local fallback. Absent API evidence is not proof that no historical run exists.
+
+Source `main`, the published CLI, and the deployed API can differ. The current handoff records a format/API transition and incomplete API evidence fields; rehearsal decides which path the footage can support.
+
+## Composition: make the brief tangible
+
+Use a fresh directory and a manual handoff:
+
+```sh
+stacks new python-react stacks-demo --sandbox --dry-run --json
+stacks new python-react stacks-demo --sandbox --no-launch --json
+```
+
+Have the agent read `.stacks/BRIEF.md` in the generated project and carry it out. Open the brief beside `.stacks/manifest.json`. Show the actual selected fragments: sandbox changes the composition, so do not promise full-project defaults that were omitted.
+
+Follow one requirement into implementation and a meaningful test, such as the typed frontend client calling the API. Accelerate waiting, label elapsed time, and return to normal speed for decisions and results.
+
+## Verification: show what passed
+
+From the generated project:
+
+```sh
+stacks verify
+stacks runs
+```
+
+Show a full green result, required steps, and a representative assertion. Exit 0 can also represent a partial run; it is insufficient by itself for a complete-verification claim.
+
+For the safeguard scene, change one recorded verification command in a disposable copy and show refusal. Label it as controlled footage, then return to the unchanged successful project. Do not use `--accept-changes` to erase the staged refusal.
+
+Command integrity does not guarantee assertion quality. Inspect the test and confirm checks were not weakened or replaced by no-ops.
+
+Show one actual read-only Rho sandbox request if ready. Otherwise show the starter's local API-to-UI interaction and identify Rho as a next step. No charge threshold, duplicate detector, payments, or application deployment.
+
+## Website: inspect the evidence
+
+Open [Python API + React SPA](https://stacks.steamfield.io/stacks/python-react/). First show its verification commands, then one outcome panel. Keep the data window, sample, uncertainty interval, and sample-data label visible.
+
+- Separate green rate among attempted projects from projects that never ran verification.
+- Explain time to green as conditional on successful projects, not a prediction.
+- Separate aggregate outcomes across configurations from the recipe's ledger panel, which showed no recorded run on October 28.
+- Use seeded charts to demonstrate inspection, not to claim community traction.
+- Include dependency trends only if an actual working view is found and supports a specific decision.
+
+The homepage's four-hour baseline is illustrative. Do not compare it with this run to claim a speedup. Finalized public metrics will not immediately reflect a just-completed demo run.
+
+## Visual direction
+
+Use the site's actual typography, colors, and stack names. Open on working software; an optional six-second title animation fits inside the opening twenty seconds. A two-second stack + fragments → brief overlay can clarify composition over real files.
+
+Match-cut the chosen stack name between search, site, and project. Keep a small Choosing → Building → Checking → Working caption. Use readable output, quiet transitions, and captions. Avoid simulated typing or animated charts that resemble observed results.
+
+Keep the source recording distinct from the site's scripted walkthrough, which uses a fixed example and runs no commands.
+
+## Rehearsal branches
+
+| Available result | What to show |
 | --- | --- |
-| Stack purpose and requirements | Establish whether the stack fits the product |
-| Usage and recent growth | Show which suitable stacks people are adopting |
-| Dependency adoption and version trends | Inform preferences about the tools the project will use |
-| Verification outcomes and sample size | Show how often observed projects reach passing checks |
-| Time to green and failure patterns | Set expectations for setup effort |
-| Source and contribution history | Let the developer inspect the recipe and how it has changed |
+| Compatible hosted search with evidence | Actual API-ranked response and explained choice |
+| Local fallback | Local ranking and recipe inspection; website sample analytics separately |
+| Missing current-recipe evidence | Say it is unavailable; identify any historical evidence used |
+| Rho unavailable | Working local starter; Rho as a next step |
+| Seeded metrics | Persistent sample-data labeling |
+| Build incomplete | Working portion and remaining failures; reduce completion claims |
 
-The recommendation should cite the evidence it used. Popularity can inform a decision without overriding an explicit requirement. Call a stack “battle-tested” only when the run history supports that description.
+## Deliverable and judging evidence
 
-## Keep the Rho starter small
+Retain uncut footage, CLI version, repo revision, composition, agent/model, verify output, run report, and interventions. Distinguish scaffold time from agent/build time. A comparative speedup needs an equivalent measured bare-agent run; otherwise report this run's duration.
 
-The request can describe an intended Rho-based product while the demo stops at its development foundation. The starter provides project structure, connection setup and a minimal example, with tests, lint and typechecking. Use an official SDK if verified for the chosen language; otherwise call it an API client.
+Show technical execution through the fresh build, technical depth through composition and command-change refusal, and usability through a tested next step. Let a judge inspect the source, rerun checks, and open the starter.
 
-A successful sandbox request in a command or small local page is enough. The developer should be able to open the example, change it and run its test immediately. Exclude charge thresholds, duplicate detection and application deployment.
+Confirm video length, edited-upload acceptance, and account upload support before export. Check captions, audio, processing time, and share permissions. Provide reproduction commands and access to private hosted implementation through the accepted judging route if needed.
 
-If the Rho starter cannot complete reliably, use an already proven stack for the same discovery-and-build workflow. Track eligibility remains an organizer decision.
-
-## What must work for this story
-
-This pitch includes shared contributions and evidence-informed agent selection. The current plans only cover parts of that experience:
-
-- The [registry index plan](../plans/phases/phase-4.0c-registry-index.md) serves the official registry and excludes third-party entries. Show an actual source or accepted contribution, and name the contribution route that exists. An open submission catalog is a product direction until implemented.
-- The [stats presentation plan](../plans/phases/phase-4.2b-stats-in-cli-and-directory.md) gives agents stack statistics through `list --json` and `show --json`. The [browsing plan](../plans/phases/phase-4.2c-directory-browsing.md) has trending views, but its CLI ignores the trending field. [Dependency statistics](../plans/phases/phase-4.2e-dependency-trends-and-pages.md) are planned for the website, not the CLI. Capture the actual browser, CLI or API access the agent uses; a person viewing a chart does not demonstrate that the agent consulted it.
-- The [handoff](../plans/HANDOFF.md) defers storage and telemetry until after the demo. Reconcile that scope with the demonstrated discovery features before recording. This outline does not change implementation status.
-
-Choose the footage and narration to match the working system:
-
-| Available evidence | Discovery scene | Website scene |
-| --- | --- | --- |
-| Working analytics with real observations | Agent reads available metrics and explains their bearing on its choice | Trace the same evidence and one useful dependency trend |
-| Working analytics with sample data | Label the dataset throughout; show the agent using the actual pipeline's output | Demonstrate computation and browsing without claiming adoption |
-| Catalog with bench evidence only | Agent compares descriptions, requirements and recorded bench results | Inspect the source and last run; describe usage trends as planned |
-
-With only bench evidence, keep the discovery comparison but omit claims about popularity influencing it. Shorten the website scene to 30 seconds and use the rest for an edit and test in the completed starter, or finish early. This still demonstrates reuse of a shared starting point; it does not establish the full analytics-driven discovery experience.
-
-Public metrics use finalized days and minimum samples. A just-completed demo run should not appear instantly in them. Keep sample data isolated from public telemetry and distinguish maintainer bench results from community observations.
-
-A concrete example of improving a shared recipe is in the [Astro bench notes](../plans/runs/2026-10-27-astro-blog.md): earlier runs hit generator flag problems, and the stack was updated with the working invocation. If useful, show that finding alongside the current instruction and explain who made the correction. It is maintainer evidence, not a discovery by the analytics pipeline.
-
-## What earns each judging criterion
-
-| Criterion | Evidence in the submission |
-| --- | --- |
-| Technical execution and completeness | A product request leads to an explained stack choice, a fresh scaffold, passing checks and a working starter |
-| Technical depth | Show data reaching the agent's selection, a composed requirement reaching its implementation, and a real changed-command refusal |
-| Value and insight quality | Explain why one existing stack fits the request, using evidence a developer can inspect |
-| Usability | Give the viewer a tested route from the catalog to a runnable project |
-| Creativity and product feel | Connect shared recipes and adoption evidence to the agent's build workflow; keep transitions and screens readable |
-| Performance | Report actual selection/setup time and interventions, separating CLI overhead from agent/build time |
-
-A speedup claim needs a comparable bare-agent run using the same task, model and acceptance checks. Account for stack-authoring effort separately. Without that comparison, report measured elapsed time. Claims about scale need measured workloads.
-
-The run report counts interventions from the agent's notes. Check that count against the recording. If time permits, have someone who did not author the stack follow the discovery and quickstart path and record where they needed help.
-
-## Capture and deliver
-
-Keep source footage of the complete workflow, including the agent's actual evidence reads and recommendation. Label acceleration, replayed footage and prebuilt projects. Preserve the connection between the selected stack, its composition and the project shown at the end.
-
-Record the controlled changed-command example in a disposable copy, restore the command before rerunning, and label the cut back to the successful project.
-
-Loom accepts externally recorded videos on paid Business, Business + AI and Enterprise roles. Uploads are unavailable on Starter and Business + AI trials. Assemble the clip in the editor, then use **New Video > Upload Video**. A practical export is 1080p at 30 fps, MP4 with H.264 video and AAC audio. See [upload requirements](https://support.atlassian.com/loom/docs/upload-or-import-videos/) and [workspace roles](https://support.atlassian.com/loom/docs/understand-workspaces-roles-and-permissions), checked October 27, 2026.
-
-The event slide says to use Loom to record and submit, without explicitly addressing edited uploads. Confirm that point with the organizer before committing to the upload route. Direct recording in Loom remains the fallback; [Starter recordings have a five-minute limit](https://www.atlassian.com/software/loom/pricing). Allow processing time and check the final share link, audio and text legibility.
-
-## Supporting material
-
-At the live table, keep the catalog, agent session and completed project open. Let a judge inspect the choice, then rerun the checks and example. Keep a local recording available if connectivity fails.
-
-Link to the demonstrated revision, stack source and generated example. Include reproduction commands and the code for composition and verification. If discovery analytics are part of the completed submission, give judges access to that implementation and its data instructions. The hosted code is in a private repository; arrange access through the organizer's accepted mechanism.
-
-The supplied slide requires a GitHub link, project description and Loom video by **5 pm Thursday, October 29**, with 15–20 minutes needed to submit. Confirm the event timezone.
-
-Before recording:
-
-- Verify the selected entry can be obtained through the submitted quickstart.
-- Rehearse the agent's discovery path and capture the evidence it actually uses.
-- Reproduce the starter from a fresh directory, recording timings and any help needed.
-- Choose the website footage supported by the working software and available records.
-- Align [PITCH.md](PITCH.md) and [PREP.md](PREP.md), which still describe the old transaction-review demo. Reconcile the broader collaborative positioning with the problem statement and registry plans before implementation.
+Existing event notes record a GitHub link, description, and Loom video due at 5 pm Thursday, October 29. Confirm the deadline, event timezone, submission time allowance, and Rho eligibility with the organizer. Keep a local recording for connectivity failures.
