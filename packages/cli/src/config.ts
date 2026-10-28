@@ -193,7 +193,7 @@ export function configLayer(env: Environment = process.env) {
         return { ...env, ...set };
       };
       const agent = Effect.sync(() => detectAgent(captured));
-      return { get, paths, logging, childEnv, agent };
+      return { get, paths, logging, childEnv, agent, ci: captured.CI !== undefined };
     }),
   );
 }
@@ -210,6 +210,8 @@ export class AppConfig extends Context.Service<
     childEnv: (remove: readonly string[], set?: Record<string, string>) => Record<string, string>;
     /** The agent this invocation runs under, from `AgentMarkers`; `"none"` when no marker is set. */
     agent: Effect.Effect<DetectedAgent>;
+    /** A set CI selects agent output even when the streams are terminals. */
+    ci: boolean;
   }
 >()("stacks/AppConfig") {
   static layer = () => configLayer();

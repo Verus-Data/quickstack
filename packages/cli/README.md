@@ -4,6 +4,8 @@ stacks starts projects for coding agents. You pick a stack, it writes a few star
 
 At a terminal, `new` and `add` launch an available configured agent, or ask you to pick when several harnesses are found. The order is Claude Code, Codex CLI, OpenCode, Cursor CLI, Copilot CLI, then the Codex app on macOS. Use `--launch claude|codex|opencode|cursor|copilot|codex-app` to choose explicitly, or `--no-launch` to print the prompt. A single harness launches without asking; a pick isn't saved. See [agents](docs/agents.md) for detection, adapter targets and launch behavior.
 
+With missing arguments, `new`, `add` and `create` offer numbered choices only in human mode with both stdin and stdout on a terminal. Enter numbers (comma-separated for fragments); Ctrl+C quits before writing. The completed choices print a `Running:` command you can reuse. Agents, `--json`, CI and pipes keep the existing noninteractive behavior.
+
 The npm package is `@steamfield/stacks`; the command it installs is `stacks`. It needs Node 22 or newer, on macOS or Linux.
 
 ```sh

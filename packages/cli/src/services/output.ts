@@ -21,9 +21,10 @@ export function resolveAudience(
   json: boolean,
   stdoutIsTTY: boolean,
   agent: DetectedAgent,
+  ci = false,
 ): Audience {
   if (json) return "json";
-  return stdoutIsTTY && agent === "none" ? "human" : "agent";
+  return !ci && stdoutIsTTY && agent === "none" ? "human" : "agent";
 }
 export type Writer = (text: string) => Promise<void>;
 function write(writer: Writer, text: string) {
@@ -76,8 +77,9 @@ export class Output extends Context.Service<
       Output,
       Effect.gen(function* () {
         const host = yield* Host;
-        const agent = yield* (yield* AppConfig).agent;
-        return make(resolveAudience(json, host.stdoutIsTTY, agent), stdout, stderr);
+        const config = yield* AppConfig;
+        const agent = yield* config.agent;
+        return make(resolveAudience(json, host.stdoutIsTTY, agent, config.ci), stdout, stderr);
       }),
     );
   /** An Output for a fixed audience, for tests that bypass the resolution. */
