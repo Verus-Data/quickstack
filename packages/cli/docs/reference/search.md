@@ -9,15 +9,29 @@ stacks search go cli --kind stack --limit 3
 
 The request is one or more positional words, joined with spaces and trimmed, from 1 to 500
 characters. `--kind stack|fragment` selects one list; `--limit` sets the maximum hits in each
-list (default 5, range 1 to 20). `--offline` is accepted as a shared flag.
+list (default 5, range 1 to 20). `--local` keeps the request on this machine;
+`--offline` is also accepted as a shared flag.
 
-Search runs locally over the visible registry and its search cards. It sends no request text
-to a server, stores none in logs, and never calls a model. Cached statistics and last-run
-evidence are optional; search never fetches statistics.
+When an API endpoint is configured, search sends the request to `GET /v1/search` while ranking
+the visible registry locally. API hits replace bundled and cached-index copies; project and
+user overrides keep their local ranking. A missing API hit stays available locally.
+The API has one attempt and an 800 ms deadline, including reading its response. A failed call
+falls back to local ranking and backs off for ten minutes. Only endpoint URLs and expiry times
+are saved under `$XDG_CACHE_HOME/stacks/search/backoff.json`; no request or response is cached.
+Search stores no request text in logs and never calls a model. Cached statistics and last-run
+evidence are optional; search never fetches statistics or refreshes the registry index.
 
-`--json` returns `SearchResult`: `ranking: "local"`, the request, recognized vocabulary and
+This release has no hosted API endpoint, so it ranks locally with `remoteReason: "no_endpoint"`.
+Source builds can use a loopback `STACKS_DEV_API_URL`; release builds ignore that variable.
+`--local`, `--offline`, `STACKS_OFFLINE=1` and `DO_NOT_TRACK` (except empty, `0` or `false`)
+each prevent the API call.
+
+`--json` returns `SearchResult`: `ranking: "api" | "local"`, the request, recognized vocabulary and
 unmatched content words under `understood`, `noStrongMatch`, and separate `stacks` and
-`fragments` lists. Run `stacks schema search` for the JSON Schema.
+`fragments` lists. `remote` is `used`, `off` or `unavailable`; when off, `remoteReason` is
+`local_flag`, `offline`, `do_not_track`, `backoff` or `no_endpoint`. API results also include
+`method` (`lexical` or `hybrid`). Text output says when ranking ran locally.
+Run `stacks schema search` for the JSON Schema.
 
 Each hit includes its origin and trust, absolute `score` from 0 to 1, strong-field `coverage`,
 `tier` (`strong`, `partial`, `weak`), matching fields and words under `why`, penalties, optional

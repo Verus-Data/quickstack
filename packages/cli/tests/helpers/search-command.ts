@@ -1,11 +1,11 @@
 import { readFileSync, realpathSync } from "node:fs";
 import { join } from "node:path";
 import type { Kind } from "@steamfield/stacks-format";
+import { SearchMetadata, SearchVocabulary } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { expect } from "vitest";
 import type { Entry } from "../../src/core/registry/entry";
 import type { LastRun } from "../../src/schemas/ledger";
-import { SearchMetadata, SearchVocabulary } from "../../src/schemas/search";
 import { quiet, runCli } from "./cli";
 import {
   bundled,
@@ -76,15 +76,15 @@ export type Rank = (input: {
 }) => SearchView;
 
 export async function loadRank(): Promise<Rank> {
-  const modulePath = join(import.meta.dirname, "../../src/core/search/rank.ts");
+  const modulePath = join(import.meta.dirname, "../../../format/src/search/rank.ts");
   return (await import(modulePath)).rank;
 }
 export async function searchSchema(): Promise<Schema.Codec<SearchView>> {
-  const modulePath = join(import.meta.dirname, "../../src/schemas/search.ts");
+  const modulePath = join(import.meta.dirname, "../../../format/src/search/schema.ts");
   return (await import(modulePath)).SearchResult;
 }
 export async function hitSchema(): Promise<Schema.Codec<Hit>> {
-  const modulePath = join(import.meta.dirname, "../../src/schemas/search.ts");
+  const modulePath = join(import.meta.dirname, "../../../format/src/search/schema.ts");
   return (await import(modulePath)).SearchHit;
 }
 export const vocabulary = () =>

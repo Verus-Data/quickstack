@@ -1,5 +1,5 @@
-import type { SearchMetadata } from "../../schemas/search";
-import { phraseIn, tokens, words } from "./tokens";
+import type { SearchMetadata } from "./schema.js";
+import { phraseIn, tokens, words } from "./tokens.js";
 /** Exclusions match phrases, their content words, or a conventional acronym (TUI). */
 export function excluded(request: string, card: SearchMetadata | undefined): boolean {
   const content = new Set(tokens(request));

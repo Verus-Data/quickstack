@@ -90,9 +90,9 @@ test("eval compares lexical and fused metrics, calls embeddings only when reques
     readJson(join(cliRoot, "tests/fixtures/search/golden.json")),
   );
   const queries = new Set(golden.queries.map(({ query }) => query));
-  const target = Schema.decodeUnknownSync((await import("../src/schemas/search")).SearchMetadata)(
-    readJson(join(cliRoot, "registry/search/stacks/tauri-react.json")),
-  );
+  const target = Schema.decodeUnknownSync(
+    (await import("@steamfield/stacks-format")).SearchMetadata,
+  )(readJson(join(cliRoot, "registry/search/stacks/tauri-react.json")));
   const targetPhrases = [target.summary, ...target.requests];
   const inputs: string[] = [];
   const server = createServer(async (request, response) => {

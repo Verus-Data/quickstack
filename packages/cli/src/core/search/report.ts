@@ -1,6 +1,14 @@
-import type { SearchHit, SearchResult } from "../../schemas/search";
+import type { SearchHit, SearchResult } from "@steamfield/stacks-format";
 import { printable } from "../text";
 import { wrap } from "../wrap";
+
+const localReasons = {
+  local_flag: "--local",
+  offline: "offline",
+  do_not_track: "DO_NOT_TRACK",
+  backoff: "API backoff",
+  no_endpoint: "no API endpoint configured",
+};
 
 function reasons(hit: SearchHit): string {
   const phrases = new Map<string, string[]>();
@@ -46,6 +54,10 @@ export function renderSearch(
   options: { invocation: string; width: number; measure: (text: string) => number },
 ): string {
   const text = [
+    ...(result.remote === "unavailable" ? ["Ranked locally: API unavailable.", ""] : []),
+    ...(result.remote === "off" && result.remoteReason
+      ? [`Ranked locally: ${localReasons[result.remoteReason]}.`, ""]
+      : []),
     ...(result.noStrongMatch ? ["Nothing fits strongly. Confirm the fit with the user.", ""] : []),
     ...(result.understood.unmatched.length
       ? [`Unmatched: ${result.understood.unmatched.map(printable).join(", ")}`, ""]

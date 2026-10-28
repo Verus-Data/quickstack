@@ -2,12 +2,11 @@ import { execFile } from "node:child_process";
 import { realpathSync } from "node:fs";
 import { createServer } from "node:http";
 import { join } from "node:path";
-import { SearchResponse } from "@steamfield/stacks-format";
+import { SearchHit, SearchResponse, SearchResult } from "@steamfield/stacks-format";
 import { Clock, Effect, Schema } from "effect";
 import { Command } from "effect/cli";
 import { expect } from "vitest";
 import { cli } from "../../src/cli";
-import { SearchHit, SearchResult } from "../../src/schemas/search";
 import { VERSION } from "../../src/version";
 import { quiet, runCli } from "./cli";
 import { bundled } from "./search-metadata";
@@ -158,6 +157,8 @@ export function childSearch(args: string[], options: ReturnType<typeof apiOption
           HOME: home,
           XDG_CONFIG_HOME: join(home, "config"),
           NO_COLOR: "1",
+          // Bun's transpiler cache would otherwise write hundreds of files into the isolated home.
+          BUN_RUNTIME_TRANSPILER_CACHE_PATH: "0",
           PATH: process.env.PATH,
           ...options.env,
         },

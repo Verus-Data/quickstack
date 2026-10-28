@@ -1,5 +1,5 @@
-import type { SearchVocabulary, SearchWhy } from "../../schemas/search";
-import { phraseFrom, tokens } from "./tokens";
+import type { SearchVocabulary, SearchWhy } from "./schema.js";
+import { phraseFrom, tokens } from "./tokens.js";
 export const categories = ["platforms", "productKinds", "languages", "capabilities"] as const;
 export type Category = (typeof categories)[number];
 export function vocabularyMatches(request: string, vocabulary: SearchVocabulary): SearchWhy[] {

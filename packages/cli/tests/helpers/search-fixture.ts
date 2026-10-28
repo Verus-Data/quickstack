@@ -9,11 +9,11 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import type { Kind } from "@steamfield/stacks-format";
+import { SearchMetadata } from "@steamfield/stacks-format";
 import { Effect, Schema } from "effect";
 import { decodeEntry } from "../../src/core/registry/entry";
 import { searchSourceDigest } from "../../src/core/search/digest";
 import { sidecarPath } from "../../src/core/search/sidecar";
-import { SearchMetadata } from "../../src/schemas/search";
 import type { Finding } from "../../src/schemas/validate";
 
 /** Complete a synthetic bundled registry after building or deliberately editing its entries. */

@@ -79,7 +79,7 @@ async function searchFile(out: string) {
       Buffer.from(envelope.signature, "base64"),
     ),
   ).toBe(true);
-  const { SearchMetadata } = await import("../src/schemas/search");
+  const { SearchMetadata } = await import("@steamfield/stacks-format");
   const raw = Schema.decodeUnknownSync(
     Schema.Struct({ formatVersion: Schema.Literal(1), entries: Schema.Array(Schema.Unknown) }),
   )(JSON.parse(envelope.payload));
@@ -98,7 +98,7 @@ test("signed search metadata matches indexed entries and check detects a changed
     index.entries.map(({ kind, id }) => `${kind}/${id}`).sort(),
   );
   for (const value of payload.entries) {
-    const { SearchMetadata } = await import("../src/schemas/search");
+    const { SearchMetadata } = await import("@steamfield/stacks-format");
     expect(value).toEqual(
       Schema.decodeUnknownSync(SearchMetadata)(readJson(cardPath(f.registry, value))),
     );
@@ -167,7 +167,7 @@ test("editing a card preserves the bundles and digests actually published by bui
   const f = await setup();
   const before = await build(f);
   const bundles = snapshot(join(f.out, "v1/entries"));
-  const { SearchMetadata } = await import("../src/schemas/search");
+  const { SearchMetadata } = await import("@steamfield/stacks-format");
   const path = cardPath(f.registry, { kind: "stack", id: "sample" });
   const card = Schema.decodeUnknownSync(SearchMetadata)(readJson(path));
   put(path, JSON.stringify({ ...card, synonyms: ["batch chores", "automation"] }));

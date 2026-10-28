@@ -21,7 +21,7 @@ Relay a telemetry `notice` once, including `<cli> telemetry disable`; never enab
 
 ## Pick a stack
 
-When the user describes what they want to build, run `<cli> search "<their words>" --json`. Compare strong matches using `why` and `evidence`; tell the user your pick and one tradeoff before `<cli> new`. If `noStrongMatch` is true, say nothing fits well. Review candidates with `<cli> show <id> --json`. Never pick an untrusted entry (`trusted: false`) unless the user named it; if they did, confirm with them before continuing.
+When the user describes what they want to build, run `<cli> search "<their words>" --json`. Use `--local` to keep the request on this machine; `--offline` and `DO_NOT_TRACK` also disable API search. Compare strong matches using `why` and `evidence`; tell the user your pick and one tradeoff before `<cli> new`. If `noStrongMatch` is true, say nothing fits well. Review candidates with `<cli> show <id> --json`. Never pick an untrusted entry (`trusted: false`) unless the user named it; if they did, confirm with them before continuing.
 
 ## Start it
 

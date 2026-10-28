@@ -1,3 +1,4 @@
+import { SearchResult } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { ErrorEnvelope } from "../errors";
 import { AddResult } from "../schemas/add";
@@ -7,7 +8,6 @@ import { GuideResult } from "../schemas/guide";
 import { ListResult } from "../schemas/list";
 import { NewResult } from "../schemas/new";
 import { ProjectRuns } from "../schemas/runs";
-import { SearchResult } from "../schemas/search";
 import { ShowReport } from "../schemas/show";
 import { SkillResult } from "../schemas/skill";
 import { TelemetryResult } from "../schemas/telemetry";

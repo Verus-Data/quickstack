@@ -46,7 +46,7 @@ async function bundledEntries() {
 
 test("every drafting prompt including examples excludes golden query strings [4.5b#13a]", async () => {
   const { buildPrompt, PROMPT_VERSION } = await import("../scripts/decorate/prompt");
-  const { SearchMetadata, SearchVocabulary } = await import("../src/schemas/search");
+  const { SearchMetadata, SearchVocabulary } = await import("@steamfield/stacks-format");
   const entries = await bundledEntries();
   const cards = entries.map((entry) =>
     Schema.decodeUnknownSync(SearchMetadata)(readJson(cardPath(bundled, entry))),
@@ -78,7 +78,7 @@ test("every drafting prompt including examples excludes golden query strings [4.
 });
 
 test("bundled requests have no holdout copies or five-word runs [4.5b#13a]", async () => {
-  const { SearchMetadata } = await import("../src/schemas/search");
+  const { SearchMetadata } = await import("@steamfield/stacks-format");
   const problems: string[] = [];
   for (const ref of await bundledEntries()) {
     const value = Schema.decodeUnknownSync(SearchMetadata)(readJson(cardPath(bundled, ref)));
@@ -88,7 +88,7 @@ test("bundled requests have no holdout copies or five-word runs [4.5b#13a]", asy
 });
 
 test("the leak guard names card and query for copies, containment and normalized five-word runs [4.5b#13a]", async () => {
-  const { SearchMetadata } = await import("../src/schemas/search");
+  const { SearchMetadata } = await import("@steamfield/stacks-format");
   const root = space.dir();
   const ref = { kind: "stack", id: "copied-holdout" } as const;
   const query = golden.queries.find(

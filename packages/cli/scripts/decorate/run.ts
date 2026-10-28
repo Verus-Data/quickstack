@@ -1,3 +1,4 @@
+import type { SearchMetadata } from "@steamfield/stacks-format";
 import { Clock, Console, Effect, FileSystem } from "effect";
 import { type Entry, isRejected } from "../../src/core/registry/entry";
 import { Registry } from "../../src/core/registry/registry";
@@ -5,7 +6,6 @@ import { openProject } from "../../src/core/scaffold/write";
 import { searchSourceDigest } from "../../src/core/search/digest";
 import { decodeSidecar, decodeVocabulary, sidecarPath } from "../../src/core/search/sidecar";
 import { PermissionDenied } from "../../src/errors";
-import type { SearchMetadata } from "../../src/schemas/search";
 import type { Options } from "./arguments";
 import { type Budget, draft } from "./client";
 import { type DecorateConfig, estimateUsd } from "./config";

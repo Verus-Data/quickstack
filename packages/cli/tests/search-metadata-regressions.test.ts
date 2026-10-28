@@ -171,7 +171,7 @@ test("validating one entry does not enumerate another kind's unreadable cards", 
 test("every bundled card is byte for byte what decorate writes, so approving changes one line", async () => {
   const { readdirSync } = await import("node:fs");
   const { Schema } = await import("effect");
-  const { SearchMetadata } = await import("../src/schemas/search");
+  const { SearchMetadata } = await import("@steamfield/stacks-format");
   for (const kind of ["stack", "fragment"] as const) {
     for (const name of readdirSync(join(bundled, "search", `${kind}s`))) {
       const text = readFileSync(join(bundled, "search", `${kind}s`, name), "utf8");

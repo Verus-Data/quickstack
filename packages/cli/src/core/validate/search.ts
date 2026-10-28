@@ -1,7 +1,6 @@
-import type { Kind } from "@steamfield/stacks-format";
+import type { Kind, SearchMetadata, SearchVocabulary } from "@steamfield/stacks-format";
 import { Effect, FileSystem, Path } from "effect";
 import { PermissionDenied } from "../../errors";
-import type { SearchMetadata, SearchVocabulary } from "../../schemas/search";
 import type { Finding } from "../../schemas/validate";
 import { countWords } from "../brief/words";
 import type { Entry } from "../registry/entry";

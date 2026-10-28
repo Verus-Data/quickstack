@@ -49,7 +49,7 @@ test("every bundled entry has a current reviewed card and no warnings [4.5b#1]",
   expect(listing.status, listing.stderr).toBe(0);
   expect(listing.stderr).toBe("");
   const entries = Schema.decodeUnknownSync(ListResult)(JSON.parse(listing.stdout)).entries;
-  const { SearchMetadata } = await import("../src/schemas/search");
+  const { SearchMetadata } = await import("@steamfield/stacks-format");
   for (const entry of entries) {
     const value = Schema.decodeUnknownSync(SearchMetadata)(readJson(cardPath(bundled, entry)));
     expect(value.source.reviewedAt, `${entry.kind}/${entry.id}`).not.toBeNull();
@@ -104,7 +104,7 @@ test.each([
   async ({ category, values }) => {
     const f = setup();
     const vocabulary = readJson(join(bundled, "search/vocabulary.json"));
-    const { SearchVocabulary } = await import("../src/schemas/search");
+    const { SearchVocabulary } = await import("@steamfield/stacks-format");
     const decoded = Schema.decodeUnknownSync(SearchVocabulary)(vocabulary);
     put(join(f.root, "search/vocabulary.json"), JSON.stringify({ ...decoded, [category]: values }));
     const findings = searchFindings(await validateSearch(f.root, { ...f, bundled: true }));
@@ -114,7 +114,7 @@ test.each([
 );
 
 test("cross-category aliases are allowed and bare go is absent [4.5b#13e]", async () => {
-  const { SearchVocabulary } = await import("../src/schemas/search");
+  const { SearchVocabulary } = await import("@steamfield/stacks-format");
   const vocabulary = Schema.decodeUnknownSync(SearchVocabulary)(
     readJson(join(bundled, "search/vocabulary.json")),
   );
@@ -177,7 +177,7 @@ test.each([
 });
 
 test("caveats are optional and empty fragment capabilities decode [4.5b#13c] [4.5b#13d]", async () => {
-  const { SearchMetadata } = await import("../src/schemas/search");
+  const { SearchMetadata } = await import("@steamfield/stacks-format");
   expect(Schema.decodeUnknownSync(SearchMetadata)(card(sample))).not.toHaveProperty("caveats");
   expect(
     Schema.decodeUnknownSync(SearchMetadata)(card({ kind: "fragment", id: "tools" })),

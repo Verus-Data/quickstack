@@ -40,6 +40,7 @@ Your own stacks and fragments live beside this file, in `stacks/<id>/` and `frag
 | `STACKS_REGISTRY_DIR` | A directory used as the bundled registry instead of the one shipped with the CLI, relative to the working directory; its entries are untrusted |
 | `STACKS_INDEX_URL` | Optional remote index URL, with no default in this release. Without it or a compiled-in official URL, the remote origin is off and makes no requests. HTTPS is required except for HTTP on `localhost` or `127.0.0.1`. Invalid URLs are never fetched. URLs other than a supplied official URL skip official signature verification and their entries are untrusted |
 | `STACKS_OFFLINE` | `1` disables remote registry requests; the shared `--offline` flag does the same. Verified cached entries remain available |
+| `STACKS_DEV_API_URL` | Source builds only: loopback API base URL for search, using HTTP or HTTPS on `localhost`, `127.0.0.1` or `[::1]`, without credentials, query or fragment. Release builds ignore it. No hosted API URL is configured yet |
 | `DO_NOT_TRACK`, `STACKS_TELEMETRY_DISABLED` | Any value except empty, `0` or `false` disables telemetry |
 | `STACKS_TELEMETRY_URL` | Optional telemetry server URL; no official URL is configured. Source builds never collect |
 | `STACKS_TELEMETRY_DEBUG` | `1` prints schema-valid events to stderr instead of queuing or sending; consent still applies |
@@ -47,6 +48,10 @@ Your own stacks and fragments live beside this file, in `stacks/<id>/` and `frag
 | `NO_COLOR` | Any nonempty value turns off color and the live progress line, so human output carries no ANSI escapes; it wins over `FORCE_COLOR`. JSON and agent output never carry them |
 | `FORCE_COLOR` | `1` colors human output even through a pipe (for `bun run human` and tests); it never colors JSON or agent output |
 | `HOME`, `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`, `XDG_CACHE_HOME` | Path roots; an unset `HOME` means the user's home directory. The cache is `$XDG_CACHE_HOME/stacks` (`$HOME/.cache/stacks`) |
+
+`--offline` and `STACKS_OFFLINE=1` also disable search API requests.
+`DO_NOT_TRACK` disables search API requests with the same value rules; `STACKS_TELEMETRY_DISABLED`
+controls telemetry only. See [Search](search.md) for local ranking and its separate backoff file.
 
 ## Remote registry cache
 

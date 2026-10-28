@@ -1,8 +1,8 @@
 import { mkdirSync } from "node:fs";
 import { join } from "node:path";
+import { SearchResult } from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { afterEach, expect, test } from "vitest";
-import { SearchResult } from "../src/schemas/search";
 import { emptyRegistry } from "./helpers/registry";
 import { buildRemoteFixture, remoteCli, remoteServer, success } from "./helpers/remote-index";
 import { workspace } from "./helpers/verify";

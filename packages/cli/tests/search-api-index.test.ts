@@ -52,7 +52,8 @@ test("an API-only stack is discoverable and show/new resolve it through the sign
         Effect.provide(RemoteIndex.layer({ keys, officialUrl: `${index.url}/v1/index.json` })),
       ),
     });
-  const body = response([officialHit("sample")]);
+  // Above every bundled stack's local score, so the API's own hit leads the merged list.
+  const body = response([officialHit("sample", { score: 1 })]);
   api.answer(body);
   const local = decoded(await invoke(["search", "sample", "--local", "--limit", "20", "--json"]));
   expect(local.stacks.some(({ id }) => id === "sample")).toBe(false);
@@ -72,15 +73,7 @@ test("an API-only stack is discoverable and show/new resolve it through the sign
   expect(index.requests).toContain("/v1/index.json");
   expect(index.requests.some((path) => path.startsWith("/v1/entries/stack/sample/"))).toBe(true);
   const target = join(scratch.path, "new-project");
-  const created = await invoke([
-    "new",
-    "sample",
-    "--dir",
-    target,
-    "--sandbox",
-    "--no-launch",
-    "--json",
-  ]);
+  const created = await invoke(["new", "sample", target, "--sandbox", "--no-launch", "--json"]);
   expect(created.status, created.stderr).toBe(0);
   expect(created.stderr).toBe("");
   const result = Schema.decodeUnknownSync(NewResult)(JSON.parse(created.stdout));

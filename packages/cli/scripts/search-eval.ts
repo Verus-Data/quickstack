@@ -1,11 +1,11 @@
 import { fileURLToPath } from "node:url";
 import { NodeServices } from "@effect/platform-node";
+import type { SearchHit, SearchVocabulary } from "@steamfield/stacks-format";
+import { type RankRecord, rank } from "@steamfield/stacks-format";
 import { Console, Effect, FileSystem, Schema } from "effect";
 import { isRejected } from "../src/core/registry/entry";
 import { Registry } from "../src/core/registry/registry";
-import { type RankRecord, rank } from "../src/core/search/rank";
 import { decodeSidecar, decodeVocabulary } from "../src/core/search/sidecar";
-import type { SearchHit, SearchVocabulary } from "../src/schemas/search";
 import { evaluate } from "../tests/helpers/search-eval";
 import { GoldenSet } from "../tests/helpers/search-golden";
 import { readConfig } from "./decorate/config";

@@ -184,8 +184,8 @@ for (const mode of ["hold", "partial"] as const) {
       yield* TestClock.adjust("799 millis");
       expect(finished).toBe(false);
       yield* TestClock.adjust("1 millis");
-      // Bound the real-I/O drain: a native or virtual 1,500 ms timeout must not pass at join.
-      yield* Effect.promise(() => expect.poll(() => finished, { timeout: 250 }).toBe(true));
+      // Bound the real-I/O drain below 1,500 ms, so a native or virtual 1,500 ms timeout fails.
+      yield* Effect.promise(() => expect.poll(() => finished, { timeout: 1_000 }).toBe(true));
       const value = decoded(yield* Fiber.join(fiber));
       expect(value).toMatchObject({ ranking: "local", remote: "unavailable" });
       expect(lists(value)).toEqual(lists(local));

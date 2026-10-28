@@ -21,6 +21,16 @@ export { Digest, IndexEntry, LastRun, RegistryIndex, SignedIndex } from "./index
 export { EntryRef, Manifest, ManifestStep, ProjectId } from "./manifest.js";
 export { NamedComposition, OfficialNames } from "./names.js";
 export { FailureKind, Outcome, RunRecord, RunStep, TamperCheck } from "./run-record.js";
+export { compareSearchHits, type RankInput, type RankRecord, rank } from "./search/rank.js";
+export {
+  SearchEvidence,
+  SearchHit,
+  SearchMetadata,
+  SearchResponse,
+  SearchResult,
+  SearchVocabulary,
+  SearchWhy,
+} from "./search/schema.js";
 export {
   CompositionStats,
   CountCell,

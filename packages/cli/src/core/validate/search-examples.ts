@@ -1,5 +1,5 @@
+import type { SearchMetadata } from "@steamfield/stacks-format";
 import { Effect } from "effect";
-import type { SearchMetadata } from "../../schemas/search";
 import { selectFragments } from "../compose/selection";
 import { isRejected } from "../registry/entry";
 import { Registry } from "../registry/registry";

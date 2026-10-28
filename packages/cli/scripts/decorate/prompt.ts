@@ -1,5 +1,5 @@
+import type { SearchMetadata, SearchVocabulary } from "@steamfield/stacks-format";
 import { type Entry, isFragment, isStack } from "../../src/core/registry/entry";
-import type { SearchMetadata, SearchVocabulary } from "../../src/schemas/search";
 
 export const PROMPT_VERSION = 2;
 

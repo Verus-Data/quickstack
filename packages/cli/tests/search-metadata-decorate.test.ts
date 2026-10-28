@@ -49,7 +49,7 @@ function success(result: Awaited<ReturnType<typeof decorate>>) {
   expect(result.stdout.trim()).not.toBe("");
 }
 async function drafted(f: DecorateWorkspace, ref: Ref = mobile) {
-  const { SearchMetadata } = await import("../src/schemas/search");
+  const { SearchMetadata } = await import("@steamfield/stacks-format");
   const value = Schema.decodeUnknownSync(SearchMetadata)(readJson(cardPath(f.registry, ref)));
   expect(value.source).toMatchObject({
     digest: await sourceDigest(f.registry, ref),
@@ -82,7 +82,7 @@ async function assertPrompt(f: DecorateWorkspace, body: unknown) {
   ])
     expect(text).toContain(input);
   expect(text.includes(entry.body) || text.includes(JSON.stringify(entry.body))).toBe(true);
-  const { SearchMetadata, SearchVocabulary } = await import("../src/schemas/search");
+  const { SearchMetadata, SearchVocabulary } = await import("@steamfield/stacks-format");
   const vocabulary = Schema.decodeUnknownSync(SearchVocabulary)(
     readJson(join(f.registry, "search/vocabulary.json")),
   );
@@ -337,7 +337,7 @@ test("a person with terminal stdin can approve without drafting [4.5b#11]", asyn
   const result = await decorate(f, ["--approve", mobile.id], { tty: true });
   expect(result.status, result.stdout + result.stderr).toBe(0);
   expect(result.stderr).toBe("");
-  const { SearchMetadata } = await import("../src/schemas/search");
+  const { SearchMetadata } = await import("@steamfield/stacks-format");
   const approved = Schema.decodeUnknownSync(SearchMetadata)(readJson(cardPath(f.registry, mobile)));
   expect([before, new Date().toISOString().slice(0, 10)]).toContain(approved.source.reviewedAt);
   expect(approved).toEqual({
@@ -361,7 +361,7 @@ test("changing body text stales only its card and restamp changes only the revie
   ).toEqual([mobile.id]);
   const before = new Date().toISOString().slice(0, 10);
   success(await decorate(f, ["--restamp", mobile.id]));
-  const { SearchMetadata } = await import("../src/schemas/search");
+  const { SearchMetadata } = await import("@steamfield/stacks-format");
   const restamped = Schema.decodeUnknownSync(SearchMetadata)(
     readJson(cardPath(f.registry, mobile)),
   );

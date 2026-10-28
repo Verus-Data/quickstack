@@ -1,13 +1,13 @@
 import { existsSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { NodeServices } from "@effect/platform-node";
-import { canonicalBundle, type IndexEntry } from "@steamfield/stacks-format";
+import { canonicalBundle, type IndexEntry, SearchMetadata } from "@steamfield/stacks-format";
 import { Effect, Schema } from "effect";
 import { afterEach, expect, test } from "vitest";
 import { EXAMPLE_CARDS, PROMPT_VERSION } from "../scripts/decorate/prompt";
 import { indexSearch } from "../scripts/index/search";
 import { decodeSidecar } from "../src/core/search/sidecar";
-import { SearchIndex, SearchMetadata } from "../src/schemas/search";
+import { SearchIndex } from "../src/schemas/search";
 import { quiet, runCli } from "./helpers/cli";
 import { copyEntry, minimal, writeEntry } from "./helpers/registry";
 import {

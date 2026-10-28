@@ -1,8 +1,8 @@
 import type { Kind } from "@steamfield/stacks-format";
+import { SearchMetadata, SearchVocabulary } from "@steamfield/stacks-format";
 import { Effect, FileSystem, Path, Schema } from "effect";
 import { PermissionDenied } from "../../errors";
 import { SEARCH_DIRECTORY } from "../../project-layout";
-import { SearchMetadata, SearchVocabulary } from "../../schemas/search";
 
 export function sidecarPath(entry: { kind: Kind; id: string }): string {
   return `${SEARCH_DIRECTORY}/${entry.kind === "stack" ? "stacks" : "fragments"}/${entry.id}.json`;

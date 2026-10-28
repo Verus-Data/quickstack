@@ -1,4 +1,6 @@
-import type { FragmentMeta, Kind, StackMeta } from "@steamfield/stacks-format";
+import type { FragmentMeta, Kind, StackMeta } from "../entry.js";
+import { bm25 } from "./bm25.js";
+import { excluded } from "./explain.js";
 import type {
   SearchEvidence,
   SearchHit,
@@ -6,11 +8,9 @@ import type {
   SearchResult,
   SearchVocabulary,
   SearchWhy,
-} from "../../schemas/search";
-import { bm25 } from "./bm25";
-import { excluded } from "./explain";
-import { tokens } from "./tokens";
-import { type Category, categories, matchedWords, vocabularyMatches } from "./vocabulary";
+} from "./schema.js";
+import { tokens } from "./tokens.js";
+import { type Category, categories, matchedWords, vocabularyMatches } from "./vocabulary.js";
 
 export type RankRecord = {
   readonly entry: {
@@ -222,7 +222,7 @@ function quality(hit: SearchHit): number {
   return 0;
 }
 const tierOrder = { strong: 0, partial: 1, weak: 2 } as const;
-function compare(a: SearchHit, b: SearchHit): number {
+export function compareSearchHits(a: SearchHit, b: SearchHit): number {
   return (
     tierOrder[a.tier] - tierOrder[b.tier] ||
     Number(b.trusted) - Number(a.trusted) ||
@@ -241,7 +241,7 @@ export function rank(input: RankInput): SearchResult {
   scoreFields(candidates, query, matches);
   const hits = candidates
     .map((candidate) => hitFor(candidate, input, matches, strongWords.size))
-    .sort(compare);
+    .sort(compareSearchHits);
   const stacks = hits.filter((hit) => hit.kind === "stack");
   const understood = {
     platforms: [],

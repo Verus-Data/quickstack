@@ -1,6 +1,6 @@
+import { SearchMetadata } from "@steamfield/stacks-format";
 import { Console, Duration, Effect, Schema, SchemaIssue } from "effect";
 import { decodeSidecar } from "../../src/core/search/sidecar";
-import { SearchMetadata } from "../../src/schemas/search";
 import type { DecorateConfig } from "./config";
 
 const Response = Schema.Struct({

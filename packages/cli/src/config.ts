@@ -220,6 +220,21 @@ export function configLayer(env: Environment = process.env, releaseBuild = false
         url: captured.STACKS_TELEMETRY_URL || undefined,
       };
       const indexUrl = read(text("STACKS_INDEX_URL")).pipe(Effect.map((url) => url || undefined));
+      const apiUrl = read(text("STACKS_DEV_API_URL")).pipe(
+        Effect.map((value) => {
+          if (releaseBuild || !URL.canParse(value)) return undefined;
+          const url = new URL(value);
+          const loopback = ["127.0.0.1", "localhost", "[::1]"].includes(url.hostname);
+          return loopback &&
+            ["http:", "https:"].includes(url.protocol) &&
+            !url.username &&
+            !url.password &&
+            !url.search &&
+            !url.hash
+            ? url.href
+            : undefined;
+        }),
+      );
       return {
         get,
         settings,
@@ -234,6 +249,7 @@ export function configLayer(env: Environment = process.env, releaseBuild = false
         color,
         ci: captured.CI !== undefined,
         indexUrl,
+        apiUrl,
         offline,
         setOffline,
       };
@@ -248,6 +264,8 @@ export class AppConfig extends Context.Service<
     noTelemetry: Effect.Effect<boolean>;
     setNoTelemetry: (value: boolean) => Effect.Effect<void>;
     indexUrl: Effect.Effect<string | undefined>;
+    /** No hosted default yet; a loopback development endpoint is source-only. */
+    apiUrl: Effect.Effect<string | undefined>;
     offline: Effect.Effect<boolean>;
     setOffline: (value: boolean) => Effect.Effect<void>;
     get: Effect.Effect<Settings, InvalidConfig>;
