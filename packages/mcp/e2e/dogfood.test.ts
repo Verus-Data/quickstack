@@ -97,8 +97,8 @@ describe("dogfood loop", () => {
       const newParsed = JSON.parse(newText);
       expect(newParsed.project).toBe(appDir);
       expect(newParsed.briefWords).toBeGreaterThan(3000);
-      expect(existsSync(join(appDir, ".quickstacks", "BRIEF.md"))).toBe(true);
-      expect(existsSync(join(appDir, ".quickstacks", "manifest.json"))).toBe(true);
+      expect(existsSync(join(appDir, ".stacks", "BRIEF.md"))).toBe(true);
+      expect(existsSync(join(appDir, ".stacks", "manifest.json"))).toBe(true);
 
       const verifyTool = findTool(tools, "quickstacks_verify");
       const verifyResult = yield* client.callTool({

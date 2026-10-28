@@ -1,21 +1,72 @@
 import { Schema } from "effect";
 
+// Shapes copied from packages/cli/src/schemas — not imported, to avoid a
+// cross-package source dependency. Keep them in sync with the CLI when it
+// changes. Origin: packages/cli/src/schemas/origin.ts
+const Origin = Schema.Literals(["project", "user", "index", "bundled"]);
+// Kind: packages/format/src/entry.ts (re-declared here for the same reason)
+const Kind = Schema.Literals(["stack", "fragment"]);
+// Category: packages/format/src/entry.ts
+const Category = Schema.Literals([
+  "agent-ops",
+  "app",
+  "ci",
+  "deploy",
+  "release",
+  "service",
+  "vendor",
+  "tooling",
+]);
+// DetectedAgent: packages/format/src/agent.ts
+const DetectedAgent = Schema.Literals(["claude", "codex", "opencode", "cursor", "other", "none"]);
+
+// LastRun: copied from packages/cli/src/schemas/ledger.ts
+const LastRun = Schema.Struct({
+  date: Schema.String,
+  result: Schema.Literals(["pass", "partial", "fail", "infra"]),
+  agent: DetectedAgent,
+  preset: Schema.String,
+  fingerprint: Schema.String,
+});
+
+// ListEntry: copied from packages/cli/src/schemas/list.ts (ListRow)
 export const ListEntry = Schema.Struct({
   id: Schema.String,
-  kind: Schema.Literals(["stack", "fragment"]),
+  kind: Kind,
   name: Schema.String,
   description: Schema.String,
   tags: Schema.Array(Schema.String),
-  origin: Schema.String,
+  category: Schema.optionalKey(Category),
+  appliesTo: Schema.optionalKey(Schema.Array(Schema.String)),
+  origin: Origin,
   trusted: Schema.Boolean,
-  shadows: Schema.Array(Schema.String),
-  lastRun: Schema.NullOr(Schema.String),
+  shadows: Schema.Array(Origin),
+  lastRun: Schema.NullOr(LastRun),
 });
 
 export type ListEntry = typeof ListEntry.Type;
 
+// ListResult: copied from packages/cli/src/schemas/list.ts
+// (notice and project are optional; the handler only reads entries)
 export const ListResult = Schema.Struct({
+  notice: Schema.optionalKey(Schema.String),
+  project: Schema.optionalKey(
+    Schema.Struct({
+      stack: Schema.NullOr(Schema.String),
+      applied: Schema.Array(Schema.String),
+      addable: Schema.Array(Schema.String),
+    }),
+  ),
   entries: Schema.Array(ListEntry),
+  rejected: Schema.Array(
+    Schema.Struct({
+      id: Schema.String,
+      kind: Kind,
+      origin: Origin,
+      dir: Schema.String,
+      error: Schema.String,
+    }),
+  ),
 });
 
 export type ListResult = typeof ListResult.Type;
@@ -30,7 +81,7 @@ export const NewResult = Schema.Struct({
   preset: Schema.Literals(["default", "sandbox"]),
   agents: Schema.Array(Schema.String),
   written: Schema.Array(Schema.String),
-  brief: Schema.Literal(".quickstacks/BRIEF.md"),
+  brief: Schema.Literal(".stacks/BRIEF.md"),
   briefWords: Schema.Number,
   fixedWords: Schema.Number,
   missingTools: Schema.Array(

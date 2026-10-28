@@ -76,7 +76,7 @@ describe("ListEntry", () => {
     expect(result.id).toBe("x");
   });
 
-  it("decodes lastRun as a string", () => {
+  it("decodes lastRun as an object", () => {
     const result = Schema.decodeUnknownSync(ListEntry)({
       id: "x",
       kind: "fragment",
@@ -86,9 +86,32 @@ describe("ListEntry", () => {
       origin: "bundled",
       trusted: false,
       shadows: [],
-      lastRun: "2026-01-01T00:00:00Z",
+      lastRun: {
+        date: "2026-01-01T00:00:00Z",
+        result: "pass",
+        agent: "claude",
+        preset: "default",
+        fingerprint: "abc123",
+      },
     });
-    expect(result.lastRun).toBe("2026-01-01T00:00:00Z");
+    expect(result.lastRun).not.toBeNull();
+    expect(result.lastRun?.result).toBe("pass");
+  });
+
+  it("rejects lastRun as a string", () => {
+    expect(() =>
+      Schema.decodeUnknownSync(ListEntry)({
+        id: "x",
+        kind: "fragment",
+        name: "X",
+        description: "d",
+        tags: [],
+        origin: "bundled",
+        trusted: false,
+        shadows: [],
+        lastRun: "2026-01-01T00:00:00Z",
+      }),
+    ).toThrow();
   });
 });
 
