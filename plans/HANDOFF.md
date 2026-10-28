@@ -15,7 +15,7 @@ Executed: 4.0a, 4.0b, 4.0c (both repositories: `stacks-api` serves the index and
 `sha256:`-named bundles, and its API README has the by-hand deploy), 4.4a, 4.4b, 4.4c, 4.5a.
 In flight, as Codex units: 4.0d's implementation (tests landed on its branch); 4.0e's
 `v1/names.json` implementation (its directory pages in `stacks-api` start after it lands);
-4.5b's acceptance tests. Waiting: 4.2c after 4.0e; everything from 4.1a on behind D17. Maintainers' steps: review the 45 search
+4.5b's acceptance tests. Waiting: 4.2c after 4.0e; everything from 4.1a on behind D17. Maintainers' steps: review the 47 search
 judgments (4.5a), generate the index key and add it to `INDEX_PUBLIC_KEYS`, rerun the bench per
 stack so the index proves something (4.0c), and publish `@stacks/format` before 4.1b.
 
@@ -83,7 +83,7 @@ boundary and command guards with tests.
 ## 4.5a executed (2026-10-27)
 
 [4.5a](phases/phase-4.5a-search-evaluation-set.md) landed: `tests/fixtures/search/golden.json`
-holds 45 judged requests (29 tune, 16 holdout) covering every bundled stack and fragment, with
+holds 47 judged requests (30 tune, 17 holdout; "go cli" and the TUI query added with the 4.5 search revision) covering every bundled stack and fragment, with
 the `GoldenSet` schema and `evaluate` in `tests/helpers/`; `docs/maintaining.md` says how to
 judge and when the baseline moves. The baseline stays at zero until 4.5c. The maintainers still
 review the judgments and record the date in the plan. 4.5b can start.
