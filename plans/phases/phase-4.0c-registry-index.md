@@ -1,6 +1,6 @@
 # Phase 4.0c: Registry index
 
-Status: DRAFT 2026-10-26 (not agreed)
+Status: EXECUTED 2026-10-27 (the `stacks-api` serving test and deploy procedure are a separate unit)
 Acceptance tests: traced
 
 | Field | Value |

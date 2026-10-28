@@ -70,6 +70,18 @@ ships Claude rules for Effect HTTP APIs, REST resource naming, testing through H
 real layers, verification and TypeScript, `/add-resource` and `/add-service` commands, and
 boundary and command guards with tests.
 
+## 4.0c executed (2026-10-27)
+
+[4.0c](phases/phase-4.0c-registry-index.md) landed: `bun run build:index` in `packages/cli`
+builds the proven-only `v1/index.json` and its bundles, signed inline with Ed25519 (`--key` or
+`--unsigned`, `--previous <url>` for carry-forward), and `--check <base-url>` verifies a host.
+`@stacks/format` gains `LastRun`, `IndexEntry`, `RegistryIndex`, `SignedIndex` and an empty
+`INDEX_PUBLIC_KEYS`; `LedgerRecord.agent` widens to `DetectedAgent`. Against today's ledger the
+index proves no stack: four have stale fingerprints and six have no default-composition record,
+so a bench rerun per stack comes first. Maintainers' steps: generate the production key and add
+it to `INDEX_PUBLIC_KEYS`, rerun the bench, then the first signed build and deploy. The
+`stacks-api` side (static `/v1/` files winning over the 404, the deploy procedure) is next.
+
 ## 4.4b executed (2026-10-27)
 
 [4.4b](phases/phase-4.4b-interactive-pickers.md) landed: at a person's terminal, `new`, `add`
