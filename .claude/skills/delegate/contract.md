@@ -51,14 +51,19 @@ roadmap's "Contracts every sub-phase shares" table; never rename or redefine one
 {The tests that must exist and pass, as behaviours. A bug fix starts with a failing regression
 test.}
 
-Run, from the worktree root, and iterate until they pass:
+Iterate on the scoped tests, lint and typecheck until they pass, from the worktree root:
 
 ```bash
 {e.g. bun run --cwd packages/cli test:unit tests/<file>.test.ts}
 bun run lint
 bun run typecheck
-rr check        # the gate, queued on the test hosts; `bun run check` in a clone without rr (AGENTS.md "Test runs")
 ```
+
+Then run the gate once, as the last check before the review (`rr check`, queued on the test
+hosts; `bun run check` in a clone without rr; AGENTS.md "Test runs"). Run it again only after
+fixing what it or the review found. Never run the gate or a whole suite to check work in
+progress. If the gate fails on a lock timeout, wait and rerun it; don't fall back to a local
+whole-suite run.
 
 Then QA it as its first user, before the review. Build (`bun run build`) and run each command
 you changed on `node packages/cli/dist/stacks`, in all three audiences (`--json`, a plain run,
