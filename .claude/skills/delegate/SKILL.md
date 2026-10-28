@@ -44,6 +44,9 @@ faster than you could write the contract, or when you can't yet say what done lo
    (`contract-tests.md` for a test-first sub-phase's test author). Codex
    reads `AGENTS.md` on its own but never sees `.claude/rules/` or this conversation, so the
    contract names the rule and skill files that apply and carries every constraint itself.
+   Scope it for what the change touches, not only the file it's about: a unit that adds a
+   service dependency gets the layer wiring file and the read-only store methods it needs in
+   "May change", or it stops at the boundary and hands back a blocked run.
 
 3. Run it in the background (`run_in_background: true`); you are notified when it exits:
 

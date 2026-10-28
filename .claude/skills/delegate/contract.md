@@ -49,7 +49,12 @@ roadmap's "Contracts every sub-phase shares" table; never rename or redefine one
 ## Acceptance
 
 {The tests that must exist and pass, as behaviours. A bug fix starts with a failing regression
-test.}
+test. Copy these when they apply:}
+
+{- Performance: first measure at the target size and hand back the time per phase, before any
+  optimization, unless the contract already names the hot path.}
+{- A cache, cursor or incremental pass: list in the hand-off every table, setting and file the
+  computation reads, with a test that changing each one invalidates the result.}
 
 Iterate on the scoped tests, lint and typecheck until they pass, from the worktree root:
 
@@ -85,8 +90,8 @@ command to run (a refactor, the harness), say so and QA what does run.
 ## Review before hand-off
 
 Once the acceptance checks pass, get one independent code review and fix what it finds, so the
-work comes back clean. The reviewer is this repo's `code-reviewer` agent,
-`.claude/agents/code-reviewer.md`, which extends the `ce:code-reviewer` agent
+work comes back clean. The reviewer is the repo's reviewer agent file (here
+`.claude/agents/code-reviewer.md`; use the target repo's own file in the commands below), which extends the `ce:code-reviewer` agent
 (`${ce}agents/code-reviewer.md`); both bodies go into the prompt, the repo's last so it wins.
 
 Run it as a fresh Codex process, so it doesn't share your context, read-only, with its report

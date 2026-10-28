@@ -12,7 +12,9 @@
 # Service tier: DELEGATE_SERVICE_TIER (default priority, Codex's fast mode: about twice the speed
 # for more usage; `default` turns it off). Codex drops a tier the model doesn't offer.
 # Wall clock: DELEGATE_TIMEOUT_SECS (default 3600). Run it in the background from Claude; a
-# foreground Bash call is capped at 10 minutes.
+# foreground Bash call is capped at 10 minutes. A run that hits the cap with a session id is
+# resumed once, read-only, to write its hand-off into last-message.md, under its own cap
+# DELEGATE_HANDOFF_SECS (default 600); the digest says whether a hand-off was written.
 #
 # Trust: Codex is trusted as much as Claude Code. With --write it runs without a sandbox, with
 # your environment and your own ~/.codex/config.toml (MCP servers included), so feature work has
@@ -38,6 +40,8 @@ MODEL="${DELEGATE_MODEL:-gpt-6-sol}"
 EFFORT="${DELEGATE_EFFORT:-high}"
 SERVICE_TIER="${DELEGATE_SERVICE_TIER:-priority}"
 TIMEOUT_SECS="${DELEGATE_TIMEOUT_SECS:-3600}"
+HANDOFF_SECS="${DELEGATE_HANDOFF_SECS:-600}"
+HANDOFF_PROMPT="Your time is up. Stop working and run no more commands. Write the hand-off now, in the contract's hand-off format if it has one: what is done, what is not, any measurements so far, and the state of the worktree."
 LOG_ROOT="${DELEGATE_LOG_ROOT:-${TMPDIR:-/tmp}/stacks-delegate}"
 LAST_MESSAGE_LINES=60
 
@@ -118,17 +122,20 @@ mkdir -p "$LOG_ROOT" || die "cannot create log root $LOG_ROOT"
 RUN_DIR="$(mktemp -d "$LOG_ROOT/$(basename "$WT")-$(date +%Y%m%d-%H%M%S)-XXXX")" ||
     die "cannot create a log dir under $LOG_ROOT"
 TIMED_OUT_MARK="$RUN_DIR/.timed-out"
+HANDOFF_TIMED_OUT_MARK="$RUN_DIR/.handoff-timed-out"
 START_MARK="$RUN_DIR/.start"
 EVENTS="$RUN_DIR/events.jsonl"
 LAST_FILE="$RUN_DIR/last-message.md"
 
 # --- helpers -------------------------------------------------------------------
 
-# run_capped <secs> <cmd...>: run cmd, TERM it after <secs>, KILL 10s later. The watchdog's own
-# fds point at /dev/null so a lingering sleep never holds the caller's stdout open.
+# run_capped <secs> <mark> <cmd...>: run cmd, touch <mark> and TERM it after <secs>, KILL 10s
+# later. Only cmd is signalled, not its process group, so a command Codex started can outlive it.
+# The watchdog's own fds point at /dev/null so a lingering sleep never holds the caller's stdout
+# open.
 run_capped() {
-    local secs="$1"
-    shift
+    local secs="$1" mark="$2"
+    shift 2
     "$@" &
     local pid=$!
     (
@@ -136,9 +143,12 @@ run_capped() {
         s=$!
         trap 'kill "$s" 2>/dev/null; exit 0' TERM
         wait "$s"
-        : >"$TIMED_OUT_MARK"
+        : >"$mark"
         kill -TERM "$pid" 2>/dev/null
-        sleep 10
+        # In the background so the trap can end the grace period as soon as cmd exits.
+        sleep 10 &
+        s=$!
+        wait "$s"
         kill -KILL "$pid" 2>/dev/null
     ) </dev/null >/dev/null 2>&1 &
     local wd=$!
@@ -204,20 +214,38 @@ else
     SUBCOMMAND=(exec)
     TARGET=("$PROMPT")
 fi
+FLAGS=(
+    --dangerously-bypass-hook-trust
+    --model "$MODEL"
+    -c "model_reasoning_effort=\"$EFFORT\""
+    -c "service_tier=\"$SERVICE_TIER\""
+    -c 'approval_policy="never"'
+    --json
+    --output-last-message "$LAST_FILE"
+)
 cd "$WT" || die "cannot enter $WT"
 START=$(date +%s)
-run_capped "$TIMEOUT_SECS" "$CODEX" "${SUBCOMMAND[@]}" \
-    --dangerously-bypass-hook-trust \
-    --model "$MODEL" \
+run_capped "$TIMEOUT_SECS" "$TIMED_OUT_MARK" "$CODEX" "${SUBCOMMAND[@]}" "${FLAGS[@]}" \
     -c "sandbox_mode=\"$SANDBOX\"" \
-    -c "model_reasoning_effort=\"$EFFORT\"" \
-    -c "service_tier=\"$SERVICE_TIER\"" \
-    -c 'approval_policy="never"' \
-    --json \
-    --output-last-message "$LAST_FILE" \
     "${TARGET[@]}" \
     </dev/null >"$EVENTS" 2>"$RUN_DIR/stderr.txt"
 RC=$?
+SESSION="$(jq -r 'select(.type == "thread.started") | .thread_id' "$EVENTS" 2>/dev/null | head -1)"
+SESSION="${SESSION:-$RESUME}"
+
+# A timed-out run gets one read-only turn to say where it stopped, so the work isn't lost with it.
+HANDOFF="no hand-off"
+if [ -e "$TIMED_OUT_MARK" ] && [ -n "$SESSION" ]; then
+    HANDOFF_EVENTS="$RUN_DIR/handoff-events.jsonl"
+    run_capped "$HANDOFF_SECS" "$HANDOFF_TIMED_OUT_MARK" "$CODEX" exec resume "${FLAGS[@]}" \
+        -c 'sandbox_mode="read-only"' \
+        "$SESSION" "$HANDOFF_PROMPT" \
+        </dev/null >"$HANDOFF_EVENTS" 2>"$RUN_DIR/handoff-stderr.txt"
+    if [ ! -e "$HANDOFF_TIMED_OUT_MARK" ] && grep -q '"type":"turn.completed"' "$HANDOFF_EVENTS" &&
+        [ -s "$LAST_FILE" ]; then
+        HANDOFF="hand-off written"
+    fi
+fi
 ELAPSED=$(($(date +%s) - START))
 
 STATUS="failure"
@@ -225,7 +253,7 @@ STATUS="failure"
 # Only a top-level event counts: an error item inside a completed turn (the hook-trust warning) is not a failure.
 FAILED_EVENT="$(grep -m1 -E '^\{"type":"(turn\.failed|error)"' "$EVENTS" 2>/dev/null | cut -c1-300)"
 if [ -e "$TIMED_OUT_MARK" ]; then
-    REASON="timed out after ${TIMEOUT_SECS}s"
+    REASON="timed out after ${TIMEOUT_SECS}s ($HANDOFF)"
 elif [ -n "$FAILED_EVENT" ]; then
     REASON="turn failed: $FAILED_EVENT"
 elif [ "$RC" -ne 0 ]; then
@@ -245,10 +273,9 @@ echo "worktree:  $WT"
 echo "exit:      $RC  (${ELAPSED}s)"
 echo "result:    $STATUS - $REASON"
 echo "logs:      $RUN_DIR"
-SESSION="$(jq -r 'select(.type == "thread.started") | .thread_id' "$EVENTS" 2>/dev/null | head -1)"
-echo "session:   ${SESSION:-${RESUME:-(none)}}  (follow up with --resume <session>)"
+echo "session:   ${SESSION:-(none)}  (follow up with --resume <session>)"
 if printf '%s' "$FAILED_EVENT" | grep -qiE 'at capacity|rate limit|overloaded'; then
-    echo "transient: resume ${SESSION:-${RESUME:-<session>}} with a short 'continue' follow-up; the work so far is in the worktree"
+    echo "transient: resume ${SESSION:-<session>} with a short 'continue' follow-up; the work so far is in the worktree"
 fi
 
 COMMANDS="$(jq -r 'select(.type == "item.completed" and .item.type == "command_execution")

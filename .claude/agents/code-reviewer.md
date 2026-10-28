@@ -61,9 +61,16 @@ Check every item. Each was a real defect that reached review in this repo.
    (the shell hooks, and `guard-commands.ts`, `guard-generated.ts` and `typecheck-on-write.ts`,
    which share names with the `claude-harness` fragment's) is maintained separately from its
    shipped namesake on purpose (docs/harness.md, "Repo hooks and shipped hooks").
-7. Plans and docs: a plan claim the code contradicts without a note in that plan's "What this plan
+7. Caches, cursors and incremental passes, in either repository: list yourself, from the code,
+   every table, setting and file read by any function whose output a cache, cursor or skipped
+   re-check stands in for (follow the calls, such as a classifier a reconcile step calls), without
+   trusting the author's list. Each input that can change needs an invalidation path and a test
+   that changes only that input and expects the result to change. A digest or before/after
+   comparison over fixed inputs doesn't cover it: an integrity cursor that ignored a released-
+   versions change passed both here.
+8. Plans and docs: a plan claim the code contradicts without a note in that plan's "What this plan
    may get wrong"; AGENTS.md's architecture map or command table out of date with the diff.
-8. Safety, on any change to a guard, a hook, its wiring, a trust rule, or a write that could
+9. Safety, on any change to a guard, a hook, its wiring, a trust rule, or a write that could
    replace something. Each of these reached production review here after a clean first review.
    - Fail closed. If the guard, hook script or config it depends on is missing, unreadable or
      crashes, the action is refused, not allowed. Read the wiring (`settings.json`,

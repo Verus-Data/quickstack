@@ -43,6 +43,12 @@ describe("whole test suites run through rr in a clone that opts in", () => {
     "bunx vitest run",
     "npx vitest",
     "cd packages/cli && bun test ./e2e",
+    // An empty expansion or glob leaves no filter, which runs everything.
+    "bunx vitest run $(ls tests/hooks/nope-*.test.ts 2>/dev/null)",
+    "bunx vitest run tests/hooks/*.test.ts",
+    "bun run --cwd packages/cli test:unit $FILES",
+    "bunx vitest run --project cli",
+    "bunx vitest run --maxWorkers 1",
   ])("denies %s", async (command) => {
     expect(
       denyReason(await runHook("PreToolUse", "guard-commands", bash(command), rrOptIn("true"))),
@@ -58,6 +64,8 @@ describe("whole test suites run through rr in a clone that opts in", () => {
     "cd packages/cli && bun run test:unit tests/a.test.ts -t 'a name'",
     "bun run test:hooks tests/hooks/guard-commands.test.ts",
     "bunx vitest run tests/hooks/wiring.test.ts",
+    "bunx vitest run 'tests/hooks/*.test.ts'",
+    "bunx vitest run --project cli tests/cli.test.ts",
     "cd packages/cli && bun test ./e2e/budget.test.ts",
     "STACKS_LOCAL_GATE=1 bun run check",
     "git commit -m 'run bun run check before pushing'",
@@ -87,6 +95,8 @@ describe("a delegate runs no full gate", () => {
     "bun run check",
     "STACKS_LOCAL_GATE=1 bun run check",
     "cd packages/cli && bun run test:unit",
+    "rr test-cli $(ls tests/nope-*.test.ts)",
+    "bunx vitest run $(ls tests/nope-*.test.ts)",
   ])("denies %s", async (command) => {
     expect(
       denyReason(
