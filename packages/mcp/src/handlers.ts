@@ -138,7 +138,7 @@ export const verifyHandler = (
         steps: decoded.steps.map((s) => ({
           name: s.name,
           status: s.status,
-          exitCode: s.exitCode,
+          ...(s.exitCode !== undefined ? { exitCode: s.exitCode } : {}),
           durationMs: s.durationMs,
         })),
       } satisfies VerifySuccess;

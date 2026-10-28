@@ -28,7 +28,7 @@ const NOT_FOUND_JSON =
   '{"error":{"tag":"NotFound","message":"Not found.","retryable":false,"details":{"suggestions":["astro-blog"],"id":"bogus-stack","kind":"stack"}}}';
 
 const NEW_JSON =
-  '{"project":"/tmp/test","fingerprint":"sha256:abc","stack":"astro-blog","fragments":["effect-schema"],"preset":"default","agents":["claude"],"written":["README.md",".claude/rules/effect.md"],"brief":".quickstacks/BRIEF.md","briefWords":100,"fixedWords":50,"missingTools":[],"untrusted":[],"warnings":[],"git":true,"stateRecord":true,"handoff":{"kind":"print","agent":"none","untrusted":false,"prompt":"go"}}';
+  '{"project":"/tmp/test","fingerprint":"sha256:abc","stack":"astro-blog","fragments":["effect-schema"],"preset":"default","agents":["claude"],"written":["README.md",".claude/rules/effect.md"],"brief":".quickstacks/BRIEF.md","briefWords":100,"fixedWords":50,"missingTools":[],"untrusted":[],"warnings":[],"git":"fresh","stateRecord":true,"handoff":{"kind":"print","reason":"no-launch","agent":"none","untrusted":[],"prompt":"go"}}';
 
 const VERIFY_RED_JSON =
   '{"outcome":"red","scope":"full","steps":[{"name":"test","phase":"check","layer":"test","command":"bun run test","status":"failed","exitCode":1,"durationMs":100}],"totals":{"passed":0,"failed":1,"skipped":0},"durationMs":200,"secondsSinceCreated":5,"tamperCheck":"full","firstGreen":false,"stateRecord":true}';
