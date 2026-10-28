@@ -1,4 +1,4 @@
-import { StatsSummary } from "@stacks/format";
+import { type Kind, StatsSummary } from "@stacks/format";
 import { Effect, FileSystem, Path, Schema } from "effect";
 import { AppConfig } from "../config";
 import type { SearchEvidence } from "../schemas/search";
@@ -15,7 +15,7 @@ export const readStatsCache = Effect.fn("statsCache.read")(function* () {
 });
 export function cachedStats(
   summary: StatsSummary | undefined,
-  ref: { id: string; kind: string },
+  ref: { id: string; kind: Kind },
 ): SearchEvidence["stats"] {
   if (!summary?.published) return undefined;
   const row = summary.items.find((item) => item.kind === ref.kind && item.id === ref.id);

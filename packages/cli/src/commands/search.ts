@@ -9,6 +9,7 @@ import { rank } from "../core/search/rank";
 import { renderSearch } from "../core/search/report";
 import { decodeSidecar, decodeVocabulary } from "../core/search/sidecar";
 import { cachedStats, readStatsCache } from "../core/stats-cache";
+import { textWidth } from "../core/wrap";
 import { BadInput } from "../errors";
 import { SearchResult, type SearchVocabulary } from "../schemas/search";
 import { Host } from "../services/host";
@@ -99,13 +100,7 @@ export const searchCommand = Command.make(
         Schema.encodeSync(SearchResult)(result),
         renderSearch(result, {
           invocation: host.invocation,
-          width:
-            output.audience === "human"
-              ? Math.min(
-                  80,
-                  Option.getOrElse(host.columns, () => 80),
-                )
-              : Number.POSITIVE_INFINITY,
+          width: textWidth(output.audience === "human", host.columns),
           measure: host.stringWidth,
         }),
       );

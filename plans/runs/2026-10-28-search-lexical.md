@@ -1,31 +1,34 @@
 # Search lexical evaluation, 2026-10-28
 
-Interim, not an accepted baseline. Registry cards remain drafted and unchanged. One tune
-first-result judgment still fails: AI chat chooses cloudflare-react-router rather than
-react-router. Restoring description search fixed the FastAPI SPA judgment, but exposes the
-health coverage assertions' conflict with two existing health-route descriptions. The
-holdout first-result and no-match judgments pass. The golden fixture remains unchanged.
+Baseline after merging main and resolving the discovery conflicts in e0bd75b. All 36
+first-result judgments and all four no-match judgments pass. The golden gate is now
+`{ "mrr": 1, "recallAt3": 0.98, "fragmentRecallAt5": 1 }`, this ranking's first passing numbers.
+
+The bundled cards were approved by a maintainer. The subsequent AI-chat request added to
+react-router's card is pending renewed approval (`reviewedAt: null`); this run neither
+approves nor restamps it. Registry content is unchanged by this follow-up.
 
 The commands below make no model calls. Metrics use the full ranking; each query shows its
-first five hits per kind. The real `--embeddings` comparison is a maintainer step requiring
-their provider key. Automated embedding checks used local fake providers only, including a
-regression with more than twenty stacks.
+first five hits per kind. The real `--embeddings` comparison remains a maintainer step
+requiring their provider key. Automated embedding checks use local fake providers only,
+including a regression with more than twenty stacks.
 
-With cards, MRR and stack recall improve; fragment recall@5 stays at 1.0. These are interim
-measurements, not approval of the golden judgments or drafted cards.
+With sidecars, MRR is 1.0000 versus 0.8563 without; recall@3 is 0.9800 versus 0.8833;
+fragment recall@5 is 1.0000 in both. First-result checks improve from 30/36 to 36/36, and
+no-match checks from 3/4 to 4/4.
 
 ## With sidecars
 
 ```text
 $ bun scripts/search-eval.ts
-Lexical: MRR 0.9828 | recall@3 0.9800 | fragment recall@5 1.0000 | first 35/36 | no-match 4/4
+Lexical: MRR 1.0000 | recall@3 0.9800 | fragment recall@5 1.0000 | first 36/36 | no-match 4/4
 
 Pool | metrics
 --- | ---
-tune | MRR 0.9722 | recall@3 0.9667 | fragment recall@5 1.0000 | first 21/22 | no-match 3/3
+tune | MRR 1.0000 | recall@3 0.9667 | fragment recall@5 1.0000 | first 22/22 | no-match 3/3
 holdout | MRR 1.0000 | recall@3 1.0000 | fragment recall@5 1.0000 | first 14/14 | no-match 1/1
 platform | MRR 1.0000 | recall@3 1.0000 | fragment recall@5 0.0000 | first 6/6 | no-match 0/0
-product | MRR 0.9000 | recall@3 1.0000 | fragment recall@5 1.0000 | first 4/5 | no-match 0/0
+product | MRR 1.0000 | recall@3 1.0000 | fragment recall@5 1.0000 | first 5/5 | no-match 0/0
 paraphrase | MRR 1.0000 | recall@3 1.0000 | fragment recall@5 0.0000 | first 4/4 | no-match 0/0
 trap | MRR 1.0000 | recall@3 0.8333 | fragment recall@5 0.0000 | first 1/1 | no-match 0/0
 fragment | MRR 0.0000 | recall@3 0.0000 | fragment recall@5 1.0000 | first 14/14 | no-match 0/0
@@ -43,14 +46,14 @@ Lexical fragments: bun-release (weak, 0.177), goreleaser (weak, 0.109), agent-op
 
 platform-go: a command line tool in Go
 Lexical stacks: go-cli (strong, 0.986), typescript-cli (partial, 0.909), python-react (weak, 0.235), typescript-api (weak, 0.032), mobile-expo (weak, 0.021)
-Lexical fragments: goreleaser (partial, 0.515), rr (partial, 0.328), agent-ops (partial, 0.297), claude-harness (weak, 0.114), openrouter-chat-cli (weak, 0.112)
+Lexical fragments: goreleaser (partial, 0.515), rr (partial, 0.328), agent-ops (partial, 0.297), claude-harness (weak, 0.114), openrouter-chat-cli (weak, 0.111)
 
 platform-go-short: go cli
 Lexical stacks: go-cli (strong, 0.982), typescript-cli (partial, 0.887), mobile-expo (weak, 0.016), typescript-api (weak, 0.014), tauri-react (weak, 0.013)
 Lexical fragments: goreleaser (strong, 0.508), openrouter-chat-cli (weak, 0.131), agent-ops (weak, 0.020), ci-github (weak, 0.011), ce-plugin (weak, 0.009)
 
 platform-typescript-terminal: a command line tool in TypeScript
-Lexical stacks: typescript-cli (strong, 0.978), go-cli (partial, 0.926), typescript-api (partial, 0.788), python-react (partial, 0.714), tauri-react (partial, 0.701)
+Lexical stacks: typescript-cli (strong, 0.978), go-cli (partial, 0.926), typescript-api (partial, 0.788), python-react (partial, 0.713), tauri-react (partial, 0.701)
 Lexical fragments: claude-harness (partial, 0.500), rr (partial, 0.331), openrouter-chat-cli (partial, 0.321), agent-ops (partial, 0.303), effect-schema (weak, 0.165)
 
 platform-worker: a React website running on Cloudflare Workers with server rendering
@@ -59,15 +62,15 @@ Lexical fragments: cloudflare-d1 (partial, 0.627), cloudflare-pages (partial, 0.
 
 product-mdx-blog: a personal blog with MDX posts
 Lexical stacks: astro-blog (strong, 0.984), python-react (weak, 0.149), astro-api (weak, 0.000), cloudflare-react-router (weak, 0.000), go-cli (weak, 0.000)
-Lexical fragments: rr (partial, 0.254), posthog (weak, 0.033), cloudflare-pages (weak, 0.017), agent-ops (weak, 0.017), ce-plugin (weak, 0.016)
+Lexical fragments: rr (partial, 0.253), posthog (weak, 0.033), cloudflare-pages (weak, 0.017), agent-ops (weak, 0.017), ce-plugin (weak, 0.016)
 
 product-typescript-rest: a REST API in TypeScript
 Lexical stacks: typescript-api (strong, 0.978), astro-api (strong, 0.965), python-react (strong, 0.964), cloudflare-react-router (strong, 0.846), react-router (strong, 0.844)
 Lexical fragments: rest-api (strong, 0.643), claude-harness (partial, 0.429), effect (partial, 0.377), effect-schema (weak, 0.168), openrouter-ai (weak, 0.157)
 
 product-ai-chat: an AI chat web app
-Lexical stacks: cloudflare-react-router (partial, 0.954), react-router (partial, 0.909), python-react (partial, 0.860), astro-blog (partial, 0.839), astro-api (partial, 0.787)
-Lexical fragments: openrouter-chat (strong, 0.655), posthog (partial, 0.424), openrouter-ai (partial, 0.414), openrouter-chat-cli (partial, 0.355), bun-release (weak, 0.019)
+Lexical stacks: react-router (strong, 0.969), cloudflare-react-router (partial, 0.952), python-react (partial, 0.860), astro-blog (partial, 0.839), astro-api (partial, 0.787)
+Lexical fragments: openrouter-chat (strong, 0.655), openrouter-ai (partial, 0.414), posthog (partial, 0.410), openrouter-chat-cli (partial, 0.348), bun-release (weak, 0.019)
 
 product-fastapi-spa: a FastAPI backend and a React single page app
 Lexical stacks: python-react (strong, 0.978), react-router (strong, 0.978), cloudflare-react-router (strong, 0.960), astro-api (partial, 0.938), typescript-api (partial, 0.879)
@@ -83,22 +86,22 @@ Lexical fragments: clerk (partial, 0.394), bun-release (partial, 0.381), git-hoo
 
 paraphrase-rename: a tool I run in my terminal to rename files
 Lexical stacks: go-cli (strong, 0.934), typescript-cli (partial, 0.926), astro-blog (partial, 0.785), python-react (partial, 0.559), typescript-api (partial, 0.423)
-Lexical fragments: openrouter-chat-cli (partial, 0.472), git-hooks (partial, 0.459), rr (partial, 0.376), ci-github (partial, 0.328), claude-harness (partial, 0.294)
+Lexical fragments: openrouter-chat-cli (partial, 0.472), git-hooks (partial, 0.459), rr (partial, 0.375), ci-github (partial, 0.328), claude-harness (partial, 0.294)
 
 paraphrase-brochure: mostly prebuilt pages, a few interactive widgets, and a typed Node backend they can call
 Lexical stacks: astro-api (strong, 0.979), react-router (strong, 0.967), python-react (strong, 0.958), cloudflare-react-router (strong, 0.943), typescript-api (partial, 0.962)
 Lexical fragments: cloudflare-d1 (partial, 0.418), posthog (partial, 0.351), cloudflare-pages (partial, 0.307), openrouter-chat (partial, 0.304), docker-deploy (weak, 0.229)
 
 paraphrase-computer: an installable window on my computer with Rust doing the work behind the buttons
-Lexical stacks: tauri-react (strong, 0.980), mobile-expo (partial, 0.754), cloudflare-react-router (partial, 0.639), go-cli (partial, 0.621), python-react (weak, 0.114)
-Lexical fragments: agent-ops (weak, 0.214), rr (weak, 0.132), goreleaser (weak, 0.094), clerk (weak, 0.051), ce-plugin (weak, 0.050)
+Lexical stacks: tauri-react (strong, 0.980), mobile-expo (partial, 0.754), cloudflare-react-router (partial, 0.638), go-cli (partial, 0.621), python-react (weak, 0.114)
+Lexical fragments: agent-ops (weak, 0.214), rr (weak, 0.132), goreleaser (weak, 0.093), clerk (weak, 0.051), ce-plugin (weak, 0.050)
 
 paraphrase-server-pages: render pages on a Node server and handle form submissions in the same React project
 Lexical stacks: react-router (strong, 0.985), cloudflare-react-router (strong, 0.981), python-react (strong, 0.957), astro-api (strong, 0.955), typescript-api (partial, 0.940)
 Lexical fragments: openrouter-chat (partial, 0.412), openrouter-ai (partial, 0.382), effect-schema (partial, 0.318), cloudflare-pages (partial, 0.307), agent-ops (weak, 0.244)
 
 trap-ios-health: an iOS health app
-Lexical stacks: mobile-expo (strong, 0.903), react-router (partial, 0.563), typescript-api (partial, 0.495), python-react (weak, 0.069), astro-api (weak, 0.037)
+Lexical stacks: mobile-expo (strong, 0.903), react-router (weak, 0.075), python-react (weak, 0.069), typescript-api (weak, 0.067), astro-api (weak, 0.037)
 Lexical fragments: cloudflare-d1 (weak, 0.047), docker-deploy (weak, 0.013), clerk (weak, 0.013), postgres (weak, 0.004), openrouter-chat (weak, 0.003)
 
 trap-monitoring: a monitoring dashboard
@@ -107,11 +110,11 @@ Lexical fragments: cloudflare-pages (weak, 0.038), agent-ops (weak, 0.000), bun-
 
 trap-student-tests: a test prep app for students
 Lexical stacks: cloudflare-react-router (strong, 0.846), go-cli (strong, 0.714), python-react (strong, 0.639), typescript-cli (strong, 0.554), mobile-expo (partial, 0.575)
-Lexical fragments: rr (partial, 0.338), postgres (partial, 0.328), git-hooks (partial, 0.266), effect (partial, 0.262), claude-harness (partial, 0.255)
+Lexical fragments: rr (partial, 0.338), postgres (partial, 0.328), git-hooks (partial, 0.265), effect (partial, 0.262), claude-harness (partial, 0.255)
 
 fragment-mobile-signin: sign-in for my mobile app
 Lexical stacks: mobile-expo (strong, 0.967), astro-api (weak, 0.000), astro-blog (weak, 0.000), cloudflare-react-router (weak, 0.000), go-cli (weak, 0.000)
-Lexical fragments: clerk (strong, 0.513), posthog (weak, 0.095), agent-ops (weak, 0.019), bun-release (weak, 0.000), ce-plugin (weak, 0.000)
+Lexical fragments: clerk (strong, 0.513), posthog (weak, 0.094), agent-ops (weak, 0.019), bun-release (weak, 0.000), ce-plugin (weak, 0.000)
 
 fragment-fastapi-postgres: a Postgres database for my FastAPI app
 Lexical stacks: mobile-expo (strong, 0.939), python-react (partial, 0.904), typescript-api (weak, 0.150), astro-api (weak, 0.000), astro-blog (weak, 0.000)
@@ -131,7 +134,7 @@ Lexical fragments: ci-github (strong, 0.810), git-hooks (strong, 0.751), rr (str
 
 fragment-agent-guidance: shared project instructions for coding agents and guards against destructive shell commands
 Lexical stacks: go-cli (partial, 0.946), typescript-cli (partial, 0.942), mobile-expo (partial, 0.919), astro-api (partial, 0.820), tauri-react (partial, 0.814)
-Lexical fragments: agent-ops (strong, 0.808), claude-harness (partial, 0.756), rest-api (partial, 0.526), effect (partial, 0.494), rr (partial, 0.473)
+Lexical fragments: agent-ops (strong, 0.808), claude-harness (partial, 0.756), rest-api (partial, 0.526), effect (partial, 0.494), rr (partial, 0.472)
 
 fragment-claude-harness: reusable TypeScript hooks and review commands for Claude Code
 Lexical stacks: typescript-cli (partial, 0.969), mobile-expo (partial, 0.954), python-react (partial, 0.933), typescript-api (partial, 0.927), tauri-react (partial, 0.925)
@@ -143,7 +146,7 @@ Lexical fragments: ce-plugin (strong, 0.852), claude-harness (partial, 0.680), a
 
 fragment-boundary-schema: use Effect schemas to validate config and generate JSON Schema for tools
 Lexical stacks: typescript-cli (partial, 0.951), typescript-api (partial, 0.933), cloudflare-react-router (partial, 0.929), mobile-expo (partial, 0.918), go-cli (partial, 0.904)
-Lexical fragments: effect-schema (strong, 0.820), effect (partial, 0.569), openrouter-chat-cli (partial, 0.386), postgres (partial, 0.354), openrouter-chat (weak, 0.186)
+Lexical fragments: effect-schema (strong, 0.820), effect (partial, 0.569), openrouter-chat-cli (partial, 0.385), postgres (partial, 0.354), openrouter-chat (weak, 0.186)
 
 fragment-virtual-time: test Effect services with isolated layers and virtual time
 Lexical stacks: react-router (partial, 0.951), typescript-api (partial, 0.946), typescript-cli (partial, 0.937), astro-api (partial, 0.895), cloudflare-react-router (partial, 0.869)
@@ -151,11 +154,11 @@ Lexical fragments: effect (strong, 0.828), postgres (partial, 0.564), effect-sch
 
 fragment-remote-checks: offload my tests and builds to another machine over SSH
 Lexical stacks: typescript-cli (partial, 0.862), cloudflare-react-router (partial, 0.850), astro-api (partial, 0.732), go-cli (partial, 0.728), astro-blog (partial, 0.694)
-Lexical fragments: rr (strong, 0.707), goreleaser (partial, 0.357), docker-deploy (partial, 0.356), postgres (partial, 0.328), bun-release (partial, 0.292)
+Lexical fragments: rr (strong, 0.707), docker-deploy (partial, 0.356), goreleaser (partial, 0.356), postgres (partial, 0.328), bun-release (partial, 0.292)
 
 fragment-bun-binaries: ship my Bun compiled CLI with a checksum verified installer and self update
 Lexical stacks: typescript-cli (partial, 0.975), go-cli (partial, 0.948), tauri-react (partial, 0.743), astro-api (partial, 0.665), mobile-expo (partial, 0.594)
-Lexical fragments: bun-release (strong, 0.813), goreleaser (partial, 0.437), openrouter-chat-cli (partial, 0.354), claude-harness (partial, 0.297), clerk (weak, 0.064)
+Lexical fragments: bun-release (strong, 0.813), goreleaser (partial, 0.436), openrouter-chat-cli (partial, 0.354), claude-harness (partial, 0.297), clerk (weak, 0.064)
 
 fragment-provider: add OpenRouter model discovery and provider configuration to my TypeScript API
 Lexical stacks: typescript-api (partial, 0.973), astro-api (partial, 0.966), python-react (partial, 0.965), typescript-cli (partial, 0.896), mobile-expo (partial, 0.889)
@@ -167,7 +170,7 @@ Lexical fragments: rest-api (strong, 0.828), ce-plugin (partial, 0.389), effect 
 
 fragment-worker-database: local SQLite storage with migrations for my Cloudflare Worker
 Lexical stacks: cloudflare-react-router (strong, 0.980), astro-blog (partial, 0.850), react-router (partial, 0.675), mobile-expo (weak, 0.190), tauri-react (weak, 0.137)
-Lexical fragments: cloudflare-d1 (strong, 0.786), postgres (strong, 0.600), cloudflare-pages (partial, 0.537), openrouter-ai (partial, 0.327), clerk (partial, 0.327)
+Lexical fragments: cloudflare-d1 (strong, 0.785), postgres (strong, 0.600), cloudflare-pages (partial, 0.537), openrouter-ai (partial, 0.327), clerk (partial, 0.327)
 
 combined-blog-pages: a static blog deployed to Cloudflare
 Lexical stacks: astro-blog (strong, 0.974), cloudflare-react-router (partial, 0.944), astro-api (partial, 0.941), react-router (weak, 0.112), typescript-cli (weak, 0.104)
@@ -175,7 +178,7 @@ Lexical fragments: cloudflare-pages (strong, 0.683), cloudflare-d1 (partial, 0.4
 
 combined-go-release: a Go command line tool with tagged cross platform binary releases
 Lexical stacks: go-cli (strong, 0.986), typescript-cli (strong, 0.974), mobile-expo (partial, 0.713), typescript-api (partial, 0.659), python-react (partial, 0.514)
-Lexical fragments: goreleaser (strong, 0.791), bun-release (strong, 0.770), rr (partial, 0.328), openrouter-chat-cli (partial, 0.318), claude-harness (partial, 0.302)
+Lexical fragments: goreleaser (strong, 0.791), bun-release (strong, 0.769), rr (partial, 0.328), openrouter-chat-cli (partial, 0.318), claude-harness (partial, 0.301)
 
 combined-worker-d1: a React app on Cloudflare Workers backed by D1
 Lexical stacks: cloudflare-react-router (strong, 0.983), react-router (partial, 0.961), python-react (partial, 0.949), tauri-react (partial, 0.945), mobile-expo (partial, 0.871)
@@ -187,10 +190,10 @@ Lexical fragments: postgres (strong, 0.774), cloudflare-d1 (partial, 0.285), doc
 
 combined-node-container: a standalone TypeScript HTTP API published as a Docker image to GHCR
 Lexical stacks: typescript-api (partial, 0.982), astro-api (partial, 0.971), python-react (partial, 0.965), react-router (partial, 0.899), mobile-expo (partial, 0.890)
-Lexical fragments: docker-deploy (partial, 0.756), rest-api (partial, 0.590), claude-harness (partial, 0.429), effect (partial, 0.382), postgres (partial, 0.339)
+Lexical fragments: docker-deploy (partial, 0.756), rest-api (partial, 0.590), claude-harness (partial, 0.428), effect (partial, 0.382), postgres (partial, 0.339)
 
 combined-terminal-chat: an AI chat tool in my terminal with a TypeScript codebase
-Lexical stacks: typescript-cli (strong, 0.967), typescript-api (partial, 0.789), go-cli (partial, 0.764), tauri-react (partial, 0.698), mobile-expo (partial, 0.648)
+Lexical stacks: typescript-cli (strong, 0.967), react-router (partial, 0.855), typescript-api (partial, 0.789), go-cli (partial, 0.764), tauri-react (partial, 0.698)
 Lexical fragments: openrouter-chat-cli (strong, 0.696), openrouter-ai (partial, 0.426), claude-harness (partial, 0.425), openrouter-chat (partial, 0.321), effect-schema (weak, 0.165)
 
 nomatch-firmware: firmware for a microcontroller
@@ -215,7 +218,7 @@ Lexical fragments: openrouter-chat-cli (partial, 0.407), bun-release (weak, 0.03
 
 nomatch-python-cli: a command line tool in Python
 Lexical stacks: go-cli (partial, 0.926), python-react (partial, 0.907), typescript-cli (partial, 0.891), mobile-expo (weak, 0.021), typescript-api (weak, 0.019)
-Lexical fragments: rr (partial, 0.330), claude-harness (partial, 0.308), agent-ops (partial, 0.305), bun-release (weak, 0.146), openrouter-chat-cli (weak, 0.115)
+Lexical fragments: rr (partial, 0.330), claude-harness (partial, 0.308), agent-ops (partial, 0.305), bun-release (weak, 0.146), openrouter-chat-cli (weak, 0.114)
 
 nomatch-gpu-training: train a neural network on a GPU cluster
 Lexical stacks: astro-api (weak, 0.231), cloudflare-react-router (weak, 0.219), typescript-api (weak, 0.163), python-react (weak, 0.149), astro-blog (weak, 0.000)
@@ -226,16 +229,16 @@ Lexical fragments: clerk (weak, 0.173), bun-release (weak, 0.021), agent-ops (we
 
 ```text
 $ bun scripts/search-eval.ts --without-sidecars
-Lexical: MRR 0.8333 | recall@3 0.8833 | fragment recall@5 1.0000 | first 29/36 | no-match 3/4
+Lexical: MRR 0.8563 | recall@3 0.8833 | fragment recall@5 1.0000 | first 30/36 | no-match 3/4
 
 Pool | metrics
 --- | ---
-tune | MRR 0.8148 | recall@3 0.9167 | fragment recall@5 1.0000 | first 17/22 | no-match 2/3
+tune | MRR 0.8519 | recall@3 0.9167 | fragment recall@5 1.0000 | first 18/22 | no-match 2/3
 holdout | MRR 0.8636 | recall@3 0.8333 | fragment recall@5 1.0000 | first 12/14 | no-match 1/1
 platform | MRR 0.9167 | recall@3 1.0000 | fragment recall@5 0.0000 | first 5/6 | no-match 0/0
 product | MRR 0.8667 | recall@3 1.0000 | fragment recall@5 1.0000 | first 4/5 | no-match 0/0
 paraphrase | MRR 0.6000 | recall@3 0.7000 | fragment recall@5 0.0000 | first 1/4 | no-match 0/0
-trap | MRR 0.6111 | recall@3 0.5278 | fragment recall@5 0.0000 | first 0/1 | no-match 0/0
+trap | MRR 0.8333 | recall@3 0.5278 | fragment recall@5 0.0000 | first 1/1 | no-match 0/0
 fragment | MRR 0.0000 | recall@3 0.0000 | fragment recall@5 1.0000 | first 13/14 | no-match 0/0
 combined | MRR 1.0000 | recall@3 1.0000 | fragment recall@5 1.0000 | first 6/6 | no-match 0/0
 no-match | MRR 0.8750 | recall@3 0.0000 | fragment recall@5 0.0000 | first 0/0 | no-match 3/4
@@ -306,7 +309,7 @@ Lexical stacks: python-react (strong, 0.941), astro-api (strong, 0.888), react-r
 Lexical fragments: cloudflare-pages (partial, 0.457), openrouter-chat (weak, 0.219), openrouter-ai (weak, 0.211), docker-deploy (weak, 0.043), postgres (weak, 0.037)
 
 trap-ios-health: an iOS health app
-Lexical stacks: react-router (strong, 0.811), typescript-api (strong, 0.765), mobile-expo (partial, 0.473), python-react (weak, 0.197), astro-api (weak, 0.113)
+Lexical stacks: mobile-expo (partial, 0.473), react-router (weak, 0.213), python-react (weak, 0.197), typescript-api (weak, 0.194), astro-api (weak, 0.113)
 Lexical fragments: postgres (weak, 0.014), docker-deploy (weak, 0.013), clerk (weak, 0.013), cloudflare-d1 (weak, 0.011), openrouter-chat (weak, 0.009)
 
 trap-monitoring: a monitoring dashboard
