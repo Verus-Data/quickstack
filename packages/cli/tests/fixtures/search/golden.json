@@ -1174,6 +1174,40 @@
       ]
     },
     {
+      "id": "product-mcp-stdio-server",
+      "pool": "product",
+      "split": "tune",
+      "query": "a stdio MCP server an agent can spawn as a subprocess",
+      "first": {
+        "kind": "stack",
+        "id": "typescript-mcp"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "typescript-mcp",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "product-mcp-tools-jsonrpc",
+      "pool": "product",
+      "split": "holdout",
+      "query": "expose typed tools to an MCP client over JSON-RPC",
+      "first": {
+        "kind": "stack",
+        "id": "typescript-mcp"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "typescript-mcp",
+          "grade": 2
+        }
+      ]
+    },
+    {
       "id": "nomatch-gpu-training",
       "pool": "no-match",
       "split": "tune",
