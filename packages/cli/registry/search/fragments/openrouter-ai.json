@@ -7,17 +7,34 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 1,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "Configure OpenRouter access, discover available models, handle provider failures safely and test requests against a local server.",
-  "capabilities": ["ai"],
+  "capabilities": [
+    "ai"
+  ],
   "requests": [
     "let my app discover models and configure provider routing",
     "test failed model requests locally without using paid credentials",
     "keep my application usable before a model API key is configured"
   ],
-  "useCases": ["shared provider configuration", "testing upstream failures"],
-  "synonyms": ["OpenRouter", "model discovery", "routing", "fallback models", "local stub"],
-  "goodFor": ["bounded retries and timeouts", "secret handling and safe errors"],
-  "notFor": ["a complete chat interface", "application-owned recording and evaluations"]
+  "useCases": [
+    "shared provider configuration",
+    "testing upstream failures"
+  ],
+  "synonyms": [
+    "OpenRouter",
+    "model discovery",
+    "routing",
+    "fallback models",
+    "local stub"
+  ],
+  "goodFor": [
+    "bounded retries and timeouts",
+    "secret handling and safe errors"
+  ],
+  "notFor": [
+    "a complete chat interface",
+    "application-owned recording and evaluations"
+  ]
 }

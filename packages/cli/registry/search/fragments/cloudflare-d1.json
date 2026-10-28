@@ -7,17 +7,34 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 1,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "Add a typed SQL database binding with checked-in migrations and isolated local tests before provisioning production.",
-  "capabilities": ["database"],
+  "capabilities": [
+    "database"
+  ],
   "requests": [
     "store records from my Worker through a typed database client",
     "develop database changes locally without opening a cloud account",
     "test SQL migrations without touching my development database"
   ],
-  "useCases": ["Worker database access", "local migration testing"],
-  "synonyms": ["Cloudflare D1", "Drizzle", "SQLite", "SQL migrations", "typed bindings"],
-  "goodFor": ["schema-driven SQL generation", "health checks that query the database"],
-  "notFor": ["Postgres databases", "opening filesystem databases inside Workers"]
+  "useCases": [
+    "Worker database access",
+    "local migration testing"
+  ],
+  "synonyms": [
+    "Cloudflare D1",
+    "Drizzle",
+    "SQLite",
+    "SQL migrations",
+    "typed bindings"
+  ],
+  "goodFor": [
+    "schema-driven SQL generation",
+    "health checks that query the database"
+  ],
+  "notFor": [
+    "Postgres databases",
+    "opening filesystem databases inside Workers"
+  ]
 }

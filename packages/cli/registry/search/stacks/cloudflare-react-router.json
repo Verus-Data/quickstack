@@ -7,19 +7,42 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 1,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "A server-rendered web app with JSON endpoints, typed runtime bindings and local tests on Cloudflare Workers.",
-  "platforms": ["web", "server"],
-  "productKinds": ["web-app", "fullstack"],
-  "languages": ["typescript"],
+  "platforms": [
+    "web",
+    "server"
+  ],
+  "productKinds": [
+    "web-app",
+    "fullstack"
+  ],
+  "languages": [
+    "typescript"
+  ],
   "requests": [
     "render pages on the server and handle JSON requests in one app",
     "develop and test my web app locally without cloud credentials",
     "give my app a testable entry point for scheduled work"
   ],
-  "useCases": ["server-rendered React applications", "web apps with resource routes"],
-  "synonyms": ["React Router", "Cloudflare Workers", "SSR", "Wrangler", "scheduled handler"],
-  "goodFor": ["testing against the local Workers runtime", "typed access to runtime bindings"],
-  "notFor": ["Node HTTP servers", "built-in application storage"]
+  "useCases": [
+    "server-rendered React applications",
+    "web apps with resource routes"
+  ],
+  "synonyms": [
+    "React Router",
+    "Cloudflare Workers",
+    "SSR",
+    "Wrangler",
+    "scheduled handler"
+  ],
+  "goodFor": [
+    "testing against the local Workers runtime",
+    "typed access to runtime bindings"
+  ],
+  "notFor": [
+    "Node HTTP servers",
+    "built-in application storage"
+  ]
 }

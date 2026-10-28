@@ -7,22 +7,36 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 1,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "Distribute compiled Bun binaries for macOS and glibc Linux with checksum-verified installation, atomic self-update and a release workflow.",
-  "capabilities": ["release"],
+  "capabilities": [
+    "release"
+  ],
   "requests": [
     "let people install my Bun tool without installing its runtime",
     "add an update command that preserves the working binary when a download fails",
     "check release checksums before replacing an installed executable",
     "build and smoke-test release binaries for both Intel and ARM machines"
   ],
-  "useCases": ["standalone Bun executable distribution", "installed binary updates"],
-  "synonyms": ["SHA256SUMS", "shell installer", "GitHub releases", "self-update"],
+  "useCases": [
+    "standalone Bun executable distribution",
+    "installed binary updates"
+  ],
+  "synonyms": [
+    "SHA256SUMS",
+    "shell installer",
+    "GitHub releases",
+    "self-update"
+  ],
   "goodFor": [
     "atomic binary replacement",
     "update availability checks",
     "tag-triggered publishing"
   ],
-  "notFor": ["Windows binaries", "musl Linux targets", "self-update when running from source"]
+  "notFor": [
+    "Windows binaries",
+    "musl Linux targets",
+    "self-update when running from source"
+  ]
 }

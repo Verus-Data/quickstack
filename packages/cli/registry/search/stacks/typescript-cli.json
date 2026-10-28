@@ -7,18 +7,27 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 1,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "A compiled command-line tool with subcommands, JSON results, lazy configuration and structured logs.",
-  "platforms": ["cli"],
-  "productKinds": ["cli-tool"],
-  "languages": ["typescript"],
+  "platforms": [
+    "cli"
+  ],
+  "productKinds": [
+    "cli-tool"
+  ],
+  "languages": [
+    "typescript"
+  ],
   "requests": [
     "build a terminal utility I can distribute as an executable",
     "let scripts consume results while diagnostics go to stderr",
     "keep help and diagnostics working when configuration is broken"
   ],
-  "useCases": ["shell automation", "diagnostic utilities"],
+  "useCases": [
+    "shell automation",
+    "diagnostic utilities"
+  ],
   "synonyms": [
     "Effect commands",
     "Bun executable",
@@ -26,6 +35,12 @@
     "doctor",
     "machine-readable output"
   ],
-  "goodFor": ["stable exit codes and safe errors", "testing commands before and after compilation"],
-  "notFor": ["a terminal user interface", "built-in installation and update workflows"]
+  "goodFor": [
+    "stable exit codes and safe errors",
+    "testing commands before and after compilation"
+  ],
+  "notFor": [
+    "a terminal user interface",
+    "built-in installation and update workflows"
+  ]
 }

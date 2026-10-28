@@ -15,10 +15,9 @@ Executed: 4.0a, 4.0b, 4.0c (both repositories: `stacks-api` serves the index and
 `sha256:`-named bundles, and its API README has the by-hand deploy), 4.0d (the remote origin; no official
 index URL ships until the host exists, so `bin.ts` passes none and the origin is off unless
 `STACKS_INDEX_URL` is set), 4.4a, 4.4b, 4.4c, 4.5a, and 4.0e (`v1/names.json` here, the directory site in `stacks-api`,
-with no source link until the repository has a public URL). 4.5b is implemented with all 30
-bundled cards drafted (by Codex agents in checkouts without the golden set) and waits on a
-maintainer: `bun run decorate --approve <id>` at a terminal for each card, after reading it,
-then it merges. 4.2c's telemetry-free parts are landed: `v1/directory.json` here, and in
+with no source link until the repository has a public URL). 4.5b is landed: all 30 bundled
+cards were drafted by Codex agents in checkouts without the golden set and approved by a
+maintainer (2026-10-28). 4.2c's telemetry-free parts are landed: `v1/directory.json` here, and in
 `stacks-api` the newest, tag, fragment and removed-stack pages with the three-link nav; its
 telemetry views remain. 4.2f runs fixture-first: the provisional `StatsSummary` and
 `StatsDetail` are in `packages/format/src/stats.ts`, its data layer is landed in `stacks-api`, and

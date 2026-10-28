@@ -57,12 +57,20 @@ test("every drafting prompt including examples excludes golden query strings [4.
   const vocabulary = Schema.decodeUnknownSync(SearchVocabulary)(
     readJson(join(bundled, "search/vocabulary.json")),
   );
+  // A query that is itself a closed-vocabulary alias ("go cli") reaches every prompt through the
+  // vocabulary, which is matched literally; only the rest could leak into drafted wording.
+  const aliases = new Set(
+    Object.values(vocabulary)
+      .flatMap((field) => (typeof field === "object" ? Object.values(field).flat() : []))
+      .map((alias) => alias.toLowerCase()),
+  );
+  const queries = golden.queries.filter((query) => !aliases.has(query.query.toLowerCase()));
   for (const ref of entries) {
     const prompt = buildPrompt({ entry: await entryAt(bundled, ref), vocabulary, examples });
     expect(prompt).toContain(ref.id);
     expect(prompt).toContain(examples[0]?.summary);
     expect(prompt).toContain(examples[1]?.summary);
-    for (const query of golden.queries)
+    for (const query of queries)
       expect(prompt.toLowerCase(), `${ref.id}: ${query.id}`).not.toContain(
         query.query.toLowerCase(),
       );

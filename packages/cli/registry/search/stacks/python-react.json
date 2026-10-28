@@ -7,20 +7,44 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 1,
-    "reviewedAt": null
+    "reviewedAt": "2026-10-28"
   },
   "summary": "A browser app backed by a Python API, with generated frontend types, query hooks and test mocks.",
-  "platforms": ["web", "server"],
-  "productKinds": ["web-app", "fullstack", "api"],
-  "languages": ["python", "typescript"],
+  "platforms": [
+    "web",
+    "server"
+  ],
+  "productKinds": [
+    "web-app",
+    "fullstack",
+    "api"
+  ],
+  "languages": [
+    "python",
+    "typescript"
+  ],
   "requests": [
     "build my browser interface around a separate Python backend",
     "generate frontend data hooks from my backend's API specification",
     "keep my browser client aligned with backend response types",
     "run frontend and backend checks through one set of commands"
   ],
-  "useCases": ["browser apps with a separate API", "frontend and backend contract checks"],
-  "synonyms": ["FastAPI", "React SPA", "OpenAPI", "orval", "TanStack Query"],
-  "goodFor": ["Python business logic with a TypeScript interface", "generated API mocks"],
-  "notFor": ["server-rendered pages"]
+  "useCases": [
+    "browser apps with a separate API",
+    "frontend and backend contract checks"
+  ],
+  "synonyms": [
+    "FastAPI",
+    "React SPA",
+    "OpenAPI",
+    "orval",
+    "TanStack Query"
+  ],
+  "goodFor": [
+    "Python business logic with a TypeScript interface",
+    "generated API mocks"
+  ],
+  "notFor": [
+    "server-rendered pages"
+  ]
 }
