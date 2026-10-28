@@ -10,7 +10,7 @@ import { targetAgents } from "./compose/agents";
 import { compose } from "./compose/compose";
 import { fitsStack } from "./compose/selection";
 import { fingerprint } from "./fingerprint";
-import { lastDefaultRecord, latestMatchingRecord, readLedger } from "./ledger";
+import { lastDefaultRecord, latestMatchingRecord, ledgerAdapterSets, readLedger } from "./ledger";
 import { toRow } from "./list";
 import { type Entry, isStack, outputPath, type RejectedEntry } from "./registry/entry";
 import { defaultRoots, Registry, type RegistryRoot, type RegistryRoots } from "./registry/registry";
@@ -132,7 +132,7 @@ const fragmentRecords = (entry: Entry, records: ReadonlyArray<LedgerRecord>) =>
           with: record.with,
           without: [],
           preset: record.preset,
-          agents: [record.agent],
+          agents: ledgerAdapterSets(record.agent)[0] ?? targetAgents(undefined, {}),
           always: [],
           mode: "new",
         }),
@@ -164,20 +164,25 @@ const bundledLastRun = (entry: Entry, records: ReadonlyArray<LedgerRecord>) =>
     };
     if (record.preset !== "default" && record.preset !== "sandbox")
       return { ...run, sameContent: false };
-    const current = yield* Effect.result(
-      compose({
-        stack: record.stack,
-        with: record.with,
-        without: [],
-        preset: record.preset,
-        agents: [record.agent],
-        always: [],
-        mode: "new",
-      }).pipe(Effect.flatMap(fingerprint)),
+    const preset = record.preset;
+    const currents = yield* Effect.forEach(ledgerAdapterSets(record.agent), (agents) =>
+      Effect.result(
+        compose({
+          stack: record.stack,
+          with: record.with,
+          without: [],
+          preset,
+          agents,
+          always: [],
+          mode: "new",
+        }).pipe(Effect.flatMap(fingerprint)),
+      ),
     );
     return {
       ...run,
-      sameContent: Result.isSuccess(current) && current.success === record.fingerprint,
+      sameContent: currents.some(
+        (current) => Result.isSuccess(current) && current.success === record.fingerprint,
+      ),
     };
   });
 

@@ -154,6 +154,16 @@ export async function serve(root: string) {
   };
 }
 
+/** Bun's isolated linker keeps each package's own dependencies in its package directory. */
+function linkPackageModules(target: string, name: string) {
+  const modules = join(repo, "packages", name, "node_modules");
+  mkdirSync(join(target, "node_modules"), { recursive: true });
+  for (const dep of existsSync(modules) ? readdirSync(modules) : []) {
+    if (dep !== "@stacks" && dep !== ".bin" && dep !== ".vite-temp")
+      symlinkSync(join(modules, dep), join(target, "node_modules", dep));
+  }
+}
+
 /** Copy source unchanged except the fixture trust root, never a production trust override. */
 export async function fixture(temporary: string) {
   const root = join(realpathSync(temporary), "index workspace café");
@@ -172,6 +182,7 @@ export async function fixture(temporary: string) {
     );
   }
   symlinkSync(join(repo, "node_modules"), join(root, "node_modules"));
+  for (const name of ["cli", "format"]) linkPackageModules(join(root, "packages", name), name);
   mkdirSync(join(cli, "node_modules/@stacks"), { recursive: true });
   symlinkSync(format, join(cli, "node_modules/@stacks/format"));
   writeFileSync(

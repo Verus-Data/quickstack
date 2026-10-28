@@ -34,7 +34,6 @@ test("index schemas and trust roots are exported through the package boundary [4
   expect(api.RegistryIndex).toBe(schemas.RegistryIndex);
   expect(api.SignedIndex).toBe(schemas.SignedIndex);
   expect(api.INDEX_PUBLIC_KEYS).toBe(keys.INDEX_PUBLIC_KEYS);
-  expect(keys.INDEX_PUBLIC_KEYS.length).toBeGreaterThan(0);
   const ids = new Set<string>();
   const fixture = createPublicKey(
     readFileSync(

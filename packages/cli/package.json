@@ -9,6 +9,7 @@
     "dev": "bun scripts/dev.ts",
     "human": "bun scripts/human.ts",
     "build": "bun scripts/build.ts",
+    "build:index": "bun scripts/build-index.ts",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.registry.json",
     "lint": "biome check .",
     "format": "biome check --write .",
