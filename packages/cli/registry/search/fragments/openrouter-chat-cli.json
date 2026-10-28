@@ -3,7 +3,7 @@
   "kind": "fragment",
   "id": "openrouter-chat-cli",
   "source": {
-    "digest": "sha256:bcda573956c6ddc5e241c0438bc77963eb271ca2a36aa17fe2026576526f4022",
+    "digest": "sha256:70ee0730ea9c07daac93351b9a1dce08ca6cbecf85217a54523d5963c2b12eaa",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 1,

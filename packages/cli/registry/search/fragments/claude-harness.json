@@ -3,7 +3,7 @@
   "kind": "fragment",
   "id": "claude-harness",
   "source": {
-    "digest": "sha256:351309ab132fa117aab1749339bd268cb5ce6198a68b2b4ff6066bbd3689ffb3",
+    "digest": "sha256:9a1caea3bc1329371439e1a690a478b3475f2628ba2351cedd1a5262bfb39ae9",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 1,

@@ -3,7 +3,7 @@
   "kind": "fragment",
   "id": "clerk",
   "source": {
-    "digest": "sha256:1003df4e99bccc50cc59b8e5d5c87e417f390dd6d0d1417ce2fee36ea8136f1f",
+    "digest": "sha256:375d44538d8debbd91e732b2988cb2ac3c9782cdc88a256dd962700a16eb9e22",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 1,

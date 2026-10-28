@@ -3,7 +3,7 @@
   "kind": "stack",
   "id": "mobile-expo",
   "source": {
-    "digest": "sha256:882eafd76d893581e61c32e59cd803106d5970a41c58b580fd64c527244ff9d2",
+    "digest": "sha256:11c94b1a0ddc2e5ea58c46fd8f6f25aa4f31f742997c58b810d8a78e95ebe0af",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 1,

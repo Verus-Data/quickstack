@@ -17,6 +17,9 @@ the temporary apps' remaining implementation/coverage limits. Mobile owns its
 process groups, native guidance is portable, and the test guard follows the
 actual command directory. Historical evidence and the ledger are unchanged.
 Metadata enrichment remains a separate draft; no review stamp was created here.
+The merged-tree rr gate passed six partitions: 3,056 tests passed/four skipped,
+plus 35 installed-package end-to-end tests. Existing approved discovery cards
+received digest-only refreshes; copy and review dates were preserved.
 
 The app-eval follow-up adds one independent report v1 checkpoint shared through
 openrouter-ai; both app manifests use it. It rejects the retained incomplete Terra

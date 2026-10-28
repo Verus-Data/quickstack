@@ -3,7 +3,7 @@
   "kind": "fragment",
   "id": "effect",
   "source": {
-    "digest": "sha256:f2da7e10fe08fbde279e6ff2e8bbf4785eabbfa0635d8ea84add3c8123b8dbe6",
+    "digest": "sha256:a578c0289ed0aac3c6b3e88c29cf4add8a0f971bcc0f70ecc63c86b405afd383",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 1,

@@ -3,7 +3,7 @@
   "kind": "fragment",
   "id": "openrouter-chat",
   "source": {
-    "digest": "sha256:89412086282e5ed5c97280b86f9770d82e2bd88326226191564683771ee90c3e",
+    "digest": "sha256:30b1df8edb81cbf9c4906b58efbae6553a3bad89416d6f668d056cb065c80a7e",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 1,

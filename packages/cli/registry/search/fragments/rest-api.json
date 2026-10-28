@@ -3,7 +3,7 @@
   "kind": "fragment",
   "id": "rest-api",
   "source": {
-    "digest": "sha256:6ff9aa2b4f7a57ec67ba52b004689bc2f1b863964adbfb642a37f44e82ef0ba2",
+    "digest": "sha256:1daa4bf183c5f035970c37b524b6613aba64cc8b731e3429e4fb13d26d8fec8a",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 1,

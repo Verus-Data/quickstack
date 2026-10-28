@@ -10,6 +10,12 @@ reports and [timings](runs/2026-10-27-library-qa/timings.md). Historical evidenc
 and the run ledger are unchanged. Metadata enrichment is maintained separately;
 no human review stamp was created by this work.
 
+Current main's discovery cards had already been approved in the parallel search
+work. Thirteen became stale after these recipe edits. Their claims were checked
+against the changed recipes and their digests refreshed through the existing
+restamp operation. Copy, provenance and all existing review dates stayed identical;
+no unread draft was approved.
+
 ## CLI and recipe findings
 
 | Finding | Change | Verification |
@@ -130,7 +136,12 @@ not establish full-green times.
   approved that new unit. Each deliverable received one review. The parent then
   reviewed/refactored the diff, adding the late-signal and nonblank-field fixes.
 
-Final merged-tree gate: pending integration.
+Final merged-tree rr gate passed six/six partitions after integration with main:
+2,477 CLI, 47 bench, 155 format and 377 root tests passed, with four total skips;
+35 additional installed-package end-to-end tests passed. Lint checked 1,124 files,
+and typechecking passed. Log directory suffix: check-20261028-011610. The independent
+QA checkout's tracked golden fixture was materialized after the merge; its contents
+and assertions were not changed by this remediation.
 
 ## Cleanup and external limits
 

@@ -3,7 +3,7 @@
   "kind": "stack",
   "id": "astro-api",
   "source": {
-    "digest": "sha256:6e6f49aa30b09a876b612af2906f7fef610329cd0dfb1861173c078f054beeb0",
+    "digest": "sha256:545edda04561d4c79caeaebfd7beedf756498da7c1ec9ab37d440a5c5fc55645",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 1,
