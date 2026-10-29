@@ -1,0 +1,201 @@
+{
+  "formatVersion": 1,
+  "cards": {
+    "alembic": {
+      "whatItIs": "A tool for recording and applying database structure changes in SQLAlchemy projects.",
+      "goodAt": ["Managing changes to SQL tables over time"],
+      "notGoodAt": ["Hosting a database; arrange that separately."],
+      "example": "Apply a reviewed change that adds a column.",
+      "homepage": "https://alembic.sqlalchemy.org",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "asyncpg": {
+      "whatItIs": "An asynchronous PostgreSQL driver for Python.",
+      "goodAt": ["Connecting Python services to Postgres without blocking on queries"],
+      "notGoodAt": ["Designing database tables; use a modeling tool."],
+      "example": "Read a saved record from Postgres in an async handler.",
+      "homepage": "https://github.com/MagicStack/asyncpg",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "fastapi": {
+      "whatItIs": "A Python framework for building HTTP APIs from typed functions.",
+      "goodAt": ["Building API endpoints with request validation"],
+      "notGoodAt": ["Providing a database automatically; add one."],
+      "example": "Accept a request and return a validated response.",
+      "homepage": "https://github.com/fastapi/fastapi",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "httpx": {
+      "whatItIs": "A Python library for making HTTP requests with synchronous or asynchronous code.",
+      "goodAt": ["Calling external web services from Python"],
+      "notGoodAt": ["Serving your own HTTP API; use a server framework."],
+      "example": "Fetch data from another service in a Python task.",
+      "homepage": "https://github.com/encode/httpx",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "mypy": {
+      "whatItIs": "A tool that checks Python type annotations before code runs.",
+      "goodAt": ["Finding type mismatches in Python code"],
+      "notGoodAt": ["Validating external data at runtime; use a data validator."],
+      "example": "Catch a function call with the wrong argument type.",
+      "homepage": "https://www.mypy-lang.org/",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "pydantic": {
+      "whatItIs": "A Python library for validating data with type annotations.",
+      "goodAt": ["Checking request and settings data at runtime"],
+      "notGoodAt": ["Storing records; use a database."],
+      "example": "Reject an incoming record with a missing field.",
+      "homepage": "https://github.com/pydantic/pydantic",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "pydantic-settings": {
+      "whatItIs": "A Pydantic library for loading and validating application settings.",
+      "goodAt": ["Reading settings from the environment"],
+      "notGoodAt": ["Managing secrets outside the app; use a secret store."],
+      "example": "Check that a required database address is configured.",
+      "homepage": "https://github.com/pydantic/pydantic-settings",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "pytest": {
+      "whatItIs": "A Python test runner with fixtures and assertions.",
+      "goodAt": ["Running Python unit and integration tests"],
+      "notGoodAt": ["Testing a real browser; use browser automation."],
+      "example": "Run API tests after changing a handler.",
+      "homepage": "https://docs.pytest.org/en/latest/",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "pytest-asyncio": {
+      "whatItIs": "Adds support for testing Python asynchronous functions with pytest.",
+      "homepage": "https://github.com/pytest-dev/pytest-asyncio",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "pytest-cov": {
+      "whatItIs": "Adds code coverage measurement to pytest runs.",
+      "homepage": "https://pytest-cov.readthedocs.io/",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "pytest-randomly": {
+      "whatItIs": "Shuffles pytest test order to expose order dependence and controls random seeds for repeatable failures.",
+      "homepage": "https://github.com/pytest-dev/pytest-randomly",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "pytest-xdist": {
+      "whatItIs": "Runs pytest tests across multiple worker processes.",
+      "homepage": "https://github.com/pytest-dev/pytest-xdist",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "ruff": {
+      "whatItIs": "A Python linter and formatter.",
+      "goodAt": ["Finding lint issues and formatting Python code"],
+      "notGoodAt": ["Checking program behavior; run tests."],
+      "example": "Format Python files and report unused imports.",
+      "homepage": "https://docs.astral.sh/ruff",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "sqlalchemy": {
+      "whatItIs": "A Python library for defining database models and queries.",
+      "goodAt": ["Working with SQL databases from Python"],
+      "notGoodAt": ["Applying schema changes alone; use a migration tool."],
+      "example": "Load an inventory record through a database model.",
+      "homepage": "https://www.sqlalchemy.org",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "structlog": {
+      "whatItIs": "A Python library for building structured log events.",
+      "goodAt": ["Adding consistent fields to application logs"],
+      "notGoodAt": ["Collecting or storing logs; configure that separately."],
+      "example": "Attach a request identifier to an API log event.",
+      "homepage": "https://www.structlog.org/",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "uvicorn": {
+      "whatItIs": "A server that runs Python web apps so they can receive HTTP requests.",
+      "goodAt": ["Serving a Python API"],
+      "notGoodAt": ["Providing API routes; use a web framework."],
+      "example": "Start a FastAPI application for local requests.",
+      "homepage": "https://uvicorn.dev/",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    }
+  }
+}

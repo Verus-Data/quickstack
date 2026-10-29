@@ -22,6 +22,16 @@
       "description": "Publish explanatory pages beside interactive filters backed by custom API resources. The shared contract keeps the filters and responses aligned."
     }
   ],
+  "plain": {
+    "whatItIs": "A starter website with prebuilt pages and a separate API for live data.",
+    "goodAt": [
+      "Content pages that show current data through small interactive parts",
+      "Keeping site and API code in one workspace"
+    ],
+    "notGoodAt": [
+      "Pages built on each request; choose a server-rendered stack."
+    ]
+  },
   "platforms": [
     "web",
     "server"

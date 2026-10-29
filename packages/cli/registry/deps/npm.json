@@ -1,0 +1,1206 @@
+{
+  "formatVersion": 1,
+  "cards": {
+    "@ai-sdk/react": {
+      "whatItIs": "React helpers for building interfaces around streamed AI responses.",
+      "goodAt": ["Displaying changing AI output in React"],
+      "notGoodAt": ["General data fetching; use a data-query library."],
+      "example": "Show a generated reply as it arrives in a chat screen.",
+      "homepage": "https://ai-sdk.dev/docs",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@astrojs/check": {
+      "whatItIs": "Checks Astro code for type and template errors during development.",
+      "homepage": "https://github.com/withastro/astro/tree/main/packages/language-tools/astro-check",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@astrojs/mdx": {
+      "whatItIs": "Adds support for pages that mix Markdown writing with components in Astro.",
+      "homepage": "https://docs.astro.build/en/guides/integrations-guide/mdx/",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@astrojs/react": {
+      "whatItIs": "Lets Astro pages render React components where interaction is needed.",
+      "homepage": "https://docs.astro.build/en/guides/integrations-guide/react/",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@astrojs/rss": {
+      "whatItIs": "Adds helpers for generating an RSS feed from Astro content.",
+      "homepage": "https://astro.build",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@astrojs/sitemap": {
+      "whatItIs": "Generates a sitemap from an Astro site's pages.",
+      "homepage": "https://docs.astro.build/en/guides/integrations-guide/sitemap/",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@biomejs/biome": {
+      "whatItIs": "A tool that formats code and checks it for selected problems.",
+      "goodAt": ["Formatting and linting JavaScript and TypeScript"],
+      "notGoodAt": ["Running application tests; use a test runner."],
+      "example": "Format source files and report lint findings before a commit.",
+      "homepage": "https://biomejs.dev",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@clerk/expo": {
+      "whatItIs": "Clerk's sign-in tools for Expo and React Native apps.",
+      "goodAt": ["Adding account sign-in to an Expo app"],
+      "notGoodAt": ["Defining your app's record permissions; implement those separately."],
+      "example": "Let a phone user sign in before opening private screens.",
+      "homepage": "https://clerk.com/",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@clerk/hono": {
+      "whatItIs": "Clerk's session verification tools for a Hono API.",
+      "goodAt": ["Checking user sessions on API requests"],
+      "notGoodAt": ["Designing which records each user can access; add authorization rules."],
+      "example": "Reject an API request with no valid user session.",
+      "homepage": "https://clerk.com/",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@cloudflare/vite-plugin": {
+      "whatItIs": "Connects Vite development and builds to the Cloudflare Workers runtime.",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@cloudflare/vitest-plugin": {
+      "whatItIs": "Runs Vitest tests inside a local Cloudflare Workers runtime.",
+      "homepage": "https://github.com/cloudflare/workers-sdk/tree/main/packages/vitest-plugin#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@effect/ai-openrouter": {
+      "whatItIs": "An Effect AI connection to models served through OpenRouter.",
+      "goodAt": ["Calling OpenRouter from Effect programs"],
+      "notGoodAt": ["Building a full chat interface; add application code."],
+      "example": "Send a prompt through an Effect service and handle its result.",
+      "homepage": "https://effect.website",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@effect/platform-bun": {
+      "whatItIs": "Connects Effect programs to Bun's platform services.",
+      "homepage": "https://effect.website",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@effect/platform-node": {
+      "whatItIs": "Connects Effect programs to Node's platform services.",
+      "homepage": "https://effect.website",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@effect/vitest": {
+      "whatItIs": "Adds Vitest helpers for testing Effect programs.",
+      "homepage": "https://effect.website",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@eslint/js": {
+      "whatItIs": "Provides ESLint's standard JavaScript rules for a project's lint setup.",
+      "homepage": "https://eslint.org",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@faker-js/faker": {
+      "whatItIs": "A library that creates sample names, dates and other test data.",
+      "goodAt": ["Generating varied sample records"],
+      "notGoodAt": ["Proving real data behavior; use fixtures and integration tests."],
+      "example": "Fill a test database with sample customer names.",
+      "homepage": "https://fakerjs.dev",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@fontsource-variable/inter": {
+      "whatItIs": "Packages the Inter variable font for serving from an application.",
+      "homepage": "https://fontsource.org/fonts/inter",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@fontsource-variable/jetbrains-mono": {
+      "whatItIs": "Packages the JetBrains Mono variable font for serving from an application.",
+      "homepage": "https://fontsource.org/fonts/jetbrains-mono",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@hono/zod-openapi": {
+      "whatItIs": "A Hono extension that describes routes with Zod and produces an API specification.",
+      "goodAt": ["Keeping route validation and API descriptions together"],
+      "notGoodAt": ["Replacing the route implementation; write handlers separately."],
+      "example": "Describe a request body once for validation and API documentation.",
+      "homepage": "https://github.com/honojs/middleware",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@openrouter/ai-sdk-provider": {
+      "whatItIs": "A provider adapter that connects the AI SDK to OpenRouter.",
+      "goodAt": ["Using OpenRouter models through AI SDK calls"],
+      "notGoodAt": ["Managing a complete chat product; add storage and interface code."],
+      "example": "Generate a reply through the AI SDK using an OpenRouter model.",
+      "homepage": "https://github.com/OpenRouterTeam/ai-sdk-provider",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@openrouter/sdk": {
+      "whatItIs": "A TypeScript client for calling OpenRouter services.",
+      "goodAt": ["Sending requests to OpenRouter from TypeScript"],
+      "notGoodAt": ["Providing a user interface; build one separately."],
+      "example": "Fetch available models for a model picker.",
+      "homepage": "https://github.com/OpenRouterTeam/typescript-sdk#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@opentui/core": {
+      "whatItIs": "A library for building interactive terminal screens with TypeScript.",
+      "goodAt": ["Laying out text and controls in a terminal"],
+      "notGoodAt": ["Simple line-by-line commands; use ordinary terminal output."],
+      "example": "Show a keyboard-driven list of chats in a terminal.",
+      "homepage": "https://github.com/anomalyco/opentui#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@opentui/react": {
+      "whatItIs": "A React renderer for OpenTUI terminal interfaces.",
+      "goodAt": ["Building terminal screens with React components"],
+      "notGoodAt": ["Browser interfaces; use React's browser renderer."],
+      "example": "Render a terminal chat screen from React components.",
+      "homepage": "https://github.com/anomalyco/opentui#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@playwright/test": {
+      "whatItIs": "A test runner that controls real web browsers.",
+      "goodAt": ["Checking complete browser flows"],
+      "notGoodAt": ["Testing isolated functions; use a unit test runner."],
+      "example": "Open a page, submit a form and check the result.",
+      "homepage": "https://playwright.dev",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@react-router/dev": {
+      "whatItIs": "Provides development and build commands for React Router projects.",
+      "homepage": "https://reactrouter.com",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@react-router/node": {
+      "whatItIs": "Provides Node utilities for applications built with React Router.",
+      "homepage": "https://github.com/remix-run/react-router",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@react-router/serve": {
+      "whatItIs": "Serves a built React Router application with Node.",
+      "homepage": "https://github.com/remix-run/react-router",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@resvg/resvg-js": {
+      "whatItIs": "A library that renders SVG graphics into images from JavaScript.",
+      "goodAt": ["Turning vector artwork into raster images"],
+      "notGoodAt": ["Editing design source files; use a graphics editor."],
+      "example": "Render a generated social card as a PNG image.",
+      "homepage": "https://github.com/yisibl/resvg-js#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@scalar/hono-api-reference": {
+      "whatItIs": "A Hono integration that displays interactive API documentation.",
+      "goodAt": ["Showing an API reference from an API specification"],
+      "notGoodAt": ["Writing the API routes; implement those separately."],
+      "example": "Serve a browser page where developers can inspect API endpoints.",
+      "homepage": "https://github.com/scalar/scalar",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@tailwindcss/postcss": {
+      "whatItIs": "Connects Tailwind CSS to a PostCSS style-processing pipeline.",
+      "homepage": "https://tailwindcss.com",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@tailwindcss/typography": {
+      "whatItIs": "Adds default text styling for prose content using Tailwind CSS.",
+      "homepage": "https://github.com/tailwindlabs/tailwindcss-typography#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@tailwindcss/vite": {
+      "whatItIs": "Connects Tailwind CSS to a Vite project.",
+      "homepage": "https://tailwindcss.com",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@tanstack/react-query": {
+      "whatItIs": "React tools for fetching, caching and updating server data.",
+      "goodAt": ["Keeping browser data in sync with an API"],
+      "notGoodAt": ["Storing data on the server; use a database."],
+      "example": "Refresh a list after a new item is saved.",
+      "homepage": "https://tanstack.com/query",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@tauri-apps/api": {
+      "whatItIs": "JavaScript functions for communicating with a Tauri desktop application's native side.",
+      "goodAt": ["Calling native app features from a web interface"],
+      "notGoodAt": ["Building Rust application logic; add commands separately."],
+      "example": "Call a Rust command from a desktop interface.",
+      "homepage": "https://github.com/tauri-apps/tauri#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@tauri-apps/cli": {
+      "whatItIs": "Provides commands for developing and packaging a Tauri application.",
+      "homepage": "https://github.com/tauri-apps/tauri#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@testing-library/dom": {
+      "whatItIs": "Helpers for testing what a person can see and do in a web page.",
+      "goodAt": ["Checking what appears on a page after user actions"],
+      "notGoodAt": ["Running tests in a real browser; use a browser test runner."],
+      "example": "Find a form field by its label and check its error message.",
+      "homepage": "https://github.com/testing-library/dom-testing-library#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@testing-library/jest-dom": {
+      "whatItIs": "Adds assertions that make web page tests easier to read.",
+      "homepage": "https://github.com/testing-library/jest-dom#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@testing-library/react": {
+      "whatItIs": "React testing helpers built around rendered component behavior.",
+      "goodAt": ["Testing React components as users interact with them"],
+      "notGoodAt": ["Testing a full deployed app; use browser tests."],
+      "example": "Render a form and check its response to a click.",
+      "homepage": "https://github.com/testing-library/react-testing-library#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@testing-library/react-native": {
+      "whatItIs": "Testing helpers for React Native component behavior.",
+      "goodAt": ["Checking mobile component output and interactions"],
+      "notGoodAt": ["Testing device hardware behavior; use device tests."],
+      "example": "Render a mobile screen and check a button press.",
+      "homepage": "https://oss.callstack.com/react-native-testing-library",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@testing-library/user-event": {
+      "whatItIs": "Helpers that simulate user actions in interface tests.",
+      "goodAt": ["Typing and clicking in component tests"],
+      "notGoodAt": ["Testing a real browser end to end; use browser automation."],
+      "example": "Type into a search box and check the filtered list.",
+      "homepage": "https://github.com/testing-library/user-event#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@types/bun": {
+      "whatItIs": "Type definitions for Bun, so TypeScript can check code that uses it.",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/bun",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@types/jest": {
+      "whatItIs": "Type definitions for Jest, so TypeScript can check code that uses it.",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/jest",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@types/node": {
+      "whatItIs": "Type definitions for Node, so TypeScript can check code that uses it.",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@types/react": {
+      "whatItIs": "Type definitions for React, so TypeScript can check code that uses it.",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@types/react-dom": {
+      "whatItIs": "Type definitions for React's DOM renderer, so TypeScript can check code that uses it.",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react-dom",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@vitejs/plugin-react": {
+      "whatItIs": "Connects React component updates and compilation to Vite.",
+      "homepage": "https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@vitest/coverage-v8": {
+      "whatItIs": "Shows which code ran during Vitest tests.",
+      "homepage": "https://vitest.dev/guide/coverage",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "@xterm/headless": {
+      "whatItIs": "A terminal emulator that runs without a visible terminal window.",
+      "goodAt": ["Testing terminal output and screen state"],
+      "notGoodAt": ["Showing an interface to a person; use a terminal renderer."],
+      "example": "Inspect a terminal chat screen during an automated test.",
+      "homepage": "https://github.com/xtermjs/xterm.js#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "ai": {
+      "whatItIs": "Tools for generating text and building AI features in JavaScript.",
+      "goodAt": ["Calling models and streaming generated output"],
+      "notGoodAt": ["Choosing a provider or product behavior for you; configure those."],
+      "example": "Stream a generated answer into a chat interface.",
+      "homepage": "https://ai-sdk.dev/docs",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "astro": {
+      "whatItIs": "A framework for building websites from pages and components.",
+      "goodAt": ["Publishing content-focused sites"],
+      "notGoodAt": [
+        "Server application behavior without added server code; choose a server stack."
+      ],
+      "example": "Build a blog page from an article file.",
+      "homepage": "https://astro.build",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "class-variance-authority": {
+      "whatItIs": "A helper that selects CSS classes from named component variants.",
+      "goodAt": ["Keeping button style variants consistent"],
+      "notGoodAt": ["Creating the CSS rules themselves; use a styling system."],
+      "example": "Choose button classes for primary and disabled states.",
+      "homepage": "https://github.com/joe-bell/cva#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "clsx": {
+      "whatItIs": "A small helper for joining conditional CSS class names.",
+      "goodAt": ["Combining classes from component state"],
+      "notGoodAt": ["Resolving conflicting utility classes; use a merge helper."],
+      "example": "Add an error class only when a field is invalid.",
+      "homepage": "https://github.com/lukeed/clsx#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "drizzle-kit": {
+      "whatItIs": "A command-line tool for creating and applying Drizzle database changes.",
+      "goodAt": ["Managing database migration files"],
+      "notGoodAt": ["Writing your data model for you; define tables first."],
+      "example": "Generate a migration after changing a table definition.",
+      "homepage": "https://orm.drizzle.team",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "drizzle-orm": {
+      "whatItIs": "A TypeScript library for querying SQL databases with typed table definitions.",
+      "goodAt": ["Writing database queries in TypeScript"],
+      "notGoodAt": ["Running a database server; provision one separately."],
+      "example": "Read saved listings from a SQL table.",
+      "homepage": "https://orm.drizzle.team",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "effect": {
+      "whatItIs": "A TypeScript library for composing programs with explicit services and errors.",
+      "goodAt": ["Sharing services across commands and requests"],
+      "notGoodAt": ["Providing a finished application structure; design one."],
+      "example": "Run a command that reads settings through an injected service.",
+      "homepage": "https://effect.website",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "eslint": {
+      "whatItIs": "A tool that checks JavaScript and TypeScript code against rules.",
+      "goodAt": ["Finding code patterns before merge"],
+      "notGoodAt": ["Formatting every file; use a formatter."],
+      "example": "Report unused variables in a changed file.",
+      "homepage": "https://eslint.org",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "eslint-plugin-jsx-a11y": {
+      "whatItIs": "Adds accessibility checks for JSX markup to ESLint.",
+      "homepage": "https://github.com/jsx-eslint/eslint-plugin-jsx-a11y#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "eslint-plugin-react-hooks": {
+      "whatItIs": "Adds React hook usage checks to ESLint.",
+      "homepage": "https://react.dev/",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "expo": {
+      "whatItIs": "A framework and toolset for building React Native apps.",
+      "goodAt": ["Developing phone apps with JavaScript"],
+      "notGoodAt": ["Writing the app's screens and backend; add those."],
+      "example": "Run a phone app while editing its screens.",
+      "homepage": "https://github.com/expo/expo/tree/main/packages/expo",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "expo-constants": {
+      "whatItIs": "Exposes app and device constants to an Expo project.",
+      "homepage": "https://github.com/expo/expo.git",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "expo-linking": {
+      "whatItIs": "Provides helpers for opening and handling links in Expo apps.",
+      "homepage": "https://github.com/expo/expo.git",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "expo-router": {
+      "whatItIs": "A routing library for Expo apps based on screen files.",
+      "goodAt": ["Moving between mobile screens"],
+      "notGoodAt": ["Managing server data; use an API client."],
+      "example": "Open a book detail screen from a list.",
+      "homepage": "https://docs.expo.dev/routing/introduction/",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "expo-secure-store": {
+      "whatItIs": "A device storage helper for small encrypted values in Expo apps.",
+      "goodAt": ["Keeping small secrets on a device"],
+      "notGoodAt": ["Storing large application records; use a database."],
+      "example": "Keep a sign-in token between app launches.",
+      "homepage": "https://github.com/expo/expo.git",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "expo-status-bar": {
+      "whatItIs": "Controls the status bar in an Expo app.",
+      "homepage": "https://github.com/expo/expo.git",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "globals": {
+      "whatItIs": "Lists standard global names so lint rules can recognize different JavaScript environments.",
+      "homepage": "https://github.com/sindresorhus/globals#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "happy-dom": {
+      "whatItIs": "A browser-like document environment for JavaScript tests.",
+      "goodAt": ["Testing DOM code without opening a browser"],
+      "notGoodAt": ["Matching every browser behavior; use real browser tests."],
+      "example": "Render a component in a test and inspect its output.",
+      "homepage": "https://github.com/capricorn86/happy-dom",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "hono": {
+      "whatItIs": "A web framework for handling HTTP requests in JavaScript runtimes.",
+      "goodAt": ["Building API routes"],
+      "notGoodAt": ["Providing persistence by itself; add a database."],
+      "example": "Return a saved record from an API endpoint.",
+      "homepage": "https://hono.dev",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "isbot": {
+      "whatItIs": "A helper that identifies common web crawlers from a request's user agent.",
+      "goodAt": ["Choosing a response for known crawlers"],
+      "notGoodAt": ["Proving a visitor is human; use a different control."],
+      "example": "Detect a crawler request before choosing a page response.",
+      "homepage": "https://isbot.js.org",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "jest": {
+      "whatItIs": "A JavaScript test runner with assertions and mocking tools.",
+      "goodAt": ["Running automated code tests"],
+      "notGoodAt": ["Testing a full browser flow; use browser automation."],
+      "example": "Run component tests after a code change.",
+      "homepage": "https://jestjs.io/",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "jest-expo": {
+      "whatItIs": "Configures Jest tests for Expo and React Native projects.",
+      "homepage": "https://github.com/expo/expo/tree/main/packages/jest-expo",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "lucide-react": {
+      "whatItIs": "A set of ready-made icons as React components.",
+      "goodAt": ["Adding familiar interface icons"],
+      "notGoodAt": ["Creating a complete visual design; design the interface."],
+      "example": "Place a search icon beside a search field.",
+      "homepage": "https://lucide.dev",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "msw": {
+      "whatItIs": "A tool that intercepts network requests in tests and development.",
+      "goodAt": ["Testing interface behavior with controlled API replies"],
+      "notGoodAt": ["Proving a live API works; use integration tests."],
+      "example": "Return a sample error when a screen requests data.",
+      "homepage": "https://mswjs.io",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "nativewind": {
+      "whatItIs": "Tailwind-style utility classes for styling React Native components.",
+      "goodAt": ["Sharing a class-based styling approach across mobile screens"],
+      "notGoodAt": ["Replacing native layout testing; check real devices."],
+      "example": "Style a phone screen's card and spacing with utility classes.",
+      "homepage": "https://nativewind.dev",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "orval": {
+      "whatItIs": "A tool that generates TypeScript API clients from an API description.",
+      "goodAt": ["Keeping frontend calls aligned with an API contract"],
+      "notGoodAt": ["Writing server routes; build those separately."],
+      "example": "Generate a typed client after the API description changes.",
+      "homepage": "https://orval.dev",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "pg": {
+      "whatItIs": "A PostgreSQL client for Node applications.",
+      "goodAt": ["Connecting Node code to Postgres"],
+      "notGoodAt": ["Creating tables or migrations; use database tooling."],
+      "example": "Run a parameterized query for a saved record.",
+      "homepage": "https://github.com/brianc/node-postgres",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "postcss": {
+      "whatItIs": "Transforms styles through a chain of JavaScript plugins.",
+      "homepage": "https://postcss.org/",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "postgres": {
+      "whatItIs": "A PostgreSQL client for JavaScript applications.",
+      "goodAt": ["Querying Postgres from JavaScript"],
+      "notGoodAt": ["Provisioning the database; arrange hosting separately."],
+      "example": "Insert a new record from a server handler.",
+      "homepage": "https://github.com/porsager/postgres",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "posthog-js": {
+      "whatItIs": "A browser library for sending product events to PostHog.",
+      "goodAt": ["Recording page views and named interactions"],
+      "notGoodAt": ["Setting consent policy for your product; decide that separately."],
+      "example": "Send an article-share event after a button click.",
+      "homepage": "https://posthog.com/docs/libraries/js",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "prettier": {
+      "whatItIs": "A code formatter that applies consistent layout to supported files.",
+      "goodAt": ["Formatting source code"],
+      "notGoodAt": ["Checking application behavior; run tests."],
+      "example": "Format changed files before a commit.",
+      "homepage": "https://prettier.io",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "prettier-plugin-astro": {
+      "whatItIs": "Adds Astro file formatting to Prettier.",
+      "homepage": "https://github.com/withastro/prettier-plugin-astro/",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "react": {
+      "whatItIs": "A JavaScript library for building interfaces from components.",
+      "goodAt": ["Building interactive screen components"],
+      "notGoodAt": ["Serving an API or storing data; add those separately."],
+      "example": "Update a list when a user adds an item.",
+      "homepage": "https://react.dev/",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "react-dom": {
+      "whatItIs": "React's renderer for web page elements.",
+      "goodAt": ["Displaying React components in a browser"],
+      "notGoodAt": ["Rendering native phone screens; use React Native."],
+      "example": "Mount a React form into a web page.",
+      "homepage": "https://react.dev/",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "react-native": {
+      "whatItIs": "A framework for building mobile interfaces with React.",
+      "goodAt": ["Building Android and iOS screens"],
+      "notGoodAt": ["Providing a backend or database; add those separately."],
+      "example": "Render a phone screen with native controls.",
+      "homepage": "https://reactnative.dev/",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "react-native-css": {
+      "whatItIs": "Connects CSS stylesheets to React Native styling.",
+      "homepage": "https://github.com/nativewind/react-native-css#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "react-native-reanimated": {
+      "whatItIs": "Animation tools for React Native interfaces.",
+      "goodAt": ["Animating mobile interface transitions"],
+      "notGoodAt": ["Managing navigation itself; use a navigation library."],
+      "example": "Animate a panel as it opens on a phone screen.",
+      "homepage": "https://docs.swmansion.com/react-native-reanimated",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "react-native-safe-area-context": {
+      "whatItIs": "Helps React Native content avoid areas covered by notches and system bars.",
+      "homepage": "https://github.com/AppAndFlow/react-native-safe-area-context#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "react-native-screens": {
+      "whatItIs": "Provides native screen components used by React Native navigation.",
+      "homepage": "https://github.com/software-mansion/react-native-screens#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "react-native-web": {
+      "whatItIs": "A renderer that lets React Native components run on the web.",
+      "goodAt": ["Sharing interface components with a browser app"],
+      "notGoodAt": ["Replacing platform-specific checks; test each target."],
+      "example": "Show a mobile-designed component in a browser preview.",
+      "homepage": "https://github.com/necolas/react-native-web#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "react-native-worklets": {
+      "whatItIs": "Runs selected React Native work away from the main JavaScript thread.",
+      "homepage": "https://docs.swmansion.com/react-native-worklets",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "react-router": {
+      "whatItIs": "A routing and application framework for React websites.",
+      "goodAt": ["Connecting pages to URLs and server data"],
+      "notGoodAt": ["Providing accounts or storage; add those separately."],
+      "example": "Load a record before showing its detail page.",
+      "homepage": "https://github.com/remix-run/react-router",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "satori": {
+      "whatItIs": "A library that turns HTML-like layouts into SVG graphics.",
+      "goodAt": ["Generating vector images from text and styles"],
+      "notGoodAt": ["Rendering a final PNG by itself; use an image renderer."],
+      "example": "Create an SVG social card from an article title.",
+      "homepage": "https://github.com/vercel/satori#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "tailwind-merge": {
+      "whatItIs": "A helper that resolves conflicting Tailwind CSS utility classes.",
+      "goodAt": ["Combining user-selected style variants"],
+      "notGoodAt": ["Creating CSS utilities; use Tailwind CSS."],
+      "example": "Keep only the active padding class on a button.",
+      "homepage": "https://github.com/dcastil/tailwind-merge",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "tailwindcss": {
+      "whatItIs": "A CSS framework built from small reusable style utilities.",
+      "goodAt": ["Styling interface elements with utility classes"],
+      "notGoodAt": ["Choosing a visual design for you; design the pages."],
+      "example": "Apply spacing and color classes to a card.",
+      "homepage": "https://tailwindcss.com",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "typescript": {
+      "whatItIs": "JavaScript with a type checker for code and data shapes.",
+      "goodAt": ["Checking code before it runs"],
+      "notGoodAt": ["Validating untrusted input at runtime; use a validator."],
+      "example": "Catch a wrong argument type during development.",
+      "homepage": "https://www.typescriptlang.org/",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "typescript-eslint": {
+      "whatItIs": "Connects ESLint rules to TypeScript code.",
+      "homepage": "https://typescript-eslint.io/packages/typescript-eslint",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "vite": {
+      "whatItIs": "A development server and build tool for web projects.",
+      "goodAt": ["Running a local web app while editing"],
+      "notGoodAt": ["Supplying application routes by itself; use a framework."],
+      "example": "Serve a React interface during development.",
+      "homepage": "https://vite.dev",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "vitest": {
+      "whatItIs": "A test runner for JavaScript and TypeScript projects.",
+      "goodAt": ["Running unit and integration tests"],
+      "notGoodAt": ["Replacing full browser checks; use browser tests."],
+      "example": "Run API service tests after a change.",
+      "homepage": "https://vitest.dev",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "wrangler": {
+      "whatItIs": "A command-line tool for developing and deploying Cloudflare Workers.",
+      "goodAt": ["Testing Workers locally and publishing them"],
+      "notGoodAt": ["Building application routes for you; write those."],
+      "example": "Run a Worker locally before deploying it.",
+      "homepage": "https://github.com/cloudflare/workers-sdk#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "yaml": {
+      "whatItIs": "A JavaScript library for reading and writing YAML documents.",
+      "goodAt": ["Handling YAML data in JavaScript"],
+      "notGoodAt": ["Checking an application's business rules; add validation."],
+      "example": "Read a YAML settings document into a program.",
+      "homepage": "https://eemeli.org/yaml/",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "zod": {
+      "whatItIs": "A TypeScript library for checking data against declared shapes at runtime.",
+      "goodAt": ["Validating requests and external data"],
+      "notGoodAt": ["Storing data; use a database."],
+      "example": "Reject a request whose email field is missing.",
+      "homepage": "https://zod.dev",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "zustand": {
+      "whatItIs": "A small state container for React applications.",
+      "goodAt": ["Sharing client state between components"],
+      "notGoodAt": ["Synchronizing server records by itself; use a data-query tool."],
+      "example": "Keep a filter selection available across screens.",
+      "homepage": "https://github.com/pmndrs/zustand",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    }
+  }
+}

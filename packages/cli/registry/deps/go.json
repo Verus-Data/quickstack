@@ -1,0 +1,70 @@
+{
+  "formatVersion": 1,
+  "cards": {
+    "github.com/jackc/pgx": {
+      "whatItIs": "A Go driver and toolkit for PostgreSQL.",
+      "goodAt": ["Querying Postgres from Go"],
+      "notGoodAt": ["Managing database migrations; use a migration tool."],
+      "example": "Read a saved record from Postgres in a Go service.",
+      "homepage": "https://github.com/jackc/pgx",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "github.com/pressly/goose": {
+      "whatItIs": "A tool and Go library for applying database migrations.",
+      "goodAt": ["Tracking incremental SQL changes"],
+      "notGoodAt": ["Defining the application's data model; write that separately."],
+      "example": "Apply a migration that creates a new table.",
+      "homepage": "https://github.com/pressly/goose",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "github.com/spf13/cobra": {
+      "whatItIs": "A Go library for building command-line programs with subcommands.",
+      "goodAt": ["Organizing terminal commands and flags"],
+      "notGoodAt": ["Building a graphical interface; use UI tools."],
+      "example": "Add a status subcommand with flags and help text.",
+      "homepage": "https://github.com/spf13/cobra",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "github.com/spf13/viper": {
+      "whatItIs": "A Go library for reading and combining application settings.",
+      "goodAt": ["Loading settings from files and the environment"],
+      "notGoodAt": ["Deciding application defaults; define those in the app."],
+      "example": "Read an API address from project settings.",
+      "homepage": "https://github.com/spf13/viper",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    },
+    "github.com/stretchr/testify": {
+      "whatItIs": "Go testing helpers for assertions, mocks and test suites.",
+      "goodAt": ["Writing readable test assertions"],
+      "notGoodAt": ["Running tests itself; use Go's test runner."],
+      "example": "Assert that a command returns the expected error.",
+      "homepage": "https://github.com/stretchr/testify",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": null
+      }
+    }
+  }
+}

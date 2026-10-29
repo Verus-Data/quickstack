@@ -24,6 +24,16 @@
       "stack": "python-react"
     }
   ],
+  "plain": {
+    "whatItIs": "Project instructions and local guards for coding assistants working in a repository.",
+    "goodAt": [
+      "Giving several coding assistants the same project guidance",
+      "Blocking selected unsafe commands and secret-shaped writes"
+    ],
+    "notGoodAt": [
+      "Running project tests or isolating untrusted code; use separate tools."
+    ]
+  },
   "capabilities": [
     "agent-harness"
   ],

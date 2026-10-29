@@ -25,6 +25,16 @@
       ]
     }
   ],
+  "plain": {
+    "whatItIs": "A starter terminal program written in TypeScript and compiled with Bun.",
+    "goodAt": [
+      "Commands with predictable text and JSON output",
+      "Testing a compiled command-line program"
+    ],
+    "notGoodAt": [
+      "Full-screen terminal interfaces; add a dedicated interface."
+    ]
+  },
   "platforms": [
     "cli"
   ],

@@ -24,6 +24,16 @@
       "stack": "typescript-cli"
     }
   ],
+  "plain": {
+    "whatItIs": "A terminal chat app that uses OpenRouter and saves conversations locally.",
+    "goodAt": [
+      "Interactive chat and scriptable text commands",
+      "Exporting saved chats as Markdown"
+    ],
+    "notGoodAt": [
+      "Browser chat interfaces; choose openrouter-chat."
+    ]
+  },
   "capabilities": [
     "ai"
   ],

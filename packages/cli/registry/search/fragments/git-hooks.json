@@ -24,6 +24,16 @@
       "stack": "python-react"
     }
   ],
+  "plain": {
+    "whatItIs": "Local Git hooks that check staged files, commit messages and tests.",
+    "goodAt": [
+      "Catching formatting and lint issues before a commit",
+      "Checking commit subjects and tests before sharing changes"
+    ],
+    "notGoodAt": [
+      "Hosted checks on pull requests; add CI separately."
+    ]
+  },
   "capabilities": [
     "git-hooks"
   ],

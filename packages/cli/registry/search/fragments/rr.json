@@ -24,6 +24,16 @@
       "stack": "python-react"
     }
   ],
+  "plain": {
+    "whatItIs": "Named tasks that run existing project checks on configured remote computers.",
+    "goodAt": [
+      "Running checks on hosts with the needed tools",
+      "Finding test results and logs from remote runs"
+    ],
+    "notGoodAt": [
+      "Setting up personal SSH hosts; configure those separately."
+    ]
+  },
   "capabilities": [],
   "requests": [
     "move slow test runs off my laptop onto an SSH machine",

@@ -24,6 +24,16 @@
       "stack": "typescript-cli"
     }
   ],
+  "plain": {
+    "whatItIs": "Testing helpers and project guidance for working with Effect code.",
+    "goodAt": [
+      "Testing Effect services with controlled time",
+      "Checking failures and unexpected defects"
+    ],
+    "notGoodAt": [
+      "Choosing an entire application architecture; the stack owns that."
+    ]
+  },
   "capabilities": [],
   "requests": [
     "test timed operations by advancing a clock instead of sleeping",

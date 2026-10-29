@@ -24,6 +24,16 @@
       "stack": "python-react"
     }
   ],
+  "plain": {
+    "whatItIs": "A GitHub Actions workflow that runs a project’s existing checks on code changes.",
+    "goodAt": [
+      "Checking pushes and pull requests",
+      "Giving branch protection one combined result"
+    ],
+    "notGoodAt": [
+      "Deploying or publishing releases; choose a deployment or release fragment."
+    ]
+  },
   "capabilities": [
     "ci"
   ],

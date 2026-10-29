@@ -25,6 +25,16 @@
       "description": "Build server-rendered result pages and JSON lookup routes around a data source you choose. Add scheduled refresh logic only after deciding its data source and schedule."
     }
   ],
+  "plain": {
+    "whatItIs": "A starter web app whose pages and API run on Cloudflare Workers.",
+    "goodAt": [
+      "Pages that load data on the server",
+      "Web apps with routes and a tested place for scheduled work"
+    ],
+    "notGoodAt": [
+      "Apps meant to run on a Node server; choose react-router."
+    ]
+  },
   "platforms": [
     "web",
     "server"
