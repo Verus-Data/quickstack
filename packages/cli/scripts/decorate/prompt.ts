@@ -1,7 +1,7 @@
 import type { SearchMetadata, SearchVocabulary } from "@steamfield/stacks-format";
 import { type Entry, isFragment, isStack } from "../../src/core/registry/entry";
 
-export const PROMPT_VERSION = 2;
+export const PROMPT_VERSION = 3;
 
 /** Recipe identity and selection constraints, without another descriptive catalog. */
 export function recipeReferences(entries: ReadonlyArray<Entry>) {
@@ -41,6 +41,11 @@ export const EXAMPLE_CARDS: ReadonlyArray<SearchMetadata> = [
           "An illustrative command that shows resolved configuration and reports invalid settings as structured errors for shell automation.",
       },
     ],
+    plain: {
+      whatItIs: "A starter for a command line program with subcommands and configuration.",
+      goodAt: ["Local tools that need several commands"],
+      notGoodAt: ["Graphical desktop applications"],
+    },
     platforms: ["cli"],
     productKinds: ["cli-tool"],
     languages: ["go"],
@@ -72,6 +77,11 @@ export const EXAMPLE_CARDS: ReadonlyArray<SearchMetadata> = [
         stack: "go-cli",
       },
     ],
+    plain: {
+      whatItIs: "Adds checks that run when contributors commit or push code.",
+      goodAt: ["Catching local mistakes before sharing code"],
+      notGoodAt: ["Replacing checks on the hosted repository"],
+    },
     capabilities: ["git-hooks"],
     requests: [
       "reject malformed commit subjects on my laptop",
@@ -100,11 +110,12 @@ export function buildPrompt(options: {
     "Stacks require platforms, productKinds and languages (1 to 3); fragments require capabilities (0 to 3) and none of those stack fields.",
     "Use only vocabulary keys for these fields. Include summary (one sentence, at most 25 words), requests (3 to 5, at most 15 words each), useCases (at most 6), synonyms (12), goodFor (4), notFor (4).",
     "Optional caveats: at most 3 material platform and operating limits (for example memory-only history, URL-based access or signing), at most 25 words each. Keep legacy search text (summary, requests, useCases, synonyms, goodFor, notFor, caveats) together within 150 words.",
-    "Require all three editorial fields for new drafts: description, seoDescription and projectExamples. All prose must be nonblank. Do not add other fields.",
-    "description, seoDescription and projectExamples are display only, unscored and unembedded; exclude all three from ranking and embeddings.",
+    "Require description, seoDescription, projectExamples and plain for new drafts. All prose must be nonblank. Do not add other fields.",
+    "description, seoDescription, projectExamples and plain are display only, unscored and unembedded; exclude all four from ranking and embeddings.",
     "Entry frontmatter description describes the recipe itself; the sidecar display description expands that source into directory detail and agent comparison prose without changing the recipe or claiming a finished product.",
     "summary is a short search preview. description is directory detail and agent comparison prose, at most 120 words. seoDescription is plain directory meta-description copy, at most 160 Unicode code points, without keyword stuffing.",
     "projectExamples contains 1 to 3 closed objects with title (at most 8 words), description (at most 35 words), optional stack (kebab id), optional withFragments (unique kebab ids, at most 3). These texts do not count against the legacy 150 words or the description/SEO caps; each editorial cap is independent.",
+    "plain contains whatItIs (at most 30 words), goodAt and notGoodAt (1 to 3 nonblank items of at most 15 words each). Use version-neutral language. The first projectExamples item is its example. Put plain directly after projectExamples.",
     "Explicitly label examples as illustrative possible projects, never shipped product features. For a stack card, omit stack or use its own id. Every fragment example requires a real compatible host stack in stack. withFragments names explicit additions beyond the entry/default composition, never claims of inclusion. Name every addition in withFragments; the card's own fragment is selected implicitly.",
     "Use the recipe references to choose real host stacks and fragments. Match appliesTo against host id or tags (empty fits anywhere); honor required/default fragments, requires, conflicts and at most one app. Use default preset with no settings/always fragments. Do not invent references.",
     "Do not make unsupported compliance, readiness, timing or domain claims. Ground every statement in the recipe; possible project ideas do not promise implemented features.",

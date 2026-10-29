@@ -24,6 +24,17 @@
       "stack": "python-react"
     }
   ],
+  "plain": {
+    "whatItIs": "Local Git checks that format and lint the files you are about to commit, check commit messages, and run tests before you push.",
+    "goodAt": [
+      "Catching formatting and code-quality problems before each commit",
+      "Rejecting commit messages that lack a standard type prefix, such as fix or feat",
+      "Running the project's tests before code is pushed to a shared copy"
+    ],
+    "notGoodAt": [
+      "Checks on the shared copy after a push; the GitHub Actions add-on does that."
+    ]
+  },
   "capabilities": [
     "git-hooks"
   ],

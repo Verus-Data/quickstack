@@ -22,6 +22,16 @@
       "description": "Publish explanatory pages beside interactive filters backed by custom API resources. The shared contract keeps the filters and responses aligned."
     }
   ],
+  "plain": {
+    "whatItIs": "A starter website of pages built ahead of time, plus a separate server that supplies live data to some of them.",
+    "goodAt": [
+      "Content pages that show current data in small interactive parts",
+      "Keeping website and server in one project, where type checks flag mismatched data"
+    ],
+    "notGoodAt": [
+      "Pages the server builds for each visitor; use the React Router stack for those."
+    ]
+  },
   "platforms": [
     "web",
     "server"

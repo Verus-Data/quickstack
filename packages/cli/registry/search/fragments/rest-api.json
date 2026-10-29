@@ -7,7 +7,7 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 2,
-    "reviewedAt": "2026-10-28"
+    "reviewedAt": "2026-10-29"
   },
   "summary": "Give coding agents consistent HTTP resource conventions for paths, methods, status codes, response shapes, pagination and versioning.",
   "description": "Give coding agents framework-neutral rules for HTTP resource design. Paths use resource nouns, methods carry the action, response shapes stay consistent and collections use cursor pagination. The project's own error table and framework decide exact statuses and behavior. Document those choices alongside an existing resource to copy. This fragment supplies conventions and agent guidance, not generated endpoints or a running server.",
@@ -24,6 +24,17 @@
       "stack": "mobile-expo"
     }
   ],
+  "plain": {
+    "whatItIs": "Rules that help coding assistants name the web addresses an API answers on, and keep its responses consistent.",
+    "goodAt": [
+      "Naming addresses after things, like orders, rather than after actions",
+      "Giving every list the same page-by-page format",
+      "Writing down the project's own API choices for future work"
+    ],
+    "notGoodAt": [
+      "Writing the server code itself; pick a project base that includes an API."
+    ]
+  },
   "capabilities": [],
   "requests": [
     "keep endpoint names consistent as agents add resources",

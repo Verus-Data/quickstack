@@ -9,6 +9,7 @@ import { bodyChecks, compositionChecks } from "./compositions";
 import { conditionalChecks } from "./conditionals";
 import { conditionalReachChecks } from "./conditionals-reach";
 import { datedChecks } from "./dated";
+import { dependencyChecks } from "./deps";
 import { fileChecks } from "./files";
 import { loadChecks, metadataChecks } from "./format";
 import { gitChecks } from "./git";
@@ -29,6 +30,7 @@ import { type Check, rootPaths, type View } from "./view";
 export const checks: ReadonlyArray<Check> = [
   loadChecks,
   searchChecks,
+  dependencyChecks,
   metadataChecks,
   referenceChecks,
   conditionalChecks,

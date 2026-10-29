@@ -22,6 +22,17 @@
       "description": "Add observation forms and API-backed records for iOS and Android. Photos, location access and offline synchronization need additional implementation and platform permissions."
     }
   ],
+  "plain": {
+    "whatItIs": "A starter phone app for iPhone and Android, with its own server and database for the data.",
+    "goodAt": [
+      "Phone screens that load and save data through a server",
+      "Sharing one set of data rules between the phone app and the server",
+      "Testing the server against a real database"
+    ],
+    "notGoodAt": [
+      "Apps built in Swift or Kotlin; use Apple's or Google's own tools instead."
+    ]
+  },
   "platforms": [
     "ios",
     "android",

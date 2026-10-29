@@ -2,6 +2,7 @@ export { AgentId, DetectedAgent, Harness } from "./agent.js";
 export { DependencyAllowlist, Ecosystem } from "./allowlist.js";
 export { BundlePath, bundleDigest, canonicalBundle, EntryBundle } from "./bundle.js";
 export { Columnar } from "./columnar.js";
+export { DependencyCard, DependencyCardFile, DependencyCards } from "./deps/schema.js";
 export { DirectoryData } from "./directory.js";
 export {
   APP_TAG,
@@ -25,6 +26,7 @@ export { NamedComposition, OfficialNames } from "./names.js";
 export { FailureKind, Outcome, RunRecord, RunStep, TamperCheck } from "./run-record.js";
 export { compareSearchHits, type RankInput, type RankRecord, rank } from "./search/rank.js";
 export {
+  Plain,
   SearchEvidence,
   SearchHit,
   SearchIndex,

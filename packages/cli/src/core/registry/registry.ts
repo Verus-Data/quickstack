@@ -1,4 +1,4 @@
-import type { Kind } from "@steamfield/stacks-format";
+import { Ecosystem, type Kind } from "@steamfield/stacks-format";
 import { Context, Effect, FileSystem, Layer, Path, type PlatformError } from "effect";
 import { AppConfig } from "../../config";
 import { EntryInvalid, NotFound, PermissionDenied } from "../../errors";
@@ -195,6 +195,8 @@ export class Registry extends Context.Service<
       id: string,
     ) => Effect.Effect<Entry, NotFound | EntryInvalid | PermissionDenied>;
     readonly vocabulary: Effect.Effect<Uint8Array | undefined, PermissionDenied>;
+    /** Dependency files from the bundled root only, each read once per invocation. */
+    readonly dependencyCards: Effect.Effect<ReadonlyMap<Ecosystem, Uint8Array>, PermissionDenied>;
     /** Raw sidecar of this entry's own origin, never a higher or lower root's card. */
     readonly search: (entry: Entry) => Effect.Effect<Uint8Array | undefined, PermissionDenied>;
     /** `files/` and `adapters/` of an entry, sorted by `source`. */
@@ -481,8 +483,20 @@ export class Registry extends Context.Service<
             ? Effect.succeed(undefined)
             : readSearch(vocabularyRoot.path, "search/vocabulary.json"),
         );
+        const dependencyCards = yield* Effect.cached(
+          Effect.gen(function* () {
+            const cards = new Map<Ecosystem, Uint8Array>();
+            if (vocabularyRoot === undefined) return cards;
+            for (const ecosystem of Ecosystem.literals) {
+              const bytes = yield* readSearch(vocabularyRoot.path, `deps/${ecosystem}.json`);
+              if (bytes !== undefined) cards.set(ecosystem, bytes);
+            }
+            return cards;
+          }),
+        );
         return {
           vocabulary,
+          dependencyCards,
           search: (entry) => readSearch(path.dirname(path.dirname(entry.dir)), sidecarPath(entry)),
           all: view.pipe(Effect.flatMap((registry) => registry.all)),
           catalog: view.pipe(Effect.map((registry) => registry.catalog)),

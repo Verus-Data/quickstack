@@ -24,6 +24,17 @@
       "stack": "python-api"
     }
   ],
+  "plain": {
+    "whatItIs": "Adds a PostgreSQL database server to the Python and React app, with local test databases and recorded changes to its tables.",
+    "goodAt": [
+      "Running the database on your own computer for development and tests",
+      "Making table changes through reviewed, saved steps",
+      "Giving each test file its own ready-made copy of the database"
+    ],
+    "notGoodAt": [
+      "Hosting a live production database; arrange a hosting provider separately."
+    ]
+  },
   "capabilities": [
     "database"
   ],

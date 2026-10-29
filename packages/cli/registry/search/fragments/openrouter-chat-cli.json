@@ -24,6 +24,18 @@
       "stack": "typescript-cli"
     }
   ],
+  "plain": {
+    "whatItIs": "A terminal chat app that talks to AI models through OpenRouter and saves each conversation as a file on your computer.",
+    "goodAt": [
+      "Chatting with AI models in a terminal window",
+      "Sending questions from scripts and shell pipes, with output other programs can read",
+      "Exporting a saved chat as a plain-text Markdown file"
+    ],
+    "notGoodAt": [
+      "Browser chat pages; the browser chat add-on covers those.",
+      "Two windows changing one saved chat, since the last save replaces the other."
+    ]
+  },
   "capabilities": [
     "ai"
   ],

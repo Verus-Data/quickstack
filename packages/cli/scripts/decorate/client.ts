@@ -34,7 +34,7 @@ const decodeDraft = Effect.fn("decorate.decodeDraft")(function* (content: string
   const card = yield* decodeSidecar(new TextEncoder().encode(content)).pipe(
     Effect.mapError(draftSchemaError),
   );
-  const missing = (["description", "seoDescription", "projectExamples"] as const).filter(
+  const missing = (["description", "seoDescription", "projectExamples", "plain"] as const).filter(
     (field) =>
       card[field] === undefined ||
       (field === "projectExamples" && card.projectExamples?.length === 0),

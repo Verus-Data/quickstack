@@ -1,4 +1,4 @@
-import type { Kind } from "@steamfield/stacks-format";
+import type { DependencyCard, Kind } from "@steamfield/stacks-format";
 import { Effect, Option, Result } from "effect";
 import { AppConfig } from "../config";
 import { BadInput, NotFound } from "../errors";
@@ -14,6 +14,8 @@ import { lastDefaultRecord, latestMatchingRecord, ledgerAdapterSets, readLedger 
 import { toRow } from "./list";
 import { type CatalogEntry, type Entry, outputPath } from "./registry/entry";
 import { Registry, type RegistryRoot, type RegistryRoots, remoteRoots } from "./registry/registry";
+import { searchSourceDigest } from "./search/digest";
+import { decodeDependencyCards, decodeSidecar } from "./search/sidecar";
 import { Stats } from "./stats";
 import { closest } from "./suggest";
 import { BUDGET, bodyLimit, canonicalBrief, composedLimit } from "./validate/budget";
@@ -39,6 +41,7 @@ export const showReport = (id: string, kind: Kind | undefined, reviewRoots?: Reg
       const { stats: _summaryStats, ...row } = toRow(entry, records);
       const stats = yield* officialDetail(entry);
       const { meta } = entry;
+      const copy = yield* entryCopy(entry, registry);
       const files = (yield* registry.files(entry)).map((file) => {
         const agent = /^adapters\/([^/]+)\//.exec(file.source)?.[1];
         return {
@@ -68,6 +71,7 @@ export const showReport = (id: string, kind: Kind | undefined, reviewRoots?: Reg
         ...stats,
         path: entry.dir,
         deps: meta.deps,
+        ...copy,
         tools: meta.tools,
         decisions: meta.decisions,
         env: meta.env,
@@ -84,6 +88,49 @@ export const showReport = (id: string, kind: Kind | undefined, reviewRoots?: Reg
       } satisfies ShowReport;
     }).pipe(Effect.provide(Registry.layer(roots)));
   });
+
+const entryCopy = Effect.fn("show.copy")(function* (entry: Entry, registry: Registry["Service"]) {
+  const plain = yield* entryPlain(entry, registry);
+  const dependencyCards = yield* entryDependencyCards(entry, registry);
+  return { ...(plain ? { plain } : {}), ...(dependencyCards ? { dependencyCards } : {}) };
+});
+
+const entryPlain = Effect.fn("show.plain")(function* (entry: Entry, registry: Registry["Service"]) {
+  const loaded = yield* Effect.result(registry.search(entry));
+  if (loaded._tag === "Failure" || loaded.success === undefined) return undefined;
+  const decoded = yield* Effect.result(decodeSidecar(loaded.success));
+  if (decoded._tag === "Failure") return undefined;
+  const card = decoded.success;
+  if (card.kind !== entry.kind || card.id !== entry.id) return undefined;
+  const plain = card.plain;
+  if (plain === undefined) return undefined;
+  const example = card.projectExamples?.[0];
+  return {
+    ...plain,
+    ...(example ? { example: { title: example.title, description: example.description } } : {}),
+    ...(card.source.digest !== searchSourceDigest(entry) ? { stale: true } : {}),
+    ...(entry.origin === "user" || entry.origin === "project" || !entry.trusted
+      ? { unreviewed: true }
+      : {}),
+  };
+});
+
+const entryDependencyCards = Effect.fn("show.dependencyCards")(function* (
+  entry: Entry,
+  registry: Registry["Service"],
+) {
+  const wanted = new Set(Object.values(entry.meta.deps).flat());
+  if (!wanted.size) return undefined;
+  const found: Record<string, DependencyCard> = {};
+  const files = yield* registry.dependencyCards;
+  for (const [ecosystem, bytes] of files) {
+    const decoded = yield* Effect.result(decodeDependencyCards(bytes));
+    if (decoded._tag === "Failure") continue;
+    for (const [name, card] of Object.entries(decoded.success.cards))
+      if (wanted.has(name)) found[`${ecosystem}/${name}`] = card;
+  }
+  return Object.keys(found).length ? found : undefined;
+});
 
 const officialDetail = Effect.fn("show.officialDetail")(function* (entry: Entry) {
   if (entry.origin !== "bundled" && entry.origin !== "index") return {};

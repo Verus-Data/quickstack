@@ -25,6 +25,18 @@
       ]
     }
   ],
+  "plain": {
+    "whatItIs": "A starter web service written in Go that answers requests with JSON data, with clear error messages, request logs and a clean shutdown.",
+    "goodAt": [
+      "Backends that a website or phone app calls to read and save records",
+      "Internal services that other software in a company calls for data",
+      "Small services that report errors in one consistent format and log each request"
+    ],
+    "notGoodAt": [
+      "Projects that need a database or sign-in from the start; you add both yourself.",
+      "Pages and screens for people to click through; use a web app stack for those."
+    ]
+  },
   "platforms": [
     "server"
   ],

@@ -24,6 +24,17 @@
       "stack": "mobile-expo"
     }
   ],
+  "plain": {
+    "whatItIs": "Adds sign-up and login to the phone app, using Clerk, a hosted sign-in service, and makes the server turn away people who aren't signed in.",
+    "goodAt": [
+      "Letting only signed-in users reach the protected parts of the server",
+      "Testing sign-in checks on your own computer without a Clerk account"
+    ],
+    "notGoodAt": [
+      "Deciding who may see or change each record; that is app code you write.",
+      "Running your own sign-in system; this uses the hosted Clerk service."
+    ]
+  },
   "capabilities": [
     "auth"
   ],

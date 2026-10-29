@@ -9,7 +9,7 @@ import { stringWidth } from "../src/platform/width";
 import { Host } from "../src/services/host";
 import { Foreground, Processes } from "../src/services/processes";
 import { VERSION } from "../src/version";
-import { readAllowlist } from "./index/allowlist";
+import { readAllowlist, readDependencyCards } from "./index/allowlist";
 import { argumentsFor, IncludeUnprovenUsage } from "./index/arguments";
 import { buildDirectory } from "./index/directory";
 import { historyExec, requireFullHistory } from "./index/history";
@@ -106,6 +106,7 @@ const program = Effect.gen(function* () {
     }),
     names,
     allowlist,
+    deps: yield* readDependencyCards(generatedAt),
     directory,
     index: {
       formatVersion: 1,

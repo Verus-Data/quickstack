@@ -65,6 +65,7 @@ function sizeProblems(card: SearchMetadata): string[] {
     problems.push("caveats: at most 25 words each");
   problems.push(...kindSizeProblems(card));
   problems.push(...editorialSizeProblems(card));
+  problems.push(...plainSizeProblems(card));
   const text = [
     card.summary,
     ...card.requests,
@@ -75,6 +76,19 @@ function sizeProblems(card: SearchMetadata): string[] {
     ...(card.caveats ?? []),
   ].join(" ");
   if (countWords(text) > 150) problems.push("card: at most 150 words of text");
+  return problems;
+}
+
+function plainSizeProblems(card: SearchMetadata): string[] {
+  if (!card.plain) return [];
+  const problems: string[] = [];
+  if (countWords(card.plain.whatItIs) > 30) problems.push("plain.whatItIs: at most 30 words");
+  for (const field of ["goodAt", "notGoodAt"] as const) {
+    const items = card.plain[field];
+    if (items.length > 3) problems.push(`plain.${field}: at most 3 items`);
+    if (items.some((text) => countWords(text) > 15))
+      problems.push(`plain.${field}: at most 15 words each`);
+  }
   return problems;
 }
 
@@ -203,8 +217,16 @@ function cardWarnings(card: SearchMetadata, entry: Entry): Array<[string, string
     warnings.push(["search-unreviewed", "Read this draft and approve it before publishing."]);
   const size = sizeProblems(card);
   if (size.length) warnings.push(["search-size", size.join("; ")]);
+  if (card.plain) {
+    const text = [card.plain.whatItIs, ...card.plain.goodAt, ...card.plain.notGoodAt].join(" ");
+    if (versionedPlain(text))
+      warnings.push(["plain-versioned", "Plain copy names a version; keep it version-neutral."]);
+  }
   return warnings;
 }
+
+export const versionedPlain = (text: string): boolean =>
+  /\bv?\d+(?:\.\d+)+\b|\bv?\d+\.x\b/i.test(text);
 
 const sidecarRefs = Effect.fn("validate.searchFiles")(function* (root: string) {
   const fs = yield* FileSystem.FileSystem;

@@ -1,0 +1,1588 @@
+{
+  "formatVersion": 1,
+  "cards": {
+    "@ai-sdk/react": {
+      "whatItIs": "Lets a React web page show an AI reply as it is generated, instead of waiting for the whole reply.",
+      "goodAt": [
+        "Showing an AI chat reply in a web page as it is written",
+        "Updating a chat list as each message arrives"
+      ],
+      "notGoodAt": ["Loading ordinary page data; use a data-fetching library for that."],
+      "example": "When a customer asks a question in the help chat, the reply appears word by word as the AI writes it.",
+      "homepage": "https://ai-sdk.dev/docs",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@astrojs/check": {
+      "whatItIs": "Checks Astro code for type and template errors during development.",
+      "homepage": "https://github.com/withastro/astro/tree/main/packages/language-tools/astro-check",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@astrojs/mdx": {
+      "whatItIs": "Lets Astro pages mix Markdown, a plain-text writing format, with reusable components.",
+      "homepage": "https://docs.astro.build/en/guides/integrations-guide/mdx/",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@astrojs/react": {
+      "whatItIs": "Lets Astro pages use React, a library for interactive parts, wherever a page needs clicks or typing.",
+      "homepage": "https://docs.astro.build/en/guides/integrations-guide/react/",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@astrojs/rss": {
+      "whatItIs": "Adds helpers for generating an RSS feed from Astro content.",
+      "homepage": "https://astro.build",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@astrojs/sitemap": {
+      "whatItIs": "Generates a sitemap from an Astro site's pages.",
+      "homepage": "https://docs.astro.build/en/guides/integrations-guide/sitemap/",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@biomejs/biome": {
+      "whatItIs": "A tool that tidies the layout of code files and flags a set of common mistakes.",
+      "goodAt": [
+        "Tidying the layout of JavaScript and TypeScript files",
+        "Flagging common mistakes in JavaScript and TypeScript code"
+      ],
+      "notGoodAt": ["Running the app's tests; a separate test tool does that."],
+      "example": "Before a team saves a change, it tidies the changed files and lists any mistakes it finds.",
+      "homepage": "https://biomejs.dev",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@clerk/expo": {
+      "whatItIs": "Adds sign-in from Clerk, a hosted login service, to a phone app built with Expo, a toolkit for phone apps.",
+      "goodAt": [
+        "Adding a sign-in screen to a phone app built with Expo",
+        "Letting people create an account and log back in from a phone"
+      ],
+      "notGoodAt": ["Deciding which records each user is allowed to see; plan that separately."],
+      "example": "When someone opens the app for the first time, they create an account, and private screens stay hidden until they sign in.",
+      "homepage": "https://clerk.com/",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@clerk/hono": {
+      "whatItIs": "Adds Clerk login checks to a Hono server, a small toolkit for web servers, so requests from people not signed in are refused.",
+      "goodAt": [
+        "Refusing web requests from people who are not signed in",
+        "Giving server code the signed-in user's ID for each request"
+      ],
+      "notGoodAt": ["Deciding which records each user may see; you write those rules."],
+      "example": "When a request arrives with no valid sign-in, the server stops it and returns an error instead of the data.",
+      "homepage": "https://clerk.com/",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@cloudflare/vite-plugin": {
+      "whatItIs": "Lets Vite, a build tool for websites, run and package a site for Cloudflare's server platform.",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@cloudflare/vitest-plugin": {
+      "whatItIs": "Runs Vitest, a testing tool, inside a local copy of Cloudflare's server platform.",
+      "homepage": "https://github.com/cloudflare/workers-sdk/tree/main/packages/vitest-plugin#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@effect/ai-openrouter": {
+      "whatItIs": "Connects Effect, a TypeScript toolkit, to AI models served through OpenRouter, a service that offers many AI models.",
+      "goodAt": [
+        "Sending prompts to OpenRouter models from an Effect program",
+        "Handling each model reply as a result the program can check"
+      ],
+      "notGoodAt": ["Building a full chat screen; add the interface code yourself."],
+      "example": "When a user submits a question, the program sends it to a chosen AI model and returns the reply.",
+      "homepage": "https://effect.website",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@effect/platform-bun": {
+      "whatItIs": "Lets Effect, a TypeScript toolkit, use the file, network and process features of Bun, a JavaScript runtime.",
+      "homepage": "https://effect.website",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@effect/platform-node": {
+      "whatItIs": "Lets Effect, a TypeScript toolkit, use the file, network and process features of Node, a JavaScript runtime.",
+      "homepage": "https://effect.website",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@effect/sql-pg": {
+      "whatItIs": "Lets Effect, a TypeScript toolkit for building larger programs, read and write a PostgreSQL database, a system that stores records in tables.",
+      "goodAt": [
+        "Looking up and saving records in a server built with Effect",
+        "Keeping database errors in the same error handling as the rest of an Effect program"
+      ],
+      "notGoodAt": [
+        "Projects that don't use Effect; use the database library that fits their framework."
+      ],
+      "example": "When a visitor places an order, the server saves it to the PostgreSQL database and sends back the saved record.",
+      "homepage": "https://effect.website",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@effect/vitest": {
+      "whatItIs": "Adds test helpers for Effect, a TypeScript toolkit, to the Vitest testing tool.",
+      "homepage": "https://effect.website",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@eslint/js": {
+      "whatItIs": "Supplies the standard JavaScript checks for ESLint, a tool that flags problems in code.",
+      "homepage": "https://eslint.org",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@faker-js/faker": {
+      "whatItIs": "A library that makes up realistic sample names, dates and other fake data.",
+      "goodAt": [
+        "Filling a test database with varied fake customers",
+        "Making a list of sample products for a demo screen"
+      ],
+      "notGoodAt": ["Checking how real data behaves; use tests that run against real records."],
+      "example": "Before a team tests its sign-up page, the tool fills the test database with made-up customer names and addresses.",
+      "homepage": "https://fakerjs.dev",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@fontsource-variable/inter": {
+      "whatItIs": "Packages the Inter font so an app can serve it from its own files.",
+      "homepage": "https://fontsource.org/fonts/inter",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@fontsource-variable/jetbrains-mono": {
+      "whatItIs": "Packages the JetBrains Mono font so an app can serve it from its own files.",
+      "homepage": "https://fontsource.org/fonts/jetbrains-mono",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@hono/zod-openapi": {
+      "whatItIs": "An add-on for Hono, a small web server toolkit, that checks incoming data and writes a description of the server's requests and replies.",
+      "goodAt": [
+        "Keeping request checks and documentation in one place",
+        "Letting a server reject a form that is missing a required field"
+      ],
+      "notGoodAt": ["Writing the server code that handles each request; write it separately."],
+      "example": "When a form sends data to the server, the same description checks it and documents it for other developers.",
+      "homepage": "https://github.com/honojs/middleware",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@openrouter/ai-sdk-provider": {
+      "whatItIs": "Lets the AI SDK, a JavaScript toolkit for AI features, use models from OpenRouter.",
+      "goodAt": [
+        "Generating text with OpenRouter models in a JavaScript app",
+        "Choosing among OpenRouter's AI models from one setup"
+      ],
+      "notGoodAt": ["Running a whole chat product; you add storage and the screens yourself."],
+      "example": "When a user asks a question, the app sends it to a chosen OpenRouter model and shows the reply.",
+      "homepage": "https://github.com/OpenRouterTeam/ai-sdk-provider",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@openrouter/sdk": {
+      "whatItIs": "A TypeScript library for sending requests to OpenRouter, a service that offers many AI models.",
+      "goodAt": [
+        "Asking OpenRouter for its list of available AI models",
+        "Sending a prompt to an OpenRouter model from TypeScript code"
+      ],
+      "notGoodAt": ["Providing screens for people to use; you build those."],
+      "example": "When an admin opens the settings page, the app fetches the list of available models and shows them in a drop-down menu.",
+      "homepage": "https://github.com/OpenRouterTeam/typescript-sdk#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@opentui/core": {
+      "whatItIs": "A library for building interactive screens in a text-only terminal window, written in TypeScript.",
+      "goodAt": [
+        "Arranging text, lists and buttons in a terminal screen",
+        "Responding to keyboard presses in a terminal app"
+      ],
+      "notGoodAt": ["Programs that only print a few lines; ordinary terminal output is enough."],
+      "example": "When a user presses a key, the app moves the highlight through a list of chats in the terminal.",
+      "homepage": "https://github.com/anomalyco/opentui#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@opentui/react": {
+      "whatItIs": "Lets React components draw screens in a text-only terminal, through OpenTUI, a terminal screen library.",
+      "goodAt": [
+        "Building keyboard-driven terminal screens from React components",
+        "Sharing one set of screen parts across several terminal views"
+      ],
+      "notGoodAt": ["Web pages in a browser; use React's standard web setup for those."],
+      "example": "When someone opens the tool, a chat screen with a message list appears in the terminal.",
+      "homepage": "https://github.com/anomalyco/opentui#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@playwright/test": {
+      "whatItIs": "A testing tool that controls real web browsers to check that a site works.",
+      "goodAt": [
+        "Checking that a full sign-up or checkout works in a browser",
+        "Checking that a page shows the right text after a click"
+      ],
+      "notGoodAt": ["Checking one small function on its own; use a unit testing tool for that."],
+      "example": "When a team changes the sign-up page, the tool opens it in a browser, fills in the form, and checks the welcome message.",
+      "homepage": "https://playwright.dev",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@react-router/dev": {
+      "whatItIs": "Provides development and build commands for React Router projects.",
+      "homepage": "https://reactrouter.com",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@react-router/node": {
+      "whatItIs": "Provides helpers for running React Router apps on Node, a server runtime.",
+      "homepage": "https://github.com/remix-run/react-router",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@react-router/serve": {
+      "whatItIs": "Serves a built React Router application with Node.",
+      "homepage": "https://github.com/remix-run/react-router",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@resvg/resvg-js": {
+      "whatItIs": "A library that turns SVG drawings, a vector picture format, into PNG image files from JavaScript.",
+      "goodAt": [
+        "Turning logos and icons saved as SVG files into PNG pictures",
+        "Making PNG images on a server from artwork files"
+      ],
+      "notGoodAt": ["Editing a design file; use a graphics editor for that."],
+      "example": "When a page needs a preview picture, the site turns its SVG artwork into a PNG file.",
+      "homepage": "https://github.com/yisibl/resvg-js#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@scalar/hono-api-reference": {
+      "whatItIs": "Adds a browser page to a Hono server, a small toolkit for web servers. The page documents the server's requests and lets people try them.",
+      "goodAt": [
+        "Showing the server's requests in a readable, clickable list",
+        "Letting a developer send a test request from the browser"
+      ],
+      "notGoodAt": ["Writing the server code itself; you build that separately."],
+      "example": "When a partner team needs to know how the server works, they open the page and try a request.",
+      "homepage": "https://github.com/scalar/scalar",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@sveltejs/adapter-node": {
+      "whatItIs": "Connects SvelteKit to Node, so the built app runs as an ordinary Node server.",
+      "homepage": "https://svelte.dev/docs/kit/adapter-node",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@sveltejs/kit": {
+      "whatItIs": "SvelteKit, a framework built on Svelte for websites and web apps, with pages, server code and form handling.",
+      "goodAt": [
+        "Building a site with several pages, such as a product list and a product page",
+        "Handling form submissions on the server and sending errors back to the page"
+      ],
+      "notGoodAt": [
+        "Phone apps; use Expo, a toolkit for building phone apps.",
+        "Storing data by itself; connect a database for records that must last."
+      ],
+      "example": "When a visitor submits the contact form, the server checks that the message is filled in and shows the form again with a clear error if it isn't.",
+      "homepage": "https://svelte.dev/docs/kit",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@sveltejs/vite-plugin-svelte": {
+      "whatItIs": "Lets Vite, a build tool, build Svelte components and refresh them as code changes.",
+      "homepage": "https://github.com/sveltejs/vite-plugin-svelte",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@tailwindcss/postcss": {
+      "whatItIs": "Connects Tailwind CSS to PostCSS, a tool that transforms stylesheets during a build.",
+      "homepage": "https://tailwindcss.com",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@tailwindcss/typography": {
+      "whatItIs": "Adds default text styling for article-style content in Tailwind CSS.",
+      "homepage": "https://github.com/tailwindlabs/tailwindcss-typography#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@tailwindcss/vite": {
+      "whatItIs": "Connects Tailwind CSS to Vite, a build tool for web projects.",
+      "homepage": "https://tailwindcss.com",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@tanstack/react-query": {
+      "whatItIs": "React helpers that load data from a server into a web page and keep it up to date after changes.",
+      "goodAt": [
+        "Showing server data on a page and refreshing it after an update",
+        "Keeping recent results so a page does not ask the server again"
+      ],
+      "notGoodAt": ["Storing the data itself; use a database for that."],
+      "example": "When a shopper adds an item to a cart, the list on the page updates without a full page reload.",
+      "homepage": "https://tanstack.com/query",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@tauri-apps/api": {
+      "whatItIs": "Lets a web screen call the computer-side code of a desktop app built with Tauri, a toolkit for desktop apps.",
+      "goodAt": [
+        "Calling the desktop app's own features from its web screens",
+        "Asking the desktop side of the app to do a task"
+      ],
+      "notGoodAt": [
+        "Writing the app's own desktop code, which is done in Rust; add that separately."
+      ],
+      "example": "When a user clicks 'Export' in the desktop app, the screen asks the desktop side to save the file.",
+      "homepage": "https://github.com/tauri-apps/tauri#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@tauri-apps/cli": {
+      "whatItIs": "Provides commands for building and packaging Tauri, a toolkit for desktop apps.",
+      "homepage": "https://github.com/tauri-apps/tauri#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@testing-library/dom": {
+      "whatItIs": "Helpers that let tests look for what a person would see and click on a web page.",
+      "goodAt": [
+        "Checking what appears on a page after someone clicks or types",
+        "Finding a form field by its label"
+      ],
+      "notGoodAt": ["Running tests inside a real browser; use browser testing tools for that."],
+      "example": "When a sign-up form shows an error, the test finds the email box by its label and checks the message.",
+      "homepage": "https://github.com/testing-library/dom-testing-library#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@testing-library/jest-dom": {
+      "whatItIs": "Adds plain checks, such as whether text is visible, to web page tests.",
+      "homepage": "https://github.com/testing-library/jest-dom#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@testing-library/react": {
+      "whatItIs": "Helpers for testing React screen parts the way a person would use them.",
+      "goodAt": [
+        "Checking that a React form responds when a user clicks or types",
+        "Checking what a screen shows after a button press"
+      ],
+      "notGoodAt": ["Testing the whole live website; use browser tests for that."],
+      "example": "When a user clicks Save on an edit form, the test checks that the saved message appears.",
+      "homepage": "https://github.com/testing-library/react-testing-library#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@testing-library/react-native": {
+      "whatItIs": "Helpers for testing the screens of a React Native phone app the way a person would use them.",
+      "goodAt": [
+        "Checking that a phone screen shows the right text after a tap",
+        "Checking that a button press runs the right action"
+      ],
+      "notGoodAt": ["Testing how a phone's camera or sensors behave; use tests on real devices."],
+      "example": "When a user taps Save on a settings screen, the test checks that the change is saved.",
+      "homepage": "https://oss.callstack.com/react-native-testing-library",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@testing-library/svelte": {
+      "whatItIs": "Helpers for testing Svelte components the way a person would use them.",
+      "homepage": "https://github.com/testing-library/svelte-testing-library#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@testing-library/user-event": {
+      "whatItIs": "Helpers that act out typing, clicking and other user actions inside automated tests.",
+      "goodAt": [
+        "Typing into a search box during a test",
+        "Clicking buttons and choosing menu options during a test"
+      ],
+      "notGoodAt": ["Testing a whole site in a real browser; use browser testing tools."],
+      "example": "When a shopper types 'red shoes' into the search box, the test checks that only matching items remain.",
+      "homepage": "https://github.com/testing-library/user-event#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@types/bun": {
+      "whatItIs": "Type definitions for Bun, so TypeScript can check code that uses it.",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/bun",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@types/jest": {
+      "whatItIs": "Type definitions for Jest, so TypeScript can check code that uses it.",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/jest",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@types/node": {
+      "whatItIs": "Type definitions for Node, so TypeScript can check code that uses it.",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/node",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@types/pg": {
+      "whatItIs": "Type definitions for pg, a library that connects Node to PostgreSQL, so TypeScript can check code that uses it.",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/pg",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@types/react": {
+      "whatItIs": "Type definitions for React, so TypeScript can check code that uses it.",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@types/react-dom": {
+      "whatItIs": "Type definitions for React's DOM renderer, so TypeScript can check code that uses it.",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/react-dom",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@vitejs/plugin-react": {
+      "whatItIs": "Lets Vite, a build tool, build React pages and refresh them as code changes.",
+      "homepage": "https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@vitest/coverage-v8": {
+      "whatItIs": "Shows which code ran during Vitest tests.",
+      "homepage": "https://vitest.dev/guide/coverage",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@xterm/headless": {
+      "whatItIs": "A terminal screen that runs without a window, so a program can read what it shows.",
+      "goodAt": [
+        "Checking what a terminal app shows during an automated test",
+        "Reading the text on a terminal app's screen"
+      ],
+      "notGoodAt": ["Showing a screen to a person; a terminal display library does that."],
+      "example": "When a test runs a chat app in the terminal, it reads the screen to confirm the reply appeared.",
+      "homepage": "https://github.com/xtermjs/xterm.js#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "ai": {
+      "whatItIs": "A JavaScript toolkit for writing AI features, such as generating text and showing replies as they are written.",
+      "goodAt": [
+        "Sending a question to an AI model and getting its answer back",
+        "Turning text into structured results, such as lists or labels"
+      ],
+      "notGoodAt": ["Choosing which AI service to use; you set up that connection."],
+      "example": "When a team wants a summary of a long report, the app sends the report to a model and shows the result.",
+      "homepage": "https://ai-sdk.dev/docs",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "astro": {
+      "whatItIs": "A toolkit for building websites from pages and reusable parts, such as a blog or a documentation site.",
+      "goodAt": [
+        "Building blogs and documentation sites that mostly show text",
+        "Making a marketing website with a few pages"
+      ],
+      "notGoodAt": ["Running a full server app by itself; add a server tool for that."],
+      "example": "When an editor writes an article as a text file, the site builds it into a readable blog page.",
+      "homepage": "https://astro.build",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "class-variance-authority": {
+      "whatItIs": "A helper that picks the right style names for a component, such as a primary or disabled button.",
+      "goodAt": [
+        "Keeping a button's look consistent across its states",
+        "Keeping each button size and color choice in one place"
+      ],
+      "notGoodAt": ["Writing the style rules themselves; use a styling tool for those."],
+      "example": "When a user cannot submit a form yet, the submit button picks its faded look.",
+      "homepage": "https://github.com/joe-bell/cva#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "clsx": {
+      "whatItIs": "A small helper that joins style names together, leaving out any that do not apply.",
+      "goodAt": [
+        "Adding an error style only when a form field is invalid",
+        "Combining a few style choices on one component"
+      ],
+      "notGoodAt": ["Resolving clashing styles, such as two padding settings; use a merge helper."],
+      "example": "When a form field is empty on submit, the helper adds a red border style to it.",
+      "homepage": "https://github.com/lukeed/clsx#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "drizzle-kit": {
+      "whatItIs": "A command-line tool that writes and applies database layout changes for Drizzle, a toolkit for databases.",
+      "goodAt": [
+        "Creating the files that move a database from one layout to the next",
+        "Generating the change file after a table's design is edited"
+      ],
+      "notGoodAt": ["Designing your tables for you; you define them first."],
+      "example": "After a developer adds a phone number field to the customers table, the tool writes the change file.",
+      "homepage": "https://orm.drizzle.team",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "drizzle-orm": {
+      "whatItIs": "A TypeScript library for reading and writing data in SQL databases from application code.",
+      "goodAt": [
+        "Writing database lookups and saves in TypeScript code",
+        "Saving records from a server into a SQL table"
+      ],
+      "notGoodAt": ["Running the database itself; set up a database server separately."],
+      "example": "When a visitor opens a product page, the code reads that product's price and name from the database.",
+      "homepage": "https://orm.drizzle.team",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "effect": {
+      "whatItIs": "A TypeScript library for building larger programs from parts that declare what they need and how they fail.",
+      "goodAt": [
+        "Sharing settings and other services across a command-line tool",
+        "Keeping track of the errors a step can produce"
+      ],
+      "notGoodAt": ["Giving you a finished app layout; you design that part."],
+      "example": "When a command runs, it gets its settings from a shared service instead of reading the files itself.",
+      "homepage": "https://effect.website",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "eslint": {
+      "whatItIs": "A tool that checks JavaScript and TypeScript code against rules you choose.",
+      "goodAt": [
+        "Flagging suspicious code before a change is merged",
+        "Catching unused variables and common coding mistakes"
+      ],
+      "notGoodAt": ["Tidying the layout of every file; use a formatter for that."],
+      "example": "When a developer changes a file, the tool lists any values it declares but never uses.",
+      "homepage": "https://eslint.org",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "eslint-config-next": {
+      "whatItIs": "Sets up ESLint, a code checker, with the rules recommended for Next.js apps.",
+      "homepage": "https://nextjs.org",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "eslint-config-prettier": {
+      "whatItIs": "Turns off ESLint checks that clash with Prettier, a code formatter, so the two tools don't disagree.",
+      "homepage": "https://github.com/prettier/eslint-config-prettier#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "eslint-plugin-jsx-a11y": {
+      "whatItIs": "Adds checks to ESLint for common accessibility mistakes in React pages.",
+      "homepage": "https://github.com/jsx-eslint/eslint-plugin-jsx-a11y#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "eslint-plugin-react-hooks": {
+      "whatItIs": "Adds checks to ESLint for misused React state and side-effect code.",
+      "homepage": "https://react.dev/",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "eslint-plugin-svelte": {
+      "whatItIs": "Adds checks to ESLint, a code checker, for Svelte component files.",
+      "homepage": "https://github.com/sveltejs/eslint-plugin-svelte",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "expo": {
+      "whatItIs": "A toolkit for building phone apps with JavaScript, on top of React Native.",
+      "goodAt": [
+        "Running a phone app on a test device while editing its screens",
+        "Building one app that runs on both iPhone and Android"
+      ],
+      "notGoodAt": ["Writing the app's screens and server side for you; you build those."],
+      "example": "While a designer changes a screen's layout, the team sees the update on a phone right away.",
+      "homepage": "https://github.com/expo/expo/tree/main/packages/expo",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "expo-constants": {
+      "whatItIs": "Gives an Expo phone app facts about itself and the device it runs on.",
+      "homepage": "https://github.com/expo/expo.git",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "expo-linking": {
+      "whatItIs": "Provides helpers for opening and handling links in Expo apps.",
+      "homepage": "https://github.com/expo/expo.git",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "expo-router": {
+      "whatItIs": "A library that sets up moving between screens in an Expo app, based on how its screen files are arranged.",
+      "goodAt": [
+        "Moving a phone user between screens, such as list and detail views",
+        "Opening a link so it shows the right screen in the app"
+      ],
+      "notGoodAt": ["Loading and saving server data; use a data-fetching library for that."],
+      "example": "When a reader taps a book in the list, the app opens that book's detail screen.",
+      "homepage": "https://docs.expo.dev/routing/introduction/",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "expo-secure-store": {
+      "whatItIs": "A helper that stores a few small values on the phone in the device's secure storage, for an Expo app.",
+      "goodAt": [
+        "Keeping a sign-in token on a phone between app launches",
+        "Keeping a small secret, such as a service key, on the phone"
+      ],
+      "notGoodAt": ["Storing large amounts of app data; use a database for that."],
+      "example": "When a user closes the app and comes back later, the app reads the sign-in token from the phone's secure storage.",
+      "homepage": "https://github.com/expo/expo.git",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "expo-status-bar": {
+      "whatItIs": "Controls the status bar in an Expo app.",
+      "homepage": "https://github.com/expo/expo.git",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "globals": {
+      "whatItIs": "Lists the standard names built into browsers and Node, so code checkers accept them.",
+      "homepage": "https://github.com/sindresorhus/globals#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "happy-dom": {
+      "whatItIs": "A stand-in web page that runs inside tests, so page code can be checked without opening a browser.",
+      "goodAt": [
+        "Checking what a web component shows, without opening a browser",
+        "Running page tests automatically, without a browser window"
+      ],
+      "notGoodAt": ["Matching every quirk of real browsers; use browser tests for that."],
+      "example": "When a test loads a contact form, the stand-in page confirms that the form's labels appear.",
+      "homepage": "https://github.com/capricorn86/happy-dom",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "hono": {
+      "whatItIs": "A toolkit for building web servers that answer requests from browsers and apps.",
+      "goodAt": [
+        "Writing the server part that answers a website or phone app",
+        "Small services that send data back in JSON, a common format"
+      ],
+      "notGoodAt": ["Saving data on its own; connect a database for that."],
+      "example": "When a phone app asks for a customer's order history, the server looks it up and sends it back.",
+      "homepage": "https://hono.dev",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "isbot": {
+      "whatItIs": "A helper that recognizes common automated visitors, such as search engine crawlers, from the name their browser sends.",
+      "goodAt": [
+        "Deciding how to respond to known search-engine bots",
+        "Spotting automated visitors from their browser name"
+      ],
+      "notGoodAt": ["Proving that a visitor is a person; it only reads the browser name."],
+      "example": "When a search engine's bot visits a page, the site can recognize it before choosing what to send back.",
+      "homepage": "https://isbot.js.org",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "jest": {
+      "whatItIs": "A testing tool for JavaScript that runs automated checks and can swap in stand-in parts.",
+      "goodAt": [
+        "Running automated checks on code after each change",
+        "Checking that a function returns the right answer"
+      ],
+      "notGoodAt": ["Testing a whole browser flow; use browser testing tools for that."],
+      "example": "After a developer edits the login message, the tests run and confirm the message still reads correctly.",
+      "homepage": "https://jestjs.io/",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "jest-expo": {
+      "whatItIs": "Configures Jest, a testing tool, for Expo and React Native projects.",
+      "homepage": "https://github.com/expo/expo/tree/main/packages/jest-expo",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "jsdom": {
+      "whatItIs": "A simulated web browser that runs inside Node, a program that runs JavaScript outside a browser, so tests can check page code without opening a window.",
+      "goodAt": [
+        "Checking that a page part shows the right text when a test loads it",
+        "Running page tests automatically, without a browser window to open"
+      ],
+      "notGoodAt": [
+        "Matching every quirk of real browsers; use tests that drive a real browser for that."
+      ],
+      "example": "When a test loads a sign-up page, the simulated browser checks that the email field and its label appear.",
+      "homepage": "https://github.com/jsdom/jsdom",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "lucide-react": {
+      "whatItIs": "A set of ready-made icons for React pages, such as search, menu and trash.",
+      "goodAt": [
+        "Adding common icons, such as search or settings, to buttons",
+        "Keeping icons drawn in one consistent style across a site"
+      ],
+      "notGoodAt": ["Designing the look of the whole site; a designer does that."],
+      "example": "When a shopper opens the store page, a magnifying-glass icon sits beside the search box.",
+      "homepage": "https://lucide.dev",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "msw": {
+      "whatItIs": "A tool that catches the requests an app sends to a server and supplies made-up replies during tests and development.",
+      "goodAt": [
+        "Testing how a page behaves when the server replies with an error",
+        "Trying a page with sample data before the server is ready"
+      ],
+      "notGoodAt": ["Proving the real server works; use tests that run against it."],
+      "example": "When a test opens the order page, the tool sends back a made-up server error so the page's message can be checked.",
+      "homepage": "https://mswjs.io",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "nativewind": {
+      "whatItIs": "Short style names, borrowed from Tailwind CSS, for styling React Native phone screens.",
+      "goodAt": [
+        "Styling phone screens with short style names instead of separate style sheets",
+        "Sharing one style approach across all of a phone app's screens"
+      ],
+      "notGoodAt": ["Confirming how a screen looks on real phones; test on actual devices."],
+      "example": "When a designer wants each product card to have more space, the developer changes one style name.",
+      "homepage": "https://nativewind.dev",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "next": {
+      "whatItIs": "Next.js, a framework for building websites and web apps with React, including the server code that answers page requests.",
+      "goodAt": [
+        "Building a company website or web app with many pages and forms",
+        "Showing a list of saved items on a page the server prepares before sending it"
+      ],
+      "notGoodAt": [
+        "Storing data by itself; connect a database for records that must last.",
+        "Phone apps; use Expo, a toolkit for building phone apps."
+      ],
+      "example": "When a visitor opens the shop's product list, the server prepares the page with the current products and sends it to the browser ready to read.",
+      "homepage": "https://nextjs.org",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "orval": {
+      "whatItIs": "A tool that writes TypeScript code for calling a server, from a written description of its requests.",
+      "goodAt": [
+        "Keeping the code that calls the server in step with its description",
+        "Avoiding hand-written copies of each request"
+      ],
+      "notGoodAt": ["Writing the server itself; you build that separately."],
+      "example": "When the server's description changes, the tool rewrites the code the website uses to call it.",
+      "homepage": "https://orval.dev",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "pg": {
+      "whatItIs": "A library that lets server code read and write a PostgreSQL database.",
+      "goodAt": [
+        "Connecting a Node server to a Postgres database",
+        "Sending lookups and saves to the database and getting results back"
+      ],
+      "notGoodAt": ["Designing tables or change files; use database tools for that."],
+      "example": "When a visitor signs in, the server looks up their account record in the database.",
+      "homepage": "https://github.com/brianc/node-postgres",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "postcss": {
+      "whatItIs": "A tool that transforms stylesheets through a chain of add-on steps during a build.",
+      "homepage": "https://postcss.org/",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "postgres": {
+      "whatItIs": "A library that lets JavaScript code read and write a PostgreSQL database.",
+      "goodAt": [
+        "Looking up and saving records in a Postgres database",
+        "Running a query from the server code that answers a request"
+      ],
+      "notGoodAt": ["Setting up the database server itself; arrange hosting separately."],
+      "example": "When a visitor places an order, the server code saves the order in the database.",
+      "homepage": "https://github.com/porsager/postgres",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "posthog-js": {
+      "whatItIs": "A browser library that sends usage events, such as page views and clicks, to the PostHog analytics service.",
+      "goodAt": [
+        "Recording page views and button clicks on a website",
+        "Sending a named event when a visitor shares an article"
+      ],
+      "notGoodAt": ["Deciding what visitors must agree to; you set that policy separately."],
+      "example": "When a reader clicks the share button on an article, the site sends one event to PostHog.",
+      "homepage": "https://posthog.com/docs/libraries/js",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "prettier": {
+      "whatItIs": "A tool that gives code and other supported files one consistent layout, such as spacing and line breaks.",
+      "goodAt": [
+        "Making the spacing and line breaks in code files consistent",
+        "Keeping a team's code looking the same across editors"
+      ],
+      "notGoodAt": ["Checking whether an app works; use tests for that."],
+      "example": "When a developer changes a few files, the tool tidies their spacing so the team's style matches.",
+      "homepage": "https://prettier.io",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "prettier-plugin-astro": {
+      "whatItIs": "Adds Astro file formatting to Prettier.",
+      "homepage": "https://github.com/withastro/prettier-plugin-astro/",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "prettier-plugin-svelte": {
+      "whatItIs": "Adds Svelte component formatting to Prettier, a code formatter.",
+      "homepage": "https://github.com/sveltejs/prettier-plugin-svelte",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "react": {
+      "whatItIs": "A JavaScript library for building web pages out of reusable pieces called components.",
+      "goodAt": [
+        "Building forms, menus and other parts that respond to users",
+        "Updating a page's content when a user acts, without a reload"
+      ],
+      "notGoodAt": ["Serving requests or storing data; add a server and database for that."],
+      "example": "When a user taps a 'show more' button, React adds the hidden rows to the page without reloading it.",
+      "homepage": "https://react.dev/",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "react-dom": {
+      "whatItIs": "Draws React components onto a web page in the browser.",
+      "goodAt": [
+        "Showing React components on a website or web app",
+        "Placing a form on a page when the site loads"
+      ],
+      "notGoodAt": ["Drawing screens for phone apps; use React Native for that."],
+      "example": "When a visitor opens the contact page, React draws the contact form onto it.",
+      "homepage": "https://react.dev/",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "react-native": {
+      "whatItIs": "A toolkit for building phone apps with JavaScript and React, a library for screen components.",
+      "goodAt": [
+        "Building the same app screens for Android and iPhone",
+        "Using a single set of components for both phone systems"
+      ],
+      "notGoodAt": ["Providing a server or database; you add those separately."],
+      "example": "When a user opens the sign-in screen, the phone shows its own text fields and buttons.",
+      "homepage": "https://reactnative.dev/",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "react-native-css": {
+      "whatItIs": "Connects CSS stylesheets to React Native styling.",
+      "homepage": "https://github.com/nativewind/react-native-css#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "react-native-reanimated": {
+      "whatItIs": "Animation tools for React Native phone screens, such as panels that slide open.",
+      "goodAt": [
+        "Animating a panel or button as a user interacts with it",
+        "Linking movement to a user's finger drag on the screen"
+      ],
+      "notGoodAt": ["Moving between screens; a navigation library handles that."],
+      "example": "When a user taps the menu icon, the side panel slides into view on the phone instead of jumping.",
+      "homepage": "https://docs.swmansion.com/react-native-reanimated",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "react-native-safe-area-context": {
+      "whatItIs": "Helps React Native content avoid areas covered by notches and system bars.",
+      "homepage": "https://github.com/AppAndFlow/react-native-safe-area-context#readme",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "react-native-screens": {
+      "whatItIs": "Provides the native screen parts that React Native navigation uses to show each screen.",
+      "homepage": "https://github.com/software-mansion/react-native-screens#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "react-native-web": {
+      "whatItIs": "Lets React Native components run in a web browser, so one set of screens can serve both phone and web.",
+      "goodAt": [
+        "Showing a phone-designed screen in a web browser",
+        "Reusing the same screen parts on a phone and a website"
+      ],
+      "notGoodAt": ["Guaranteeing identical behavior on phones and browsers; test each one."],
+      "example": "When a designer wants to preview a phone screen on a laptop, the same screen code appears in a browser window.",
+      "homepage": "https://github.com/necolas/react-native-web#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "react-native-worklets": {
+      "whatItIs": "Lets a phone app run small pieces of its code on a separate thread, so animations and gestures stay smooth.",
+      "homepage": "https://docs.swmansion.com/react-native-worklets",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "react-router": {
+      "whatItIs": "A framework for building React websites, with pages at set web addresses that load their own data.",
+      "goodAt": [
+        "Linking each page to its web address and the data it needs",
+        "Sending a form's answers to the server and showing the result"
+      ],
+      "notGoodAt": ["Providing user accounts or file storage; add those separately."],
+      "example": "Before a page shows one order, the app loads that order's details from the server.",
+      "homepage": "https://github.com/remix-run/react-router",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "satori": {
+      "whatItIs": "A library that turns a web-style layout, described with text and styles, into an SVG picture.",
+      "goodAt": [
+        "Making social preview cards from a title and a background",
+        "Creating pictures that stay sharp at any size"
+      ],
+      "notGoodAt": ["Making a PNG file by itself; pair it with an image converter."],
+      "example": "When a site needs a preview picture for an article, it fills a card layout with the article's title.",
+      "homepage": "https://github.com/vercel/satori#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "server-only": {
+      "whatItIs": "A small package that makes a build fail if code meant only for the server ends up in a browser page.",
+      "goodAt": [
+        "Marking a module that talks to a database as server only",
+        "Making a mistaken import fail during the build, not after the site is live"
+      ],
+      "notGoodAt": ["Being the only safeguard; it works only where the build tool checks it."],
+      "example": "When a developer accidentally imports a database module into a browser component, the build stops before the site ships.",
+      "homepage": "https://www.npmjs.com/package/server-only",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "svelte": {
+      "whatItIs": "Svelte, a tool for building the parts of a web page that respond to users, compiled into browser code when the app is built.",
+      "goodAt": [
+        "Building forms, menus and other page parts that update when a user acts",
+        "Keeping a page part's layout and its behavior together in one file"
+      ],
+      "notGoodAt": [
+        "Serving pages or storing data by itself; add SvelteKit and a database for that."
+      ],
+      "example": "When a customer changes the quantity on a cart page, the total updates on the screen at once, without a reload.",
+      "homepage": "https://svelte.dev",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "svelte-check": {
+      "whatItIs": "A command-line checker that reports TypeScript errors in Svelte components and the code around them.",
+      "homepage": "https://github.com/sveltejs/language-tools/tree/master/packages/svelte-check",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "tailwind-merge": {
+      "whatItIs": "A helper that removes clashing Tailwind CSS style names, such as two padding settings on one element.",
+      "goodAt": [
+        "Combining style choices a user picks, such as a button size",
+        "Letting a page change a component's default style without a clash"
+      ],
+      "notGoodAt": ["Creating the style names themselves; Tailwind CSS provides those."],
+      "example": "When a button gets a second padding setting, the helper keeps only the later one.",
+      "homepage": "https://github.com/dcastil/tailwind-merge",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "tailwindcss": {
+      "whatItIs": "A styling toolkit made of small, ready-made style names that you combine on each element.",
+      "goodAt": [
+        "Styling buttons, cards and layouts with short style names",
+        "Keeping spacing and colors consistent across a site"
+      ],
+      "notGoodAt": ["Choosing the look of your site for you; you design the pages."],
+      "example": "When a page's buttons need to look dimmer when disabled, one style name sets the faded color.",
+      "homepage": "https://tailwindcss.com",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "typescript": {
+      "whatItIs": "JavaScript with added checks that flag values used the wrong way, before the code runs.",
+      "goodAt": [
+        "Catching a wrong value type before a program is run",
+        "Showing a function's expected inputs to other developers"
+      ],
+      "notGoodAt": [
+        "Checking outside data while the program runs; use a validation library for that."
+      ],
+      "example": "While a developer writes a price function, the editor warns that a text value was passed where a number belongs.",
+      "homepage": "https://www.typescriptlang.org/",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "typescript-eslint": {
+      "whatItIs": "Connects ESLint rules to TypeScript code.",
+      "homepage": "https://typescript-eslint.io/packages/typescript-eslint",
+      "source": {
+        "by": "drafted",
+        "model": "codex/gpt-6-sol",
+        "promptVersion": 1,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "vite": {
+      "whatItIs": "A tool that runs a website on your computer while you edit it, and packages it for publishing.",
+      "goodAt": [
+        "Showing a live preview of a web app while editing it",
+        "Packaging a finished website into files ready to publish"
+      ],
+      "notGoodAt": ["Deciding an app's pages and addresses; a framework does that."],
+      "example": "While a developer edits a React page, the browser refreshes to show each change right away.",
+      "homepage": "https://vite.dev",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "vitest": {
+      "whatItIs": "A testing tool for JavaScript and TypeScript projects that runs automated checks and reports what failed.",
+      "goodAt": [
+        "Running checks on single functions and on parts working together",
+        "Checking a server's behavior after each change"
+      ],
+      "notGoodAt": ["Checking a whole site in a real browser; use browser tests for that."],
+      "example": "When a developer changes how shipping is priced, the tests run and report any order that now costs the wrong amount.",
+      "homepage": "https://vitest.dev",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "wrangler": {
+      "whatItIs": "A command-line tool for running and publishing small server programs on Cloudflare Workers.",
+      "goodAt": [
+        "Running a server program on your computer before publishing it",
+        "Publishing a finished server program to Cloudflare"
+      ],
+      "notGoodAt": ["Writing the program itself; you write the code."],
+      "example": "Before a team publishes a change, they run the server program on their laptop and check the answers.",
+      "homepage": "https://github.com/cloudflare/workers-sdk#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "yaml": {
+      "whatItIs": "A JavaScript library for reading and writing YAML, a plain-text format for settings and data files.",
+      "goodAt": [
+        "Reading a settings file written in YAML into a program",
+        "Writing a program's data back out as a YAML file"
+      ],
+      "notGoodAt": ["Checking that settings make sense; add your own checks for that."],
+      "example": "When the app starts, it reads a YAML settings file and uses the values inside.",
+      "homepage": "https://eemeli.org/yaml/",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "zod": {
+      "whatItIs": "A TypeScript library for checking that data has the expected form while the program runs.",
+      "goodAt": [
+        "Checking data a website or phone app sends to a server",
+        "Checking settings and data files before a program uses them"
+      ],
+      "notGoodAt": ["Storing data after it is checked; use a database for that."],
+      "example": "When someone submits a signup form without an email address, it stops the request and returns a clear error instead of saving an incomplete record.",
+      "homepage": "https://zod.dev",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "zustand": {
+      "whatItIs": "A small tool that holds shared app data, such as a filter choice, for React screens to use.",
+      "goodAt": [
+        "Sharing a user's choices between different parts of a page",
+        "Keeping a filter selection available across screens"
+      ],
+      "notGoodAt": [
+        "Keeping server records up to date by itself; use a data-fetching tool for that."
+      ],
+      "example": "When a shopper picks a price range on the list screen, the same choice still applies on the detail screen.",
+      "homepage": "https://github.com/pmndrs/zustand",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    }
+  }
+}

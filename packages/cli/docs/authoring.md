@@ -92,7 +92,7 @@ of at most 25 words each. Keep these search fields together within 150 words.
 Describe needs supported by the entry; do not guess a product domain or copy
 evaluation queries.
 
-Bundled cards also include three optional editorial fields. They have separate
+Stored cards can include four optional editorial fields; new drafts include all four. They have separate
 budgets and are excluded from search ranking and embeddings:
 
 | Field | Purpose and limit |
@@ -100,6 +100,7 @@ budgets and are excluded from search ranking and embeddings:
 | `description` | Directory detail and agent comparison prose, at most 120 words |
 | `seoDescription` | Plain page-meta copy, at most 160 Unicode characters; this is an editorial limit, not a search-engine guarantee |
 | `projectExamples` | 1 to 3 illustrative project ideas, each with a `title` (8 words maximum) and `description` (35 words) |
+| `plain` | Optional plain-language `whatItIs` (30 words maximum), plus 1 to 3 short `goodAt` and `notGoodAt` items (15 words each); `show` uses the first project example |
 
 All editorial strings must be nonblank. An example on a fragment card also names
 its host `stack`; on a stack card, that host is the card itself. Optional

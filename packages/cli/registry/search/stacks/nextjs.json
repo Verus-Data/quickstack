@@ -22,6 +22,18 @@
       "description": "Server-rendered marketing and account pages served by next start on your own box, with a health route for the load balancer. Add a database and sign-in when the product needs them."
     }
   ],
+  "plain": {
+    "whatItIs": "A starter web app built with Next.js, which draws its pages on the server before sending them to the browser.",
+    "goodAt": [
+      "Pages that load their data on the server before showing them",
+      "Forms that show a clear message beside each field filled in wrongly",
+      "Sites you run on your own server with Node, a program for running JavaScript"
+    ],
+    "notGoodAt": [
+      "Sites made only of plain files with no server; use an Astro stack instead.",
+      "Sites with a database or sign-in already set up; the starter adds neither."
+    ]
+  },
   "platforms": [
     "web",
     "server"
