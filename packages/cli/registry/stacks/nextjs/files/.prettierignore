@@ -1,0 +1,12 @@
+# Generated output
+.next/
+out/
+next-env.d.ts
+coverage/
+test-results/
+playwright-report/
+blob-report/
+bun.lock
+
+# Written and read by stacks
+.stacks/

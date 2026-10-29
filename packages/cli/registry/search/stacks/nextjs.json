@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "kind": "stack",
+  "id": "nextjs",
+  "source": {
+    "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "by": "drafted",
+    "model": "claude-opus-5-5",
+    "promptVersion": 2,
+    "reviewedAt": null
+  },
+  "summary": "A Next.js App Router app on Node with server components, validated Server Actions, a JSON health route and browser tests.",
+  "description": "Start a Next.js App Router project that builds for production and runs under next start on Node. Pages render on the server from a server-only service, forms post to Server Actions that validate with zod and show field errors, and a route handler serves JSON. Vitest covers schemas, services and client components; Playwright drives the production build in Chromium. There is no database, sign-in or hosting setup; add those for a real product.",
+  "seoDescription": "A Next.js App Router starter on Node with server components, zod-validated Server Actions, ESLint, Vitest and Playwright against the production build.",
+  "projectExamples": [
+    {
+      "title": "Internal request tracker",
+      "description": "Server-rendered lists and forms that post to Server Actions, starting from the in-memory items slice. Swap the service for a real database and add sign-in before sharing it."
+    },
+    {
+      "title": "Self-hosted product site",
+      "description": "Server-rendered marketing and account pages served by next start on your own box, with a health route for the load balancer. Add a database and sign-in when the product needs them."
+    }
+  ],
+  "platforms": ["web", "server"],
+  "productKinds": ["web-app", "fullstack"],
+  "languages": ["typescript"],
+  "requests": [
+    "start a Next.js app with the App Router",
+    "nextjs project with server actions and form validation",
+    "server components that load data on the server, served by Node",
+    "a react app with SSR and a production build I can self-host",
+    "self-host a Next.js site on my own Node server"
+  ],
+  "useCases": ["server-rendered React apps", "forms backed by Server Actions", "self-hosted Next.js on Node"],
+  "synonyms": [
+    "Next.js",
+    "nextjs",
+    "App Router",
+    "React Server Components",
+    "Server Actions",
+    "SSR",
+    "create-next-app"
+  ],
+  "goodFor": ["server and client component boundaries", "production build checks in a browser"],
+  "notFor": []
+}
