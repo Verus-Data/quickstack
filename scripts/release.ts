@@ -1,0 +1,109 @@
+// Publishes @steamfield/stacks-format, then @steamfield/stacks, at the versions in their
+// package.json files, from a clean detached worktree of origin/main, then tags v<cli version>.
+// A person runs it (`bun run release`, or `bun run release -- --dry-run` to pack and check
+// without publishing or tagging); packages/format/README.md, "Publishing", has the steps it wraps.
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+const PACKAGES = ["format", "cli"] as const;
+const dryRun = process.argv.includes("--dry-run");
+const root = join(import.meta.dirname, "..");
+
+class ReleaseFailed extends Error {}
+
+/** Stops the release; thrown rather than exiting so the worktree's `finally` still runs. */
+function fail(message: string): never {
+  throw new ReleaseFailed(message);
+}
+
+/** Runs a command with the terminal attached and stops the release when it fails. */
+function run(command: string, args: ReadonlyArray<string>, cwd = root) {
+  console.error(`$ ${[command, ...args].join(" ")}`);
+  const result = spawnSync(command, args, { cwd, stdio: "inherit" });
+  if (result.status !== 0)
+    fail(`${command} ${args[0] ?? ""} exited ${result.status ?? "on a signal"}`);
+}
+
+/** Runs a command quietly and returns its exit status and trimmed stdout. */
+function read(command: string, args: ReadonlyArray<string>) {
+  const result = spawnSync(command, args, { cwd: root, encoding: "utf8" });
+  return { status: result.status, stdout: (result.stdout ?? "").trim() };
+}
+
+function manifest(dir: (typeof PACKAGES)[number]) {
+  const parsed = JSON.parse(
+    readFileSync(join(root, "packages", dir, "package.json"), "utf8"),
+  ) as unknown;
+  if (
+    typeof parsed !== "object" ||
+    parsed === null ||
+    !("name" in parsed) ||
+    !("version" in parsed) ||
+    typeof parsed.name !== "string" ||
+    typeof parsed.version !== "string"
+  )
+    fail(`packages/${dir}/package.json has no name or version`);
+  const tarball = `dist/pack/${parsed.name.replace(/^@/, "").replace("/", "-")}-${parsed.version}.tgz`;
+  return { dir, name: parsed.name, version: parsed.version, tarball };
+}
+
+const packages = PACKAGES.map(manifest);
+const tag = `v${packages[1]?.version}`;
+
+function preflight() {
+  if (!dryRun && read("npm", ["whoami"]).status !== 0) fail("not logged in to npm; run npm login");
+  if (read("git", ["status", "--porcelain"]).stdout !== "") fail("the working tree has changes");
+  run("git", ["fetch", "--quiet", "origin", "main"]);
+  if (
+    read("git", ["rev-parse", "HEAD"]).stdout !== read("git", ["rev-parse", "origin/main"]).stdout
+  )
+    fail("HEAD is not origin/main; push the release commit first");
+  for (const pkg of packages)
+    if (read("npm", ["view", `${pkg.name}@${pkg.version}`, "version"]).stdout !== "")
+      fail(`${pkg.name}@${pkg.version} is already on npm; bump its version`);
+  if (read("git", ["rev-parse", "--quiet", "--verify", `refs/tags/${tag}`]).status === 0)
+    fail(`tag ${tag} already exists`);
+}
+
+function publish(checkout: string) {
+  run("bun", ["install", "--frozen-lockfile"], checkout);
+  for (const pkg of packages) {
+    const cwd = join(checkout, "packages", pkg.dir);
+    run("bun", ["run", "pack"], cwd);
+    run("tar", ["-tzf", pkg.tarball], cwd);
+    run(
+      "npm",
+      ["publish", pkg.tarball, "--access", "public", ...(dryRun ? ["--dry-run"] : [])],
+      cwd,
+    );
+  }
+}
+
+function release() {
+  preflight();
+  const checkout = join(mkdtempSync(join(tmpdir(), "stacks-release-")), "checkout");
+  run("git", ["worktree", "add", "--detach", checkout, "origin/main"]);
+  try {
+    publish(checkout);
+  } finally {
+    run("git", ["worktree", "remove", "--force", checkout]);
+  }
+  if (dryRun) {
+    const names = packages.map((pkg) => `${pkg.name}@${pkg.version}`).join(" and ");
+    console.error(`release: dry run packed ${names}; nothing published`);
+    return;
+  }
+  for (const pkg of packages) run("npm", ["view", `${pkg.name}@${pkg.version}`, "version"]);
+  run("git", ["tag", "--annotate", tag, "--message", `Release ${tag}`, "origin/main"]);
+  run("git", ["push", "origin", tag]);
+}
+
+try {
+  release();
+} catch (error) {
+  if (!(error instanceof ReleaseFailed)) throw error;
+  console.error(`release: ${error.message}`);
+  process.exitCode = 1;
+}

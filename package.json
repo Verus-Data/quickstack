@@ -38,7 +38,9 @@
     "check": "bun run lint && bun run typecheck && bun run test && bun run e2e",
     "clean": "bun run --filter '*' clean",
     "prepare": "bun scripts/prepare.ts",
-    "install:ci": "bun install --frozen-lockfile"
+    "install:ci": "bun install --frozen-lockfile",
+    "release": "bun scripts/release.ts",
+    "release:dry-run": "bun scripts/release.ts --dry-run"
   },
   "devDependencies": {
     "@biomejs/biome": "catalog:",
