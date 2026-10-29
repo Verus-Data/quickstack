@@ -108,8 +108,10 @@
     ],
     "pypi": [
       "alembic",
+      "asgi-lifespan",
       "asyncpg",
       "fastapi",
+      "greenlet",
       "httpx",
       "mypy",
       "pydantic",

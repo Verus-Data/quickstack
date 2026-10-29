@@ -143,6 +143,45 @@
       ]
     },
     {
+      "id": "platform-python-json-only",
+      "pool": "platform",
+      "split": "tune",
+      "query": "an HTTP service in Python that only returns JSON, no UI",
+      "first": {
+        "kind": "stack",
+        "id": "python-api"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "python-api",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "platform-python-openapi",
+      "pool": "platform",
+      "split": "holdout",
+      "query": "uvicorn app with typed endpoints and an openapi contract I commit",
+      "first": {
+        "kind": "stack",
+        "id": "python-api"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "python-api",
+          "grade": 2
+        },
+        {
+          "kind": "stack",
+          "id": "python-react",
+          "grade": 1
+        }
+      ]
+    },
+    {
       "id": "product-mdx-blog",
       "pool": "product",
       "split": "tune",
@@ -438,6 +477,23 @@
       "pool": "fragment",
       "split": "holdout",
       "query": "a Postgres database for my FastAPI app",
+      "first": {
+        "kind": "fragment",
+        "id": "postgres"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "postgres",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "fragment-sqlalchemy-alembic",
+      "pool": "fragment",
+      "split": "tune",
+      "query": "sqlalchemy and alembic for my FastAPI service",
       "first": {
         "kind": "fragment",
         "id": "postgres"
