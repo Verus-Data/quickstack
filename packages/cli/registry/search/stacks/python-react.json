@@ -25,6 +25,17 @@
       ]
     }
   ],
+  "plain": {
+    "whatItIs": "A starter web app with its business logic in Python and a separate browser interface built with React, a toolkit for web screens.",
+    "goodAt": [
+      "Python services with a browser interface on top",
+      "Generating the browser's data types from the Python API's description",
+      "One set of commands to check both the Python and browser code"
+    ],
+    "notGoodAt": [
+      "Pages the server builds before sending them; use the React Router stack for those."
+    ]
+  },
   "platforms": [
     "web",
     "server"

@@ -24,6 +24,17 @@
       "stack": "astro-blog"
     }
   ],
+  "plain": {
+    "whatItIs": "Publishes a website of ready-built pages to Cloudflare Pages, with a live site from the default branch and previews for each pull request.",
+    "goodAt": [
+      "Putting a built website online on Cloudflare",
+      "Setting page caching rules and redirects for the site",
+      "Showing a preview site for each pull request before it is merged"
+    ],
+    "notGoodAt": [
+      "Running a backend that computes responses; this only publishes finished pages."
+    ]
+  },
   "capabilities": [
     "deploy"
   ],

@@ -1,7 +1,13 @@
-import { DependencyAllowlist } from "@steamfield/stacks-format";
+import {
+  DependencyAllowlist,
+  type DependencyCards,
+  Ecosystem,
+  type Ecosystem as EcosystemType,
+} from "@steamfield/stacks-format";
 import { Effect, FileSystem, Path, Schema } from "effect";
 import { type Entry, isRejected } from "../../src/core/registry/entry";
 import { Registry } from "../../src/core/registry/registry";
+import { decodeDependencyCards } from "../../src/core/search/sidecar";
 
 export const readAllowlist = Effect.fn("index.readAllowlist")(function* (root: string) {
   const fs = yield* FileSystem.FileSystem;
@@ -27,4 +33,25 @@ export const readAllowlist = Effect.fn("index.readAllowlist")(function* (root: s
             ),
           );
   return allowlist;
+});
+
+export const readDependencyCards = Effect.fn("index.readDependencyCards")(function* (
+  generatedAt: string,
+) {
+  const files = yield* (yield* Registry).dependencyCards;
+  const cards: { -readonly [K in EcosystemType]: DependencyCards["cards"][K] } = {
+    npm: {},
+    pypi: {},
+    go: {},
+    crates: {},
+  };
+  for (const ecosystem of Ecosystem.literals) {
+    const bytes = files.get(ecosystem);
+    if (bytes === undefined) continue;
+    const file = yield* decodeDependencyCards(bytes).pipe(
+      Effect.mapError(() => new Error(`deps/${ecosystem}.json: invalid DependencyCardFile.`)),
+    );
+    cards[ecosystem] = file.cards;
+  }
+  return { formatVersion: 1, generatedAt, cards } satisfies DependencyCards;
 });

@@ -24,6 +24,18 @@
       "stack": "python-react"
     }
   ],
+  "plain": {
+    "whatItIs": "Runs the project's existing checks on GitHub whenever code is pushed or a pull request, a proposed change, is opened or updated.",
+    "goodAt": [
+      "Giving GitHub's merge rules one combined result to wait for",
+      "Running the same checks you run locally, using the project's own commands",
+      "Running only the checks for the parts of a multi-app repository that changed"
+    ],
+    "notGoodAt": [
+      "Deploying the app or publishing releases; add a deployment or release add-on.",
+      "Projects hosted outside GitHub, such as on GitLab."
+    ]
+  },
   "capabilities": [
     "ci"
   ],

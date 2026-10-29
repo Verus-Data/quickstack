@@ -24,6 +24,17 @@
       "stack": "python-react"
     }
   ],
+  "plain": {
+    "whatItIs": "Adds PostHog, an analytics service, to a web app to record page views and a fixed list of named user actions.",
+    "goodAt": [
+      "Tracking chosen actions, such as an article being shared, in the browser",
+      "Running tests and local development without an analytics account or key",
+      "Guidance against sending typed text or email addresses in events"
+    ],
+    "notGoodAt": [
+      "Server-side analytics or error tracking; those need separate tools."
+    ]
+  },
   "capabilities": [
     "analytics"
   ],

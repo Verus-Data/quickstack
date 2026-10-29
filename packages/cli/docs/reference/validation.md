@@ -48,6 +48,8 @@ Budgets count every conditional branch in a body and, for a composed brief, the 
 
 Findings are errors, warnings or notes. Exit 0 when there are no errors; exit 2 (`ValidationFailed`) with the full report still on stdout and `Validation failed.` (with `--json`, the error envelope, whose `details` carry the counts) as the last stderr line. A path that is neither a registry root nor an entry under `stacks/` or `fragments/` is `NotFound` (2); an unreadable root is exit 6. Warnings don't change the exit, but the bundled registry is held to zero.
 
+Search sidecars report malformed `plain` copy as `search-invalid`, excess length as `search-size`, and version-specific copy as `plain-versioned`. A bundled registry with `allowlist.json` also checks `deps/<ecosystem>.json`: `deps-invalid` and `deps-ambiguous` are errors; `deps-missing` and `deps-unreviewed` are warnings; `deps-review-due` is a note.
+
 ## Previewing a brief
 
 `--brief <stack>` prints only the canonical composed brief to stdout. Word count, fixed-text count and limit go to stderr in human mode; agent stderr stays empty on success. `--json` returns `BriefPreview`, including its fingerprint and findings for the selected entries. Error findings exit 2 with `ValidationFailed` and keep the brief on stdout. Preview uses only the first configured agent (default `claude`), ignores `always`, and starts no processes. `--with` and `--without` take ids (repeatable or comma-separated); they and `--sandbox` work only with `--brief`.

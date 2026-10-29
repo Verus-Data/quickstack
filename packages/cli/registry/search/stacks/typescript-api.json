@@ -7,7 +7,7 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 2,
-    "reviewedAt": "2026-10-28"
+    "reviewedAt": "2026-10-29"
   },
   "summary": "A TypeScript HTTP API with validated requests, documented endpoints, consistent errors and structured request logs.",
   "description": "Create a Node HTTP API whose Effect contract owns endpoint schemas, routing and documented errors. Thin handlers call services, and one request boundary produces safe responses and structured logs. The recipe proves startup and HTTP behavior with a health endpoint, then packages the server as one Node bundle. It does not select a database, identity provider or browser interface.",
@@ -22,6 +22,17 @@
       "description": "Wrap selected upstream APIs in typed resources with consistent errors and logs. Implement the provider clients, credentials and access rules for those integrations."
     }
   ],
+  "plain": {
+    "whatItIs": "A starter API, written in TypeScript (a typed form of JavaScript), that checks incoming requests and documents its own addresses.",
+    "goodAt": [
+      "Web services that return data to apps and websites",
+      "Consistent error replies when a request is wrong",
+      "Testing the real server by sending it actual requests"
+    ],
+    "notGoodAt": [
+      "Projects that need a built-in screen or database; add those separately."
+    ]
+  },
   "platforms": [
     "server"
   ],

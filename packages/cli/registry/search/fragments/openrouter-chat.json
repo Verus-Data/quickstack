@@ -24,6 +24,18 @@
       "stack": "react-router"
     }
   ],
+  "plain": {
+    "whatItIs": "A browser chat app for AI models through OpenRouter, showing replies as they are written and keeping history on the server.",
+    "goodAt": [
+      "Trying different AI models from a web page",
+      "Exporting a conversation as a plain-text Markdown file",
+      "Pulling contact details out of pasted text"
+    ],
+    "notGoodAt": [
+      "Private accounts, or history that survives a restart; add sign-in and saved storage.",
+      "Keeping chats private, since anyone with a chat's link can open it."
+    ]
+  },
   "capabilities": [
     "ai"
   ],

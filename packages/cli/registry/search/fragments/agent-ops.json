@@ -24,6 +24,16 @@
       "stack": "python-react"
     }
   ],
+  "plain": {
+    "whatItIs": "Gives every AI coding assistant one shared project guide, plus local guards that block destructive commands and writes containing secrets.",
+    "goodAt": [
+      "Giving Claude Code, Codex, Cursor and OpenCode the same project instructions",
+      "Stopping an assistant from running destructive commands or writing credentials into files"
+    ],
+    "notGoodAt": [
+      "Running tests or sandboxing untrusted code; use your normal test commands and a sandbox."
+    ]
+  },
   "capabilities": [
     "agent-harness"
   ],

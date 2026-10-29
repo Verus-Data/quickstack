@@ -1,4 +1,10 @@
-import { Category, StatsDetail, VerifyStep } from "@steamfield/stacks-format";
+import {
+  Category,
+  DependencyCard,
+  Plain,
+  StatsDetail,
+  VerifyStep,
+} from "@steamfield/stacks-format";
 import { Schema } from "effect";
 import { LastRun } from "./ledger";
 import { ListRow } from "./list";
@@ -11,6 +17,18 @@ export const ShowReport = Schema.Struct({
   stats: Schema.optionalKey(StatsDetail),
   path: Schema.String,
   deps: Schema.Record(Schema.String, Schema.Array(Schema.String)),
+  plain: Schema.optionalKey(
+    Schema.Struct({
+      ...Plain.fields,
+      example: Schema.optionalKey(
+        Schema.Struct({ title: Schema.String, description: Schema.String }),
+      ),
+      stale: Schema.optionalKey(Schema.Boolean),
+      /** The copy comes from a user, project or untrusted entry's author. */
+      unreviewed: Schema.optionalKey(Schema.Boolean),
+    }),
+  ),
+  dependencyCards: Schema.optionalKey(Schema.Record(Schema.String, DependencyCard)),
   tools: Schema.Array(Schema.String),
   decisions: Schema.Array(Schema.String),
   env: Schema.Record(Schema.String, Schema.String),

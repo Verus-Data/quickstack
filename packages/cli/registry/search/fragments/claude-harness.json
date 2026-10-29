@@ -24,6 +24,18 @@
       "stack": "typescript-cli"
     }
   ],
+  "plain": {
+    "whatItIs": "Adds tested guards and helper commands to Claude Code in a TypeScript project that uses Bun, a JavaScript runtime.",
+    "goodAt": [
+      "Blocking certain commands and edits to generated files in Claude Code",
+      "Testing each guard against blocked actions and similar safe ones",
+      "Adding read-only helpers that review designs and code changes"
+    ],
+    "notGoodAt": [
+      "Sandboxing untrusted code; use a separate sandbox for that.",
+      "Projects that do not use Bun, or that use Cursor instead of Claude Code."
+    ]
+  },
   "capabilities": [
     "agent-harness"
   ],

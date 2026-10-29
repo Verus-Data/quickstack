@@ -36,6 +36,36 @@ function statsLines(stats: ShowReport["stats"]): string[] {
   return lines;
 }
 
+function plainLines(plain: ShowReport["plain"]): string[] {
+  if (!plain) return [];
+  return [
+    plain.whatItIs,
+    ...(plain.stale ? ["(written for an earlier version of this entry)"] : []),
+    ...(plain.unreviewed ? ["(from the entry's author, not reviewed by stacks)"] : []),
+    ...plain.goodAt.map((text) => `Good at: ${text}`),
+    ...(plain.example ? [`Example: ${plain.example.title} — ${plain.example.description}`] : []),
+    ...plain.notGoodAt.map((text) => `Not good at: ${text}`),
+  ];
+}
+
+function dependencyLines(report: ShowReport, human: boolean): string[] {
+  const list = (values: ReadonlyArray<string>) => (values.length ? values.join(", ") : "none");
+  return Object.entries(report.deps).flatMap(([role, names]) => {
+    if (role !== "app" || !human || names.length === 0)
+      return [`Dependencies (${role}): ${list(names)}`];
+    return [
+      "Dependencies (app):",
+      ...names.map((name) => {
+        const matches = Object.entries(report.dependencyCards ?? {}).filter(
+          ([key]) => key.slice(key.indexOf("/") + 1) === name,
+        );
+        const card = matches.length === 1 ? matches[0]?.[1] : undefined;
+        return `  ${name}${card ? `: ${card.whatItIs}` : ""}`;
+      }),
+    ];
+  });
+}
+
 /** Complete text review, including commands and every unfiltered guidance branch. */
 export function renderShow(
   report: ShowReport,
@@ -46,11 +76,14 @@ export function renderShow(
   const list = (values: ReadonlyArray<string>) => (values.length ? values.join(", ") : "none");
   const out = [
     `${report.name} (${report.id}), ${report.kind}, origin ${report.origin}, ${report.trusted ? "trusted" : "untrusted"}`,
+    ...plainLines(report.plain).flatMap((line) =>
+      layout ? wrapWords(line, layout.width, layout.measure).split("\n") : [line],
+    ),
     report.description,
     `Path: ${report.path}`,
     `Shadows: ${list(report.shadows)}`,
     `Tags: ${list(report.tags)}`,
-    ...Object.entries(report.deps).map(([role, names]) => `Dependencies (${role}): ${list(names)}`),
+    ...dependencyLines(report, layout !== undefined),
     `Tools: ${list(report.tools)}`,
     ...(report.decisions.length
       ? ["Decisions:", ...report.decisions.map((decision) => `  - ${decision}`)]

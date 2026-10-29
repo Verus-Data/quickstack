@@ -24,6 +24,18 @@
       "stack": "typescript-cli"
     }
   ],
+  "plain": {
+    "whatItIs": "Connects a TypeScript app to OpenRouter, a service giving one account access to many AI models, with settings for the key and model.",
+    "goodAt": [
+      "Testing AI requests on a local fake server, with no paid calls",
+      "Listing the models OpenRouter offers, kept for ten minutes at a time",
+      "Turning provider errors into clear messages without exposing secrets"
+    ],
+    "notGoodAt": [
+      "A finished chat screen; the browser or terminal chat add-ons include one.",
+      "Live answers, which need an OpenRouter key and credit on the account."
+    ]
+  },
   "capabilities": [
     "ai"
   ],

@@ -60,6 +60,8 @@ stacks show effect --kind fragment  # look among fragments only, for an id a sta
 
 `show <id>` reviews a stack or fragment without starting a process: metadata, every guidance branch, commands, verify steps and shipped output paths, including adapters for every agent. `--json` returns `ShowReport`. Bundled and index stacks receive recorded run evidence; `sameContent` compares the current composition fingerprint with that run. Other origins get `lastRun: null`.
 
+When a search card has `plain` copy, `show` prints its definition, strengths, first project example and limits before the technical description. JSON includes `plain` and any bundled `dependencyCards` for the entry's dependencies. Human output expands application dependencies with their definitions.
+
 ## new
 
 ```sh

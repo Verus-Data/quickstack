@@ -24,6 +24,17 @@
       "stack": "typescript-cli"
     }
   ],
+  "plain": {
+    "whatItIs": "Test helpers and guidance for coding assistants working on code written with Effect, a TypeScript library for structuring services and errors.",
+    "goodAt": [
+      "Testing services with a controlled clock, so tests skip real waiting",
+      "Checking that failures and unexpected crashes are reported as intended",
+      "Giving coding assistants reference notes that match the installed Effect version"
+    ],
+    "notGoodAt": [
+      "Choosing how a whole app is organized; the base project recipe makes that choice."
+    ]
+  },
   "capabilities": [],
   "requests": [
     "test timed operations by advancing a clock instead of sleeping",

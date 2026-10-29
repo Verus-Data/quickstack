@@ -1,6 +1,7 @@
 # Phase 4.5f: Plain-language metadata
 
 Status: IN PROGRESS 2026-10-29
+Acceptance tests: traced
 
 | Field | Value |
 |---|---|
@@ -86,7 +87,7 @@ Text, human and agent alike, follows the name line with `whatItIs`, then `Good a
 9. With a bundled entry depending on `hono` and no card for it, `validate` warns `deps-missing` naming `npm/hono`; with the card, it doesn't.
 10. A card reviewed 400 days before the test clock gives `deps-review-due` as a note and exits 0; a card with `reviewedAt: null` gives `deps-unreviewed` as a warning.
 11. A user registry with entries and no `allowlist.json` or `deps/` reports no `deps-*` finding.
-12. `show <stack> --json` includes `plain` (with `example` from `projectExamples[0]`) and `dependencyCards` for its deps; an entry with no sidecar, or a sidecar with no `plain`, omits both keys and still exits 0.
+12. `show <stack> --json` includes `plain` (with `example` from `projectExamples[0]`) and `dependencyCards` for its deps; an entry with no sidecar, or a sidecar with no `plain`, omits `plain`, keeps `dependencyCards`, and still exits 0; with no card for any of its deps, `dependencyCards` is omitted.
 13. Agent-mode `show` prints the `whatItIs` line and `Good at:`, `Example:` and `Not good at:` before the description, and keeps `Dependencies (app): ...` as one line.
 14. Human-mode `show` prints each `app` dependency with its `whatItIs` on its own line and keeps the `dev` role as one line.
 15. A sidecar whose digest no longer matches the entry prints the earlier-version label; an untrusted entry's block prints the author label; a `whatItIs` holding an escape sequence prints escaped.
@@ -98,6 +99,8 @@ Text, human and agent alike, follows the name line with `whatItIs`, then `Good a
 18. A scoped npm name (`@tanstack/react-query`) and a Go module path (`github.com/jackc/pgx`) are looked up and shown correctly.
 19. A dependency that appears in an entry's `deps` but in no card file prints only its name in human mode, without a blank or placeholder line.
 20. A `deps/` file in a project or user registry root is ignored by `show` and `validate`.
+21. A dependency card key with different letter case from its allowlist name is `deps-invalid`; the matching name remains `deps-missing` when a bundled entry uses it.
+22. An allowlisted ecosystem with no card file publishes an empty object in `v1/deps.json`, without fabricating cards.
 
 ## Exit criteria
 
@@ -106,3 +109,6 @@ Acceptance tests pass and the gate is green. A maintainer has read and approved 
 ## What this plan may get wrong
 
 - The 30-word `whatItIs` cap may be too tight for apps; it is a warning, so loosen it from evidence.
+- 2026-10-29 (test authoring): test 12 said a missing `plain` omits `dependencyCards` too, which contradicted the design (dependency cards come from the bundled root, independent of the entry's sidecar). The test and item now keep the cards.
+- 2026-10-29 (implementation): acceptance test 3 requires four plain-list items to decode and produce `search-size`, although the design says 1 to 3 items. The schema enforces a nonempty list and validation warns above three; dependency-card lists still reject four items at decode time as test 6 requires.
+- 2026-10-29 (implementation): drafted dependency cards carry `deps-unreviewed` warnings until a maintainer stamps them, and `build:index` (signed or unsigned) refuses a registry with warnings, so an index carrying the cards can be built only after review.
