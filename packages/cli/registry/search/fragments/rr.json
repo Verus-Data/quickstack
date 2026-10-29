@@ -3,7 +3,7 @@
   "kind": "fragment",
   "id": "rr",
   "source": {
-    "digest": "sha256:d6306d36d694939ac0746d6d81b1d2c618accac9f69ba176363516f0498cf56a",
+    "digest": "sha256:40dc4d2214eb7019f05c07221eac08ca0b84f206f6bc56a79fd0dedb8dcea38e",
     "by": "drafted",
     "model": "claude/claude-opus-5-5",
     "promptVersion": 2,

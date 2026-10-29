@@ -3,7 +3,7 @@
   "kind": "stack",
   "id": "react-router",
   "source": {
-    "digest": "sha256:754280d59ee97c42f023c26f7e2a356e569b430be51d5ec6f540b0f30664636d",
+    "digest": "sha256:5c5febef7d8e136ca7125da8ea7067d54959c7f7adae9fbaca5217ace2c5c66a",
     "by": "drafted",
     "model": "claude-opus-5-5",
     "promptVersion": 2,

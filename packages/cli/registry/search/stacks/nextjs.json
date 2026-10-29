@@ -3,7 +3,7 @@
   "kind": "stack",
   "id": "nextjs",
   "source": {
-    "digest": "sha256:d421430f43931bea5ccf8eb61b21703320e3c03980aaa8d9e3e8b350187de6f8",
+    "digest": "sha256:6c280d4cc07e407af8b3dfacdf5ebc943d4dda1b63e8e2e8245f6e4d4ee65baa",
     "by": "drafted",
     "model": "claude-opus-5-5",
     "promptVersion": 2,
