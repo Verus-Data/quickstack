@@ -1,6 +1,6 @@
 # Bundled stack audit
 
-Status: COMPLETE 2026-10-29. Audit only; recommendations are not implemented.
+Status: COMPLETE 2026-10-29. Finding 1 fixed 2026-10-29; the other recommendations are not implemented.
 
 All ten stacks define testing tools and a concrete proving slice. The useful work is tightening what verification actually proves, correcting two fragment contracts, and sharing a small amount of duplicated infrastructure. There is no evidence here for replacing the testing frameworks or adding a database, auth provider, or deployment target to every stack.
 

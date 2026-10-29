@@ -48,12 +48,14 @@ Local Postgres for dev and tests, a migration workflow, and a harness that gives
 
 ## Test harness
 
-1. **Template once per run.** Connect to the maintenance DB, take a fixed advisory lock (serializes parallel workers and runs), drop leftover test DBs by name prefix, drop and recreate `<project>_template`, release the lock, run the real migrations on it, and close every connection to it (`CREATE DATABASE ... TEMPLATE` fails while anything is connected).
-2. **One DB per test file**: `CREATE DATABASE "<prefix>_<label>_<random>" TEMPLATE "<project>_template"` (a file copy), point the app's URL at it, build the app.
-3. **Teardown**: close pools, then `DROP DATABASE ... WITH (FORCE)`.
+Two runs can share `db-test` (two agents, a watch run beside a full one), so each run owns only the databases it names, and nothing is deleted by prefix.
+
+1. **One template per run.** Give each run an id its parallel workers share: the test runner's own run id when it has one (check the installed pytest-xdist), otherwise one generated before workers start and passed through the environment. The run owns `<project>_tpl_<runid>`. On the maintenance DB, take an advisory lock keyed on the run id; while holding it, if the template doesn't exist, create it and run the real migrations on it, dropping it again if either step fails. Release the lock, then close every connection to the template (`CREATE DATABASE ... TEMPLATE` fails while anything is connected).
+2. **One DB per test file**: `CREATE DATABASE "<project>_<runid>_<label>_<random>" TEMPLATE "<project>_tpl_<runid>"` (a file copy), point the app's URL at it, build the app.
+3. **Teardown**: close pools, then `DROP DATABASE ... WITH (FORCE)` on that file's database. The run's template is dropped once, by the session-finish hook in the controlling process. Leftovers from a crashed run are reported, never dropped automatically.
 4. **Within a file**, tests share the DB: unique ids per test or a rolled-back transaction per test; never truncate everything.
 
-Expose it as one call per test file (`db = setup_test_database("users")`). Raise the hook timeout if the default is a few seconds; the first file pays for the template. With testcontainers instead of `db-test`, start one container per session and do the same inside it.
+Expose it as one call per test file (`db = setup_test_database("users")`). Raise the hook timeout if the default is a few seconds; the first file pays for the template. Add a harness test that runs two sessions with different run ids at once and checks that one's teardown leaves the other's databases in place, and one where migration fails and no template is left behind. With testcontainers instead of `db-test`, start one container per session and do the same inside it.
 
 <!-- stacks:when with=ci-github -->
 ## CI

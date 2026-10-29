@@ -14,8 +14,9 @@ to `archive/` and leave a link.
 The subsequent [stack audit](stack-audit-2026-10-29.md) reviews all ten stacks and
 records eight findings, including Postgres test-database ownership, fragment
 compatibility, verification gaps and two shared-infrastructure opportunities.
-Audit only; no recommendations applied. Registry validation returned no errors
-or warnings. Fresh project benches were not run.
+Finding 1 is fixed (the Postgres harness now uses run-owned template and
+database names, never prefix cleanup); the other seven are open. Registry
+validation returned no errors or warnings. Fresh project benches were not run.
 
 An audit of every bundled entry's naming, descriptions and search cards was applied: clearer
 descriptions, search card facets, synonyms and exclusions, Go and `fullstack` vocabulary
