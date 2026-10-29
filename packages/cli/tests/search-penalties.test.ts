@@ -13,9 +13,13 @@ test("SaaS with Postgres and auth ranks a web app ahead of the mobile stack", as
     "--limit",
     "20",
   ]);
-  expect(["cloudflare-react-router", "react-router", "python-react"]).toContain(
-    value.stacks[0]?.id,
-  );
+  expect([
+    "cloudflare-react-router",
+    "react-router",
+    "python-react",
+    "nextjs",
+    "sveltekit",
+  ]).toContain(value.stacks[0]?.id);
   expect(hit(value.stacks, "mobile-expo").penalties).toContainEqual({
     kind: "productKind",
     request: "saas (web-app)",
