@@ -568,6 +568,40 @@
       ]
     },
     {
+      "id": "fragment-effect-otel-spans",
+      "pool": "fragment",
+      "split": "tune",
+      "query": "instrument my effect http server with otel spans",
+      "first": {
+        "kind": "fragment",
+        "id": "effect-otlp"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "effect-otlp",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "fragment-effect-otlp-collector",
+      "pool": "fragment",
+      "split": "holdout",
+      "query": "ship opentelemetry traces from an effect backend to tempo",
+      "first": {
+        "kind": "fragment",
+        "id": "effect-otlp"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "effect-otlp",
+          "grade": 2
+        }
+      ]
+    },
+    {
       "id": "fragment-drizzle-next",
       "pool": "fragment",
       "split": "tune",
