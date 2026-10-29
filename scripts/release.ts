@@ -81,6 +81,16 @@ function publish(checkout: string) {
   }
 }
 
+/** npm accepts a publish before the registry serves it ("may take a few minutes"), so poll. */
+function awaitPublished(spec: string) {
+  for (let attempt = 1; attempt <= 40; attempt++) {
+    if (read("npm", ["view", spec, "version", "--prefer-online"]).stdout !== "") return;
+    console.error(`release: waiting for the registry to serve ${spec}`);
+    spawnSync("sleep", ["15"]);
+  }
+  fail(`the registry still doesn't serve ${spec} after 10 minutes; tag once npm view finds it`);
+}
+
 function release() {
   preflight();
   const checkout = join(mkdtempSync(join(tmpdir(), "stacks-release-")), "checkout");
@@ -95,7 +105,7 @@ function release() {
     console.error(`release: dry run packed ${names}; nothing published`);
     return;
   }
-  for (const pkg of packages) run("npm", ["view", `${pkg.name}@${pkg.version}`, "version"]);
+  for (const pkg of packages) awaitPublished(`${pkg.name}@${pkg.version}`);
   run("git", ["tag", "--annotate", tag, "--message", `Release ${tag}`, "origin/main"]);
   run("git", ["push", "origin", tag]);
 }
