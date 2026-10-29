@@ -11,6 +11,16 @@ to `archive/` and leave a link.
 
 ## Submission queue (2026-10-28)
 
+State at the end of the 2026-10-28 run: R0 to R4, R10, R12 and R13 are done (evidence in
+`runs/2026-10-28-submission-readiness/`). CLI 0.4.0 is committed, gated and packed
+(`release.md` has the tarball sha256); the maintainer runs `npm publish`, then an agent runs
+the pinned `npx @steamfield/stacks@0.4.0` checks and pushes `v0.4.0`. Production serves the
+120-day `active-4` seed with fast stats routes, a 4 GB API heap and stack dependency counts
+inside each stack's population. The R6 rehearsal reached a green `verify --all`; the recording,
+the organizer fields, S6 and the R11 uptime ping are the maintainer's. Known search limit: four
+R13 queries ("typescript api", negation, e2e for an existing repo, Fly deploy) need `rank.ts`
+and a format release.
+
 Use [the submission-readiness plan](submission-readiness/README.md) for the remaining
 order, scoped to a working, polished demo before the deadline. Its README is the tracker
 and the decisions the user owes (S1 to S8); each row has its own file: R0 baseline; R1
