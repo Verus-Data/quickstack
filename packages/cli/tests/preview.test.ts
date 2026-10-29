@@ -285,6 +285,20 @@ test("preview reports the selected entries' exact findings and keeps warning-onl
   );
 });
 
+test("preview keeps the user's --with and --without warnings as warnings, as new does", async () => {
+  const { registry, preview } = fixture();
+  stack(registry, "other-stack");
+  fragment(registry, "elsewhere", "applies_to: [other-stack]");
+  fragment(registry, "unlisted");
+  const report = previewResult(await preview(["--with", "elsewhere", "--without", "unlisted"]));
+  expect(report.fragments).toEqual(["elsewhere"]);
+  expect(report.warnings).toEqual([
+    { code: "with_not_applicable", id: "elsewhere" },
+    { code: "without_not_selected", id: "unlisted" },
+  ]);
+  expect(report.findings).toEqual([]);
+});
+
 test("an explicitly added app gets a split brief, the 9000-word cap and a fingerprint [3.1a#17]", async () => {
   const { registry, preview } = fixture();
   writeEntry({

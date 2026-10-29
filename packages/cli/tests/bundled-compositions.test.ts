@@ -307,10 +307,11 @@ test.each([
   ["astro-blog", "openrouter-ai"],
 ])("%s warns when %s does not apply", async (stack, fragment) => {
   const run = await cli(["validate", "--brief", stack, "--with", fragment, "--json"]);
-  expect(run.status).toBe(2);
-  expect(JSON.parse(run.stderr)).toMatchObject({ error: { tag: "ValidationFailed" } });
+  expect(run.status, run.stderr).toBe(0);
+  expect(run.stderr).toBe("");
   const preview = Schema.decodeUnknownSync(BriefPreview)(JSON.parse(run.stdout));
   expect(preview.warnings).toEqual([{ code: "with_not_applicable", id: fragment }]);
+  expect(preview.findings.filter((finding) => finding.severity === "error")).toEqual([]);
 });
 
 test.each(["astro-blog", "python-react"])(

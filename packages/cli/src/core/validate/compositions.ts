@@ -274,7 +274,9 @@ const checkCompositionCase = (
       return false;
     }
     const composition = composed.success;
-    recordWarnings(composition, { preset, plan }, state);
+    // A preview's warnings come from the caller's --with and --without, not the stack's listing;
+    // the preview returns them as warnings, as `new` does.
+    if (!view.composition) recordWarnings(composition, { preset, plan }, state);
     recordBudget(view, composition, { stack, preset, plan }, state);
     recordMissingLayers(stack, composition, { preset, plan }, state);
     return true;
