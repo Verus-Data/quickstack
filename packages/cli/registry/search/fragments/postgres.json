@@ -24,6 +24,16 @@
       "stack": "python-react"
     }
   ],
+  "plain": {
+    "whatItIs": "Local Postgres services, database models and migration steps for the Python and React stack.",
+    "goodAt": [
+      "Testing database-backed Python code",
+      "Changing the database with reviewed migrations"
+    ],
+    "notGoodAt": [
+      "Provisioning a production database; arrange hosting separately."
+    ]
+  },
   "capabilities": [
     "database"
   ],

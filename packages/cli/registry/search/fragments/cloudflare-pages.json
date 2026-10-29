@@ -24,6 +24,16 @@
       "stack": "astro-blog"
     }
   ],
+  "plain": {
+    "whatItIs": "Deployment steps for publishing a static website on Cloudflare Pages.",
+    "goodAt": [
+      "Production and preview deployments of built pages",
+      "Setting response headers and redirects"
+    ],
+    "notGoodAt": [
+      "Running a backend server; choose a server deployment path."
+    ]
+  },
   "capabilities": [
     "deploy"
   ],

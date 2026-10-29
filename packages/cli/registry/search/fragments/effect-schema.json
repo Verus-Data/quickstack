@@ -24,6 +24,16 @@
       "stack": "typescript-cli"
     }
   ],
+  "plain": {
+    "whatItIs": "Guidance for checking incoming data with Effect Schema at application boundaries.",
+    "goodAt": [
+      "Defining one shape for validation and TypeScript types",
+      "Testing that data survives encoding and decoding"
+    ],
+    "notGoodAt": [
+      "Replacing validators required by a framework; keep those where needed."
+    ]
+  },
   "capabilities": [],
   "requests": [
     "derive my data types and runtime validation from the same definition",

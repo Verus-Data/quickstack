@@ -24,6 +24,16 @@
       "stack": "typescript-cli"
     }
   ],
+  "plain": {
+    "whatItIs": "Tested local guards and helper commands for Claude Code in a Bun project.",
+    "goodAt": [
+      "Adding project-specific checks to Claude Code work",
+      "Testing guards against valid and rejected actions"
+    ],
+    "notGoodAt": [
+      "Isolating untrusted code; use a sandbox."
+    ]
+  },
   "capabilities": [
     "agent-harness"
   ],

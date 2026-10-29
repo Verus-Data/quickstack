@@ -25,6 +25,16 @@
       ]
     }
   ],
+  "plain": {
+    "whatItIs": "A starter web app with a Python API and a separate React browser interface.",
+    "goodAt": [
+      "Python services with a React interface",
+      "Generating browser types from the API contract"
+    ],
+    "notGoodAt": [
+      "Pages rendered on the server; choose a server-rendered stack."
+    ]
+  },
   "platforms": [
     "web",
     "server"

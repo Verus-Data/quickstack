@@ -24,6 +24,16 @@
       "stack": "mobile-expo"
     }
   ],
+  "plain": {
+    "whatItIs": "Guidance for naming API endpoints and keeping their responses consistent.",
+    "goodAt": [
+      "Keeping resource names and response shapes consistent",
+      "Recording the project’s own API decisions"
+    ],
+    "notGoodAt": [
+      "Generating endpoints or a server; use an API stack."
+    ]
+  },
   "capabilities": [],
   "requests": [
     "keep endpoint names consistent as agents add resources",

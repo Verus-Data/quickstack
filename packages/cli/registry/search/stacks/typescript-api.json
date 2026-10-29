@@ -22,6 +22,16 @@
       "description": "Wrap selected upstream APIs in typed resources with consistent errors and logs. Implement the provider clients, credentials and access rules for those integrations."
     }
   ],
+  "plain": {
+    "whatItIs": "A starter Node API with checked request and response shapes.",
+    "goodAt": [
+      "HTTP endpoints with shared error handling",
+      "Testing real requests against the server"
+    ],
+    "notGoodAt": [
+      "Apps needing a built-in interface or database; add those separately."
+    ]
+  },
   "platforms": [
     "server"
   ],

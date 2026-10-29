@@ -24,6 +24,16 @@
       "stack": "typescript-cli"
     }
   ],
+  "plain": {
+    "whatItIs": "A connection that lets a TypeScript app request AI-generated text through OpenRouter.",
+    "goodAt": [
+      "Testing provider requests without paid calls",
+      "Handling provider failures at one boundary"
+    ],
+    "notGoodAt": [
+      "A finished chat interface; choose a chat app fragment."
+    ]
+  },
   "capabilities": [
     "ai"
   ],

@@ -24,6 +24,15 @@
       "stack": "astro-blog"
     }
   ],
+  "plain": {
+    "whatItIs": "Project guidance that connects Claude Code to the Claude Essentials plugin.",
+    "goodAt": [
+      "Pointing Claude Code to relevant engineering and writing guidance"
+    ],
+    "notGoodAt": [
+      "Enforcing checks or guiding other assistants; use their own adapters."
+    ]
+  },
   "capabilities": [
     "agent-harness"
   ],

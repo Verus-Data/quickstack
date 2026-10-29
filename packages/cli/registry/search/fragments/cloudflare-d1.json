@@ -24,6 +24,16 @@
       "stack": "cloudflare-react-router"
     }
   ],
+  "plain": {
+    "whatItIs": "Database wiring and migration steps for a Cloudflare Workers app.",
+    "goodAt": [
+      "Local database tests without a cloud account",
+      "Adding SQL storage to a Workers app"
+    ],
+    "notGoodAt": [
+      "Postgres projects; choose a Postgres-backed stack."
+    ]
+  },
   "capabilities": [
     "database"
   ],

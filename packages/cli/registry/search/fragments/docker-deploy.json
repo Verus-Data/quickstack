@@ -24,6 +24,16 @@
       "stack": "astro-fullstack"
     }
   ],
+  "plain": {
+    "whatItIs": "Container build and publishing steps for a project’s deployable parts.",
+    "goodAt": [
+      "Building application images",
+      "Publishing images after project checks pass"
+    ],
+    "notGoodAt": [
+      "Rolling images out to a host; set up deployment separately."
+    ]
+  },
   "capabilities": [
     "deploy"
   ],

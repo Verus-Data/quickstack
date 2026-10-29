@@ -22,6 +22,16 @@
       "description": "Replace the demonstration tick channel with application measurements and charts. Platform integrations, permissions and data retention remain product work."
     }
   ],
+  "plain": {
+    "whatItIs": "A starter desktop app with a React interface and Rust code behind it.",
+    "goodAt": [
+      "Desktop interfaces backed by Rust logic",
+      "Testing interface behavior in a browser preview"
+    ],
+    "notGoodAt": [
+      "Browser-only products; choose a web stack."
+    ]
+  },
   "platforms": [
     "desktop"
   ],

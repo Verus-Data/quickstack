@@ -24,6 +24,16 @@
       "stack": "mobile-expo"
     }
   ],
+  "plain": {
+    "whatItIs": "Sign-in for the Expo app with session checks in its Hono API.",
+    "goodAt": [
+      "Requiring a signed-in user for protected routes",
+      "Testing session checks without a live account"
+    ],
+    "notGoodAt": [
+      "Record ownership rules; implement those in application code."
+    ]
+  },
   "capabilities": [
     "auth"
   ],

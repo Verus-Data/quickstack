@@ -24,6 +24,16 @@
       "stack": "go-cli"
     }
   ],
+  "plain": {
+    "whatItIs": "Release steps that turn Go program tags into downloadable archives.",
+    "goodAt": [
+      "Building Go binaries for several operating systems",
+      "Publishing archives with checksums"
+    ],
+    "notGoodAt": [
+      "Bun-compiled programs; choose bun-release."
+    ]
+  },
   "capabilities": [
     "release"
   ],

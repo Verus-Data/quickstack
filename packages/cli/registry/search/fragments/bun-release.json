@@ -27,6 +27,16 @@
       ]
     }
   ],
+  "plain": {
+    "whatItIs": "Release files and an installer for a Bun-compiled command-line program.",
+    "goodAt": [
+      "Publishing downloadable macOS and Linux binaries",
+      "Checking downloaded files before installation"
+    ],
+    "notGoodAt": [
+      "Windows or musl Linux binaries; add those targets separately."
+    ]
+  },
   "capabilities": [
     "release"
   ],

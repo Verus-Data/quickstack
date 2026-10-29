@@ -24,6 +24,16 @@
       "stack": "react-router"
     }
   ],
+  "plain": {
+    "whatItIs": "A browser chat app that streams OpenRouter replies and keeps server-side conversation history.",
+    "goodAt": [
+      "Trying model replies in a browser",
+      "Exporting conversations as Markdown"
+    ],
+    "notGoodAt": [
+      "Private accounts or restart-proof history; add authentication and durable storage."
+    ]
+  },
   "capabilities": [
     "ai"
   ],

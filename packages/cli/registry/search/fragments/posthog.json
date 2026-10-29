@@ -24,6 +24,16 @@
       "stack": "python-react"
     }
   ],
+  "plain": {
+    "whatItIs": "Browser analytics wiring for named product events and page views.",
+    "goodAt": [
+      "Tracking explicit browser events",
+      "Running tests without an analytics account"
+    ],
+    "notGoodAt": [
+      "Server-side analytics or error tracking; use separate tools."
+    ]
+  },
   "capabilities": [
     "analytics"
   ],
