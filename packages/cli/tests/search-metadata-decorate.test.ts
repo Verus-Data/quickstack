@@ -36,6 +36,11 @@ function draftCard(ref: Ref) {
         description: "An illustrative project built from the selected recipe.",
       },
     ],
+    plain: {
+      whatItIs: "A starter for a project using the selected recipe.",
+      goodAt: ["Building a small project"],
+      notGoodAt: ["Shipping a finished product without further work"],
+    },
   };
 }
 function setup() {
@@ -56,7 +61,7 @@ async function drafted(f: DecorateWorkspace, ref: Ref = mobile) {
     by: "drafted",
     model,
     reviewedAt: null,
-    promptVersion: 2,
+    promptVersion: 3,
   });
   expect(value.source.promptVersion).toBeGreaterThan(0);
   expect(value).toEqual({ ...draftCard(ref), source: value.source });
@@ -114,6 +119,26 @@ function files(root: string): string[] {
     return statSync(path).isDirectory() ? files(path) : [path];
   });
 }
+
+test("new drafts without plain copy are rejected after the correction retry [4.5f#1]", async () => {
+  const f = setup();
+  const { plain: _plain, ...withoutPlain } = draftCard(mobile);
+  const response = { ...withoutPlain, source: card(mobile).source };
+  const server = await openRouter([
+    { content: JSON.stringify(response) },
+    { content: JSON.stringify(response) },
+  ]);
+  try {
+    const result = await decorate(f, [mobile.id, "--model", model], {
+      env: { OPENROUTER_BASE_URL: server.url, OPENROUTER_API_KEY: sentinel },
+    });
+    success(result);
+    expect(server.requests).toHaveLength(2);
+    expect(existsSync(cardPath(f.registry, mobile))).toBe(false);
+  } finally {
+    await server.close();
+  }
+});
 
 test("dry-run prints prompt sizes without contacting OpenRouter [4.5b#8]", async () => {
   const f = setup();

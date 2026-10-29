@@ -26,6 +26,12 @@ const ProjectExample = Schema.Struct({
     ),
   ),
 });
+const PlainItems = Schema.Array(Prose).check(Schema.isMinLength(1));
+export const Plain = Schema.Struct({
+  whatItIs: Prose,
+  goodAt: PlainItems,
+  notGoodAt: PlainItems,
+});
 const Source = Schema.Struct({
   digest: Schema.String.check(Schema.isPattern(/^sha256:[a-f0-9]{64}$/)),
   by: Schema.Literals(["author", "drafted"]),
@@ -42,6 +48,8 @@ const identity = {
   /** Display copy only; excluded from ranking and embeddings. */
   seoDescription: Schema.optionalKey(Prose),
   projectExamples: Schema.optionalKey(Schema.Array(ProjectExample)),
+  /** Display copy only; excluded from ranking and embeddings. */
+  plain: Schema.optionalKey(Plain),
 };
 const common = {
   requests: Words,

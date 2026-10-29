@@ -1,5 +1,5 @@
 import type { Kind } from "@steamfield/stacks-format";
-import { SearchMetadata, SearchVocabulary } from "@steamfield/stacks-format";
+import { DependencyCardFile, SearchMetadata, SearchVocabulary } from "@steamfield/stacks-format";
 import { Effect, FileSystem, Path, Schema } from "effect";
 import { PermissionDenied } from "../../errors";
 import { SEARCH_DIRECTORY } from "../../project-layout";
@@ -40,6 +40,11 @@ export const decodeSidecar = (bytes: Uint8Array) =>
   );
 export const decodeVocabulary = (bytes: Uint8Array) =>
   Schema.decodeUnknownEffect(Schema.fromJsonString(SearchVocabulary))(
+    new TextDecoder().decode(bytes).replace(/^\uFEFF/, ""),
+    { onExcessProperty: "error" },
+  );
+export const decodeDependencyCards = (bytes: Uint8Array) =>
+  Schema.decodeUnknownEffect(Schema.fromJsonString(DependencyCardFile))(
     new TextDecoder().decode(bytes).replace(/^\uFEFF/, ""),
     { onExcessProperty: "error" },
   );

@@ -66,6 +66,11 @@ const editorial = {
     "Build a command with structured output and configuration overrides for local automation.",
   seoDescription: "Build a configurable command for local automation with structured output.",
   projectExamples: [example],
+  plain: {
+    whatItIs: "A starter for a command line utility.",
+    goodAt: ["Automating repeated local tasks"],
+    notGoodAt: ["Hosting a public website"],
+  },
 };
 const decode = (value: unknown) =>
   Effect.runPromise(decodeSidecar(new TextEncoder().encode(JSON.stringify(value))));
@@ -471,7 +476,7 @@ async function expectCompleteDraft(f: DecorateWorkspace, complete: unknown) {
       digest: await sourceDigest(f.registry, stack),
       by: "drafted",
       model: "codex/gpt-6.1-sol",
-      promptVersion: 2,
+      promptVersion: 3,
       reviewedAt: null,
     },
   });
@@ -489,7 +494,7 @@ test.each([
   {
     label: "legacy-shaped response",
     reply: card(stack),
-    fields: ["description", "seoDescription", "projectExamples"],
+    fields: ["description", "seoDescription", "projectExamples", "plain"],
   },
   {
     label: "blank description",
@@ -608,8 +613,8 @@ test.each(["malformed JSON", "unknown property"])(
   },
 );
 
-test("prompt v2 supplies recipe references and honest editorial instructions through the draft boundary [4.5b#22]", async () => {
-  expect(PROMPT_VERSION).toBe(2);
+test("prompt v3 supplies recipe references and honest editorial instructions through the draft boundary [4.5b#22]", async () => {
+  expect(PROMPT_VERSION).toBe(3);
   for (const value of EXAMPLE_CARDS) {
     expect(await decode(value)).toMatchObject({
       description: expect.any(String),
@@ -684,7 +689,7 @@ test("prompt v2 supplies recipe references and honest editorial instructions thr
       "seoDescription",
       "160 Unicode code points",
       "display only",
-      "description, seoDescription and projectExamples are display only, unscored and unembedded",
+      "description, seoDescription, projectExamples and plain are display only, unscored and unembedded",
       "material platform and operating limits",
       "memory-only history",
       "URL-based access",
@@ -715,7 +720,7 @@ test("prompt v2 supplies recipe references and honest editorial instructions thr
         digest: expect.stringMatching(/^sha256:/),
         by: "drafted",
         model: "codex/gpt-6.1-sol",
-        promptVersion: 2,
+        promptVersion: 3,
         reviewedAt: null,
       },
     });

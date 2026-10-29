@@ -1,5 +1,6 @@
 import {
   DependencyAllowlist,
+  DependencyCards,
   DirectoryData,
   type IndexEntry,
   OfficialNames,
@@ -112,6 +113,7 @@ export const publish = Effect.fn("index.publish")(function* (options: {
   index: RegistryIndex;
   names: OfficialNames;
   allowlist: DependencyAllowlist;
+  deps: DependencyCards;
   search: SearchIndex;
   directory: DirectoryData;
   bundles: ReadonlyMap<string, Uint8Array>;
@@ -128,6 +130,7 @@ export const publish = Effect.fn("index.publish")(function* (options: {
     `${JSON.stringify(options.allowlist, null, 2)}\n`,
     options.key,
   );
+  const depsEnvelope = yield* signIndex(`${JSON.stringify(options.deps, null, 2)}\n`, options.key);
   yield* Schema.decodeUnknownEffect(SearchIndex)(options.search);
   const searchEnvelope = yield* signIndex(
     `${JSON.stringify(options.search, null, 2)}\n`,
@@ -141,6 +144,7 @@ export const publish = Effect.fn("index.publish")(function* (options: {
   yield* Schema.decodeUnknownEffect(RegistryIndex)(options.index);
   yield* Schema.decodeUnknownEffect(OfficialNames)(options.names);
   yield* Schema.decodeUnknownEffect(DependencyAllowlist)(options.allowlist);
+  yield* Schema.decodeUnknownEffect(DependencyCards)(options.deps);
   yield* Schema.decodeUnknownEffect(DirectoryData)(options.directory);
   yield* Effect.scoped(
     Effect.gen(function* () {
@@ -168,6 +172,10 @@ export const publish = Effect.fn("index.publish")(function* (options: {
       yield* fs.writeFileString(
         path.join(stage, "v1/allowlist.json"),
         `${JSON.stringify(allowlistEnvelope, null, 2)}\n`,
+      );
+      yield* fs.writeFileString(
+        path.join(stage, "v1/deps.json"),
+        `${JSON.stringify(depsEnvelope, null, 2)}\n`,
       );
       yield* fs.writeFileString(
         path.join(stage, "v1/search.json"),

@@ -110,3 +110,5 @@ Acceptance tests pass and the gate is green. A maintainer has read and approved 
 
 - The 30-word `whatItIs` cap may be too tight for apps; it is a warning, so loosen it from evidence.
 - 2026-10-29 (test authoring): test 12 said a missing `plain` omits `dependencyCards` too, which contradicted the design (dependency cards come from the bundled root, independent of the entry's sidecar). The test and item now keep the cards.
+- 2026-10-29 (implementation): acceptance test 3 requires four plain-list items to decode and produce `search-size`, although the design says 1 to 3 items. The schema enforces a nonempty list and validation warns above three; dependency-card lists still reject four items at decode time as test 6 requires.
+- 2026-10-29 (implementation): drafted dependency cards carry `deps-unreviewed` warnings until a maintainer stamps them, and `build:index` (signed or unsigned) refuses a registry with warnings, so an index carrying the cards can be built only after review.
