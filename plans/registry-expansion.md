@@ -178,9 +178,10 @@ stacks is authored. Django stays in Batch 3 because it is PyPI.
 (`drizzle-postgres`, `effect-sql-postgres`, `redis`, `bullmq`, `s3-storage`,
 `grafana-lgtm`) cites it instead of inventing its own:
 
-1. The Compose project name and host ports come from the project (env with a
-   default derived from the project name), so two checkouts or worktrees never
-   share a container or a port.
+1. Host ports are env variables with fixed defaults (`PORT_DB`, `PORT_DB_TEST`
+   in `postgres`), and the Compose project name is the project's, so a second
+   checkout or worktree sets its own ports in `.env` and never shares a
+   container. The fragment's guidance says so.
 2. A test run creates the databases, keys, queues or buckets it uses under
    run-owned names and removes only those. Never truncate, flush or drop by
    prefix on a shared service.
