@@ -1,6 +1,6 @@
 # Bundled stack audit
 
-Status: REVIEWED 2026-10-29. Finding 1's ownership rewrite landed in `10dcf1c` and `4203b84`; a devils-advocate review of the findings found a lock-order race in that rewrite and a teardown that breaks it, so finding 1 is reopened for those two follow-ups. Findings 2 to 8 are open. The "Fix guide" at the end is the implementation contract for all of them.
+Status: EXECUTED 2026-10-29 except task 8. Fix guide tasks 1 to 7 (findings 1 to 6 and 8) landed together; the changed compositions await a bench run. Task 8 (finding 7, the dev-logs fragment) is blocked: moving `scripts/logs.ts` and `scripts/dev-logs.ts` out of the stacks broke repository typecheck, because other stack-owned scripts import them by relative path before composition, and the attempt put `typescript-api --with rr` at 6,001 of 6,000 words. It needs a different extraction design or should be dropped. Two CLI questions stay open: whether `--with` of a fragment that doesn't fit should fail `new`, and the misleading `validate --brief` error for that case, which reports "fragments.optional names <fragment>" although the stack never listed it.
 
 All ten stacks define testing tools and a concrete proving slice. The useful work is tightening what verification actually proves, correcting fragment contracts, and sharing a small amount of duplicated infrastructure. There is no evidence here for replacing the testing frameworks or adding a database, auth provider, or deployment target to every stack.
 

@@ -3,7 +3,7 @@
   "kind": "fragment",
   "id": "openrouter-ai",
   "source": {
-    "digest": "sha256:f0108bbd24c6069ed195c18c699b0960405ab70d47b62a3151f37ab6a7b36591",
+    "digest": "sha256:7a1ce4e21365fc48043a19fcb4264b788417166eba7cd3bf1a5d8e095f012863",
     "by": "drafted",
     "model": "claude/claude-opus-5-5",
     "promptVersion": 2,

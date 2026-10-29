@@ -32,7 +32,8 @@ verify:
   - { name: test, layer: test, run: make test }
   - { name: home-route-test, layer: test, run: cd frontend && bun run test app/routes/home.test.tsx }
   - { name: api-contract, layer: check, run: make check-api }
-  - { name: build, layer: build, run: make build, tags: [prod] }
+  - { name: build, layer: build, run: make build }
+  - { name: e2e, layer: test, run: make e2e }
   - name: api
     phase: serve
     layer: serve
@@ -148,13 +149,13 @@ Every generator runs in its subdirectory, never the populated root.
 - **Vitest**: own `vitest.config.ts` with `@vitejs/plugin-react` (not the React Router plugin), `happy-dom`, `globals`, `setupFiles: ["./tests/setup.ts"]`, include `app/**/*.test.{ts,tsx}`, exclude `tests/e2e/**`, tsconfig's aliases, and vendor keys (`VITE_PUBLIC_POSTHOG_KEY`) set to `""` in `test.env`. v8 coverage (text + lcov) over `app/**` minus generated code and route entries; thresholds 80 lines/statements, 70 branches, 75 functions.
 - **tests/setup.ts**: jest-dom matchers, MSW server set to fail on any unhandled request (find the installed MSW's option for it; reset per test), Testing Library cleanup.
 - **orval**: from `./openapi.json`, (1) TanStack Query hooks + zod schemas in `app/api/generated/` using `app/lib/api.ts` as the custom mutator, with the fetch client configured so hooks return the success body itself rather than a `{data, status, headers}` wrapper (the fetcher throws on non-2xx; check orval's docs for the current option names, more than one may be involved); (2) MSW handlers in `tests/mocks/generated/`. Its post-generation Prettier hook respects `.prettierignore`, which is why generated dirs stay out of it. MSW handlers use `@faker-js/faker`. Default to camelCase on the wire via a shared `ApiModel` pydantic base model with camelCase aliases (serialize by alias, accept both on input); keep Python code snake_case.
-- **Playwright**: chromium, CI retries and `forbidOnly`, HTML report with `open: "never"`; `webServer` runs `make dev-api` and `make dev-web`, reusing servers outside CI only.
+- **Playwright**: chromium, CI retries and `forbidOnly`, HTML report with `open: "never"`; `webServer` runs `make dev-api PORT_API=18000` and `make dev-web PORT_WEB=15173 PORT_API=18000` from the project root with `reuseExistingServer: false`. Set the browser base URL to port 15173. These test ports differ from verify's later serve probes; Playwright stops both owned servers when the run ends and never stops a user's servers.
 
 ## Testing
 
 - **Backend**: shared fixtures in `tests/conftest.py`; the real app via `httpx.AsyncClient` + `ASGITransport(app=create_app(test_settings))`, entering the lifespan. Assert status codes, the envelope for 404/422/500, bodies. Test services directly. Stub external HTTP at the transport (respx or `httpx.MockTransport`), never your own code.
 - **Frontend**: Testing Library by role/label, `user-event`, a fresh `QueryClient` with retries off per test, MSW via generated handlers (override inline for error and empty states). Build on `tests/render.tsx` and `tests/mocks/server.ts`. The test DOM enforces CORS on requests to another origin (a test of `VITE_API_BASE_URL`): give those handlers CORS headers, and answer `OPTIONS` if it preflights.
-- **E2E**: a few Playwright smoke paths; `make e2e`, not verify.
+- **E2E**: a few Playwright smoke paths; verify runs `make e2e`.
 - `make coverage` enforces both halves' thresholds; `make test` stays fast.
 
 ## Commands
@@ -162,7 +163,7 @@ Every generator runs in its subdirectory, never the populated root.
 The shipped root Makefile (`make help`) has `backend-*` and `frontend-*` sub-targets (install, lint, format, typecheck, test, coverage; plus `frontend-build`) that the combined targets call: install, lint, format, typecheck, test, coverage, build, dev, dev-api, dev-web, generate-api, check-api (a verify step: fails when `openapi.json` no longer matches the spec the backend dumps, compared as parsed JSON so formatting doesn't matter; it checks the spec only, not the generated client, which `generate-api` rebuilds from it and `typecheck` catches drifting), e2e, clean. `frontend/package.json` scripts back the frontend half: `dev`, `build`, `typecheck` (`react-router typegen && tsc`), `lint`, `format`, `test` (`vitest run`), `test:e2e`, `generate:api`. Mirror both in AGENTS.md.
 <!-- stacks:when with=ci-github -->
 
-**CI.** Two jobs behind the `changes` filter. Backend: uv's setup action (cache on, `.python-version`), then `make backend-install backend-lint backend-typecheck backend-coverage`. Frontend: bun's setup action, which reads `packageManager` from `frontend/package.json`, then `make frontend-install frontend-lint frontend-typecheck frontend-coverage frontend-build check-api`; `check-api` dumps the backend's spec, so this job also sets up uv and runs `make backend-install` first. Use the `-test` targets instead of `-coverage` if the coverage decision is no. Playwright (`make e2e`), if wanted, is its own job.
+**CI.** Two jobs behind the `changes` filter. Backend: uv's setup action (cache on, `.python-version`), then `make backend-install backend-lint backend-typecheck backend-coverage`. Frontend: bun's setup action, which reads `packageManager` from `frontend/package.json`, then `make frontend-install frontend-lint frontend-typecheck frontend-coverage frontend-build check-api`; `check-api` dumps the backend's spec, so this job also sets up uv and runs `make backend-install` first. Use the `-test` targets instead of `-coverage` if the coverage decision is no. The Playwright job runs `make e2e` and is required by the CI aggregate.
 <!-- stacks:end -->
 
 ## Gotchas

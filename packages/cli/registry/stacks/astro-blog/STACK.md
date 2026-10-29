@@ -27,7 +27,7 @@ verify:
   - { name: lint, layer: lint, run: make lint }
   - { name: check, layer: typecheck, run: make check }
   - { name: test, layer: test, run: make test }
-  - { name: build, layer: build, run: make build, tags: [prod] }
+  - { name: build, layer: build, run: make build }
   - name: web
     phase: serve
     layer: serve

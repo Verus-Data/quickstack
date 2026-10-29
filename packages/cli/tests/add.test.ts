@@ -948,6 +948,25 @@ test("a known stack enforces fragment compatibility without changing project or 
   expect(readFileSync(file)).toEqual(state);
 });
 
+test("astro-blog refuses bun-release as inapplicable", async () => {
+  const project = addProject();
+  project.registry = join(import.meta.dirname, "../registry");
+  const created = await addCli(project, [
+    "new",
+    "astro-blog",
+    project.root,
+    "--no-launch",
+    "--json",
+  ]);
+  expect(created.status).toBe(0);
+  expect(created.stderr).toBe("");
+  const before = snapshot(project.root);
+  expect(
+    refused(await addCli(project, ["add", "bun-release", "--json"]), 2, "ComposeConflict").details,
+  ).toMatchObject({ reason: "applies_to", ids: ["bun-release"] });
+  expect(snapshot(project.root)).toEqual(before);
+});
+
 test("an absent dependency is added once before its dependent in a plain repository [3.0#1]", async () => {
   const project = addProject();
   const result = await added(await addCli(project, ["add", "ci-github", "--json"]));

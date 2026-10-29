@@ -1,8 +1,8 @@
 # {{project_name}} development commands.
 #
 # A starting point: adapt the recipes to the project, but keep the target
-# names. `stacks verify` calls install, lint, typecheck, test, bindings-check,
-# architecture-check, e2e, build and dev-web. CI calls the -web and -rust
+# names. `stacks verify` calls install, lint, typecheck, check-targets, test,
+# bindings-check, architecture-check, e2e, build and dev-web. CI calls the -web and -rust
 # halves per job; the combined targets are for local use.
 
 PORT_WEB ?= 1420
@@ -15,7 +15,7 @@ BINDINGS := src/core/generated/bindings.ts
 
 .DEFAULT_GOAL := help
 .PHONY: help install dev dev-web build bindings bindings-check \
-	lint lint-web lint-rust format typecheck typecheck-web typecheck-rust \
+	lint lint-web lint-rust format typecheck typecheck-web typecheck-rust check-targets \
 	test test-web test-rust coverage e2e architecture-check check clean stub-dist
 
 help: ## List targets
@@ -69,6 +69,11 @@ typecheck-web: ## tsc over every TypeScript project
 typecheck-rust: stub-dist ## cargo check
 	cargo check --workspace --all-targets
 
+check-targets: ## cargo check the library crates for every promised platform
+	for t in x86_64-unknown-linux-gnu aarch64-apple-darwin x86_64-pc-windows-msvc; do \
+		cargo check --workspace --exclude $(APP_CRATE) --target $$t || exit 1; \
+	done
+
 test: test-web test-rust ## Vitest and cargo test
 
 test-web: ## Vitest
@@ -86,7 +91,7 @@ e2e: ## Playwright against the Vite dev server on the mock transport (browser fr
 architecture-check: ## Cargo dependency edges against scripts/architecture/crate-edges.json
 	bash -o pipefail -c 'cargo metadata --no-deps --format-version 1 | jq -e --slurpfile allowed scripts/architecture/crate-edges.json -f scripts/architecture/crate-edges.jq'
 
-check: lint typecheck test bindings-check architecture-check e2e ## The gate: everything above
+check: lint typecheck check-targets test bindings-check architecture-check e2e ## The gate: everything above
 
 # tauri::generate_context! embeds the frontend dist at compile time, so any
 # cargo build of src-tauri needs the directory to exist, even empty.

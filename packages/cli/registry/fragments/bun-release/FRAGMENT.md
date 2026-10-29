@@ -6,7 +6,7 @@ category: release
 name: Bun binary releases
 description: Release a Bun-compiled CLI as standalone binaries for macOS and glibc Linux on x64 and arm64, with SHA256SUMS, a checksum-verifying install.sh, an atomic self-update command and a tag-triggered GitHub release workflow.
 tags: [bun, release]
-applies_to: [bun]
+applies_to: [typescript-cli]
 tools: [bun]
 decisions:
   - "Release targets: darwin arm64 and x64, Linux x64 and arm64 with glibc (default). Defer musl and Windows."

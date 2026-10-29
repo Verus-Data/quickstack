@@ -1,7 +1,7 @@
 # {{project_name}} development commands.
 #
 # A starting point: adapt the recipes, but keep the target names.
-# `stacks verify` calls install, build, vet, lint, test and smoke, and CI
+# `stacks verify` calls install, build, vet, lint, test, test-integration and smoke, and CI
 # should call the same targets (golangci-lint's own action is the one exception).
 
 BIN      := {{project_slug}}
@@ -41,8 +41,8 @@ install: ## Download modules and install dev tools that are missing
 build: ## Build the binary into bin/ with version info
 	go build -ldflags "$(LDFLAGS)" -o bin/$(BIN) $(PKG)
 
-vet: ## Type-check every package, tests included (go vet)
-	go vet ./...
+vet: ## Type-check every package, including tagged integration tests (go vet)
+	go vet -tags integration ./...
 
 lint: ## Run golangci-lint
 	$(require_golangci_lint)
@@ -63,6 +63,7 @@ test: ## Unit tests
 	go test ./...
 
 test-integration: ## Integration tests (build and run the binary)
+	@find tests/integration -type f -name '*_test.go' -exec grep -l '^func Test' {} \; | grep -q . || { echo "test-integration: no tests under tests/integration"; exit 1; }
 	go test -tags integration ./tests/integration/...
 
 coverage: ## Race-enabled tests with a coverage floor
@@ -78,7 +79,7 @@ smoke: build ## Build and run the binary's --help and --version
 	./bin/$(BIN) --help >/dev/null
 	./bin/$(BIN) --version
 
-ci: fmt-check lint coverage vuln build ## Everything CI runs
+ci: fmt-check lint coverage test-integration vuln build ## Everything CI runs
 
 clean: ## Remove build and coverage output
 	rm -rf bin/ dist/ coverage.out coverage.html

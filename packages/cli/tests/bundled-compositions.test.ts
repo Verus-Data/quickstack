@@ -300,6 +300,28 @@ test.each(gate)(
   },
 );
 
+test.each([
+  ["astro-blog", "bun-release"],
+  ["react-router", "bun-release"],
+  ["mobile-expo", "docker-deploy"],
+  ["astro-blog", "openrouter-ai"],
+])("%s warns when %s does not apply", async (stack, fragment) => {
+  const run = await cli(["validate", "--brief", stack, "--with", fragment, "--json"]);
+  expect(run.status).toBe(2);
+  expect(JSON.parse(run.stderr)).toMatchObject({ error: { tag: "ValidationFailed" } });
+  const preview = Schema.decodeUnknownSync(BriefPreview)(JSON.parse(run.stdout));
+  expect(preview.warnings).toEqual([{ code: "with_not_applicable", id: fragment }]);
+});
+
+test.each(["astro-blog", "python-react"])(
+  "%s keeps the build step enabled in sandbox verification",
+  async (stack) => {
+    const result = await scaffold(stack, `build-${stack}-sandbox`, ["--sandbox"]);
+    const build = readManifestAt(result.project).verify.find((step) => step.name === "build");
+    expect(build).toMatchObject({ skipByDefault: false });
+  },
+);
+
 test("a shared fragment branch for another stack leaves gate briefs and fingerprints unchanged [3.3b#4]", async () => {
   const registry = join(home, "conditional-registry");
   cpSync(bundled, registry, { recursive: true });

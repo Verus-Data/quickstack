@@ -26,6 +26,7 @@ verify:
   - { name: vet, layer: typecheck, run: make vet }
   - { name: lint, layer: lint, run: make lint }
   - { name: test, layer: test, run: make test }
+  - { name: test-integration, layer: test, run: make test-integration }
   - { name: smoke, layer: test, run: make smoke }
   - name: readme-filled
     layer: check
@@ -33,7 +34,7 @@ verify:
 commands:
   install: Download modules and install dev tools that are missing
   build: Build the binary into bin/ with version info
-  vet: Type-check every package, tests included (go vet)
+  vet: Type-check every package, including tagged integration tests (go vet)
   lint: Run golangci-lint
   lint-fix: Run golangci-lint with --fix
   fmt: Format code
@@ -43,7 +44,7 @@ commands:
   coverage: Race-enabled tests with a coverage floor
   vuln: Check dependencies for known vulnerabilities (govulncheck)
   smoke: Build and run the binary's --help and --version
-  ci: "Everything CI runs (fmt-check, lint, coverage, vuln, build): the full check"
+  ci: "Everything CI runs (fmt-check, lint, coverage, test-integration, vuln, build): the full check"
   clean: Remove build and coverage output
 ---
 
@@ -110,7 +111,7 @@ No generator; write the code by hand at the root.
 The shipped Makefile (`make help`) has install, build, vet, lint, lint-fix, fmt, fmt-check (gofmt and goimports), test, test-integration, coverage, vuln (govulncheck), smoke, ci, clean. Adapt recipes, keep the names, mirror them in AGENTS.md.
 <!-- stacks:when with=ci-github -->
 
-**CI.** Go's setup action with the version read from `go.mod`. Steps: `make fmt-check`, lint, `make coverage` (`make test` if the coverage decision is no), `make vuln`, `make build`. Lint is the one sanctioned exception to calling make targets: use golangci-lint's official action with its `version-file` input pointed at `.golangci-lint-version` (the file `make lint` checks against; the action accepts only that name or `.tool-versions`), because the action installs and caches that exact binary.
+**CI.** Go's setup action with the version read from `go.mod`. Steps: `make fmt-check`, lint, `make coverage` (`make test` if the coverage decision is no), `make test-integration`, `make vuln`, `make build`. Lint is the one sanctioned exception to calling make targets: use golangci-lint's official action with its `version-file` input pointed at `.golangci-lint-version` (the file `make lint` checks against; the action accepts only that name or `.tool-versions`), because the action installs and caches that exact binary.
 <!-- stacks:end -->
 
 ## Gotchas

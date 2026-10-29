@@ -24,6 +24,7 @@ verify:
   - { name: typecheck, layer: typecheck, run: bun run typecheck }
   - { name: test, layer: test, run: bun run test }
   - { name: build, layer: build, run: bun run build }
+  - { name: e2e, layer: test, run: bun run e2e }
   - name: web
     phase: serve
     layer: serve
@@ -54,6 +55,8 @@ commands:
 # React Router with Effect
 
 One SSR application in framework mode. React components use loaders/actions and resource routes; server programs run on one Effect runtime. Package scripts are the entry points. The base proving slice is `/healthz` through config, logging, a service, and the runtime, plus a minimal page. No vendor account or reference application is needed.
+
+Read `docs/guidance/react-router/index.md` for the shared conventions and link it from AGENTS.md.
 
 ## Layout
 

@@ -14,9 +14,17 @@ to `archive/` and leave a link.
 The subsequent [stack audit](stack-audit-2026-10-29.md) reviews all ten stacks and
 records eight findings, including Postgres test-database ownership, fragment
 compatibility, verification gaps and two shared-infrastructure opportunities.
-Finding 1 is fixed (the Postgres harness now uses run-owned template and
-database names, never prefix cleanup); the other seven are open. Registry
-validation returned no errors or warnings. Fresh project benches were not run.
+A devils-advocate review corrected the findings, and the audit's fix guide
+landed except task 8: Postgres lock order and teardown, Go integration tests
+in vet/verify/CI, `bun-release`, `docker-deploy` and `openrouter-ai` narrowed
+to the stacks they describe, sandbox builds for astro-blog and python-react,
+browser smoke in verify for react-router and python-react, Tauri
+`check-targets`, and React Router and Tauri guidance moved to portable
+`docs/guidance/`. The dev-logs fragment extraction (task 8) is blocked on
+typecheck and budget; see the audit's Status line for it and two open CLI
+questions. Gate brief digests and five stack search cards were restamped;
+astro-blog, go-cli, python-react, react-router and tauri-react need a bench
+run before their compositions count as proven.
 
 An audit of every bundled entry's naming, descriptions and search cards was applied: clearer
 descriptions, search card facets, synonyms and exclusions, Go and `fullstack` vocabulary

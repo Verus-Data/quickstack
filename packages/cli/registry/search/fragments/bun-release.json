@@ -3,7 +3,7 @@
   "kind": "fragment",
   "id": "bun-release",
   "source": {
-    "digest": "sha256:998e0bcb4d18ec7e736f61d034cdd5f1b0f94610da14fa769decb7a3080d9021",
+    "digest": "sha256:6c6e94d539b8a44e85b9ee0d377fbb2c76fafe06c695f9dd85f03142119e658c",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 2,

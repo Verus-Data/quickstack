@@ -26,6 +26,7 @@ verify:
   - { name: install, phase: setup, layer: install, run: make install }
   - { name: lint, layer: lint, run: make lint }
   - { name: typecheck, layer: typecheck, run: make typecheck }
+  - { name: check-targets, layer: typecheck, run: make check-targets }
   - { name: test, layer: test, run: make test }
   - { name: bindings, layer: check, run: make bindings-check }
   - { name: architecture, layer: lint, run: make architecture-check }
@@ -53,6 +54,7 @@ commands:
   typecheck: typecheck-web and typecheck-rust
   typecheck-web: tsc over every TypeScript project
   typecheck-rust: cargo check over the workspace
+  check-targets: cargo check the library crates for Linux, macOS and Windows
   test: test-web and test-rust
   test-web: Vitest
   test-rust: cargo test over the workspace
@@ -66,6 +68,8 @@ commands:
 # Tauri desktop app with React
 
 One desktop application. Rust owns data and behavior in a workspace of library crates; `src-tauri/` is a thin shell that registers commands, channels, windows, and plugins. The React frontend renders inside Tauri webviews and reaches Rust only through `@core/transport`, which has a native adapter over the generated bindings and a mock adapter that the browser dev server, Vitest, and Playwright use. The Makefile is the entry point for both halves.
+
+Read `docs/guidance/tauri-react/index.md` for the shared conventions and link it from AGENTS.md.
 
 The proving slice is one typed command and one live channel, exercised end to end: a `core` crate computes the values, the shell exposes `app_info` (name, version, and OS through a typed `Result`) and `subscribe_ticks` (a Channel that sends a counter and timestamp once a second until the window drops it), the bindings are generated, both transports implement them, and one window renders both. Stop there; product features come after a green verify.
 
@@ -93,7 +97,7 @@ Unit tests sit next to source (`*.test.ts(x)`, `#[cfg(test)] mod tests`); Rust i
 ## Setup
 
 1. Run the official Tauri app generator non-interactively in a temporary directory: app named with the project slug (the Makefile's `APP_CRATE` assumes it), bun, the React TypeScript template, the bundle identifier. Move its `package.json` (keep deps, replace scripts), `src-tauri/`, `index.html`, `src/`, and Vite config into the project. Keep its icons until real ones exist (list that under Deferred). Discard its README, tsconfig files (rewritten below), `.vscode/`, and any plugin the template adds that the slice doesn't use, with its capability entry. Delete the temp directory.
-2. Make the root `Cargo.toml` a workspace (members `crates/*` and `src-tauri`, current edition, matching resolver) with shared `[workspace.dependencies]` and `[workspace.lints]`, then create `crates/<slug>-core` with cargo and no VCS (otherwise cargo nests a git repo while the root has no commits). Pin the toolchain in `rust-toolchain.toml` with rustfmt and clippy.
+2. Make the root `Cargo.toml` a workspace (members `crates/*` and `src-tauri`, current edition, matching resolver) with shared `[workspace.dependencies]` and `[workspace.lints]`, then create `crates/<slug>-core` with cargo and no VCS (otherwise cargo nests a git repo while the root has no commits). Pin the toolchain in `rust-toolchain.toml` with rustfmt, clippy and the targets `x86_64-unknown-linux-gnu`, `aarch64-apple-darwin` and `x86_64-pc-windows-msvc`, so `make install` fetches them.
 3. In `tauri.conf.json`: product name, identifier, `devUrl` on `PORT_WEB`'s default (it's fixed there, so moving `PORT_WEB` for `make dev` means editing it too), `beforeDevCommand` running the `dev:web` script and `beforeBuildCommand` building the frontend. CSP: `default-src 'self'`, the IPC origins in `connect-src`, inline styles allowed for Vite and Tailwind, no remote scripts, and a dev CSP that also allows the HMR websocket. Capabilities grant each window only what it uses; the app's own commands need no permission, so start from an empty list.
 4. Add the `app` and `dev` deps with bun and the Rust deps with cargo at compatible current versions; `@types/node` matches the Node major. Set `packageManager`, `.node-version`, and engines.
 5. Initialize shadcn non-interactively (pick its base and preset explicitly; it prompts otherwise) with aliases into `src/app/`, and drop deps it made unused. Write `scripts/architecture/crate-edges.json`, configure the tools below, build the slice, and fill README and AGENTS.md.
@@ -118,7 +122,7 @@ A route-level error boundary catches render errors. A transport rejection is a f
 
 Dependencies point one way: shell -> core crates. `scripts/architecture/crate-edges.json` is an allowlist mapping every workspace member to its permitted `normal` and `dev` path dependencies (`{"<slug>-core": {"normal": [], "dev": []}, "<app crate>": {"normal": ["<slug>-core"], "dev": []}}`); `make architecture-check` pipes `cargo metadata --no-deps` through the shipped `crate-edges.jq`, which fails on unlisted members and forbidden edges. A new edge is a design change: update the policy deliberately, never just to silence the check.
 
-Logic that isn't Tauri-specific lives in a crate, testable without a webview. The shell uses `anyhow` with `.context(...)` at each boundary; never in a library's public API. Deny `clippy::unwrap_used`, `expect_used`, and `panic` in workspace lints and allow them in tests through clippy's config; a locally proven invariant takes a scoped `#[expect(clippy::expect_used, reason = "...")]`. A background task never takes the process down; it logs once and carries on. Platform code is gated with `cfg(target_os)` at module level, `unsafe` stays in one module per API with a `// SAFETY:` comment per block, and library crates must `cargo check` on every target platform. Prefer crates with bundled C libraries so the app needs no system installs.
+Logic that isn't Tauri-specific lives in a crate, testable without a webview. The shell uses `anyhow` with `.context(...)` at each boundary; never in a library's public API. Deny `clippy::unwrap_used`, `expect_used`, and `panic` in workspace lints and allow them in tests through clippy's config; a locally proven invariant takes a scoped `#[expect(clippy::expect_used, reason = "...")]`. A background task never takes the process down; it logs once and carries on. Platform code is gated with `cfg(target_os)` at module level, `unsafe` stays in one module per API with a `// SAFETY:` comment per block, and library crates must `cargo check` on every target platform. Prefer crates with bundled C libraries so the app needs no system installs. If a crate's build script compiles C, `check-targets` needs that target's C toolchain; install it or move that target's check to a CI runner on its OS and record the choice in AGENTS.md.
 
 ## Tool configuration
 
@@ -133,7 +137,7 @@ Logic that isn't Tauri-specific lives in a crate, testable without a webview. Th
 Mock at the transport seam on the frontend and at traits on the Rust side; never mock internal modules or `vi.mock` Tauri packages. Cover the slice at every layer: core unit tests; a shell test driving the tick loop with paused tokio time (including a skipped tick) through a sink trait or Tauri's test runtime; a Vitest test that renders the window through `renderWithProviders`, pushes two frames into the mock, and asserts what renders, plus the command error path and the ended-channel state; a render-count test proving a frame that changes one slice doesn't re-render a sibling; and a Playwright test that loads the window on the mock and sees the app info and a changing tick. Playwright can't drive the packaged webview (WebDriver doesn't support WKWebView on macOS), so the real webview is covered by Rust tests and a manual `make dev` check; list that under Pending user actions when you can't open a window.
 
 <!-- stacks:when with=ci-github -->
-CI has two jobs plus the aggregate `ci-ok`. The frontend job on Ubuntu runs `make install` (CI set: frozen lockfile, browser system deps), `lint-web`, `typecheck-web`, `coverage`, and `e2e`. The Rust job on the bundle platform (macOS by default) caches cargo and runs `lint-rust`, `test-rust`, `bindings-check`, and `architecture-check`; the toolchain comes from `rust-toolchain.toml`. A Linux Rust job needs Tauri's WebKitGTK packages. Upload Playwright reports on failure.
+CI has two jobs plus the aggregate `ci-ok`. The frontend job on Ubuntu runs `make install` (CI set: frozen lockfile, browser system deps), `lint-web`, `typecheck-web`, `coverage`, and `e2e`. The Rust job on the bundle platform (macOS by default) caches cargo and runs `lint-rust`, `test-rust`, `check-targets`, `bindings-check`, and `architecture-check`; the toolchain comes from `rust-toolchain.toml`. A Linux Rust job needs Tauri's WebKitGTK packages. Upload Playwright reports on failure.
 <!-- stacks:end -->
 
 <!-- stacks:when with=git-hooks -->

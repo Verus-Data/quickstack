@@ -6,7 +6,7 @@ category: vendor
 name: OpenRouter LLM provider
 description: "OpenRouter as the LLM provider for a TypeScript project: an optional API key, model discovery with a ten-minute cache, routing settings, bounded retries with safe upstream errors, a scriptable local stub server for tests, and an eval report format with a dry-run checker."
 tags: [typescript, ai, openrouter]
-applies_to: [typescript]
+applies_to: [typescript-api, react-router, typescript-cli]
 decisions:
   - "Default model: a cheap current model with tool support, selected from OpenRouter's public models list during setup (default), recorded as OPENROUTER_MODEL and as the application's fallback default when it needs one."
   - "Routing: no fallback models or provider sort; provider fallbacks and data collection allowed, zero-data-retention disabled (default). All routing settings are configurable."
