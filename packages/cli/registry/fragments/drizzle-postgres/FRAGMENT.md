@@ -3,10 +3,10 @@ schema_version: 1
 id: drizzle-postgres
 kind: fragment
 category: service
-name: PostgreSQL with Drizzle for Next.js
-description: "PostgreSQL for the Next.js stack through Drizzle ORM and node-postgres (pg): Docker Compose dev and test databases, checked-in SQL migrations with a drift check, a server-only database module and repository, a readiness route, and tests on databases cloned from a migrated template."
+name: PostgreSQL with Drizzle for Next.js and SvelteKit
+description: "PostgreSQL for the Next.js and SvelteKit stacks through Drizzle ORM and node-postgres (pg): Docker Compose dev and test databases, checked-in SQL migrations with a drift check, a server-only database module and repository, a readiness route, and tests on databases cloned from a migrated template."
 tags: [database, postgres, drizzle, service]
-applies_to: [nextjs]
+applies_to: [nextjs, sveltekit]
 conflicts: [effect-sql-postgres]
 requires_tools: [docker]
 tools: [docker]
@@ -42,12 +42,10 @@ Read `docs/guidance/drizzle-postgres/index.md` and the two files it links, `data
 
 ## What to add
 
-1. **`compose.yaml`** with `db` and `db-test`, as `database.md` describes: host ports from `PORT_DB` and `PORT_DB_TEST`, a named volume for dev data, tmpfs and durability off for tests, healthchecks, the project slug as the Compose name.
-2. **Environment.** Add `PORT_DB`, `PORT_DB_TEST`, the `POSTGRES_*` values, `DATABASE_URL` and `TEST_DATABASE_URL` to the existing `.env.example` without removing its lines. A second checkout sets its own Compose project name, ports and URLs in `.env`; say so in README.
-3. **Dependencies and config.** Install the runtime and dev packages, checking peer ranges. Write `drizzle.config` and the schema file following `database.md`; the schema loads under plain Node, so it imports nothing from the app.
-4. **Scripts:** `db:up`, `db:migrate`, `db:generate`, `db:check`, `db:down` and `test:db`, wired as `database.md` and `testing.md` describe. `db:generate` is for development only, so it isn't in the verify commands; list it in AGENTS.md with the others. Add `test:db` and `db:check` to the stack's `check` script.
-5. **The first migration.** Define the `items` table (generated identity id, `name` text not null with a unique constraint, `created_at` with a default), run `db:generate`, read the SQL and commit it under `drizzle/`. Add `drizzle/` to the formatter's ignore file: drizzle-kit writes its own JSON snapshots, and reformatting them fails lint or changes what the drift check compares.
-6. **The database module, one repository and readiness**, placed as the host section below says, and the tests in `testing.md`.
+1. Add `compose.yaml` with dev and test services as `database.md` specifies. Extend `.env.example` with the database ports, credentials and URLs; document separate Compose names, ports and URLs for a second checkout.
+2. Install the declared dependencies, check peer ranges, add `drizzle.config` and a plain-Node schema, then generate and commit the first migration for `items` as `database.md` describes. Ignore `drizzle/` in the formatter.
+3. Wire `db:up`, `db:migrate`, `db:generate`, `db:check`, `db:down` and `test:db` as the guidance specifies. Keep `db:generate` development-only, list it in AGENTS.md, and add `test:db` and `db:check` to the host's `check` script.
+4. Add the database module, one repository, readiness route and tests as the host section and `testing.md` describe.
 
 Pool lifecycle belongs to the server process: one pool per process, created on first use, closed by the process or by the test that opened it. Never open a pool per request.
 
@@ -73,18 +71,17 @@ The items page now reads the database, so it must render per request: opt it out
 `vitest.db.config` reuses the base config's React plugin settings, `@/*` alias and `server-only` mapping, runs `tests/db/**/*.test.ts` in the node environment with the global setup from `testing.md`, and the base config excludes `tests/db/`. `e2e` needs `db:up` first; the Playwright global setup fails with a message naming `db:up` when `db-test` doesn't answer.
 <!-- stacks:end -->
 
+<!-- stacks:when stack=sveltekit -->
+## SvelteKit placement
+
+Follow the SvelteKit sections in `database.md` and `testing.md`. Put the schema, lazy pool and repository under `src/lib/server/`; `$lib/server` enforces the boundary, so omit `server-only`. Keep the items service interface for `+page.server.ts`, making its calls async and mapping duplicate names to the form action's field error. The page load and `/api/ready` query per request, without prerendering. `/api/health` returns only `{"status":"ok"}` and never queries Postgres; document its removed item count in README. Keep the shared zod parser, form and browser assertions.
+<!-- stacks:end -->
+
 <!-- stacks:when with=ci-github -->
 ## CI
 
 In the job that runs the tests, add a Postgres service container (the same image, a healthcheck, port 5432 mapped) and set `TEST_DATABASE_URL` to its maintenance database. Run `db:check` and `test:db` before e2e; e2e creates its own database on the same service. No credentials are needed.
 <!-- stacks:end -->
-
-## Gotchas
-
-- `CREATE DATABASE ... TEMPLATE` fails while any connection to the template is open. Close the migration pool before cloning.
-- Postgres truncates identifiers past 63 bytes without an error, so long generated database names can collide. Keep them short.
-- `pg` returns `bigint` and `numeric` columns as strings. Use integer identity ids unless the schema needs a bigger range, and parse deliberately where it does.
-- When a schema change could be a rename, `db:generate` asks which one it is, and an agent's shell can't answer. Put the rename in its own change, or ask the person to run `db:generate` at a terminal. Verify never runs it.
 
 ## AGENTS.md
 

@@ -29,11 +29,16 @@ drizzle-kit and the test runners run on Node, outside the framework's env loadin
 ## Migrations
 
 - `db:generate` runs drizzle-kit's generate against the schema file and writes a new migration under `drizzle/`. Review the SQL before committing it, and never edit a migration after it's committed; add a new one.
+- If a schema change could be a rename, `db:generate` may ask for a choice an agent's shell cannot answer. Put the rename in its own change, or ask the person to run generation in a terminal. Verify never generates migrations.
 - `db:migrate` applies the committed migrations to `DATABASE_URL`. It's an explicit step for development and release, never part of app start.
 - `db:check` fails when the migration history is inconsistent or when the schema has changes no migration covers. It never writes to `drizzle/`: it runs drizzle-kit's consistency check, then copies `drizzle/` to a temporary directory under the project, generates into the copy (point `drizzle.config`'s output directory at a relative-path env override for this) and fails if the copy gained a file. Check the generator output as well as its exit status: some releases report errors while exiting successfully. Fail unless generation confirms it completed. Remove the temporary copy even on failure. It needs no database. If the installed drizzle-kit's own `check --help` says it compares the schema with the migrations, use that alone.
 - `db:up` is `docker compose up -d --wait db db-test`, so it fails loudly when a service never turns healthy. `db:down` is `docker compose stop db`: it keeps the dev data and leaves `db-test` running, because another test run may be using it and its tmpfs data dies when it stops. Nothing in the project runs `docker compose down -v`; a person removes volumes.
 
 `drizzle.config` sets the PostgreSQL dialect, the schema file, `drizzle/` as output and strict mode. The schema file must load under plain Node: no `server-only` import, no path aliases, no imports from app code.
+
+The first migration defines `items` with a generated identity id, `name` text not null and unique, and `created_at` with a default. Run `db:generate`, review the SQL and commit it under `drizzle/`. Add that directory to the formatter's ignore file: drizzle-kit writes JSON snapshots that must stay in its own format for lint and drift checks.
+
+`pg` returns `bigint` and `numeric` columns as strings. Use integer identity ids unless the schema needs a bigger range, and parse deliberately where it does.
 
 ## The database module
 
@@ -42,3 +47,13 @@ One module owns the pool and the Drizzle instance. It creates both on first use,
 Export a factory that builds a repository from any Drizzle instance, and a default repository on the shared one. The app uses the default; tests build one on their own database. Repositories return typed rows and map expected database errors to results the caller can show: a unique violation (Postgres error code `23505`) becomes a field error, never a thrown error that reaches the error boundary. Other errors are thrown.
 
 Readiness runs `select 1` through the same pool with a bounded wait. It answers 200 `{"status":"ready"}` or 503 `{"status":"unavailable"}`, and never includes the error text. Liveness never touches the database.
+
+<!-- stacks:when stack=sveltekit -->
+## SvelteKit placement
+
+Keep the schema in `src/lib/server/db/schema.ts`, with no `$lib` aliases or `$env` imports because drizzle-kit loads it under plain Node. Put the lazy pool, Drizzle instance and readiness query in `src/lib/server/db/index.ts`; read `DATABASE_URL` on first use through the installed SvelteKit release's dynamic private environment module. Static private env is resolved at build time, when no database URL is guaranteed. `src/lib/server/items-repository.ts` exports the factory that accepts a Drizzle instance; `src/lib/server/items.ts` keeps the existing service's list and add interface over the shared repository. Do not import `server-only`: SvelteKit guards `$lib/server` itself.
+
+The `+page.server.ts` load and action await the service. Return the duplicate-name constraint as the action's existing field error with `fail`, leaving the shared zod parser and form intact. Do not prerender the page or `/api/ready`; put the readiness handler in `src/routes/api/ready/+server.ts`. Keep `src/routes/api/health/+server.ts` database-independent, returning `{"status":"ok"}` without the old item count.
+
+For this host, `db:up` notes whether it started `db` itself. `db:down` stops `db` only when this run started it; an already running service stays up. Leave `db-test` running because another test run may be using it. Keep the same `db:*` scripts and migrations-only schema source as Next.js.
+<!-- stacks:end -->
