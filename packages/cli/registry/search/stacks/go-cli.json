@@ -26,13 +26,14 @@
     }
   ],
   "plain": {
-    "whatItIs": "A starter for a Go program people run from a terminal.",
+    "whatItIs": "A starter for a terminal program written in the Go language, with settings and clear error messages.",
     "goodAt": [
-      "Commands with settings from flags and the environment",
-      "Human and machine-readable command results"
+      "Commands that read settings from files, environment variables and flags",
+      "Output for people to read, or in a structured form scripts can parse",
+      "Error messages that say what went wrong and how to fix it"
     ],
     "notGoodAt": [
-      "Graphical apps; choose a web or desktop stack."
+      "Graphical apps with windows and buttons; choose a web or desktop stack."
     ]
   },
   "platforms": [

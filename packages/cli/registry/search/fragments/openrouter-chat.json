@@ -25,13 +25,15 @@
     }
   ],
   "plain": {
-    "whatItIs": "A browser chat app that streams OpenRouter replies and keeps server-side conversation history.",
+    "whatItIs": "A browser chat app for AI models through OpenRouter, showing replies as they are written and keeping history on the server.",
     "goodAt": [
-      "Trying model replies in a browser",
-      "Exporting conversations as Markdown"
+      "Trying different AI models from a web page",
+      "Exporting a conversation as a plain-text Markdown file",
+      "Pulling contact details out of pasted text"
     ],
     "notGoodAt": [
-      "Private accounts or restart-proof history; add authentication and durable storage."
+      "Private accounts, or history that survives a restart; add sign-in and saved storage.",
+      "Keeping chats private, since anyone with a chat's link can open it."
     ]
   },
   "capabilities": [

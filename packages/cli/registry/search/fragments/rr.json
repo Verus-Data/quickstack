@@ -25,13 +25,15 @@
     }
   ],
   "plain": {
-    "whatItIs": "Named tasks that run existing project checks on configured remote computers.",
+    "whatItIs": "Runs a project's existing tests and checks on remote computers you reach over SSH, a remote login method, and reports the results.",
     "goodAt": [
-      "Running checks on hosts with the needed tools",
-      "Finding test results and logs from remote runs"
+      "Running checks on a computer that has tools your own computer lacks",
+      "Listing failing tests with file and line, so coding assistants can read the results",
+      "Running separate test areas at the same time"
     ],
     "notGoodAt": [
-      "Setting up personal SSH hosts; configure those separately."
+      "Setting up the remote computers themselves; you do that separately.",
+      "Replacing local checks: every command still works on your own computer."
     ]
   },
   "capabilities": [],

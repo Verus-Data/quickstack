@@ -23,13 +23,13 @@
     }
   ],
   "plain": {
-    "whatItIs": "A starter website with prebuilt pages and a separate API for live data.",
+    "whatItIs": "A starter website of pages built ahead of time, plus a separate server that supplies live data to some of them.",
     "goodAt": [
-      "Content pages that show current data through small interactive parts",
-      "Keeping site and API code in one workspace"
+      "Content pages that show current data in small interactive parts",
+      "Keeping website and server in one project, where type checks flag mismatched data"
     ],
     "notGoodAt": [
-      "Pages built on each request; choose a server-rendered stack."
+      "Pages the server builds for each visitor; use the React Router stack for those."
     ]
   },
   "platforms": [

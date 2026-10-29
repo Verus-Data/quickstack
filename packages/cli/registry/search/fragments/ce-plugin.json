@@ -25,12 +25,14 @@
     }
   ],
   "plain": {
-    "whatItIs": "Project guidance that connects Claude Code to the Claude Essentials plugin.",
+    "whatItIs": "Turns on a shared set of engineering guides and review helpers in Claude Code, and adds rules that point to them for tests, errors, debugging and writing.",
     "goodAt": [
-      "Pointing Claude Code to relevant engineering and writing guidance"
+      "Giving Claude Code guidance on writing tests and handling errors",
+      "Adding helpers that review code and logs, and critique plans"
     ],
     "notGoodAt": [
-      "Enforcing checks or guiding other assistants; use their own adapters."
+      "Enforcing checks, since it only gives guidance; use test commands or guards for that.",
+      "Helping other coding assistants such as Codex or Cursor; it works only in Claude Code."
     ]
   },
   "capabilities": [

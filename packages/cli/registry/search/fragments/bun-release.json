@@ -28,13 +28,15 @@
     }
   ],
   "plain": {
-    "whatItIs": "Release files and an installer for a Bun-compiled command-line program.",
+    "whatItIs": "Packages a command-line program built with Bun, a JavaScript runtime, into downloadable files for macOS and Linux, with an installer and an update command.",
     "goodAt": [
-      "Publishing downloadable macOS and Linux binaries",
-      "Checking downloaded files before installation"
+      "Publishing downloads for Intel and ARM Macs and Linux computers",
+      "Checking each download against a checksum, a file fingerprint, before installing it",
+      "Updating an installed program in place, keeping the old copy if a download fails"
     ],
     "notGoodAt": [
-      "Windows or musl Linux binaries; add those targets separately."
+      "Windows computers or some Linux systems such as Alpine; add those targets separately.",
+      "Updating a copy run from source code; the update command only works for installed builds."
     ]
   },
   "capabilities": [

@@ -23,13 +23,14 @@
     }
   ],
   "plain": {
-    "whatItIs": "A starter Node API with checked request and response shapes.",
+    "whatItIs": "A starter API, written in TypeScript (a typed form of JavaScript), that checks incoming requests and documents its own addresses.",
     "goodAt": [
-      "HTTP endpoints with shared error handling",
-      "Testing real requests against the server"
+      "Web services that return data to apps and websites",
+      "Consistent error replies when a request is wrong",
+      "Testing the real server by sending it actual requests"
     ],
     "notGoodAt": [
-      "Apps needing a built-in interface or database; add those separately."
+      "Projects that need a built-in screen or database; add those separately."
     ]
   },
   "platforms": [

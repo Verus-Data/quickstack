@@ -25,13 +25,13 @@
     }
   ],
   "plain": {
-    "whatItIs": "Database wiring and migration steps for a Cloudflare Workers app.",
+    "whatItIs": "Adds a small SQL database to a Cloudflare Workers web app, with saved steps for creating and changing tables and tests that need no cloud account.",
     "goodAt": [
-      "Local database tests without a cloud account",
-      "Adding SQL storage to a Workers app"
+      "Running database tests on your own computer without a cloud account",
+      "Reading and writing rows from a Workers app through a typed connection"
     ],
     "notGoodAt": [
-      "Postgres projects; choose a Postgres-backed stack."
+      "Projects that need PostgreSQL; this uses a different database that Cloudflare provides."
     ]
   },
   "capabilities": [

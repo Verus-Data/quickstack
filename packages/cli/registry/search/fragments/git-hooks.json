@@ -25,13 +25,14 @@
     }
   ],
   "plain": {
-    "whatItIs": "Local Git hooks that check staged files, commit messages and tests.",
+    "whatItIs": "Local Git checks that format and lint the files you are about to commit, check commit messages, and run tests before you push.",
     "goodAt": [
-      "Catching formatting and lint issues before a commit",
-      "Checking commit subjects and tests before sharing changes"
+      "Catching formatting and code-quality problems before each commit",
+      "Rejecting commit messages that lack a standard type prefix, such as fix or feat",
+      "Running the project's tests before code is pushed to a shared copy"
     ],
     "notGoodAt": [
-      "Hosted checks on pull requests; add CI separately."
+      "Checks on the shared copy after a push; the GitHub Actions add-on does that."
     ]
   },
   "capabilities": [

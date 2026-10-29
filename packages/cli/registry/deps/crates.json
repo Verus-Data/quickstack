@@ -2,165 +2,201 @@
   "formatVersion": 1,
   "cards": {
     "anyhow": {
-      "whatItIs": "A Rust library for passing application errors with context.",
-      "goodAt": ["Reporting errors from application code"],
-      "notGoodAt": ["Defining a public error contract; use typed errors."],
-      "example": "Add context when a file cannot be read.",
+      "whatItIs": "anyhow, a library for the Rust programming language that reports program errors and adds a plain explanation of what was being done.",
+      "goodAt": [
+        "Reporting failures from an app's own code with clear messages",
+        "Adding a note on which step failed, such as reading a file"
+      ],
+      "notGoodAt": [
+        "Defining exact error types that other code must check for; use thiserror for that."
+      ],
+      "example": "When the program cannot open a settings file, it reports that the settings file could not be opened, along with the reason.",
       "homepage": "https://github.com/dtolnay/anyhow",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
     "serde": {
-      "whatItIs": "A Rust framework for converting data to and from typed values.",
-      "goodAt": ["Reading and writing structured data"],
-      "notGoodAt": ["Choosing a storage system; add one separately."],
-      "example": "Convert a saved record into a Rust struct.",
+      "whatItIs": "serde, a library for the Rust programming language that converts data between saved text formats and the program's own data shapes.",
+      "goodAt": [
+        "Reading settings and records saved in a text format",
+        "Writing the program's data out in a form other programs can read"
+      ],
+      "notGoodAt": ["Storing data in a database; use a database library for that."],
+      "example": "When the program loads a saved order from a file, it turns the text into an order record the rest of the code can use.",
       "homepage": "https://serde.rs",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
     "serde_json": {
-      "whatItIs": "A Rust library for reading and writing JSON with Serde.",
-      "goodAt": ["Handling JSON data in Rust"],
-      "notGoodAt": ["Validating product rules by itself; add checks."],
-      "example": "Read a JSON settings document into a Rust value.",
+      "whatItIs": "serde_json, a library for the Rust programming language that reads and writes JSON, a text format for exchanging data.",
+      "goodAt": [
+        "Reading JSON settings or web responses into Rust data",
+        "Writing Rust data out as JSON text"
+      ],
+      "notGoodAt": ["Checking business rules by itself; the program needs its own checks."],
+      "example": "When a settings file arrives as JSON, the program reads it into a Rust record and reports a clear error if a required part is missing.",
       "homepage": "https://github.com/serde-rs/json",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
     "specta": {
-      "whatItIs": "A Rust library for exporting type definitions to other languages.",
-      "goodAt": ["Sharing Rust data shapes with frontend code"],
-      "notGoodAt": ["Providing desktop commands; use a desktop framework."],
-      "example": "Export a Rust result type for a frontend.",
+      "whatItIs": "specta, a library for the Rust programming language that writes the shape of a program's data into other programming languages, so both sides agree on it.",
+      "goodAt": [
+        "Sharing Rust data shapes with the code that draws a website or desktop screen",
+        "Catching a mismatch between Rust data and the screen code that reads it"
+      ],
+      "notGoodAt": ["Providing the actions a desktop app performs; use Tauri for that."],
+      "example": "A Rust part of a desktop app returns a list of saved files, and the screen code gets a matching shape, so it can show the list without guessing.",
       "homepage": "https://github.com/specta-rs/specta",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
     "specta-typescript": {
-      "whatItIs": "Exports Rust type definitions from Specta for use in TypeScript.",
+      "whatItIs": "Writes Rust data shapes, made with Specta, into TypeScript code that a screen can use.",
       "homepage": "https://github.com/specta-rs/specta",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
     "tauri": {
-      "whatItIs": "A framework for desktop applications with web interfaces and Rust code.",
-      "goodAt": ["Connecting a desktop window to Rust logic"],
-      "notGoodAt": ["Building the web interface for you; add frontend code."],
-      "example": "Open a desktop window that calls a Rust command.",
+      "whatItIs": "Tauri, a toolkit for building desktop apps that show a web-style screen and run their logic in Rust, a programming language.",
+      "goodAt": [
+        "Opening a desktop window that shows a web-style screen",
+        "Letting the screen call Rust code and get answers back"
+      ],
+      "notGoodAt": ["Designing the screens for you; the web-style part needs its own code."],
+      "example": "When a user clicks Export in a desktop app, a button on the screen runs Rust code that saves the file to the user's computer.",
       "homepage": "https://tauri.app/",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
     "tauri-build": {
-      "whatItIs": "Adds build-time steps needed by a Tauri desktop application.",
+      "whatItIs": "Adds the setup steps a Tauri desktop app needs when it is built.",
       "homepage": "https://tauri.app/",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
     "tauri-specta": {
-      "whatItIs": "A bridge that exports typed Tauri commands through Specta.",
-      "goodAt": ["Keeping desktop command types aligned with frontend code"],
-      "notGoodAt": ["Implementing command behavior; write Rust handlers."],
-      "example": "Generate frontend types for a Rust desktop command.",
+      "whatItIs": "tauri-specta, a bridge that shares a Tauri desktop app's Rust actions and data shapes with its screen code.",
+      "goodAt": [
+        "Keeping the desktop app's Rust actions and the screen code's data shapes matching"
+      ],
+      "notGoodAt": [
+        "Doing the real work of each action; that Rust code must be written separately."
+      ],
+      "example": "When a developer adds a Rust action that saves a note, the screen code gets a matching piece it can call, with the right kinds of input.",
       "homepage": "https://github.com/specta-rs/tauri-specta",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
     "tempfile": {
-      "whatItIs": "A Rust library for creating and cleaning temporary files and directories.",
-      "goodAt": ["Using temporary storage during tests or processing"],
-      "notGoodAt": ["Keeping files permanently; choose a durable path."],
-      "example": "Write a temporary test file that is removed afterward.",
+      "whatItIs": "tempfile, a library for the Rust programming language that makes short-lived files and folders and removes them when done.",
+      "goodAt": [
+        "Holding temporary working files during a test or a data job",
+        "Removing test files once the test finishes"
+      ],
+      "notGoodAt": ["Keeping files for later; save those to a folder you choose."],
+      "example": "A test writes a temporary order file, reads it back, and the file is removed when the test ends.",
       "homepage": "https://stebalien.com/projects/tempfile-rs/",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
     "thiserror": {
-      "whatItIs": "A Rust helper for defining structured error types.",
-      "goodAt": ["Giving library errors clear variants"],
-      "notGoodAt": ["Handling errors for the caller; add that logic."],
-      "example": "Define a distinct error for an invalid input file.",
+      "whatItIs": "thiserror, a library for the Rust programming language that helps define the program's own kinds of error, each with a clear message.",
+      "goodAt": [
+        "Giving a library's errors clear names and messages",
+        "Letting other code tell one failure from another"
+      ],
+      "notGoodAt": ["Deciding how to recover from an error; the code using the library does that."],
+      "example": "When a customer uploads a file that is not an order file, the error says so by name, not just 'something went wrong'.",
       "homepage": "https://github.com/dtolnay/thiserror",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
     "tokio": {
-      "whatItIs": "A Rust runtime for asynchronous tasks and input/output.",
-      "goodAt": ["Running concurrent network and file tasks"],
-      "notGoodAt": ["Providing an application framework; choose one separately."],
-      "example": "Run an asynchronous network request in a Rust program.",
+      "whatItIs": "tokio, a library for the Rust programming language that runs many jobs at once, such as handling web requests and reading files.",
+      "goodAt": [
+        "Handling many web connections at once in a Rust server",
+        "Reading and writing files without stopping the rest of the program"
+      ],
+      "notGoodAt": ["Providing the overall structure of an app; choose a framework separately."],
+      "example": "When many people load a Rust web service at the same time, it can work on several requests at once instead of finishing one before starting the next.",
       "homepage": "https://tokio.rs",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
     "tracing": {
-      "whatItIs": "A Rust library for recording events and grouping them with the work that produced them.",
-      "goodAt": ["Recording work across asynchronous calls"],
-      "notGoodAt": ["Collecting logs by itself; add a subscriber."],
-      "example": "Record an event while processing a desktop command.",
+      "whatItIs": "tracing, a library for the Rust programming language that records what a program does step by step, and ties each record to the job it belongs to.",
+      "goodAt": [
+        "Following one request's steps through a program that handles many at once",
+        "Recording the steps of a single job so they can be read later"
+      ],
+      "notGoodAt": ["Saving or showing records on its own; use tracing-subscriber for that."],
+      "example": "While a desktop app saves a document, the program records each step, so a developer can see where a failed save stopped.",
       "homepage": "https://tokio.rs",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
     "tracing-subscriber": {
-      "whatItIs": "A Rust library for collecting and formatting tracing events.",
-      "goodAt": ["Sending Rust tracing events to output"],
-      "notGoodAt": ["Creating application events; instrument the code."],
-      "example": "Print structured events from a Rust program.",
+      "whatItIs": "tracing-subscriber, a library for the Rust programming language that collects the records made by tracing and writes them out in a readable form.",
+      "goodAt": [
+        "Sending a program's recorded steps to the screen or a file",
+        "Setting how much detail gets written out"
+      ],
+      "notGoodAt": ["Making the records itself; the program's code has to mark each step."],
+      "example": "A desktop app can print each step of a save as it happens, with the time and the step's name, so the output reads like a timeline.",
       "homepage": "https://tokio.rs",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     }

@@ -26,13 +26,14 @@
     }
   ],
   "plain": {
-    "whatItIs": "A starter React web app whose pages and forms run through a Node server.",
+    "whatItIs": "A starter web app, built with React, a toolkit for web screens, whose pages and forms run on a server.",
     "goodAt": [
-      "Pages that load data before rendering",
-      "Forms and API routes in one app"
+      "Pages that load their data on the server before showing",
+      "Handling form submissions and data requests in the same app",
+      "Shared services across pages, with one error style and a log of each request"
     ],
     "notGoodAt": [
-      "Static hosting without a server; choose an Astro stack."
+      "Sites served as plain files with no server; use an Astro stack instead."
     ]
   },
   "platforms": [

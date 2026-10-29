@@ -26,13 +26,15 @@
     }
   ],
   "plain": {
-    "whatItIs": "A starter terminal program written in TypeScript and compiled with Bun.",
+    "whatItIs": "A starter terminal program written in TypeScript, a typed form of JavaScript, packaged as one file you can run.",
     "goodAt": [
-      "Commands with predictable text and JSON output",
-      "Testing a compiled command-line program"
+      "Commands with predictable output for people and for scripts",
+      "Testing the packaged program as well as its source code",
+      "Keeping help and diagnostic commands working even when settings are broken"
     ],
     "notGoodAt": [
-      "Full-screen terminal interfaces; add a dedicated interface."
+      "Full-screen terminal programs with menus and panels; add a dedicated interface tool.",
+      "Installers or self-updating programs; add those separately."
     ]
   },
   "platforms": [

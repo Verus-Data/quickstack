@@ -25,13 +25,13 @@
     }
   ],
   "plain": {
-    "whatItIs": "Container build and publishing steps for a project’s deployable parts.",
+    "whatItIs": "Packages each deployable part of the app as a container, a sealed bundle with what it needs, and publishes it to GitHub after checks pass.",
     "goodAt": [
-      "Building application images",
-      "Publishing images after project checks pass"
+      "Building images that leave out development tools and secrets",
+      "Publishing versioned images after the project's checks pass"
     ],
     "notGoodAt": [
-      "Rolling images out to a host; set up deployment separately."
+      "Starting the images on a live server; pick a host and set that up separately."
     ]
   },
   "capabilities": [

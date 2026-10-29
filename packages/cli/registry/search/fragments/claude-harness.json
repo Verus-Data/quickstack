@@ -25,13 +25,15 @@
     }
   ],
   "plain": {
-    "whatItIs": "Tested local guards and helper commands for Claude Code in a Bun project.",
+    "whatItIs": "Adds tested guards and helper commands to Claude Code in a TypeScript project that uses Bun, a JavaScript runtime.",
     "goodAt": [
-      "Adding project-specific checks to Claude Code work",
-      "Testing guards against valid and rejected actions"
+      "Blocking certain commands and edits to generated files in Claude Code",
+      "Testing each guard against blocked actions and similar safe ones",
+      "Adding read-only helpers that review designs and code changes"
     ],
     "notGoodAt": [
-      "Isolating untrusted code; use a sandbox."
+      "Sandboxing untrusted code; use a separate sandbox for that.",
+      "Projects that do not use Bun, or that use Cursor instead of Claude Code."
     ]
   },
   "capabilities": [

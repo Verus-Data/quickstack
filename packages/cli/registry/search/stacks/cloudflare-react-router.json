@@ -26,13 +26,15 @@
     }
   ],
   "plain": {
-    "whatItIs": "A starter web app whose pages and API run on Cloudflare Workers.",
+    "whatItIs": "A starter web app whose pages and data services run on Cloudflare's network.",
     "goodAt": [
-      "Pages that load data on the server",
-      "Web apps with routes and a tested place for scheduled work"
+      "Pages that load their data on the server before they appear",
+      "Testing the app on your own computer without a Cloudflare account",
+      "A tested placeholder for scheduled work, which you fill in later"
     ],
     "notGoodAt": [
-      "Apps meant to run on a Node server; choose react-router."
+      "Apps meant to run on a regular server; use the React Router stack instead.",
+      "Apps that store data out of the box; add a database option separately."
     ]
   },
   "platforms": [

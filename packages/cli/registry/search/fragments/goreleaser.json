@@ -25,13 +25,13 @@
     }
   ],
   "plain": {
-    "whatItIs": "Release steps that turn Go program tags into downloadable archives.",
+    "whatItIs": "Turns version labels pushed to Git into downloadable builds of a Go command-line program for Windows, macOS and Linux, with checksums.",
     "goodAt": [
-      "Building Go binaries for several operating systems",
-      "Publishing archives with checksums"
+      "Building one program for Windows, macOS and Linux on Intel and ARM chips",
+      "Publishing release files with checksum files and a changelog written from commit messages"
     ],
     "notGoodAt": [
-      "Bun-compiled programs; choose bun-release."
+      "Programs built with Bun, a JavaScript runtime; use the Bun release add-on for those."
     ]
   },
   "capabilities": [

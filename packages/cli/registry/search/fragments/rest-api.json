@@ -25,13 +25,14 @@
     }
   ],
   "plain": {
-    "whatItIs": "Guidance for naming API endpoints and keeping their responses consistent.",
+    "whatItIs": "Rules that help coding assistants name the web addresses an API answers on, and keep its responses consistent.",
     "goodAt": [
-      "Keeping resource names and response shapes consistent",
-      "Recording the project’s own API decisions"
+      "Naming addresses after things, like orders, rather than after actions",
+      "Giving every list the same page-by-page format",
+      "Writing down the project's own API choices for future work"
     ],
     "notGoodAt": [
-      "Generating endpoints or a server; use an API stack."
+      "Writing the server code itself; pick a project base that includes an API."
     ]
   },
   "capabilities": [],

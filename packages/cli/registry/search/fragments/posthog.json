@@ -25,13 +25,14 @@
     }
   ],
   "plain": {
-    "whatItIs": "Browser analytics wiring for named product events and page views.",
+    "whatItIs": "Adds PostHog, an analytics service, to a web app to record page views and a fixed list of named user actions.",
     "goodAt": [
-      "Tracking explicit browser events",
-      "Running tests without an analytics account"
+      "Tracking chosen actions, such as an article being shared, in the browser",
+      "Running tests and local development without an analytics account or key",
+      "Guidance against sending typed text or email addresses in events"
     ],
     "notGoodAt": [
-      "Server-side analytics or error tracking; use separate tools."
+      "Server-side analytics or error tracking; those need separate tools."
     ]
   },
   "capabilities": [

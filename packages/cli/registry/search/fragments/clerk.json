@@ -25,13 +25,14 @@
     }
   ],
   "plain": {
-    "whatItIs": "Sign-in for the Expo app with session checks in its Hono API.",
+    "whatItIs": "Adds sign-up and login to the phone app, using Clerk, a hosted sign-in service, and makes the server turn away people who aren't signed in.",
     "goodAt": [
-      "Requiring a signed-in user for protected routes",
-      "Testing session checks without a live account"
+      "Letting only signed-in users reach the protected parts of the server",
+      "Testing sign-in checks on your own computer without a Clerk account"
     ],
     "notGoodAt": [
-      "Record ownership rules; implement those in application code."
+      "Deciding who may see or change each record; that is app code you write.",
+      "Running your own sign-in system; this uses the hosted Clerk service."
     ]
   },
   "capabilities": [

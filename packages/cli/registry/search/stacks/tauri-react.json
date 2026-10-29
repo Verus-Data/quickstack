@@ -23,13 +23,15 @@
     }
   ],
   "plain": {
-    "whatItIs": "A starter desktop app with a React interface and Rust code behind it.",
+    "whatItIs": "A starter desktop app with interfaces built in React, a toolkit for screens, and logic written in Rust, a programming language.",
     "goodAt": [
-      "Desktop interfaces backed by Rust logic",
-      "Testing interface behavior in a browser preview"
+      "Desktop windows that call Rust logic and get back checked results",
+      "Previewing the interface in a web browser with sample data",
+      "Showing live updates from Rust in a window"
     ],
     "notGoodAt": [
-      "Browser-only products; choose a web stack."
+      "Products that only run in a web browser; use a web stack instead.",
+      "Programs that run in a terminal; use a command-line stack."
     ]
   },
   "platforms": [

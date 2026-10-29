@@ -25,13 +25,14 @@
     }
   ],
   "plain": {
-    "whatItIs": "Guidance for checking incoming data with Effect Schema at application boundaries.",
+    "whatItIs": "Checks data entering the app, such as requests and settings, against one written shape that the code also uses for its types.",
     "goodAt": [
-      "Defining one shape for validation and TypeScript types",
-      "Testing that data survives encoding and decoding"
+      "Rejecting badly formed input from users, outside services and settings",
+      "Keeping the data shape and the code's types from drifting apart",
+      "Testing that data converts to and from its stored form without loss"
     ],
     "notGoodAt": [
-      "Replacing validators required by a framework; keep those where needed."
+      "Replacing checks a framework requires; keep those where the framework needs them."
     ]
   },
   "capabilities": [],

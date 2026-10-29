@@ -26,13 +26,13 @@
     }
   ],
   "plain": {
-    "whatItIs": "A starter blog that turns written posts into web pages, with feeds and optional interactive parts.",
+    "whatItIs": "A starter blog where you write articles as files, which it builds into web pages with a feed for readers and a sitemap for search engines.",
     "goodAt": [
-      "Publishing articles from files",
-      "Adding small interactive pieces to otherwise static pages"
+      "Publishing articles written as files, with drafts kept off the public site",
+      "Adding a few interactive widgets to pages that otherwise stay static"
     ],
     "notGoodAt": [
-      "Sites that need server code on each request; choose a server-based stack."
+      "Sites that build pages when visitors arrive; choose a stack with a server."
     ]
   },
   "platforms": [

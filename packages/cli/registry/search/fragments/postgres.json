@@ -25,13 +25,14 @@
     }
   ],
   "plain": {
-    "whatItIs": "Local Postgres services, database models and migration steps for the Python and React stack.",
+    "whatItIs": "Adds a PostgreSQL database server to the Python and React app, with local test databases and recorded changes to its tables.",
     "goodAt": [
-      "Testing database-backed Python code",
-      "Changing the database with reviewed migrations"
+      "Running the database on your own computer for development and tests",
+      "Making table changes through reviewed, saved steps",
+      "Giving each test file its own ready-made copy of the database"
     ],
     "notGoodAt": [
-      "Provisioning a production database; arrange hosting separately."
+      "Hosting a live production database; arrange a hosting provider separately."
     ]
   },
   "capabilities": [

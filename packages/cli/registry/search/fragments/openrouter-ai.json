@@ -25,13 +25,15 @@
     }
   ],
   "plain": {
-    "whatItIs": "A connection that lets a TypeScript app request AI-generated text through OpenRouter.",
+    "whatItIs": "Connects a TypeScript app to OpenRouter, a service giving one account access to many AI models, with settings for the key and model.",
     "goodAt": [
-      "Testing provider requests without paid calls",
-      "Handling provider failures at one boundary"
+      "Testing AI requests on a local fake server, with no paid calls",
+      "Listing the models OpenRouter offers, kept for ten minutes at a time",
+      "Turning provider errors into clear messages without exposing secrets"
     ],
     "notGoodAt": [
-      "A finished chat interface; choose a chat app fragment."
+      "A finished chat screen; the browser or terminal chat add-ons include one.",
+      "Live answers, which need an OpenRouter key and credit on the account."
     ]
   },
   "capabilities": [

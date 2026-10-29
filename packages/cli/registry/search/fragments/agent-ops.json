@@ -25,13 +25,13 @@
     }
   ],
   "plain": {
-    "whatItIs": "Project instructions and local guards for coding assistants working in a repository.",
+    "whatItIs": "Gives every AI coding assistant one shared project guide, plus local guards that block destructive commands and writes containing secrets.",
     "goodAt": [
-      "Giving several coding assistants the same project guidance",
-      "Blocking selected unsafe commands and secret-shaped writes"
+      "Giving Claude Code, Codex, Cursor and OpenCode the same project instructions",
+      "Stopping an assistant from running destructive commands or writing credentials into files"
     ],
     "notGoodAt": [
-      "Running project tests or isolating untrusted code; use separate tools."
+      "Running tests or sandboxing untrusted code; use your normal test commands and a sandbox."
     ]
   },
   "capabilities": [

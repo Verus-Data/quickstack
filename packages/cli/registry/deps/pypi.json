@@ -2,106 +2,132 @@
   "formatVersion": 1,
   "cards": {
     "alembic": {
-      "whatItIs": "A tool for recording and applying database structure changes in SQLAlchemy projects.",
-      "goodAt": ["Managing changes to SQL tables over time"],
-      "notGoodAt": ["Hosting a database; arrange that separately."],
-      "example": "Apply a reviewed change that adds a column.",
+      "whatItIs": "Alembic, a tool that records changes to a database's layout, such as adding a table or a column, and applies them in order, for Python projects.",
+      "goodAt": [
+        "Keeping a database's table layout in step with the app as it changes",
+        "Applying the same layout changes to a test database and a live one"
+      ],
+      "notGoodAt": ["Hosting the database itself; set up the database server separately."],
+      "example": "When the team adds a phone number field to customer records, the tool applies that change to the database in order, so every copy matches.",
       "homepage": "https://alembic.sqlalchemy.org",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
     "asyncpg": {
-      "whatItIs": "An asynchronous PostgreSQL driver for Python.",
-      "goodAt": ["Connecting Python services to Postgres without blocking on queries"],
-      "notGoodAt": ["Designing database tables; use a modeling tool."],
-      "example": "Read a saved record from Postgres in an async handler.",
+      "whatItIs": "asyncpg, a library that lets Python programs read and write a PostgreSQL database, a system for storing records in tables, without pausing the program while they wait.",
+      "goodAt": [
+        "Letting a Python service load and save records in PostgreSQL",
+        "Running several database reads at once inside one program"
+      ],
+      "notGoodAt": ["Designing the tables themselves; use a database design tool."],
+      "example": "When a customer opens their order history, the app asks the database for saved orders and keeps serving other people while it waits.",
       "homepage": "https://github.com/MagicStack/asyncpg",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
     "fastapi": {
-      "whatItIs": "A Python framework for building HTTP APIs from typed functions.",
-      "goodAt": ["Building API endpoints with request validation"],
-      "notGoodAt": ["Providing a database automatically; add one."],
-      "example": "Accept a request and return a validated response.",
+      "whatItIs": "FastAPI, a Python toolkit for building the server side of a website or phone app, the part that answers each request it receives.",
+      "goodAt": [
+        "Building a service that answers requests from a website or phone app",
+        "Rejecting requests with missing or wrong details before the main code runs"
+      ],
+      "notGoodAt": ["Storing data by itself; connect a database separately."],
+      "example": "When a phone app sends an order with no quantity, the service sends back an error that names the missing field instead of saving the order.",
       "homepage": "https://github.com/fastapi/fastapi",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
     "httpx": {
-      "whatItIs": "A Python library for making HTTP requests with synchronous or asynchronous code.",
-      "goodAt": ["Calling external web services from Python"],
-      "notGoodAt": ["Serving your own HTTP API; use a server framework."],
-      "example": "Fetch data from another service in a Python task.",
+      "whatItIs": "httpx, a Python library that lets a program send web requests to other services, either one at a time or in the background.",
+      "goodAt": [
+        "Fetching data from outside web services",
+        "Running many web requests at once without waiting for each one"
+      ],
+      "notGoodAt": ["Building a web service that others call; use a web framework instead."],
+      "example": "When someone enters a street address, the app asks an outside mapping service to check it and waits for the answer.",
       "homepage": "https://github.com/encode/httpx",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
     "mypy": {
-      "whatItIs": "A tool that checks Python type annotations before code runs.",
-      "goodAt": ["Finding type mismatches in Python code"],
-      "notGoodAt": ["Validating external data at runtime; use a data validator."],
-      "example": "Catch a function call with the wrong argument type.",
+      "whatItIs": "mypy, a checker that reads the notes a Python project adds about what kind of data each value holds, and reports mismatches before the program runs.",
+      "goodAt": [
+        "Finding places where data of one kind is used as another kind",
+        "Keeping a large Python project consistent as it changes"
+      ],
+      "notGoodAt": ["Checking data that arrives while the program runs; use Pydantic for that."],
+      "example": "When a developer passes a price as text where the code expects a number, the checker flags it before anyone runs the code.",
       "homepage": "https://www.mypy-lang.org/",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
     "pydantic": {
-      "whatItIs": "A Python library for validating data with type annotations.",
-      "goodAt": ["Checking request and settings data at runtime"],
-      "notGoodAt": ["Storing records; use a database."],
-      "example": "Reject an incoming record with a missing field.",
+      "whatItIs": "Pydantic, a Python library that checks incoming data, such as form fields or settings, against rules about what each value must look like.",
+      "goodAt": [
+        "Checking that a request from a website has every field it needs",
+        "Converting incoming text into the right kinds of values"
+      ],
+      "notGoodAt": ["Storing records; use a database for that."],
+      "example": "When a sign-up sends an age as the word ten instead of a number, it rejects the data and says which field is wrong.",
       "homepage": "https://github.com/pydantic/pydantic",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
     "pydantic-settings": {
-      "whatItIs": "A Pydantic library for loading and validating application settings.",
-      "goodAt": ["Reading settings from the environment"],
-      "notGoodAt": ["Managing secrets outside the app; use a secret store."],
-      "example": "Check that a required database address is configured.",
+      "whatItIs": "An add-on for Pydantic that reads an app's settings, such as a database address, from the system it runs on, and checks that they are present and valid.",
+      "goodAt": [
+        "Reading settings from the system the app runs on",
+        "Stopping startup early when a required setting is missing"
+      ],
+      "notGoodAt": ["Storing passwords and keys; use a secrets manager."],
+      "example": "Before the app starts, it checks that the database address is set, and stops with a clear message if it is missing.",
       "homepage": "https://github.com/pydantic/pydantic-settings",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
     "pytest": {
-      "whatItIs": "A Python test runner with fixtures and assertions.",
-      "goodAt": ["Running Python unit and integration tests"],
-      "notGoodAt": ["Testing a real browser; use browser automation."],
-      "example": "Run API tests after changing a handler.",
+      "whatItIs": "pytest, a Python tool that runs automated tests, small checks that confirm the code still does what it should.",
+      "goodAt": [
+        "Running Python tests, from checks on one function to checks on a whole feature",
+        "Sharing setup code between related tests"
+      ],
+      "notGoodAt": [
+        "Clicking through a website the way a visitor does; use a browser testing tool."
+      ],
+      "example": "After a developer changes how orders are saved, the test run repeats the order checks and reports any that fail.",
       "homepage": "https://docs.pytest.org/en/latest/",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
@@ -116,84 +142,100 @@
       }
     },
     "pytest-cov": {
-      "whatItIs": "Adds code coverage measurement to pytest runs.",
+      "whatItIs": "Adds a report showing how much of the Python code the pytest tests run.",
       "homepage": "https://pytest-cov.readthedocs.io/",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
     "pytest-randomly": {
-      "whatItIs": "Shuffles pytest test order to expose order dependence and controls random seeds for repeatable failures.",
+      "whatItIs": "Runs pytest tests in a shuffled order to catch tests that only pass in one order, and fixes random choices so failures can be repeated.",
       "homepage": "https://github.com/pytest-dev/pytest-randomly",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
     "pytest-xdist": {
-      "whatItIs": "Runs pytest tests across multiple worker processes.",
+      "whatItIs": "Runs pytest tests across several helper programs at the same time.",
       "homepage": "https://github.com/pytest-dev/pytest-xdist",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
     "ruff": {
-      "whatItIs": "A Python linter and formatter.",
-      "goodAt": ["Finding lint issues and formatting Python code"],
-      "notGoodAt": ["Checking program behavior; run tests."],
-      "example": "Format Python files and report unused imports.",
+      "whatItIs": "Ruff, a Python tool that checks code for likely mistakes and untidy style, and reformats it to one standard layout.",
+      "goodAt": [
+        "Catching unused code and small mistakes before a person reviews it",
+        "Keeping formatting the same across a Python project"
+      ],
+      "notGoodAt": ["Checking whether the program behaves correctly; run tests for that."],
+      "example": "When a developer saves a file with a leftover line that nothing uses, the tool flags the line and fixes the spacing to match the project's standard.",
       "homepage": "https://docs.astral.sh/ruff",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
     "sqlalchemy": {
-      "whatItIs": "A Python library for defining database models and queries.",
-      "goodAt": ["Working with SQL databases from Python"],
-      "notGoodAt": ["Applying schema changes alone; use a migration tool."],
-      "example": "Load an inventory record through a database model.",
+      "whatItIs": "SQLAlchemy, a Python library that lets a program describe its database tables as code and read or write records through that description.",
+      "goodAt": [
+        "Reading and saving records in a database from Python",
+        "Writing database queries in Python rather than the database's own language"
+      ],
+      "notGoodAt": [
+        "Changing a database's layout over time; use a tool for that, such as Alembic."
+      ],
+      "example": "When a shopper's cart is saved, the program writes it to the database through Python code, without writing database commands by hand.",
       "homepage": "https://www.sqlalchemy.org",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
     "structlog": {
-      "whatItIs": "A Python library for building structured log events.",
-      "goodAt": ["Adding consistent fields to application logs"],
-      "notGoodAt": ["Collecting or storing logs; configure that separately."],
-      "example": "Attach a request identifier to an API log event.",
+      "whatItIs": "structlog, a Python library that writes a program's activity log as labeled pieces of information, so each entry can be searched and sorted.",
+      "goodAt": [
+        "Attaching the same details, such as a request number, to every log entry",
+        "Making activity logs searchable across a whole service"
+      ],
+      "notGoodAt": ["Collecting or storing logs; set up a log service separately."],
+      "example": "When a customer reports a problem, support staff can search the activity log by request number and see every step that request took.",
       "homepage": "https://www.structlog.org/",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     },
     "uvicorn": {
-      "whatItIs": "A server that runs Python web apps so they can receive HTTP requests.",
-      "goodAt": ["Serving a Python API"],
-      "notGoodAt": ["Providing API routes; use a web framework."],
-      "example": "Start a FastAPI application for local requests.",
+      "whatItIs": "uvicorn, a server program that runs a Python web app so it can receive requests from browsers and phone apps.",
+      "goodAt": [
+        "Running a Python web service that answers requests from websites or phone apps",
+        "Starting a local copy of an app to test it on one computer"
+      ],
+      "notGoodAt": [
+        "Deciding what the app does with a request; use a web framework such as FastAPI."
+      ],
+      "example": "When a phone app asks for a user's order list, the server hands the request to the app's code and sends the reply back.",
       "homepage": "https://uvicorn.dev/",
       "source": {
         "by": "drafted",
-        "model": "codex/gpt-6-sol",
-        "promptVersion": 1,
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": null
       }
     }

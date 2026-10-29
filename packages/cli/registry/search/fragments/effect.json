@@ -25,13 +25,14 @@
     }
   ],
   "plain": {
-    "whatItIs": "Testing helpers and project guidance for working with Effect code.",
+    "whatItIs": "Test helpers and guidance for coding assistants working on code written with Effect, a TypeScript library for structuring services and errors.",
     "goodAt": [
-      "Testing Effect services with controlled time",
-      "Checking failures and unexpected defects"
+      "Testing services with a controlled clock, so tests skip real waiting",
+      "Checking that failures and unexpected crashes are reported as intended",
+      "Giving coding assistants reference notes that match the installed Effect version"
     ],
     "notGoodAt": [
-      "Choosing an entire application architecture; the stack owns that."
+      "Choosing how a whole app is organized; the base project recipe makes that choice."
     ]
   },
   "capabilities": [],

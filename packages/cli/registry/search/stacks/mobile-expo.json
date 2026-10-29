@@ -23,13 +23,14 @@
     }
   ],
   "plain": {
-    "whatItIs": "A starter phone app with a separate API and database for its data.",
+    "whatItIs": "A starter phone app for iPhone and Android, with its own server and database for the data.",
     "goodAt": [
-      "Mobile screens that read and change server data",
-      "Sharing data definitions between phone app and API"
+      "Phone screens that load and save data through a server",
+      "Sharing one set of data rules between the phone app and the server",
+      "Testing the server against a real database"
     ],
     "notGoodAt": [
-      "Native Swift or Kotlin apps; use their platform tools."
+      "Apps built in Swift or Kotlin; use Apple's or Google's own tools instead."
     ]
   },
   "platforms": [
