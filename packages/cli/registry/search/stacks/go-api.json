@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "kind": "stack",
+  "id": "go-api",
+  "source": {
+    "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "by": "drafted",
+    "model": "claude-opus-5-5",
+    "promptVersion": 2,
+    "reviewedAt": null
+  },
+  "summary": "A Go HTTP API on the standard library with JSON resources, consistent errors, request logs and graceful shutdown.",
+  "description": "Write a Go HTTP service on net/http's own router, with no web framework. One in-memory resource proves the shape: list, read and create routes, JSON validation, a single error envelope for misses and wrong methods, request IDs, slog access logs, a body size limit and server timeouts. The binary stops cleanly on SIGINT or SIGTERM, and integration tests check that against the built server. The recipe picks no database, authentication or hosting; the in-memory store sits behind an interface a database can replace.",
+  "seoDescription": "A Go HTTP API recipe on net/http with JSON validation, one error envelope, request logging, timeouts, graceful shutdown and race-enabled tests.",
+  "projectExamples": [
+    {
+      "title": "Internal inventory service",
+      "description": "Illustrative: replace the notes resource with items and stock levels for other internal services to call. Persistence and access control are work the project still has to add."
+    },
+    {
+      "title": "Webhook receiver in a container",
+      "description": "Illustrative: accept JSON callbacks from a third-party service, validate them and log each request. Signature checks are custom work; docker-deploy builds and publishes the image.",
+      "withFragments": ["docker-deploy"]
+    }
+  ],
+  "platforms": ["server"],
+  "productKinds": ["api"],
+  "languages": ["go"],
+  "requests": [
+    "build a Go REST API with only the standard library",
+    "a JSON HTTP service in golang without a web framework",
+    "Go backend that shuts down cleanly on SIGTERM",
+    "return consistent JSON errors for bad requests in a Go server",
+    "small Go microservice with structured request logs"
+  ],
+  "useCases": ["REST services", "internal HTTP services", "JSON backends"],
+  "synonyms": [
+    "net/http",
+    "ServeMux",
+    "slog",
+    "web service",
+    "HTTP server",
+    "microservice",
+    "Gin alternative",
+    "Chi alternative"
+  ],
+  "goodFor": ["standard-library routing", "graceful shutdown", "race-tested handlers"],
+  "notFor": [],
+  "caveats": ["Race-enabled tests need cgo and a C compiler on every machine and CI runner."]
+}

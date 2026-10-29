@@ -75,6 +75,40 @@
       ]
     },
     {
+      "id": "platform-go-http-stdlib",
+      "pool": "paraphrase",
+      "split": "tune",
+      "query": "http server in go with net/http and no dependencies",
+      "first": {
+        "kind": "stack",
+        "id": "go-api"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "go-api",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "platform-go-backend-shutdown",
+      "pool": "platform",
+      "split": "holdout",
+      "query": "golang json backend that handles shutdown signals",
+      "first": {
+        "kind": "stack",
+        "id": "go-api"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "go-api",
+          "grade": 2
+        }
+      ]
+    },
+    {
       "id": "platform-typescript-terminal",
       "pool": "platform",
       "split": "holdout",
