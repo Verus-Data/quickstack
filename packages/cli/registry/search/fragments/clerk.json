@@ -3,11 +3,11 @@
   "kind": "fragment",
   "id": "clerk",
   "source": {
-    "digest": "sha256:375d44538d8debbd91e732b2988cb2ac3c9782cdc88a256dd962700a16eb9e22",
+    "digest": "sha256:89e66e3ab56fd54ba9ddac61dbbc8d0b7ee4ec28cb24e1281809405893464584",
     "by": "drafted",
-    "model": "codex/gpt-6.1-sol",
+    "model": "claude/claude-opus-5-5",
     "promptVersion": 2,
-    "reviewedAt": "2026-10-28"
+    "reviewedAt": "2026-10-29"
   },
   "summary": "Add mobile sign-in and verified user sessions to an API, with protected routes and account-free local tests.",
   "description": "Connect Expo sign-in to session verification in the Hono API. Protected routes require a verified user id, with a small public-path allowlist and explicit local bypass. Tests use a local signing key to exercise real verification without a Clerk account. Configure the Clerk application, keys and redirect URLs before live sign-in; application-specific permissions and record ownership still need implementation.",
@@ -49,7 +49,8 @@
     "local development with an explicit auth bypass"
   ],
   "notFor": [
-    "self-hosted identity management"
+    "self-hosted identity management",
+    "session recording"
   ],
   "caveats": [
     "Apple sign-in entitlements can require a simulator signing certificate; leave them disabled unless needed."

@@ -8,7 +8,11 @@ afterEach(() => space.cleanup());
 const agents = ["claude", "codex", "cursor", "opencode"] as const;
 const compositions = [
   { stack: "typescript-api", guide: "typescript-api", required: ["effect-api", "testing"] },
-  { stack: "astro-api", guide: "astro-api", required: ["effect-api", "testing", "astro"] },
+  {
+    stack: "astro-fullstack",
+    guide: "astro-fullstack",
+    required: ["effect-api", "testing", "astro"],
+  },
   {
     stack: "typescript-cli",
     fragments: ["openrouter-chat-cli"],

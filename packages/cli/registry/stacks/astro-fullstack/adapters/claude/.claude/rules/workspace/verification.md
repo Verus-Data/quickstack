@@ -6,4 +6,4 @@ paths:
   - "tests/**"
 ---
 
-Read [Before calling work done](../../../docs/guidance/astro-api/verification.md). This is the shared authoritative guidance for every selected agent.
+Read [Before calling work done](../../../docs/guidance/astro-fullstack/verification.md). This is the shared authoritative guidance for every selected agent.

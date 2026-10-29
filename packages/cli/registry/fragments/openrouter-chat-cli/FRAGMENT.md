@@ -4,7 +4,7 @@ id: openrouter-chat-cli
 kind: fragment
 category: app
 name: OpenRouter CLI chat
-description: Effect AI commands, OpenTUI chat, tools and MCP, extraction, persistence/export, local stubs, replay, and evals.
+description: "A terminal chat app for typescript-cli on OpenRouter: an OpenTUI chat screen and scriptable commands with NDJSON events, tools also served by a stdio MCP server, chats saved as JSON with Markdown export, and stubbed replay and eval checks."
 tags: [typescript, cli, tui, ai, openrouter]
 applies_to: [typescript-cli]
 requires: [openrouter-ai, claude-harness]

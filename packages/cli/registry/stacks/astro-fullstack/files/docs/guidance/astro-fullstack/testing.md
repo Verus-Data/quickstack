@@ -35,7 +35,7 @@ Test what a client observes, with real dependencies, so tests survive refactorin
 
 ## Running
 
-- Scoped first: `bun run test apps/api/tests/<file>.test.ts` or `bun run test --project api` (add `-t "<name>"` for one test), then `bun run test` before calling it done. Site tests follow `docs/guidance/astro-api/astro.md`. Vitest runs on Node: never `bun test`, never `--bun`.
+- Scoped first: `bun run test apps/api/tests/<file>.test.ts` or `bun run test --project api` (add `-t "<name>"` for one test), then `bun run test` before calling it done. Site tests follow `docs/guidance/astro-fullstack/astro.md`. Vitest runs on Node: never `bun test`, never `--bun`.
 - Test names describe behavior from the client's side ("creating an order with a taken reference is 409"), not the function under test.
 
 ## Discipline

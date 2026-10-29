@@ -3,8 +3,8 @@ schema_version: 1
 id: claude-harness
 kind: fragment
 category: agent-ops
-name: Claude development harness
-description: Shared Bun TypeScript hooks, commands, review agents, and tests for Claude development.
+name: Claude Code TypeScript hooks
+description: Bun TypeScript hook helpers and tested Claude Code guards on top of agent-ops (destructive commands, package manager, generated files, typecheck on write), plus /check, /test and /feature commands, architect and reviewer agents, and a docs/harness.md guide.
 tags: [bun, agents]
 applies_to: [node, bun]
 requires: [agent-ops]

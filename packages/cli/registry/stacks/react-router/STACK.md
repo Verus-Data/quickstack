@@ -3,7 +3,7 @@ schema_version: 1
 id: react-router
 kind: stack
 name: React Router with Effect
-description: React Router framework mode with SSR, Effect services, typed HTTP errors, structured logs, Tailwind and shadcn, Vitest, and a one-route proving slice.
+description: A server-rendered (SSR) React Router app served by Node, with loaders and actions on shared Effect services, typed HTTP errors and structured logs, plus Tailwind, shadcn/ui, Vitest and a Playwright smoke test.
 tags: [typescript, react, web, effect, fullstack, scripts, bun, node]
 deps:
   app: [react, react-dom, react-router, "@react-router/node", "@react-router/serve", isbot, effect, tailwindcss, "@tailwindcss/vite", class-variance-authority, lucide-react]

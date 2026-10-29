@@ -3,8 +3,8 @@ schema_version: 1
 id: openrouter-ai
 kind: fragment
 category: vendor
-name: OpenRouter integration
-description: OpenRouter configuration, models discovery, request guardrails, and a scriptable local test server.
+name: OpenRouter LLM provider
+description: "OpenRouter as the LLM provider for a TypeScript project: an optional API key, model discovery with a ten-minute cache, routing settings, bounded retries with safe upstream errors, a scriptable local stub server for tests, and an eval report format with a dry-run checker."
 tags: [typescript, ai, openrouter]
 applies_to: [typescript]
 decisions:

@@ -3,8 +3,8 @@
   "compilerOptions": {
     "types": ["bun", "node"],
     "rootDirs": [
-      "registry/stacks/astro-api/adapters/claude",
-      "registry/stacks/astro-api/files",
+      "registry/stacks/astro-fullstack/adapters/claude",
+      "registry/stacks/astro-fullstack/files",
       "registry/fragments/claude-harness/adapters/claude",
       "registry/fragments/claude-harness/files",
       "registry/fragments/openrouter-chat-cli/adapters/claude",

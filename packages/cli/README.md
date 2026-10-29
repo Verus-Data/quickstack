@@ -47,8 +47,8 @@ At a human terminal, status words use color, `verify` and `new` show live progre
 
 | Stack | What it builds | App (`--with`) |
 | --- | --- | --- |
-| `astro-api` | Bun workspace: a static Astro site with React islands and an Effect HttpApi server on Node, sharing a typed contract package | |
 | `astro-blog` | Static Astro blog: MDX posts in a validated collection, React islands, Tailwind, RSS and sitemap | |
+| `astro-fullstack` | Bun workspace: a static Astro site with React islands and an Effect HttpApi server on Node, sharing a typed contract package | |
 | `cloudflare-react-router` | React Router on the local Workers runtime with typed bindings and Workers integration tests | |
 | `go-cli` | Go CLI: cobra, viper config, structured errors, human and JSON output, golangci-lint | |
 | `mobile-expo` | Expo Router app and a Bun + Hono API on Postgres, sharing zod schemas through a typed client | |

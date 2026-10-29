@@ -4,7 +4,7 @@ id: openrouter-chat
 kind: fragment
 category: app
 name: OpenRouter web chat
-description: Streaming chat, model selection, tools, extraction, server history, usage and cost, Markdown export, and a local end-to-end harness.
+description: "A web chat app on OpenRouter: streaming replies, a model picker, tool calls, contact extraction, server-side history, usage and cost, Markdown export and a stub-backed Playwright flow."
 tags: [typescript, web, ai, openrouter]
 applies_to: [react-router]
 requires: [openrouter-ai]

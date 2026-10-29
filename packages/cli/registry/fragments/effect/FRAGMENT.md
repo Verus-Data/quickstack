@@ -3,8 +3,8 @@ schema_version: 1
 id: effect
 kind: fragment
 category: tooling
-name: Effect testing and development
-description: Effect test layers, virtual time, installed-API guidance, and a shared rule for Effect programs.
+name: Effect testing and API skill
+description: Effect testing with @effect/vitest (fresh real layers per test, TestClock instead of sleeps, typed failure and defect assertions), shipped Effect guidance for each agent, and an agent skill written from the installed Effect release's declarations.
 tags: [typescript, effect, testing]
 applies_to: [typescript]
 requires: [effect-schema]

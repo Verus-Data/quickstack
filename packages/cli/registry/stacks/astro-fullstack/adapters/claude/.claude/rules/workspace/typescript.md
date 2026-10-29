@@ -8,4 +8,4 @@ paths:
   - ".claude/hooks/*.ts"
 ---
 
-Read [TypeScript](../../../docs/guidance/astro-api/typescript.md). This is the shared authoritative guidance for every selected agent.
+Read [TypeScript](../../../docs/guidance/astro-fullstack/typescript.md). This is the shared authoritative guidance for every selected agent.

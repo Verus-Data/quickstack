@@ -6,7 +6,7 @@ import { adapterWorkspace, scaffoldAdapters } from "./helpers/native-adapters";
 
 const space = adapterWorkspace();
 afterEach(() => space.cleanup());
-const cases = ["astro-api", "typescript-api"].flatMap((stack) =>
+const cases = ["astro-fullstack", "typescript-api"].flatMap((stack) =>
   (["claude", "codex", "opencode", "cursor"] as const).map((agent) => ({ stack, agent })),
 );
 

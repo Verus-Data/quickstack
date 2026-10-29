@@ -3,11 +3,11 @@
   "kind": "fragment",
   "id": "claude-harness",
   "source": {
-    "digest": "sha256:9a1caea3bc1329371439e1a690a478b3475f2628ba2351cedd1a5262bfb39ae9",
+    "digest": "sha256:3a6c7e51b121fe3e999d089d6be6af35e47435ffaad551d009a6af68f6ef1143",
     "by": "drafted",
-    "model": "codex/gpt-6.1-sol",
+    "model": "claude/claude-opus-5-5",
     "promptVersion": 2,
-    "reviewedAt": "2026-10-28"
+    "reviewedAt": "2026-10-29"
   },
   "summary": "Add reusable TypeScript hook helpers and a Claude Code adapter with command guards, incremental type checks, hook tests, workflows and review agents.",
   "description": "Build project-specific agent guards on shared Bun TypeScript hook helpers. For Claude Code, the adapter adds guarded commands, incremental typechecking, development commands and read-only review agents, with tests and a harness guide. The shared helpers can also support stack-owned Codex hooks. Each guard must be wired once and documented with its own regression cases.",
@@ -16,7 +16,7 @@
     {
       "title": "Generated client protection",
       "description": "Use the shared hook helpers to add a tested project guard for generated files. The stack or product must declare which paths it owns.",
-      "stack": "astro-api"
+      "stack": "astro-fullstack"
     },
     {
       "title": "CLI development harness",
@@ -50,6 +50,7 @@
   ],
   "notFor": [
     "sandboxing untrusted code",
-    "projects without Bun"
+    "projects without Bun",
+    "Cursor hooks"
   ]
 }

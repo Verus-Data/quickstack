@@ -3,11 +3,11 @@
   "kind": "stack",
   "id": "tauri-react",
   "source": {
-    "digest": "sha256:f10dddd5843a5b5110a6edabd0d2ea4b02829d64bfb1930e6a3d175c0f0dc5cf",
+    "digest": "sha256:c125a633e7664914e9d5a54ad5d821091a30cb97b8611e2c4d794bfa13809ebf",
     "by": "drafted",
-    "model": "codex/gpt-6.1-sol",
+    "model": "claude-opus-5-5",
     "promptVersion": 2,
-    "reviewedAt": "2026-10-28"
+    "reviewedAt": "2026-10-29"
   },
   "summary": "A desktop app with a React interface and Rust logic connected through generated TypeScript bindings.",
   "description": "Give Rust application logic a React desktop interface through generated TypeScript bindings. A thin Tauri shell exposes typed commands and live channels, while a transport facade lets the same interface run against browser fixtures. Tests cover Rust logic, bindings and the mocked interface. The starting app shows application information and a live tick; filesystem workflows, persistence and other desktop behavior are features you implement.",
@@ -47,15 +47,19 @@
     "webview",
     "typed IPC",
     "native windows",
-    "live channels"
+    "live channels",
+    "Electron alternative",
+    "cross-platform desktop"
   ],
   "goodFor": [
     "sharing types between Rust and TypeScript",
     "testing interfaces through a mock transport"
   ],
   "notFor": [
-    "server-rendered websites",
-    "browser-only products"
+    "server-side rendering",
+    "server rendered",
+    "browser-only products",
+    "command line interface"
   ],
   "caveats": [
     "Browser previews and Playwright use a mock transport; the packaged webview needs a manual check.",

@@ -1,9 +1,9 @@
 ---
 schema_version: 1
-id: astro-api
+id: astro-fullstack
 kind: stack
 name: Astro site + Effect API
-description: A bun workspace with a Node HTTP API on Effect's HttpApi, a static Astro site with React islands and Tailwind, and a shared contract package holding the HttpApi definition, so islands call the API through a typed HttpApiClient; the API can also serve the built site.
+description: A Bun workspace with a static Astro site (React islands, Tailwind), a Node API on Effect's HttpApi and a shared contract package, so islands call the API through a typed client. The API can also serve the built site.
 tags: [typescript, api, effect, node, astro, react, web, fullstack, monorepo, bun, scripts]
 deps:
   contract: [effect]
@@ -67,7 +67,7 @@ commands:
 
 # Astro site + Effect API
 
-Read `docs/guidance/astro-api/index.md` before implementation; it supplies the shared guidance for every selected agent.
+Read `docs/guidance/astro-fullstack/index.md` before implementation; it supplies the shared guidance for every selected agent.
 
 Three bun workspaces. `packages/contract` is the `HttpApi` definition: groups, endpoints, schemas and tagged errors, depending only on `effect`. `apps/api` implements it on Node with Effect and is the only server. `apps/web` is a static Astro site whose React islands call the API through Effect's typed client built from the same contract, so a renamed field or a new error is a type error on both sides. Packages are `@<slug>/contract`, `@<slug>/api` and `@<slug>/web`, using the project slug, and ship TypeScript source with no build step of their own.
 
@@ -98,11 +98,11 @@ Read `docs/api-foundation.md` for lint, testing and development requirements.
 
 ## Contract
 
-`docs/guidance/astro-api/effect-api.md` covers the definition and its helpers, and the `rest-api` rule covers naming. Errors are `Schema.TaggedError` classes in `errors.ts`, each carrying its status annotation. `apiErrorTable` maps every tag exhaustively to one status and one `retryable`. Every error body is `{ "error": { "tag", "message", "retryable" } }`. The base rows are `BadInput` (400), `NotFound` (404), `Unavailable` (503, retryable) and `Defect` (generic 500); add `UnsupportedMediaType` (415) with the first endpoint that takes a body, and other rows when an endpoint needs them. Resources live under `/v1`; `/healthz` and `/openapi.json` stay outside it. The contract imports nothing but `effect`, never the API or the site.
+`docs/guidance/astro-fullstack/effect-api.md` covers the definition and its helpers, and the `rest-api` rule covers naming. Errors are `Schema.TaggedError` classes in `errors.ts`, each carrying its status annotation. `apiErrorTable` maps every tag exhaustively to one status and one `retryable`. Every error body is `{ "error": { "tag", "message", "retryable" } }`. The base rows are `BadInput` (400), `NotFound` (404), `Unavailable` (503, retryable) and `Defect` (generic 500); add `UnsupportedMediaType` (415) with the first endpoint that takes a body, and other rows when an endpoint needs them. Resources live under `/v1`; `/healthz` and `/openapi.json` stay outside it. The contract imports nothing but `effect`, never the API or the site.
 
 ## API
 
-`docs/guidance/astro-api/effect-api.md` holds the conventions. Services compose into one `AppLayer` built once at startup. `config.ts` reads environment through Effect Config over the provider the platform entry supplies. Only `src/platform/` imports Node, Bun or `@effect/platform-node` or touches `process`, so `app.ts` also runs as a web fetch handler. One server-level request middleware owns the request id, the `request` log line, the defect log and the envelope, including for misses, static files and the framework's own error responses. A wrong method gets the 404 envelope. Serve `/openapi.json` from the definition.
+`docs/guidance/astro-fullstack/effect-api.md` holds the conventions. Services compose into one `AppLayer` built once at startup. `config.ts` reads environment through Effect Config over the provider the platform entry supplies. Only `src/platform/` imports Node, Bun or `@effect/platform-node` or touches `process`, so `app.ts` also runs as a web fetch handler. One server-level request middleware owns the request id, the `request` log line, the defect log and the envelope, including for misses, static files and the framework's own error responses. A wrong method gets the 404 envelope. Serve `/openapi.json` from the definition.
 
 When `STATIC_DIR` is set (a relative one resolves against the repository root), `platform/node.ts` mounts Effect's static file server over it, resolving directory `index.html` files. API routes always win. A miss on an API path (`/v1/*`, `/healthz`, `/openapi.json`, any method) gets the 404 envelope, and any other miss gets the site's `404.html` with status 404.
 
@@ -110,7 +110,7 @@ Logging: a custom Effect logger writes JSON records with UTC `time`, lowercase `
 
 ## Site
 
-`docs/guidance/astro-api/astro.md` holds the conventions. `output: "static"`, with Tailwind through its Vite plugin. `lib/api.ts` is the only module that builds the typed client over the contract, on Effect's fetch-based HTTP client, at relative URLs. In dev, Astro's Vite `server.proxy` forwards `/v1`, `/healthz` and `/openapi.json` to `PORT_API`, so the browser always talks to one origin and the API needs no CORS. Build-time page data comes from files or the contract's schemas, never a running API, so `build` needs no server. Only `PUBLIC_` env vars reach islands. Build-time switches are server-context Astro env fields read in `src/site-config.ts`; a page behind a switch that is off has no static paths, so it isn't built. The site never imports `@<slug>/api`.
+`docs/guidance/astro-fullstack/astro.md` holds the conventions. `output: "static"`, with Tailwind through its Vite plugin. `lib/api.ts` is the only module that builds the typed client over the contract, on Effect's fetch-based HTTP client, at relative URLs. In dev, Astro's Vite `server.proxy` forwards `/v1`, `/healthz` and `/openapi.json` to `PORT_API`, so the browser always talks to one origin and the API needs no CORS. Build-time page data comes from files or the contract's schemas, never a running API, so `build` needs no server. Only `PUBLIC_` env vars reach islands. Build-time switches are server-context Astro env fields read in `src/site-config.ts`; a page behind a switch that is off has no static paths, so it isn't built. The site never imports `@<slug>/api`.
 
 ## Tool configuration and tests
 
@@ -122,7 +122,7 @@ Biome covers TypeScript, TSX and JSON in every workspace: recommended rules, typ
 
 `typecheck` runs all four checks.
 
-Vitest runs on Node without `.env`, external network or credentials. Implement `docs/acceptance/astro-api.md`: verify independently runs `apps/api/tests/http-contract.test.ts`, the full error/request/logging/static-file matrix through Node and platform-free web transports. Use real layers per `docs/guidance/astro-api/testing.md`. The site uses `getViteConfig()`, happy-dom and Testing Library: test ApiStatus loading, success, error envelope and network failure over fake fetch. `bun run build` integrates the site.
+Vitest runs on Node without `.env`, external network or credentials. Implement `docs/acceptance/astro-fullstack.md`: verify independently runs `apps/api/tests/http-contract.test.ts`, the full error/request/logging/static-file matrix through Node and platform-free web transports. Use real layers per `docs/guidance/astro-fullstack/testing.md`. The site uses `getViteConfig()`, happy-dom and Testing Library: test ApiStatus loading, success, error envelope and network failure over fake fetch. `bun run build` integrates the site.
 
 <!-- stacks:when with=ci-github -->
 CI sets up Bun from packageManager and Node from .node-version, installs frozen dependencies, then runs lint, typecheck, coverage and the build. No credentials are needed.

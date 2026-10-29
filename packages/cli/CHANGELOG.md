@@ -2,6 +2,12 @@
 
 All notable changes to `@steamfield/stacks`. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html); before 1.0.0 a minor release may break compatibility.
 
+## [Unreleased]
+
+### Changed
+
+- The `astro-api` stack is now `astro-fullstack`: it builds a static Astro site and a separate Node API, which the old id didn't say. Run `stacks new astro-fullstack`. Projects created from `astro-api` keep that id in their manifest, so `stacks add` in them no longer finds the stack and reports `stack_unknown`.
+
 ## [0.4.1] - 2026-10-29
 
 ### Fixed

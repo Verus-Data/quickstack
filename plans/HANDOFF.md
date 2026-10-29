@@ -9,6 +9,25 @@ Start here, then read repo `AGENTS.md`, the README's
 next steps, who owns each. When it grows past a couple of screens, move the dated detail
 to `archive/` and leave a link.
 
+## Registry metadata pass (2026-10-29)
+
+An audit of every bundled entry's naming, descriptions and search cards was applied: clearer
+descriptions, search card facets, synonyms and exclusions, Go and `fullstack` vocabulary
+aliases, and the `astro-api` to `astro-fullstack` rename (D39). New authoring guidance lives
+in `.claude/skills/stack-authoring/` and `.claude/skills/fragment-authoring/`, and the
+`stack-creator` agent (`.claude/agents/stack-creator.md`) uses both. Still open:
+
+- Every `runs.json` proof is stale (the agent-ops, ci-github, claude-harness and effect edits
+  changed the default compositions); re-bench before calling those stacks proven.
+- `stacks-api` still names `astro-api` in `scripts/seed/profile.ts` (the rising storyline,
+  which falls back silently), its web fixtures and its search fixtures. Update them, rebuild
+  the index here and re-seed.
+- The postgres fragment's TypeScript paragraph sits outside any `stacks:when` block, so it
+  reaches python-react's brief; its Go and TypeScript branches and `deps` are unreachable.
+- mobile-expo sandbox plus rr is about two words under the 6,000-word brief budget.
+- Searches still missing: "mcp server", "add auth to my web app", "add a database to my
+  typescript api", "containerize my api".
+
 ## Submission queue (2026-10-28)
 
 State at the end of the 2026-10-28 run: R0 to R4, R10, R12 and R13 are done (evidence in

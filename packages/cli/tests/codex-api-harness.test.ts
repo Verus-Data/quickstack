@@ -7,7 +7,7 @@ import { adapterWorkspace, guardCommands, scaffoldAdapters } from "./helpers/nat
 const space = adapterWorkspace();
 afterEach(() => space.cleanup());
 
-const cases = ["astro-api", "typescript-api"].flatMap((stack) =>
+const cases = ["astro-fullstack", "typescript-api"].flatMap((stack) =>
   (["codex", "claude,codex"] as const).map((selection) => ({ stack, selection })),
 );
 

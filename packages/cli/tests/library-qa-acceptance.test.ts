@@ -17,7 +17,7 @@ const contracts = [
     steps: { "http-contract": "bun run test tests/http-contract.test.ts" },
   },
   {
-    stack: "astro-api",
+    stack: "astro-fullstack",
     steps: { "http-contract": "bun run test --project api apps/api/tests/http-contract.test.ts" },
   },
   {

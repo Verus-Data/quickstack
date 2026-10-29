@@ -4,7 +4,7 @@ id: postgres
 kind: fragment
 category: service
 name: PostgreSQL
-description: A local Postgres service in Docker Compose with healthchecks and a separate fast test instance, a migration tool for the stack's language, and a test harness that gives every test file its own database cloned from a migrated template.
+description: "PostgreSQL for python-react: Docker Compose dev and test services with healthchecks, SQLAlchemy async models with Alembic migrations, make db-* targets, and a test harness that gives each test file its own database cloned from a migrated template."
 tags: [database, postgres, service]
 applies_to: [python-react]
 requires_tools: [docker]

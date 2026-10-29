@@ -4,4 +4,4 @@ paths:
   - "apps/api/**"
 ---
 
-Read [Effect HTTP API](../../../docs/guidance/astro-api/effect-api.md). This is the shared authoritative guidance for every selected agent.
+Read [Effect HTTP API](../../../docs/guidance/astro-fullstack/effect-api.md). This is the shared authoritative guidance for every selected agent.

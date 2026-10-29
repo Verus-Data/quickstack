@@ -5,9 +5,9 @@
   "source": {
     "digest": "sha256:11c94b1a0ddc2e5ea58c46fd8f6f25aa4f31f742997c58b810d8a78e95ebe0af",
     "by": "drafted",
-    "model": "codex/gpt-6.1-sol",
+    "model": "claude-opus-5-5",
     "promptVersion": 2,
-    "reviewedAt": "2026-10-28"
+    "reviewedAt": "2026-10-29"
   },
   "summary": "An iOS and Android app sharing TypeScript schemas with its own API and Postgres database.",
   "description": "Build an Expo Router phone app and a Bun/Hono API together, sharing Zod schemas across the mobile screens and backend. Postgres and Drizzle are part of the base, with database-backed API tests and hooks that own client data access. The default Clerk fragment adds sign-in when configured. The first screen proves API connectivity; your screens, data model and authorization rules come next.",
@@ -25,7 +25,8 @@
   "platforms": [
     "ios",
     "android",
-    "mobile"
+    "mobile",
+    "server"
   ],
   "productKinds": [
     "mobile-app",
@@ -50,7 +51,8 @@
     "React Native",
     "Hono",
     "Drizzle",
-    "NativeWind"
+    "NativeWind",
+    "Clerk sign-in"
   ],
   "goodFor": [
     "typed app-to-API calls",
@@ -58,9 +60,12 @@
     "utility-class styling"
   ],
   "notFor": [
-    "native Swift or Kotlin projects"
+    "native Swift or Kotlin projects",
+    "server-side rendering",
+    "server rendered"
   ],
   "caveats": [
-    "Entitlements such as Apple sign-in can require signing even for simulator builds; gate them to EAS builds."
+    "Entitlements such as Apple sign-in can require signing even for simulator builds; gate them to EAS builds.",
+    "Local API development and the API tests need Docker for the Postgres container."
   ]
 }

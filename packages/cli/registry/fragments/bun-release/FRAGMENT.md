@@ -4,7 +4,7 @@ id: bun-release
 kind: fragment
 category: release
 name: Bun binary releases
-description: Cross-platform compiled binaries, checksummed installation, atomic self-update, and a release workflow.
+description: Release a Bun-compiled CLI as standalone binaries for macOS and glibc Linux on x64 and arm64, with SHA256SUMS, a checksum-verifying install.sh, an atomic self-update command and a tag-triggered GitHub release workflow.
 tags: [bun, release]
 applies_to: [bun]
 tools: [bun]

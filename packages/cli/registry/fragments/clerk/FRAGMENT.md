@@ -3,7 +3,7 @@ schema_version: 1
 id: clerk
 kind: fragment
 category: vendor
-name: Clerk auth
+name: Clerk auth for Expo and Hono
 description: Clerk sign-in for the Expo app and session verification on the Hono API, with auth on by default behind a public-path allowlist, a dev bypass, and tests that run Clerk's real verification against a local keypair with no account or network.
 tags: [auth, clerk, vendor]
 applies_to: [mobile-expo]

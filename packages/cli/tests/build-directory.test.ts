@@ -1,5 +1,5 @@
 import { sign } from "node:crypto";
-import { cpSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { Schema } from "effect";
 import { afterAll, afterEach, beforeAll, expect, test } from "vitest";
@@ -185,16 +185,40 @@ test("history reads ignore cwd and inherited git selectors in paths with spaces 
   expect(directory.commit).toBe(git(published, "rev-parse", "HEAD"));
 }, 30_000);
 
-test("bundled removal manifest ships with no entries [4.2c#5]", () => {
-  expect(
-    JSON.parse(readFileSync(join(import.meta.dirname, "../registry/removed.json"), "utf8")),
-  ).toEqual({ schemaVersion: 1, entries: {} });
+const BundledRemovals = Schema.Struct({
+  schemaVersion: Schema.Literal(1),
+  entries: Schema.Record(
+    Schema.String,
+    Schema.Struct({
+      kind: Schema.Literals(["stack", "fragment"]),
+      replacedBy: Schema.optionalKey(Schema.String),
+    }),
+  ),
 });
 
-test("the bundled registry builds a signed directory with no removals [4.2c#5]", async () => {
+test("bundled removal rows name retired ids and current replacements [4.2c#5]", () => {
+  const bundled = join(import.meta.dirname, "../registry");
+  const removals = Schema.decodeUnknownSync(BundledRemovals)(
+    JSON.parse(readFileSync(join(bundled, "removed.json"), "utf8")) as unknown,
+  );
+  const current = (kind: "stack" | "fragment", id: string) =>
+    existsSync(join(bundled, kind === "stack" ? "stacks" : "fragments", id));
+  for (const [id, row] of Object.entries(removals.entries)) {
+    expect(current(row.kind, id), `${row.kind}/${id} is still bundled`).toBe(false);
+    if (row.replacedBy !== undefined)
+      expect(
+        current("stack", row.replacedBy) || current("fragment", row.replacedBy),
+        `${id}: replacement ${row.replacedBy} is not bundled`,
+      ).toBe(true);
+  }
+});
+
+test("the bundled registry's current entries build a signed directory [4.2c#5]", async () => {
   const f = await fixture(space.dir());
   rmSync(f.registry, { recursive: true });
   cpSync(join(import.meta.dirname, "../registry"), f.registry, { recursive: true });
+  // The fixture has no release tags, so a removal row's last published content can't resolve.
+  writeFileSync(join(f.registry, "removed.json"), '{ "schemaVersion": 1, "entries": {} }\n');
   commitAt(f, "2026-11-06T12:00:00Z", "fixture: bundled registry");
   await buildDirectory(f);
   const directory = await readDirectory(f.out);

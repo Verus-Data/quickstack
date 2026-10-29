@@ -5,9 +5,9 @@
   "source": {
     "digest": "sha256:5c9bd204409ec134ce16afa82c2ee6f7d30a77d2b199d637e06bad497c13d897",
     "by": "drafted",
-    "model": "codex/gpt-6.1-sol",
+    "model": "claude/claude-opus-5-5",
     "promptVersion": 2,
-    "reviewedAt": "2026-10-28"
+    "reviewedAt": "2026-10-29"
   },
   "summary": "Enable shared engineering skills and review agents in Claude Code, with rules that load relevant guidance for testing, debugging, errors and writing.",
   "description": "Enable the Claude Essentials plugin and route relevant project files to its engineering and writing skills. Short path-scoped rules cover testing, errors, debugging and documentation, while AGENTS.md remains the source for project facts. The plugin takes effect in a trusted Claude Code session. It supplies guidance and review agents; it does not enforce checks or change other coding assistants.",
@@ -50,6 +50,7 @@
   ],
   "notFor": [
     "agents other than Claude Code",
-    "enforcing checks with hooks"
+    "enforcing checks with hooks",
+    "Claude Code hooks"
   ]
 }

@@ -5,7 +5,7 @@ kind: fragment
 needs_own_repo: true
 category: ci
 name: GitHub Actions CI
-description: A GitHub Actions workflow that runs the project's own make targets or package scripts on every push and pull request, with SHA-pinned actions, least-privilege permissions, and path-filtered jobs for monorepos.
+description: A GitHub Actions workflow that runs the project's own make targets or package scripts on every push and pull request, with SHA-pinned actions in the default preset, least-privilege permissions, and path-filtered jobs for monorepos.
 tags: [ci, github]
 applies_to: []
 tools: [git]

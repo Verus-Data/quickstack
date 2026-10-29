@@ -5,9 +5,9 @@
   "source": {
     "digest": "sha256:0d84f44c3535f4e8a8c12fbaddc5cbb0538f0f3781f0542ddb27eda54b0ee7b4",
     "by": "drafted",
-    "model": "codex/gpt-6.1-sol",
+    "model": "claude-opus-5-5",
     "promptVersion": 2,
-    "reviewedAt": "2026-10-28"
+    "reviewedAt": "2026-10-29"
   },
   "summary": "A browser app backed by a Python API, with generated frontend types, query hooks and test mocks.",
   "description": "Keep Python business logic in FastAPI and build the browser interface as a React single-page app. OpenAPI generates the frontend's types, query hooks and test handlers, with a drift check for the committed API contract. Both halves have their own tests behind one Makefile. The base has no database or authentication; postgres is the compatible persistence add-on, while account handling remains your work.",
@@ -60,6 +60,8 @@
     "generated API mocks"
   ],
   "notFor": [
-    "server-rendered pages"
+    "server-side rendering",
+    "server rendered",
+    "command line interface"
   ]
 }

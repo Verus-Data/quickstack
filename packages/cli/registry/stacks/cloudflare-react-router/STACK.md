@@ -3,7 +3,7 @@ schema_version: 1
 id: cloudflare-react-router
 kind: stack
 name: React Router on Cloudflare Workers
-description: Full-stack React Router on the local Workers runtime, typed bindings, JSON resource routes, a cron handler slot, Tailwind, Biome, and Workers integration tests.
+description: A full-stack React Router app on Cloudflare Workers with server rendering, JSON resource routes, typed bindings and a cron handler slot, plus Tailwind, Biome and integration tests that run in the local Workers runtime.
 tags: [typescript, react, web, fullstack, cloudflare, workers, scripts, bun, node]
 deps:
   app: [react, react-dom, react-router, tailwindcss, "@tailwindcss/vite"]

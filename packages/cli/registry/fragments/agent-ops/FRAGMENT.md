@@ -3,8 +3,8 @@ schema_version: 1
 id: agent-ops
 kind: fragment
 category: agent-ops
-name: Agent operations
-description: AGENTS.md for every coding agent, plus a Claude Code adapter with CLAUDE.md, settings, and hooks guarding destructive commands and secrets, linting on write, and formatting the agent's own edits on stop.
+name: AGENTS.md and agent guardrails
+description: AGENTS.md as the one project guide for every coding agent, with hooks for Claude Code, Codex, Cursor and OpenCode that block destructive commands and secret writes. Claude Code and OpenCode also lint on write and format the agent's edits; Claude Code gets CLAUDE.md and Cursor a rule pointing at AGENTS.md.
 tags: [agents, claude, codex, cursor, opencode]
 applies_to: []
 tools: [git]

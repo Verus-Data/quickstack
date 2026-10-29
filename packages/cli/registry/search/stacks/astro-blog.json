@@ -5,9 +5,9 @@
   "source": {
     "digest": "sha256:1c7c933c4e16c6fc3257c3fda284a28e3d29c3c286cad49153268708c18dcf4d",
     "by": "drafted",
-    "model": "codex/gpt-6.1-sol",
+    "model": "claude-opus-5-5",
     "promptVersion": 2,
-    "reviewedAt": "2026-10-28"
+    "reviewedAt": "2026-10-29"
   },
   "summary": "A static blog with file-based posts, draft and unlisted publishing, RSS and a sitemap.",
   "description": "Publish articles as MDX files with checked metadata and explicit draft, published and unlisted states. Astro builds the reading pages, RSS feed and sitemap; React islands handle the interactions you choose to add. The recipe includes post scaffolding and optional generated social images. Hosting is separate: select cloudflare-pages if you want its deployment workflow.",
@@ -49,14 +49,18 @@
     "MDX",
     "content collections",
     "React islands",
-    "Tailwind typography"
+    "Tailwind typography",
+    "static site",
+    "Markdown",
+    "RSS"
   ],
   "goodFor": [
     "validating post metadata during builds",
     "optional generated social preview images"
   ],
   "notFor": [
-    "request-time server rendering",
+    "server-side rendering",
+    "server rendered",
     "built-in HTTP backend"
   ]
 }

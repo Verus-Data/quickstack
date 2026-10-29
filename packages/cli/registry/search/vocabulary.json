@@ -18,12 +18,23 @@
     "desktop-app": ["desktop app"],
     "cli-tool": ["cli tool", "command line tool"],
     "ai-app": ["chat", "llm", "ai"],
-    "fullstack": ["full stack", "frontend and backend"]
+    "fullstack": ["full stack", "fullstack", "frontend and backend"]
   },
   "languages": {
     "typescript": ["typescript", "ts", "javascript", "js", "node"],
     "python": ["python", "fastapi"],
-    "go": ["golang", "in go", "go cli", "go api", "go service"],
+    "go": [
+      "golang",
+      "in go",
+      "go cli",
+      "go api",
+      "go service",
+      "go binary",
+      "go binaries",
+      "go tool",
+      "go release",
+      "go releases"
+    ],
     "rust": ["rust"],
     "swift": ["swift", "swiftui"],
     "kotlin": ["kotlin"]

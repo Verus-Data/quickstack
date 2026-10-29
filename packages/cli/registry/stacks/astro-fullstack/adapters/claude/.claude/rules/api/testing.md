@@ -5,4 +5,4 @@ paths:
   - "**/vitest.config.ts"
 ---
 
-Read [Testing](../../../docs/guidance/astro-api/testing.md). This is the shared authoritative guidance for every selected agent.
+Read [Testing](../../../docs/guidance/astro-fullstack/testing.md). This is the shared authoritative guidance for every selected agent.

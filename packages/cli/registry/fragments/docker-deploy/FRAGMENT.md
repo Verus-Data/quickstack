@@ -47,7 +47,7 @@ A production image per deployable part and a workflow that publishes them, writt
 <!-- stacks:when stack=typescript-api -->
 **Node API**: one root `Dockerfile`. Build the bundle with bun in the build stage; the runtime stage is the official slim Node image matching `.node-version` with only `dist/`, no `node_modules` or source, running `node` on the bundle with `NODE_ENV=production`, so it logs JSON to stdout and never writes `logs/`. The health check fetches `/healthz` with Node's own `fetch`.
 <!-- stacks:end -->
-<!-- stacks:when stack=astro-api -->
+<!-- stacks:when stack=astro-fullstack -->
 **API and site**: one root `Dockerfile`, one image. The build stage installs the workspace frozen and runs `bun run build`; the runtime stage is the official slim Node image matching `.node-version` with only the API bundle and `apps/web/dist`, `STATIC_DIR` pointing at the copied site and `NODE_ENV=production`. The health check fetches `/healthz` with Node's own `fetch`.
 <!-- stacks:end -->
 <!-- stacks:when tag=go -->

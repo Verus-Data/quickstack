@@ -142,7 +142,7 @@
         },
         {
           "kind": "stack",
-          "id": "astro-api",
+          "id": "astro-fullstack",
           "grade": 1
         },
         {
@@ -203,12 +203,12 @@
       "query": "an Astro site with React islands and a separate Effect API",
       "first": {
         "kind": "stack",
-        "id": "astro-api"
+        "id": "astro-fullstack"
       },
       "relevant": [
         {
           "kind": "stack",
-          "id": "astro-api",
+          "id": "astro-fullstack",
           "grade": 2
         }
       ]
@@ -255,12 +255,12 @@
       "query": "mostly prebuilt pages, a few interactive widgets, and a typed Node backend they can call",
       "first": {
         "kind": "stack",
-        "id": "astro-api"
+        "id": "astro-fullstack"
       },
       "relevant": [
         {
           "kind": "stack",
-          "id": "astro-api",
+          "id": "astro-fullstack",
           "grade": 2
         },
         {
@@ -349,7 +349,7 @@
         },
         {
           "kind": "stack",
-          "id": "astro-api",
+          "id": "astro-fullstack",
           "grade": 1
         }
       ]
@@ -753,7 +753,7 @@
         },
         {
           "kind": "stack",
-          "id": "astro-api",
+          "id": "astro-fullstack",
           "grade": 1
         },
         {

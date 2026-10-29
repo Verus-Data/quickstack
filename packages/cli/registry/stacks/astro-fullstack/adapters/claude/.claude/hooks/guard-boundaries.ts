@@ -111,9 +111,9 @@ function reasonsFor({ workspace, file }: Target, lines: string[]): string[] {
 }
 
 const RULES: Record<Workspace, string> = {
-  contract: "docs/guidance/astro-api/effect-api.md",
-  api: "docs/guidance/astro-api/effect-api.md",
-  web: "docs/guidance/astro-api/astro.md",
+  contract: "docs/guidance/astro-fullstack/effect-api.md",
+  api: "docs/guidance/astro-fullstack/effect-api.md",
+  web: "docs/guidance/astro-fullstack/astro.md",
 };
 
 const payload = readPayload();

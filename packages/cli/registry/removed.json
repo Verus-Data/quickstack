@@ -1,1 +1,11 @@
-{ "schemaVersion": 1, "entries": {} }
+{
+  "schemaVersion": 1,
+  "entries": {
+    "astro-api": {
+      "kind": "stack",
+      "removedAt": "2026-10-29",
+      "reason": "Renamed: the stack is a static Astro site plus a separate Node API, and \"api\" read as an API built with Astro.",
+      "replacedBy": "astro-fullstack"
+    }
+  }
+}

@@ -3,7 +3,7 @@ schema_version: 1
 id: rr
 kind: fragment
 category: tooling
-name: rr remote runner
+name: rr remote test runner
 description: Configures rr (github.com/rileyhilliard/rr) so the project's test, lint, and build commands can run on remote machines over SSH, with a committed .rr.yaml of named tasks, an AGENTS.md section, and the rr Claude Code plugin.
 tags: [testing, remote, ssh]
 applies_to: []
@@ -29,7 +29,7 @@ rr has two config files. `~/.rr/config.yaml` is personal (SSH hosts, remote dire
 
 **`.rr.yaml`**, written for the rr version installed. Run `rr init --help` and read the rr skill or docs for the current schema rather than relying on memory. It should contain:
 
-- **Tasks that wrap the project's existing commands**, not new logic: typically `test` (calling the same Makefile target or script as local), `lint`, and one task per test area in a monorepo (`test-backend`, `test-frontend`), plus a parallel task that runs them together. Single-command tasks accept extra arguments, so scoped runs (`rr test -- <file or filter>`) work without extra task definitions; use an `{args}` placeholder if the command has pipes or `&&`. Don't name a task after a built-in rr command (`run`, `exec`, `sync`, and so on); rr rejects it.
+- **Tasks that wrap the project's existing commands**, not new logic: typically `test` (calling the same Makefile target or script as local), `lint`, and one task per test area in a monorepo (`test-backend`, `test-frontend`), plus a parallel task that runs them together. Single-command tasks accept extra arguments, so scoped runs (`rr test -- <file or filter>`) work without extra tasks; use an `{args}` placeholder if the command has pipes or `&&`. Don't name a task after a built-in rr command (`run`, `exec`, `sync`); rr rejects it.
 - **`require:`** lists remote toolchains, package managers and `make`, failing clearly when missing. Setup installs locked dependencies in the host's own environment. For Node projects, first check the host major meets `.node-version`; report actual and required versions and ask for a host update on failure.
 - **Sync rules** only if the defaults don't fit. rr already excludes `.git`, `.venv`, `node_modules`, caches, and agent directories, and applies `.gitignore`. A custom `sync.exclude` list replaces the defaults, so repeat them if you set one.
 - **No `hosts:`** unless the user wants specific hosts: when omitted, rr uses every host in the user's global config, which keeps personal host names out of the shared file.

@@ -3,11 +3,11 @@
   "kind": "fragment",
   "id": "openrouter-ai",
   "source": {
-    "digest": "sha256:a335d246470f3e37e4ed4415294955e74d043c91098c50af048ae3cab24e4e68",
+    "digest": "sha256:f0108bbd24c6069ed195c18c699b0960405ab70d47b62a3151f37ab6a7b36591",
     "by": "drafted",
-    "model": "codex/gpt-6.1-sol",
+    "model": "claude/claude-opus-5-5",
     "promptVersion": 2,
-    "reviewedAt": "2026-10-28"
+    "reviewedAt": "2026-10-29"
   },
   "summary": "Configure OpenRouter access, discover available models, handle provider failures safely and test requests against a local server.",
   "description": "Add the provider boundary for an OpenRouter-backed feature: optional secret configuration, model discovery, routing controls and safe upstream errors. A scriptable local HTTP server lets tests inspect real requests and exercise failures without paid credentials. The application still owns its client integration, streaming, tools and interface. Live provider calls require a key and credit limits; startup and automated tests must work without one.",
@@ -49,6 +49,6 @@
   ],
   "notFor": [
     "a complete chat interface",
-    "application-owned recording and evaluations"
+    "an eval runner or scorers"
   ]
 }

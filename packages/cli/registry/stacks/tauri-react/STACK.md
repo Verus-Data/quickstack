@@ -3,7 +3,7 @@ schema_version: 1
 id: tauri-react
 kind: stack
 name: Tauri desktop app with React
-description: Tauri 2 desktop app with a Rust crate workspace behind a thin app shell, tauri-specta typed IPC, a React/Vite frontend that reaches Rust only through a transport facade with a mock for the browser and tests, Biome, Vitest, Playwright, clippy, and a crate-edge policy check.
+description: A Tauri desktop app with Rust logic in a crate workspace behind a thin shell, and a React/Vite frontend that calls it through tauri-specta typed IPC or a mock transport in the browser and tests. Biome, Vitest, Playwright, clippy and a check on crate dependency direction cover both halves.
 tags: [rust, typescript, react, desktop, tauri, make, bun, node]
 deps:
   app: [react, react-dom, react-router, "@tauri-apps/api", "@tanstack/react-query", zustand, tailwindcss, "@tailwindcss/vite", class-variance-authority, clsx, tailwind-merge, lucide-react]

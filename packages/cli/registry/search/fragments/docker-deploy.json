@@ -3,14 +3,14 @@
   "kind": "fragment",
   "id": "docker-deploy",
   "source": {
-    "digest": "sha256:830a28fbf6688f11dcf9412befbf219b920f74bcc2026f6910efb7e187535649",
+    "digest": "sha256:4c007b6fcd4900330ca9bedebcbc11256dbf212105db20ea2ed9628816fb8bae",
     "by": "drafted",
-    "model": "codex/gpt-6.1-sol",
+    "model": "claude/claude-opus-5-5",
     "promptVersion": 2,
-    "reviewedAt": "2026-10-28"
+    "reviewedAt": "2026-10-29"
   },
   "summary": "Package deployable services as production container images and publish them to GitHub Container Registry after CI passes.",
-  "description": "Package each deployable part as a multi-stage, non-root image with a healthcheck, then publish versioned images to GitHub Container Registry after CI. The instructions adapt to the selected stack, including an API and static site in one image for astro-api. Local verification builds images. Choosing a host, configuring runtime secrets and rolling out containers remain separate deployment work.",
+  "description": "Package each deployable part as a multi-stage, non-root image with a healthcheck, then publish versioned images to GitHub Container Registry after CI. The instructions adapt to the selected stack, including an API and static site in one image for astro-fullstack. Local verification builds images. Choosing a host, configuring runtime secrets and rolling out containers remain separate deployment work.",
   "seoDescription": "Build non-root production container images with healthchecks and publish versioned artifacts to GHCR through GitHub Actions.",
   "projectExamples": [
     {
@@ -21,7 +21,7 @@
     {
       "title": "Single-image site and API",
       "description": "Bundle the Astro site and Node API into one image with static serving configured. Provision the host and supply runtime configuration outside the image.",
-      "stack": "astro-api"
+      "stack": "astro-fullstack"
     }
   ],
   "capabilities": [
@@ -41,7 +41,9 @@
     "GHCR",
     "Buildx",
     "multi-stage builds",
-    "HEALTHCHECK"
+    "HEALTHCHECK",
+    "Docker",
+    "containerize"
   ],
   "goodFor": [
     "minimal runtime images",

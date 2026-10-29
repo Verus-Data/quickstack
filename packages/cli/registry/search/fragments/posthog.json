@@ -5,9 +5,9 @@
   "source": {
     "digest": "sha256:6189bc5e1f9181f097c8212bf783a177d9ab9a756f358ce20220689584de4c88",
     "by": "drafted",
-    "model": "codex/gpt-6.1-sol",
+    "model": "claude/claude-opus-5-5",
     "promptVersion": 2,
-    "reviewedAt": "2026-10-28"
+    "reviewedAt": "2026-10-29"
   },
   "summary": "Track browser pageviews and typed product events through PostHog, with buffered initialization and analytics disabled when no key is configured.",
   "description": "Collect browser pageviews and explicitly named product events through one typed analytics module. Events can queue while PostHog initializes, and an empty key makes analytics silent in development and tests. Session recording and autocapture are off by default; consent and persistence are explicit choices. The guidance excludes user-entered text, email addresses and tokens. It does not establish legal compliance or provide server-side analytics.",
@@ -49,6 +49,8 @@
   ],
   "notFor": [
     "server-side event collection",
-    "collecting user-entered text or emails"
+    "collecting user-entered text or emails",
+    "error tracking",
+    "feature flags"
   ]
 }

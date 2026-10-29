@@ -3,11 +3,11 @@
   "kind": "fragment",
   "id": "postgres",
   "source": {
-    "digest": "sha256:b01c691fd7050d408e798ed32f99b6b45e5002adbe3b7ea32109cd401bf746da",
+    "digest": "sha256:64322e2d023e887c89088d8058ac4f116b827e08af6cb6e641add6cacb749ecb",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 2,
-    "reviewedAt": "2026-10-28"
+    "reviewedAt": "2026-10-29"
   },
   "summary": "Add local PostgreSQL services, explicit schema migrations and a private database for each test file cloned from a migrated template.",
   "description": "Add local Postgres development and test services, SQLAlchemy/Alembic integration for python-react, and explicit migration commands. The test harness clones a migrated template so each test file has a private database. Readiness checks distinguish API health from database availability. Product tables, queries and access rules are your work. Production hosting is separate, and migrations run as a release step rather than at application startup.",
