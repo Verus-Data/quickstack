@@ -7,6 +7,7 @@ name: PostgreSQL with Effect SQL
 description: "PostgreSQL for the Effect stacks (typescript-api, react-router, astro-fullstack): Docker Compose dev and test databases, migrations run by an explicit command, a scoped connection pool, a schema-decoding repository behind an Effect service, and tests on a private database per test file."
 tags: [database, postgres, effect, service]
 applies_to: [typescript-api, astro-fullstack, react-router]
+conflicts: [drizzle-postgres]
 requires_tools: [docker]
 tools: [docker]
 deps:

@@ -7,6 +7,7 @@ name: PostgreSQL with Drizzle for Next.js
 description: "PostgreSQL for the Next.js stack through Drizzle ORM and node-postgres (pg): Docker Compose dev and test databases, checked-in SQL migrations with a drift check, a server-only database module and repository, a readiness route, and tests on databases cloned from a migrated template."
 tags: [database, postgres, drizzle, service]
 applies_to: [nextjs]
+conflicts: [effect-sql-postgres]
 requires_tools: [docker]
 tools: [docker]
 deps:

@@ -534,6 +534,40 @@
       ]
     },
     {
+      "id": "fragment-drizzle-next",
+      "pool": "fragment",
+      "split": "tune",
+      "query": "next.js server actions saving to postgres with drizzle",
+      "first": {
+        "kind": "fragment",
+        "id": "drizzle-postgres"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "drizzle-postgres",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "fragment-nextjs-postgres",
+      "pool": "fragment",
+      "split": "holdout",
+      "query": "postgres database for a nextjs app",
+      "first": {
+        "kind": "fragment",
+        "id": "drizzle-postgres"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "drizzle-postgres",
+          "grade": 2
+        }
+      ]
+    },
+    {
       "id": "fragment-effect-postgres",
       "pool": "fragment",
       "split": "tune",
