@@ -23,7 +23,7 @@ Out:
 
 - Dependency numbers in the CLI.
 - Dependency numbers in `list --json` or `show`.
-- Advisories, licenses or any data about a dependency that doesn't come from these reports.
+- Advisories, licenses or any data about a dependency that doesn't come from these reports, apart from 4.5f's reviewed plain-language cards (D40).
 
 ## Design
 
@@ -120,3 +120,4 @@ The routes answer the same cases: 404 `NotFound` for a name not on the allowlist
 - 2026-10-28 (execution): a suppressed dependency stays in the ecosystem and stack lists with its cells suppressed, as the stats summary keeps a suppressed entry's row, so a list's membership doesn't move with the threshold; its allowlisted detail route returns 200 with suppressed cells.
 - 2026-10-28 (landed, stacks-api): the rollup dimensions (dep, dep_major, ecosystem, adoption, drop, transitions, co-installed lift, dep_stack with and without rates) and both routes are on `main`. The routes are in the Stats contract group, return format 0.3.0's columnar `StatsDeps` and `StatsDep`, and add `deps` to a published stack detail. A malformed query returns `BadInput` with the same details as the stats detail route. The routes read the allowlist through `IndexAssets.allowlist`: an off-allowlist name is a 404, and a missing or invalid allowlist is a 503. Remaining: the site reads the allowlist from the index directory instead of a nonexistent `/v1/allowlist` route (A8), and the seed sends v2 events so a seeded store publishes these cells (A9).
 - 2026-10-28 (landed, stacks-api): both remaining items are on `main`. The `/deps` pages read the signed allowlist from the index output (`v1/allowlist.json`) and the numbers from the two routes, and the seed sends v2 events, so a seeded store publishes every dependency cell. Left for the maintainers: reviewing the allowlist names (`packages/cli/registry/allowlist.json`).
+- 2026-10-29 (D40, 4.5f): dependency pages also show the signed plain-language card from `v1/deps.json`, which exists before any telemetry publishes. `DEPS_ENABLED` gating the whole `/deps/*` tree no longer fits: the stacks-api follow-up builds the pages from the cards with the switch off, hides only their stats sections, and changes acceptance test 7 to match.
