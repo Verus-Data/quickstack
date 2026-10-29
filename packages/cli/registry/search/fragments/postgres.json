@@ -3,7 +3,7 @@
   "kind": "fragment",
   "id": "postgres",
   "source": {
-    "digest": "sha256:64322e2d023e887c89088d8058ac4f116b827e08af6cb6e641add6cacb749ecb",
+    "digest": "sha256:c688dcc0388404f19ff5a00fb21709d3bbfcc213840e09651eab381d26e93823",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 2,
