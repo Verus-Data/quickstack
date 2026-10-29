@@ -1,5 +1,17 @@
-import type { SearchMetadata } from "./schema.js";
+import type { SearchMetadata, SearchWhy } from "./schema.js";
 import { phraseFrom, tokens, words } from "./tokens.js";
+
+export function constraintReasons(existing: boolean, request: string): SearchWhy[] {
+  return existing
+    ? [
+        {
+          field: "constraint",
+          from: request,
+          matched: "an existing repository needs a fragment; this entry scaffolds a new project",
+        },
+      ]
+    : [];
+}
 /** Exclusions match phrases, their content words, or a conventional acronym (TUI). */
 export function excluded(
   request: string,

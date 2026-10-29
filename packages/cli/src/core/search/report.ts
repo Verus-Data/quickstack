@@ -55,6 +55,9 @@ function next(result: SearchResult, invocation: string): string {
     `Next: ${invocation} search "<fewer, broader words>"`,
   ];
   if (!result.stacks.length && !result.fragments.length) return recovery.join("\n");
+  const fragment = result.fragments.find((hit) => hit.trusted && hit.tier === "strong");
+  if (fragment && !result.stacks.some((hit) => hit.tier === "strong"))
+    return `Next: ${invocation} show ${fragment.id}, then ${invocation} add ${fragment.id}.`;
   const trusted = result.stacks.find((hit) => hit.trusted);
   const confirmation = result.noStrongMatch
     ? "confirm with the user before using a weak match; then "

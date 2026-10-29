@@ -1148,6 +1148,183 @@
           "grade": 2
         }
       ]
+    },
+    {
+      "id": "rank-r13",
+      "pool": "combined",
+      "split": "tune",
+      "query": "TypeScript only, no Python, for a server rendered React dashboard",
+      "first": {
+        "kind": "stack",
+        "id": "react-router"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "react-router",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "rank-r20",
+      "pool": "no-match",
+      "split": "tune",
+      "query": "add e2e browser tests to my existing React repo",
+      "noMatch": true,
+      "relevant": []
+    },
+    {
+      "id": "rank-r21",
+      "pool": "no-match",
+      "split": "tune",
+      "query": "deploy my existing app to Fly.io",
+      "noMatch": true,
+      "relevant": []
+    },
+    {
+      "id": "rank-ts-api",
+      "pool": "combined",
+      "split": "tune",
+      "query": "typescript api",
+      "first": {
+        "kind": "stack",
+        "id": "typescript-api"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "typescript-api",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "rank-pages",
+      "pool": "combined",
+      "split": "tune",
+      "query": "migrate to Cloudflare Pages",
+      "first": {
+        "kind": "fragment",
+        "id": "cloudflare-pages"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "cloudflare-pages",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "rank-mixed",
+      "pool": "combined",
+      "split": "tune",
+      "query": "Python API with TypeScript only on frontend",
+      "first": {
+        "kind": "stack",
+        "id": "python-react"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "python-react",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "rank-review-no-python",
+      "pool": "combined",
+      "split": "tune",
+      "query": "a React dashboard with no Python on the backend",
+      "first": {
+        "kind": "stack",
+        "id": "react-router"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "react-router",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "rank-review-backend-without",
+      "pool": "combined",
+      "split": "tune",
+      "query": "a React dashboard with a backend without Python",
+      "first": {
+        "kind": "stack",
+        "id": "react-router"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "react-router",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "rank-review-app-add",
+      "pool": "no-match",
+      "split": "tune",
+      "query": "add e2e browser tests to my React app",
+      "noMatch": true,
+      "relevant": []
+    },
+    {
+      "id": "rank-review-business",
+      "pool": "combined",
+      "split": "tune",
+      "query": "new React dashboard for my existing business",
+      "first": {
+        "kind": "stack",
+        "id": "react-router"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "react-router",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "rank-review-how-migrate",
+      "pool": "combined",
+      "split": "tune",
+      "query": "how to migrate to Cloudflare Pages",
+      "first": {
+        "kind": "fragment",
+        "id": "cloudflare-pages"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "cloudflare-pages",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "rank-review-deploy-today",
+      "pool": "combined",
+      "split": "tune",
+      "query": "deploy to Cloudflare Pages today",
+      "first": {
+        "kind": "fragment",
+        "id": "cloudflare-pages"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "cloudflare-pages",
+          "grade": 2
+        }
+      ]
     }
   ]
 }
