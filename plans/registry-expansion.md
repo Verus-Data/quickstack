@@ -459,6 +459,18 @@ landed before most SDKs that could send to it; `bullmq` pulled in a cache; and
 `react-vite`, `prometheus-*`, `k6`, `sentry-expo`, `supabase`, `prisma`,
 `ci-gitlab`, `openapi-client` and `ai-sdk` had no place in the order.
 
+Batch 1 authoring found the Effect hosts can't take two optional fragments at
+once. `validate` budgets each fitting fragment alone, and every single
+composition fits, but `typescript-api` and `astro-fullstack` sit within about 30
+words of the 6,000-word brief limit with `rr` alone. Adding `effect-otlp`
+(about 600 words) or `effect-sql-postgres` (about 650) on top of `rr`,
+`docker-deploy` or each other overflows: `typescript-api` with `effect-otlp`
+and `rr` composes to 6,562. Persistence plus telemetry, the obvious pairing,
+doesn't fit. Fix it before Batch 2 adds Sentry and Better Auth to these hosts:
+trim the two stack bodies and their default fragments, moving per-stack detail
+into `files/docs/guidance/`, then add a budget check over the likely pairs
+rather than each fragment alone.
+
 ## Research validation
 
 Three research agents inspected the current registry and official online sources.

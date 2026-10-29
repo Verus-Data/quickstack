@@ -3,7 +3,7 @@ schema_version: 1
 id: nextjs
 kind: stack
 name: Next.js app on Node
-description: A full-stack Next.js App Router app served by Node, with server components, Server Actions validated by zod, a JSON health route, ESLint, Vitest with Testing Library, and a Playwright browser test against the production build.
+description: A full-stack Next.js App Router app served by Node, with server components, Server Actions validated by zod, ESLint, Vitest with Testing Library, and a Playwright browser test against the production build.
 tags: [typescript, react, web, fullstack, scripts, bun, node]
 deps:
   app: [next, react, react-dom, zod, server-only]
