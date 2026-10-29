@@ -9,7 +9,10 @@ import { run } from "./decorate/run";
 
 const root = fileURLToPath(new URL("../registry", import.meta.url));
 const program = Effect.gen(function* () {
-  const options = yield* Effect.try(() => argumentsFor(process.argv.slice(2)));
+  const options = yield* Effect.try({
+    try: () => argumentsFor(process.argv.slice(2)),
+    catch: (error) => (error instanceof Error ? error : new Error("Invalid arguments.")),
+  });
   const config = yield* Effect.try({
     try: readConfig,
     catch: () => new Error("Invalid OpenRouter configuration."),

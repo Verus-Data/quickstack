@@ -351,6 +351,16 @@ test.each([
   30_000,
 );
 
+test("a rejected argument prints the parser's reason, not a generic failure", async () => {
+  const f = setup();
+  const result = await decorate(f, ["--approve", mobile.id, "extra-id"], { tty: false });
+  expect(result.status).toBe(2);
+  expect(result.stdout).toBe("");
+  expect(result.stderr.trim()).toBe(
+    "Review one id with --restamp or --approve, without drafting flags.",
+  );
+}, 30_000);
+
 test("a person with terminal stdin can approve without drafting [4.5b#11]", async () => {
   const f = setup();
   const value = {
