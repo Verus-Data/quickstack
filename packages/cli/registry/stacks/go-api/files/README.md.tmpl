@@ -1,0 +1,46 @@
+# {{project_name}}
+
+<!-- stacks:fill One or two sentences on what this API does and who calls it. -->
+
+## Run it
+
+```bash
+make serve
+curl -s http://127.0.0.1:8080/healthz
+```
+
+The server logs JSON to stdout and stops cleanly on Ctrl+C or SIGTERM.
+
+## API
+
+<!-- stacks:fill A table of the routes (method, path, what it returns), including /healthz, and the error envelope's shape with one example. -->
+
+## Configuration
+
+Settings come from environment variables only. See [docs/configuration.md](docs/configuration.md).
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `HOST` | `127.0.0.1` | Address to listen on (`0.0.0.0` in a container) |
+| `PORT` | `8080` | Port to listen on (`0` picks a free one) |
+| `LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
+| `SHUTDOWN_TIMEOUT` | `10s` | How long in-flight requests get after a stop signal |
+
+## Development
+
+Requires Go, make, a C compiler (for the race detector) and [golangci-lint](https://golangci-lint.run/).
+
+| Command | What it does |
+|---|---|
+| `make build` | Build `bin/server` |
+| `make serve` | Build and run the server in the foreground |
+| `make test` | Unit and handler tests with the race detector |
+| `make test-integration` | Run the built binary and test it over HTTP, including signal shutdown |
+| `make lint` | golangci-lint |
+| `make vuln` | govulncheck |
+| `make coverage` | Race-enabled tests with a coverage floor |
+| `make ci` | Everything CI runs |
+
+## License
+
+Copyright (c) {{year}} {{author}}
