@@ -1,6 +1,6 @@
 # Registry expansion: missing stacks and reusable capabilities
 
-Status: APPROVED 2026-10-29 after one devils-advocate review (corrections below). Batch 1 IN PROGRESS: `nextjs`, `python-api`, `go-api`, `sveltekit`, `effect-sql-postgres`, `drizzle-postgres` and `effect-otlp` are being authored; no bench proofs yet.
+Status: APPROVED 2026-10-29 after one devils-advocate review (corrections below). Batch 1 EXECUTED: `nextjs`, `python-api`, `go-api`, `sveltekit`, `effect-sql-postgres`, `drizzle-postgres` and `effect-otlp` landed, each proven green from a fresh scaffold; no bench ledger records yet, and `drizzle-postgres` covers `nextjs` only until its SvelteKit branch is proven.
 
 Start with reusable operational fragments and a small set of missing framework
 families. The first stack candidates are Next.js, SvelteKit, Nuxt, a standalone
@@ -178,9 +178,10 @@ stacks is authored. Django stays in Batch 3 because it is PyPI.
 (`drizzle-postgres`, `effect-sql-postgres`, `redis`, `bullmq`, `s3-storage`,
 `grafana-lgtm`) cites it instead of inventing its own:
 
-1. The Compose project name and host ports come from the project (env with a
-   default derived from the project name), so two checkouts or worktrees never
-   share a container or a port.
+1. Host ports are env variables with fixed defaults (`PORT_DB`, `PORT_DB_TEST`
+   in `postgres`), and the Compose project name is the project's, so a second
+   checkout or worktree sets its own ports in `.env` and never shares a
+   container. The fragment's guidance says so.
 2. A test run creates the databases, keys, queues or buckets it uses under
    run-owned names and removes only those. Never truncate, flush or drop by
    prefix on a shared service.
@@ -457,6 +458,18 @@ existing product on a default fragment that runs under `new`; `grafana-lgtm`
 landed before most SDKs that could send to it; `bullmq` pulled in a cache; and
 `react-vite`, `prometheus-*`, `k6`, `sentry-expo`, `supabase`, `prisma`,
 `ci-gitlab`, `openapi-client` and `ai-sdk` had no place in the order.
+
+Batch 1 authoring found the Effect hosts can't take two optional fragments at
+once. `validate` budgets each fitting fragment alone, and every single
+composition fits, but `typescript-api` and `astro-fullstack` sit within about 30
+words of the 6,000-word brief limit with `rr` alone. Adding `effect-otlp`
+(about 600 words) or `effect-sql-postgres` (about 650) on top of `rr`,
+`docker-deploy` or each other overflows: `typescript-api` with `effect-otlp`
+and `rr` composes to 6,562. Persistence plus telemetry, the obvious pairing,
+doesn't fit. Fix it before Batch 2 adds Sentry and Better Auth to these hosts:
+trim the two stack bodies and their default fragments, moving per-stack detail
+into `files/docs/guidance/`, then add a budget check over the likely pairs
+rather than each fragment alone.
 
 ## Research validation
 

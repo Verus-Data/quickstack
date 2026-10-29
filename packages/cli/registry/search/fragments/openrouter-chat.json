@@ -62,6 +62,7 @@
   "notFor": [
     "terminal interfaces",
     "private user accounts without added authentication",
-    "auth"
+    "auth",
+    "e2e browser tests"
   ]
 }

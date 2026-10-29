@@ -1,0 +1,66 @@
+{
+  "schemaVersion": 1,
+  "kind": "stack",
+  "id": "sveltekit",
+  "source": {
+    "digest": "sha256:d8744156414de9f708792ee8d15ef7e5fbfdf6870274ff34748e9fc10d64ee87",
+    "by": "drafted",
+    "model": "claude-opus-5-5",
+    "promptVersion": 2,
+    "reviewedAt": "2026-10-29"
+  },
+  "summary": "A SvelteKit app on Node with server load functions, zod-validated form actions and browser tests against the production build.",
+  "description": "Start a SvelteKit project that the Node adapter builds into a standalone server you run with node. Pages load their data on the server from a server-only service, forms post to form actions that validate with zod and return field errors, and the forms still work with JavaScript turned off. Vitest covers schemas, services, actions and components; Playwright drives the production build in Chromium. There is no database, sign-in or hosting setup; add those for a real product.",
+  "seoDescription": "A SvelteKit starter on Node with server load functions, zod-validated form actions, svelte-check, ESLint, Vitest and Playwright against the production build.",
+  "projectExamples": [
+    {
+      "title": "Team inventory tracker",
+      "description": "Server-rendered lists and forms backed by form actions, starting from the in-memory items slice. Swap the service for a real database and add sign-in before sharing it."
+    },
+    {
+      "title": "Self-hosted event signup site",
+      "description": "Signup forms that work without JavaScript, served by node on your own box. Add storage and email when the product needs them."
+    }
+  ],
+  "platforms": [
+    "web",
+    "server"
+  ],
+  "productKinds": [
+    "web-app",
+    "fullstack"
+  ],
+  "languages": [
+    "typescript"
+  ],
+  "requests": [
+    "start a SvelteKit app served by Node",
+    "svelte project with form actions and zod validation",
+    "a svelte web app with server-side rendering and load functions",
+    "svelte forms with progressive enhancement and a server fallback",
+    "self-host a SvelteKit site with the node adapter"
+  ],
+  "useCases": [
+    "server-rendered Svelte apps",
+    "forms backed by form actions",
+    "self-hosted SvelteKit on Node"
+  ],
+  "synonyms": [
+    "SvelteKit",
+    "Svelte",
+    "Svelte Kit",
+    "adapter-node",
+    "form actions",
+    "load functions",
+    "progressive enhancement",
+    "SSR",
+    "sv create"
+  ],
+  "goodFor": [
+    "server and browser code boundaries",
+    "production build checks in a browser"
+  ],
+  "notFor": [
+    "React"
+  ]
+}

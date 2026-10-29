@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "kind": "stack",
+  "id": "python-api",
+  "source": {
+    "digest": "sha256:e5264b0bf372fb2480a16c51a06e3452519e8660132626c6c79407fcd58c328d",
+    "by": "drafted",
+    "model": "claude-opus-5-5",
+    "promptVersion": 2,
+    "reviewedAt": "2026-10-29"
+  },
+  "summary": "A FastAPI JSON service in Python with typed routes, one error format, request-id logs and a committed OpenAPI spec.",
+  "description": "Start a Python HTTP API on FastAPI and Uvicorn with no frontend. An app factory, settings and lifespan keep startup testable; routes return one error envelope, and middleware tags every log line with a request id. Tests run the real app in process, and a drift check keeps the committed OpenAPI spec in step with the code. The example resource lives in memory: add postgres for a database, and build authentication yourself.",
+  "seoDescription": "A FastAPI service recipe with uv, ruff, mypy and pytest, structlog request logs, one error envelope and an OpenAPI drift check.",
+  "projectExamples": [
+    {
+      "title": "Internal pricing service",
+      "description": "Expose pricing rules as typed FastAPI endpoints that other services call. The rules, their storage and caller authentication are your work."
+    },
+    {
+      "title": "Field report intake API",
+      "description": "Add postgres to store submitted reports, then build validated create and list endpoints on it. Access control and file uploads need their own design.",
+      "withFragments": [
+        "postgres"
+      ]
+    }
+  ],
+  "platforms": [
+    "server"
+  ],
+  "productKinds": [
+    "api"
+  ],
+  "languages": [
+    "python"
+  ],
+  "requests": [
+    "start a FastAPI service with no frontend",
+    "a Python backend that serves JSON endpoints",
+    "keep my committed OpenAPI spec in sync with my Python routes",
+    "return one consistent error format from a Python web service",
+    "log every request with an id in a FastAPI app"
+  ],
+  "useCases": [
+    "JSON APIs in Python",
+    "backends for separate browser or mobile clients",
+    "API contract checks"
+  ],
+  "synonyms": [
+    "FastAPI",
+    "Uvicorn",
+    "pydantic",
+    "uv",
+    "OpenAPI",
+    "Flask alternative",
+    "Python microservice"
+  ],
+  "goodFor": [
+    "Python business logic behind HTTP",
+    "typed request validation"
+  ],
+  "notFor": [
+    "React",
+    "TypeScript",
+    "browser frontend",
+    "command line interface"
+  ]
+}

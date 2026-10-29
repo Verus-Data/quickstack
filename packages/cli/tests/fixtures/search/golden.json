@@ -75,6 +75,108 @@
       ]
     },
     {
+      "id": "platform-go-http-stdlib",
+      "pool": "paraphrase",
+      "split": "tune",
+      "query": "http server in go with net/http and no dependencies",
+      "first": {
+        "kind": "stack",
+        "id": "go-api"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "go-api",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "platform-go-backend-shutdown",
+      "pool": "platform",
+      "split": "holdout",
+      "query": "golang json backend that handles shutdown signals",
+      "first": {
+        "kind": "stack",
+        "id": "go-api"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "go-api",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "platform-nextjs-app-router",
+      "pool": "platform",
+      "split": "tune",
+      "query": "Next.js project using the app directory and server actions",
+      "first": {
+        "kind": "stack",
+        "id": "nextjs"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "nextjs",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "platform-nextjs-self-host",
+      "pool": "platform",
+      "split": "holdout",
+      "query": "a React site built with Next that I run with next start on my own box",
+      "first": {
+        "kind": "stack",
+        "id": "nextjs"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "nextjs",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "platform-sveltekit-node",
+      "pool": "platform",
+      "split": "tune",
+      "query": "svelte kit starter that runs on my own node server",
+      "first": {
+        "kind": "stack",
+        "id": "sveltekit"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "sveltekit",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "platform-svelte-forms",
+      "pool": "platform",
+      "split": "holdout",
+      "query": "build a svelte site where forms post to the server and show validation errors",
+      "first": {
+        "kind": "stack",
+        "id": "sveltekit"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "sveltekit",
+          "grade": 2
+        }
+      ]
+    },
+    {
       "id": "platform-typescript-terminal",
       "pool": "platform",
       "split": "holdout",
@@ -105,6 +207,45 @@
           "kind": "stack",
           "id": "cloudflare-react-router",
           "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "platform-python-json-only",
+      "pool": "platform",
+      "split": "tune",
+      "query": "an HTTP service in Python that only returns JSON, no UI",
+      "first": {
+        "kind": "stack",
+        "id": "python-api"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "python-api",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "platform-python-openapi",
+      "pool": "platform",
+      "split": "holdout",
+      "query": "uvicorn app with typed endpoints and an openapi contract I commit",
+      "first": {
+        "kind": "stack",
+        "id": "python-api"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "python-api",
+          "grade": 2
+        },
+        {
+          "kind": "stack",
+          "id": "python-react",
+          "grade": 1
         }
       ]
     },
@@ -349,6 +490,11 @@
         },
         {
           "kind": "stack",
+          "id": "nextjs",
+          "grade": 2
+        },
+        {
+          "kind": "stack",
           "id": "astro-fullstack",
           "grade": 1
         }
@@ -379,6 +525,11 @@
           "kind": "stack",
           "id": "cloudflare-react-router",
           "grade": 2
+        },
+        {
+          "kind": "stack",
+          "id": "nextjs",
+          "grade": 2
         }
       ]
     },
@@ -404,6 +555,125 @@
       "pool": "fragment",
       "split": "holdout",
       "query": "a Postgres database for my FastAPI app",
+      "first": {
+        "kind": "fragment",
+        "id": "postgres"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "postgres",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "fragment-effect-otel-spans",
+      "pool": "fragment",
+      "split": "tune",
+      "query": "instrument my effect http server with otel spans",
+      "first": {
+        "kind": "fragment",
+        "id": "effect-otlp"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "effect-otlp",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "fragment-effect-otlp-collector",
+      "pool": "fragment",
+      "split": "holdout",
+      "query": "ship opentelemetry traces from an effect backend to tempo",
+      "first": {
+        "kind": "fragment",
+        "id": "effect-otlp"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "effect-otlp",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "fragment-drizzle-next",
+      "pool": "fragment",
+      "split": "tune",
+      "query": "next.js server actions saving to postgres with drizzle",
+      "first": {
+        "kind": "fragment",
+        "id": "drizzle-postgres"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "drizzle-postgres",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "fragment-nextjs-postgres",
+      "pool": "fragment",
+      "split": "holdout",
+      "query": "postgres database for a nextjs app",
+      "first": {
+        "kind": "fragment",
+        "id": "drizzle-postgres"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "drizzle-postgres",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "fragment-effect-postgres",
+      "pool": "fragment",
+      "split": "tune",
+      "query": "hook up postgresql to an effect httpapi service",
+      "first": {
+        "kind": "fragment",
+        "id": "effect-sql-postgres"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "effect-sql-postgres",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "fragment-astro-api-postgres",
+      "pool": "fragment",
+      "split": "holdout",
+      "query": "postgres for the api half of my astro project",
+      "first": {
+        "kind": "fragment",
+        "id": "effect-sql-postgres"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "effect-sql-postgres",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "fragment-sqlalchemy-alembic",
+      "pool": "fragment",
+      "split": "tune",
+      "query": "sqlalchemy and alembic for my FastAPI service",
       "first": {
         "kind": "fragment",
         "id": "postgres"

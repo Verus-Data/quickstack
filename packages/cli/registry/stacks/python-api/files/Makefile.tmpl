@@ -1,0 +1,51 @@
+# {{project_name}} development commands.
+#
+# A starting point: adapt the recipes to the project, but keep the target
+# names. `stacks verify` calls install, lint, typecheck, test, check-openapi
+# and start. CI calls install, lint, typecheck, coverage and check-openapi.
+
+PORT_API ?= 8000
+API_HOST ?= 127.0.0.1
+export PORT_API
+
+.DEFAULT_GOAL := help
+.PHONY: help install lint format typecheck test coverage dev start openapi check-openapi clean
+
+help: ## List targets
+	@grep -E '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-16s %s\n", $$1, $$2}'
+
+install: ## uv sync (--locked when CI is set)
+	uv sync $(if $(CI),--locked)
+
+lint: ## ruff check + ruff format --check
+	uv run ruff check . && uv run ruff format --check .
+
+format: ## ruff format + ruff check --fix
+	uv run ruff format . && uv run ruff check --fix .
+
+typecheck: ## mypy strict over app, tests and scripts
+	uv run mypy app tests scripts
+
+test: ## pytest (parallel)
+	uv run pytest -n auto
+
+coverage: ## pytest with the coverage floor
+	uv run pytest -n auto --cov --cov-report=term-missing
+
+dev: ## Uvicorn with reload on PORT_API
+	uv run uvicorn app.main:app --reload --host $(API_HOST) --port $(PORT_API)
+
+start: ## Uvicorn without reload on PORT_API, as production runs it
+	uv run uvicorn app.main:app --host $(API_HOST) --port $(PORT_API)
+
+openapi: ## Write the app's OpenAPI spec to openapi.json
+	uv run python -m scripts.dump_openapi openapi.json
+
+check-openapi: ## Fail if openapi.json no longer matches the app's spec (run make openapi)
+	@tmp=$$(mktemp); trap 'rm -f "$$tmp"' EXIT; \
+	uv run python -m scripts.dump_openapi "$$tmp" || exit 1; \
+	uv run python -c 'import json, sys; a, b = (json.load(open(p)) for p in sys.argv[1:]); sys.exit(a != b)' "$$tmp" openapi.json \
+		|| { echo "openapi.json is stale: run make openapi"; exit 1; }
+
+clean: ## Remove caches and coverage output
+	rm -rf .pytest_cache .mypy_cache .ruff_cache htmlcov .coverage .coverage.*

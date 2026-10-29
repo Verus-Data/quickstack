@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "kind": "fragment",
+  "id": "drizzle-postgres",
+  "source": {
+    "digest": "sha256:e9bc3aafc4bfe35ad79c9b29c6d31d84455e9ac5d98872d33b7bd357105f0fb2",
+    "by": "drafted",
+    "model": "claude-opus-5-5",
+    "promptVersion": 2,
+    "reviewedAt": "2026-10-29"
+  },
+  "summary": "Add Postgres to a Next.js app through Drizzle ORM, with checked-in SQL migrations and a private database for each test file.",
+  "description": "Add PostgreSQL to the Next.js stack through Drizzle ORM and the pg driver: Docker Compose services for development and tests, checked-in SQL migrations with a drift check, a server-only database module, one repository behind the starter items service and a readiness route. Each test file gets its own database cloned from a migrated template, and the end-to-end run gets its own too. Your product tables, queries and access rules are still to write; hosting a production database is separate.",
+  "seoDescription": "Postgres for Next.js through Drizzle ORM and pg, with Docker Compose, checked-in SQL migrations and isolated databases for each test file.",
+  "projectExamples": [
+    {
+      "title": "Team request tracker",
+      "description": "Store requests and their status in Postgres through Drizzle repositories behind Server Actions. Add sign-in and per-team access rules before sharing it.",
+      "stack": "nextjs"
+    },
+    {
+      "title": "Inventory catalog with history",
+      "description": "Keep catalog items and change records in your own tables, with migrations reviewed in pull requests and each test file on a private database.",
+      "stack": "nextjs"
+    }
+  ],
+  "capabilities": [
+    "database"
+  ],
+  "requests": [
+    "drizzle orm with postgres in my nextjs app",
+    "store my Next.js app's data in a real SQL database with migrations",
+    "typed database queries from server components and server actions",
+    "run database tests in parallel without sharing one database"
+  ],
+  "useCases": [
+    "persistent data for Next.js apps",
+    "typed SQL queries on a Node server",
+    "SQL migrations checked in with the code",
+    "parallel database integration tests"
+  ],
+  "synonyms": [
+    "Drizzle",
+    "Drizzle ORM",
+    "drizzle-kit",
+    "node-postgres",
+    "PostgreSQL",
+    "ORM",
+    "Docker Compose",
+    "Prisma alternative"
+  ],
+  "goodFor": [
+    "migrations as the schema source",
+    "server-only database access"
+  ],
+  "notFor": []
+}

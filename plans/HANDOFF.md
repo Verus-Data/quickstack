@@ -15,10 +15,18 @@ The [registry expansion proposal](registry-expansion.md) inventories all 10 stac
 and 20 fragments and links three online research reports with dependency-level
 creation outlines. A devils-advocate review reshaped its delivery order into
 batches, and the maintainer approved it. Batch 0 (narrowing the remaining
-tag-wide `applies_to` lists) and Batch 1 are in progress: stacks `nextjs`,
-`python-api`, `go-api`, `sveltekit`; fragments `effect-sql-postgres`,
-`drizzle-postgres`, `effect-otlp`; `postgres` widened to `python-api`. Low-value
-or unprovable candidates are marked deferred in the reports. .NET is excluded.
+tag-wide `applies_to` lists) landed. Batch 1 is EXECUTED: stacks `nextjs`,
+`python-api`, `go-api`, `sveltekit`; fragments `effect-sql-postgres` (Effect
+hosts), `drizzle-postgres` (`nextjs`; the two conflict), `effect-otlp`;
+`postgres` widened to `python-api`. Each was proven green from a fresh scaffold
+by a Codex prover; none has a bench ledger record yet. Open follow-ups, in
+order: trim `typescript-api` and `astro-fullstack` so an Effect host fits two
+optional fragments (plan, "What this plan may get wrong"); add the new
+fragments to their hosts' `fragments.optional`; prove and add the
+`drizzle-postgres` SvelteKit branch; bench each new composition; fix
+`cloudflare-d1` outranking `drizzle-postgres` on "add a sql database with
+migrations to my nextjs project". Low-value or unprovable candidates are marked
+deferred in the reports. .NET is excluded.
 
 The subsequent [stack audit](stack-audit-2026-10-29.md) reviews all ten stacks and
 records eight findings, including Postgres test-database ownership, fragment

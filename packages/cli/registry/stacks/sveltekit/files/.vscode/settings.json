@@ -1,0 +1,27 @@
+{
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "[svelte]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "eslint.validate": ["javascript", "typescript", "svelte"],
+
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+
+  "search.exclude": {
+    ".svelte-kit": true,
+    "build": true,
+    "coverage": true,
+    "test-results": true,
+    "playwright-report": true,
+    "bun.lock": true
+  },
+  "files.readonlyInclude": {
+    ".svelte-kit/**": true,
+    "build/**": true
+  }
+}
