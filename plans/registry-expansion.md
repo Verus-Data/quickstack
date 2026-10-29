@@ -1,6 +1,6 @@
 # Registry expansion: missing stacks and reusable capabilities
 
-Status: APPROVED 2026-10-29 after one devils-advocate review (corrections below). Batch 1 IN PROGRESS: `nextjs`, `python-api`, `go-api`, `sveltekit`, `effect-sql-postgres`, `drizzle-postgres` and `effect-otlp` are being authored; no bench proofs yet.
+Status: APPROVED 2026-10-29 after one devils-advocate review (corrections below). Batch 1 EXECUTED: `nextjs`, `python-api`, `go-api`, `sveltekit`, `effect-sql-postgres`, `drizzle-postgres` and `effect-otlp` landed, each proven green from a fresh scaffold; no bench ledger records yet, and `drizzle-postgres` covers `nextjs` only until its SvelteKit branch is proven.
 
 Start with reusable operational fragments and a small set of missing framework
 families. The first stack candidates are Next.js, SvelteKit, Nuxt, a standalone
