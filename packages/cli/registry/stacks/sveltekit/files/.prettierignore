@@ -1,0 +1,14 @@
+# Generated output
+.svelte-kit/
+build/
+coverage/
+test-results/
+playwright-report/
+blob-report/
+bun.lock
+
+# Static assets, copied as they are
+/static/
+
+# Written and read by stacks
+.stacks/
