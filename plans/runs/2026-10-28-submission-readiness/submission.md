@@ -56,4 +56,5 @@ buttons, Back, focus and canonicals were right; search ranks `python-react`, `go
 `ci-github` first for their queries. Findings: `/browse/trending/` is gone (removed on purpose
 in stacks-api `e957690`; nothing links to it); search needs JavaScript (by design, with browse
 links); and python-react's dependency reporter counts (5,445) exceed its project count (4,815)
-in the same window, which is being fixed.
+in the same window. Fixed by stacks-api `1561803` and the final reseed: 5,080 projects, largest
+dependency count 3,130 (`release.md`, "Final reseed and deploy").

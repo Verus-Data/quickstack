@@ -37,3 +37,17 @@
 | `doctor` | `Configuration: ok`; remote index off |
 
 The slow stats routes are an API fix in progress (stats speed unit); no CLI change is needed.
+
+## Final reseed and deploy (stacks-api `1561803`)
+
+stacks-api `58a0423` moved stats cell selection into SQL with a bounded read cache, and the
+dependency-count merge made a stack's dependency counts use that stack's 28-day mature
+population. Production was reseeded (`--profile active --seed 1 --days 120 --through
+2026-10-28`) and redeployed from `1561803`: 244 pages, stats pass about 15 s.
+
+- Routes: `/healthz` 0.17 s, `/v1/stats` 0.24 s, `/v1/stacks/python-react/stats` 0.35 s,
+  `/v1/deps/npm/stats` 0.12 s.
+- python-react, 28 days through 2026-10-28: 5,080 projects; the largest dependency count is
+  3,130 (`fastapi`, `typescript`, `react-dom`), so none exceeds the project count.
+- Packed CLI `show python-react` in a fresh `HOME`: `Stats: 5080 projects; green 86% (n=4495,
+  seeded); no verify 11%; median to green 23 min; through 2026-10-28`.

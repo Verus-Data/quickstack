@@ -48,7 +48,7 @@ than improvising.
 | ID | Task | Depends on | Owner | State | Evidence |
 | --- | --- | --- | --- | --- | --- |
 | [R0](r0-baseline.md) | Baseline, in-flight work, demo scope | none | Claude | Done | `baseline.md` |
-| [R1](r1-search-contracts.md) | Search and guidance an agent can follow | R0 | Claude + Codex | In progress | `contracts.md` |
+| [R1](r1-search-contracts.md) | Search and guidance an agent can follow | R0 | Claude + Codex | Done | `contracts.md` |
 | [R2](r2-seed.md) | Seed data that looks right on the site | R0 | Claude + Codex | Done | `seed-quality.md` |
 | [R3](r3-recipe-proof.md) | Fresh proof for the demo recipe | R0; S5, S8 | Claude + Codex | Done | `recipe-proof.md` |
 | [R4](r4-website.md) | Website demo polish | R0; R2 sample for the walkthrough | Claude + Codex | Done (production walkthrough in R5) | `web.md` |
