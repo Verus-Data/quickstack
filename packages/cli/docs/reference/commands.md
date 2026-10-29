@@ -205,7 +205,7 @@ stacks update --check  # report versions without installing
 stacks update --json   # UpdateResult
 ```
 
-Each invocation makes one request to the npm registry for the latest `@steamfield/stacks` version, with a 10 second timeout. Nothing checks in the background. An equal version reports `up-to-date`; a running version newer than the published one reports `ahead`. Neither runs npm.
+Each invocation makes one request to the npm registry for the latest `@steamfield/stacks` version, with a 10 second timeout. Nothing checks in the background, and no version is cached, so under `--offline` or `STACKS_OFFLINE=1` both `update` and `update --check` fail with `BadInput` (`flag: "offline"`, exit 2) before any request. An equal version reports `up-to-date`; a running version newer than the published one reports `ahead`. Neither runs npm.
 
 When a newer version exists, `update` detects npx from the running package's path, or checks npm's global prefix against the package's real path. A global npm install upgrades with `npm install -g @steamfield/stacks@<latest>`, pinned to the version just reported, with a 5 minute timeout. Both npm calls run from your home directory with your captured environment, so a project's `.npmrc` cannot change them. Human output reports progress before installing; npm's output is kept private.
 

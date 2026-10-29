@@ -22,7 +22,7 @@ export const updateCommand = Command.make(
     }),
 ).pipe(
   Command.withDescription(
-    "Check the latest published version with one request to the npm registry; nothing runs in the background. Upgrades a global npm install; other installs get the command to run. Agents use --check. Exits 0 when up to date, ahead, available or updated; 4 when the registry is unavailable; 6 when an agent tries to install a newer version without --check or npm fails; 130 when interrupted.",
+    "Check the latest published version with one request to the npm registry; nothing runs in the background. Upgrades a global npm install; other installs get the command to run. Agents use --check. Exits 0 when up to date, ahead, available or updated; 2 in offline mode, without a request; 4 when the registry is unavailable; 6 when an agent tries to install a newer version without --check or npm fails; 130 when interrupted.",
   ),
   Command.withShortDescription("Check or update a global npm install."),
   Command.withExamples(({ commandPath }) => [
