@@ -37,6 +37,7 @@ statement needs a change first.
 | [risks-and-open-questions.md](risks-and-open-questions.md) | Risks with mitigations; open questions for the maintainers |
 | [phases/](phases/) | One file per sub-phase (`phase-<phase>.<sub>[letter]-<slug>.md`), each with scope, design, files touched, acceptance tests and exit criteria |
 | [runs/](runs/README.md) | Run notes: gate and bench runs, which are also the evidence for D5 |
+| [registry-expansion.md](registry-expansion.md) | APPROVED 2026-10-29, Batch 1 in progress: registry gap analysis, researched stack/fragment dependency outlines and the batched delivery order |
 
 ## Phases
 

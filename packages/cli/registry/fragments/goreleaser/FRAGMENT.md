@@ -6,7 +6,7 @@ category: release
 name: GoReleaser
 description: Tag-driven releases for a Go binary with GoReleaser, covering cross-platform builds with version ldflags, archives, checksums, a conventional-commit changelog, a GitHub release workflow, and optional Homebrew publishing.
 tags: [go, release, goreleaser]
-applies_to: [go-cli, go]
+applies_to: [go-cli]
 requires_tools: [goreleaser]
 tools: [goreleaser]
 decisions:

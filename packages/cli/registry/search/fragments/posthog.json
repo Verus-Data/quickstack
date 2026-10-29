@@ -3,7 +3,7 @@
   "kind": "fragment",
   "id": "posthog",
   "source": {
-    "digest": "sha256:6189bc5e1f9181f097c8212bf783a177d9ab9a756f358ce20220689584de4c88",
+    "digest": "sha256:00887a21cebe76b7fcd934b06e1544af29d59826da71739ebf5e56b9bb3acd15",
     "by": "drafted",
     "model": "claude/claude-opus-5-5",
     "promptVersion": 2,

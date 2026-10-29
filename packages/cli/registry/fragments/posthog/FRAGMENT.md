@@ -6,7 +6,7 @@ category: vendor
 name: PostHog analytics
 description: PostHog analytics in the web client, disabled when no key is set so tests, CI, and sandboxes need no account, with a typed event catalog and a pre-init buffer.
 tags: [analytics, vendor, web]
-applies_to: [web]
+applies_to: [astro-blog, astro-fullstack, cloudflare-react-router, python-react, react-router]
 deps:
   web: [posthog-js]
 decisions:

@@ -3,11 +3,11 @@
   "kind": "fragment",
   "id": "cloudflare-pages",
   "source": {
-    "digest": "sha256:5f11ead576b105ef7419f4c03da93babfb6c319acabb7438660893c1f21cab19",
+    "digest": "sha256:ead386ba8a4809d68cbd97659dff5e9c6e4fb0faba6fd850284f04a5c40aa5c6",
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 2,
-    "reviewedAt": "2026-10-28"
+    "reviewedAt": "2026-10-29"
   },
   "summary": "Publish a static site to Cloudflare Pages with production deploys, pull request previews, caching headers and redirects.",
   "description": "Publish a static build to Cloudflare Pages using project-local Wrangler. The recipe covers production and pull-request preview deployments, plus caching headers and redirects. Direct upload from GitHub Actions is the default; git integration is another documented choice. Creating the Pages project, setting credentials and attaching a domain remain explicit user actions. It does not provide a backend server.",

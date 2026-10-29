@@ -6,7 +6,7 @@ category: deploy
 name: Cloudflare Pages
 description: Deploy a static site's build output to Cloudflare Pages with wrangler (installed as a dev dependency, run through bunx), covering production deploys from the default branch, preview deploys for pull requests, and headers and redirects config.
 tags: [deploy, cloudflare, static]
-applies_to: [astro-blog, static]
+applies_to: [astro-blog]
 deps:
   deploy-dev: [wrangler]
 decisions:

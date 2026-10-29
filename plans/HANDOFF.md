@@ -11,6 +11,15 @@ to `archive/` and leave a link.
 
 ## Registry metadata pass (2026-10-29)
 
+The [registry expansion proposal](registry-expansion.md) inventories all 10 stacks
+and 20 fragments and links three online research reports with dependency-level
+creation outlines. A devils-advocate review reshaped its delivery order into
+batches, and the maintainer approved it. Batch 0 (narrowing the remaining
+tag-wide `applies_to` lists) and Batch 1 are in progress: stacks `nextjs`,
+`python-api`, `go-api`, `sveltekit`; fragments `effect-sql-postgres`,
+`drizzle-postgres`, `effect-otlp`; `postgres` widened to `python-api`. Low-value
+or unprovable candidates are marked deferred in the reports. .NET is excluded.
+
 The subsequent [stack audit](stack-audit-2026-10-29.md) reviews all ten stacks and
 records eight findings, including Postgres test-database ownership, fragment
 compatibility, verification gaps and two shared-infrastructure opportunities.
