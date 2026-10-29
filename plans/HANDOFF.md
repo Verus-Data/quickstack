@@ -9,6 +9,20 @@ Start here, then read repo `AGENTS.md`, the README's
 next steps, who owns each. When it grows past a couple of screens, move the dated detail
 to `archive/` and leave a link.
 
+## Plain-language metadata (2026-10-29)
+
+[4.5f](phases/phase-4.5f-plain-language-metadata.md) is executed (D40). Every bundled
+sidecar has an unscored `plain` block (what it is, good at, not good at; the example is
+`projectExamples[0]`), and every allowlisted dependency a bundled entry uses has a reviewed
+card in `packages/cli/registry/deps/<ecosystem>.json`. `show` leads with the copy,
+`validate` checks it (`plain-versioned`, `deps-*`), and `build:index` signs `v1/deps.json`.
+A new entry or dependency now needs its `plain` block and card before the bundled registry
+is warning-free: `deps-missing` names the gap.
+
+Next, in stacks-api: dependency pages built from `v1/deps.json` with `DEPS_ENABLED` hiding
+only the stats sections (4.2e's dated note), the "What this is" panel on stack and fragment
+pages, and each dependency's `whatItIs` in the stack page's dependencies section.
+
 ## Registry metadata pass (2026-10-29)
 
 The [registry expansion proposal](registry-expansion.md) inventories all 10 stacks

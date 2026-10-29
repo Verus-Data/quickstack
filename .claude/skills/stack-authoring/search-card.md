@@ -32,6 +32,8 @@ Closed facets (`platforms`, `productKinds`, `languages`, `capabilities`) must ma
 
 The editorial fields (`description`, `seoDescription`, `projectExamples`) are for people browsing the directory, and a new bundled card has all three, with at least one project example. Write them as plain prose: what the entry sets up, then what a product still needs. Project examples are illustrative; name the optional fragments they need in `withFragments` and never imply auth, persistence or compliance the entry doesn't provide.
 
+`plain` (directly after `projectExamples`) is the copy `show` and the directory lead with, written for someone who has never used this ecosystem: `whatItIs` (one sentence, at most 30 words), `goodAt` (2 or 3 jobs, at most 15 words each) and `notGoodAt` (1 to 3 limits, ideally naming what to use instead). Explain any unavoidable technical word in the same sentence, and keep it version-neutral (`plain-versioned` flags a version number). Every name in the entry's `deps` also needs a card in `registry/deps/<ecosystem>.json` (`whatItIs`, plus `goodAt`, `notGoodAt` and an `example` for a package a person would choose; support packages such as `@types/*` and plugins get `whatItIs` only), or `validate` reports `deps-missing`; follow the existing cards' tone.
+
 ## Provenance: you write drafts, a person reviews
 
 `reviewedAt` is a person's statement that they read the card. Don't set it, and don't run `bun run decorate --restamp` or `--approve`: restamp writes today's date as a review, so running it yourself fakes one.

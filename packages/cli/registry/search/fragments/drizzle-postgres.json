@@ -24,6 +24,18 @@
       "stack": "nextjs"
     }
   ],
+  "plain": {
+    "whatItIs": "Adds a PostgreSQL database server to the Next.js app, with Drizzle, a library for writing database queries in code, and saved steps for table changes.",
+    "goodAt": [
+      "Running a local database on your own computer for development and tests",
+      "Giving each test file its own copy of the database, made from a ready template",
+      "Saving table changes as steps, and checking them against the code's schema"
+    ],
+    "notGoodAt": [
+      "Hosting a live production database; arrange a hosting provider separately.",
+      "Apps on other stacks; the Effect and FastAPI Postgres add-ons are built for those."
+    ]
+  },
   "capabilities": [
     "database"
   ],

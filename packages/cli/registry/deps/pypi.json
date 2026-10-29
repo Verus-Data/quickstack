@@ -17,6 +17,24 @@
         "reviewedAt": "2026-10-29"
       }
     },
+    "asgi-lifespan": {
+      "whatItIs": "A Python test helper that runs a web app's startup and shutdown steps, so tests use an app that is fully set up.",
+      "goodAt": [
+        "Running a web app's startup code, such as opening a database connection, inside tests",
+        "Letting tests send requests to the app once its resources are ready"
+      ],
+      "notGoodAt": [
+        "Running a live app; it's a test helper, so the real server handles startup there."
+      ],
+      "example": "When a test starts, the helper opens the app's database connection first, then closes it again once the test finishes.",
+      "homepage": "https://github.com/florimondmanca/asgi-lifespan",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
     "asyncpg": {
       "whatItIs": "asyncpg, a library that lets Python programs read and write a PostgreSQL database, a system for storing records in tables, without pausing the program while they wait.",
       "goodAt": [
@@ -42,6 +60,22 @@
       "notGoodAt": ["Storing data by itself; connect a database separately."],
       "example": "When a phone app sends an order with no quantity, the service sends back an error that names the missing field instead of saving the order.",
       "homepage": "https://github.com/fastapi/fastapi",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "greenlet": {
+      "whatItIs": "A Python library that SQLAlchemy, a database toolkit, needs to run its database calls without holding up the rest of the program.",
+      "goodAt": [
+        "Letting a Python service use SQLAlchemy's asynchronous database calls",
+        "Letting other requests proceed while a database query is still running"
+      ],
+      "notGoodAt": ["Calling it directly from your code; SQLAlchemy uses it behind the scenes."],
+      "example": "When a shopper opens a saved cart, the service asks the database for the items and keeps answering other visitors while it waits.",
+      "homepage": "https://github.com/python-greenlet/greenlet",
       "source": {
         "by": "drafted",
         "model": "claude-haiku-5-5",

@@ -25,6 +25,18 @@
       ]
     }
   ],
+  "plain": {
+    "whatItIs": "A starter web service written in Python with FastAPI, a toolkit for building them, which sends back data in JSON and has no website.",
+    "goodAt": [
+      "Business rules in Python that other programs reach over the web",
+      "Checking every request's fields and giving a clear error when one is wrong",
+      "Keeping a published description of the API in step with the code"
+    ],
+    "notGoodAt": [
+      "Websites or browser screens; the Python and React stack covers those.",
+      "Saving data across restarts: the example records live in memory until you add a database."
+    ]
+  },
   "platforms": [
     "server"
   ],

@@ -22,6 +22,18 @@
       "description": "Signup forms that work without JavaScript, served by node on your own box. Add storage and email when the product needs them."
     }
   ],
+  "plain": {
+    "whatItIs": "A starter web app built with SvelteKit, a toolkit for web apps, which draws its pages on the server before sending them to the browser.",
+    "goodAt": [
+      "Pages that fetch their data on the server before the browser shows them",
+      "Forms that still work when a visitor has turned off JavaScript",
+      "Showing a clear message beside each form field that was filled in wrongly"
+    ],
+    "notGoodAt": [
+      "Projects that need sign-in or a database on day one; the starter has neither.",
+      "Teams that want React; use the Next.js or React Router stack instead."
+    ]
+  },
   "platforms": [
     "web",
     "server"

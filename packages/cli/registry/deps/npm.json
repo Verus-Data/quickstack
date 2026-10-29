@@ -170,6 +170,24 @@
         "reviewedAt": "2026-10-29"
       }
     },
+    "@effect/sql-pg": {
+      "whatItIs": "Lets Effect, a TypeScript toolkit for building larger programs, read and write a PostgreSQL database, a system that stores records in tables.",
+      "goodAt": [
+        "Looking up and saving records in a server built with Effect",
+        "Keeping database errors in the same error handling as the rest of an Effect program"
+      ],
+      "notGoodAt": [
+        "Projects that don't use Effect; use the database library that fits their framework."
+      ],
+      "example": "When a visitor places an order, the server saves it to the PostgreSQL database and sends back the saved record.",
+      "homepage": "https://effect.website",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
     "@effect/vitest": {
       "whatItIs": "Adds test helpers for Effect, a TypeScript toolkit, to the Vitest testing tool.",
       "homepage": "https://effect.website",
@@ -384,6 +402,45 @@
         "reviewedAt": "2026-10-29"
       }
     },
+    "@sveltejs/adapter-node": {
+      "whatItIs": "Connects SvelteKit to Node, so the built app runs as an ordinary Node server.",
+      "homepage": "https://svelte.dev/docs/kit/adapter-node",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@sveltejs/kit": {
+      "whatItIs": "SvelteKit, a framework built on Svelte for websites and web apps, with pages, server code and form handling.",
+      "goodAt": [
+        "Building a site with several pages, such as a product list and a product page",
+        "Handling form submissions on the server and sending errors back to the page"
+      ],
+      "notGoodAt": [
+        "Phone apps; use Expo, a toolkit for building phone apps.",
+        "Storing data by itself; connect a database for records that must last."
+      ],
+      "example": "When a visitor submits the contact form, the server checks that the message is filled in and shows the form again with a clear error if it isn't.",
+      "homepage": "https://svelte.dev/docs/kit",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@sveltejs/vite-plugin-svelte": {
+      "whatItIs": "Lets Vite, a build tool, build Svelte components and refresh them as code changes.",
+      "homepage": "https://github.com/sveltejs/vite-plugin-svelte",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
     "@tailwindcss/postcss": {
       "whatItIs": "Connects Tailwind CSS to PostCSS, a tool that transforms stylesheets during a build.",
       "homepage": "https://tailwindcss.com",
@@ -516,6 +573,16 @@
         "reviewedAt": "2026-10-29"
       }
     },
+    "@testing-library/svelte": {
+      "whatItIs": "Helpers for testing Svelte components the way a person would use them.",
+      "homepage": "https://github.com/testing-library/svelte-testing-library#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
     "@testing-library/user-event": {
       "whatItIs": "Helpers that act out typing, clicking and other user actions inside automated tests.",
       "goodAt": [
@@ -559,6 +626,16 @@
         "by": "drafted",
         "model": "codex/gpt-6-sol",
         "promptVersion": 1,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "@types/pg": {
+      "whatItIs": "Type definitions for pg, a library that connects Node to PostgreSQL, so TypeScript can check code that uses it.",
+      "homepage": "https://github.com/DefinitelyTyped/DefinitelyTyped/tree/master/types/pg",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": "2026-10-29"
       }
     },
@@ -746,6 +823,26 @@
         "reviewedAt": "2026-10-29"
       }
     },
+    "eslint-config-next": {
+      "whatItIs": "Sets up ESLint, a code checker, with the rules recommended for Next.js apps.",
+      "homepage": "https://nextjs.org",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "eslint-config-prettier": {
+      "whatItIs": "Turns off ESLint checks that clash with Prettier, a code formatter, so the two tools don't disagree.",
+      "homepage": "https://github.com/prettier/eslint-config-prettier#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
     "eslint-plugin-jsx-a11y": {
       "whatItIs": "Adds checks to ESLint for common accessibility mistakes in React pages.",
       "homepage": "https://github.com/jsx-eslint/eslint-plugin-jsx-a11y#readme",
@@ -759,6 +856,16 @@
     "eslint-plugin-react-hooks": {
       "whatItIs": "Adds checks to ESLint for misused React state and side-effect code.",
       "homepage": "https://react.dev/",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "eslint-plugin-svelte": {
+      "whatItIs": "Adds checks to ESLint, a code checker, for Svelte component files.",
+      "homepage": "https://github.com/sveltejs/eslint-plugin-svelte",
       "source": {
         "by": "drafted",
         "model": "claude-haiku-5-5",
@@ -928,6 +1035,24 @@
         "reviewedAt": "2026-10-29"
       }
     },
+    "jsdom": {
+      "whatItIs": "A simulated web browser that runs inside Node, a program that runs JavaScript outside a browser, so tests can check page code without opening a window.",
+      "goodAt": [
+        "Checking that a page part shows the right text when a test loads it",
+        "Running page tests automatically, without a browser window to open"
+      ],
+      "notGoodAt": [
+        "Matching every quirk of real browsers; use tests that drive a real browser for that."
+      ],
+      "example": "When a test loads a sign-up page, the simulated browser checks that the email field and its label appear.",
+      "homepage": "https://github.com/jsdom/jsdom",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
     "lucide-react": {
       "whatItIs": "A set of ready-made icons for React pages, such as search, menu and trash.",
       "goodAt": [
@@ -969,6 +1094,25 @@
       "notGoodAt": ["Confirming how a screen looks on real phones; test on actual devices."],
       "example": "When a designer wants each product card to have more space, the developer changes one style name.",
       "homepage": "https://nativewind.dev",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "next": {
+      "whatItIs": "Next.js, a framework for building websites and web apps with React, including the server code that answers page requests.",
+      "goodAt": [
+        "Building a company website or web app with many pages and forms",
+        "Showing a list of saved items on a page the server prepares before sending it"
+      ],
+      "notGoodAt": [
+        "Storing data by itself; connect a database for records that must last.",
+        "Phone apps; use Expo, a toolkit for building phone apps."
+      ],
+      "example": "When a visitor opens the shop's product list, the server prepares the page with the current products and sends it to the browser ready to read.",
+      "homepage": "https://nextjs.org",
       "source": {
         "by": "drafted",
         "model": "claude-haiku-5-5",
@@ -1073,6 +1217,16 @@
         "by": "drafted",
         "model": "codex/gpt-6-sol",
         "promptVersion": 1,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "prettier-plugin-svelte": {
+      "whatItIs": "Adds Svelte component formatting to Prettier, a code formatter.",
+      "homepage": "https://github.com/sveltejs/prettier-plugin-svelte",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
         "reviewedAt": "2026-10-29"
       }
     },
@@ -1221,6 +1375,50 @@
       "notGoodAt": ["Making a PNG file by itself; pair it with an image converter."],
       "example": "When a site needs a preview picture for an article, it fills a card layout with the article's title.",
       "homepage": "https://github.com/vercel/satori#readme",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "server-only": {
+      "whatItIs": "A small package that makes a build fail if code meant only for the server ends up in a browser page.",
+      "goodAt": [
+        "Marking a module that talks to a database as server only",
+        "Making a mistaken import fail during the build, not after the site is live"
+      ],
+      "notGoodAt": ["Being the only safeguard; it works only where the build tool checks it."],
+      "example": "When a developer accidentally imports a database module into a browser component, the build stops before the site ships.",
+      "homepage": "https://www.npmjs.com/package/server-only",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "svelte": {
+      "whatItIs": "Svelte, a tool for building the parts of a web page that respond to users, compiled into browser code when the app is built.",
+      "goodAt": [
+        "Building forms, menus and other page parts that update when a user acts",
+        "Keeping a page part's layout and its behavior together in one file"
+      ],
+      "notGoodAt": [
+        "Serving pages or storing data by itself; add SvelteKit and a database for that."
+      ],
+      "example": "When a customer changes the quantity on a cart page, the total updates on the screen at once, without a reload.",
+      "homepage": "https://svelte.dev",
+      "source": {
+        "by": "drafted",
+        "model": "claude-haiku-5-5",
+        "promptVersion": 2,
+        "reviewedAt": "2026-10-29"
+      }
+    },
+    "svelte-check": {
+      "whatItIs": "A command-line checker that reports TypeScript errors in Svelte components and the code around them.",
+      "homepage": "https://github.com/sveltejs/language-tools/tree/master/packages/svelte-check",
       "source": {
         "by": "drafted",
         "model": "claude-haiku-5-5",

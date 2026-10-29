@@ -24,6 +24,18 @@
       "stack": "react-router"
     }
   ],
+  "plain": {
+    "whatItIs": "Adds a PostgreSQL database server to the Effect server, a TypeScript toolkit for building server programs, with saved table changes.",
+    "goodAt": [
+      "Running a local database for development and for tests",
+      "Checking each row read from the database and logging one that doesn't match",
+      "Making table changes through saved steps that run only when you ask"
+    ],
+    "notGoodAt": [
+      "Hosting a live production database; arrange a hosting provider separately.",
+      "Projects that want query code generated from models; you write the queries yourself."
+    ]
+  },
   "capabilities": [
     "database"
   ],

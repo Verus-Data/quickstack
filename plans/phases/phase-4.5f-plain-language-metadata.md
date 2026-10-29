@@ -1,6 +1,6 @@
 # Phase 4.5f: Plain-language metadata
 
-Status: IN PROGRESS 2026-10-29
+Status: EXECUTED 2026-10-29. Copy drafted by Codex, rewritten for non-developers by Claude Haiku agents, and approved by a maintainer; the stacks-api site pages and the 4.2e `DEPS_ENABLED` split are the follow-up in that repository
 Acceptance tests: traced
 
 | Field | Value |

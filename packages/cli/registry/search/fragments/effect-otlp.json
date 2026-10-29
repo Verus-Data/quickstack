@@ -24,6 +24,17 @@
       "stack": "react-router"
     }
   ],
+  "plain": {
+    "whatItIs": "Sends the server's timing records, logs and counts to a monitoring tool you choose, so slow requests can be traced.",
+    "goodAt": [
+      "Finding which step inside a request was slow, such as a call to another service",
+      "Matching each server log line to the request it came from",
+      "Running tests without a monitoring tool or any account"
+    ],
+    "notGoodAt": [
+      "Browser screens; it only watches the server, so use a browser monitoring tool there."
+    ]
+  },
   "capabilities": [],
   "requests": [
     "send traces from my Effect server to an OTLP collector",
