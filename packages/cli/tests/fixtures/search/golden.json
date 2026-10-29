@@ -534,6 +534,40 @@
       ]
     },
     {
+      "id": "fragment-effect-postgres",
+      "pool": "fragment",
+      "split": "tune",
+      "query": "hook up postgresql to an effect httpapi service",
+      "first": {
+        "kind": "fragment",
+        "id": "effect-sql-postgres"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "effect-sql-postgres",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "fragment-astro-api-postgres",
+      "pool": "fragment",
+      "split": "holdout",
+      "query": "postgres for the api half of my astro project",
+      "first": {
+        "kind": "fragment",
+        "id": "effect-sql-postgres"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "effect-sql-postgres",
+          "grade": 2
+        }
+      ]
+    },
+    {
       "id": "fragment-sqlalchemy-alembic",
       "pool": "fragment",
       "split": "tune",
