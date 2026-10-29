@@ -31,16 +31,19 @@ creation outlines. A devils-advocate review reshaped its delivery order into
 batches, and the maintainer approved it. Batch 0 (narrowing the remaining
 tag-wide `applies_to` lists) landed. Batch 1 is EXECUTED: stacks `nextjs`,
 `python-api`, `go-api`, `sveltekit`; fragments `effect-sql-postgres` (Effect
-hosts), `drizzle-postgres` (`nextjs`; the two conflict), `effect-otlp`;
-`postgres` widened to `python-api`. Each was proven green from a fresh scaffold
-by a Codex prover; none has a bench ledger record yet. Open follow-ups, in
-order: trim `typescript-api` and `astro-fullstack` so an Effect host fits two
-optional fragments (plan, "What this plan may get wrong"); add the new
-fragments to their hosts' `fragments.optional`; prove and add the
-`drizzle-postgres` SvelteKit branch; bench each new composition; fix
-`cloudflare-d1` outranking `drizzle-postgres` on "add a sql database with
-migrations to my nextjs project". Low-value or unprovable candidates are marked
-deferred in the reports. .NET is excluded.
+hosts), `drizzle-postgres` (`nextjs` and `sveltekit`; the two conflict),
+`effect-otlp`; `postgres` widened to `python-api`. Each was proven green from a
+fresh scaffold by a Codex prover. The follow-ups landed: `validate` now budgets
+every compatible pair of a stack's optional fragments; `rr`, `ce-plugin`,
+`postgres`, `typescript-api` and `astro-fullstack` were trimmed (detail moved to
+shipped `docs/guidance/`) so every pair fits within 5,950 words; the new
+fragments are in their hosts' `fragments.optional`; the `drizzle-postgres`
+SvelteKit branch was proven green; and `drizzle-postgres` ranks first for
+host-named SQL requests (golden judgments added). Still open: bench each new
+composition (maintainer tokens; none has a ledger record), and a full agent
+build of SvelteKit with `drizzle-postgres`, since the prover's own build skipped
+dev-reload pool reuse and some harness tests. Low-value or unprovable candidates
+are marked deferred in the reports. .NET is excluded.
 
 The subsequent [stack audit](stack-audit-2026-10-29.md) reviews all ten stacks and
 records eight findings, including Postgres test-database ownership, fragment

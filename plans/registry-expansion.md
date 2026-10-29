@@ -1,6 +1,6 @@
 # Registry expansion: missing stacks and reusable capabilities
 
-Status: APPROVED 2026-10-29 after one devils-advocate review (corrections below). Batch 1 EXECUTED: `nextjs`, `python-api`, `go-api`, `sveltekit`, `effect-sql-postgres`, `drizzle-postgres` and `effect-otlp` landed, each proven green from a fresh scaffold; no bench ledger records yet, and `drizzle-postgres` covers `nextjs` only until its SvelteKit branch is proven.
+Status: APPROVED 2026-10-29 after one devils-advocate review (corrections below). Batch 1 EXECUTED: `nextjs`, `python-api`, `go-api`, `sveltekit`, `effect-sql-postgres`, `drizzle-postgres` and `effect-otlp` landed, each proven green from a fresh scaffold; no bench ledger records yet. Follow-ups EXECUTED: pair budgets, trims, optional lists, the proven `drizzle-postgres` SvelteKit branch and its search ranking.
 
 Start with reusable operational fragments and a small set of missing framework
 families. The first stack candidates are Next.js, SvelteKit, Nuxt, a standalone
@@ -470,6 +470,12 @@ doesn't fit. Fix it before Batch 2 adds Sentry and Better Auth to these hosts:
 trim the two stack bodies and their default fragments, moving per-stack detail
 into `files/docs/guidance/`, then add a budget check over the likely pairs
 rather than each fragment alone.
+
+Resolved 2026-10-29. The pair check covers every compatible pair, not just the
+likely ones, and it found the problem wider than the Effect hosts: eight stacks
+overran, mostly through `rr` (672 words) and `ce-plugin` (418). Trimming those
+two, `postgres`, `typescript-api` and `astro-fullstack` brought every pair to
+5,950 words or fewer.
 
 ## Research validation
 
