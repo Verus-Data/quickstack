@@ -11,6 +11,12 @@ to `archive/` and leave a link.
 
 ## Registry metadata pass (2026-10-29)
 
+The subsequent [stack audit](stack-audit-2026-10-29.md) reviews all ten stacks and
+records eight findings, including Postgres test-database ownership, fragment
+compatibility, verification gaps and two shared-infrastructure opportunities.
+Audit only; no recommendations applied. Registry validation returned no errors
+or warnings. Fresh project benches were not run.
+
 An audit of every bundled entry's naming, descriptions and search cards was applied: clearer
 descriptions, search card facets, synonyms and exclusions, Go and `fullstack` vocabulary
 aliases, and the `astro-api` to `astro-fullstack` rename (D39). New authoring guidance lives
@@ -22,8 +28,6 @@ in `.claude/skills/stack-authoring/` and `.claude/skills/fragment-authoring/`, a
 - `stacks-api` still names `astro-api` in `scripts/seed/profile.ts` (the rising storyline,
   which falls back silently), its web fixtures and its search fixtures. Update them, rebuild
   the index here and re-seed.
-- The postgres fragment's TypeScript paragraph sits outside any `stacks:when` block, so it
-  reaches python-react's brief; its Go and TypeScript branches and `deps` are unreachable.
 - mobile-expo sandbox plus rr is about two words under the 6,000-word brief budget.
 - Searches still missing: "mcp server", "add auth to my web app", "add a database to my
   typescript api", "containerize my api".
