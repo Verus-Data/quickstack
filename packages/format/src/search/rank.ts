@@ -1,6 +1,13 @@
 import type { FragmentMeta, Kind, StackMeta } from "../entry.js";
 import { bm25 } from "./bm25.js";
-import { excluded } from "./explain.js";
+import {
+  existingRepository,
+  facetConflicts,
+  hostingTarget,
+  missingTarget,
+  requestConstraints,
+} from "./constraints.js";
+import { constraintReasons, excluded } from "./explain.js";
 import type {
   SearchEvidence,
   SearchHit,
@@ -38,6 +45,7 @@ type Candidate = {
   why: SearchWhy[];
   covered: Set<string>;
   raw: number;
+  constraints: SearchWhy[];
 };
 const field = (name: string, weight: number, text: string): Field => ({
   name,
@@ -84,8 +92,15 @@ function categoryValues(
   if (card.kind === "fragment") return category === "capabilities" ? card.capabilities : [];
   return category === "capabilities" ? [] : card[category];
 }
-function prepare(input: RankInput, query: string[], matches: SearchWhy[]): Candidate[] {
+function prepare(
+  input: RankInput,
+  query: string[],
+  matches: SearchWhy[],
+  constraints: ReturnType<typeof requestConstraints>,
+): Candidate[] {
   const forms = surfaceForms(input.request);
+  const existing = existingRepository(input.request);
+  const target = hostingTarget(input.request);
   return input.entries.map((record) => {
     const why = matches.filter((match) =>
       categories.some(
@@ -104,7 +119,15 @@ function prepare(input: RankInput, query: string[], matches: SearchWhy[]): Candi
       }
       if (f.weight >= 1.5) for (const word of matched) covered.add(word);
     }
-    return { record, fields, why, covered, raw: 0 };
+    const conflicts = [
+      ...facetConflicts(record.search, constraints.facets),
+      ...missingTarget(
+        target,
+        fields.filter((f) => f.name !== "body").map((f) => f.text),
+      ),
+      ...constraintReasons(existing && record.entry.kind === "stack", input.request),
+    ];
+    return { record, fields, why, covered, raw: 0, constraints: conflicts };
   });
 }
 function scoreFields(candidates: Candidate[], query: string[], matches: SearchWhy[]) {
@@ -223,7 +246,14 @@ function hitFor(
   denominator: number,
 ): SearchHit {
   const { entry, search, evidence } = candidate.record;
-  const penalties = penaltiesFor(candidate, input, matches);
+  const penalties = [
+    ...penaltiesFor(candidate, input, matches),
+    ...candidate.constraints.map((reason) => ({
+      kind: "notFor" as const,
+      request: reason.from,
+      entry: reason.matched,
+    })),
+  ];
   let adjusted = candidate.raw;
   for (const penalty of penalties) {
     if (["platform", "language", "productKind"].includes(penalty.kind)) adjusted *= 0.3;
@@ -245,7 +275,7 @@ function hitFor(
     tier,
     score,
     coverage,
-    why: candidate.why,
+    why: [...candidate.why, ...candidate.constraints],
     penalties,
     ...(search?.caveats ? { caveats: search.caveats } : {}),
     ...(entry.meta.kind === "fragment" ? { appliesTo: entry.meta.appliesTo } : {}),
@@ -253,9 +283,11 @@ function hitFor(
   };
 }
 function quality(hit: SearchHit): number {
-  if (hit.evidence.stats) return 0.1 * (hit.evidence.stats.greenRateLower - 0.5);
-  if (hit.evidence.lastRun?.result === "pass") return 0.02;
-  if (hit.evidence.lastRun?.result === "fail") return -0.02;
+  // At most 0.005 in either direction: evidence can settle near-ties but cannot
+  // reverse a lexical gap above 0.01. A scalar adjustment keeps comparison transitive.
+  if (hit.evidence.stats) return 0.01 * (hit.evidence.stats.greenRateLower - 0.5);
+  if (hit.evidence.lastRun?.result === "pass") return 0.002;
+  if (hit.evidence.lastRun?.result === "fail") return -0.002;
   return 0;
 }
 const tierOrder = { strong: 0, partial: 1, weak: 2 } as const;
@@ -263,7 +295,7 @@ export function compareSearchHits(a: SearchHit, b: SearchHit): number {
   return (
     tierOrder[a.tier] - tierOrder[b.tier] ||
     Number(b.trusted) - Number(a.trusted) ||
-    b.score * (1 + quality(b)) - a.score * (1 + quality(a)) ||
+    b.score + quality(b) - (a.score + quality(a)) ||
     (b.evidence.stats?.projects ?? 0) - (a.evidence.stats?.projects ?? 0) ||
     a.id.localeCompare(b.id)
   );
@@ -283,21 +315,35 @@ function selectHits(hits: ReadonlyArray<SearchHit>, limit: number): SearchHit[] 
 /** Pure, invocation-independent ranking over plain data; no service, file, network or clock. */
 export function rank(input: RankInput): SearchResult {
   const request = input.request.trim();
-  const query = [...new Set(tokens(request))];
-  const matches = vocabularyMatches(request, input.vocabulary);
-  const candidates = prepare(input, query, matches);
+  const constraints = requestConstraints(request, input.vocabulary);
+  const query = [...new Set(tokens(constraints.positive))];
+  const matches = vocabularyMatches(constraints.positive, input.vocabulary);
+  const candidates = prepare(input, query, matches, constraints);
   const strongWords = new Set(candidates.flatMap((candidate) => [...candidate.covered]));
   scoreFields(candidates, query, matches);
   const hits = candidates
     .map((candidate) => hitFor(candidate, input, matches, strongWords.size))
     .sort(compareSearchHits);
-  const stacks = hits.filter((hit) => hit.kind === "stack");
+  const stacks =
+    input.kind === "fragment"
+      ? []
+      : selectHits(
+          hits.filter((hit) => hit.kind === "stack"),
+          input.limit ?? 5,
+        );
+  const fragments =
+    input.kind === "stack"
+      ? []
+      : selectHits(
+          hits.filter((hit) => hit.kind === "fragment"),
+          input.limit ?? 5,
+        );
   const understood = {
     platforms: [],
     productKinds: [],
     languages: [],
     capabilities: [],
-    unmatched: [...surfaceForms(request)]
+    unmatched: [...surfaceForms(constraints.positive)]
       .filter(([word]) => !strongWords.has(word))
       .map(([, surface]) => surface),
   } satisfies SearchResult["understood"];
@@ -313,14 +359,8 @@ export function rank(input: RankInput): SearchResult {
         ]),
       ),
     },
-    noStrongMatch: !stacks.some((hit) => hit.tier === "strong"),
-    stacks: input.kind === "fragment" ? [] : selectHits(stacks, input.limit ?? 5),
-    fragments:
-      input.kind === "stack"
-        ? []
-        : selectHits(
-            hits.filter((hit) => hit.kind === "fragment"),
-            input.limit ?? 5,
-          ),
+    noStrongMatch: ![...stacks, ...fragments].some((hit) => hit.tier === "strong"),
+    stacks,
+    fragments,
   };
 }

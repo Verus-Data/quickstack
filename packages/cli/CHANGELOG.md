@@ -2,6 +2,14 @@
 
 All notable changes to `@steamfield/stacks`. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html); before 1.0.0 a minor release may break compatibility.
 
+## [0.4.1] - 2026-10-29
+
+### Fixed
+
+- `search` honors negated languages and platforms ("no Python", "Python-free"), demotes scaffold stacks when you ask to add something to an existing repository, and won't call an entry a strong match for a hosting provider it doesn't serve.
+- Run evidence can only break near-ties in search ranking; it no longer lifts a weaker lexical match over a clearly better one.
+- `noStrongMatch` is false whenever a strong stack or fragment is shown, and a strong fragment's `Next:` line names `show` and `add` for that fragment.
+
 ## [0.4.0] - 2026-10-28
 
 ### Added

@@ -39,14 +39,16 @@ export function mergeSearch(
   },
 ): SearchResult & { remote: RemoteSearch["remote"] } {
   const overrides = new Set(options.overrides.map((entry) => `${entry.kind}:${entry.id}`));
-  const stacks =
+  const mergedStacks =
     remote.remote === "used"
       ? mergeHits(local.stacks, remote.response.stacks, overrides)
       : local.stacks;
-  const fragments =
+  const mergedFragments =
     remote.remote === "used"
       ? mergeHits(local.fragments, remote.response.fragments, overrides)
       : local.fragments;
+  const stacks = options.kind === "fragment" ? [] : mergedStacks.slice(0, options.limit ?? 5);
+  const fragments = options.kind === "stack" ? [] : mergedFragments.slice(0, options.limit ?? 5);
   const ranking =
     remote.remote === "used"
       ? ({ ranking: "api", method: remote.response.method } as const)
@@ -57,8 +59,8 @@ export function mergeSearch(
     remote: remote.remote,
     ...(remote.remote === "off" ? { remoteReason: remote.remoteReason } : {}),
     understood: remote.remote === "used" ? remote.response.understood : local.understood,
-    noStrongMatch: !stacks.some((hit) => hit.tier === "strong"),
-    stacks: options.kind === "fragment" ? [] : stacks.slice(0, options.limit ?? 5),
-    fragments: options.kind === "stack" ? [] : fragments.slice(0, options.limit ?? 5),
+    noStrongMatch: ![...stacks, ...fragments].some((hit) => hit.tier === "strong"),
+    stacks,
+    fragments,
   };
 }

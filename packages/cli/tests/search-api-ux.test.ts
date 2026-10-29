@@ -27,6 +27,50 @@ afterEach(async () => {
   space.release();
 });
 
+test.each([undefined, "stack", "fragment"] as const)(
+  "merged noStrongMatch follows visible kinds (%s), not the API flag",
+  async (kind) => {
+    const opts = { ...apiOptions(space.dir(), server.url), host: { registry: emptyRegistry } };
+    const flags = kind ? ["--kind", kind] : [];
+    for (const strongKind of ["stack", "fragment"] as const) {
+      const hit = officialHit("supported", { kind: strongKind });
+      server.answer({
+        ...response(strongKind === "stack" ? [hit] : [], strongKind === "fragment" ? [hit] : []),
+        noStrongMatch: true,
+      });
+      const result = decoded(await runCli(["search", "supported", ...flags, "--json"], opts));
+      expect(result.noStrongMatch).toBe(kind !== undefined && kind !== strongKind);
+      expect(result.noStrongMatch).toBe(
+        ![...result.stacks, ...result.fragments].some((row) => row.tier === "strong"),
+      );
+    }
+  },
+);
+
+test.each([false, true])(
+  "local fragment success has consistent text and JSON (human %s)",
+  async (human) => {
+    const opts = {
+      ...apiOptions(space.dir(), server.url),
+      ...(human
+        ? { host: { ...terminal, registry: join(import.meta.dirname, "../registry") } }
+        : {}),
+    };
+    const args = ["search", "migrate to Cloudflare Pages", "--local", "--kind", "fragment"];
+    const json = decoded(await runCli([...args, "--json"], opts));
+    expect(json.fragments[0]).toMatchObject({ id: "cloudflare-pages", tier: "strong" });
+    expect(json.noStrongMatch).toBe(false);
+    const text = await runCli(args, opts);
+    expect(text.status).toBe(0);
+    expect(text.stderr).toBe("");
+    expect(text.stdout).toContain("cloudflare-pages");
+    expect(text.stdout).not.toContain("Nothing fits strongly");
+    expect(text.stdout).toMatch(
+      /Next: stacks show cloudflare-pages, then stacks add cloudflare-pages\.\n?$/,
+    );
+  },
+);
+
 function cachedEvidence(home: string) {
   const wire = readFileSync(
     join(import.meta.dirname, "../../format/tests/fixtures/stats/summary.json"),
