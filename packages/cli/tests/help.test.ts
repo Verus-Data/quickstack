@@ -96,7 +96,7 @@ const exits: Record<string, ReadonlyArray<number>> = {
   "telemetry flush": [0, 2, 130],
   "telemetry reset": [0, 2, 130],
   "telemetry status": [0, 2, 130],
-  update: [0, 4, 6, 130],
+  update: [0, 2, 4, 6, 130],
   validate: [0, 2, 3, 6, 130],
   verify: [0, 2, 3, 5, 6, 130],
 };

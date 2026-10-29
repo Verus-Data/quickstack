@@ -4,9 +4,22 @@ All notable changes to `@steamfield/stacks`. The format follows [Keep a Changelo
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-29
+
+### Added
+
+- `show` opens with a plain-language summary of the entry (what it is, what it's good at, an example project and what it's not good at). For a person at a terminal it also lists each app dependency with a one-line description. `show --json` carries both as `plain` and `dependencyCards`.
+- `validate` checks plain-language copy against its size limits and warns about version numbers in it. On the bundled registry it also checks dependency cards against the allowlist and flags missing, duplicate, unreviewed or year-old cards.
+- New stacks: `go-api`, `python-api`, `nextjs` and `sveltekit`. New fragments: `drizzle-postgres`, `effect-sql-postgres` and `effect-otlp`. `postgres` now also fits `python-api`.
+
 ### Changed
 
 - The `astro-api` stack is now `astro-fullstack`: it builds a static Astro site and a separate Node API, which the old id didn't say. Run `stacks new astro-fullstack`. Projects created from `astro-api` keep that id in their manifest, so `stacks add` in them no longer finds the stack and reports `stack_unknown`.
+
+### Fixed
+
+- `update` and `update --check` under `--offline` or `STACKS_OFFLINE=1` fail with `BadInput` (exit 2) instead of requesting the latest version from npm.
+- `validate --brief` with `--with` or `--without` reports a fragment that doesn't apply as a warning and exits 0, as `new` does, instead of failing with a stack error.
 
 ## [0.4.1] - 2026-10-29
 
@@ -92,6 +105,7 @@ First release, as the npm package `@steamfield/stacks` installed as `stacks` (No
 - Commands: `list`, `show`, `new`, `add`, `create`, `validate`, `verify`, `runs`, `schema`, `guide`, `skill` and `doctor`, each with `--json` output, fixed exit codes and error envelopes with a next action.
 - Bundled stacks: `astro-blog`, `cloudflare-react-router`, `go-cli`, `mobile-expo`, `python-react`, `react-router`, `tauri-react` and `typescript-cli`, with 19 fragments.
 
+[0.5.0]: https://github.com/steamfield/stacks/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/steamfield/stacks/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/steamfield/stacks/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/steamfield/stacks/compare/v0.2.0...v0.3.0

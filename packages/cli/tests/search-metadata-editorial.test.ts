@@ -335,7 +335,8 @@ test("examples preserve default selections and reject a second app alongside the
       message: expect.stringMatching(/projectExamples\[1\].*app_count.*first-app, second-app/),
     }),
   ]);
-});
+  // Two validations that resolve through the bundled registry exceed 5 s under CI coverage.
+}, 30_000);
 
 test("editorial selectors accept metadata-compatible entries whose source files collide [4.5b#21]", async () => {
   const f = await setup();

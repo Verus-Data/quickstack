@@ -131,6 +131,43 @@ test("a person's check detects npm but never installs [4.4d#6]", async () => {
   expect(f.calls().map((call) => call.argv)).toEqual([["prefix", "-g"]]);
 });
 
+test.each([
+  [
+    "--offline",
+    [
+      ["update", "--check", "--offline"],
+      ["update", "--offline"],
+    ],
+    {},
+  ],
+  ["STACKS_OFFLINE=1", [["update", "--check"], ["update"]], { STACKS_OFFLINE: "1" }],
+])("offline mode (%s) refuses update without a request or npm", async (_, invocations, env) => {
+  for (const args of invocations)
+    for (const json of [false, true]) {
+      const f = fixture();
+      const http = registry();
+      const result = await runCli([...args, ...(json ? ["--json"] : [])], {
+        ...f.options,
+        env: { ...f.options.env, ...env },
+        http: http.http,
+      });
+      if (json)
+        expect(failure(result, 2)).toMatchObject({
+          tag: "BadInput",
+          details: { flag: "offline" },
+          next: expect.stringMatching(/without --offline/),
+        });
+      else {
+        expect(result.status).toBe(2);
+        expect(result.stdout).toBe("");
+        expect(result.stderr).toContain("Invalid input.");
+        expect(result.stderr.trim().split("\n").at(-1)).toMatch(/^\s*Next: .*without --offline/);
+      }
+      expect(http.requests).toEqual([]);
+      expect(f.calls()).toEqual([]);
+    }
+});
+
 test("npx installations give an exact npx command without spawning npm [4.4d#7]", async () => {
   const f = fixture({ npx: true });
   expect(

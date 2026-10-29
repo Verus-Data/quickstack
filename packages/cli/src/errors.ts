@@ -46,10 +46,12 @@ export class Usage extends Schema.TaggedError<Usage>()("Usage", {
  * `agents` and `sandbox` are add flags that disagree with the manifest.
  * `create_shadows` names an existing id, with its winning and shadowed origins in `origins`.
  * Search's `request` carries only its trimmed `length`; `limit` carries the rejected `value`.
+ * `offline` is `update` under `--offline` or `STACKS_OFFLINE=1`, refused before any request.
  */
 export const BadInputDetails = Schema.Union([
   Schema.Struct({ flag: Schema.Literal("request"), length: Schema.Int }),
   Schema.Struct({ flag: Schema.Literal("limit"), value: Schema.String }),
+  Schema.Struct({ flag: Schema.Literal("offline") }),
   Schema.Struct({
     id: Schema.String,
     flag: Schema.Literals([
@@ -697,6 +699,11 @@ function badInputGuide(details: typeof BadInputDetails.Type, invocation: string)
     return guide(
       [`Flag: --limit ${printable(details.value)}`],
       `run ${invocation} search with --limit from 1 to 20.`,
+    );
+  if (details.flag === "offline")
+    return guide(
+      ["update needs the npm registry, and offline mode makes no network requests."],
+      `run ${invocation} update without --offline and with STACKS_OFFLINE unset.`,
     );
   const id = printable(details.id);
   switch (details.flag) {

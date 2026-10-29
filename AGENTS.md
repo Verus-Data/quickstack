@@ -56,6 +56,7 @@ Root commands run from the repo root and fan out to every workspace package (`bu
 | `bun run check` | Lint, typecheck, test, e2e: the gate |
 | `bun run clean` | Each package's generated output |
 | `bun run prepare` | Install hooks outside CI |
+| `bun run release` / `release:dry-run` | A maintainer's step, never an agent's: publish `@steamfield/stacks-format`, then `@steamfield/stacks`, from `origin/main`, and tag `v<version>` (packages/format/README.md, "Publishing"). The dry run packs both and publishes nothing |
 
 In `packages/cli/` (run there):
 

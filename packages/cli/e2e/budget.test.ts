@@ -1,9 +1,13 @@
 import { expect, test } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-import { binary, scratchPath } from "./package";
+import { binary, packageRoot, scratchPath } from "./package";
+
+const bundledEntries = ["stacks", "fragments"]
+  .flatMap((kind) => readdirSync(join(packageRoot, "registry", kind), { withFileTypes: true }))
+  .filter((entry) => entry.isDirectory()).length;
 
 function sample(args: readonly string[]) {
   const home = mkdtempSync(join(tmpdir(), "cli-binary-budget-"));
@@ -45,8 +49,9 @@ test.each([
   {
     args: ["validate"],
     output: "(bundled registry)",
-    // Guard against registry validation CPU regressions; today's CPU cost is ~1.2 s.
-    budget: 3.5,
+    // Validating the bundled registry grows with its size, so the guard is per entry: at 37
+    // entries the cost is ~0.05 s per entry on a laptop and ~0.10 s on a CI runner.
+    budget: 0.15 * bundledEntries,
   },
 ])(
   "$args stays within its CPU budget",

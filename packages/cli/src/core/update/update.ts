@@ -1,6 +1,6 @@
 import { Duration, Effect, Schema } from "effect";
 import { AppConfig } from "../../config";
-import { PermissionDenied, UpdateFailed } from "../../errors";
+import { BadInput, PermissionDenied, UpdateFailed } from "../../errors";
 import type { UpdateResult } from "../../schemas/update";
 import { Output } from "../../services/output";
 import { Processes } from "../../services/processes";
@@ -50,6 +50,9 @@ export const update = Effect.fn("update.update")(function* (options: {
   const current = yield* Schema.decodeUnknownEffect(Version)(options.current ?? VERSION).pipe(
     Effect.orDie,
   );
+  // No version is cached, so offline mode has nothing to compare against: refuse before the request.
+  if (yield* (yield* AppConfig).offline)
+    return yield* new BadInput({ details: { flag: "offline" } });
   const latest = yield* latestVersion(options.registryTimeout);
   const compared = compareVersions(latest, current);
   if (compared === 0) return { status: "up-to-date", current, latest } satisfies UpdateResult;
