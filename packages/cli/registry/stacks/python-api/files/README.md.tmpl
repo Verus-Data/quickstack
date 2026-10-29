@@ -1,0 +1,43 @@
+# {{project_name}}
+
+<!-- stacks:fill One or two sentences on what this API does and who calls it. -->
+
+A FastAPI JSON API run by Uvicorn. `openapi.json` is the committed API contract; `make check-openapi` fails when it no longer matches the app.
+
+## Quickstart
+
+Requires [uv](https://docs.astral.sh/uv/) and make.
+
+```bash
+cp .env.example .env
+make install
+make dev        # API on :8000 with reload
+```
+
+Open http://localhost:8000/docs for the interactive API docs.
+
+## Commands
+
+| Command | What it does |
+|---|---|
+| `make dev` | Run the API with reload |
+| `make start` | Run the API without reload |
+| `make lint` / `make format` | Check / fix lint and formatting |
+| `make typecheck` | mypy strict |
+| `make test` | Tests |
+| `make coverage` | Tests with the coverage floor |
+| `make openapi` | Rewrite `openapi.json` after a route or model change |
+
+Run `make help` for the full list.
+
+## Layout
+
+```
+app/        FastAPI app: factory, config, routers, schemas, services
+scripts/    dump_openapi.py
+tests/      pytest suite against the real app
+```
+
+## License
+
+Copyright (c) {{year}} {{author}}

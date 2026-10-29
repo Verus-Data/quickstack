@@ -3,15 +3,15 @@
   "kind": "fragment",
   "id": "postgres",
   "source": {
-    "digest": "sha256:8dca154bcac955e61dc655a8319052f1a1852f3298591b3e5e42a0ed32d43a64",
+    "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
     "by": "drafted",
-    "model": "codex/gpt-6.1-sol",
+    "model": "claude-opus-5-5",
     "promptVersion": 2,
-    "reviewedAt": "2026-10-29"
+    "reviewedAt": null
   },
   "summary": "Add local PostgreSQL services, explicit schema migrations and a private database for each test file cloned from a migrated template.",
-  "description": "Add local Postgres development and test services, SQLAlchemy/Alembic integration for python-react, and explicit migration commands. The test harness clones a migrated template so each test file has a private database. Readiness checks distinguish API health from database availability. Product tables, queries and access rules are your work. Production hosting is separate, and migrations run as a release step rather than at application startup.",
-  "seoDescription": "Postgres for Python and React projects, with Docker Compose, SQLAlchemy, Alembic migrations and isolated databases for integration tests.",
+  "description": "Add local Postgres development and test services, SQLAlchemy/Alembic integration for the FastAPI stacks (python-react and python-api), and explicit migration commands. The test harness clones a migrated template so each test file has a private database. Readiness checks distinguish API health from database availability. Product tables, queries and access rules are your work. Production hosting is separate, and migrations run as a release step rather than at application startup.",
+  "seoDescription": "Postgres for FastAPI projects, with Docker Compose, SQLAlchemy, Alembic migrations and isolated databases for integration tests.",
   "projectExamples": [
     {
       "title": "Persistent inventory workbench",
@@ -20,8 +20,8 @@
     },
     {
       "title": "Import review database",
-      "description": "Persist imported rows and review decisions in custom tables. Use private test databases to exercise migrations and queries without touching development data.",
-      "stack": "python-react"
+      "description": "Persist imported rows and review decisions in custom tables behind a FastAPI service. Use private test databases to exercise migrations and queries without touching development data.",
+      "stack": "python-api"
     }
   ],
   "capabilities": [
@@ -51,7 +51,9 @@
     "async Python database sessions"
   ],
   "notFor": [
-    "managed production database provisioning",
-    "automatic migrations on application startup"
+    "TypeScript",
+    "Node",
+    "Drizzle",
+    "managed production database provisioning"
   ]
 }
