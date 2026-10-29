@@ -6,7 +6,7 @@ import { fitsStack } from "../compose/selection";
 import { type Entry, isStack } from "../registry/entry";
 import { canonicalBrief, composedLimit } from "./budget";
 import { uniqueFindings } from "./composed";
-import { compositionPlans, describe, replacementDefaults } from "./compositions";
+import { compositionSingles, describe, replacementDefaults } from "./compositions";
 import { type Check, entryFile, finding, type View } from "./view";
 
 type Stack = Entry & { meta: StackMeta };
@@ -41,7 +41,7 @@ function fragmentPlan(view: View, stack: Stack, fragment: Fragment) {
   const inBase = [...stack.meta.fragments.required, ...stack.meta.fragments.default].includes(
     fragment.id,
   );
-  const plan = compositionPlans(view, stack).find((plan) =>
+  const plan = compositionSingles(view, stack).find((plan) =>
     inBase ? plan.added === undefined : plan.added === fragment.id,
   );
   const budgeted = listed || plan !== undefined;

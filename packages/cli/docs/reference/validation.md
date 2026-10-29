@@ -12,7 +12,9 @@ stacks validate --brief web --with docs --sandbox # the brief a composition rend
 
 ## What it checks
 
-`validate` checks frontmatter and identity, references (`fragments`, `requires`, `conflicts`, `applies_to`), conditional prose markers, `merge` files, verify step layers, whether git ignores any of an entry's files, and composes each stack in both presets: alone (with its required and default fragments), then with each optional fragment and each app that fits it added on its own. References resolve through every root, the one being validated first; one that resolves only in another root is a note naming that root. The bundled registry must be self-contained.
+`validate` checks frontmatter and identity, references (`fragments`, `requires`, `conflicts`, `applies_to`), conditional prose markers, `merge` files, verify step layers, whether git ignores any of an entry's files, and composes each stack in both presets: alone (with its required and default fragments), with each optional fragment and each fitting app added on its own, then with each compatible pair of those extras. It skips pairs of two apps and pairs whose fragments conflict with each other. Each addition drops any default fragment it replaces. References resolve through every root, the one being validated first; one that resolves only in another root is a note naming that root. The bundled registry must be self-contained.
+
+Composed size rows use `with` as a display label: one fragment id for a single addition, or two sorted ids joined by ` + ` for a pair. An over-budget pair finding includes the command to preview that brief, including any defaults to leave out.
 
 Every stack's base composition must verify each layer: `install`, `lint`, `typecheck` and `test`, plus a `serve` step with a probe when the stack is tagged `web` or `api`.
 
