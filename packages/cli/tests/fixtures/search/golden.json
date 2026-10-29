@@ -636,6 +636,40 @@
       ]
     },
     {
+      "id": "fragment-nextjs-sql-migrations",
+      "pool": "fragment",
+      "split": "tune",
+      "query": "add a sql database with migrations to my nextjs project",
+      "first": {
+        "kind": "fragment",
+        "id": "drizzle-postgres"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "drizzle-postgres",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "fragment-sveltekit-sql-migrations",
+      "pool": "fragment",
+      "split": "holdout",
+      "query": "add a sql database with migrations to my sveltekit project",
+      "first": {
+        "kind": "fragment",
+        "id": "drizzle-postgres"
+      },
+      "relevant": [
+        {
+          "kind": "fragment",
+          "id": "drizzle-postgres",
+          "grade": 2
+        }
+      ]
+    },
+    {
       "id": "fragment-effect-postgres",
       "pool": "fragment",
       "split": "tune",

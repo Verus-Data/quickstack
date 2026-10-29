@@ -401,6 +401,153 @@ test("a composition with an app is budgeted at 9,000, and default apps leave whe
   ]);
 });
 
+test("two optional fragments that fit alone report one composed budget error per preset together", async () => {
+  const root = temp();
+  stack(root, "pair", "fragments:\n  default: [d1, d2, d3, d4]\n  optional: [alpha, beta]");
+  for (const id of ["d1", "d2", "d3", "d4"]) fragment(root, id, "", words(900, id));
+  fragment(root, "alpha", "", words(850, "a"));
+  fragment(root, "beta", "", words(850, "b"));
+
+  const { status, stderr, report: got } = await report([root]);
+  expect(status).toBe(2);
+  expect(JSON.parse(stderr).error).toMatchObject({
+    tag: "ValidationFailed",
+    details: { errors: 2, warnings: 0 },
+  });
+  const rows = got.sizes.filter((row) => row.kind === "composed");
+  expect(rows.map((row) => [row.preset, row.with])).toEqual([
+    ["default", undefined],
+    ["default", "alpha"],
+    ["default", "beta"],
+    ["default", "alpha + beta"],
+    ["sandbox", undefined],
+    ["sandbox", "alpha"],
+    ["sandbox", "beta"],
+    ["sandbox", "alpha + beta"],
+  ]);
+  expect(
+    rows
+      .filter((row) => row.with === "alpha" || row.with === "beta")
+      .every((row) => row.words <= BUDGET.composed),
+  ).toBe(true);
+  expect(only(got.findings, "budget-composed").map((finding) => finding.message)).toEqual([
+    `pair (default) + alpha + beta: ${rows[3]?.words.toLocaleString("en-US")} words, limit 6,000; preview: stacks validate ${root} --brief pair --with alpha --with beta`,
+    `pair (sandbox) + alpha + beta: ${rows[7]?.words.toLocaleString("en-US")} words, limit 6,000; preview: stacks validate ${root} --brief pair --sandbox --with alpha --with beta`,
+  ]);
+});
+
+test("two apps or two mutually conflicting optional fragments are not paired", async () => {
+  const root = temp();
+  stack(root, "host", "fragments:\n  optional: [left, right]");
+  fragment(root, "left", "conflicts: [right]");
+  fragment(root, "right", "conflicts: [left]");
+  app(root, "first-app", "host");
+  app(root, "second-app", "host");
+
+  const { status, report: got } = await report([root]);
+  expect(status).toBe(0);
+  expect(only(got.findings, "compose")).toEqual([]);
+  const withIds = got.sizes
+    .filter((row) => row.kind === "composed" && row.preset === "default")
+    .map((row) => row.with);
+  expect(withIds).toContain("first-app + left");
+  expect(withIds).toContain("right + second-app");
+  expect(withIds).not.toContain("first-app + second-app");
+  expect(withIds).not.toContain("left + right");
+});
+
+test("a file collision introduced only by an optional pair is reported", async () => {
+  const root = temp();
+  stack(root, "pair-files", "fragments:\n  optional: [alpha, beta]");
+  for (const { id, content } of [
+    { id: "alpha", content: "first" },
+    { id: "beta", content: "second" },
+  ]) {
+    const entry = fragment(root, id);
+    mkdirSync(join(entry, "files"));
+    writeFileSync(join(entry, "files", "config.txt"), content);
+  }
+
+  const { status, report: got } = await report([root]);
+  expect(status).toBe(2);
+  expect(only(got.findings, "compose").map((finding) => finding.message)).toEqual([
+    expect.stringContaining("pair-files (default, sandbox) + alpha + beta"),
+  ]);
+});
+
+test("a pair drops each optional fragment's conflicting default", async () => {
+  const root = temp();
+  stack(
+    root,
+    "swap-pair",
+    "fragments:\n  default: [first-default, second-default]\n  optional: [alpha, beta]",
+  );
+  fragment(root, "first-default");
+  fragment(root, "second-default");
+  fragment(root, "alpha", "conflicts: [first-default]");
+  fragment(root, "beta", "conflicts: [second-default]");
+
+  const { status, report: got } = await report([root]);
+  expect(status).toBe(0);
+  expect(only(got.findings, "compose")).toEqual([]);
+  expect(
+    got.sizes.filter((row) => row.kind === "composed" && row.with === "alpha + beta"),
+  ).toHaveLength(2);
+  for (const preset of ["default", "sandbox"]) {
+    const preview = await run([
+      root,
+      "--brief",
+      "swap-pair",
+      "--with",
+      "alpha",
+      "--with",
+      "beta",
+      "--without",
+      "first-default",
+      "--without",
+      "second-default",
+      ...(preset === "sandbox" ? ["--sandbox"] : []),
+      "--json",
+    ]);
+    expect(preview.status).toBe(0);
+    const brief = Schema.decodeUnknownSync(BriefPreview)(JSON.parse(preview.stdout));
+    expect(brief.fragments).toEqual(["alpha", "beta"]);
+    expect(
+      got.sizes.find(
+        (row) => row.kind === "composed" && row.preset === preset && row.with === "alpha + beta",
+      )?.words,
+    ).toBe(brief.briefWords);
+  }
+});
+
+test("an over-budget pair that replaces defaults gives a runnable preview command", async () => {
+  const root = temp();
+  stack(
+    root,
+    "replace-pair",
+    "fragments:\n  default: [core-a, core-b, core-c, old-a, old-b]\n  optional: [alpha, beta]",
+    {
+      body: `${SETUP}\n${words(1350, "s")}`,
+    },
+  );
+  for (const id of ["core-a", "core-b", "core-c"]) fragment(root, id, "", words(900, id));
+  fragment(root, "old-a");
+  fragment(root, "old-b");
+  fragment(root, "alpha", "conflicts: [old-a]", words(850, "a"));
+  fragment(root, "beta", "conflicts: [old-b]", words(850, "b"));
+
+  const { status, report: got } = await report([root]);
+  expect(status).toBe(2);
+  expect(only(got.findings, "budget-composed").map((finding) => finding.message)).toEqual([
+    expect.stringContaining(
+      `preview: stacks validate ${root} --brief replace-pair --with alpha --with beta --without old-a --without old-b`,
+    ),
+    expect.stringContaining(
+      `preview: stacks validate ${root} --brief replace-pair --sandbox --with alpha --with beta --without old-a --without old-b`,
+    ),
+  ]);
+});
+
 test("sizes are rendered with the canonical context: tools, git, invocation and user settings change nothing [1.5#3]", async () => {
   const root = temp();
   stack(root, "steady", "tools: [surely-not-installed-tool]\nfragments:\n  default: [helper]");

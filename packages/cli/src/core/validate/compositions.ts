@@ -13,6 +13,7 @@ import { targetAgents } from "../compose/agents";
 import { type ComposeWarning, type Composition, compose } from "../compose/compose";
 import { fitsStack } from "../compose/selection";
 import type { Entry } from "../registry/entry";
+import { shellArg } from "../shell";
 import { bodyLimit, canonicalBrief, composedLimit } from "./budget";
 import { type Check, entryFile, finding, type View } from "./view";
 
@@ -70,29 +71,22 @@ export function replacementDefaults(view: Omit<View, "composed">, stack: Stack, 
   });
 }
 
-/**
- * The compositions each validated stack is budgeted in: its required and default fragments (with
- * any default app), then each optional fragment and each app that fits it added on its own, all
- * in both presets. Apps come from the validated root (or the stack's own `optional`), so the
- * compositions don't depend on what else this machine holds. An added fragment replaces the
- * defaults it conflicts with, in either direction, and an added app replaces default apps, since
- * one composition holds at most one. An optional id that names no fragment is `referenceChecks`'.
- */
-export function compositionPlans(view: Omit<View, "composed">, stack: Stack) {
+/** Default and single-extra plans, also used by the per-fragment rot check. */
+export function compositionSingles(view: Omit<View, "composed">, stack: Stack) {
   const { required, optional } = stack.meta.fragments;
   const defaults = stack.meta.fragments.default;
-  const fragments = new Map(
-    view.all.flatMap((item) =>
-      item.kind === "fragment" && "meta" in item && item.meta.kind === "fragment"
-        ? [[item.id, { item, meta: item.meta }] as const]
-        : [],
-    ),
-  );
   const fits = (meta: FragmentMeta) =>
     fitsStack(meta.appliesTo, { id: stack.id, tags: stack.meta.tags });
-  const apps = [...fragments.values()]
-    .filter(({ item, meta }) => meta.category === "app" && fits(meta) && view.inRoot(item))
-    .map(({ item }) => item.id);
+  const apps = view.all.flatMap((item) =>
+    item.kind === "fragment" &&
+    "meta" in item &&
+    item.meta.kind === "fragment" &&
+    item.meta.category === "app" &&
+    fits(item.meta) &&
+    view.inRoot(item)
+      ? [item.id]
+      : [],
+  );
   const known = new Set(view.all.filter((item) => item.kind === "fragment").map((item) => item.id));
   const extras = [...new Set([...optional.filter((id) => known.has(id)), ...apps])]
     .filter((id) => !required.includes(id) && !defaults.includes(id))
@@ -104,6 +98,56 @@ export function compositionPlans(view: Omit<View, "composed">, stack: Stack) {
       with: [id],
       without: replacementDefaults(view, stack, id),
     })),
+  ];
+}
+
+/**
+ * The compositions each validated stack is budgeted in: its required and default fragments (with
+ * any default app), each extra on its own, then each compatible unordered pair, all in both
+ * presets. Apps come from the validated root (or the stack's own `optional`), so the
+ * compositions don't depend on what else this machine holds. An added fragment replaces the
+ * defaults it conflicts with, in either direction, and an added app replaces default apps, since
+ * one composition holds at most one. Two apps or mutually conflicting fragments cannot be
+ * paired. An optional id that names no fragment is `referenceChecks`'.
+ */
+export function compositionPlans(view: Omit<View, "composed">, stack: Stack) {
+  const singles = compositionSingles(view, stack);
+  const extras = singles.flatMap((plan) => (plan.added === undefined ? [] : [plan.added]));
+  const fragments = new Map(
+    view.all.flatMap((item) =>
+      item.kind === "fragment" && "meta" in item && item.meta.kind === "fragment"
+        ? [[item.id, item.meta] as const]
+        : [],
+    ),
+  );
+  return [
+    ...singles,
+    ...extras.flatMap((first, index) =>
+      extras.slice(index + 1).flatMap((second) => {
+        const left = fragments.get(first);
+        const right = fragments.get(second);
+        if (
+          !left ||
+          !right ||
+          (left.category === "app" && right.category === "app") ||
+          left.conflicts.includes(second) ||
+          right.conflicts.includes(first)
+        )
+          return [];
+        return [
+          {
+            added: `${first} + ${second}`,
+            with: [first, second],
+            without: [
+              ...new Set([
+                ...replacementDefaults(view, stack, first),
+                ...replacementDefaults(view, stack, second),
+              ]),
+            ],
+          },
+        ];
+      }),
+    ),
   ];
 }
 
@@ -336,9 +380,24 @@ function recordBudget(
         check: "budget-composed",
         severity: "error",
         file,
-        message: `${name}: ${brief.briefWords.toLocaleString("en-US")} words, limit ${limit.toLocaleString("en-US")}`,
+        message: `${name}: ${brief.briefWords.toLocaleString("en-US")} words, limit ${limit.toLocaleString("en-US")}${previewHint(view, stack, preset, plan)}`,
       }),
     );
+}
+
+function previewHint(view: View, stack: Stack, preset: Preset, plan: CompositionPlan) {
+  if (plan.with.length !== 2) return "";
+  const args = [
+    "stacks",
+    "validate",
+    ...(view.bundled ? [] : [view.root]),
+    "--brief",
+    stack.id,
+    ...(preset === "sandbox" ? ["--sandbox"] : []),
+    ...plan.with.flatMap((id) => ["--with", id]),
+    ...plan.without.flatMap((id) => ["--without", id]),
+  ];
+  return `; preview: ${args.map(shellArg).join(" ")}`;
 }
 
 function recordMissingLayers(

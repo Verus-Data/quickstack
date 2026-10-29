@@ -3,15 +3,15 @@
   "kind": "fragment",
   "id": "drizzle-postgres",
   "source": {
-    "digest": "sha256:e9bc3aafc4bfe35ad79c9b29c6d31d84455e9ac5d98872d33b7bd357105f0fb2",
+    "digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
     "by": "drafted",
-    "model": "claude-opus-5-5",
-    "promptVersion": 2,
-    "reviewedAt": "2026-10-29"
+    "model": "codex/gpt-6",
+    "promptVersion": 3,
+    "reviewedAt": null
   },
-  "summary": "Add Postgres to a Next.js app through Drizzle ORM, with checked-in SQL migrations and a private database for each test file.",
-  "description": "Add PostgreSQL to the Next.js stack through Drizzle ORM and the pg driver: Docker Compose services for development and tests, checked-in SQL migrations with a drift check, a server-only database module, one repository behind the starter items service and a readiness route. Each test file gets its own database cloned from a migrated template, and the end-to-end run gets its own too. Your product tables, queries and access rules are still to write; hosting a production database is separate.",
-  "seoDescription": "Postgres for Next.js through Drizzle ORM and pg, with Docker Compose, checked-in SQL migrations and isolated databases for each test file.",
+  "summary": "Add PostgreSQL to a Next.js or SvelteKit app through Drizzle, with SQL migrations and isolated database tests.",
+  "description": "Add PostgreSQL to Next.js or SvelteKit through Drizzle ORM and the pg driver: Docker Compose services for development and tests, checked-in SQL migrations with a drift check, a server-only database module, one repository behind the starter items service and a readiness route. Each test file gets its own database cloned from a migrated template, and the end-to-end run gets its own too. Your product tables, queries and access rules are still to write; hosting a production database is separate.",
+  "seoDescription": "Postgres for Next.js and SvelteKit through Drizzle ORM and pg, with checked-in SQL migrations and isolated database tests.",
   "projectExamples": [
     {
       "title": "Team request tracker",
@@ -21,11 +21,11 @@
     {
       "title": "Inventory catalog with history",
       "description": "Keep catalog items and change records in your own tables, with migrations reviewed in pull requests and each test file on a private database.",
-      "stack": "nextjs"
+      "stack": "sveltekit"
     }
   ],
   "plain": {
-    "whatItIs": "Adds a PostgreSQL database server to the Next.js app, with Drizzle, a library for writing database queries in code, and saved steps for table changes.",
+    "whatItIs": "Adds a PostgreSQL database server to a Next.js or SvelteKit app, with Drizzle for queries and saved steps for table changes.",
     "goodAt": [
       "Running a local database on your own computer for development and tests",
       "Giving each test file its own copy of the database, made from a ready template",
@@ -33,7 +33,7 @@
     ],
     "notGoodAt": [
       "Hosting a live production database; arrange a hosting provider separately.",
-      "Apps on other stacks; the Effect and FastAPI Postgres add-ons are built for those."
+      "Other stacks; the Effect and FastAPI Postgres add-ons are built for those."
     ]
   },
   "capabilities": [
@@ -41,12 +41,12 @@
   ],
   "requests": [
     "drizzle orm with postgres in my nextjs app",
-    "store my Next.js app's data in a real SQL database with migrations",
-    "typed database queries from server components and server actions",
+    "add database persistence to my nextjs app with Drizzle migrations",
+    "persist SvelteKit form data in Postgres with Drizzle migrations",
     "run database tests in parallel without sharing one database"
   ],
   "useCases": [
-    "persistent data for Next.js apps",
+    "persistent data for Next.js and SvelteKit apps",
     "typed SQL queries on a Node server",
     "SQL migrations checked in with the code",
     "parallel database integration tests"
