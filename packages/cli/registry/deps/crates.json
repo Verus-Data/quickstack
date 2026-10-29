@@ -16,7 +16,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "serde": {
@@ -32,7 +32,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "serde_json": {
@@ -48,7 +48,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "specta": {
@@ -64,7 +64,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "specta-typescript": {
@@ -74,7 +74,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "tauri": {
@@ -90,7 +90,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "tauri-build": {
@@ -100,7 +100,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "tauri-specta": {
@@ -117,7 +117,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "tempfile": {
@@ -133,7 +133,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "thiserror": {
@@ -149,7 +149,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "tokio": {
@@ -165,7 +165,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "tracing": {
@@ -181,7 +181,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "tracing-subscriber": {
@@ -197,7 +197,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     }
   }

@@ -14,7 +14,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "github.com/pressly/goose": {
@@ -30,7 +30,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "github.com/spf13/cobra": {
@@ -48,7 +48,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "github.com/spf13/viper": {
@@ -64,7 +64,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "github.com/stretchr/testify": {
@@ -80,7 +80,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     }
   }

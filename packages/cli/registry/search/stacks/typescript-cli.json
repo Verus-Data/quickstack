@@ -7,7 +7,7 @@
     "by": "drafted",
     "model": "codex/gpt-6.1-sol",
     "promptVersion": 2,
-    "reviewedAt": "2026-10-28"
+    "reviewedAt": "2026-10-29"
   },
   "summary": "A compiled command-line tool with subcommands, JSON results, lazy configuration and structured logs.",
   "description": "Create a TypeScript command-line utility compiled with Bun. Effect owns commands, services, configuration and errors; results stay on stdout while diagnostics use stderr. Help, version and doctor work independently of optional application configuration. Tests exercise the command tree and compiled binary. Add your own commands after the base passes, then select bun-release for distribution or openrouter-chat-cli for the terminal chat application.",

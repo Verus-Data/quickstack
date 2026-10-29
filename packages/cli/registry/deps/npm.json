@@ -14,7 +14,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@astrojs/check": {
@@ -24,7 +24,7 @@
         "by": "drafted",
         "model": "codex/gpt-6-sol",
         "promptVersion": 1,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@astrojs/mdx": {
@@ -34,7 +34,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@astrojs/react": {
@@ -44,7 +44,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@astrojs/rss": {
@@ -54,7 +54,7 @@
         "by": "drafted",
         "model": "codex/gpt-6-sol",
         "promptVersion": 1,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@astrojs/sitemap": {
@@ -64,7 +64,7 @@
         "by": "drafted",
         "model": "codex/gpt-6-sol",
         "promptVersion": 1,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@biomejs/biome": {
@@ -80,7 +80,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@clerk/expo": {
@@ -96,7 +96,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@clerk/hono": {
@@ -112,7 +112,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@cloudflare/vite-plugin": {
@@ -121,7 +121,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@cloudflare/vitest-plugin": {
@@ -131,7 +131,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@effect/ai-openrouter": {
@@ -147,7 +147,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@effect/platform-bun": {
@@ -157,7 +157,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@effect/platform-node": {
@@ -167,7 +167,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@effect/vitest": {
@@ -177,7 +177,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@eslint/js": {
@@ -187,7 +187,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@faker-js/faker": {
@@ -203,7 +203,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@fontsource-variable/inter": {
@@ -213,7 +213,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@fontsource-variable/jetbrains-mono": {
@@ -223,7 +223,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@hono/zod-openapi": {
@@ -239,7 +239,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@openrouter/ai-sdk-provider": {
@@ -255,7 +255,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@openrouter/sdk": {
@@ -271,7 +271,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@opentui/core": {
@@ -287,7 +287,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@opentui/react": {
@@ -303,7 +303,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@playwright/test": {
@@ -319,7 +319,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@react-router/dev": {
@@ -329,7 +329,7 @@
         "by": "drafted",
         "model": "codex/gpt-6-sol",
         "promptVersion": 1,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@react-router/node": {
@@ -339,7 +339,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@react-router/serve": {
@@ -349,7 +349,7 @@
         "by": "drafted",
         "model": "codex/gpt-6-sol",
         "promptVersion": 1,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@resvg/resvg-js": {
@@ -365,7 +365,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@scalar/hono-api-reference": {
@@ -381,7 +381,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@tailwindcss/postcss": {
@@ -391,7 +391,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@tailwindcss/typography": {
@@ -401,7 +401,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@tailwindcss/vite": {
@@ -411,7 +411,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@tanstack/react-query": {
@@ -427,7 +427,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@tauri-apps/api": {
@@ -445,7 +445,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@tauri-apps/cli": {
@@ -455,7 +455,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@testing-library/dom": {
@@ -471,7 +471,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@testing-library/jest-dom": {
@@ -481,7 +481,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@testing-library/react": {
@@ -497,7 +497,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@testing-library/react-native": {
@@ -513,7 +513,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@testing-library/user-event": {
@@ -529,7 +529,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@types/bun": {
@@ -539,7 +539,7 @@
         "by": "drafted",
         "model": "codex/gpt-6-sol",
         "promptVersion": 1,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@types/jest": {
@@ -549,7 +549,7 @@
         "by": "drafted",
         "model": "codex/gpt-6-sol",
         "promptVersion": 1,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@types/node": {
@@ -559,7 +559,7 @@
         "by": "drafted",
         "model": "codex/gpt-6-sol",
         "promptVersion": 1,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@types/react": {
@@ -569,7 +569,7 @@
         "by": "drafted",
         "model": "codex/gpt-6-sol",
         "promptVersion": 1,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@types/react-dom": {
@@ -579,7 +579,7 @@
         "by": "drafted",
         "model": "codex/gpt-6-sol",
         "promptVersion": 1,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@vitejs/plugin-react": {
@@ -589,7 +589,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@vitest/coverage-v8": {
@@ -599,7 +599,7 @@
         "by": "drafted",
         "model": "codex/gpt-6-sol",
         "promptVersion": 1,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "@xterm/headless": {
@@ -615,7 +615,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "ai": {
@@ -631,7 +631,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "astro": {
@@ -647,7 +647,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "class-variance-authority": {
@@ -663,7 +663,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "clsx": {
@@ -679,7 +679,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "drizzle-kit": {
@@ -695,7 +695,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "drizzle-orm": {
@@ -711,7 +711,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "effect": {
@@ -727,7 +727,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "eslint": {
@@ -743,7 +743,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "eslint-plugin-jsx-a11y": {
@@ -753,7 +753,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "eslint-plugin-react-hooks": {
@@ -763,7 +763,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "expo": {
@@ -779,7 +779,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "expo-constants": {
@@ -789,7 +789,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "expo-linking": {
@@ -799,7 +799,7 @@
         "by": "drafted",
         "model": "codex/gpt-6-sol",
         "promptVersion": 1,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "expo-router": {
@@ -815,7 +815,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "expo-secure-store": {
@@ -831,7 +831,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "expo-status-bar": {
@@ -841,7 +841,7 @@
         "by": "drafted",
         "model": "codex/gpt-6-sol",
         "promptVersion": 1,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "globals": {
@@ -851,7 +851,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "happy-dom": {
@@ -867,7 +867,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "hono": {
@@ -883,7 +883,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "isbot": {
@@ -899,7 +899,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "jest": {
@@ -915,7 +915,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "jest-expo": {
@@ -925,7 +925,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "lucide-react": {
@@ -941,7 +941,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "msw": {
@@ -957,7 +957,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "nativewind": {
@@ -973,7 +973,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "orval": {
@@ -989,7 +989,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "pg": {
@@ -1005,7 +1005,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "postcss": {
@@ -1015,7 +1015,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "postgres": {
@@ -1031,7 +1031,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "posthog-js": {
@@ -1047,7 +1047,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "prettier": {
@@ -1063,7 +1063,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "prettier-plugin-astro": {
@@ -1073,7 +1073,7 @@
         "by": "drafted",
         "model": "codex/gpt-6-sol",
         "promptVersion": 1,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "react": {
@@ -1089,7 +1089,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "react-dom": {
@@ -1105,7 +1105,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "react-native": {
@@ -1121,7 +1121,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "react-native-css": {
@@ -1131,7 +1131,7 @@
         "by": "drafted",
         "model": "codex/gpt-6-sol",
         "promptVersion": 1,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "react-native-reanimated": {
@@ -1147,7 +1147,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "react-native-safe-area-context": {
@@ -1157,7 +1157,7 @@
         "by": "drafted",
         "model": "codex/gpt-6-sol",
         "promptVersion": 1,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "react-native-screens": {
@@ -1167,7 +1167,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "react-native-web": {
@@ -1183,7 +1183,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "react-native-worklets": {
@@ -1193,7 +1193,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "react-router": {
@@ -1209,7 +1209,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "satori": {
@@ -1225,7 +1225,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "tailwind-merge": {
@@ -1241,7 +1241,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "tailwindcss": {
@@ -1257,7 +1257,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "typescript": {
@@ -1275,7 +1275,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "typescript-eslint": {
@@ -1285,7 +1285,7 @@
         "by": "drafted",
         "model": "codex/gpt-6-sol",
         "promptVersion": 1,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "vite": {
@@ -1301,7 +1301,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "vitest": {
@@ -1317,7 +1317,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "wrangler": {
@@ -1333,7 +1333,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "yaml": {
@@ -1349,7 +1349,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "zod": {
@@ -1365,7 +1365,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     },
     "zustand": {
@@ -1383,7 +1383,7 @@
         "by": "drafted",
         "model": "claude-haiku-5-5",
         "promptVersion": 2,
-        "reviewedAt": null
+        "reviewedAt": "2026-10-29"
       }
     }
   }
