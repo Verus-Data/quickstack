@@ -143,6 +143,40 @@
       ]
     },
     {
+      "id": "platform-sveltekit-node",
+      "pool": "platform",
+      "split": "tune",
+      "query": "svelte kit starter that runs on my own node server",
+      "first": {
+        "kind": "stack",
+        "id": "sveltekit"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "sveltekit",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "platform-svelte-forms",
+      "pool": "platform",
+      "split": "holdout",
+      "query": "build a svelte site where forms post to the server and show validation errors",
+      "first": {
+        "kind": "stack",
+        "id": "sveltekit"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "sveltekit",
+          "grade": 2
+        }
+      ]
+    },
+    {
       "id": "platform-typescript-terminal",
       "pool": "platform",
       "split": "holdout",
