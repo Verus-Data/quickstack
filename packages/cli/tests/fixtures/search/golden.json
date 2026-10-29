@@ -109,6 +109,40 @@
       ]
     },
     {
+      "id": "platform-nextjs-app-router",
+      "pool": "platform",
+      "split": "tune",
+      "query": "Next.js project using the app directory and server actions",
+      "first": {
+        "kind": "stack",
+        "id": "nextjs"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "nextjs",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "platform-nextjs-self-host",
+      "pool": "platform",
+      "split": "holdout",
+      "query": "a React site built with Next that I run with next start on my own box",
+      "first": {
+        "kind": "stack",
+        "id": "nextjs"
+      },
+      "relevant": [
+        {
+          "kind": "stack",
+          "id": "nextjs",
+          "grade": 2
+        }
+      ]
+    },
+    {
       "id": "platform-typescript-terminal",
       "pool": "platform",
       "split": "holdout",
@@ -422,6 +456,11 @@
         },
         {
           "kind": "stack",
+          "id": "nextjs",
+          "grade": 2
+        },
+        {
+          "kind": "stack",
           "id": "astro-fullstack",
           "grade": 1
         }
@@ -451,6 +490,11 @@
         {
           "kind": "stack",
           "id": "cloudflare-react-router",
+          "grade": 2
+        },
+        {
+          "kind": "stack",
+          "id": "nextjs",
           "grade": 2
         }
       ]
