@@ -13,19 +13,13 @@ merge: [.claude/settings.json]
 
 # Claude Essentials plugin
 
-[claude-essentials](https://github.com/rileyhilliard/claude-essentials) is a Claude Code plugin marketplace whose `ce` plugin packages general engineering practice as skills and agents. This fragment turns it on for everyone who opens the project in Claude Code and wires it to the project through rules. It only affects Claude Code; other agents see nothing from it.
-
-What `ce` provides:
-
-- **Skills** (loaded on demand as `ce:<name>`): `writing-tests`, `fixing-flaky-tests`, `systematic-debugging`, `handling-errors`, `optimizing-performance`, `architecting-systems`, `executing-plans`, `writer`, `visualizing-with-mermaid`, `managing-databases`, `writing-sql`, `managing-pipelines`, `design`, `planning-products`, `post-mortem`, `strategy-writer`, `structuring-articles`.
-- **Agents**: `ce:code-reviewer`, `ce:log-reader`, `ce:devils-advocate`, `ce:copywriter`.
-- **Command**: `/ce:setup`, which audits or bootstraps a repo's `.claude/` config.
+Enable the `ce` Claude Code plugin and connect its skills through project rules.
 
 ## What to add
 
-**Settings (merged into `.claude/settings.json`).** Registers the `claude-essentials` marketplace from GitHub and enables `ce@claude-essentials`. Claude Code applies marketplace entries only after the user trusts the project folder, so the plugin appears on the next trusted session, not necessarily in the one doing the scaffolding. Nothing else to do for it.
+**Settings.** The merge into `.claude/settings.json` registers the marketplace and enables the plugin. It may appear only after the user trusts the project folder and starts another session.
 
-**Rules (copied to `.claude/rules/`).** Each rule is short and tells Claude which `ce` skill to load, deferring to `AGENTS.md` for project facts:
+**Rules.** The shipped `.claude/rules/` files route Claude to skills and defer project facts to AGENTS.md:
 
 | Rule | Loads for | Points at |
 | --- | --- | --- |
@@ -34,13 +28,10 @@ What `ce` provides:
 | `debugging.md` | always | `ce:systematic-debugging`, `ce:optimizing-performance`, the debugging budget in `AGENTS.md` |
 | `writing.md` | Markdown and `docs/` | `ce:writer`, `ce:visualizing-with-mermaid` |
 
-Once the project exists, check the `paths:` globs in `testing.md` and `error-handling.md` against the real layout and tighten them if they match far more than they should (for example, a vendored directory). If the project has a stack-specific testing pattern worth enforcing (the harness to use, what may be faked), add a short `## Project specifics` section to `testing.md` rather than repeating what `AGENTS.md` already says. Add a rule for another skill (`ce:managing-databases` for schema and migration files, `ce:managing-pipelines` for CI workflows) only when the project has files for it to attach to.
+Check the `paths:` globs against the real layout; narrow overly broad matches. Put stack-specific testing rules in `testing.md` under `## Project specifics`, without repeating AGENTS.md. Add other skill rules only where matching project files exist.
 
-Don't copy skill content into the rules or `AGENTS.md`. The rules exist to route to the skills.
-
-**CLAUDE.md.** Add one line to the Claude Code section noting that the `ce` plugin is enabled and that `.claude/rules/` routes to its skills.
+Don't copy skill content into rules or AGENTS.md. Note the plugin and rule routing in CLAUDE.md.
 
 ## Gotchas
 
-- Skills are referenced by their current names above. If a rule names a skill that doesn't exist, Claude silently gets nothing; check the plugin's skill list if you add rules.
-- `autoUpdate` is on, so the plugin follows the marketplace, consistent with the no-pinning policy.
+- Check the plugin's current skill list before adding a rule; an unknown skill name silently does nothing.

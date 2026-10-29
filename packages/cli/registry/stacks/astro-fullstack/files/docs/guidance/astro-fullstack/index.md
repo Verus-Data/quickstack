@@ -3,7 +3,9 @@
 Read these references before changing the corresponding code. They apply to every selected agent; native rules and skills link here.
 
 - [astro](astro.md)
+- [development](development.md)
 - [effect-api](effect-api.md)
 - [testing](testing.md)
+- [tooling](tooling.md)
 - [typescript](typescript.md)
 - [verification](verification.md)

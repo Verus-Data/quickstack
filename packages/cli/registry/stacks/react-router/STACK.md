@@ -15,7 +15,7 @@ merge: [.claude/settings.json]
 fragments:
   required: [claude-harness]
   default: [git-hooks, ci-github, effect]
-  optional: [posthog, rr, ce-plugin, openrouter-chat]
+  optional: [posthog, rr, ce-plugin, openrouter-chat, effect-sql-postgres, effect-otlp]
 env:
   PORT_WEB: "5173"
 verify:

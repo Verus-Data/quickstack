@@ -17,7 +17,7 @@ merge: [.claude/settings.json]
 fragments:
   required: [claude-harness]
   default: [git-hooks, ci-github]
-  optional: [rr, ce-plugin]
+  optional: [rr, ce-plugin, drizzle-postgres]
 env:
   PORT_WEB: "3000"
 verify:
